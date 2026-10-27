@@ -25,6 +25,10 @@ const Picker = @import("launcher_picker.zig");
 const Action = enum { activate, launch, pin, unpin, minimize, maximize, close, choose_launcher };
 const Callback = struct { dock: *Dock, action: Action, id: [:0]const u8, value: bool = false, desktop_action: ?[:0]const u8 = null, resolution_hash: u64 = 0, window_id: ?[:0]const u8 = null, desktop_id: ?[:0]const u8 = null, picker: ?Picker.Request = null };
 const Group = struct { key: []const u8, desktop: ?[]const u8, pinned: bool, windows: std.ArrayList(*const e.Window) = .empty };
+/// G_TYPE_STRING: fundamental type index 16 (2 is G_TYPE_INTERFACE) shifted into GType space.
+const g_type_string: usize = 16 << 2;
+const DragBinding = struct { dock: *Dock, key: [*:0]const u8, widget: *gtk.Widget };
+const DropBinding = struct { dock: *Dock, widget: *gtk.Widget, index: usize, pins: usize, vertical: bool };
 pub const Dock = struct {
     client: *Client,
     index: *Apps.Index,
@@ -51,6 +55,7 @@ pub const Dock = struct {
     /// Edge-direction thickness including margin, reserved as exclusive zone in `always` mode.
     thickness: i32 = 0,
     hover: bool = false,
+    dragging: bool = false,
     keyboard: bool = false,
     locked: bool = true,
     fullscreen: bool = false,
@@ -269,6 +274,8 @@ pub const Dock = struct {
     fn position(self: *Dock) void {
         const vertical = self.config.edge == .left or self.config.edge == .right;
         self.panel.as(gtk.Orientable).setOrientation(if (vertical) .vertical else .horizontal);
+        // Drives the insertion-indicator CSS, which flips with the dock edge.
+        if (vertical) self.panel.as(gtk.Widget).addCssClass("pearl-dock-vertical") else self.panel.as(gtk.Widget).removeCssClass("pearl-dock-vertical");
         const length = @max(1, (if (vertical) self.bounds.height else self.bounds.width) - 64);
         self.scroll.setPolicy(if (vertical) .never else .automatic, if (vertical) .automatic else .never);
         self.scroll.setMaxContentWidth(if (vertical) -1 else length);
@@ -307,7 +314,7 @@ pub const Dock = struct {
         }
     }
     fn showState(self: *Dock) void {
-        var interaction = self.hover;
+        var interaction = self.hover or self.dragging;
         for (self.menus.items) |menu| if (menu.as(gtk.Widget).getVisible() != 0) {
             interaction = true;
         };
@@ -385,7 +392,7 @@ pub const Dock = struct {
         self.showState();
     }
     fn left(_: *gtk.EventControllerMotion, self: *Dock) callconv(.c) void {
-        if (!self.destroying and self.timer == 0) self.timer = glib.timeoutAdd(450, hideLater, self);
+        if (!self.destroying and !self.dragging and self.timer == 0) self.timer = glib.timeoutAdd(450, hideLater, self);
     }
     fn hideLater(data: ?*anyopaque) callconv(.c) c_int {
         const self: *Dock = @ptrCast(@alignCast(data.?));
@@ -432,7 +439,13 @@ pub const Dock = struct {
     fn build(self: *Dock, groups: []Group) !void {
         self.clear();
         const alloc = self.arena.allocator();
+        // Pinned groups are built first, so they occupy the leading positions.
+        var pins: usize = 0;
         for (groups) |group| {
+            if (group.pinned) pins += 1;
+        }
+        const vertical = self.config.edge == .left or self.config.edge == .right;
+        for (groups, 0..) |group, index| {
             const entry = if (group.desktop) |id| self.installed(id) else null;
             const title = if (entry) |v| v.name else if (group.desktop) |id| try std.fmt.allocPrintSentinel(alloc, "{s} — launcher unavailable", .{id}, 0) else if (group.windows.items.len > 0) group.windows.items[0].app_id orelse group.windows.items[0].class orelse "Application" else group.key;
             var focused = false;
@@ -465,6 +478,28 @@ pub const Dock = struct {
             content.append(indicator_label.as(gtk.Widget));
             primary.setChild(content.as(gtk.Widget));
             box.append(primary.as(gtk.Widget));
+            if (group.pinned) if (group.desktop) |id| {
+                const drag = try alloc.create(DragBinding);
+                drag.* = .{ .dock = self, .key = try alloc.dupeZ(u8, id), .widget = primary.as(gtk.Widget) };
+                const source = gtk.DragSource.new();
+                source.setActions(.{ .move = true });
+                // Drag the bare icon centered on the pointer instead of an empty default surface.
+                const paintable = gtk.WidgetPaintable.new(icon.as(gtk.Widget));
+                defer paintable.as(object.Object).unref();
+                source.setIcon(paintable.as(gdk.Paintable), @divTrunc(self.config.icon_size, 2), @divTrunc(self.config.icon_size, 2));
+                _ = gtk.DragSource.signals.prepare.connect(source, *DragBinding, dragPrepare, drag, .{});
+                _ = gtk.DragSource.signals.drag_begin.connect(source, *DragBinding, dragBegan, drag, .{});
+                _ = gtk.DragSource.signals.drag_end.connect(source, *DragBinding, dragDone, drag, .{});
+                _ = gtk.DragSource.signals.drag_cancel.connect(source, *DragBinding, dragCancelled, drag, .{});
+                primary.as(gtk.Widget).addController(source.as(gtk.EventController));
+            };
+            const drop = try alloc.create(DropBinding);
+            drop.* = .{ .dock = self, .widget = box.as(gtk.Widget), .index = index, .pins = pins, .vertical = vertical };
+            const drop_target = gtk.DropTarget.new(g_type_string, .{ .move = true });
+            _ = gtk.DropTarget.signals.motion.connect(drop_target, *DropBinding, dropMotion, drop, .{});
+            _ = gtk.DropTarget.signals.leave.connect(drop_target, *DropBinding, dropLeave, drop, .{});
+            _ = gtk.DropTarget.signals.drop.connect(drop_target, *DropBinding, dropped, drop, .{});
+            box.as(gtk.Widget).addController(drop_target.as(gtk.EventController));
             const menu = gtk.Popover.new();
             w.name(menu.as(gtk.Widget), try std.fmt.allocPrintSentinel(alloc, "Actions for {s}", .{title}, 0));
             _ = gtk.Popover.signals.closed.connect(menu, *Dock, menuClosed, self, .{});
@@ -546,6 +581,72 @@ pub const Dock = struct {
             }
             self.panel.append(box.as(gtk.Widget));
         }
+    }
+    fn dragPrepare(_: *gtk.DragSource, _: f64, _: f64, binding: *DragBinding) callconv(.c) ?*gdk.ContentProvider {
+        if (binding.dock.locked or binding.dock.destroying) return null;
+        // g_value_init requires zero-filled memory; stack garbage faults inside gobject.
+        var value: object.Value = std.mem.zeroes(object.Value);
+        _ = object.Value.init(&value, g_type_string);
+        value.setString(binding.key);
+        return gdk.ContentProvider.newForValue(&value);
+    }
+    /// Keeps autohide/intelligent docks revealed while an icon is being moved;
+    /// the pointer leaves the surface during the drag and would hide it.
+    fn dragBegan(_: *gtk.DragSource, _: *gdk.Drag, binding: *DragBinding) callconv(.c) void {
+        const self = binding.dock;
+        binding.widget.addCssClass("pearl-dragging");
+        self.dragging = true;
+        if (self.timer != 0) {
+            _ = glib.Source.remove(self.timer);
+            self.timer = 0;
+        }
+        self.showState();
+    }
+    fn dragDone(_: *gtk.DragSource, _: *gdk.Drag, _: c_int, binding: *DragBinding) callconv(.c) void {
+        binding.widget.removeCssClass("pearl-dragging");
+        binding.dock.dragging = false;
+        if (!binding.dock.destroying) binding.dock.showState();
+    }
+    fn dragCancelled(_: *gtk.DragSource, _: *gdk.Drag, _: gdk.DragCancelReason, binding: *DragBinding) callconv(.c) c_int {
+        binding.widget.removeCssClass("pearl-dragging");
+        binding.dock.dragging = false;
+        if (!binding.dock.destroying) binding.dock.showState();
+        return 0;
+    }
+    fn dropAfter(binding: *const DropBinding, x: f64, y: f64) bool {
+        const extent = @as(f64, @floatFromInt(if (binding.vertical) binding.widget.getHeight() else binding.widget.getWidth())) / 2;
+        return if (binding.vertical) y >= extent else x >= extent;
+    }
+    fn clearDropClasses(widget: *gtk.Widget) void {
+        widget.removeCssClass("pearl-drop-before");
+        widget.removeCssClass("pearl-drop-after");
+    }
+    fn dropMotion(_: *gtk.DropTarget, x: f64, y: f64, binding: *DropBinding) callconv(.c) gdk.DragAction {
+        if (dropAfter(binding, x, y)) {
+            binding.widget.addCssClass("pearl-drop-after");
+            binding.widget.removeCssClass("pearl-drop-before");
+        } else {
+            binding.widget.addCssClass("pearl-drop-before");
+            binding.widget.removeCssClass("pearl-drop-after");
+        }
+        return .{ .move = true };
+    }
+    fn dropLeave(_: *gtk.DropTarget, binding: *DropBinding) callconv(.c) void {
+        clearDropClasses(binding.widget);
+    }
+    fn dropped(_: *gtk.DropTarget, value: *object.Value, x: f64, y: f64, binding: *DropBinding) callconv(.c) c_int {
+        clearDropClasses(binding.widget);
+        const self = binding.dock;
+        if (self.destroying) return 0;
+        const raw = value.getString() orelse return 0;
+        // Drops past the pinned run append to it; running-only items keep their derived order.
+        const pos = if (binding.index < binding.pins) binding.index + @intFromBool(dropAfter(binding, x, y)) else binding.pins;
+        self.reorder(std.mem.span(raw), pos) catch |err| {
+            log.err("event=dock-reorder error={s}", .{@errorName(err)});
+            self.window.as(gtk.Widget).setTooltipText(@import("i18n").dtr("pearl", "Action unavailable; the application or window may have changed."));
+            return 0;
+        };
+        return 1;
     }
     fn contextMenu(gesture: *gtk.GestureClick, _: c_int, _: f64, _: f64, menu: *gtk.Popover) callconv(.c) void {
         _ = gesture.as(gtk.Gesture).setState(.claimed);
@@ -646,6 +747,31 @@ pub const Dock = struct {
             try pins.append(alloc, existing);
         };
         if (value) try pins.append(alloc, id);
+        prefs.pinned_apps = pins.items;
+        try prefs.validate();
+        const json = try std.json.Stringify.valueAlloc(alloc, prefs, .{});
+        try self.preferences.apply(json, self.preferences.revision);
+    }
+    /// Moves `id` to position `pos` in the pinned list; dragging an unpinned
+    /// desktop item pins it at that spot. `pos` counts the pre-removal list.
+    pub fn reorder(self: *Dock, id: []const u8, pos: usize) !void {
+        if (!p.desktopId(id)) return error.InvalidDesktopId;
+        if (self.locked or self.client.availability != .ready or self.client.model.get(.session, "session").?.locked) return error.Locked;
+        if (self.installed(id) == null) return error.StaleApplication;
+        var arena = std.heap.ArenaAllocator.init(a);
+        defer arena.deinit();
+        const alloc = arena.allocator();
+        var prefs = self.preferences.prefs();
+        var pins: std.ArrayList([]const u8) = .empty;
+        var insertion = pos;
+        for (prefs.pinned_apps, 0..) |existing, i| {
+            if (std.mem.eql(u8, id, existing)) {
+                if (i < insertion) insertion -= 1;
+                continue;
+            }
+            try pins.append(alloc, existing);
+        }
+        try pins.insert(alloc, @min(insertion, pins.items.len), id);
         prefs.pinned_apps = pins.items;
         try prefs.validate();
         const json = try std.json.Stringify.valueAlloc(alloc, prefs, .{});
