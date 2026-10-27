@@ -1,7 +1,7 @@
-# Build the checksum-pinned v0.3.2 source archive. scripts/release-source.py can also generate
+# Build the checksum-pinned v0.3.3 source archive. scripts/release-source.py can also generate
 # a checksum-locked recipe for a local source archive.
 pkgname=pearl
-pkgver=0.3.2
+pkgver=0.3.3
 pkgrel=1
 # Preserve upgrade ordering from packages previously numbered 1.0.0rc2.
 epoch=1
@@ -53,6 +53,7 @@ source=("pearl-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz"
         "https://github.com/bytecodealliance/wasmtime/releases/download/v$_wasmtime/wasmtime-v$_wasmtime-x86_64-linux-c-api.tar.xz"
         "https://github.com/bytecodealliance/wit-bindgen/releases/download/v$_wit_bindgen/wit-bindgen-$_wit_bindgen-x86_64-linux.tar.gz"
         "https://github.com/bytecodealliance/wasm-tools/releases/download/v$_wasm_tools/wasm-tools-$_wasm_tools-x86_64-linux.tar.gz")
+# TODO: refresh the first checksum after publishing v0.3.3; it still pins v0.3.2.
 sha256sums=('738a006a64198c7293c8a5b01bf60e6f30422f9868cfd0e6b1f324753b436e08'
             'd9a2b5dfaf688035f288a7ae81a4b96c3acdd3e849262c2ab577b61908c3f9f9'
             '3e81cc6523729f7532b4aa7968648a04abf0c711b7d1677150e9121f4e6458fe'

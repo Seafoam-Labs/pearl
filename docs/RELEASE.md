@@ -10,7 +10,7 @@ no Flatpak-wide support is claimed. Before downgrade/removal, disable Qt managem
 and complete conditional restoration using the [recovery procedure](QT_THEMING.md#shared-files-conflicts-and-recovery).
 Preserve user ownership records; package scripts must not remove them.
 
-Pearl `0.3.2` targets Aqueous exclusively and builds with exactly Zig 0.16.0.
+Pearl `0.3.3` targets Aqueous exclusively and builds with exactly Zig 0.16.0.
 This candidate bundles Phyto, Dome and Coral `0.1.1` and Pearl Material's VS Code
 theme `1.0.1`, with refreshed Arch and Devario packaging. It retains Dome's
 `appearance-rejected` log-event catalog fix, live Pearl theme following in Dome
@@ -42,9 +42,11 @@ session dispatcher and asynchronous capture-backend patch together. See the
 [capture picker implementation record](FILE_CHOOSER_IMPLEMENTATION_PLAN.md#capture-picker-implementation-record)
 for verification and rebuild details.
 
-The checked-in `packaging/arch/PKGBUILD` uses the SHA-256-pinned source archive for `v0.3.2`.
-Its Arch version is `1:0.3.2-1`; the epoch allows upgrades from the earlier
-`1.0.0rc2` packages. The source and runtime version are also `0.3.2`.
+The checked-in `packaging/arch/PKGBUILD` targets the source archive for `v0.3.3`.
+After publishing the tag, refresh the first source SHA-256 in both stable
+PKGBUILDs and their `.SRCINFO` files; it currently still pins the `v0.3.2` archive.
+Its Arch version is `1:0.3.3-1`; the epoch allows upgrades from the earlier
+`1.0.0rc2` packages. The source and runtime version are also `0.3.3`.
 The Devario [standard split recipe](../packaging/Devario/pearl/PKGBUILD) uses the
 same archive and produces `pearl` and `pearl-greeter` from one source tree and build.
 The [Devario Git split recipe](../packaging/Devario/pearl-git/PKGBUILD) tracks the
@@ -57,7 +59,7 @@ Each output has its own runtime dependencies and backups; installing either
 shell alone does not install a greeter. Installing a greeter retains the existing
 next-boot setup hook. PKGBUILDs and pacman install hooks use shell because these
 are the package manager's required integration format; application builds use Zig.
-Publish `v0.3.2` from the commit containing this version bump before these recipes
+Publish `v0.3.3` from the commit containing this version bump before these recipes
 can fetch the release. The standard packages install
 `pearl-agent`; Git packages install `pearl-agent-git` and the matching desktop entry.
 Git sources
