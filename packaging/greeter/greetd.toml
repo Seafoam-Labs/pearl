@@ -1,4 +1,4 @@
-# Installed as /etc/greetd/config.toml; the previous config is saved as config.toml.bak.
+# Installed as /etc/greetd/config.toml only when no configuration exists.
 [terminal]
 vt = 7
 switch = true

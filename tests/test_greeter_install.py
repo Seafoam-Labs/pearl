@@ -11,6 +11,9 @@ import unittest
 from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
+SCRIPTLETS = ('packaging/arch-git/pearl-greeter.install',
+              'packaging/Devario/pearl/pearl-greeter.install',
+              'packaging/Devario/pearl-git/pearl-greeter.install')
 spec = importlib.util.spec_from_file_location('greeter_setup', ROOT/'packaging/greeter/setup.py')
 setup = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(setup)
@@ -42,34 +45,34 @@ class GreeterInstall(unittest.TestCase):
         self.install.systemctl('enable', 'old.service')
         self.install.systemctl('set-default', 'multi-user.target')
 
-    def backup_configs(self, check=True):
-        return subprocess.run(['bash', '-c', 'source "$1"; _backup_greetd_configs "$2"',
-                               'backup-test', str(ROOT/'packaging/arch-git/pearl-greeter.install'),
-                               str(self.root)], check=check, capture_output=True, text=True)
-
-    def replace_config(self):
-        subprocess.run(['bash', '-c', 'source "$1"; _install_greetd_config "$2"',
-                        'install-config-test', str(ROOT/'packaging/arch-git/pearl-greeter.install'),
+    def install_config(self):
+        return subprocess.run(['bash', '-c', 'source "$1"; _install_greetd_config "$2"',
+                        'install-config-test', str(ROOT/self.scriptlet),
                         str(self.root)], check=True, capture_output=True, text=True)
 
-    def test_replace_standard_config_and_restore_original(self):
+    def test_preserve_graphics_wrapper_on_install_upgrade_and_restore(self):
         config = self.root/'etc/greetd/config.toml'
         config.parent.mkdir()
-        original = '[terminal]\nvt = 7\n[default_session]\ncommand = "dms-greeter"\nuser = "greeter"\n'
+        original = '# Keep graphics policy\n[terminal]\nvt = 7\n[default_session]\ncommand = "graphics-session /usr/lib/pearl/pearl-greeter-host"\nuser = "pearl-greeter"\n'
         config.write_text(original)
         config.chmod(0o640)
         self.old_manager()
-        self.replace_config()
-        self.assertEqual(config.read_bytes(), self.template.read_bytes())
-        self.assertEqual(config.stat().st_mode & 0o777, 0o644)
-        self.assertEqual(config.with_suffix('.toml.bak').read_text(), original)
+        before = config.stat()
+        for _ in range(3):
+            self.assertIn('Preserved existing', self.install_config().stdout)
+            self.assertEqual(config.read_text(), original)
+            after = config.stat()
+            for field in ('st_ino', 'st_mode', 'st_uid', 'st_gid', 'st_mtime_ns'):
+                self.assertEqual(getattr(after, field), getattr(before, field))
+        self.assertFalse(config.with_suffix('.toml.bak').exists())
+        self.assertFalse(self.install.state.with_name('created-greetd.toml').exists())
         self.install.enable()
         self.install.restore()
         self.assertEqual(config.read_text(), original)
         self.assertEqual(config.stat().st_mode & 0o777, 0o640)
-        self.assertEqual(config.with_suffix('.toml.bak').read_text(), original)
+        self.assertFalse(config.with_suffix('.toml.bak').exists())
 
-    def test_upgrade_replaces_old_split_config_and_keeps_backup(self):
+    def test_upgrade_preserves_legacy_config_and_backup(self):
         config = self.root/'etc/greetd/config.toml'
         config.parent.mkdir()
         config.write_text('current DMS configuration')
@@ -78,51 +81,115 @@ class GreeterInstall(unittest.TestCase):
         legacy = self.root/'etc/pearl/greetd.toml'
         legacy.parent.mkdir()
         legacy.write_text('obsolete private configuration')
-        self.replace_config()
-        self.assertEqual(config.read_bytes(), self.template.read_bytes())
+        self.install_config()
+        self.assertEqual(config.read_text(), 'current DMS configuration')
         self.assertEqual(backup.read_text(), 'original configuration')
-        self.replace_config()
+        self.install_config()
         self.assertEqual(backup.read_text(), 'original configuration')
+        self.install.restore()
+        self.assertEqual(config.read_text(), 'current DMS configuration')
+        self.assertEqual(legacy.read_text(), 'obsolete private configuration')
 
     def test_no_original_config_is_not_backed_up_on_upgrade(self):
-        self.replace_config()
-        self.replace_config()
+        self.install_config()
+        self.install_config()
         config = self.root/'etc/greetd/config.toml'
+        self.assertEqual(config.read_bytes(), self.template.read_bytes())
+        self.assertEqual(config.stat().st_mode & 0o777, 0o644)
+        created = self.install.state.with_name('created-greetd.toml')
+        self.assertEqual(created.read_bytes(), config.read_bytes())
+        self.assertEqual(created.stat().st_mode & 0o777, 0o600)
         self.assertFalse(config.with_suffix('.toml.bak').exists())
         self.install.enable()
         self.install.restore()
         self.assertFalse(config.exists())
+        self.assertFalse(created.exists())
 
     def test_restore_preserves_later_greetd_edits(self):
-        self.replace_config()
+        self.install_config()
         self.install.enable()
         config = self.root/'etc/greetd/config.toml'
         config.write_text('later administrator configuration')
         self.install.restore()
         self.assertEqual(config.read_text(), 'later administrator configuration')
 
-    def test_config_backup_preserves_original_and_existing_backup(self):
-        config_dir = self.root/'etc/greetd'
-        config_dir.mkdir()
-        config = config_dir/'config.toml'
-        config.write_text('[terminal]\nvt = 2\n')
-        config.chmod(0o640)
-        self.backup_configs()
-        backup = config_dir/'config.toml.bak'
-        self.assertEqual(backup.read_bytes(), config.read_bytes())
-        self.assertEqual(backup.stat().st_mode & 0o777, 0o640)
-        original = backup.read_bytes()
-        config.write_text('later edit')
-        self.backup_configs()
-        self.assertEqual(backup.read_bytes(), original)
-        self.assertEqual(config.read_text(), 'later edit')
+    def test_preserved_template_is_not_owned_even_with_legacy_backup(self):
+        config = self.root/'etc/greetd/config.toml'
+        config.parent.mkdir()
+        config.write_bytes(self.template.read_bytes())
+        backup = config.with_suffix('.toml.bak')
+        backup.write_text('stale original configuration')
+        self.install_config()
         self.install.enable()
         self.install.restore()
-        self.assertEqual(backup.read_bytes(), original)
+        self.assertEqual(config.read_bytes(), self.template.read_bytes())
+        self.assertEqual(backup.read_text(), 'stale original configuration')
 
-    def test_missing_greetd_config_needs_no_backup(self):
-        self.backup_configs()
-        self.assertFalse((self.root/'etc/greetd').exists())
+    def test_preserve_valid_and_dangling_symlinks(self):
+        config = self.root/'etc/greetd/config.toml'
+        config.parent.mkdir()
+        target = config.parent/'graphics.toml'
+        for exists in (False, True):
+            with self.subTest(target_exists=exists):
+                if exists:
+                    target.write_bytes(self.template.read_bytes())
+                config.symlink_to(target.name)
+                for _ in range(2):
+                    self.install_config()
+                self.install.restore()
+                self.assertTrue(config.is_symlink())
+                self.assertEqual(os.readlink(config), target.name)
+                self.assertEqual(target.exists(), exists)
+                if exists:
+                    self.assertEqual(target.read_bytes(), self.template.read_bytes())
+                config.unlink()
+
+    def test_restore_preserves_symlink_replacing_created_config(self):
+        self.install_config()
+        config = self.root/'etc/greetd/config.toml'
+        config.unlink()
+        config.symlink_to(self.template)
+        self.install.restore()
+        self.assertTrue(config.is_symlink())
+
+    def test_template_update_does_not_change_config_or_restore_snapshot(self):
+        self.install_config()
+        config = self.root/'etc/greetd/config.toml'
+        original = config.read_bytes()
+        self.template.write_text('new package default')
+        self.install_config()
+        self.assertEqual(config.read_bytes(), original)
+        self.install.restore()
+        self.assertFalse(config.exists())
+
+    def test_missing_config_with_stale_backup_does_not_restore_backup(self):
+        config = self.root/'etc/greetd/config.toml'
+        config.parent.mkdir()
+        backup = config.with_suffix('.toml.bak')
+        backup.write_text('stale original configuration')
+        self.install_config()
+        self.install.restore()
+        self.assertFalse(config.exists())
+        self.assertEqual(backup.read_text(), 'stale original configuration')
+
+    def test_post_upgrade_preserves_wrapper(self):
+        config = self.root/'etc/greetd/config.toml'
+        config.parent.mkdir()
+        original = 'command = "graphics-session /usr/lib/pearl/pearl-greeter-host"\n'
+        config.write_text(original)
+        # Stub service actions and redirect only the config helper to our root.
+        script = '''source "$1"
+eval "$(declare -f _install_greetd_config | sed '1s/_install_greetd_config/_test_install_config/')"
+_install_greetd_config() { _test_install_config "$test_root"; }
+_provision_pearl_greeter() { :; }
+_enable_greeter_sync() { :; }
+test_root=$2
+post_upgrade
+post_upgrade
+'''
+        subprocess.run(['bash', '-c', script, 'upgrade-test', str(ROOT/self.scriptlet),
+                        str(self.root)], check=True, capture_output=True, text=True)
+        self.assertEqual(config.read_text(), original)
 
     def test_install_and_remove_restore_previous_manager_and_target(self):
         self.old_manager()
@@ -212,7 +279,7 @@ class GreeterInstall(unittest.TestCase):
 
     def test_failed_repair_preserves_backup_and_pearl_config(self):
         self.old_manager()
-        self.replace_config()
+        self.install_config()
         self.install.enable()
         saved = self.install.state.read_bytes()
         self.install.systemctl('enable', 'ly@tty2.service')
@@ -312,6 +379,15 @@ class GreeterInstall(unittest.TestCase):
         # The package uses greetd's distro PAM policy, not the Pearl locker's policy.
         pkgbuild = (ROOT/'packaging/arch-git/PKGBUILD').read_text()
         self.assertIn("backup=('etc/pearl/greeter.json')", pkgbuild)
+
+
+def load_tests(loader, tests, pattern):
+    suite = unittest.TestSuite()
+    for scriptlet in SCRIPTLETS:
+        for case in loader.loadTestsFromTestCase(GreeterInstall):
+            case.scriptlet = scriptlet
+            suite.addTest(case)
+    return suite
 
 
 if __name__ == '__main__':

@@ -4,7 +4,6 @@ import argparse
 import json
 import os
 from pathlib import Path
-import shutil
 import subprocess
 import sys
 
@@ -123,15 +122,15 @@ class Setup:
 
     def restore_config(self):
         config = self.root/'etc/greetd/config.toml'
-        template = self.root/'usr/share/pearl-greeter/greetd.toml'
-        backup = config.with_name('config.toml.bak')
-        # Restore our replacement, preserving a later administrator configuration.
-        if not config.is_file() or not template.is_file() or config.read_bytes() != template.read_bytes():
+        created = self.state.with_name('created-greetd.toml')
+        # This package integration helper only removes a config the install hook
+        # recorded creating. Template equality alone does not establish ownership.
+        # Legacy .bak files require manual recovery; never restore one implicitly.
+        if created.is_symlink() or not created.is_file():
             return
-        if backup.is_file():
-            shutil.copy2(backup, config)
-        else:
+        if not config.is_symlink() and config.is_file() and config.read_bytes() == created.read_bytes():
             config.unlink()
+        created.unlink()
 
     def restore(self):
         if not self.state.exists():

@@ -69,15 +69,17 @@ The [consolidated Git PKGBUILD](../packaging/arch-git/PKGBUILD) builds
 `pearl-git` and `pearl-greeter-git` from one checkout. The greeter is independently
 installable. From `packaging/arch-git`, run `makepkg -s`, then install only the
 newly built `pearl-greeter-git` archive with `pacman -U`. Installation creates the default
-`/etc/pearl/greeter.json` (UWSM allowed) and replaces `/etc/greetd/config.toml`, provisions
+`/etc/pearl/greeter.json` (UWSM allowed), preserves existing `/etc/greetd/config.toml`, provisions
 the greeter account/directories, and selects `pearl-greeter.service` for the next
 boot without restarting the current desktop. Appearance configuration edits survive
-upgrades through pacman's backup handling; install/upgrade hooks reinstall Pearl's
-greetd configuration on VT7.
+upgrades through pacman's backup handling. Install/upgrade hooks create Pearl's
+greetd configuration on VT7 only when `/etc/greetd/config.toml` is absent.
 
-Before installation, `/etc/greetd/config.toml` is copied to
-`/etc/greetd/config.toml.bak` if it exists and no backup exists yet. The hook then
-replaces the standard config with `/usr/share/pearl-greeter/greetd.toml`.
+Existing configuration and symlinks are preserved, including graphics-session
+wrappers and their environment. Review `/usr/share/pearl-greeter/greetd.toml`
+when explicitly selecting Pearl in an existing greetd setup. Legacy
+`config.toml.bak` files are left untouched; automatic migration never replaces
+the current configuration with a template or backup.
 Both the packaged service and a direct greetd invocation use `/etc/greetd/config.toml`.
 The package saves the previous display-manager selection/default target and
 restores them on removal unless the administrator has since changed the selection.
@@ -86,8 +88,9 @@ which can start independently of `display-manager.service`. If an older install
 left Ly enabled, update the package, run
 `sudo /usr/lib/pearl/pearl-greeter-setup enable`, then reboot. Rerunning setup
 repairs this case while keeping the original restore backup.
-Removal also restores the `.bak` when the config still matches Pearl's template.
-Run `sudo /usr/lib/pearl/pearl-greeter-setup restore` to restore it earlier.
+Removal only deletes a config recorded as created by the install hook and still
+matching its creation snapshot. Preserved files, symlinks and later edits remain.
+Run `sudo /usr/lib/pearl/pearl-greeter-setup restore` to restore boot selection earlier.
 See [package setup and recovery](../packaging/arch-greeter/README.md) for details.
 
 For startup failures, follow the greeter runbook in

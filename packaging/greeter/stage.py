@@ -36,8 +36,8 @@ def main():
         files['usr/share/wayland-sessions/pearl-aqueous.desktop']=(ROOT/'packaging/greeter/pearl-aqueous.desktop',0o644)
     else:
         files['etc/pearl/greeter.json']=(ROOT/'packaging/greeter/greeter.json',0o644)
-        # greetd owns /etc/greetd/config.toml. The install hook backs up and
-        # replaces it using this template, avoiding a pacman ownership conflict.
+        # greetd owns /etc/greetd/config.toml. The install hook uses this template
+        # only when the config is absent, preserving administrator wrappers.
         files['usr/share/pearl-greeter/greetd.toml']=(ROOT/'packaging/greeter/greetd.toml',0o644)
         files['usr/lib/systemd/system/pearl-greeter.service']=(ROOT/'packaging/greeter/pearl-greeter.service',0o644)
         files['usr/lib/systemd/system/pearl-greeter-sync.socket']=(ROOT/'packaging/greeter/pearl-greeter-sync.socket',0o644)

@@ -1,25 +1,3 @@
-_backup_greetd_configs() {
-    local root=${1:-/}
-    local config="${root%/}/etc/greetd/config.toml"
-    [[ -f "$config" ]] || return 0
-    [[ -e "$config.bak" || -L "$config.bak" ]] && return 0
-    # A config installed by this package is not a previous greeter configuration.
-    cmp -s -- "$config" "${root%/}/usr/share/pearl-greeter/greetd.toml" && return 0
-    cp -p -- "$config" "$config.bak" || {
-        rm -f -- "$config.bak"
-        return 1
-    }
-    echo "==> Previous greetd configuration backed up to $config.bak"
-}
-
-pre_install() {
-    _backup_greetd_configs
-}
-
-pre_upgrade() {
-    _backup_greetd_configs
-}
-
 _provision_pearl_greeter() {
     systemd-sysusers /usr/lib/sysusers.d/pearl-greeter.conf || return 1
     systemd-tmpfiles --create /usr/lib/tmpfiles.d/pearl-greeter.conf || return 1
@@ -42,8 +20,19 @@ _enable_greeter_sync() {
 _install_greetd_config() {
     local root=${1:-/}
     local config="${root%/}/etc/greetd/config.toml"
-    _backup_greetd_configs "$root" || return 1
+    # greetd or the administrator owns existing configuration, including wrappers.
+    # -L also preserves dangling symlinks instead of writing through them.
+    if [[ -e "$config" || -L "$config" ]]; then
+        echo '==> Preserved existing /etc/greetd/config.toml.'
+        echo '    Pearl template: /usr/share/pearl-greeter/greetd.toml'
+        return 0
+    fi
+    local state="${root%/}/var/lib/pearl-greeter-setup"
+    install -dm700 -- "$state" || return 1
+    # Discard any stale ownership record before creating a new configuration.
+    rm -f -- "$state/created-greetd.toml" || return 1
     install -Dm644 -- "${root%/}/usr/share/pearl-greeter/greetd.toml" "$config" || return 1
+    install -m600 -- "$config" "$state/created-greetd.toml" || return 1
     echo '==> Installed Pearl Greeter configuration in /etc/greetd/config.toml (VT7).'
 }
 
@@ -52,18 +41,19 @@ post_install() {
     _install_greetd_config || return 1
     /usr/lib/pearl/pearl-greeter-setup enable || return 1
     _enable_greeter_sync
-    echo '==> Pearl Greeter is selected for the next boot. The running session was not restarted.'
+    echo '==> Pearl Greeter service is selected for the next boot using the retained greetd configuration.'
+    echo '    The running session was not restarted. Review the session command to select Pearl Greeter.'
     echo '    Configuration: /etc/pearl/greeter.json and /etc/greetd/config.toml'
     echo '    Restore the previous boot setup: sudo /usr/lib/pearl/pearl-greeter-setup restore'
 }
 
 post_upgrade() {
-    # Replace the standard config on upgrades too, including older split-config installs.
+    # Only supply defaults when no configuration exists, including legacy installs.
     # Keep disabled services and later display-manager choices unchanged.
     _provision_pearl_greeter || return 1
     _install_greetd_config || return 1
     _enable_greeter_sync
-    echo '==> Pearl Greeter updated; original greetd config remains in /etc/greetd/config.toml.bak.'
+    echo '==> Pearl Greeter updated; existing greetd configuration and backups are preserved.'
     echo '    Password entry is now enabled before Sign in by default.'
     echo '    If your preserved /etc/pearl/greeter.json has password_first: false, set it to true for one-action password login.'
     echo '    Keep false only for custom PAM stacks that request another credential before the password.'

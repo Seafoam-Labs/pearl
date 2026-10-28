@@ -53,17 +53,17 @@ from `aqueousctl outputs --json`. `preferred_output` remains a connector fallbac
 See [monitor configuration](../../docs/GREETER.md#configuration-and-sessions) for
 the identity format and duplicate-monitor behavior.
 
-Before installation, an existing `/etc/greetd/config.toml` is copied to
-`/etc/greetd/config.toml.bak`. An existing `.bak` is preserved on upgrades and
-reinstalls. If there is no config, no backup is created. The backup remains after
-package removal. The install and upgrade hooks then replace
-`/etc/greetd/config.toml` with Pearl's VT7 configuration. The template is shipped
-at `/usr/share/pearl-greeter/greetd.toml`; greetd retains package ownership of the
-standard config file. Upgrading from the earlier package also replaces the old
-DMS/other greeter configuration instead of continuing to use `/etc/pearl/greetd.toml`.
+Install and upgrade hooks preserve an existing `/etc/greetd/config.toml`
+byte-for-byte, including graphics-session wrappers, permissions and symlinks
+(even dangling links). Only an absent path receives Pearl's VT7 default.
+The template remains available at `/usr/share/pearl-greeter/greetd.toml` for review;
+greetd retains package ownership of the standard config file. If your config
+selects another greeter, selecting Pearl's service does not rewrite that command:
+adapt it explicitly while retaining any required graphics-session wrapper.
+Legacy `/etc/pearl/greetd.toml` and `config.toml.bak` files are left untouched.
 
 The install hook selects `pearl-greeter.service` as `display-manager.service` and
-sets `graphical.target` for the next boot. The greeter uses VT7, with a matching
+sets `graphical.target` for the next boot. The default config uses VT7, with a matching
 `getty@tty7.service` conflict; VT1 remains available for console login. This service runs
 `greetd --config /etc/greetd/config.toml`.
 Enabled `ly.service` and `ly@…service` instances are also disabled, since Ly can
@@ -72,8 +72,8 @@ The previous display-manager selection, enabled Ly services and default target a
 `/var/lib/pearl-greeter-setup/previous.json`. No service is stopped, started or
 restarted by the package. Reboot when ready to use the new greeter.
 
-Upgrades provision any missing account directories and reinstall the Pearl greetd
-configuration, preserving the original `.bak`. They do not change service selection.
+Upgrades provision any missing account directories and preserve existing greetd
+configuration and backups. They do not change service selection.
 If an earlier installation left Ly enabled alongside Pearl, run the setup command
 below after updating, then reboot. It disables the remaining Ly boot entries even
 when Pearl is already selected and preserves the original restore backup.
@@ -93,9 +93,17 @@ sudo /usr/lib/pearl/pearl-greeter-setup restore
 
 Package removal invokes the same restore operation before removing files. If
 another display manager has since been selected, or Pearl has been disabled, that
-choice is preserved. If `/etc/greetd/config.toml` still matches Pearl's template,
-restore/removal copies back `config.toml.bak` (or removes the Pearl config if there
-was no original); later administrator edits are preserved. The backup remains.
+choice is preserved. When the hook creates a previously absent config, it records
+the installed content in `/var/lib/pearl-greeter-setup/created-greetd.toml`.
+Restore/removal deletes that config only if it remains a regular file matching
+the snapshot, then clears the snapshot. Existing configs are never claimed merely
+because they match the packaged template. Later edits and symlinks are preserved.
+Legacy installs without a creation snapshot retain their configuration on removal.
+
+If an older package already overwrote your graphics-session wrapper, inspect
+`config.toml.bak` and recover the required command manually from a verified backup
+or the original configuration. The backup may predate the wrapper; the package
+does not restore it automatically.
 The saved account, user selection state and caches are not
 deleted. Restore/removal does not stop the current session; reboot to use the
 restored setup. The restore command also supports `--root /path/to/mounted/system`
