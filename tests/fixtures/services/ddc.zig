@@ -8,6 +8,22 @@ extern "c" fn fwrite([*]const u8, usize, usize, *anyopaque) usize;
 extern "c" fn usleep(c_uint) c_int;
 const Handle = ?*anyopaque;
 const Value = extern struct { mh: u8, ml: u8, sh: u8, sl: u8 };
+const DisplayInfo = extern struct {
+    marker: [4]u8,
+    dispno: c_int,
+    path: extern struct { io_mode: c_uint, path: extern union { i2c_busno: c_int, hiddev_devno: c_int } },
+    usb_bus: c_int,
+    usb_device: c_int,
+    mfg_id: [4]u8,
+    model_name: [14]u8,
+    sn: [14]u8,
+    product_code: u16,
+    edid_bytes: [128]u8,
+    vcp_version: extern struct { major: u8, minor: u8 },
+    dref: Handle,
+};
+const DisplayInfoList = extern struct { ct: c_int, info: [4]DisplayInfo };
+var displays: DisplayInfoList = undefined;
 fn file(id: usize, suffix: []const u8, mode: [*:0]const u8) ?*anyopaque {
     const root = getenv("PEARL_TEST_DDC") orelse return null;
     var buf: [1024]u8 = undefined;
@@ -21,18 +37,28 @@ fn number(id: usize, suffix: []const u8) ?u16 {
     const n = fread(&buf, 1, buf.len, f);
     return std.fmt.parseInt(u16, std.mem.trim(u8, buf[0..n], "\n "), 10) catch null;
 }
-export fn ddca_create_edid_display_identifier(edid: [*]const u8, out: *Handle) c_int {
-    if (edid[0] < 1 or edid[0] > 3) return -3001;
-    out.* = @ptrFromInt(edid[0]);
+// Deliberately do not export the crashing EDID identifier lookup API.
+export fn ddca_get_display_info_list2(_: bool, out: **DisplayInfoList) c_int {
+    if (number(0, ".fail") == 1) return -3001;
+    displays = std.mem.zeroes(DisplayInfoList);
+    for ([_]u8{ 3, 2, 1 }) |id| {
+        if (number(id, "") == null) continue;
+        const index: usize = @intCast(displays.ct);
+        var info = &displays.info[index];
+        info.marker = "DDIN".*;
+        info.dispno = id;
+        info.edid_bytes[0] = id;
+        info.dref = @ptrFromInt(id);
+        displays.ct += 1;
+        if (number(id, ".duplicate") == 1) {
+            displays.info[@intCast(displays.ct)] = info.*;
+            displays.ct += 1;
+        }
+    }
+    out.* = &displays;
     return 0;
 }
-export fn ddca_free_display_identifier(_: Handle) c_int {
-    return 0;
-}
-export fn ddca_get_display_ref(id: Handle, out: *Handle) c_int {
-    out.* = id;
-    return 0;
-}
+export fn ddca_free_display_info_list(_: *DisplayInfoList) void {}
 export fn ddca_open_display2(ref: Handle, _: bool, out: *Handle) c_int {
     if (number(@intFromPtr(ref), ".deny") == 1) return -13;
     if (number(@intFromPtr(ref), "") == null) return -3001;

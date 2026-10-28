@@ -1,5 +1,5 @@
 //! Worker-only hardware discovery and DDC/CI. libddcutil is an optional runtime dependency.
-//! Opaque public C API handles and the four-byte VCP value record are ABI-stable.
+//! Uses public display-info records, opaque handles and the four-byte VCP value record.
 //! Reference: https://github.com/rockowitz/ddcutil/tree/master/src/public
 const std = @import("std");
 const glib = @import("glib2");
@@ -12,10 +12,25 @@ extern "c" fn dlopen([*:0]const u8, c_int) ?*anyopaque;
 extern "c" fn dlsym(*anyopaque, [*:0]const u8) ?*anyopaque;
 const Handle = ?*anyopaque;
 const Value = extern struct { mh: u8, ml: u8, sh: u8, sl: u8 };
+// DDCA_Display_Info (also used by get_display_info_list2, not Display_Info2).
+const DisplayInfo = extern struct {
+    marker: [4]u8,
+    dispno: c_int,
+    path: extern struct { io_mode: c_uint, path: extern union { i2c_busno: c_int, hiddev_devno: c_int } },
+    usb_bus: c_int,
+    usb_device: c_int,
+    mfg_id: [4]u8,
+    model_name: [14]u8,
+    sn: [14]u8,
+    product_code: u16,
+    edid_bytes: [128]u8,
+    vcp_version: extern struct { major: u8, minor: u8 },
+    dref: Handle,
+};
+const DisplayInfoList = extern struct { ct: c_int, info: [0]DisplayInfo };
 const Api = struct {
-    ddca_create_edid_display_identifier: *const fn ([*]const u8, *Handle) callconv(.c) c_int,
-    ddca_free_display_identifier: *const fn (Handle) callconv(.c) c_int,
-    ddca_get_display_ref: *const fn (Handle, *Handle) callconv(.c) c_int,
+    ddca_get_display_info_list2: *const fn (bool, *?*DisplayInfoList) callconv(.c) c_int,
+    ddca_free_display_info_list: *const fn (*DisplayInfoList) callconv(.c) void,
     ddca_open_display2: *const fn (Handle, bool, *Handle) callconv(.c) c_int,
     ddca_close_display: *const fn (Handle) callconv(.c) c_int,
     ddca_get_non_table_vcp_value: *const fn (Handle, u8, *Value) callconv(.c) c_int,
@@ -177,12 +192,25 @@ fn sort(result: *model.List) void {
     }.less);
 }
 fn access(lib: *const Api, device: *Device, wanted: ?u8) ?[]const u8 {
-    var ident: Handle = null;
+    // Match the full base EDID ourselves. The identifier -> reference path in
+    // some libddcutil releases leaves the selector's EDID length at zero and
+    // aborts inside ddc_test_display_ref_by_selector.
+    var list: ?*DisplayInfoList = null;
+    if (lib.ddca_get_display_info_list2(true, &list) != 0) return "Cannot enumerate external displays.";
+    const displays = list orelse return "Cannot enumerate external displays.";
+    defer lib.ddca_free_display_info_list(displays);
+    if (displays.ct < 0 or displays.ct > 256) return "Cannot enumerate external displays.";
+    const info: [*]const DisplayInfo = @ptrCast(&displays.info);
     var ref: Handle = null;
+    var matched = false;
+    for (info[0..@intCast(displays.ct)]) |display| {
+        if (!std.mem.eql(u8, &display.edid_bytes, &device.edid)) continue;
+        if (matched) return "Display identity is ambiguous; brightness control is disabled.";
+        matched = true;
+        ref = display.dref;
+    }
+    if (ref == null) return "Display is asleep, disconnected, or DDC/CI is unavailable.";
     var handle: Handle = null;
-    if (lib.ddca_create_edid_display_identifier(&device.edid, &ident) != 0) return "Cannot identify this display.";
-    defer _ = lib.ddca_free_display_identifier(ident);
-    if (lib.ddca_get_display_ref(ident, &ref) != 0) return "Display is asleep, disconnected, or DDC/CI is unavailable.";
     const opened = lib.ddca_open_display2(ref, false, &handle);
     if (opened != 0) return if (opened == -13 or opened == -1) "Display access denied. Check I²C device permissions." else "Display is busy or unavailable. Try again.";
     defer _ = lib.ddca_close_display(handle);

@@ -70,8 +70,11 @@ notice is retained here explicitly.
 ## Optional monitor brightness ABI
 
 `src/services/brightness_io.zig` declares the small, stable public libddcutil C
-API used for external monitor brightness: opaque identifiers/references/handles
-and the four-byte non-table VCP value record. It loads libddcutil at runtime and
+API used for external monitor brightness: display-info lists, opaque references/handles
+and the four-byte non-table VCP value record. It matches the full 128-byte EDID
+against `DDCA_Display_Info` records from `ddca_get_display_info_list2`, rejecting
+duplicate matches before opening a reference. This avoids the EDID identifier
+lookup path that aborts in affected libddcutil releases. It loads libddcutil at runtime and
 keeps it loaded for the process lifetime. The source of the ABI is
 <https://github.com/rockowitz/ddcutil/tree/master/src/public>. Calls are serialized
 on worker threads. No generated headers, C implementation bridge, or required

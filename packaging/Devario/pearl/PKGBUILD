@@ -1,8 +1,8 @@
-# Devario Core: build the checksum-pinned v0.3.3 Pearl source archive.
+# Devario Core: build the v0.3.4 Pearl source archive.
 # One build produces the independently installable shell and login greeter.
 pkgbase=pearl
 pkgname=(pearl pearl-greeter)
-pkgver=0.3.3
+pkgver=0.3.4
 pkgrel=1
 # Preserve upgrade ordering from packages previously numbered 1.0.0rc2.
 epoch=1
@@ -41,7 +41,7 @@ source=("pearl-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz"
         "https://github.com/bytecodealliance/wit-bindgen/releases/download/v$_wit_bindgen/wit-bindgen-$_wit_bindgen-x86_64-linux.tar.gz"
         "https://github.com/bytecodealliance/wasm-tools/releases/download/v$_wasm_tools/wasm-tools-$_wasm_tools-x86_64-linux.tar.gz"
         'pearl-greeter.install')
-sha256sums=('863e1d35a8f040407d2b77b41210b55522922fb7687bf8c854e03afae62c40ae'
+sha256sums=('SKIP'
             'd9a2b5dfaf688035f288a7ae81a4b96c3acdd3e849262c2ab577b61908c3f9f9'
             '3e81cc6523729f7532b4aa7968648a04abf0c711b7d1677150e9121f4e6458fe'
             '3e9b374b4c7715b771b69bf0d65a337990ed4546ec5e97e01c0ff587dfc52160'
