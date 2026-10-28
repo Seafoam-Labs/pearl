@@ -58,6 +58,6 @@ pub const Probe = struct {
                 else => return error.InvalidRequest,
             },
         }
-        return std.json.Stringify.valueAlloc(alloc, .{ .network = n.interest.count(), .bluetooth = b.interest.count(), .power = p.interest.count(), .power_polling = p.poll_source != 0 }, .{});
+        return std.json.Stringify.valueAlloc(alloc, .{ .network = n.interest.count(), .bluetooth = b.interest.count(), .power = p.interest.count(), .power_polling = false }, .{});
     }
 };

@@ -25,7 +25,7 @@ def assert_page(s, binary, page):
     assert r['heading'] == TITLES[page], r
     assert r['page'] == page and r['populated_pages'] == 1 and r['viewports'] == 5, r
     assert r['body_height'] > 0 and r['body_width'] > 0, r
-    assert r['interest'] == {name: name == page for name in ('network', 'bluetooth', 'power')}, r
+    assert r['interest'] == {name: name == page or (name == 'power' and page == 'overview') for name in ('network', 'bluetooth', 'power')}, r
     body = '\n'.join(r['labels'])
     if page != 'overview':
         assert 'Workspace layout' not in body and 'Session & security' not in body and 'Media controls' not in body, body

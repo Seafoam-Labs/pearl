@@ -162,7 +162,7 @@ def main():
             assert report(s, args.ctl)['interest']['power']
             assert fixture('release', 'power')['result']['power'] == 0
             assert not report(s, args.ctl)['interest']['power']
-            checks['power-polling-interest-survives-another-view-leaving'] = True
+            checks['power-view-interest-survives-another-view-leaving'] = True
             # Lock revokes every host, not only the current flyout.
             fixture('acquire', 'network'); fixture('connect', 'network', AP)
             await_state(s, args.ctl, lambda v: v['network']['prompt'])

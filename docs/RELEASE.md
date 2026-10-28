@@ -10,9 +10,13 @@ no Flatpak-wide support is claimed. Before downgrade/removal, disable Qt managem
 and complete conditional restoration using the [recovery procedure](QT_THEMING.md#shared-files-conflicts-and-recovery).
 Preserve user ownership records; package scripts must not remove them.
 
-Pearl `0.3.4` targets Aqueous exclusively and builds with exactly Zig 0.16.0.
-This patch fixes the libddcutil EDID-selection startup crash by matching monitor
-identities against display-info records before opening a DDC reference.
+Pearl `0.3.5` targets Aqueous exclusively and builds with exactly Zig 0.16.0.
+This patch removes periodic DDC brightness polling that caused frame drops during
+gaming. Brightness refreshes on demand and through debounced hotplug events;
+writes and readback target only the selected device. It preserves idle-dim
+restoration, cancels stale requests on replacement or session changes, and avoids
+background retries after failures. It retains the libddcutil EDID-selection
+startup fix from `0.3.4`.
 This candidate bundles Phyto, Dome and Coral `0.1.1` and Pearl Material's VS Code
 theme `1.0.1`, with refreshed Arch and Devario packaging. It retains Dome's
 `appearance-rejected` log-event catalog fix, live Pearl theme following in Dome
@@ -44,11 +48,11 @@ session dispatcher and asynchronous capture-backend patch together. See the
 [capture picker implementation record](FILE_CHOOSER_IMPLEMENTATION_PLAN.md#capture-picker-implementation-record)
 for verification and rebuild details.
 
-The checked-in `packaging/arch/PKGBUILD` targets the source archive for `v0.3.4`.
+The checked-in `packaging/arch/PKGBUILD` targets the source archive for `v0.3.5`.
 Both stable PKGBUILDs and their `.SRCINFO` files use `SKIP` for the Pearl source
 archive, matching Aqueous packaging, so publishing a tag requires no checksum refresh.
-Its Arch version is `1:0.3.4-1`; the epoch allows upgrades from the earlier
-`1.0.0rc2` packages. The local source and runtime version are also `0.3.4`.
+Its Arch version is `1:0.3.5-1`; the epoch allows upgrades from the earlier
+`1.0.0rc2` packages. The local source and runtime version are also `0.3.5`.
 The Devario [standard split recipe](../packaging/Devario/pearl/PKGBUILD) uses the
 same archive and produces `pearl` and `pearl-greeter` from one source tree and build.
 The [Devario Git split recipe](../packaging/Devario/pearl-git/PKGBUILD) tracks the
@@ -61,7 +65,7 @@ Each output has its own runtime dependencies and backups; installing either
 shell alone does not install a greeter. Installing a greeter retains the existing
 next-boot setup hook. PKGBUILDs and pacman install hooks use shell because these
 are the package manager's required integration format; application builds use Zig.
-Publish `v0.3.4` from the commit containing this version bump before these recipes
+Publish `v0.3.5` from the commit containing this version bump before these recipes
 can fetch the release. The standard packages install
 `pearl-agent`; Git packages install `pearl-agent-git` and the matching desktop entry.
 Git sources

@@ -37,8 +37,16 @@ fn number(id: usize, suffix: []const u8) ?u16 {
     const n = fread(&buf, 1, buf.len, f);
     return std.fmt.parseInt(u16, std.mem.trim(u8, buf[0..n], "\n "), 10) catch null;
 }
+fn record(operation: []const u8, id: usize) void {
+    const f = file(0, ".calls", "a") orelse return;
+    defer _ = fclose(f);
+    var buffer: [64]u8 = undefined;
+    const line = std.fmt.bufPrint(&buffer, "{s} {d}\n", .{ operation, id }) catch return;
+    _ = fwrite(line.ptr, 1, line.len, f);
+}
 // Deliberately do not export the crashing EDID identifier lookup API.
 export fn ddca_get_display_info_list2(_: bool, out: **DisplayInfoList) c_int {
+    record("enumerate", 0);
     if (number(0, ".fail") == 1) return -3001;
     displays = std.mem.zeroes(DisplayInfoList);
     for ([_]u8{ 3, 2, 1 }) |id| {
@@ -60,26 +68,32 @@ export fn ddca_get_display_info_list2(_: bool, out: **DisplayInfoList) c_int {
 }
 export fn ddca_free_display_info_list(_: *DisplayInfoList) void {}
 export fn ddca_open_display2(ref: Handle, _: bool, out: *Handle) c_int {
+    record("open", @intFromPtr(ref));
     if (number(@intFromPtr(ref), ".deny") == 1) return -13;
     if (number(@intFromPtr(ref), "") == null) return -3001;
     out.* = ref;
     return 0;
 }
-export fn ddca_close_display(_: Handle) c_int {
+export fn ddca_close_display(handle: Handle) c_int {
+    record("close", @intFromPtr(handle));
     return 0;
 }
 export fn ddca_redetect_displays() c_int {
+    record("redetect", 0);
     return 0;
 }
 export fn ddca_set_fout(_: Handle) void {}
 export fn ddca_set_ferr(_: Handle) void {}
 export fn ddca_get_non_table_vcp_value(handle: Handle, feature: u8, out: *Value) c_int {
+    record("read", @intFromPtr(handle));
+    if (number(@intFromPtr(handle), ".read-delay")) |delay| _ = usleep(@as(c_uint, delay) * 1000);
     if (feature != 0x10) return -3001;
     const value = number(@intFromPtr(handle), "") orelse return -3001;
     out.* = .{ .mh = 0, .ml = 100, .sh = @intCast(value >> 8), .sl = @intCast(value & 255) };
     return 0;
 }
 export fn ddca_set_non_table_vcp_value(handle: Handle, feature: u8, hi: u8, lo: u8) c_int {
+    record("write", @intFromPtr(handle));
     if (feature != 0x10 or hi != 0 or lo > 100) return -3001;
     const id = @intFromPtr(handle);
     if (number(id, ".deny") == 1) return -13;

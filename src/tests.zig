@@ -9,6 +9,7 @@ test {
     _ = @import("services/audio_feedback.zig");
     _ = @import("services/brightness_feedback.zig");
     _ = @import("services/brightness_model.zig");
+    _ = @import("services/brightness_events.zig");
     _ = @import("services/night_light_policy.zig");
     _ = @import("desktop/workspace_policy.zig");
     _ = @import("desktop/task_model.zig");

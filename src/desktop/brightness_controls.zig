@@ -7,6 +7,7 @@ const w = @import("../ui/components/widgets.zig");
 const Power = @import("../services/power.zig").Power;
 const Idle = @import("../platform/wayland/idle.zig").Idle;
 pub const View = struct {
+    owner: @import("../services/view_ownership.zig").Owner,
     power: *Power,
     idle: ?*Idle,
     picker: *gtk.DropDown,
@@ -18,6 +19,8 @@ pub const View = struct {
     signature: u64 = 0,
     connections: [3]c_ulong = @splat(0),
     pub fn create(host: *gtk.Box, power: *Power, idle: ?*Idle) !*View {
+        const owner = try power.acquireView();
+        errdefer power.releaseView(owner);
         const self = try std.heap.c_allocator.create(View);
         const card = w.card();
         card.append(w.label(@import("i18n").dtr("pearl", "Brightness"), "pearl-card-title").as(gtk.Widget));
@@ -44,7 +47,7 @@ pub const View = struct {
         card.append(screen.as(gtk.Widget));
         screen.as(gtk.Widget).setVisible(@intFromBool(idle != null));
         host.append(card.as(gtk.Widget));
-        self.* = .{ .power = power, .idle = idle, .picker = picker, .scale = scale, .value = value, .status = status, .screen = screen };
+        self.* = .{ .owner = owner, .power = power, .idle = idle, .picker = picker, .scale = scale, .value = value, .status = status, .screen = screen };
         @import("focus_state.zig").tag(self.scale.as(gtk.Widget), "quick-brightness", .{});
         self.connections[0] = object.Object.signals.notify.connect(picker.as(object.Object), *View, selected, self, .{ .detail = "selected" });
         self.connections[1] = gtk.Range.signals.value_changed.connect(scale.as(gtk.Range), *View, changed, self, .{});
@@ -53,6 +56,7 @@ pub const View = struct {
         return self;
     }
     pub fn destroy(self: *View) void {
+        self.power.releaseView(self.owner);
         object.signalHandlerDisconnect(self.picker.as(object.Object), self.connections[0]);
         object.signalHandlerDisconnect(self.scale.as(object.Object), self.connections[1]);
         object.signalHandlerDisconnect(self.screen.as(object.Object), self.connections[2]);

@@ -105,7 +105,7 @@ Pearl discovers backlights through `/sys/class/backlight` and external displays
 through `/sys/class/drm`. A bounded display list carries stable device IDs,
 connector associations, hardware ranges, confirmed percentages, pending intent,
 and availability. The flyout and Power pages offer a display chooser. Opening the
-flyout prefers its own output when that output has an unambiguous usable device;
+flyout prefers its own output when that output has an unambiguous brightness backend;
 otherwise the existing valid selection remains visible. A single internal panel
 and a single backlight can be associated automatically. Ambiguous connector names
 or identical external-monitor EDIDs never select an arbitrary write target.
@@ -121,12 +121,20 @@ installing the library. There is no dependency on the `wlopm` executable.
 Discovery and hardware operations run in cancellable GTasks off GTK's thread.
 Writes coalesce independently per device, and all hardware jobs are serialized.
 A captured logind owner and generation prevent stale replies from changing current
-state. DDC writes re-discover the connector/EDID identity before opening it.
+state. DDC writes validate the kernel-cached connector/EDID identity before
+opening only the target display; they do not run DDC redetection.
 Confirmed values remain visible on failure; the affected display reports the
 failure. Session inactivity, sleep preparation, and powered-off displays disable
-writes. Directory/selected-backlight monitoring and a five-second worker refresh
-track changes, including external writers. Sleeping DDC displays retain the last
-confirmed value and idle-dim restoration state.
+writes. There is no brightness polling, even while a power view remains open.
+Startup and debounced DRM hotplug events discover devices; an unchanged topology
+reuses cached DDC values without probing I²C. Kernel uevents and directory monitors
+detect topology changes, and backlight events refresh only the affected backlight.
+Opening a power view or selecting a display refreshes that display once. Each write
+reads back only its target. External monitor-menu changes appear on the next explicit
+refresh, selection, or panel opening. Failures do not schedule periodic retries.
+Output power-mode notifications update availability without rediscovering monitors.
+Sleeping DDC displays retain their last confirmed value and idle-dim restoration
+state; wake reads only devices needing restoration or an open view's refresh.
 
 Idle dimming operates on all available devices and restores only Pearl's unchanged
 20% dim level. A manual brightness change relinquishes restoration for that

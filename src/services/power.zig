@@ -4,6 +4,7 @@ const ownership = @import("view_ownership.zig");
 pub const Owner = ownership.Owner;
 const gio = @import("gio2");
 const glib = @import("glib2");
+const unix = @import("glibunix2");
 const object = @import("gobject2");
 const policy = @import("policy.zig");
 const Text = policy.Text;
@@ -22,12 +23,24 @@ const Call = struct { service: *Power, tag: Tag, generation: u64, purpose: Purpo
 pub const brightness_model = @import("brightness_model.zig");
 const brightness_io = @import("brightness_io.zig");
 pub const Backlight = brightness_model.Device;
-const Scan = struct { service: *Power, root: Text(512), drm: Text(512), result: brightness_model.List = .{} };
+const Scan = struct {
+    service: *Power,
+    root: Text(512),
+    drm: Text(512),
+    previous: brightness_model.List,
+    targets: brightness_model.List,
+    active: bool,
+    epoch: u64,
+    discovery: bool,
+    result: brightness_model.List = .{},
+};
 const BrightnessWrite = struct {
     service: *Power,
     device: Backlight,
     percent: u8,
     session_generation: u64,
+    epoch: u64,
+    expected: ?u8 = null,
     connection: ?*gio.DBusConnection = null,
     owner: Text(256) = .{},
     path: Text(512) = .{},
@@ -83,17 +96,21 @@ pub const Power = struct {
     drm_monitor_signal: c_ulong = 0,
     backlight_root: Text(512) = .{},
     scan_pending: bool = false,
+    scan_cancel: ?*gio.Cancellable = null,
     scan_again: bool = false,
+    discover_pending: bool = false,
+    refresh_targets: brightness_model.List = .{},
+    topology_epoch: u64 = 0,
+    events_fd: i32 = -1,
+    events_source: c_uint = 0,
+    device_monitors: [brightness_model.capacity]struct { monitor: ?*gio.FileMonitor = null, signal: c_ulong = 0, id: Text(128) = .{}, backend: brightness_model.Backend = .unavailable } = @splat(.{}),
     monitor: ?*gio.FileMonitor = null,
     monitor_signal: c_ulong = 0,
-    brightness_monitor: ?*gio.FileMonitor = null,
-    brightness_monitor_signal: c_ulong = 0,
-    monitored: Text(128) = .{},
     observed: brightness_feedback.Observer = .{},
     brightness_change: ?brightness_feedback.Change = null,
     interest: ownership.Interest = .{},
     panel_open: bool = false,
-    poll_source: c_uint = 0,
+    discovery_source: c_uint = 0,
     brightness_wanted: ?u8 = null,
     brightness_pending: bool = false,
     profile_wanted: ?u8 = null,
@@ -121,7 +138,7 @@ pub const Power = struct {
             if (self.drm_monitor) |m| self.drm_monitor_signal = gio.FileMonitor.signals.changed.connect(m, *Power, backlightChanged, self, .{});
         }
         self.scan();
-        self.poll_source = glib.timeoutAdd(5000, poll, self);
+        if (std.mem.eql(u8, self.drm_root.slice(), "/sys/class/drm")) self.watchEvents();
     }
     fn closeSlot(slot: *Slot) void {
         slot.generation += 1;
@@ -142,7 +159,7 @@ pub const Power = struct {
             if (d.pending or d.percent() != 20 or !self.deviceAvailable(&d)) continue;
             const slot = self.available(.session) orelse continue;
             const job = a.create(BrightnessWrite) catch continue;
-            job.* = .{ .service = self, .device = d, .percent = before, .session_generation = slot.generation, .root = self.backlight_root, .drm = self.drm_root, .owner = slot.owner, .path = self.session_path };
+            job.* = .{ .service = self, .device = d, .percent = before, .session_generation = slot.generation, .epoch = self.topology_epoch, .expected = 20, .root = self.backlight_root, .drm = self.drm_root, .owner = slot.owner, .path = self.session_path };
             if (d.backend == .backlight) {
                 job.connection = slot.proxy.?.getConnection();
                 job.connection.?.ref();
@@ -160,12 +177,17 @@ pub const Power = struct {
         self.interest.revoke();
         self.panel_open = false;
         self.cancel.cancel();
+        if (self.scan_cancel) |c| c.cancel();
         if (self.write_cancel) |c| c.cancel();
-        for ([_]c_uint{ self.retry_source, self.poll_source, self.write_source }) |id| if (id != 0) {
+        for ([_]c_uint{ self.retry_source, self.discovery_source, self.write_source, self.events_source }) |id| if (id != 0) {
             _ = glib.Source.remove(id);
         };
         self.retry_source = 0;
-        self.poll_source = 0;
+        self.discovery_source = 0;
+        self.events_source = 0;
+        if (self.events_fd >= 0) _ = std.os.linux.close(self.events_fd);
+        self.events_fd = -1;
+        self.unwatchDevices();
         self.write_source = 0;
         if (self.monitor) |m| {
             object.signalHandlerDisconnect(m.as(object.Object), self.monitor_signal);
@@ -179,7 +201,6 @@ pub const Power = struct {
             m.unref();
         }
         self.drm_monitor = null;
-        self.unwatchBrightness();
         self.observed = .{};
         self.brightness_change = null;
         for (&self.slots) |*slot| closeSlot(slot);
@@ -392,8 +413,15 @@ pub const Power = struct {
         // Only a reachable DisplayDevice can confirm charge state. An outage must
         // neither warn nor silently clear an in-progress low-battery episode.
         if (self.battery_available) self.alarm.update(self.battery_present and self.on_battery and self.battery_state == 2, if (self.percentage_valid) self.percentage else null);
+        const was_active = self.session_active;
         self.session_active = self.boolean(.session, "Active");
         if (!self.session_active or self.preparing) self.invalidateBrightness();
+        if (self.session_active and !was_active and !self.preparing) {
+            self.scan();
+            for (self.displays.slice()) |d| if (d.maximum == 0 or self.panel_open) {
+                self.refreshDevice(d.id.slice());
+            };
+        }
         self.profiles = .{ false, false, false };
         self.profile = .{};
         self.degraded = .{};
@@ -455,10 +483,12 @@ pub const Power = struct {
                 if (!d.pending and d.wanted == 20) {
                     d.wanted = null;
                     d.dim_restore = null;
-                } else d.dim_restoring = true;
+                } else {
+                    d.dim_restoring = true;
+                    if (d.powered) self.refreshDevice(d.id.slice());
+                }
             }
         }
-        if (!active) self.scan();
         self.syncBrightness();
         self.arm();
     }
@@ -476,12 +506,17 @@ pub const Power = struct {
         self.selected_display = d.id;
         self.err = null;
         self.syncBrightness();
+        self.refreshDevice(d.id.slice());
         self.changed(self.context, .state);
     }
     pub fn preferOutput(self: *Power, output: []const u8) void {
         if (!std.mem.eql(u8, self.preferred_output.slice(), output)) self.preferred_output.set(output);
         if (self.displays.resolve(output)) |d| {
-            if (self.deviceAvailable(d)) self.selected_display = d.id;
+            if (d.backend != .unavailable) {
+                const changed = !std.mem.eql(u8, self.selected_display.slice(), d.id.slice());
+                self.selected_display = d.id;
+                if (changed and self.panel_open) self.refreshDevice(d.id.slice());
+            }
         }
         self.syncBrightness();
     }
@@ -522,6 +557,7 @@ pub const Power = struct {
     }
     fn invalidateBrightness(self: *Power) void {
         if (self.write_cancel) |c| c.cancel();
+        if (self.scan_cancel) |c| c.cancel();
         for (self.displays.slice()) |*d| {
             d.wanted = null;
             d.dim_restore = null;
@@ -530,13 +566,30 @@ pub const Power = struct {
         self.syncBrightness();
     }
     pub fn updateOutputPower(self: *Power, idle: anytype) void {
+        const old = self.output_states;
         self.output_states = @splat(.{});
         for (idle.outputs, 0..) |output, i| {
             if (output.proxy != null) self.output_states[i] = .{ .name = output.name, .powered = output.mode != .off };
         }
         self.mergeOutputs();
         self.syncBrightness();
-        self.scan();
+        var topology_changed = false;
+        for (self.output_states, old) |output, previous| {
+            if (!std.mem.eql(u8, output.name.slice(), previous.name.slice())) topology_changed = true;
+            if (!output.powered and previous.powered) {
+                if (self.write_cancel) |c| c.cancel();
+                if (self.scan_cancel) |c| c.cancel();
+                for (self.displays.slice()) |*d| if (std.mem.eql(u8, d.output.slice(), output.name.slice())) {
+                    d.wanted = null;
+                };
+            }
+            if (output.powered and !previous.powered) {
+                for (self.displays.slice()) |d| if (std.mem.eql(u8, d.output.slice(), output.name.slice()) and (d.dim_restoring or d.maximum == 0 or self.panel_open)) {
+                    self.refreshDevice(d.id.slice());
+                };
+            }
+        }
+        if (topology_changed) self.scan();
     }
     fn mergeOutputs(self: *Power) void {
         for (self.output_states) |output| {
@@ -623,7 +676,7 @@ pub const Power = struct {
     fn pump(data: ?*anyopaque) callconv(.c) c_int {
         const self: *Power = @ptrCast(@alignCast(data.?));
         self.write_source = 0;
-        if (!self.brightness_io_pending and !self.scan_pending) {
+        if (!self.brightness_io_pending and !self.scan_pending and !self.scan_again) {
             for (self.displays.slice()) |*d| if (d.wanted) |percent| {
                 d.wanted = null;
                 if (!self.deviceAvailable(d)) {
@@ -728,7 +781,7 @@ pub const Power = struct {
     }
     pub fn acquireView(self: *Power) !Owner {
         const token = try self.interest.acquire();
-        if (!self.panel_open) self.panel(true);
+        self.panel(true);
         return token;
     }
     pub fn releaseView(self: *Power, token: Owner) void {
@@ -741,53 +794,119 @@ pub const Power = struct {
     fn panel(self: *Power, open: bool) void {
         if (open and !self.panel_open) self.capabilities();
         self.panel_open = open;
-        if (open) self.scan();
+        if (open) self.refreshDevice(self.selected_display.slice());
     }
-    fn poll(data: ?*anyopaque) callconv(.c) c_int {
+    fn discoverReady(data: ?*anyopaque) callconv(.c) c_int {
         const self: *Power = @ptrCast(@alignCast(data.?));
-        if (!self.running) return 0;
+        self.discovery_source = 0;
+        self.beginScan();
+        return 0;
+    }
+    fn backlightChanged(monitor: *gio.FileMonitor, _: *gio.File, _: ?*gio.File, _: gio.FileMonitorEvent, self: *Power) callconv(.c) void {
+        for (self.device_monitors) |watch| if (watch.monitor == monitor and watch.backend == .backlight) {
+            self.refreshDevice(watch.id.slice());
+            return;
+        };
         self.scan();
-        return 1;
     }
-    fn backlightChanged(_: *gio.FileMonitor, _: *gio.File, _: ?*gio.File, _: gio.FileMonitorEvent, self: *Power) callconv(.c) void {
-        self.scan();
-    }
-    // The directory monitor only reports device add/remove; a single-file monitor on the
-    // selected backlight's brightness attribute reports writes by any external writer.
-    fn watchBrightness(self: *Power) void {
-        if (self.brightness_monitor != null and self.backlight.backend == .backlight and self.backlight.maximum > 0 and std.mem.eql(u8, self.monitored.slice(), self.backlight.name.slice())) return;
-        self.unwatchBrightness();
-        if (self.backlight.maximum == 0 or self.backlight.backend != .backlight) return;
-        var buffer: [768]u8 = undefined;
-        const path = std.fmt.bufPrintZ(&buffer, "{s}/{s}/brightness", .{ self.backlight_root.slice(), self.backlight.name.slice() }) catch return;
-        const file = gio.File.newForPath(path.ptr);
-        defer file.unref();
-        const monitor = file.monitor(.{}, self.cancel, null) orelse return;
-        self.brightness_monitor = monitor;
-        self.brightness_monitor_signal = gio.FileMonitor.signals.changed.connect(monitor, *Power, backlightChanged, self, .{});
-        self.monitored.set(self.backlight.name.slice());
-    }
-    fn unwatchBrightness(self: *Power) void {
-        if (self.brightness_monitor) |m| {
-            object.signalHandlerDisconnect(m.as(object.Object), self.brightness_monitor_signal);
-            _ = m.cancel();
-            m.unref();
+    fn unwatchDevices(self: *Power) void {
+        for (&self.device_monitors) |*watch| {
+            if (watch.monitor) |m| {
+                object.signalHandlerDisconnect(m.as(object.Object), watch.signal);
+                _ = m.cancel();
+                m.unref();
+            }
+            watch.* = .{};
         }
-        self.brightness_monitor = null;
-        self.brightness_monitor_signal = 0;
-        self.monitored = .{};
+    }
+    fn watchDevices(self: *Power) void {
+        self.unwatchDevices();
+        for (self.displays.slice(), 0..) |d, i| {
+            var buffer: [768]u8 = undefined;
+            const path = if (d.backend == .backlight)
+                std.fmt.bufPrintZ(&buffer, "{s}/{s}/brightness", .{ self.backlight_root.slice(), d.name.slice() }) catch continue
+            else if (d.connector.len != 0)
+                std.fmt.bufPrintZ(&buffer, "{s}/{s}", .{ self.drm_root.slice(), d.connector.slice() }) catch continue
+            else
+                continue;
+            const file = gio.File.newForPath(path.ptr);
+            defer file.unref();
+            const monitor = (if (d.backend == .backlight) file.monitorFile(.{}, self.cancel, null) else file.monitorDirectory(.{}, self.cancel, null)) orelse continue;
+            self.device_monitors[i] = .{ .monitor = monitor, .signal = gio.FileMonitor.signals.changed.connect(monitor, *Power, backlightChanged, self, .{}), .id = d.id, .backend = d.backend };
+        }
+    }
+    fn watchEvents(self: *Power) void {
+        const linux = std.os.linux;
+        const socket = linux.socket(linux.AF.NETLINK, linux.SOCK.DGRAM | linux.SOCK.CLOEXEC | linux.SOCK.NONBLOCK, linux.NETLINK.KOBJECT_UEVENT);
+        if (linux.errno(socket) != .SUCCESS) return;
+        const fd: i32 = @intCast(socket);
+        var address: linux.sockaddr.nl = .{ .pid = 0, .groups = 1 };
+        if (linux.errno(linux.bind(fd, @ptrCast(&address), @sizeOf(linux.sockaddr.nl))) != .SUCCESS) {
+            _ = linux.close(fd);
+            return;
+        }
+        self.events_fd = fd;
+        self.events_source = unix.fdAdd(fd, .{ .in = true }, eventsReady, self);
+    }
+    fn eventsReady(fd: c_int, _: glib.IOCondition, data: ?*anyopaque) callconv(.c) c_int {
+        const self: *Power = @ptrCast(@alignCast(data.?));
+        const linux = std.os.linux;
+        var buffer: [8192]u8 = undefined;
+        // Bound each dispatch so a hotplug storm cannot monopolize GTK's loop.
+        for (0..64) |_| {
+            var sender: linux.sockaddr.nl = .{ .pid = 0, .groups = 0 };
+            var len: linux.socklen_t = @sizeOf(linux.sockaddr.nl);
+            const n = linux.recvfrom(fd, &buffer, buffer.len, 0, @ptrCast(&sender), &len);
+            switch (linux.errno(n)) {
+                .SUCCESS => {
+                    if (sender.pid != 0 or n == buffer.len) continue;
+                    const event = @import("brightness_events.zig").parse(buffer[0..n]);
+                    switch (event.kind) {
+                        .topology => self.scan(),
+                        .backlight => self.refreshDevice(event.name),
+                        .ignore => {},
+                    }
+                },
+                .NOBUFS => self.scan(),
+                .INTR => {},
+                else => break,
+            }
+        }
+        return 1;
     }
     pub fn scan(self: *Power) void {
         if (!self.running) return;
+        self.topology_epoch += 1;
+        if (self.write_cancel) |c| c.cancel();
+        if (self.scan_cancel) |c| c.cancel();
+        self.discover_pending = true;
+        self.scan_again = true;
+        if (self.discovery_source == 0) self.discovery_source = glib.timeoutAdd(120, discoverReady, self);
+    }
+    fn refreshDevice(self: *Power, id: []const u8) void {
+        if (!self.running or id.len == 0) return;
+        if (self.refresh_targets.find(id) == null) {
+            var target: Backlight = .{};
+            target.id.set(id);
+            self.refresh_targets.add(target);
+        }
+        self.scan_again = true;
+        if (self.discovery_source == 0) self.discovery_source = glib.timeoutAdd(40, discoverReady, self);
+    }
+    fn beginScan(self: *Power) void {
+        if (!self.running or !self.scan_again or self.discovery_source != 0) return;
         if (self.scan_pending or self.brightness_io_pending) {
-            self.scan_again = true;
             return;
         }
         const job = a.create(Scan) catch return;
-        job.* = .{ .service = self, .root = self.backlight_root, .drm = self.drm_root };
+        job.* = .{ .service = self, .root = self.backlight_root, .drm = self.drm_root, .previous = self.displays, .targets = self.refresh_targets, .active = self.session_active and !self.preparing, .epoch = self.topology_epoch, .discovery = self.discover_pending };
+        self.refresh_targets = .{};
+        self.discover_pending = false;
+        self.scan_again = false;
         self.scan_pending = true;
         self.app.hold();
-        const task = gio.Task.new(self.app.as(object.Object), self.cancel, scanned, job);
+        self.scan_cancel = gio.Cancellable.new();
+        const task = gio.Task.new(self.app.as(object.Object), self.scan_cancel, scanned, job);
         task.setTaskData(job, null);
         _ = task.setReturnOnCancel(0);
         task.runInThread(scanThread);
@@ -795,7 +914,23 @@ pub const Power = struct {
     }
     fn scanThread(task: *gio.Task, _: *object.Object, data: ?*anyopaque, cancel: ?*gio.Cancellable) callconv(.c) void {
         const job: *Scan = @ptrCast(@alignCast(data.?));
-        job.result = brightness_io.scan(job.root.z(), job.drm.z(), cancel.?);
+        if (job.discovery) {
+            job.result = brightness_io.discover(job.root.z(), job.drm.z(), cancel.?);
+            brightness_io.refresh(&job.result, &job.previous, &job.targets, job.active, cancel.?);
+        } else {
+            job.result = job.previous;
+            for (job.result.slice()) |*d| {
+                if (cancel.?.isCancelled() != 0) break;
+                if (job.targets.find(d.id.slice()) == null) continue;
+                switch (d.backend) {
+                    .backlight => d.reason = brightness_io.readBacklight(d, job.root.z()),
+                    .ddc => if (job.active and d.powered) {
+                        d.reason = brightness_io.readDdc(d, job.drm.z(), cancel.?);
+                    },
+                    .unavailable => {},
+                }
+            }
+        }
         task.returnBoolean(1);
     }
     fn scanned(_: ?*object.Object, result: *gio.AsyncResult, data: ?*anyopaque) callconv(.c) void {
@@ -807,7 +942,28 @@ pub const Power = struct {
         _ = object.ext.cast(gio.Task, result).?.propagateBoolean(&err);
         defer if (err) |e| e.free();
         self.scan_pending = false;
+        if (self.scan_cancel) |c| c.unref();
+        self.scan_cancel = null;
         if (!self.running) return;
+        if (job.epoch != self.topology_epoch) {
+            for (job.targets.slice()) |d| self.refreshDevice(d.id.slice());
+            self.beginScan();
+            return;
+        }
+        if (err != null) {
+            // Topology/session transitions may supersede a worker. Retain the
+            // topology request, but never automatically retry a hardware failure.
+            if (job.discovery) self.discover_pending = true;
+            if (self.session_active and !self.preparing) {
+                if (job.discovery) self.scan_again = true;
+                for (job.targets.slice()) |target| {
+                    if (self.displays.find(target.id.slice())) |d| if (d.powered) self.refreshDevice(d.id.slice());
+                }
+            }
+            self.beginScan();
+            self.arm();
+            return;
+        }
         for (job.result.slice()) |*d| {
             if (self.displays.find(d.id.slice())) |old| {
                 d.generation = old.generation;
@@ -834,11 +990,14 @@ pub const Power = struct {
                     if (!self.session_active or self.preparing) {
                         d.dim_restore = null;
                         d.dim_restoring = false;
-                    } else if (d.powered and d.reason == null and d.wanted == null) {
+                    } else if (d.powered and d.reason == null and d.wanted == null and job.targets.find(d.id.slice()) != null) {
                         if (d.dim_restoring) {
-                            d.dim_restoring = false;
-                            d.dim_restore = null;
-                            if (d.percent() == 20) d.wanted = before;
+                            if (d.percent() == 20) {
+                                d.wanted = before;
+                            } else {
+                                d.dim_restoring = false;
+                                d.dim_restore = null;
+                            }
                         } else if (d.percent() != 20) d.dim_restore = null;
                     }
                 }
@@ -859,13 +1018,10 @@ pub const Power = struct {
             if (self.preferred_output.len != 0) self.preferOutput(self.preferred_output.slice());
         }
         self.syncBrightness();
-        self.watchBrightness();
+        if (job.discovery) self.watchDevices();
         for (self.displays.slice()) |*d| self.observeBrightness(d);
         self.changed(self.context, .state);
-        if (self.scan_again) {
-            self.scan_again = false;
-            self.scan();
-        }
+        self.beginScan();
         self.arm();
     }
     fn observeBrightness(self: *Power, d: *Backlight) void {
@@ -881,7 +1037,12 @@ pub const Power = struct {
     fn startBrightnessWrite(self: *Power, d: *Backlight, percent: u8) !void {
         const slot = self.available(.session) orelse return error.Unavailable;
         const job = try a.create(BrightnessWrite);
-        job.* = .{ .service = self, .device = d.*, .percent = percent, .session_generation = slot.generation, .root = self.backlight_root, .drm = self.drm_root, .owner = slot.owner, .path = self.session_path };
+        job.* = .{ .service = self, .device = d.*, .percent = percent, .session_generation = slot.generation, .epoch = self.topology_epoch, .root = self.backlight_root, .drm = self.drm_root, .owner = slot.owner, .path = self.session_path };
+        if (d.dim_restoring) {
+            job.expected = 20;
+            d.dim_restoring = false;
+            d.dim_restore = null;
+        }
         if (d.backend == .backlight) {
             job.connection = slot.proxy.?.getConnection();
             job.connection.?.ref();
@@ -900,8 +1061,15 @@ pub const Power = struct {
     fn brightnessThread(task: *gio.Task, _: *object.Object, data: ?*anyopaque, cancel: ?*gio.Cancellable) callconv(.c) void {
         const job: *BrightnessWrite = @ptrCast(@alignCast(data.?));
         if (job.device.backend == .ddc) {
-            job.reason = brightness_io.writeDdc(&job.device, job.percent, job.drm.z(), cancel.?);
+            job.reason = brightness_io.writeDdc(&job.device, job.percent, job.drm.z(), cancel.?, job.expected);
         } else {
+            if (job.expected) |expected| {
+                job.reason = brightness_io.readBacklight(&job.device, job.root.z());
+                if (job.reason != null or job.device.percent() != expected) {
+                    task.returnBoolean(1);
+                    return;
+                }
+            }
             const raw = job.device.raw(job.percent) catch {
                 task.returnBoolean(0);
                 return;
@@ -914,11 +1082,7 @@ pub const Power = struct {
             defer if (err) |e| e.free();
             if (result) |r| {
                 r.unref();
-                var fresh = brightness_io.scan(job.root.z(), "", cancel.?);
-                if (fresh.find(job.device.id.slice())) |d| {
-                    job.device.value = d.value;
-                    job.device.maximum = d.maximum;
-                } else job.reason = "Backlight disappeared; final brightness was not confirmed.";
+                job.reason = brightness_io.readBacklight(&job.device, job.root.z());
             } else {
                 job.reason = "Brightness request failed. Check active session and device permissions.";
                 if (err) |e| if (gio.DBusError.isRemoteError(e) != 0) {
@@ -957,7 +1121,7 @@ pub const Power = struct {
         if (self.displays.find(job.device.id.slice())) |d| {
             d.pending = false;
             d.requested = null;
-            if (err == null and self.slots[@intFromEnum(Tag.session)].generation == job.session_generation and d.generation == job.device.generation) {
+            if (err == null and job.epoch == self.topology_epoch and self.session_active and !self.preparing and self.slots[@intFromEnum(Tag.session)].generation == job.session_generation and d.generation == job.device.generation) {
                 if (job.reason) |reason| {
                     d.wanted = null;
                     d.dim_restore = null;
@@ -978,10 +1142,7 @@ pub const Power = struct {
         }
         self.syncBrightness();
         self.changed(self.context, .state);
-        if (self.scan_again) {
-            self.scan_again = false;
-            self.scan();
-        }
+        self.beginScan();
         self.arm();
     }
 };

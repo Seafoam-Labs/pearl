@@ -75,7 +75,8 @@ fn number(path: [:0]const u8) ?u32 {
     return std.fmt.parseInt(u32, std.mem.trim(u8, read(path, &buf) orelse return null, " \n\t"), 10) catch null;
 }
 const readName: *const fn (*glib.Dir) callconv(.c) ?[*:0]const u8 = @ptrCast(&glib.Dir.readName);
-pub fn scan(backlight_root: [:0]const u8, drm_root: [:0]const u8, cancel: *gio.Cancellable) model.List {
+/// Kernel-cached topology only. This must never load libddcutil or probe I²C.
+pub fn discover(backlight_root: [:0]const u8, drm_root: [:0]const u8, cancel: *gio.Cancellable) model.List {
     var result: model.List = .{};
     if (glib.Dir.open(backlight_root, 0, null)) |dir| {
         defer dir.close();
@@ -159,10 +160,6 @@ pub fn scan(backlight_root: [:0]const u8, drm_root: [:0]const u8, cancel: *gio.C
         sort(&result);
         return result;
     }
-    mutex.lock();
-    defer mutex.unlock();
-    const lib = api();
-    if (lib) |l| _ = l.ddca_redetect_displays();
     for (result.slice()[backlights..]) |*d| {
         if (cancel.isCancelled() != 0) break;
         if (d.backend != .ddc) continue;
@@ -174,14 +171,82 @@ pub fn scan(backlight_root: [:0]const u8, drm_root: [:0]const u8, cancel: *gio.C
             d.reason = "Display identity is ambiguous; brightness control is disabled.";
             continue;
         }
-        const l = lib orelse {
-            d.reason = "Install ddcutil to enable external display brightness.";
-            continue;
-        };
-        d.reason = access(l, d, null);
+        d.reason = null;
     }
     sort(&result);
     return result;
+}
+
+var detected: model.List = .{};
+fn sameTopology(left: *model.List, right: *model.List) bool {
+    var count: usize = 0;
+    for (left.slice()) |d| if (d.backend == .ddc) {
+        count += 1;
+        if (right.find(d.id.slice()) == null) return false;
+    };
+    for (right.slice()) |d| if (d.backend == .ddc) {
+        if (count == 0) return false;
+        count -= 1;
+    };
+    return count == 0;
+}
+
+/// Reuse confirmed values unless topology changed or this device was requested.
+/// Callers serialize jobs; the mutex also covers best-effort shutdown restores.
+pub fn refresh(result: *model.List, previous: *model.List, targets: *model.List, active: bool, cancel: *gio.Cancellable) void {
+    mutex.lock();
+    defer mutex.unlock();
+    const changed = !sameTopology(result, &detected);
+    for (result.slice()) |*d| {
+        if (previous.find(d.id.slice())) |old| d.powered = old.powered;
+        // New hardware can replace an output-only placeholder that is asleep.
+        if (d.output.len != 0) for (previous.slice()) |old| {
+            if (std.mem.eql(u8, old.output.slice(), d.output.slice()) and !old.powered) d.powered = false;
+        };
+    }
+    var lib: ?*const Api = null;
+    if (active and cancel.isCancelled() == 0) {
+        var needed = false;
+        for (result.slice()) |*d| {
+            if (d.backend == .ddc and (changed or previous.find(d.id.slice()) == null or targets.find(d.id.slice()) != null) and d.powered) {
+                needed = true;
+            }
+        }
+        if (needed) lib = api();
+        if (changed) if (lib) |l| {
+            if (l.ddca_redetect_displays() == 0) detected = result.* else lib = null;
+        };
+    }
+    // Removing the last monitor needs no bus access, but reconnecting the same
+    // EDID later must not reuse libddcutil's references from before removal.
+    if (changed and lib == null) detected = .{};
+    for (result.slice()) |*d| {
+        const old = previous.find(d.id.slice());
+        if (d.backend != .ddc) continue;
+        const identity_reason = d.reason;
+        if (old) |o| {
+            d.maximum = o.maximum;
+            d.value = o.value;
+            if (identity_reason == null) d.reason = o.reason;
+        }
+        if (identity_reason != null or !active or !d.powered or cancel.isCancelled() != 0) continue;
+        if (!changed and old != null and targets.find(d.id.slice()) == null) continue;
+        const l = lib orelse {
+            d.reason = "External brightness discovery is unavailable. Check ddcutil and device permissions.";
+            continue;
+        };
+        d.reason = access(l, d, null, cancel, null);
+    }
+}
+
+pub fn readBacklight(device: *Device, root: [:0]const u8) ?[]const u8 {
+    var path: [768]u8 = undefined;
+    const max = number(std.fmt.bufPrintZ(&path, "{s}/{s}/max_brightness", .{ root, device.name.slice() }) catch return "Invalid backlight path.") orelse return "Backlight disappeared.";
+    const value = number(std.fmt.bufPrintZ(&path, "{s}/{s}/brightness", .{ root, device.name.slice() }) catch return "Invalid backlight path.") orelse return "Backlight disappeared.";
+    if (max == 0 or max > std.math.maxInt(i32) or value > max) return "Invalid backlight range.";
+    device.maximum = max;
+    device.value = value;
+    return null;
 }
 fn sort(result: *model.List) void {
     result.unmapAmbiguousOutputs();
@@ -191,7 +256,8 @@ fn sort(result: *model.List) void {
         }
     }.less);
 }
-fn access(lib: *const Api, device: *Device, wanted: ?u8) ?[]const u8 {
+fn access(lib: *const Api, device: *Device, wanted: ?u8, cancel: *gio.Cancellable, expected: ?u8) ?[]const u8 {
+    if (cancel.isCancelled() != 0) return "Brightness request canceled.";
     // Match the full base EDID ourselves. The identifier -> reference path in
     // some libddcutil releases leaves the selector's EDID length at zero and
     // aborts inside ddc_test_display_ref_by_selector.
@@ -210,10 +276,12 @@ fn access(lib: *const Api, device: *Device, wanted: ?u8) ?[]const u8 {
         ref = display.dref;
     }
     if (ref == null) return "Display is asleep, disconnected, or DDC/CI is unavailable.";
+    if (cancel.isCancelled() != 0) return "Brightness request canceled.";
     var handle: Handle = null;
     const opened = lib.ddca_open_display2(ref, false, &handle);
     if (opened != 0) return if (opened == -13 or opened == -1) "Display access denied. Check I²C device permissions." else "Display is busy or unavailable. Try again.";
     defer _ = lib.ddca_close_display(handle);
+    if (cancel.isCancelled() != 0) return "Brightness request canceled.";
     var value: Value = undefined;
     if (lib.ddca_get_non_table_vcp_value(handle, 0x10, &value) != 0) return "Display did not report brightness. Check DDC/CI in its menu.";
     device.maximum = @as(u32, value.mh) * 256 + value.ml;
@@ -223,6 +291,8 @@ fn access(lib: *const Api, device: *Device, wanted: ?u8) ?[]const u8 {
         return "Display returned an invalid brightness range.";
     }
     if (wanted) |percent| {
+        if (cancel.isCancelled() != 0) return "Brightness request canceled.";
+        if (expected) |level| if (device.percent() != level) return null;
         const raw_value = device.raw(percent) catch return "Invalid brightness value.";
         if (lib.ddca_set_non_table_vcp_value(handle, 0x10, @intCast(raw_value >> 8), @intCast(raw_value & 255)) != 0) return "Display did not accept brightness. Try again.";
         if (lib.ddca_get_non_table_vcp_value(handle, 0x10, &value) != 0) return "Brightness was sent but could not be confirmed.";
@@ -231,16 +301,27 @@ fn access(lib: *const Api, device: *Device, wanted: ?u8) ?[]const u8 {
     }
     return null;
 }
-pub fn writeDdc(device: *Device, percent: u8, drm_root: [:0]const u8, cancel: *gio.Cancellable) ?[]const u8 {
-    // Re-discover before every write. A replaced monitor must never inherit a queued request.
-    var fresh = scan("/nonexistent/pearl-backlight", drm_root, cancel);
+pub fn writeDdc(device: *Device, percent: u8, drm_root: [:0]const u8, cancel: *gio.Cancellable, expected: ?u8) ?[]const u8 {
+    return accessDdc(device, percent, drm_root, cancel, expected);
+}
+pub fn readDdc(device: *Device, drm_root: [:0]const u8, cancel: *gio.Cancellable) ?[]const u8 {
+    return accessDdc(device, null, drm_root, cancel, null);
+}
+fn accessDdc(device: *Device, percent: ?u8, drm_root: [:0]const u8, cancel: *gio.Cancellable, expected: ?u8) ?[]const u8 {
+    // Validate cached kernel identity, without DDC redetection or unrelated reads.
+    var fresh = discover("/nonexistent/pearl-backlight", drm_root, cancel);
     const target = fresh.find(device.id.slice()) orelse return "Display disconnected before brightness could be applied.";
     if (target.reason) |reason| return reason;
     if (cancel.isCancelled() != 0) return "Brightness request canceled.";
     mutex.lock();
     defer mutex.unlock();
     const lib = api() orelse return "External brightness support is unavailable.";
-    device.maximum = target.maximum;
-    device.value = target.value;
-    return access(lib, device, percent);
+    if (!sameTopology(&fresh, &detected)) {
+        if (percent != null) return "Display topology changed; refresh brightness before retrying.";
+        // An explicit read may recover failed initial discovery. A write never
+        // initiates a bus-wide probe, and a failed read schedules no retry.
+        if (lib.ddca_redetect_displays() != 0) return "External brightness discovery failed. Try refreshing again.";
+        detected = fresh;
+    }
+    return access(lib, device, percent, cancel, expected);
 }
