@@ -231,6 +231,11 @@
 .pearl-root.$scope .pearl-island { background: $container$; }
 .pearl-root.$scope.pearl-blur .pearl-island { background: alpha($container$, 0.86); }
 .pearl-root.$scope .pearl-dock .focused { background: mix($high$, $primary$, 0.12); }
+.pearl-root.$scope .pearl-dock button.pearl-dragging { opacity: 0.45; transform: scale(1.15); }
+.pearl-root.$scope .pearl-dock .pearl-drop-before { box-shadow: -2px 0 0 0 $primary$; }
+.pearl-root.$scope .pearl-dock .pearl-drop-after { box-shadow: 2px 0 0 0 $primary$; }
+.pearl-root.$scope .pearl-dock-vertical .pearl-drop-before { box-shadow: 0 -2px 0 0 $primary$; }
+.pearl-root.$scope .pearl-dock-vertical .pearl-drop-after { box-shadow: 0 2px 0 0 $primary$; }
 .pearl-root.$scope .pearl-dock-indicator { color: $primary$; font-size: 0.75em; margin-top: -3px; margin-bottom: -2px; }
 
 .pearl-root.$scope popover > contents { background: $container$; color: $text$; border: 1px solid alpha($outline$, 0.3); border-radius: 14px; padding: 8px; }
