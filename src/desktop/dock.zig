@@ -25,10 +25,34 @@ const Picker = @import("launcher_picker.zig");
 const Action = enum { activate, launch, pin, unpin, minimize, maximize, close, choose_launcher };
 const Callback = struct { dock: *Dock, action: Action, id: [:0]const u8, value: bool = false, desktop_action: ?[:0]const u8 = null, resolution_hash: u64 = 0, window_id: ?[:0]const u8 = null, desktop_id: ?[:0]const u8 = null, picker: ?Picker.Request = null };
 const Group = struct { key: []const u8, desktop: ?[]const u8, pinned: bool, windows: std.ArrayList(*const e.Window) = .empty };
-/// G_TYPE_STRING: fundamental type index 16 (2 is G_TYPE_INTERFACE) shifted into GType space.
-const g_type_string: usize = 16 << 2;
-const DragBinding = struct { dock: *Dock, key: [*:0]const u8, widget: *gtk.Widget };
-const DropBinding = struct { dock: *Dock, widget: *gtk.Widget, index: usize, pins: usize, vertical: bool };
+/// In-process drag state. Reordering never leaves GTK: a Wayland data-source
+/// drag that ends outside a drop target crashes Aqueous (wlroots XWM
+/// use-after-free in xwm_set_drag_focus), so the dock tracks the pointer
+/// itself with a gesture and hit-tests the panel. Slots slide live: the
+/// grabbed slot is translated to the hovered position and the slots in
+/// between shift one step, Windows-taskbar style.
+const DragBinding = struct {
+    dock: *Dock,
+    key: [*:0]const u8,
+    widget: *gtk.Widget,
+    box: *gtk.Widget,
+    icon: *gtk.Image,
+    pins: usize,
+    start_x: f64 = 0,
+    start_y: f64 = 0,
+    origin_x: f64 = 0,
+    origin_y: f64 = 0,
+    /// Panel-to-window offset; the ghost layer lives in window coordinates.
+    win_x: f64 = 0,
+    win_y: f64 = 0,
+    src_index: usize = 0,
+    step: f64 = 0,
+    target: usize = 0,
+    hover_after: bool = false,
+    /// Pointer visited a real slot at least once; distinguishes a sweep from
+    /// a click that never moved off the source icon.
+    dragged: bool = false,
+};
 pub const Dock = struct {
     client: *Client,
     index: *Apps.Index,
@@ -39,12 +63,18 @@ pub const Dock = struct {
     sensor: *gtk.Window,
     panel: *gtk.Box,
     scroll: *gtk.ScrolledWindow,
+    /// Hosts the drag ghost above the scroll content; never targets input.
+    fixed: *gtk.Fixed,
+    ghost: *gtk.Image,
     effects: native.Surface = undefined,
     arena: std.heap.ArenaAllocator,
     menus: std.ArrayList(*gtk.Popover) = .empty,
     hash: ?u64 = null,
     config: p.Config = .{},
     background_css: ?*gtk.CssProvider = null,
+    drag_css: ?*gtk.CssProvider = null,
+    /// Id whose reorder just landed; the next build plays the settle animation on its slot.
+    landed: ?[:0]u8 = null,
     background_opacity: @import("bar_opacity.zig").Config = .{},
     background_color: ?gdk.RGBA = null,
     bounds: placement.Rect = .{ .x = 0, .y = 0, .width = 1, .height = 1 },
@@ -91,7 +121,19 @@ pub const Dock = struct {
         scroll.setPropagateNaturalWidth(1);
         scroll.setPropagateNaturalHeight(1);
         scroll.setChild(panel.as(gtk.Widget));
-        window.setChild(scroll.as(gtk.Widget));
+        // The drag ghost floats above the scroll content; pass-through and
+        // can-target keep it from stealing events from the dock buttons.
+        const overlay = gtk.Overlay.new();
+        overlay.setChild(scroll.as(gtk.Widget));
+        const fixed = gtk.Fixed.new();
+        fixed.as(gtk.Widget).setCanTarget(0);
+        const ghost = gtk.Image.new();
+        ghost.as(gtk.Widget).addCssClass("pearl-dock-ghost");
+        ghost.as(gtk.Widget).setVisible(0);
+        fixed.put(ghost.as(gtk.Widget), 0, 0);
+        overlay.addOverlay(fixed.as(gtk.Widget));
+        overlay.setClipOverlay(fixed.as(gtk.Widget), 1);
+        window.setChild(overlay.as(gtk.Widget));
         // A transparent render node maps the reveal strip even without visible pixels.
         const pixels = glib.Bytes.newStatic(&[_]u8{ 0, 0, 0, 0 }, 4);
         defer pixels.unref();
@@ -116,7 +158,7 @@ pub const Dock = struct {
         scroll.as(gtk.Widget).addCssClass("pearl-surface-panel");
         panel.as(gtk.Widget).addCssClass("pearl-dock");
         w.name(panel.as(gtk.Widget), @import("i18n").dtr("pearl", "Applications dock"));
-        self.* = .{ .client = client, .index = index, .tasks = tasks, .preferences = preferences, .output = output, .window = window, .sensor = sensor, .panel = panel, .scroll = scroll, .arena = .init(a), .context = context, .changed = changed };
+        self.* = .{ .client = client, .index = index, .tasks = tasks, .preferences = preferences, .output = output, .window = window, .sensor = sensor, .panel = panel, .scroll = scroll, .fixed = fixed, .ghost = ghost, .arena = .init(a), .context = context, .changed = changed };
         try self.effects.init(effects, window, scroll.as(gtk.Widget), true, .panel);
         self.effects.geometry_context = self;
         self.effects.geometry_changed = measured;
@@ -141,6 +183,11 @@ pub const Dock = struct {
             self.scroll.as(gtk.Widget).getStyleContext().removeProvider(provider.as(gtk.StyleProvider));
             provider.unref();
         }
+        if (self.drag_css) |provider| {
+            self.panel.as(gtk.Widget).getStyleContext().removeProvider(provider.as(gtk.StyleProvider));
+            provider.unref();
+        }
+        if (self.landed) |id| a.free(id);
         self.window.destroy();
         self.window.unref();
         self.sensor.destroy();
@@ -242,7 +289,9 @@ pub const Dock = struct {
             for (self.menus.items) |menu| if (menu.as(gtk.Widget).getVisible() != 0) {
                 menu_open = true;
             };
-            if (!menu_open) {
+            // A rebuild frees the arena-backed drag bindings; defer it until the
+            // gesture ends, which re-syncs via `changed`.
+            if (!menu_open and !self.dragging) {
                 try self.build(groups.items);
                 self.hash = hash;
             }
@@ -444,8 +493,14 @@ pub const Dock = struct {
         for (groups) |group| {
             if (group.pinned) pins += 1;
         }
-        const vertical = self.config.edge == .left or self.config.edge == .right;
-        for (groups, 0..) |group, index| {
+        // Slide transitions for the live drag; transform values are reloaded
+        // per hover change in `loadDragCss`.
+        if (self.drag_css == null) {
+            self.drag_css = gtk.CssProvider.new();
+            self.panel.as(gtk.Widget).getStyleContext().addProvider(self.drag_css.?.as(gtk.StyleProvider), 601);
+        }
+        self.loadDragCss(false, 0, 0);
+        for (groups) |group| {
             const entry = if (group.desktop) |id| self.installed(id) else null;
             const title = if (entry) |v| v.name else if (group.desktop) |id| try std.fmt.allocPrintSentinel(alloc, "{s} — launcher unavailable", .{id}, 0) else if (group.windows.items.len > 0) group.windows.items[0].app_id orelse group.windows.items[0].class orelse "Application" else group.key;
             var focused = false;
@@ -463,6 +518,12 @@ pub const Dock = struct {
             }
             const description = try std.fmt.allocPrintSentinel(alloc, "{s} — {d} running{s}{s}{s}{s}", .{ title, group.windows.items.len, if (focused) ", focused" else "", if (minimized) ", minimized windows" else "", if (hidden) ", hidden windows" else "", if (group.pinned) ", pinned" else "" }, 0);
             const box = gtk.Box.new(.horizontal, 0);
+            // One-shot settle animation on the slot the last reorder landed in.
+            if (self.landed) |id| if (group.desktop != null and std.mem.eql(u8, id, group.desktop.?)) {
+                box.as(gtk.Widget).addCssClass("pearl-drop-landed");
+                a.free(id);
+                self.landed = null;
+            };
             const primary = try self.button(description, if (target != null) .activate else .launch, if (target) |win| win.id else group.desktop.?, false, null, null, if (target != null) group.desktop else null);
             primary.as(gtk.Widget).setTooltipText(description);
             if (target == null and entry == null) primary.as(gtk.Widget).setSensitive(1); // Keep context menu and Unpin reachable.
@@ -480,26 +541,13 @@ pub const Dock = struct {
             box.append(primary.as(gtk.Widget));
             if (group.pinned) if (group.desktop) |id| {
                 const drag = try alloc.create(DragBinding);
-                drag.* = .{ .dock = self, .key = try alloc.dupeSentinel(u8, id, 0), .widget = primary.as(gtk.Widget) };
-                const source = gtk.DragSource.new();
-                source.setActions(.{ .move = true });
-                // Drag the bare icon centered on the pointer instead of an empty default surface.
-                const paintable = gtk.WidgetPaintable.new(icon.as(gtk.Widget));
-                defer paintable.as(object.Object).unref();
-                source.setIcon(paintable.as(gdk.Paintable), @divTrunc(self.config.icon_size, 2), @divTrunc(self.config.icon_size, 2));
-                _ = gtk.DragSource.signals.prepare.connect(source, *DragBinding, dragPrepare, drag, .{});
-                _ = gtk.DragSource.signals.drag_begin.connect(source, *DragBinding, dragBegan, drag, .{});
-                _ = gtk.DragSource.signals.drag_end.connect(source, *DragBinding, dragDone, drag, .{});
-                _ = gtk.DragSource.signals.drag_cancel.connect(source, *DragBinding, dragCancelled, drag, .{});
-                primary.as(gtk.Widget).addController(source.as(gtk.EventController));
+                drag.* = .{ .dock = self, .key = try alloc.dupeSentinel(u8, id, 0), .widget = primary.as(gtk.Widget), .box = box.as(gtk.Widget), .icon = icon, .pins = pins };
+                const gesture = gtk.GestureDrag.new();
+                _ = gtk.GestureDrag.signals.drag_begin.connect(gesture, *DragBinding, dragBegan, drag, .{});
+                _ = gtk.GestureDrag.signals.drag_update.connect(gesture, *DragBinding, dragMoved, drag, .{});
+                _ = gtk.GestureDrag.signals.drag_end.connect(gesture, *DragBinding, dragDone, drag, .{});
+                primary.as(gtk.Widget).addController(gesture.as(gtk.EventController));
             };
-            const drop = try alloc.create(DropBinding);
-            drop.* = .{ .dock = self, .widget = box.as(gtk.Widget), .index = index, .pins = pins, .vertical = vertical };
-            const drop_target = gtk.DropTarget.new(g_type_string, .{ .move = true });
-            _ = gtk.DropTarget.signals.motion.connect(drop_target, *DropBinding, dropMotion, drop, .{});
-            _ = gtk.DropTarget.signals.leave.connect(drop_target, *DropBinding, dropLeave, drop, .{});
-            _ = gtk.DropTarget.signals.drop.connect(drop_target, *DropBinding, dropped, drop, .{});
-            box.as(gtk.Widget).addController(drop_target.as(gtk.EventController));
             const menu = gtk.Popover.new();
             w.name(menu.as(gtk.Widget), try std.fmt.allocPrintSentinel(alloc, "Actions for {s}", .{title}, 0));
             _ = gtk.Popover.signals.closed.connect(menu, *Dock, menuClosed, self, .{});
@@ -583,20 +631,103 @@ pub const Dock = struct {
             }
             self.panel.append(box.as(gtk.Widget));
         }
+        // No slot matched (e.g. the pin vanished mid-drag); drop the stale id.
+        if (self.landed) |id| {
+            a.free(id);
+            self.landed = null;
+        }
     }
-    fn dragPrepare(_: *gtk.DragSource, _: f64, _: f64, binding: *DragBinding) callconv(.c) ?*gdk.ContentProvider {
-        if (binding.dock.locked or binding.dock.destroying) return null;
-        // g_value_init requires zero-filled memory; stack garbage faults inside gobject.
-        var value: object.Value = std.mem.zeroes(object.Value);
-        _ = object.Value.init(&value, g_type_string);
-        value.setString(binding.key);
-        return gdk.ContentProvider.newForValue(&value);
+    /// Regenerates the drag slide rules: the grabbed slot translates to the
+    /// hovered position while the slots in between shift one step aside.
+    fn loadDragCss(self: *Dock, vertical: bool, src_delta: f64, shift: f64) void {
+        const provider = self.drag_css orelse return;
+        const sx: f64 = if (vertical) 0 else src_delta;
+        const sy: f64 = if (vertical) src_delta else 0;
+        const fx: f64 = if (vertical) 0 else shift;
+        const fy: f64 = if (vertical) shift else 0;
+        const css = std.fmt.allocPrintSentinel(a, ".pearl-dock > box {{ transition: transform 160ms ease; }} .pearl-dock > box.pearl-drag-src {{ transform: translate({d:.1}px, {d:.1}px); }} .pearl-dock > box.pearl-drag-fwd {{ transform: translate({d:.1}px, {d:.1}px); }} .pearl-dock > box.pearl-drag-back {{ transform: translate({d:.1}px, {d:.1}px); }}", .{ sx, sy, fx, fy, -fx, -fy }, 0) catch return;
+        defer a.free(css);
+        provider.loadFromString(css);
+    }
+    /// Per-slot advance measured from live allocations; falls back to icon + spacing.
+    fn slotStep(self: *Dock, vertical: bool) f64 {
+        var prev: f64 = 0;
+        var have_prev = false;
+        var child = self.panel.as(gtk.Widget).getFirstChild();
+        while (child) |slot| : (child = slot.getNextSibling()) {
+            var rect: gtk.Allocation = undefined;
+            slot.getAllocation(&rect);
+            const at: f64 = @floatFromInt(if (vertical) rect.f_y else rect.f_x);
+            if (have_prev and at != prev) return @abs(at - prev);
+            prev = at;
+            have_prev = true;
+        }
+        return @floatFromInt(self.config.icon_size + 10);
+    }
+    fn clearShiftClasses(widget: *gtk.Widget) void {
+        widget.removeCssClass("pearl-drag-fwd");
+        widget.removeCssClass("pearl-drag-back");
+    }
+    fn clearDragClasses(self: *Dock) void {
+        var child = self.panel.as(gtk.Widget).getFirstChild();
+        while (child) |slot| : (child = slot.getNextSibling()) {
+            clearShiftClasses(slot);
+            slot.removeCssClass("pearl-drag-src");
+        }
     }
     /// Keeps autohide/intelligent docks revealed while an icon is being moved;
     /// the pointer leaves the surface during the drag and would hide it.
-    fn dragBegan(_: *gtk.DragSource, _: *gdk.Drag, binding: *DragBinding) callconv(.c) void {
+    fn dragBegan(_: *gtk.GestureDrag, x: f64, y: f64, binding: *DragBinding) callconv(.c) void {
         const self = binding.dock;
+        if (self.locked or self.destroying or self.dragging) return;
+        var box_rect: gtk.Allocation = undefined;
+        var button_rect: gtk.Allocation = undefined;
+        binding.box.getAllocation(&box_rect);
+        binding.widget.getAllocation(&button_rect);
+        binding.origin_x = @floatFromInt(box_rect.f_x + button_rect.f_x);
+        binding.origin_y = @floatFromInt(box_rect.f_y + button_rect.f_y);
+        binding.start_x = x;
+        binding.start_y = y;
+        binding.hover_after = false;
+        binding.dragged = false;
+        const vertical = self.config.edge == .left or self.config.edge == .right;
+        binding.step = self.slotStep(vertical);
+        binding.src_index = 0;
+        var index: usize = 0;
+        var child = self.panel.as(gtk.Widget).getFirstChild();
+        while (child) |slot| : (child = slot.getNextSibling()) {
+            if (slot == binding.box) {
+                binding.src_index = index;
+                break;
+            }
+            index += 1;
+        }
+        binding.target = binding.src_index;
+        // The ghost layer lives in window coordinates: sum panel offsets up
+        // to the window (allocations already reflect any scroll).
+        binding.win_x = 0;
+        binding.win_y = 0;
+        {
+            var node: ?*gtk.Widget = self.panel.as(gtk.Widget);
+            while (node) |n| {
+                if (n == self.window.as(gtk.Widget)) break;
+                var r: gtk.Allocation = undefined;
+                n.getAllocation(&r);
+                binding.win_x += @floatFromInt(r.f_x);
+                binding.win_y += @floatFromInt(r.f_y);
+                node = n.getParent();
+            }
+        }
+        // The ghost mirrors the grabbed icon and follows the pointer while the
+        // source slot hides, leaving the landing gap empty.
+        if (binding.icon.getGicon()) |gicon| self.ghost.setFromGicon(gicon) else self.ghost.setFromIconName("pearl-application-x-executable-symbolic");
+        self.ghost.setPixelSize(self.config.icon_size);
+        const half = @as(f64, @floatFromInt(self.config.icon_size)) / 2;
+        self.fixed.move(self.ghost.as(gtk.Widget), binding.win_x + binding.origin_x + x - half, binding.win_y + binding.origin_y + y - half);
+        self.ghost.as(gtk.Widget).setVisible(1);
         binding.widget.addCssClass("pearl-dragging");
+        binding.box.addCssClass("pearl-drag-src");
+        self.loadDragCss(vertical, 0, 0);
         self.dragging = true;
         if (self.timer != 0) {
             _ = glib.Source.remove(self.timer);
@@ -604,51 +735,115 @@ pub const Dock = struct {
         }
         self.showState();
     }
-    fn dragDone(_: *gtk.DragSource, _: *gdk.Drag, _: c_int, binding: *DragBinding) callconv(.c) void {
-        binding.widget.removeCssClass("pearl-dragging");
-        binding.dock.dragging = false;
-        if (!binding.dock.destroying) binding.dock.showState();
-    }
-    fn dragCancelled(_: *gtk.DragSource, _: *gdk.Drag, _: gdk.DragCancelReason, binding: *DragBinding) callconv(.c) c_int {
-        binding.widget.removeCssClass("pearl-dragging");
-        binding.dock.dragging = false;
-        if (!binding.dock.destroying) binding.dock.showState();
-        return 0;
-    }
-    fn dropAfter(binding: *const DropBinding, x: f64, y: f64) bool {
-        const extent = @as(f64, @floatFromInt(if (binding.vertical) binding.widget.getHeight() else binding.widget.getWidth())) / 2;
-        return if (binding.vertical) y >= extent else x >= extent;
-    }
-    fn clearDropClasses(widget: *gtk.Widget) void {
-        widget.removeCssClass("pearl-drop-before");
-        widget.removeCssClass("pearl-drop-after");
-    }
-    fn dropMotion(_: *gtk.DropTarget, x: f64, y: f64, binding: *DropBinding) callconv(.c) gdk.DragAction {
-        if (dropAfter(binding, x, y)) {
-            binding.widget.addCssClass("pearl-drop-after");
-            binding.widget.removeCssClass("pearl-drop-before");
-        } else {
-            binding.widget.addCssClass("pearl-drop-before");
-            binding.widget.removeCssClass("pearl-drop-after");
-        }
-        return .{ .move = true };
-    }
-    fn dropLeave(_: *gtk.DropTarget, binding: *DropBinding) callconv(.c) void {
-        clearDropClasses(binding.widget);
-    }
-    fn dropped(_: *gtk.DropTarget, value: *object.Value, x: f64, y: f64, binding: *DropBinding) callconv(.c) c_int {
-        clearDropClasses(binding.widget);
+    /// Translates the gesture offset into panel coordinates, finds the hovered
+    /// slot and slides the row live so the gap travels with the pointer.
+    fn dragMoved(_: *gtk.GestureDrag, off_x: f64, off_y: f64, binding: *DragBinding) callconv(.c) void {
         const self = binding.dock;
-        if (self.destroying) return 0;
-        const raw = value.getString() orelse return 0;
-        // Drops past the pinned run append to it; running-only items keep their derived order.
-        const pos = if (binding.index < binding.pins) binding.index + @intFromBool(dropAfter(binding, x, y)) else binding.pins;
-        self.reorder(std.mem.span(raw), pos) catch |err| {
-            log.err("event=dock-reorder error={s}", .{@errorName(err)});
-            self.window.as(gtk.Widget).setTooltipText(@import("i18n").dtr("pearl", "Action unavailable; the application or window may have changed."));
-            return 0;
-        };
-        return 1;
+        if (!self.dragging or self.destroying) return;
+        const px = binding.origin_x + binding.start_x + off_x;
+        const py = binding.origin_y + binding.start_y + off_y;
+        const half = @as(f64, @floatFromInt(self.config.icon_size)) / 2;
+        self.fixed.move(self.ghost.as(gtk.Widget), binding.win_x + px - half, binding.win_y + py - half);
+        const vertical = self.config.edge == .left or self.config.edge == .right;
+        // Hit-test in visual space: slots displaced by the live slide keep
+        // their allocations, and testing those made the target overshoot and
+        // the indicator jump. The dragged slot itself covers the gap; landing
+        // there means "hold position", which keeps the sweep stable.
+        var found: ?*gtk.Widget = null;
+        var found_index: usize = 0;
+        var after = false;
+        var slots: usize = 0;
+        var over_panel = false;
+        {
+            var panel_rect: gtk.Allocation = undefined;
+            self.panel.as(gtk.Widget).getAllocation(&panel_rect);
+            const x0: f64 = @floatFromInt(panel_rect.f_x);
+            const y0: f64 = @floatFromInt(panel_rect.f_y);
+            over_panel = px >= x0 and px < x0 + @as(f64, @floatFromInt(panel_rect.f_width)) and py >= y0 and py < y0 + @as(f64, @floatFromInt(panel_rect.f_height));
+        }
+        // Visual gap position of the current state: when moving right the
+        // reorder index counts the dragged slot itself, so the gap sits one
+        // position left of it.
+        const cur_gap = if (binding.target > binding.src_index) binding.target - 1 else binding.target;
+        const src_delta: f64 = @as(f64, @floatFromInt(cur_gap)) - @as(f64, @floatFromInt(binding.src_index));
+        var index: usize = 0;
+        var child = self.panel.as(gtk.Widget).getFirstChild();
+        while (child) |slot| : (child = slot.getNextSibling()) {
+            slots += 1;
+            var rect: gtk.Allocation = undefined;
+            slot.getAllocation(&rect);
+            var shift: f64 = 0;
+            if (index == binding.src_index) shift = src_delta * binding.step;
+            if (cur_gap > binding.src_index and index > binding.src_index and index <= cur_gap) shift = -binding.step;
+            if (cur_gap < binding.src_index and index >= cur_gap and index < binding.src_index) shift = binding.step;
+            const x0: f64 = @as(f64, @floatFromInt(rect.f_x)) + (if (vertical) @as(f64, 0) else shift);
+            const y0: f64 = @as(f64, @floatFromInt(rect.f_y)) + (if (vertical) shift else @as(f64, 0));
+            const x1 = x0 + @as(f64, @floatFromInt(rect.f_width));
+            const y1 = y0 + @as(f64, @floatFromInt(rect.f_height));
+            if (found == null and px >= x0 and px < x1 and py >= y0 and py < y1) {
+                found = slot;
+                found_index = index;
+                after = if (vertical) py >= y0 + (y1 - y0) / 2 else px >= x0 + (x1 - x0) / 2;
+            }
+            index += 1;
+        }
+        const over_src = found != null and found_index == binding.src_index;
+        // Gap-space target: the pointer half picks which side of the hovered
+        // slot the gap snaps to. Slots right of home read one lower because
+        // the dragged slot no longer occupies visual space. Resting the row
+        // over the gap itself would oscillate, so the gap holds position.
+        const gap: usize = if (over_src or (over_panel and found == null)) cur_gap else if (!over_panel or slots == 0) binding.src_index else if (found_index > binding.src_index) found_index - 1 + @intFromBool(after) else found_index + @intFromBool(after);
+        const target = @min(gap + @intFromBool(gap >= binding.src_index), slots - 1);
+        // Remember the pointer side so a release over the gap keeps its intent.
+        binding.hover_after = after;
+        if (found != null and !over_src) binding.dragged = true;
+        if (target == binding.target) return;
+        binding.target = target;
+        var i: usize = 0;
+        child = self.panel.as(gtk.Widget).getFirstChild();
+        while (child) |slot| : (child = slot.getNextSibling()) {
+            clearShiftClasses(slot);
+            if (target > binding.src_index) {
+                if (i > binding.src_index and i < target) slot.addCssClass("pearl-drag-back");
+            } else if (target < binding.src_index) {
+                if (i >= target and i < binding.src_index) slot.addCssClass("pearl-drag-fwd");
+            }
+            i += 1;
+        }
+        const new_gap = if (target > binding.src_index) target - 1 else target;
+        const delta = @as(f64, @floatFromInt(new_gap)) - @as(f64, @floatFromInt(binding.src_index));
+        self.loadDragCss(vertical, delta * binding.step, binding.step);
+    }
+    fn dragDone(_: *gtk.GestureDrag, _: f64, _: f64, binding: *DragBinding) callconv(.c) void {
+        const self = binding.dock;
+        if (!self.dragging) return;
+        self.dragging = false;
+        binding.widget.removeCssClass("pearl-dragging");
+        self.ghost.as(gtk.Widget).setVisible(0);
+        self.clearDragClasses();
+        self.loadDragCss(false, 0, 0);
+        const target = binding.target;
+        const after = binding.hover_after;
+        const dragged = binding.dragged;
+        binding.dragged = false;
+        if (self.destroying) return;
+        self.showState();
+        // The visual target is the landing row position; a release over the
+        // gap keeps the pointer side, and drops past the pinned run append.
+        if (dragged) {
+            const pos = if (target < binding.pins) target + @intFromBool(target == binding.src_index and after) else binding.pins;
+            if (self.reorder(std.mem.span(binding.key), pos)) |moved| {
+                if (moved) {
+                    if (self.landed) |old| a.free(old);
+                    self.landed = a.dupeSentinel(u8, std.mem.span(binding.key), 0) catch null;
+                }
+            } else |err| {
+                log.err("event=dock-reorder error={s}", .{@errorName(err)});
+                self.window.as(gtk.Widget).setTooltipText(@import("i18n").dtr("pearl", "Action unavailable; the application or window may have changed."));
+            }
+        }
+        // Rebuilds are deferred while dragging; reconcile any model change now.
+        self.changed(self.context);
     }
     fn contextMenu(gesture: *gtk.GestureClick, _: c_int, _: f64, _: f64, menu: *gtk.Popover) callconv(.c) void {
         _ = gesture.as(gtk.Gesture).setState(.claimed);
@@ -756,7 +951,8 @@ pub const Dock = struct {
     }
     /// Moves `id` to position `pos` in the pinned list; dragging an unpinned
     /// desktop item pins it at that spot. `pos` counts the pre-removal list.
-    pub fn reorder(self: *Dock, id: []const u8, pos: usize) !void {
+    /// Returns false when the order is unchanged (no write, no animation).
+    pub fn reorder(self: *Dock, id: []const u8, pos: usize) !bool {
         if (!p.desktopId(id)) return error.InvalidDesktopId;
         if (self.locked or self.client.availability != .ready or self.client.model.get(.session, "session").?.locked) return error.Locked;
         if (self.installed(id) == null) return error.StaleApplication;
@@ -774,9 +970,18 @@ pub const Dock = struct {
             try pins.append(alloc, existing);
         }
         try pins.insert(alloc, @min(insertion, pins.items.len), id);
+        if (pins.items.len == prefs.pinned_apps.len) {
+            var same = true;
+            for (pins.items, prefs.pinned_apps) |x, y| if (!std.mem.eql(u8, x, y)) {
+                same = false;
+                break;
+            };
+            if (same) return false;
+        }
         prefs.pinned_apps = pins.items;
         try prefs.validate();
         const json = try std.json.Stringify.valueAlloc(alloc, prefs, .{});
         try self.preferences.apply(json, self.preferences.revision);
+        return true;
     }
 };

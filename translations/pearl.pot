@@ -131,7 +131,7 @@ msgstr ""
 msgid "A profile applies immediately and stays selected after a restart."
 msgstr ""
 
-#: src/desktop/dock.zig:570
+#: src/desktop/dock.zig:618
 msgid "A unique application identity is needed. Existing choices can be removed in Settings."
 msgstr ""
 
@@ -198,7 +198,7 @@ msgstr ""
 msgid "Action unavailable or failed. Try again."
 msgstr ""
 
-#: src/desktop/dock.zig:648 src/desktop/dock.zig:668
+#: src/desktop/dock.zig:842 src/desktop/dock.zig:863
 msgid "Action unavailable; the application or window may have changed."
 msgstr ""
 
@@ -506,7 +506,7 @@ msgstr ""
 msgid "Applications are still loading. Retry shortly."
 msgstr ""
 
-#: src/desktop/dock.zig:118
+#: src/desktop/dock.zig:160
 msgid "Applications dock"
 msgstr ""
 
@@ -4366,11 +4366,11 @@ msgstr ""
 msgid "Pearl bar reveal"
 msgstr ""
 
-#: src/desktop/dock.zig:106
+#: src/desktop/dock.zig:148
 msgid "Pearl dock"
 msgstr ""
 
-#: src/desktop/dock.zig:106
+#: src/desktop/dock.zig:148
 msgid "Pearl dock reveal"
 msgstr ""
 
@@ -7033,7 +7033,7 @@ msgstr ""
 msgid "Use launcher"
 msgstr ""
 
-#: src/desktop/dock.zig:556 src/desktop/dock.zig:557
+#: src/desktop/dock.zig:604 src/desktop/dock.zig:605
 msgid "Use launcher…"
 msgstr ""
 
