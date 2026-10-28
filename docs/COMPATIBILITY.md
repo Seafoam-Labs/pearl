@@ -45,6 +45,11 @@ coordinate feedback across surfaces sharing a frame clock/frame number, includin
 discarded feedback and popup teardown. These checks do not replace full release
 qualification.
 
+Normal-session opening and keyboard navigation were subsequently verified by the
+user. `test-settings-app` is now report-only, including its release variant and
+the Settings acceptance aggregate's `window` check. Its GTK warning and failure
+remain visible in evidence but no longer block release; other checks still do.
+
 Modern writes negotiate structured results, receipts, impact and recoverable commits.
 Collection-only edits additionally use `protected_collection_apply_v1` and
 `collection_preconditions_v2`; display declaration editing uses

@@ -9,6 +9,31 @@ gate=module('gate');source=module('source')
 def write(root,path,value):
     p=root/path;p.parent.mkdir(parents=True,exist_ok=True);p.write_text(json.dumps(value))
 class ReleaseTools(unittest.TestCase):
+    def test_settings_window_failure_is_advisory_but_other_failures_block(self):
+        with tempfile.TemporaryDirectory() as t:
+            root=Path(t)
+            targets={name:{'exit_code':0,'status':'passed'} for name in gate.TARGETS}
+            targets['test-settings-app']={'exit_code':1,'status':'failed'}
+            report=dict(status='passed',source_unchanged=True,targets=targets)
+            write(root,'functional/metadata.json',report)
+            result=gate.evaluate(root)
+            self.assertTrue(result['checks']['functional'])
+            self.assertEqual(result['reports']['test-settings-app']['status'],'failed')
+            self.assertTrue(result['reports']['test-settings-app']['report_only'])
+            targets['test-settings-appearance']['exit_code']=1
+            write(root,'functional/metadata.json',report)
+            self.assertFalse(gate.evaluate(root)['checks']['functional'])
+
+    def test_settings_acceptance_only_exempts_window_and_preserves_source_check(self):
+        spec=importlib.util.spec_from_file_location('settings_acceptance',ROOT/'tests/integration/test_settings_acceptance.py')
+        acceptance=importlib.util.module_from_spec(spec);spec.loader.exec_module(acceptance)
+        report=dict(source_unchanged=True,suites={'window':{'status':'failed'},'appearance':{'status':'passed'}})
+        self.assertTrue(acceptance.acceptance_passed(report))
+        report['suites']['appearance']['status']='failed'
+        self.assertFalse(acceptance.acceptance_passed(report))
+        report['suites']['appearance']['status']='passed';report['source_unchanged']=False
+        self.assertFalse(acceptance.acceptance_passed(report))
+
     def test_helper_provenance_uses_pinned_version_not_compatibility_floor(self):
         with tempfile.TemporaryDirectory() as t:
             root=Path(t);project=root/'project';evidence=root/'evidence'

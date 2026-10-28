@@ -138,7 +138,7 @@ def run_suites(args, suites, environment, parent=None):
             directory = output / key.replace(':', '-')
             directory.mkdir()
             check = environment.check(suite)
-            result.update(versions=check['versions'], issues=check['issues'])
+            result.update(versions=check['versions'], issues=list(check['issues']))
             variant = suite.get('fixture')
             if variant and not result['issues']:
                 if variant not in checked_variants:

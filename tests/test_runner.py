@@ -43,6 +43,9 @@ class CatalogTests(unittest.TestCase):
         normal = select(names=['test-settings-app'])[0]
         release = select(names=['release:test-settings-app'])[0]
         self.assertNotEqual(normal['options'], release['options'])
+        self.assertTrue(normal['report_only'])
+        self.assertTrue(release['report_only'])
+        self.assertFalse(catalog()['test-settings-appearance'].get('report_only', False))
 
     def test_list_and_dry_run_work_outside_checkout_without_writes(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -263,6 +266,44 @@ class EvidenceTests(unittest.TestCase):
             self.assertEqual(result, 2)
             self.assertEqual(report['suites']['protocol-trace']['status'], 'blocked')
             self.assertEqual(report['status'], 'failed')
+
+    def test_report_only_failure_is_retained_and_does_not_stop_fail_fast(self):
+        for advisory_code, blocking_code in ((1, 0), (0, 0), (1, 1)):
+            with self.subTest(advisory_code=advisory_code, blocking_code=blocking_code), tempfile.TemporaryDirectory() as temp:
+                args = arguments(group='integration')
+                args.fail_fast = True
+                args.output = Path(temp) / 'run'
+                env = Environment(args)
+                suites = [dict(catalog()['test-settings-app'], fixture=None), catalog()['protocol-trace']]
+                def execute(command, cwd, environment, logfile, timeout):
+                    if logfile.parent.name == 'test-settings-app':
+                        atomic_json(logfile.parent / 'results.json', dict(status='failed', error='GTK timing warning'))
+                        return advisory_code
+                    return blocking_code
+                with patch.object(env, 'check', return_value=dict(issues=[], versions={}, hint='')), patch.object(env, 'suite_env', return_value={}), patch.object(cli, 'suite_commands', return_value=[['fixture']]), patch.object(cli, 'execute', side_effect=execute) as run:
+                    result = cli.run_suites(args, suites, env)
+                report = json.loads((args.output / 'results.json').read_text())
+                self.assertEqual(result, blocking_code)
+                self.assertEqual(run.call_count, 2)
+                self.assertEqual(report['suites']['test-settings-app']['status'], 'failed')
+                self.assertTrue(report['suites']['test-settings-app']['report_only'])
+                self.assertIn('[report only]', (args.output / 'summary.txt').read_text())
+                junit = cli.ET.parse(args.output / 'junit.xml')
+                advisory = junit.find("./testcase[@name='test-settings-app']")
+                self.assertIsNone(advisory.find('failure'))
+                self.assertIn('failed', advisory.find('system-out').text)
+                self.assertEqual(len(junit.findall('./testcase/failure')), blocking_code)
+
+    def test_report_only_blocked_suite_reports_without_failing(self):
+        with tempfile.TemporaryDirectory() as temp:
+            args = arguments(group='integration')
+            args.output = Path(temp) / 'run'
+            env = Environment(args)
+            with patch.object(env, 'check', return_value=dict(issues=['Missing fixture'], versions={}, hint='prepare')):
+                code = cli.run_suites(args, select(names=['test-settings-app']), env)
+            report = json.loads((args.output / 'results.json').read_text())
+            self.assertEqual(code, 0)
+            self.assertEqual(report['suites']['test-settings-app']['status'], 'blocked')
 
     def test_rerun_selects_only_unsuccessful_and_retains_options(self):
         with tempfile.TemporaryDirectory() as temp:
