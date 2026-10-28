@@ -1,8 +1,8 @@
-# Devario Core: build the v0.3.5 Pearl source archive.
+# Devario Core: build the v0.3.6 Pearl source archive.
 # One build produces the independently installable shell and login greeter.
 pkgbase=pearl
 pkgname=(pearl pearl-greeter)
-pkgver=0.3.5
+pkgver=0.3.6
 pkgrel=1
 # Preserve upgrade ordering from packages previously numbered 1.0.0rc2.
 epoch=1

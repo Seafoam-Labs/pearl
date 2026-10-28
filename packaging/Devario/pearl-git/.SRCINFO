@@ -1,6 +1,6 @@
 pkgbase = pearl-git
 	pkgdesc = GTK desktop shell exclusively for Aqueous (Git version)
-	pkgver = 0.3.5
+	pkgver = 0.3.6
 	pkgrel = 1
 	epoch = 1
 	url = https://github.com/Seafoam-Labs/pearl
@@ -75,6 +75,8 @@ pkgname = pearl-git
 	depends = systemd>=261.3
 	depends = aqueous>0.7
 	depends = uwsm>=0.26.7
+	optdepends = ddcutil: brightness control for compatible external monitors
+	optdepends = pearl-lang-de: German interface translations (partial coverage)
 	optdepends = pearl-assistant-runtime: optional local launcher answers; system or custom llama-server also supported
 	optdepends = llama-cpp: system runtime for launcher assistant setup
 	optdepends = shelly: assistant runtime installation on Devario
@@ -94,7 +96,8 @@ pkgname = pearl-git
 	optdepends = bluez>=5.87: Bluetooth controls
 	optdepends = upower>=1.91.4: battery status
 	optdepends = power-profiles-daemon>=0.30: power profiles
-	provides = pearl-capture-picker-git=1
+	provides = pearl=1:0.3.6-1
+	provides = pearl-capture-picker=1
 	backup = etc/pam.d/pearl-git
 	backup = etc/pearl-git/portal-policy.conf
 

@@ -1,7 +1,7 @@
 .{
     .name = .pearl_spikes_wasm_plugins,
     .fingerprint = 0x81a283e9751d90f,
-    .version = "0.3.5",
+    .version = "0.3.6",
     .minimum_zig_version = "0.17.0",
     .dependencies = .{
         .translate_c = .{

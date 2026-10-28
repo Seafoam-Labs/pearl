@@ -1,7 +1,7 @@
 .{
     .name = .pearl_translations,
     .fingerprint = 0x257b77044a1516e8,
-    .version = "0.3.5",
+    .version = "0.3.6",
     .minimum_zig_version = "0.17.0",
     .dependencies = .{
         .pearl_ffi = .{ .path = "../bindings/c" },
