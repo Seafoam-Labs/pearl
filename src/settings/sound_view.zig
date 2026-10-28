@@ -141,7 +141,7 @@ pub const View = struct {
         head.setColumnSpacing(16);
         const labels = w.column(3);
         labels.as(gtk.Widget).setHexpand(1);
-        labels.append(w.label(try alloc.dupeZ(u8, device.label), "settings-row-title").as(gtk.Widget));
+        labels.append(w.label(try alloc.dupeSentinel(u8, device.label, 0), "settings-row-title").as(gtk.Widget));
         const detail = w.label("", "pearl-secondary");
         labels.append(detail.as(gtk.Widget));
         head.insert(labels.as(gtk.Widget), -1);
@@ -189,7 +189,7 @@ pub const View = struct {
             head.insert(popup.button.as(gtk.Widget), -1);
             if (hardware) {
                 for (snapshot.devices) |target| if (target.kind == device.kind) {
-                    _ = try self.action(popup.box, try alloc.dupeZ(u8, target.label), try std.fmt.allocPrint(alloc, "{s}:{d}/default", .{ @tagName(target.kind), target.index }), .{ .key = .{ .generation = self.generation, .kind = target.kind, .index = target.index }, .default = true }, popup.popover);
+                    _ = try self.action(popup.box, try alloc.dupeSentinel(u8, target.label, 0), try std.fmt.allocPrint(alloc, "{s}:{d}/default", .{ @tagName(target.kind), target.index }), .{ .key = .{ .generation = self.generation, .kind = target.kind, .index = target.index }, .default = true }, popup.popover);
                     popup.box.as(gtk.Widget).getLastChild().?.setSensitive(@intFromBool(!target.is_default));
                 };
             } else {
@@ -199,7 +199,7 @@ pub const View = struct {
                 var names: std.ArrayList(?[*:0]const u8) = .empty;
                 var targets: std.ArrayList(u32) = .empty;
                 for (snapshot.devices) |target| if (target.kind == targetKind(device.kind)) {
-                    try names.append(alloc, try alloc.dupeZ(u8, target.label));
+                    try names.append(alloc, try alloc.dupeSentinel(u8, target.label, 0));
                     try targets.append(alloc, target.index);
                 };
                 try names.append(alloc, null);
@@ -303,7 +303,7 @@ pub const View = struct {
         }
         var buffer: [1024]u8 = undefined;
         const status = if (snapshot.error_message.len > 0) snapshot.error_message else if (!snapshot.ready) "Audio service unavailable. Reconnecting…" else if (snapshot.truncated) "Some audio devices could not be listed." else if (snapshot.pending) "Applying changes…" else "";
-        self.status.setText(std.fmt.bufPrintZ(&buffer, "{s}", .{status}) catch "Audio unavailable");
+        self.status.setText(std.mem.printSentinel(&buffer, "{s}", .{status}, 0) catch "Audio unavailable");
         self.status.as(gtk.Widget).setVisible(@intFromBool(status.len > 0));
         self.body.as(gtk.Widget).setSensitive(@intFromBool(snapshot.ready));
         for (snapshot.devices) |device| {
@@ -324,7 +324,7 @@ pub const View = struct {
             }
             for ([_]*gtk.Widget{ row.number.as(gtk.Widget), row.scale.as(gtk.Widget), row.mute.as(gtk.Widget) }) |widget| widget.setSensitive(@intFromBool(device.writable));
             row.mute.setChild(w.icon(if (device.muted) "pearl-audio-volume-muted-symbolic" else if (targetKind(device.kind) == .source) "pearl-microphone-symbolic" else "pearl-audio-volume-high-symbolic").as(gtk.Widget));
-            const mute_name = std.fmt.bufPrintZ(&buffer, "{s}: {s}", .{ device.label, if (device.muted) "Unmute" else "Mute" }) catch "Mute";
+            const mute_name = std.mem.printSentinel(&buffer, "{s}: {s}", .{ device.label, if (device.muted) "Unmute" else "Mute" }, 0) catch "Mute";
             w.name(row.mute.as(gtk.Widget), mute_name);
             row.mute.as(gtk.Widget).setTooltipText(mute_name);
             if (device.muted) row.mute.as(gtk.Widget).addCssClass("sound-muted") else row.mute.as(gtk.Widget).removeCssClass("sound-muted");
@@ -336,7 +336,7 @@ pub const View = struct {
                 if (target.is_default) default = target.index;
             };
             const detail = if (hardware) (if (device.is_default) (if (device.kind == .sink) "Default output" else "Default input") else (if (device.kind == .sink) "Output device" else "Input device")) else (if (device.kind == .playback) "Output" else "Input");
-            row.detail.setText(std.fmt.bufPrintZ(&buffer, "{s}{s}{s}{s}{s}", .{ detail, if (hardware) "" else " · ", if (hardware) "" else route, if (device.muted) " · Muted" else "", if (!device.writable) " · Volume unavailable" else "" }) catch "Audio");
+            row.detail.setText(std.mem.printSentinel(&buffer, "{s}{s}{s}{s}{s}", .{ detail, if (hardware) "" else " · ", if (hardware) "" else route, if (device.muted) " · Muted" else "", if (!device.writable) " · Volume unavailable" else "" }, 0) catch "Audio");
             if (row.target) |selector| {
                 var selected_index: c_uint = gtk.INVALID_LIST_POSITION;
                 for (row.targets, 0..) |target, i| if (target == device.target) {

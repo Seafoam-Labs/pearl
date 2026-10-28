@@ -59,7 +59,7 @@ pub const Bar = struct {
     context: *anyopaque,
     action: *const fn (*anyopaque, Event) void,
     groups: [3][:0]u8,
-    widgets: [@typeInfo(policy.Item).@"enum".fields.len]?*gtk.Widget = @splat(null),
+    widgets: [@typeInfo(policy.Item).@"enum".field_names.len]?*gtk.Widget = @splat(null),
     handlers: std.ArrayList(*Button) = .empty,
     workspace_handlers: std.ArrayList(*Button) = .empty,
     workspace_hash: ?u64 = null,
@@ -80,7 +80,7 @@ pub const Bar = struct {
     pub fn create(host: *gtk.Box, client: *Client, output: []const u8, context: *anyopaque, action: @FieldType(Bar, "action"), audio: *@import("../services/audio.zig").Audio, power: *@import("../services/power.zig").Power, network: *@import("../services/network.zig").Network, bluetooth: *@import("../services/bluetooth.zig").Bluetooth, session: *@import("../services/session.zig").Session, plugins: ?*@import("../plugins/manager.zig").Manager, tasks: *const @import("task_model.zig").Snapshot, app_index: *@import("apps.zig").Index, scheduling: *@import("../services/scheduling.zig").Service, weather: ?*@import("../services/weather.zig").Service) !*Bar {
         const self = try a.create(Bar);
         self.* = .{ .scheduling_service = scheduling, .host = host, .tasks = tasks, .app_index = app_index, .plugins = plugins, .session_services = session, .audio_service = audio, .power_service = power, .network_service = network, .bluetooth_service = bluetooth, .weather_service = weather, .client = client, .output = output, .context = context, .action = action, .groups = undefined };
-        self.groups = .{ try a.dupeZ(u8, "launcher,workspaces,title"), try a.dupeZ(u8, "clock"), try a.dupeZ(u8, (policy.Groups{}).right) };
+        self.groups = .{ try a.dupeSentinel(u8, "launcher,workspaces,title", 0), try a.dupeSentinel(u8, "clock", 0), try a.dupeSentinel(u8, (policy.Groups{}).right, 0) };
         try self.build();
         return self;
     }
@@ -156,7 +156,7 @@ pub const Bar = struct {
         var count: usize = 0;
         errdefer for (next[0..count]) |v| a.free(v);
         for ([_][]const u8{ groups.left, groups.center, groups.right }, 0..) |g, i| {
-            next[i] = try a.dupeZ(u8, g);
+            next[i] = try a.dupeSentinel(u8, g, 0);
             count += 1;
         }
         self.clear();
@@ -428,7 +428,7 @@ pub const Bar = struct {
                     },
                 };
                 widget.addCssClass("pearl-bar-item");
-                self.widgets[@intFromEnum(item)] = widget;
+                self.widgets[@backingInt(item)] = widget;
                 box.append(widget);
             }
         }
@@ -455,8 +455,8 @@ pub const Bar = struct {
     fn fit(self: *Bar) void {
         if (self.tray) |tray| tray.setLimit(if (self.compact or self.vertical) 2 else 4);
         if (self.media_label) |label| label.as(gtk.Widget).setVisible(@intFromBool(!self.compact and !self.vertical));
-        if (self.widgets[@intFromEnum(policy.Item.title)]) |v| v.setVisible(@intFromBool(!self.compact and !self.vertical));
-        if (self.widgets[@intFromEnum(policy.Item.overview)]) |v| v.setVisible(@intFromBool(!self.compact));
+        if (self.widgets[@backingInt(policy.Item.title)]) |v| v.setVisible(@intFromBool(!self.compact and !self.vertical));
+        if (self.widgets[@backingInt(policy.Item.overview)]) |v| v.setVisible(@intFromBool(!self.compact));
         self.layoutWorkspaces();
         // Primary controls survive; overview also lives in the control center.
     }
@@ -484,7 +484,7 @@ pub const Bar = struct {
     /// and with it the bar height and the exclusive zone, move on every update.
     fn liveText(self: *Bar, widget: *gtk.Widget) bool {
         inline for (.{ policy.Item.title, policy.Item.keyboard, policy.Item.media, policy.Item.notifications }) |item| {
-            if (self.widgets[@intFromEnum(item)]) |candidate| if (candidate == widget) return true;
+            if (self.widgets[@backingInt(item)]) |candidate| if (candidate == widget) return true;
         }
         return false;
     }
@@ -493,7 +493,7 @@ pub const Bar = struct {
         view.compact = self.thickness < 40;
         view.per_window = self.running_apps_per_window;
         const orientation: gtk.Orientation = if (self.vertical) .vertical else .horizontal;
-        const grid = self.widgets[@intFromEnum(policy.Item.workspaces)];
+        const grid = self.widgets[@backingInt(policy.Item.workspaces)];
         var used: c_int = 64;
         for (self.sections) |maybe| if (maybe) |section| {
             var child = section.getFirstChild();
@@ -534,13 +534,13 @@ pub const Bar = struct {
         self.action(self.context, .{ .pane = .tray });
     }
     pub fn update(self: *Bar) void {
-        if (self.widgets[@intFromEnum(policy.Item.window_switcher)]) |widget| {
+        if (self.widgets[@backingInt(policy.Item.window_switcher)]) |widget| {
             const all = self.client.capabilities.global_window_switcher_v1;
             const n = @import("window_switcher.zig").count(&self.client.model, self.output, all);
             const supported = all or self.client.capabilities.workspace_switcher_v1;
             widget.setSensitive(@intFromBool(supported and (if (all) n > 0 else n > 1)));
             var buffer: [160]u8 = undefined;
-            const title = if (!supported) @import("i18n").dtr("pearl", "Cycle windows requires updated Aqueous") else if (all) (if (n == 0) @import("i18n").dtr("pearl", "No open windows") else std.fmt.bufPrintZ(&buffer, "{s} · {d}", .{ @import("i18n").dtr("pearl", "Cycle windows across all workspaces and displays"), n }) catch "Cycle windows") else if (n == 0) @import("i18n").dtr("pearl", "No open windows on this workspace") else if (n == 1) @import("i18n").dtr("pearl", "Only window on this workspace") else std.fmt.bufPrintZ(&buffer, "{s} · {d}", .{ @import("i18n").dtr("pearl", "Cycle windows on this workspace"), n }) catch "Cycle windows";
+            const title = if (!supported) @import("i18n").dtr("pearl", "Cycle windows requires updated Aqueous") else if (all) (if (n == 0) @import("i18n").dtr("pearl", "No open windows") else std.mem.printSentinel(&buffer, "{s} · {d}", .{ @import("i18n").dtr("pearl", "Cycle windows across all workspaces and displays"), n }, 0) catch "Cycle windows") else if (n == 0) @import("i18n").dtr("pearl", "No open windows on this workspace") else if (n == 1) @import("i18n").dtr("pearl", "Only window on this workspace") else std.mem.printSentinel(&buffer, "{s} · {d}", .{ @import("i18n").dtr("pearl", "Cycle windows on this workspace"), n }, 0) catch "Cycle windows";
             widget.setTooltipText(title);
             w.name(widget, title);
         }
@@ -552,46 +552,46 @@ pub const Bar = struct {
                 count += 1;
             };
             var buf: [20]u8 = undefined;
-            label.setText(std.fmt.bufPrintZ(&buf, "{s}{d}", .{ if (self.session_services.notifications.model.dnd) "− " else "", count }) catch "");
+            label.setText(std.mem.printSentinel(&buf, "{s}{d}", .{ if (self.session_services.notifications.model.dnd) "− " else "", count }, 0) catch "");
         }
         if (self.media_label) |label| label.setText(if (self.session_services.media.current()) |p| p.title.z() else "");
         var service_buffer: [256]u8 = undefined;
         if (self.audio_label) |label| {
             const device = self.audio_service.default(.sink);
-            label.setText(if (device) |d| if (d.mute) @import("i18n").dtr("pearl", "Muted") else std.fmt.bufPrintZ(&service_buffer, "{d}%", .{d.volume}) catch "" else @import("i18n").dtr("pearl", "—"));
-            const widget = self.widgets[@intFromEnum(policy.Item.audio)].?;
+            label.setText(if (device) |d| if (d.mute) @import("i18n").dtr("pearl", "Muted") else std.mem.printSentinel(&service_buffer, "{d}%", .{d.volume}, 0) catch "" else @import("i18n").dtr("pearl", "—"));
+            const widget = self.widgets[@backingInt(policy.Item.audio)].?;
             var detail: [768]u8 = undefined;
-            serviceName(widget, @import("i18n").dtr("pearl", "Open Sound controls"), if (device) |d| std.fmt.bufPrintZ(&detail, "{s} · {s}", .{ d.label.slice(), std.mem.span(label.getText()) }) catch d.label.z() else @import("i18n").dtr("pearl", "Audio unavailable"));
+            serviceName(widget, @import("i18n").dtr("pearl", "Open Sound controls"), if (device) |d| std.mem.printSentinel(&detail, "{s} · {s}", .{ d.label.slice(), std.mem.span(label.getText()) }, 0) catch d.label.z() else @import("i18n").dtr("pearl", "Audio unavailable"));
         }
         if (self.battery_label) |label| {
             const power = self.power_service;
             // An unmeasured charge is shown as absent, never as a fabricated 0%.
             const percent = if (power.percentage_valid) power.percentage else null;
-            label.setText(if (percent) |n| std.fmt.bufPrintZ(&service_buffer, "{d:.0}%", .{n}) catch "—" else @import("i18n").dtr("pearl", "—"));
+            label.setText(if (percent) |n| std.mem.printSentinel(&service_buffer, "{d:.0}%", .{n}, 0) catch "—" else @import("i18n").dtr("pearl", "—"));
             if (self.battery_icon) |glyph| glyph.setFromIconName(presentation.icon(power.battery_state, percent));
-            const widget = self.widgets[@intFromEnum(policy.Item.battery)].?;
+            const widget = self.widgets[@backingInt(policy.Item.battery)].?;
             // Sticky presence: a transient UPower loss keeps the indicator, and a
             // machine that never reported a battery still never grows one.
             widget.setVisible(@intFromBool(power.battery_observed));
             var detail: [192]u8 = undefined;
-            serviceName(widget, @import("i18n").dtr("pearl", "Open Power controls"), std.fmt.bufPrintZ(&detail, "{s} · {s}", .{ std.mem.span(label.getText()), chargeState(power.battery_state) }) catch "");
+            serviceName(widget, @import("i18n").dtr("pearl", "Open Power controls"), std.mem.printSentinel(&detail, "{s} · {s}", .{ std.mem.span(label.getText()), chargeState(power.battery_state) }, 0) catch "");
         }
         if (self.scheduler_label) |label| {
             const service = self.scheduling_service;
             const profile: ?sched_profiles.Profile = if (service.config) |config| if (service.status.profile) |i| config.profiles[i] else null else null;
             const name = if (profile) |value| value.label else "";
             label.setText(switch (service.status.kind) {
-                .running, .off => std.fmt.bufPrintZ(&service_buffer, "{s}", .{if (profile) |value| value.label else @import("i18n").dtr("pearl", "Default")}) catch "",
+                .running, .off => std.mem.printSentinel(&service_buffer, "{s}", .{if (profile) |value| value.label else @import("i18n").dtr("pearl", "Default")}, 0) catch "",
                 .starting => @import("i18n").dtr("pearl", "..."),
                 .failed => @import("i18n").dtr("pearl", "Failed"),
                 .custom => @import("i18n").dtr("pearl", "Custom"),
                 .unavailable => @import("i18n").dtr("pearl", "-"),
             });
-            const widget = self.widgets[@intFromEnum(policy.Item.scheduler)].?;
+            const widget = self.widgets[@backingInt(policy.Item.scheduler)].?;
             // Hidden without profiles, sched_ext support or scx.service.
             widget.setVisible(@intFromBool(service.configured() and service.status.kind != .unavailable));
             var detail: [512]u8 = undefined;
-            serviceName(widget, @import("i18n").dtr("pearl", "Open CPU scheduler profiles"), if (service.status.kind == .running) std.fmt.bufPrintZ(&detail, "{s} - {s}", .{ name, service.describe(&service_buffer) }) catch "" else service.describe(&detail));
+            serviceName(widget, @import("i18n").dtr("pearl", "Open CPU scheduler profiles"), if (service.status.kind == .running) std.mem.printSentinel(&detail, "{s} - {s}", .{ name, service.describe(&service_buffer) }, 0) catch "" else service.describe(&detail));
             if (self.scheduler_dot) |dot| {
                 // Red after a fallback to Default, until a profile is chosen;
                 // amber while starting or a scheduler outside the profiles runs.
@@ -613,7 +613,7 @@ pub const Bar = struct {
                 connected = true;
             };
             label.setText(if (n.peer.snapshot == null) @import("i18n").dtr("pearl", "—") else if (n.pending) @import("i18n").dtr("pearl", "…") else if (connected) @import("i18n").dtr("pearl", "On") else if (n.enabled) @import("i18n").dtr("pearl", "Wi-Fi") else @import("i18n").dtr("pearl", "Off"));
-            const widget = self.widgets[@intFromEnum(policy.Item.network)].?;
+            const widget = self.widgets[@backingInt(policy.Item.network)].?;
             serviceName(widget, @import("i18n").dtr("pearl", "Open Network controls"), if (n.peer.snapshot == null) @import("i18n").dtr("pearl", "Network unavailable") else if (n.pending) @import("i18n").dtr("pearl", "Connecting…") else if (connected) @import("i18n").dtr("pearl", "Connected") else if (n.enabled) @import("i18n").dtr("pearl", "Wi-Fi on") else @import("i18n").dtr("pearl", "Wi-Fi off"));
         }
         if (self.bluetooth_label) |label| {
@@ -622,23 +622,23 @@ pub const Bar = struct {
             for (b.devices[0..b.device_count]) |dev| if (dev.connected) {
                 connected += 1;
             };
-            label.setText(if (b.peer.snapshot == null) @import("i18n").dtr("pearl", "—") else std.fmt.bufPrintZ(&service_buffer, "{d}", .{connected}) catch "");
-            const widget = self.widgets[@intFromEnum(policy.Item.bluetooth)].?;
+            label.setText(if (b.peer.snapshot == null) @import("i18n").dtr("pearl", "—") else std.mem.printSentinel(&service_buffer, "{d}", .{connected}, 0) catch "");
+            const widget = self.widgets[@backingInt(policy.Item.bluetooth)].?;
             var powered = false;
             for (b.adapters[0..b.adapter_count]) |adapter| powered = powered or adapter.powered;
             var detail: [128]u8 = undefined;
-            serviceName(widget, @import("i18n").dtr("pearl", "Open Bluetooth controls"), if (b.peer.snapshot == null) @import("i18n").dtr("pearl", "Bluetooth unavailable") else if (!powered) @import("i18n").dtr("pearl", "Bluetooth off") else std.fmt.bufPrintZ(&detail, "{s} · {d} {s}", .{ @import("i18n").dtr("pearl", "Bluetooth on"), connected, @import("i18n").dtr("pearl", "connected") }) catch "");
+            serviceName(widget, @import("i18n").dtr("pearl", "Open Bluetooth controls"), if (b.peer.snapshot == null) @import("i18n").dtr("pearl", "Bluetooth unavailable") else if (!powered) @import("i18n").dtr("pearl", "Bluetooth off") else std.mem.printSentinel(&detail, "{s} · {d} {s}", .{ @import("i18n").dtr("pearl", "Bluetooth on"), connected, @import("i18n").dtr("pearl", "connected") }, 0) catch "");
         }
         if (self.weather_label) |label| if (self.weather_service) |weather| {
-            const widget = self.widgets[@intFromEnum(policy.Item.weather)].?;
+            const widget = self.widgets[@backingInt(policy.Item.weather)].?;
             const action = @import("i18n").dtr("pearl", "Open weather forecast");
             var detail: [384]u8 = undefined;
             if (weather.snapshot) |forecast| {
                 const snapshot = forecast.current;
                 // An unfetched temperature is shown as pending, never invented.
-                label.setText(std.fmt.bufPrintZ(&service_buffer, "{d:.0}°", .{snapshot.temperature}) catch "");
+                label.setText(std.mem.printSentinel(&service_buffer, "{d:.0}°", .{snapshot.temperature}, 0) catch "");
                 if (self.weather_icon) |glyph| glyph.setFromIconName(@import("weather_policy.zig").icon(snapshot.code, !snapshot.is_day));
-                serviceName(widget, action, std.fmt.bufPrintZ(&detail, "{s} · {s} · {s}", .{ weather.config.location, @import("weather_policy.zig").condition(snapshot.code), std.mem.span(label.getText()) }) catch "");
+                serviceName(widget, action, std.mem.printSentinel(&detail, "{s} · {s} · {s}", .{ weather.config.location, @import("weather_policy.zig").condition(snapshot.code), std.mem.span(label.getText()) }, 0) catch "");
             } else {
                 if (self.weather_icon) |glyph| glyph.setFromIconName("pearl-weather-clear-symbolic");
                 label.setText(if (weather.failed) @import("i18n").dtr("pearl", "—") else @import("i18n").dtr("pearl", "…"));
@@ -651,7 +651,7 @@ pub const Bar = struct {
                 if (f.seat.focus_kind == .window) if (f.window) |window| if (window.output) |output| if (std.mem.eql(u8, output, self.output)) break :blk window.title orelse window.app_id orelse "";
                 break :blk if (f.seat.focus_kind == .layer_surface) "Pearl" else @import("i18n").dtr("pearl", "Desktop");
             } else @import("i18n").dtr("pearl", "Desktop");
-            const text = a.dupeZ(u8, title) catch return;
+            const text = a.dupeSentinel(u8, title, 0) catch return;
             defer a.free(text);
             label.setText(text);
             label.as(gtk.Widget).setTooltipText(text);
@@ -662,7 +662,7 @@ pub const Bar = struct {
             // A virtual keyboard can publish an empty layout name; show the same
             // placeholder as for a missing keyboard instead of an empty control.
             const text = if (layout.len != 0) layout else "—";
-            const value = a.dupeZ(u8, text) catch return;
+            const value = a.dupeSentinel(u8, text, 0) catch return;
             defer a.free(value);
             if (self.vertical) {
                 // Keep a compact language indicator; the full layout stays in
@@ -673,11 +673,11 @@ pub const Bar = struct {
                 for (prefix, 0..) |byte, i| short[i] = std.ascii.toUpper(byte);
                 label.setText(&short);
             } else label.setText(value);
-            self.widgets[@intFromEnum(policy.Item.keyboard)].?.setTooltipText(value);
-            w.name(self.widgets[@intFromEnum(policy.Item.keyboard)].?, value);
-            self.widgets[@intFromEnum(policy.Item.keyboard)].?.setSensitive(@intFromBool(keyboard != null and self.client.capabilities.keyboard));
+            self.widgets[@backingInt(policy.Item.keyboard)].?.setTooltipText(value);
+            w.name(self.widgets[@backingInt(policy.Item.keyboard)].?, value);
+            self.widgets[@backingInt(policy.Item.keyboard)].?.setSensitive(@intFromBool(keyboard != null and self.client.capabilities.keyboard));
         }
-        if (self.widgets[@intFromEnum(policy.Item.workspaces)]) |host| {
+        if (self.widgets[@backingInt(policy.Item.workspaces)]) |host| {
             const list = self.client.model.workspaces(a, self.output) catch return;
             defer a.free(list);
             const active = self.client.model.activeWorkspace(self.output);
@@ -707,7 +707,7 @@ pub const Bar = struct {
                 freeHandlers(&self.workspace_handlers);
                 for (visible, 0..) |ws, i| {
                     var buffer: [20]u8 = undefined;
-                    const number = std.fmt.bufPrintZ(&buffer, "{d}", .{ws.number}) catch unreachable;
+                    const number = std.mem.printSentinel(&buffer, "{d}", .{ws.number}, 0) catch unreachable;
                     const button = self.makeButton(.{ .workspace = ws.id }, null, number, true) catch continue;
                     const tooltip = std.fmt.allocPrintSentinel(a, "{s} · {s}", .{ ws.name, ws.id }, 0) catch continue;
                     defer a.free(tooltip);
@@ -723,7 +723,7 @@ pub const Bar = struct {
         self.fitTasks();
     }
     fn layoutWorkspaces(self: *Bar) void {
-        const host = self.widgets[@intFromEnum(policy.Item.workspaces)] orelse return;
+        const host = self.widgets[@backingInt(policy.Item.workspaces)] orelse return;
         const orientation: gtk.Orientation = if (self.vertical) .vertical else .horizontal;
         // Account for the host margins, island padding, group gaps and sibling
         // controls. Live text ellipsizes to leave room.
@@ -782,7 +782,7 @@ pub const Bar = struct {
         w.name(widget, action);
         widget.as(gtk.Accessible).updateProperty(.description, detail.ptr, @as(c_int, -1));
         var buffer: [1024]u8 = undefined;
-        widget.setTooltipText(std.fmt.bufPrintZ(&buffer, "{s} · {s}", .{ action, detail }) catch action);
+        widget.setTooltipText(std.mem.printSentinel(&buffer, "{s} · {s}", .{ action, detail }, 0) catch action);
     }
     // Compiled only by the integration hook: measure actual allocated children.
     pub fn layoutReport(self: *Bar, alloc: std.mem.Allocator, keyboard_mode: []const u8) ![]const u8 {
@@ -805,7 +805,7 @@ pub const Bar = struct {
             while (child) |v| : (child = v.getNextSibling()) {
                 if (v.getVisible() != 0) try parts.append(alloc, allocation.read(v, self.host.as(gtk.Widget)));
             }
-            try items.append(alloc, .{ .name = @tagName(@as(policy.Item, @enumFromInt(i))), .rect = allocation.read(widget, self.host.as(gtk.Widget)), .parts = try parts.toOwnedSlice(alloc) });
+            try items.append(alloc, .{ .name = @tagName(@as(policy.Item, @fromBackingInt(@intCast(i)))), .rect = allocation.read(widget, self.host.as(gtk.Widget)), .parts = try parts.toOwnedSlice(alloc) });
         };
         for (self.clock_views.items) |view| {
             const widget = view.button.as(gtk.Widget);

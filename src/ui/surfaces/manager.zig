@@ -1162,7 +1162,7 @@ pub const Manager = struct {
                 errdefer a.destroy(o);
                 const id = try a.dupe(u8, record.id);
                 errdefer a.free(id);
-                const connector = try a.dupeZ(u8, record.name);
+                const connector = try a.dupeSentinel(u8, record.name, 0);
                 errdefer a.free(connector);
                 _ = found.?.ref();
                 o.* = .{ .manager = self, .id = id, .connector = connector, .monitor = found.?, .bounds = bounds, .usable = usable, .scale = record.scale };
@@ -1615,7 +1615,7 @@ pub const Manager = struct {
         const destination = if (state.switcher_destination_output) |destination_id| self.client.model.get(.output, destination_id) else self.client.model.get(.output, output.id);
         const location = try std.fmt.allocPrintSentinel(a, "{d} / {d} · {s} {s} · {s}", .{ state.switcher_position, state.switcher_total, @import("i18n").dtr("pearl", "Workspace"), if (workspace) |ws| ws.name else "", if (destination) |dest| dest.name else "" }, 0);
         defer a.free(location);
-        const title_z = try a.dupeZ(u8, title);
+        const title_z = try a.dupeSentinel(u8, title, 0);
         defer a.free(title_z);
         const label = try std.fmt.allocPrintSentinel(a, "{s} · {s}", .{ title, location }, 0);
         defer a.free(label);
@@ -1925,7 +1925,7 @@ pub const Manager = struct {
                     return err;
                 };
                 var buffer: [256]u8 = undefined;
-                const label = gtk.Label.new(try std.fmt.bufPrintZ(&buffer, "{d}  ·  {s}", .{ @import("../../config/aqueous_display_setup.zig").number(output, i + 1), connector }));
+                const label = gtk.Label.new(try std.mem.printSentinel(&buffer, "{d}  ·  {s}", .{ @import("../../config/aqueous_display_setup.zig").number(output, i + 1), connector }, 0));
                 label.as(gtk.Widget).addCssClass("pearl-title");
                 object.ext.cast(gtk.Box, surface.panel).?.append(label.as(gtk.Widget));
                 surface.window.present();
@@ -2391,7 +2391,7 @@ pub const Manager = struct {
                 const o = try self.selected(request.output);
                 const edge = request.edge.?;
                 try o.reservations.frame(edge, request.size.?);
-                const index = @intFromEnum(edge);
+                const index = @backingInt(edge);
                 if (o.frames[index]) |s| {
                     s.destroy();
                     o.frames[index] = null;

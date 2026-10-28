@@ -53,7 +53,7 @@ pub const Layout = struct {
     }
     pub fn find(self: Layout, id: []const u8) ?struct { group: Group, index: usize } {
         for (self.items, 0..) |list, g| for (list.items, 0..) |item, i| {
-            if (std.mem.eql(u8, item, id)) return .{ .group = @enumFromInt(g), .index = i };
+            if (std.mem.eql(u8, item, id)) return .{ .group = @fromBackingInt(@intCast(g)), .index = i };
         };
         return null;
     }
@@ -69,30 +69,30 @@ pub const Layout = struct {
         switch (action) {
             .add => |to| {
                 if (found != null) return error.AlreadyPlaced;
-                try next.items[@intFromEnum(to)].append(a, try a.dupe(u8, id));
+                try next.items[@backingInt(to)].append(a, try a.dupe(u8, id));
             },
             .place => |target| {
                 var index = target.index;
                 if (found) |pos| {
-                    const item = next.items[@intFromEnum(pos.group)].orderedRemove(pos.index);
+                    const item = next.items[@backingInt(pos.group)].orderedRemove(pos.index);
                     // The index is expressed against the list before removal.
                     if (pos.group == target.group and pos.index < index) index -= 1;
-                    const dest = &next.items[@intFromEnum(target.group)];
+                    const dest = &next.items[@backingInt(target.group)];
                     try dest.insert(a, @min(index, dest.items.len), item);
                 } else {
-                    const dest = &next.items[@intFromEnum(target.group)];
+                    const dest = &next.items[@backingInt(target.group)];
                     try dest.insert(a, @min(index, dest.items.len), try a.dupe(u8, id));
                 }
             },
             else => {
                 const pos = found orelse return error.WidgetNotFound;
-                const list = &next.items[@intFromEnum(pos.group)];
+                const list = &next.items[@backingInt(pos.group)];
                 switch (action) {
                     .remove => _ = list.orderedRemove(pos.index),
                     .move => |to| {
                         if (to == pos.group) return error.SameGroup;
                         const item = list.orderedRemove(pos.index);
-                        try next.items[@intFromEnum(to)].append(a, item);
+                        try next.items[@backingInt(to)].append(a, item);
                     },
                     .earlier, .later => {
                         if ((action == .earlier and pos.index == 0) or (action == .later and pos.index + 1 == list.items.len)) return error.OrderBoundary;
@@ -223,20 +223,20 @@ test "bar operations enforce serialized byte and plugin count limits before comm
     for (0..16) |i| layout = try layout.change(a, try std.fmt.allocPrint(a, "plugin:p{d}/main", .{i}), .{ .add = .right });
     try std.testing.expectError(error.InvalidGroups, layout.change(a, "plugin:extra/main", .{ .add = .center }));
     var large: std.ArrayList([]const u8) = .empty;
-    for (0..7) |i| try large.append(a, try std.fmt.allocPrint(a, "plugin:{s}{d}/main", .{ "p" ** 57, i }));
+    for (0..7) |i| try large.append(a, try std.fmt.allocPrint(a, "plugin:{s}{d}/main", .{ @import("test_strings").string("p", 57), i }));
     const text = try std.mem.join(a, ",", large.items);
     var full = try Layout.parse(a, .{ .left = "launcher", .center = "", .right = text });
     full = try full.change(a, "clock", .{ .add = .right });
     try std.testing.expectError(error.InvalidGroups, full.change(a, "plugin:overflow/main", .{ .add = .right }));
 }
 test "bar plugin catalog requires current approval and bar placement" {
-    const plugin: Plugin = .{ .id = "demo", .name = "Demo", .digest = "a" ** 64, .available = true, .status = "active" };
-    var config: @import("../plugins/model.zig").Config = .{ .id = "demo", .enabled = true, .digest = "a" ** 64 };
+    const plugin: Plugin = .{ .id = "demo", .name = "Demo", .digest = @import("test_strings").string("a", 64), .available = true, .status = "active" };
+    var config: @import("../plugins/model.zig").Config = .{ .id = "demo", .enabled = true, .digest = @import("test_strings").string("a", 64) };
     try std.testing.expect(eligible(.{ .plugins = .{ .entries = (&config)[0..1] } }, plugin));
     config.placement.mode = .overlay;
     try std.testing.expect(!eligible(.{ .plugins = .{ .entries = (&config)[0..1] } }, plugin));
     config.placement.mode = .bar;
-    config.digest = "b" ** 64;
+    config.digest = @import("test_strings").string("b", 64);
     try std.testing.expect(!eligible(.{ .plugins = .{ .entries = (&config)[0..1] } }, plugin));
 }
 
@@ -246,8 +246,8 @@ test "bar catalog is optional and unavailable or unapproved plugins cannot be ad
     const alloc = arena.allocator();
     const legacy = try std.json.parseFromSliceLeaky(Catalog, alloc, "{\"summary\":\"\",\"rows\":[]}", .{ .ignore_unknown_fields = true });
     try std.testing.expect(legacy.bar_widgets == null);
-    var plugin: Plugin = .{ .id = "demo", .name = "Demo", .digest = "a" ** 64, .available = false, .status = "unavailable" };
-    var config: @import("../plugins/model.zig").Config = .{ .id = "demo", .enabled = true, .digest = "a" ** 64 };
+    var plugin: Plugin = .{ .id = "demo", .name = "Demo", .digest = @import("test_strings").string("a", 64), .available = false, .status = "unavailable" };
+    var config: @import("../plugins/model.zig").Config = .{ .id = "demo", .enabled = true, .digest = @import("test_strings").string("a", 64) };
     try std.testing.expect(!eligible(.{ .plugins = .{ .entries = (&config)[0..1] } }, plugin));
     plugin.available = true;
     config.enabled = false;

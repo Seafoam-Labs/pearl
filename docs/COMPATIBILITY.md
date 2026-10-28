@@ -14,13 +14,36 @@ Qt Quick/Kirigami palette inheritance is partial; Dolphin/Kate, KDE-runtime Flat
 and physical login remain unverified. See [Qt theming](QT_THEMING.md) and
 [current evidence](../artifacts/qtengine/README.md).
 
-The current integration pins Zig **0.16.0**, Aqueous
-`88587243059d58d72dd0fe2146d0ebdb64f26474` and aqueous-config **0.8.2**.
-Matching compositor/helper/aqueousctl and freshly patched wlroots hashes are in
-[release metadata](../packaging/release.json) and the private build metadata
-under `.cache/aqueous-activity-production`. [Activity integration evidence](PLUGIN_INPUT_ACTIVITY_VALIDATION.md)
-records the latest checks; earlier [0.8.2 evidence](../artifacts/aqueous-082/README.md)
-applies to its recorded binaries.
+The current integration pins Zig **0.17.0**, Aqueous
+`debc0353e745890f205cd399613f942f83e34986`, whose aqueous-config is **1.0.12**.
+The supported helper version floor remains **0.8.2**.
+The fixture builder uses `.cache/aqueous-zig17-debc035`; its `metadata.json`
+records the exact commands and binary hashes. This published merge has the same
+Git source tree as the previously tested local migration commit, so the recorded
+binary hashes are retained. Prior [activity integration evidence](PLUGIN_INPUT_ACTIVITY_VALIDATION.md)
+and [0.8.2 evidence](../artifacts/aqueous-082/README.md) apply only to their
+recorded binaries and do not qualify the new toolchain for release.
+
+The Zig 0.17 migration uses upstream zig-wayland **0.7.0**, Ghostty GObject
+**0.11.0-zig-0.17.0-2026-10-02-38-1**, and translate-c **2.0.2**.
+The GIR generator uses upstream's Zig 0.17 branch at
+`4272fe9e0a1b7d8c0e6bd8ffe258e787b80ed038`. URLs and integrity hashes are
+pinned in `build.zig.zon`. No dependency implementation was vendored.
+
+Migration checks on October 28, 2026 passed the fast suite (including 323 core
+tests), the production build, Phyto/Dome/Coral
+builds and unit tests, native binding regeneration, language packs, portal
+settings, lifecycle and lock integration, optional greeter process/session/sync
+checks, and C/Zig WebAssembly probes. Package staging also passed. The Settings
+application integration still fails when GTK 4.24.1 reports duplicate presentation
+timings while navigating the narrow window's popup; its fatal-warning policy
+remains enabled. A client-side Wayland trace shows separate feedback objects for
+the parent and popup, presented about 16 ms apart, rather than a duplicate event
+on one feedback object. GTK shares their frame clock but deduplicates feedback
+within each surface's presentation tracker. The GTK fix to validate is to
+coordinate feedback across surfaces sharing a frame clock/frame number, including
+discarded feedback and popup teardown. These checks do not replace full release
+qualification.
 
 Modern writes negotiate structured results, receipts, impact and recoverable commits.
 Collection-only edits additionally use `protected_collection_apply_v1` and
@@ -180,8 +203,8 @@ Build Pearl from the repository root:
 
 ```sh
 export ZIG_GLOBAL_CACHE_DIR="$PWD/.cache/zig"
-zig build -Doptimize=ReleaseSafe
-zig build test-bindings -Doptimize=ReleaseSafe
+zig build -Doptimize=safe
+zig build test-bindings -Doptimize=safe
 python3 scripts/generate-bindings.py --check
 ```
 
@@ -191,7 +214,7 @@ The Aqueous test binary was built with the existing patched wlroots installation
 PKG_CONFIG_PATH=/home/zoey/RiderProjects/Aqueous/compositor/.deps/wlroots-render-hook/lib/pkgconfig \
 zig build --build-file /home/zoey/RiderProjects/Aqueous/compositor/build.zig \
   --cache-dir "$PWD/.cache/aqueous-build" --prefix "$PWD/.cache/aqueous" \
-  -Dvulkan-effects=false -Dman-pages=false -Doptimize=ReleaseSafe -Dllvm
+  -Dvulkan-effects=false -Dman-pages=false -Doptimize=safe -Dllvm
 ```
 
 On another machine, prepare the pinned Aqueous source and patched wlroots in a
@@ -229,7 +252,7 @@ outputs to 720px usable height. The generated lock API reports both monitors,
 acquires the isolated lock, and releases it with corresponding compositor state.
 It has no authentication and must not be reused as the production locker.
 
-On the AMD Ryzen 9 9950X3D / 32-thread reference machine, ReleaseSafe spike bar
+On the AMD Ryzen 9 9950X3D / 32-thread reference machine, safe spike bar
 readiness was **30.56 ms** from process launch to observed reservations. A single
 **60-second** idle sample measured **0 CPU ticks** and **16,091 KiB PSS** after the
 interaction/lock probes. This accounts for the bar process only and proportional

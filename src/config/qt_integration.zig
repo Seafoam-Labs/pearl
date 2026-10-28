@@ -65,7 +65,7 @@ pub fn directory(a: std.mem.Allocator, path: []const u8, create: bool) !c_int {
     var parts = std.mem.tokenizeScalar(u8, path, '/');
     while (parts.next()) |part| {
         if (std.mem.eql(u8, part, ".") or std.mem.eql(u8, part, "..")) return error.InvalidQtPath;
-        const z = try a.dupeZ(u8, part);
+        const z = try a.dupeSentinel(u8, part, 0);
         var next = std.c.openat(fd, z, .{ .ACCMODE = .RDONLY, .DIRECTORY = true, .CLOEXEC = true, .NOFOLLOW = true }, @as(c_uint, 0));
         if (next < 0 and std.posix.errno(next) == .NOENT and create) {
             if (std.c.mkdirat(fd, z, 0o700) != 0 and std.posix.errno(-1) != .EXIST) return error.QtDirectoryUnavailable;
@@ -192,10 +192,10 @@ fn probe(a: std.mem.Allocator, root: []const u8, version: []const u8, p: model.P
     const sibling = try std.fmt.allocPrintSentinel(a, "{s}/pearl-qt{s}-probe", .{ std.fs.path.dirname(own[0..@intCast(n)]).?, version }, 0);
     const installed = try std.fmt.allocPrintSentinel(a, "/usr/lib/pearl/pearl-qt{s}-probe", .{version}, 0);
     const executable = if (glib.fileTest(sibling, .{ .is_executable = true }) != 0) sibling else installed;
-    const family = try a.dupeZ(u8, p.font);
+    const family = try a.dupeSentinel(u8, p.font, 0);
     const size = try std.fmt.allocPrintSentinel(a, "{d}", .{p.font_size}, 0);
     const existing = try std.fmt.allocPrintSentinel(a, "{s}/qtengine/config.json", .{root}, 0);
-    const icon = try a.dupeZ(u8, p.qt.icon_theme);
+    const icon = try a.dupeSentinel(u8, p.qt.icon_theme, 0);
     const result = try helper.run(a, &.{ executable, family, size, existing, icon }, null, cancel, 3000);
     if (!result.success or result.stdout.len > 4096) return error.QtProbeFailed;
     const value = try std.json.parseFromSliceLeaky(Probe, a, result.stdout, .{});
@@ -256,7 +256,7 @@ fn restoreLegacy(a: std.mem.Allocator, root: []const u8, state_fd: c_int, versio
 pub fn reconcile(a: std.mem.Allocator, root: []const u8, p: model.Preferences, palette: theme.Palette, cancel: *gio.Cancellable, reviewed_digest: ?[64]u8) !qt.Status {
     var status: qt.Status = .{ .gtk_fallback = p.qt.enabled and p.qt.palette == .follow_pearl and p.theme.mode == .gtk };
     const state_root = try std.fmt.allocPrint(a, "{s}/pearl/qt", .{root});
-    if (!p.qt.enabled and glib.fileTest(try a.dupeZ(u8, state_root), .{ .exists = true }) == 0) return status;
+    if (!p.qt.enabled and glib.fileTest(try a.dupeSentinel(u8, state_root, 0), .{ .exists = true }) == 0) return status;
     const state_fd = try directory(a, state_root, p.qt.enabled);
     defer _ = std.c.close(state_fd);
     const lock = std.c.openat(state_fd, "writer.lock", .{ .ACCMODE = .RDWR, .CREAT = true, .NOFOLLOW = true, .CLOEXEC = true }, @as(c_uint, 0o600));
@@ -392,6 +392,6 @@ fn collectPalettes(a: std.mem.Allocator, root: []const u8, state_fd: c_int, canc
         const prefix = if (scheme) "[General]\nName=Pearl\n" else "[ColorScheme]\n";
         if (!std.mem.startsWith(u8, file.bytes, prefix) or !std.mem.eql(u8, io.digest(file.bytes)[0..16], if (scheme) name[7..23] else name[10..26])) continue;
         if (cancel.isCancelled() != 0) return error.Cancelled;
-        _ = std.c.unlinkat(state_fd, try a.dupeZ(u8, name), 0);
+        _ = std.c.unlinkat(state_fd, try a.dupeSentinel(u8, name, 0), 0);
     }
 }

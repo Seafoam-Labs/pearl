@@ -1,8 +1,6 @@
 //! Regional calendar policy uses the active LC_TIME data, independently of UI packs.
 const std = @import("std");
-const c = @cImport({
-    @cInclude("langinfo.h");
-});
+const c = @import("pearl_libc");
 /// ISO index: Monday = 0, Sunday = 6. Unknown libc data preserves Monday.
 pub fn firstWeekday() u32 {
     if (!@hasDecl(c, "_NL_TIME_FIRST_WEEKDAY") or !@hasDecl(c, "_NL_TIME_WEEK_1STDAY")) return 0;

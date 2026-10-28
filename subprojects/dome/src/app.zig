@@ -950,7 +950,7 @@ pub const App = struct {
     fn removeDetailBindings(self: *App) void {
         var i: usize = 0;
         while (i < self.bindings.items.len) {
-            if (@intFromEnum(self.bindings.items[i].field) >= @intFromEnum(Field.proc_cpu)) {
+            if (@backingInt(self.bindings.items[i].field) >= @backingInt(Field.proc_cpu)) {
                 _ = self.bindings.swapRemove(i);
             } else i += 1;
         }
@@ -1285,7 +1285,7 @@ pub const App = struct {
         u.append(area, u.label(@import("i18n").dtr("dome", "Appearance & monitoring"), "title"));
         const themes = [_]?[*:0]const u8{ @import("i18n").dtr("dome", "Follow Pearl"), @import("i18n").dtr("dome", "Native GTK"), @import("i18n").dtr("dome", "Light"), @import("i18n").dtr("dome", "Dark"), null };
         const selector = c.gtk_drop_down_new_from_strings(@ptrCast(&themes)).?;
-        c.gtk_drop_down_set_selected(u.cast(c.GtkDropDown, selector), @intFromEnum(self.prefs.theme));
+        c.gtk_drop_down_set_selected(u.cast(c.GtkDropDown, selector), @backingInt(self.prefs.theme));
         self.theme_selector = selector;
         u.append(area, u.label(@import("i18n").dtr("dome", "Appearance"), null));
         u.append(area, selector);
@@ -1314,7 +1314,7 @@ pub const App = struct {
         if (response == c.GTK_RESPONSE_APPLY and self.service_generation == self.services.generation) self.services.action(self.service_target.z(), self.service_action.z());
         if (response == 43) {
             const selected = c.gtk_drop_down_get_selected(u.cast(c.GtkDropDown, self.theme_selector.?));
-            self.prefs.theme = if (selected < std.meta.tags(Preferences.Theme).len) @enumFromInt(selected) else .follow_pearl;
+            self.prefs.theme = if (selected < std.meta.tags(Preferences.Theme).len) @fromBackingInt(@intCast(selected)) else .follow_pearl;
             self.prefs.compact = c.gtk_check_button_get_active(u.cast(c.GtkCheckButton, self.pref_widgets[0].?)) != 0;
             self.prefs.bits = c.gtk_check_button_get_active(u.cast(c.GtkCheckButton, self.pref_widgets[1].?)) != 0;
             self.prefs.per_core = c.gtk_check_button_get_active(u.cast(c.GtkCheckButton, self.pref_widgets[2].?)) != 0;
@@ -1458,7 +1458,7 @@ pub const App = struct {
                 .dialog_pearl_class = if (self.dialog) |dialog| c.gtk_widget_has_css_class(dialog, "pearl") != 0 else false,
             }, .{}) catch return;
             defer u.a.free(theme);
-            const z = u.a.dupeZ(u8, theme) catch return;
+            const z = u.a.dupeSentinel(u8, theme, 0) catch return;
             defer u.a.free(z);
             c.g_print("DOME_THEME %s\n", z.ptr);
         }

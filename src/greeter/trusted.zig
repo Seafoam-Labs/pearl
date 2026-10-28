@@ -10,7 +10,7 @@ pub fn open(path: []const u8, directory: bool) !c_int {
     var parts = std.mem.tokenizeScalar(u8, path, '/');
     while (parts.next()) |part| {
         if (std.mem.eql(u8, part, ".") or std.mem.eql(u8, part, "..")) return error.InvalidPath;
-        const z = try a.dupeZ(u8, part);
+        const z = try a.dupeSentinel(u8, part, 0);
         defer a.free(z);
         const last = parts.peek() == null;
         const next = std.c.openat(fd, z, .{ .ACCMODE = .RDONLY, .CLOEXEC = true, .NOFOLLOW = true, .NONBLOCK = true, .DIRECTORY = !last or directory }, @as(c_uint, 0));

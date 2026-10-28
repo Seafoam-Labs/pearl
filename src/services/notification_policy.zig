@@ -155,7 +155,7 @@ pub fn pairAction(key: []const u8, caption: []const u8) Pair {
 /// Failures say "rejected", not "reloaded", and stay visible.
 pub fn compositorReloadAnnouncement(r: Record) bool {
     if (!std.ascii.eqlIgnoreCase(r.app.slice(), "Aqueous")) return false;
-    return std.ascii.indexOfIgnoreCase(r.summary.slice(), "reloaded") != null;
+    return std.ascii.findIgnoreCase(r.summary.slice(), "reloaded") != null;
 }
 
 test "action captions that read as blank are dropped, readable ones are not" {
@@ -164,7 +164,7 @@ test "action captions that read as blank are dropped, readable ones are not" {
         const caption = sanitize(160, raw);
         try t.expect(!usableAction(caption.slice()));
     }
-    const long = "x" ** 160;
+    const long = @import("test_strings").string("x", 160);
     for (&[_][]const u8{ "Open", "Öffnen", "a", long, "\xc2\xa0", " \xc2\xa0 " }) |raw| {
         const caption = sanitize(160, raw);
         try t.expect(usableAction(caption.slice()));
@@ -181,7 +181,7 @@ test "an unreadable caption hides a pair but the reserved key still registers" {
         .{ .key = "open", .raw = " ", .want = .skip },
         .{ .key = "", .raw = "", .want = .skip },
         .{ .key = "", .raw = "Open", .want = .render },
-        .{ .key = "k" ** 97, .raw = " ", .want = .skip },
+        .{ .key = @import("test_strings").string("k", 97), .raw = " ", .want = .skip },
         .{ .key = "DEFAULT", .raw = " ", .want = .skip },
         .{ .key = "default", .raw = "\xc2\xa0", .want = .render },
     };

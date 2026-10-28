@@ -187,9 +187,9 @@ pub const View = struct {
                 const source = self.sources[index];
                 var memory = std.heap.ArenaAllocator.init(a);
                 defer memory.deinit();
-                self.source_id.as(gtk.Editable).setText(try memory.allocator().dupeZ(u8, source.id));
-                self.source_name.as(gtk.Editable).setText(try memory.allocator().dupeZ(u8, source.name));
-                self.source_url.as(gtk.Editable).setText(try memory.allocator().dupeZ(u8, source.url));
+                self.source_id.as(gtk.Editable).setText(try memory.allocator().dupeSentinel(u8, source.id, 0));
+                self.source_name.as(gtk.Editable).setText(try memory.allocator().dupeSentinel(u8, source.name, 0));
+                self.source_url.as(gtk.Editable).setText(try memory.allocator().dupeSentinel(u8, source.url, 0));
                 try self.perform(.community, 0);
             },
             .source_add => try self.send(.{ .action = .source_add, .id = entry(self.source_id), .name = entry(self.source_name), .url = entry(self.source_url) }),
@@ -268,7 +268,7 @@ pub const View = struct {
     }
     fn matches(self: *View, name: []const u8, author: []const u8) bool {
         const query = entry(self.search);
-        return query.len == 0 or std.ascii.indexOfIgnoreCase(name, query) != null or std.ascii.indexOfIgnoreCase(author, query) != null;
+        return query.len == 0 or std.ascii.findIgnoreCase(name, query) != null or std.ascii.findIgnoreCase(author, query) != null;
     }
     fn render(self: *View) !void {
         while (self.list.as(gtk.Widget).getFirstChild()) |child| self.list.remove(child);
@@ -282,7 +282,7 @@ pub const View = struct {
                 const box = w.column(4);
                 self.list.append(box.as(gtk.Widget));
                 box.append(w.label(try std.fmt.allocPrintSentinel(alloc, "{s} · {s} · {s}", .{ r.name, r.version, r.author }, 0), "pearl-card-title").as(gtk.Widget));
-                if (r.description.len > 0) box.append(w.label(try alloc.dupeZ(u8, r.description), "pearl-secondary").as(gtk.Widget));
+                if (r.description.len > 0) box.append(w.label(try alloc.dupeSentinel(u8, r.description, 0), "pearl-secondary").as(gtk.Widget));
                 box.append(w.label(try std.fmt.allocPrintSentinel(alloc, "{s} · {s}", .{ r.license, r.source }, 0), "pearl-secondary").as(gtk.Widget));
                 if (!r.requires.supported()) box.append(w.label(@import("i18n").dtr("pearl", "Requires an unsupported theme API"), "pearl-secondary").as(gtk.Widget)) else try self.button(box, @import("i18n").dtr("pearl", "Download / update"), .install, i, true);
             }
@@ -295,7 +295,7 @@ pub const View = struct {
                 self.list.append(box.as(gtk.Widget));
                 box.append(w.label(try std.fmt.allocPrintSentinel(alloc, "{s} · {s} · {s}", .{ e.name, e.version, e.author }, 0), "pearl-card-title").as(gtk.Widget));
                 if (e.error_code) |code| {
-                    box.append(w.label(try alloc.dupeZ(u8, code), "pearl-secondary").as(gtk.Widget));
+                    box.append(w.label(try alloc.dupeSentinel(u8, code, 0), "pearl-secondary").as(gtk.Widget));
                     continue;
                 }
                 box.append(w.label(try std.fmt.allocPrintSentinel(alloc, "{s}{s}{s}", .{ if (e.dark) "Dark " else "", if (e.light) "Light " else "", if (e.style) "Widget style" else "Palette" }, 0), "pearl-secondary").as(gtk.Widget));
@@ -412,9 +412,9 @@ pub const View = struct {
                 self.revision = result.revision;
                 if (!self.automatic_refresh) self.community = false;
                 if (result.sources.len > 0 and entry(self.source_id).len == 0) {
-                    self.source_id.as(gtk.Editable).setText(try alloc.dupeZ(u8, result.sources[0].id));
-                    self.source_name.as(gtk.Editable).setText(try alloc.dupeZ(u8, result.sources[0].name));
-                    self.source_url.as(gtk.Editable).setText(try alloc.dupeZ(u8, result.sources[0].url));
+                    self.source_id.as(gtk.Editable).setText(try alloc.dupeSentinel(u8, result.sources[0].id, 0));
+                    self.source_name.as(gtk.Editable).setText(try alloc.dupeSentinel(u8, result.sources[0].name, 0));
+                    self.source_url.as(gtk.Editable).setText(try alloc.dupeSentinel(u8, result.sources[0].url, 0));
                 }
                 self.status.setText(if (result.diagnostics.len > 0) try std.fmt.allocPrintSentinel(alloc, "Package unavailable: {s} ({s})", .{ result.diagnostics[0].path, result.diagnostics[0].error_code }, 0) else if (result.entries.len == 0) @import("i18n").dtr("pearl", "No themes installed. Choose Community · refresh to browse themes.") else @import("i18n").dtr("pearl", "Installed themes. Choose colors and widget style, then Apply & save."));
                 try self.render();

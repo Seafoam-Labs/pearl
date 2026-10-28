@@ -63,7 +63,7 @@ pub const View = struct {
             picker.as(gtk.NativeDialog).destroy();
             picker.unref();
         }
-        if (response != @intFromEnum(gtk.ResponseType.accept)) return;
+        if (response != @backingInt(gtk.ResponseType.accept)) return;
         const file = picker.as(gtk.FileChooser).getFile() orelse return;
         defer file.unref();
         const path = file.getPath() orelse return;
@@ -76,7 +76,7 @@ pub const View = struct {
         job.* = .{ .owner = self, .arena = .init(a), .cancel = gio.Cancellable.new() };
         const alloc = job.arena.allocator();
         if (override) |path| {
-            job.override = alloc.dupeZ(u8, path) catch {
+            job.override = alloc.dupeSentinel(u8, path, 0) catch {
                 job.destroy();
                 return;
             };
@@ -167,7 +167,7 @@ fn socketSync(input: [:0]u8) ?SocketResult {
     return .failed;
 }
 fn readWallpaper(alloc: std.mem.Allocator, path: []const u8) ![]u8 {
-    const z = try alloc.dupeZ(u8, path);
+    const z = try alloc.dupeSentinel(u8, path, 0);
     const fd = std.c.open(z, .{ .ACCMODE = .RDONLY, .NONBLOCK = true, .CLOEXEC = true }, @as(c_uint, 0));
     if (fd < 0) return error.ImageUnavailable;
     defer _ = std.c.close(fd);
@@ -277,7 +277,7 @@ const Job = struct {
         }
         if (self.cancel.isCancelled() != 0) return error.Cancelled;
         const json = try std.json.Stringify.valueAlloc(alloc, request, .{});
-        const input = try alloc.dupeZ(u8, json);
+        const input = try alloc.dupeSentinel(u8, json, 0);
         const test_bypass = @import("build_options").test_hooks and glib.getenv("PEARL_TEST_GREETER_SYNC") != null;
         // Prefer the socket-activated root service: it authorizes against the
         // caller's login session, which pkexec cannot resolve when Pearl runs

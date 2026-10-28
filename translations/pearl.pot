@@ -562,7 +562,7 @@ msgstr ""
 msgid "Applying"
 msgstr ""
 
-#: src/desktop/brightness_controls.zig:99
+#: src/desktop/brightness_controls.zig:103
 msgid "Applying brightness…"
 msgstr ""
 
@@ -966,7 +966,7 @@ msgctxt "aqueous.struts.bottom.label"
 msgid "Bottom reserved space"
 msgstr ""
 
-#: src/ui/i18n.zig:27 src/desktop/brightness_controls.zig:23 src/settings/power_view.zig:182 src/settings/power_view.zig:196 src/ui/surfaces/osd.zig:25 src/ui/surfaces/osd.zig:86 src/ui/surfaces/osd.zig:94
+#: src/ui/i18n.zig:27 src/desktop/brightness_controls.zig:26 src/settings/power_view.zig:182 src/settings/power_view.zig:196 src/ui/surfaces/osd.zig:25 src/ui/surfaces/osd.zig:86 src/ui/surfaces/osd.zig:94
 msgid "Brightness"
 msgstr ""
 
@@ -979,7 +979,7 @@ msgstr ""
 msgid "Brightness control is unavailable for this display"
 msgstr ""
 
-#: src/desktop/brightness_controls.zig:99
+#: src/desktop/brightness_controls.zig:103
 msgid "Brightness unavailable · an active session is required"
 msgstr ""
 
@@ -1126,7 +1126,7 @@ msgstr ""
 msgid "Change icon…"
 msgstr ""
 
-#: src/desktop/brightness_controls.zig:99
+#: src/desktop/brightness_controls.zig:103
 msgid "Changes apply to the selected display"
 msgstr ""
 
@@ -2088,7 +2088,7 @@ msgstr ""
 msgid "Dismiss popups when clicking outside"
 msgstr ""
 
-#: src/desktop/brightness_controls.zig:26 src/settings/power_view.zig:179 src/settings/power_view.zig:191
+#: src/desktop/brightness_controls.zig:29 src/settings/power_view.zig:179 src/settings/power_view.zig:191
 msgid "Display"
 msgstr ""
 
@@ -2096,7 +2096,7 @@ msgstr ""
 msgid "Display (empty: first output)"
 msgstr ""
 
-#: src/desktop/brightness_controls.zig:34
+#: src/desktop/brightness_controls.zig:37
 msgid "Display brightness"
 msgstr ""
 
@@ -3926,7 +3926,7 @@ msgstr ""
 msgid "No scheduler profiles are installed."
 msgstr ""
 
-#: src/desktop/brightness_controls.zig:99
+#: src/desktop/brightness_controls.zig:103
 msgid "No supported display brightness controls"
 msgstr ""
 
@@ -5046,7 +5046,7 @@ msgstr ""
 msgid "Restart…"
 msgstr ""
 
-#: src/desktop/brightness_controls.zig:90
+#: src/desktop/brightness_controls.zig:94
 msgid "Restore display"
 msgstr ""
 
@@ -5362,7 +5362,7 @@ msgstr ""
 msgid "Scheduled"
 msgstr ""
 
-#: src/desktop/brightness_controls.zig:99
+#: src/desktop/brightness_controls.zig:103
 msgid "Screen is off. Move the mouse or press a key to wake."
 msgstr ""
 
@@ -6878,7 +6878,7 @@ msgstr ""
 msgid "Turn off"
 msgstr ""
 
-#: src/desktop/brightness_controls.zig:43 src/desktop/brightness_controls.zig:90
+#: src/desktop/brightness_controls.zig:46 src/desktop/brightness_controls.zig:94
 msgid "Turn off display"
 msgstr ""
 

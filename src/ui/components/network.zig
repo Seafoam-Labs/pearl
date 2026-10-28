@@ -163,7 +163,7 @@ pub const View = struct {
     }
     fn heading(title: [:0]const u8) *gtk.Label {
         const label = w.label(title, "pearl-section-title");
-        label.as(object.Object).set("accessible-role", @intFromEnum(gtk.AccessibleRole.heading), @as(?[*:0]const u8, null));
+        label.as(object.Object).set("accessible-role", @backingInt(gtk.AccessibleRole.heading), @as(?[*:0]const u8, null));
         label.as(gtk.Accessible).updateProperty(.level, @as(c_int, 2), @as(c_int, -1));
         return label;
     }
@@ -193,7 +193,7 @@ pub const View = struct {
         button.as(gtk.Widget).setHalign(.start);
         button.as(gtk.Widget).setValign(.center);
         box.append(button.as(gtk.Widget));
-        self.sections[@intFromEnum(spec.section)].append(box.as(gtk.Widget));
+        self.sections[@backingInt(spec.section)].append(box.as(gtk.Widget));
         row.* = .{ .view = self, .box = box, .title = title, .detail = detail, .button = button, .section = spec.section, .signal = 0 };
         row.key.set(spec.key);
         focus.tag(button.as(gtk.Widget), "network:{d}:{s}", .{ self.generation, spec.key });
@@ -264,7 +264,7 @@ pub const View = struct {
             };
             if (!retained) {
                 object.signalHandlerDisconnect(row.button.as(object.Object), row.signal);
-                self.sections[@intFromEnum(row.section)].remove(row.box.as(gtk.Widget));
+                self.sections[@backingInt(row.section)].remove(row.box.as(gtk.Widget));
                 a.destroy(row);
                 slot.* = null;
             }
@@ -295,16 +295,16 @@ pub const View = struct {
             title.set(spec.title);
             row.title.setText(title.z());
             var buffer: [1024]u8 = undefined;
-            const detail = if (spec.section == .nearby or spec.section == .connected) std.fmt.bufPrintZ(&buffer, "{s}{s}{s} · {s}", .{ if (spec.state == .connecting) @import("i18n").dtr("pearl", "Connecting…") else if (spec.state == .connected) @import("i18n").dtr("pearl", "Connected") else "", if (spec.state == .connecting or spec.state == .connected) " · " else "", signalTitle(spec.strength), if (spec.profiles > 1) @import("i18n").dtr("pearl", "Choose a saved profile") else securityTitle(spec.security) }) catch "" else std.fmt.bufPrintZ(&buffer, "{s}{s}{s}", .{ stateTitle(spec.state), if (spec.section == .ethernet) " · " else "", if (spec.section == .ethernet and spec.device < data.devices.len) data.devices[spec.device].name else "" }) catch "";
+            const detail = if (spec.section == .nearby or spec.section == .connected) std.mem.printSentinel(&buffer, "{s}{s}{s} · {s}", .{ if (spec.state == .connecting) @import("i18n").dtr("pearl", "Connecting…") else if (spec.state == .connected) @import("i18n").dtr("pearl", "Connected") else "", if (spec.state == .connecting or spec.state == .connected) " · " else "", signalTitle(spec.strength), if (spec.profiles > 1) @import("i18n").dtr("pearl", "Choose a saved profile") else securityTitle(spec.security) }, 0) catch "" else std.mem.printSentinel(&buffer, "{s}{s}{s}", .{ stateTitle(spec.state), if (spec.section == .ethernet) " · " else "", if (spec.section == .ethernet and spec.device < data.devices.len) data.devices[spec.device].name else "" }, 0) catch "";
             row.detail.setText(detail);
             row.button.setLabel(actionTitle(spec.action));
             row.button.as(gtk.Widget).setSensitive(@intFromBool(spec.enabled));
             row.button.as(gtk.Widget).setVisible(@intFromBool(spec.action != .none));
-            w.name(row.button.as(gtk.Widget), std.fmt.bufPrintZ(&buffer, "{s}: {s}", .{ spec.title, actionTitle(spec.action) }) catch actionTitle(spec.action));
+            w.name(row.button.as(gtk.Widget), std.mem.printSentinel(&buffer, "{s}: {s}", .{ spec.title, actionTitle(spec.action) }, 0) catch actionTitle(spec.action));
         }
         for (&self.rows) |*slot| if (slot.*) |row| if (!row.present) {
             object.signalHandlerDisconnect(row.button.as(object.Object), row.signal);
-            self.sections[@intFromEnum(row.section)].remove(row.box.as(gtk.Widget));
+            self.sections[@backingInt(row.section)].remove(row.box.as(gtk.Widget));
             a.destroy(row);
             slot.* = null;
         };
@@ -322,14 +322,14 @@ pub const View = struct {
                 fn less(_: void, lhs: ?*Row, rhs: ?*Row) bool {
                     const left = lhs orelse return false;
                     const right = rhs orelse return true;
-                    if (left.section != right.section) return @intFromEnum(left.section) < @intFromEnum(right.section);
+                    if (left.section != right.section) return @backingInt(left.section) < @backingInt(right.section);
                     if (left.strength != right.strength) return left.strength > right.strength;
                     return std.mem.lessThan(u8, std.mem.span(left.title.getText()), std.mem.span(right.title.getText()));
                 }
             }.less);
             var previous: [4]?*gtk.Widget = @splat(null);
             for (data.rows) |spec| for (self.rows) |maybe| if (maybe) |row| if (std.mem.eql(u8, row.key.slice(), spec.key)) {
-                const section = @intFromEnum(row.section);
+                const section = @backingInt(row.section);
                 self.sections[section].reorderChildAfter(row.box.as(gtk.Widget), previous[section]);
                 previous[section] = row.box.as(gtk.Widget);
                 break;

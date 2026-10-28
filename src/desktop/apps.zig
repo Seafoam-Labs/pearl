@@ -53,7 +53,7 @@ pub const Catalog = struct {
                 try keywords.appendSlice(alloc, std.mem.span(word));
             }
         }
-        const entry: Entry = .{ .info = info, .key = try std.fmt.allocPrintSentinel(alloc, "{d}:{s}{s}", .{ std.mem.span(id).len, std.mem.span(id), if (action) |v| std.mem.span(v) else "" }, 0), .id = try alloc.dupeZ(u8, std.mem.span(id)), .action = if (action) |v| try alloc.dupeZ(u8, std.mem.span(v)) else null, .name = try alloc.dupeZ(u8, title), .detail = try alloc.dupeZ(u8, description), .folded = try fold(alloc, title), .keywords = try fold(alloc, keywords.items) };
+        const entry: Entry = .{ .info = info, .key = try std.fmt.allocPrintSentinel(alloc, "{d}:{s}{s}", .{ std.mem.span(id).len, std.mem.span(id), if (action) |v| std.mem.span(v) else "" }, 0), .id = try alloc.dupeSentinel(u8, std.mem.span(id), 0), .action = if (action) |v| try alloc.dupeSentinel(u8, std.mem.span(v), 0) else null, .name = try alloc.dupeSentinel(u8, title, 0), .detail = try alloc.dupeSentinel(u8, description, 0), .folded = try fold(alloc, title), .keywords = try fold(alloc, keywords.items) };
         try self.entries.append(alloc, entry);
         _ = info.as(object.Object).ref();
     }
@@ -61,7 +61,7 @@ pub const Catalog = struct {
 pub fn fold(alloc: std.mem.Allocator, value: []const u8) ![:0]u8 {
     const text = glib.utf8Casefold(@ptrCast(value.ptr), @intCast(value.len));
     defer glib.free(text);
-    return alloc.dupeZ(u8, std.mem.span(text));
+    return alloc.dupeSentinel(u8, std.mem.span(text), 0);
 }
 pub const Index = struct {
     app: *gio.Application,

@@ -52,7 +52,7 @@ pub const Discovery = struct {
             self.degraded = true;
             return;
         }
-        const z = a.dupeZ(u8, path) catch {
+        const z = a.dupeSentinel(u8, path, 0) catch {
             self.degraded = true;
             return;
         };

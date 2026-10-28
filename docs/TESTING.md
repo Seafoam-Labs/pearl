@@ -14,7 +14,7 @@ recovery, and records screenshots plus 10,000-file rendering measurements. Use
 direct harness runs; these test probes are absent from the production shell.
 
 Settings portal regression coverage is available with
-`zig build test-portal-settings -Doptimize=ReleaseSafe` (also included in
+`zig build test-portal-settings -Doptimize=safe` (also included in
 `zig build test-portals`). It requires PyGObject, `dbus-run-session`,
 `glib-compile-schemas`, and the installed xdg-desktop-portal frontend, document
 portal and permission store. It stages Pearl's package files and tests the real
@@ -103,13 +103,21 @@ python3 scripts/test.py run --group fast
 | `upstream` | Pinned Aqueous adversarial tests and private upstream pam_fprintd tests; requires systemd/PAM headers and the compositor build tools. |
 | `apps` | Phyto, Dome, and Coral. Coral requires GtkSourceView 5, Enchant and dictionaries; Phyto cases need GVfs, Bubblewrap, Poppler, and FFmpeg. |
 | `extended` | Long-running and aggregate acceptance suites. Aggregate targets intentionally repeat constituent scenarios to produce their own acceptance reports. |
-| `release-regression` | The existing release matrix with ReleaseSafe and release stripping options. It is only part of release acceptance. |
+| `release-regression` | The existing release matrix with safe and release stripping options. It is only part of release acceptance. |
 | `all` | All registered unattended groups, including optional dependencies and release variants. |
 
 `list` shows exact suite IDs, capabilities, and aliases. `list --json` also lists
 explained exclusions for historical scripts, helpers, and manual measurements.
 Missing prerequisites for a selected suite produce a blocked result and a nonzero
 exit code. Optional groups are not silently skipped when selected.
+
+`test-settings-app` and its release variant are report-only diagnostics. They
+still run with fatal GTK warnings and preserve failures, tracebacks, screenshots,
+and logs, but do not fail the suite group or release gate. Summaries label them
+`[report only]`; JUnit retains advisory failures as diagnostic output rather than
+failed test cases. The standalone Settings acceptance aggregate applies the same
+policy to its `window` check. Other checks remain blocking. To make a direct run
+strict, use `zig build test-settings-app -Doptimize=safe -- --strict`.
 
 The extended suites `test-agent-launcher`, `test-agent-benchmark`, and
 `test-agent-benchmark-settings` require an existing managed model. Set

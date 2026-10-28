@@ -6,8 +6,8 @@ const policy = @import("../core/preview.zig");
 const a = std.heap.c_allocator;
 pub const Snapshot = extern struct {
     magic: [4]u8 = "PHP1".*,
-    pdf: u8 = @intFromEnum(policy.Status.sandbox),
-    video: u8 = @intFromEnum(policy.Status.sandbox),
+    pdf: u8 = @backingInt(policy.Status.sandbox),
+    video: u8 = @backingInt(policy.Status.sandbox),
     reserved: [2]u8 = .{ 0, 0 },
     pdf_version: [32]u8 = @splat('0'),
     video_version: [32]u8 = @splat('0'),
@@ -44,19 +44,19 @@ pub fn discover() Snapshot {
     const sandbox = runner.run("/usr/bin/true", &.{}, fd, 1500, 1024);
     defer sandbox.deinit();
     if (sandbox.status != .ok) return snapshot;
-    snapshot.pdf = @intFromEnum(policy.Status.missing_pdf);
-    snapshot.video = @intFromEnum(policy.Status.missing_video);
+    snapshot.pdf = @backingInt(policy.Status.missing_pdf);
+    snapshot.video = @backingInt(policy.Status.missing_video);
     if (available(tool("pdftoppm"))) {
         const result = runner.run(tool("pdftoppm"), &.{"-h"}, fd, 1000, 16384);
         defer result.deinit();
-        if (result.status == .ok) snapshot.pdf = @intFromEnum(policy.Status.ok);
+        if (result.status == .ok) snapshot.pdf = @backingInt(policy.Status.ok);
     }
     if (available(tool("ffmpeg")) and available(tool("ffprobe"))) {
         const ffmpeg = runner.run(tool("ffmpeg"), &.{"-version"}, fd, 1000, 16384);
         defer ffmpeg.deinit();
         const ffprobe = runner.run(tool("ffprobe"), &.{"-version"}, fd, 1000, 16384);
         defer ffprobe.deinit();
-        if (ffmpeg.status == .ok and ffprobe.status == .ok) snapshot.video = @intFromEnum(policy.Status.ok);
+        if (ffmpeg.status == .ok and ffprobe.status == .ok) snapshot.video = @backingInt(policy.Status.ok);
     }
     return snapshot;
 }
@@ -67,5 +67,5 @@ pub fn emit() void {
 }
 pub fn versionZ(p: policy.Provider) [:0]u8 {
     const version = fingerprint(p);
-    return a.dupeZ(u8, &version) catch unreachable;
+    return a.dupeSentinel(u8, &version, 0) catch unreachable;
 }

@@ -107,7 +107,7 @@ pub fn eligible(info: *gio.FileInfo, allow_text: bool) bool {
 pub fn identity(info: *gio.FileInfo, edge: u32, limit: usize, allow_text: bool) [:0]u8 {
     const uri = u.file(info).getUri();
     defer glib.free(uri);
-    return u.format("{s}\n{d}:{d}:{d}:{d}:{d}:{d}:{d}:{d}", .{ uri, info.getAttributeUint64("time::modified"), info.getAttributeUint32("time::modified-usec"), info.getSize(), edge, limit, @intFromBool(allow_text), @intFromEnum(policy.provider(std.mem.span(info.getContentType() orelse ""))), generation });
+    return u.format("{s}\n{d}:{d}:{d}:{d}:{d}:{d}:{d}:{d}", .{ uri, info.getAttributeUint64("time::modified"), info.getAttributeUint32("time::modified-usec"), info.getSize(), edge, limit, @intFromBool(allow_text), @backingInt(policy.provider(std.mem.span(info.getContentType() orelse ""))), generation });
 }
 fn queuePump() void {
     if (pump_id == 0) pump_id = glib.idleAdd(pump, null);
@@ -164,7 +164,7 @@ pub fn request(info: *gio.FileInfo, edge: u32, limit: usize, allow_text: bool, p
     defer glib.free(uri);
     const e = a.create(Entry) catch unreachable;
     next_stamp += 1;
-    e.* = .{ .key = key, .uri = a.dupeZ(u8, std.mem.span(uri)) catch unreachable, .seconds = info.getAttributeUint64("time::modified"), .usec = info.getAttributeUint32("time::modified-usec"), .size = info.getSize(), .edge = edge, .limit = limit, .text = allow_text, .priority = priority, .provider = provider, .touched = next_stamp };
+    e.* = .{ .key = key, .uri = a.dupeSentinel(u8, std.mem.span(uri), 0) catch unreachable, .seconds = info.getAttributeUint64("time::modified"), .usec = info.getAttributeUint32("time::modified-usec"), .size = info.getSize(), .edge = edge, .limit = limit, .text = allow_text, .priority = priority, .provider = provider, .touched = next_stamp };
     e.listeners.append(a, listener) catch unreachable;
     entries.append(a, e) catch unreachable;
     queuePump();
@@ -285,7 +285,7 @@ fn reportFailure(status: policy.Status) void {
 fn fail(e: *Entry, message: []const u8) void {
     e.state = .ready;
     e.retry_after = glib.getMonotonicTime() + 5_000_000;
-    e.caption = a.dupeZ(u8, message) catch unreachable;
+    e.caption = a.dupeSentinel(u8, message, 0) catch unreachable;
 }
 fn deliver(e: *Entry) void {
     if (@import("build_options").test_hooks and e.kind == .unavailable) glib.printerr("PHYTO_PREVIEW_FAILURE %s\n", if (e.caption) |caption| caption.ptr else @as([*:0]const u8, "unknown"));
@@ -331,7 +331,7 @@ fn completed(read: *Read, success: bool, data: ?*anyopaque) void {
             memory += e.cost;
         } else {
             e.retry_after = glib.getMonotonicTime() + 5_000_000;
-            e.caption = a.dupeZ(u8, if (h.status != .ok) policy.message(h.status) else raw[16..n]) catch unreachable;
+            e.caption = a.dupeSentinel(u8, if (h.status != .ok) policy.message(h.status) else raw[16..n], 0) catch unreachable;
             if (h.status != .ok) reportFailure(h.status);
         }
     }

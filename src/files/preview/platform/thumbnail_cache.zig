@@ -57,7 +57,7 @@ pub fn save(root: [:0]const u8, relative: [:0]const u8, png: []const u8) void {
     defer ledger.unref();
     if (read(ledger_path, 2 * 1024 * 1024)) |data| {
         defer a.free(data);
-        const terminated = a.dupeZ(u8, data) catch return;
+        const terminated = a.dupeSentinel(u8, data, 0) catch return;
         defer a.free(terminated);
         _ = ledger.loadFromData(terminated, data.len, .{}, null);
     }
@@ -92,7 +92,7 @@ pub fn save(root: [:0]const u8, relative: [:0]const u8, png: []const u8) void {
     const path = format("{s}/{s}", .{ root, relative });
     defer a.free(path);
     const slash = std.mem.lastIndexOfScalar(u8, path, '/').?;
-    const parent = a.dupeZ(u8, path[0..slash]) catch return;
+    const parent = a.dupeSentinel(u8, path[0..slash], 0) catch return;
     defer a.free(parent);
     if (glib.mkdirWithParents(parent, 0o700) != 0) return;
     ledger.setUint64("Sizes", relative, png.len);

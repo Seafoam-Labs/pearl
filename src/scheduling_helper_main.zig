@@ -55,7 +55,7 @@ fn installed(alloc: std.mem.Allocator, sched: []const u8) bool {
 }
 
 fn write(bytes: []const u8) !void {
-    const temp = try a.dupeZ(u8, p.env_path ++ ".XXXXXX");
+    const temp = try a.dupeSentinel(u8, p.env_path ++ ".XXXXXX", 0);
     defer a.free(temp);
     if (glib.mkdirWithParents("/etc/default", 0o755) != 0) return error.CreateDirectoryFailed;
     const fd = glib.mkstempFull(temp, @bitCast(std.c.O{ .ACCMODE = .RDWR, .CLOEXEC = true }), 0o644);

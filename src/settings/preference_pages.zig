@@ -199,7 +199,7 @@ pub const View = struct {
             // Acknowledgments must not reset the cursor in an active entry.
             if (field.spec.kind != .percent and (field.widget.hasFocus() != 0 or (field.widget.getRoot() != null and field.spec.kind == .text and field.widget.getFocusChild() != null))) continue;
             switch (field.spec.kind) {
-                .text => object.ext.cast(gtk.Entry, field.widget).?.as(gtk.Editable).setText(alloc.dupeZ(u8, value.string) catch continue),
+                .text => object.ext.cast(gtk.Entry, field.widget).?.as(gtk.Editable).setText(alloc.dupeSentinel(u8, value.string, 0) catch continue),
                 .number => object.ext.cast(gtk.SpinButton, field.widget).?.setValue(@floatFromInt(value.integer)),
                 .percent => {
                     const spin = object.ext.cast(gtk.SpinButton, field.widget).?;

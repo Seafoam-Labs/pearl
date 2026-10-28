@@ -32,7 +32,7 @@ pub fn save(a: std.mem.Allocator, root: [:0]const u8, blobs: []const assets.Blob
     for (blobs) |blob| {
         try model.digest(blob.digest);
         if (blob.bytes.len > assets.max_image or !std.mem.eql(u8, &model.hash(blob.bytes), blob.digest)) return error.ThemeAssetDigestMismatch;
-        const z = try a.dupeZ(u8, blob.digest);
+        const z = try a.dupeSentinel(u8, blob.digest, 0);
         var info: c.struct_stat = undefined;
         if (c.fstatat(fd, z, &info, c.AT_SYMLINK_NOFOLLOW) == 0) {
             const old = try pkg.read(a, fd, blob.digest, assets.max_image);
@@ -115,7 +115,7 @@ test "asset collection protects retained snapshots and aborts on corrupt history
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
     const a = arena.allocator();
-    const root = try a.dupeZ(u8, "/tmp/pearl-assets-store-XXXXXX");
+    const root = try a.dupeSentinel(u8, "/tmp/pearl-assets-store-XXXXXX", 0);
     const native = struct {
         extern fn mkdtemp([*:0]u8) ?[*:0]u8;
     };

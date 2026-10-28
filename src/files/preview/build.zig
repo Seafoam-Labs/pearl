@@ -5,6 +5,6 @@ pub fn module(b: *std.Build, bindings: *std.Build.Dependency, target: std.Build.
     for ([_][]const u8{ "gdk4", "gio2", "glib2", "gobject2", "gdkpixbuf2" }) |name| m.addImport(name, bindings.module(name));
     m.addImport("build_options", options);
     m.addImport("diagnostics", diagnostics);
-    m.linkSystemLibrary("gtk4", .{ .use_pkg_config = .force });
+    m.linkSystemLibrary("gtk4", .{ .use_pkg_config = .yes });
     return m;
 }

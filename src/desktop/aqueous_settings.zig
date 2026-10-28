@@ -183,7 +183,7 @@ pub fn ViewFor(comptime ClientType: type) type {
             a.destroy(self);
         }
         pub fn z(self: *Self, text: []const u8) [:0]const u8 {
-            return self.arena.allocator().dupeZ(u8, text) catch "";
+            return self.arena.allocator().dupeSentinel(u8, text, 0) catch "";
         }
         fn page(self: *Self, notebook: *Pages, title: []const u8) *gtk.Box {
             const scroll = gtk.ScrolledWindow.new();
@@ -506,7 +506,7 @@ pub fn ViewFor(comptime ClientType: type) type {
             const draft = m.parse(arena.allocator(), self.client.draft orelse "{}", m.max_request) catch m.Value.null;
             const raw = m.get(m.get(draft, "raw_files"), key);
             const text = if (raw == .string) raw.string else m.str(m.get(m.get(self.client.baseValue(), "raw_files"), key));
-            const terminated = a.dupeZ(u8, text) catch return;
+            const terminated = a.dupeSentinel(u8, text, 0) catch return;
             defer a.free(terminated);
             self.raw_buffer.?.setText(terminated, -1);
         }
@@ -557,7 +557,7 @@ pub fn ViewFor(comptime ClientType: type) type {
                 .failed => "Operation failed",
                 .uncertain => "Outcome unresolved; Refresh reconciles the preview and operation receipt. Writes remain blocked.",
             };
-            const text = std.fmt.bufPrintZ(&buffer, "{s} · Last result — save: {s} · receipt: {s} · display: {s} · reload: {s} · toolkit sync: {s}{s}{s}{s}{s}{s}{s}", .{
+            const text = std.mem.printSentinel(&buffer, "{s} · Last result — save: {s} · receipt: {s} · display: {s} · reload: {s} · toolkit sync: {s}{s}{s}{s}{s}{s}{s}", .{
                 outcome,                                  if (c.save_state) |state| @tagName(state) else "not requested", if (c.receipt) |state| @tagName(state) else "not requested", @tagName(c.display_state), if (c.reload_state == .not_requested) "not requested" else @tagName(c.reload_state), if (c.toolkit == .not_requested) "not requested" else @tagName(c.toolkit),
                 if (c.draft != null) " · draft retained" else "",
                 if (c.conflict()) " · external change; review before rebasing" else "",
@@ -565,7 +565,7 @@ pub fn ViewFor(comptime ClientType: type) type {
                 if (c.err) |err| @errorName(err) else "",
                 if (c.detail[0] != 0) " · " else "",
                 std.mem.sliceTo(&c.detail, 0),
-            }) catch "Settings status unavailable";
+            }, 0) catch "Settings status unavailable";
             if (self.layout.status) |status| status.setText(text);
             self.message.setText(if (self.rule_move_pending) @import("i18n").dtr("pearl", "Rule order changed. Review & apply or Discard before making other Aqueous edits.") else if (c.err != null or c.conflict() or c.unresolved) text else if (c.job != null or c.previewPhase() != 0) self.z(outcome) else if (c.draft != null) @import("i18n").dtr("pearl", "Unsaved Aqueous changes · Review includes every section.") else @import("i18n").dtr("pearl", "All Aqueous settings saved"));
             const simple = self.page_index == 5 and self.display_canvas != null;
@@ -597,12 +597,12 @@ pub fn ViewFor(comptime ClientType: type) type {
             if (simple and (self.display_blocked or self.display_changes + self.display_other_changes == 0)) self.buttons[2].as(gtk.Widget).setSensitive(0);
             if (simple and c.previewPhase() == 0 and c.job == null and c.err == null and !c.conflict() and !c.unresolved) {
                 var message: [256]u8 = undefined;
-                self.message.setText(if (c.draft != null) (std.fmt.bufPrintZ(&message, "{d} unsaved display changes · {d} other Aqueous changes.\nApply to try this setup. Keep it only if everything looks right.", .{ self.display_changes, self.display_other_changes }) catch "Display settings") else @import("i18n").dtr("pearl", "All display settings saved.\nChanges take effect only when you apply them."));
+                self.message.setText(if (c.draft != null) (std.mem.printSentinel(&message, "{d} unsaved display changes · {d} other Aqueous changes.\nApply to try this setup. Keep it only if everything looks right.", .{ self.display_changes, self.display_other_changes }, 0) catch "Display settings") else @import("i18n").dtr("pearl", "All display settings saved.\nChanges take effect only when you apply them."));
             }
             if (c.job == null and (c.err != null or c.unresolved or (c.outcome == .saved and c.draft == null))) {
                 const status = std.mem.span(self.message.getText());
                 if (!std.mem.eql(u8, status, std.mem.sliceTo(&self.announced_status, 0))) {
-                    _ = std.fmt.bufPrintZ(&self.announced_status, "{s}", .{status}) catch "";
+                    _ = std.mem.printSentinel(&self.announced_status, "{s}", .{status}, 0) catch "";
                     self.message.as(gtk.Accessible).announce(self.message.getText(), .medium);
                 }
             }
@@ -666,7 +666,7 @@ pub fn ViewFor(comptime ClientType: type) type {
                 return;
             }
             var buffer: [512]u8 = undefined;
-            const text = if (c.previewing()) (std.fmt.bufPrintZ(&buffer, "Your displays are using the new settings. Check every screen. Reverting in {d} seconds.\n\nKeep changes saves the complete Aqueous draft. Revert restores your previous displays and retains your edits.", .{c.remaining()}) catch "Check every screen before keeping these settings.") else switch (c.previewPhase()) {
+            const text = if (c.previewing()) (std.mem.printSentinel(&buffer, "Your displays are using the new settings. Check every screen. Reverting in {d} seconds.\n\nKeep changes saves the complete Aqueous draft. Revert restores your previous displays and retains your edits.", .{c.remaining()}, 0) catch "Check every screen before keeping these settings.") else switch (c.previewPhase()) {
                 2 => "Saving confirmed settings…",
                 4 => "Reverting displays. Waiting for Aqueous to confirm completion…",
                 5 => "Session inactive. Rollback will continue when the session resumes.",
@@ -695,7 +695,7 @@ pub fn ViewFor(comptime ClientType: type) type {
             self.revision = self.client.revision;
             self.filling = true;
             defer self.filling = false;
-            const text = a.dupeZ(u8, self.client.draft orelse "{}") catch return;
+            const text = a.dupeSentinel(u8, self.client.draft orelse "{}", 0) catch return;
             defer a.free(text);
             if (self.request_buffer) |b| b.setText(text, -1);
         }
@@ -874,7 +874,7 @@ pub fn ViewFor(comptime ClientType: type) type {
         pub fn record(self: *Self, id: []const u8) !void {
             self.selectPage(3);
             for (self.editors.items) |editor| if (editor.record != null and std.mem.eql(u8, m.str(m.get(editor.field, "id")), id)) {
-                if (self.layout.sections[@intFromEnum(editor.group)]) |section| section.reveal();
+                if (self.layout.sections[@backingInt(editor.group)]) |section| section.reveal();
                 return self.startRecording(editor);
             };
             return error.UnknownField;
@@ -920,14 +920,14 @@ pub fn ViewFor(comptime ClientType: type) type {
         fn revealIssue(self: *Self) void {
             const id = std.mem.sliceTo(&self.issue_focus, 0);
             if (std.mem.eql(u8, id, "@request")) {
-                if (self.layout.sections[@intFromEnum(layout.map.Group.request)]) |section| section.reveal();
+                if (self.layout.sections[@backingInt(layout.map.Group.request)]) |section| section.reveal();
             } else for (self.editors.items) |editor| if (std.mem.eql(u8, id, m.str(m.get(editor.field, "id")))) {
                 if (std.mem.eql(u8, m.fieldCategory(editor.field), "keybinds")) {
                     @memset(&self.layout.search, 0);
                     if (self.layout.search_entry) |entry| entry.as(gtk.Editable).setText("");
                     Layout.filter(self);
                 }
-                if (self.layout.sections[@intFromEnum(editor.group)]) |section| section.reveal();
+                if (self.layout.sections[@backingInt(editor.group)]) |section| section.reveal();
                 break;
             };
         }
@@ -936,7 +936,7 @@ pub fn ViewFor(comptime ClientType: type) type {
             defer @memset(&self.issue_focus, 0);
             const id = std.mem.sliceTo(&self.issue_focus, 0);
             for (self.editors.items) |editor| if (std.mem.eql(u8, id, m.str(m.get(editor.field, "id")))) return editor.widget.grabFocus() != 0;
-            if (self.layout.sections[@intFromEnum(layout.map.Group.request)]) |section| if (section.button) |button| return button.as(gtk.Widget).grabFocus() != 0;
+            if (self.layout.sections[@backingInt(layout.map.Group.request)]) |section| if (section.button) |button| return button.as(gtk.Widget).grabFocus() != 0;
             return false;
         }
         pub fn focusName(window: *gtk.Window) []const u8 {
@@ -1003,7 +1003,7 @@ pub fn ViewFor(comptime ClientType: type) type {
             if (key >= 0xffe1 and key <= 0xffee) return 1; // modifier-only press
             const name = gdk.keyvalName(key) orelse return 1;
             var buffer: [256]u8 = undefined;
-            const chord = std.fmt.bufPrintZ(&buffer, "{s}{s}{s}{s}{s}", .{ if (modifiers.super_mask) "Super+" else "", if (modifiers.control_mask) "Ctrl+" else "", if (modifiers.alt_mask) "Alt+" else "", if (modifiers.shift_mask) "Shift+" else "", std.mem.span(name) }) catch return 1;
+            const chord = std.mem.printSentinel(&buffer, "{s}{s}{s}{s}{s}", .{ if (modifiers.super_mask) "Super+" else "", if (modifiers.control_mask) "Ctrl+" else "", if (modifiers.alt_mask) "Alt+" else "", if (modifiers.shift_mask) "Shift+" else "", std.mem.span(name) }, 0) catch return 1;
             self.stopRecording();
             object.ext.cast(gtk.Editable, editor.widget).?.setText(chord);
             return 1;

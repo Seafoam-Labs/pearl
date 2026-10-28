@@ -120,24 +120,24 @@ fn runGuarded(a: std.mem.Allocator, request: Request, cancel: *gio.Cancellable, 
             for (choices.entries[request.offset..end], brief) |entry, *out| out.* = .{ .descriptor = .{ .id = entry.descriptor.id, .name = entry.descriptor.name, .application = entry.descriptor.application }, .origin = entry.origin };
             return std.json.Stringify.valueAlloc(a, .{ .profile_catalog = true, .revision = choices.revision[0..], .entries = brief, .next_offset = if (end < choices.entries.len) @as(?usize, end) else null }, .{});
         },
-        .publish_build => return @import("publishing.zig").build(a, try a.dupeZ(u8, request.path), try a.dupeZ(u8, request.output), cancel),
-        .verify_profiles => return @import("application_profiles.zig").verifyPackage(a, try a.dupeZ(u8, request.path), request.output, cancel),
+        .publish_build => return @import("publishing.zig").build(a, try a.dupeSentinel(u8, request.path, 0), try a.dupeSentinel(u8, request.output, 0), cancel),
+        .verify_profiles => return @import("application_profiles.zig").verifyPackage(a, try a.dupeSentinel(u8, request.path, 0), request.output, cancel),
         .validate => {
-            const package = try @import("package.zig").load(a, try a.dupeZ(u8, request.path));
+            const package = try @import("package.zig").load(a, try a.dupeSentinel(u8, request.path, 0));
             return std.json.Stringify.valueAlloc(a, package.manifest, .{});
         },
         .validate_index => {
-            const file = try io.read(a, try a.dupeZ(u8, request.path), 1048576, cancel);
+            const file = try io.read(a, try a.dupeSentinel(u8, request.path, 0), 1048576, cancel);
             if (file.missing) return error.ThemeIndexMissing;
             try model.identifier(request.id);
             return std.json.Stringify.valueAlloc(a, try repository.parseIndex(a, file.bytes, .{ .id = request.id, .name = request.id, .url = request.url }), .{});
         },
         .pack => {
             if (request.output.len == 0) return error.ThemeArchiveOutputRequired;
-            const package = try @import("package.zig").load(a, try a.dupeZ(u8, request.path));
+            const package = try @import("package.zig").load(a, try a.dupeSentinel(u8, request.path, 0));
             const bytes = try @import("archive_writer.zig").pack(a, package);
             if (cancel.isCancelled() != 0) return error.Cancelled;
-            try io.atomic(try a.dupeZ(u8, request.output), bytes, true);
+            try io.atomic(try a.dupeSentinel(u8, request.output, 0), bytes, true);
             return std.json.Stringify.valueAlloc(a, .{ .manifest = package.manifest, .sha256 = model.hash(bytes)[0..], .size = bytes.len }, .{});
         },
         .catalog => {
@@ -176,7 +176,7 @@ fn runGuarded(a: std.mem.Allocator, request: Request, cancel: *gio.Cancellable, 
                     defer install.removeTree(a, temporary) catch {};
                     var image: ?[]const u8 = null;
                     if (theme.source == .wallpaper) {
-                        const file = try io.read(a, try a.dupeZ(u8, request.wallpaper.path), 64 * 1024 * 1024, cancel);
+                        const file = try io.read(a, try a.dupeSentinel(u8, request.wallpaper.path, 0), 64 * 1024 * 1024, cancel);
                         if (file.missing or (!std.mem.startsWith(u8, file.bytes, "\x89PNG\r\n\x1a\n") and !std.mem.startsWith(u8, file.bytes, "\xff\xd8\xff"))) return error.InvalidImage;
                         image = file.bytes;
                     }
@@ -265,7 +265,7 @@ fn runGuarded(a: std.mem.Allocator, request: Request, cancel: *gio.Cancellable, 
             return std.json.Stringify.valueAlloc(a, try store.publish(package, try std.fmt.allocPrint(a, "{s}:{s}", .{ source.id, source.url })), .{});
         },
         .import_archive => {
-            const file = try io.read(a, try a.dupeZ(u8, request.path), model.max_bytes, cancel);
+            const file = try io.read(a, try a.dupeSentinel(u8, request.path, 0), model.max_bytes, cancel);
             if (file.missing) return error.ThemeArchiveMissing;
             const package = try store.unpack(file.bytes, cancel);
             if (cancel.isCancelled() != 0) return error.Cancelled;

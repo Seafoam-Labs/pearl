@@ -192,14 +192,16 @@ fn declaresScope(event: Event, scopes: std.EnumSet(logging.Scope)) bool {
 const roots = [_][]const u8{ "src", "subprojects/coral/src", "subprojects/dome/src", "subprojects/phyto/src" };
 
 /// Test binaries may be invoked from any working directory (zig cache, IDE
-/// runners), so locate the repository root from the executable's own path.
-fn repoRoot(io: std.Io, alloc: std.mem.Allocator) ![]const u8 {
+/// runners). Prefer a source checkout cwd, then walk up from the executable.
+fn repoRoot(io: std.Io, alloc: std.mem.Allocator) ![:0]const u8 {
+    // A custom Zig cache can live outside the checkout.
+    if (hasFile(io, alloc, ".", "src/core/log_events.zig")) return try std.process.currentPathAlloc(io, alloc);
     var buf: [std.fs.max_path_bytes]u8 = undefined;
     const n = try std.Io.Dir.readLinkAbsolute(io, "/proc/self/exe", &buf);
     var path: []const u8 = buf[0..n];
     while (true) {
         const dir = std.fs.path.dirname(path) orelse return error.RepoRootNotFound;
-        if (hasFile(io, alloc, dir, "src/core/log_events.zig")) return try alloc.dupe(u8, dir);
+        if (hasFile(io, alloc, dir, "src/core/log_events.zig")) return try alloc.dupeSentinel(u8, dir, 0);
         if (std.mem.eql(u8, dir, path)) return error.RepoRootNotFound;
         path = dir;
     }
@@ -207,7 +209,7 @@ fn repoRoot(io: std.Io, alloc: std.mem.Allocator) ![]const u8 {
 fn hasFile(io: std.Io, alloc: std.mem.Allocator, dir: []const u8, rel: []const u8) bool {
     const path = std.fs.path.join(alloc, &.{ dir, rel }) catch return false;
     defer alloc.free(path);
-    const file = std.Io.Dir.openFileAbsolute(io, path, .{}) catch return false;
+    const file = std.Io.Dir.cwd().openFile(io, path, .{}) catch return false;
     file.close(io);
     return true;
 }
@@ -218,7 +220,7 @@ test "catalog matches the literal event names in the tree" {
     const t = std.testing;
     const root_abs = try repoRoot(io, t.allocator);
     defer t.allocator.free(root_abs);
-    var seen = [_]bool{false} ** events.len;
+    var seen = @as([events.len]bool, @splat(false));
     for (roots) |root| {
         const joined = try std.fs.path.join(t.allocator, &.{ root_abs, root });
         defer t.allocator.free(joined);

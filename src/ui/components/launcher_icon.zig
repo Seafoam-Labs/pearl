@@ -50,7 +50,7 @@ pub const Renderer = struct {
             self.refresh(); // Theme availability may have changed.
             return;
         }
-        const owned = try a.dupeZ(u8, selection.value);
+        const owned = try a.dupeSentinel(u8, selection.value, 0);
         self.cancel();
         if (self.owned) |value| a.free(value);
         if (self.pixels) |pixels| pixels.unref();
@@ -61,7 +61,7 @@ pub const Renderer = struct {
         if (selection.kind == .file) {
             const job = try a.create(Job);
             errdefer a.destroy(job);
-            job.* = .{ .owner = self, .path = try a.dupeZ(u8, owned), .cancel = gio.Cancellable.new() };
+            job.* = .{ .owner = self, .path = try a.dupeSentinel(u8, owned, 0), .cancel = gio.Cancellable.new() };
             self.job = job;
             const task = gio.Task.new(null, job.cancel, completed, job);
             task.setCheckCancellable(0);

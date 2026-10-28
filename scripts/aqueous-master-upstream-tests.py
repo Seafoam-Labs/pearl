@@ -3,14 +3,14 @@
 import argparse,hashlib,json,os,subprocess,sys
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
-from aqueous_target import REV
+from aqueous_target import REV,PREFIX
 def main():
- p=argparse.ArgumentParser(description=__doc__);p.add_argument('--prefix',type=Path,default=ROOT/'.cache/aqueous-activity-production');p.add_argument('--output',type=Path,default=ROOT/'artifacts/aqueous-082/upstream');a=p.parse_args();a.prefix=a.prefix.resolve();a.output=a.output.resolve();a.output.mkdir(parents=True,exist_ok=True)
+ p=argparse.ArgumentParser(description=__doc__);p.add_argument('--prefix',type=Path,default=PREFIX);p.add_argument('--output',type=Path,default=ROOT/'artifacts/aqueous-082/upstream');a=p.parse_args();a.prefix=a.prefix.resolve();a.output=a.output.resolve();a.output.mkdir(parents=True,exist_ok=True)
  source=a.prefix/'source';meta=json.loads((a.prefix/'metadata.json').read_text());assert meta['revision']==REV
  env=dict(os.environ,ZIG_GLOBAL_CACHE_DIR=str(ROOT/'.cache/zig'))
  report=dict(status='running',baseline=meta,checks={})
  try:
-  with (a.output/'driver-build.log').open('w') as log:subprocess.run(['zig','build','test-driver','--prefix',str(a.prefix),'-Doptimize=ReleaseSafe'],cwd=source/'settingsApplication',env=env,stdout=log,stderr=subprocess.STDOUT,check=True)
+  with (a.output/'driver-build.log').open('w') as log:subprocess.run(['zig','build','test-driver','--prefix',str(a.prefix),'-Doptimize=safe'],cwd=source/'settingsApplication',env=env,stdout=log,stderr=subprocess.STDOUT,check=True)
   transactions=source/'settingsApplication/tests/backend/test-transactions.py'
   with (a.output/'transactions.log').open('w') as log:subprocess.run([sys.executable,transactions,a.prefix/'bin/aqueous-config',a.prefix/'bin/aqueous-backend-test'],env=env,stdout=log,stderr=subprocess.STDOUT,check=True,timeout=300)
   report['checks']['canonical-journal-crash-recovery-replay-and-collection-preconditions']=True
@@ -20,7 +20,7 @@ def main():
   with (a.output/'scene-capture.log').open('w') as log:subprocess.run([sys.executable,source/'compositor/scripts/test-scene-capture.py','--compositor',a.prefix/'bin/aqueous','--ctl',a.prefix/'bin/aqueousctl'],env=env,stdout=log,stderr=subprocess.STDOUT,check=True,timeout=300)
   report['checks']['scene-capture']=True
   instrumented=a.prefix/'instrumented'
-  build=['zig','build','--prefix',str(instrumented),'-Doutput-retry-testing=true','-Dvulkan-effects=true','-Dman-pages=false','-Doptimize=ReleaseSafe','-Dllvm']
+  build=['zig','build','--prefix',str(instrumented),'-Doutput-retry-testing=true','-Dvulkan-effects=true','-Dman-pages=false','-Doptimize=safe','-Dllvm']
   with (a.output/'compositor-test-build.log').open('w') as log:subprocess.run(build,cwd=source/'compositor',env=dict(env,PKG_CONFIG_PATH=meta['patched_wlroots_pkgconfig']),stdout=log,stderr=subprocess.STDOUT,check=True)
   report['instrumented_compositor']=dict(command=build,sha256=hashlib.sha256((instrumented/'bin/aqueous').read_bytes()).hexdigest(),production=False)
   preview=source/'compositor/scripts/test-display-preview.py';original=preview.read_text();script=original

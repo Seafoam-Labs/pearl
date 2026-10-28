@@ -23,7 +23,7 @@ pub fn hasFlag(help: []const u8, flag: []const u8) bool {
 }
 pub fn resolve(a: std.mem.Allocator, cfg: config.RuntimeConfig) ![:0]const u8 {
     const path = switch (cfg.source) {
-        .custom => try a.dupeZ(u8, cfg.executable),
+        .custom => try a.dupeSentinel(u8, cfg.executable, 0),
         .system => blk: {
             for ([_][:0]const u8{ "/usr/bin/llama-server", "/usr/local/bin/llama-server" }) |p| if (std.c.access(p, std.c.X_OK) == 0) break :blk p;
             return error.AssistantRuntimeNotInstalled;
@@ -37,7 +37,7 @@ pub fn resolve(a: std.mem.Allocator, cfg: config.RuntimeConfig) ![:0]const u8 {
     if (!std.fs.path.isAbsolute(path) or std.c.access(path, std.c.X_OK) != 0) return error.AssistantRuntimeNotInstalled;
     var resolved: [std.posix.PATH_MAX]u8 = undefined;
     const resolved_ptr = std.c.realpath(path, &resolved) orelse return error.InvalidRuntimeExecutable;
-    return a.dupeZ(u8, std.mem.span(resolved_ptr));
+    return a.dupeSentinel(u8, std.mem.span(resolved_ptr), 0);
 }
 pub fn fingerprint(a: std.mem.Allocator, path: [:0]const u8) ![]const u8 {
     var st: std.os.linux.Statx = undefined;

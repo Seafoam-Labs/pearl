@@ -255,7 +255,7 @@ pub fn run(argc: c_int, argv: [*c][*c]u8) callconv(.c) c_int {
         @ptrCast(@alignCast(&xml_Print)),
         @ptrCast(@alignCast(&xml_Inhibit)),
     };
-    var ids = [_]ffi.guint{0} ** xmls.len;
+    var ids = @as([xmls.len]ffi.guint, @splat(0));
     portal_print_init(&p);
     portal_inhibit_init(&p);
     portal_settings_init(&p);

@@ -15,7 +15,7 @@ fn etag(alloc: std.mem.Allocator, path: [:0]const u8) ![:0]const u8 {
     defer file.unref();
     const info = file.queryInfo("etag::value", .{ .nofollow_symlinks = true }, null, null) orelse return error.ReadFailed;
     defer info.unref();
-    return alloc.dupeZ(u8, std.mem.span(info.getEtag() orelse return error.ReadFailed));
+    return alloc.dupeSentinel(u8, std.mem.span(info.getEtag() orelse return error.ReadFailed), 0);
 }
 pub fn read(alloc: std.mem.Allocator, path: [:0]const u8, limit: ?usize, cancel: ?*gio.Cancellable) !Read {
     const fd = std.c.open(path, .{ .ACCMODE = .RDONLY, .CLOEXEC = true, .NONBLOCK = true, .NOFOLLOW = true }, @as(c_uint, 0));
@@ -62,7 +62,7 @@ pub fn replace(path: [:0]const u8, bytes: []const u8, expected: Read, cancel: ?*
     const ok = file.replaceContents(bytes.ptr, bytes.len, disk.etag.?, 0, .{ .private = true, .replace_destination = true }, null, cancel, &err);
     if (err) |e| {
         defer e.free();
-        if (e.matches(gio.ioErrorQuark(), @intFromEnum(gio.IOErrorEnum.wrong_etag)) != 0) return error.Conflict;
+        if (e.matches(gio.ioErrorQuark(), @backingInt(gio.IOErrorEnum.wrong_etag)) != 0) return error.Conflict;
     }
     if (ok == 0) return error.SaveFailed;
 }
@@ -83,7 +83,7 @@ pub fn atomic(path: [:0]const u8, bytes: []const u8, exclusive: bool) !void {
     if (exclusive) {
         if (std.c.link(temp, path) != 0) return error.Conflict;
     } else if (std.c.rename(temp, path) != 0) return error.SaveFailed;
-    const parent = try a.dupeZ(u8, std.fs.path.dirname(path) orelse "/");
+    const parent = try a.dupeSentinel(u8, std.fs.path.dirname(path) orelse "/", 0);
     defer a.free(parent);
     const dir = std.c.open(parent, .{ .ACCMODE = .RDONLY, .DIRECTORY = true, .CLOEXEC = true }, @as(c_uint, 0));
     if (dir >= 0) {

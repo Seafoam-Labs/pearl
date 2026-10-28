@@ -293,10 +293,10 @@ pub const View = struct {
         const model_changed = !std.mem.eql(u8, config.model_id, selected_model);
         config.model_id = selected_model;
         config.custom_model = std.mem.span(self.custom.as(gtk.Editable).getText());
-        config.runtime.source = @enumFromInt(self.runtime_source.getSelected());
+        config.runtime.source = @fromBackingInt(@intCast(self.runtime_source.getSelected()));
         config.runtime.executable = std.mem.span(self.runtime_path.as(gtk.Editable).getText());
-        config.compute.mode = @enumFromInt(self.compute_mode.getSelected());
-        config.compute.backend = @enumFromInt(self.backend.getSelected());
+        config.compute.mode = @fromBackingInt(@intCast(self.compute_mode.getSelected()));
+        config.compute.backend = @fromBackingInt(@intCast(self.backend.getSelected()));
         config.compute.allow_cpu_fallback = self.fallback.getActive() != 0;
         config.compute.offload_layers = if (self.layers.getValueAsInt() == 0) null else @intCast(self.layers.getValueAsInt());
         config.compute.gpu_memory_target_mib = if (self.gpu_memory.getValueAsInt() == 0) null else @intCast(self.gpu_memory.getValueAsInt());
@@ -309,7 +309,7 @@ pub const View = struct {
         if (self.provider_index < config.providers.len) {
             const list = alloc.dupe(cfg.Provider, config.providers) catch return;
             const p = &list[self.provider_index];
-            p.kind = @enumFromInt(self.provider_kind.getSelected());
+            p.kind = @fromBackingInt(@intCast(self.provider_kind.getSelected()));
             p.name = std.mem.span(self.provider_name.as(gtk.Editable).getText());
             p.endpoint = std.mem.span(self.endpoint.as(gtk.Editable).getText());
             p.engine_id = std.mem.span(self.engine_id.as(gtk.Editable).getText());
@@ -367,10 +367,10 @@ pub const View = struct {
         self.enabled.setActive(@intFromBool(config.enabled));
         self.model.setSelected(registry.selection(config.model_id));
         fill(alloc, self.custom, config.custom_model);
-        self.runtime_source.setSelected(@intFromEnum(config.runtime.source));
+        self.runtime_source.setSelected(@backingInt(config.runtime.source));
         fill(alloc, self.runtime_path, config.runtime.executable);
-        self.compute_mode.setSelected(@intFromEnum(config.compute.mode));
-        self.backend.setSelected(@intFromEnum(config.compute.backend));
+        self.compute_mode.setSelected(@backingInt(config.compute.mode));
+        self.backend.setSelected(@backingInt(config.compute.backend));
         self.fallback.setActive(@intFromBool(config.compute.allow_cpu_fallback));
         self.fallback.as(gtk.Widget).setSensitive(@intFromBool(config.compute.mode == .gpu));
         fillNumber(self.layers, config.compute.offload_layers orelse 0);
@@ -401,14 +401,14 @@ pub const View = struct {
         };
         if (names_changed) {
             self.provider_names.splice(0, self.provider_names.as(gio.ListModel).getNItems(), null);
-            for (config.providers) |p| self.provider_names.append(alloc.dupeZ(u8, p.name) catch continue);
+            for (config.providers) |p| self.provider_names.append(alloc.dupeSentinel(u8, p.name, 0) catch continue);
         }
         self.provider_index = current;
         self.provider.setSelected(@intCast(current));
         self.provider_editor.as(gtk.Widget).setVisible(@intFromBool(current < config.providers.len));
         if (current < config.providers.len) {
             const p = config.providers[current];
-            self.provider_kind.setSelected(@intFromEnum(p.kind));
+            self.provider_kind.setSelected(@backingInt(p.kind));
             fill(alloc, self.provider_name, p.name);
             fill(alloc, self.endpoint, p.endpoint);
             fill(alloc, self.engine_id, p.engine_id);
@@ -438,8 +438,8 @@ pub const View = struct {
         const available = self.job == null and (if (self.comparison) |comparison| !comparison.busy() else true);
         for (self.buttons) |b| b.as(gtk.Widget).setSensitive(@intFromBool(available));
         const needs_key = current < config.providers.len and (config.providers[current].kind == .brave or config.providers[current].kind == .google_legacy);
-        self.buttons[@intFromEnum(Action.store_key)].as(gtk.Widget).setSensitive(@intFromBool(available and needs_key));
-        self.buttons[@intFromEnum(Action.remove_key)].as(gtk.Widget).setSensitive(@intFromBool(available and needs_key));
+        self.buttons[@backingInt(Action.store_key)].as(gtk.Widget).setSensitive(@intFromBool(available and needs_key));
+        self.buttons[@backingInt(Action.remove_key)].as(gtk.Widget).setSensitive(@intFromBool(available and needs_key));
         self.feedback();
     }
     fn providerSelected(_: *object.Object, _: *object.ParamSpec, self: *View) callconv(.c) void {
@@ -473,13 +473,13 @@ pub const View = struct {
             picker.as(gtk.NativeDialog).destroy();
             picker.unref();
         }
-        if (response != @intFromEnum(gtk.ResponseType.accept) or !self.editor.editable()) return;
+        if (response != @backingInt(gtk.ResponseType.accept) or !self.editor.editable()) return;
         const file = picker.as(gtk.FileChooser).getFile() orelse return;
         defer file.unref();
         const path = file.getPath() orelse return;
         defer glib.free(path);
         self.runtime_path.as(gtk.Editable).setText(path);
-        self.runtime_source.setSelected(@intFromEnum(cfg.RuntimeSource.custom));
+        self.runtime_source.setSelected(@backingInt(cfg.RuntimeSource.custom));
     }
     pub fn requestApply(self: *View) void {
         self.begin(.apply_status) catch |err| self.status.setText(@errorName(err));
@@ -496,8 +496,8 @@ pub const View = struct {
         dialog.as(gtk.Window).setModal(1);
         dialog.as(gtk.Window).setTitle(@import("i18n").dtr("pearl", "Stop the current answer?"));
         note(dialog.getContentArea(), "Applying these settings stops the current answer and unloads its model. Your conversation stays available.");
-        _ = dialog.addButton("Keep editing", @intFromEnum(gtk.ResponseType.cancel));
-        _ = dialog.addButton("Stop & apply", @intFromEnum(gtk.ResponseType.accept));
+        _ = dialog.addButton("Keep editing", @backingInt(gtk.ResponseType.cancel));
+        _ = dialog.addButton("Stop & apply", @backingInt(gtk.ResponseType.accept));
         _ = gtk.Dialog.signals.response.connect(dialog, *View, applyResponse, self, .{});
         dialog.as(gtk.Window).present();
     }
@@ -505,7 +505,7 @@ pub const View = struct {
         self.apply_dialog = null;
         dialog.as(gtk.Window).destroy();
         dialog.unref();
-        if (response == @intFromEnum(gtk.ResponseType.accept)) self.begin(.apply_stop) catch |err| self.status.setText(@errorName(err));
+        if (response == @backingInt(gtk.ResponseType.accept)) self.begin(.apply_stop) catch |err| self.status.setText(@errorName(err));
     }
     fn addProvider(_: *gtk.Button, self: *View) callconv(.c) void {
         if (!self.editor.editable()) return;
@@ -544,7 +544,7 @@ pub const View = struct {
     }
     fn actionClicked(button_: *gtk.Button, self: *View) callconv(.c) void {
         for (self.buttons, 0..) |b, i| if (button_ == b) {
-            if (i == @intFromEnum(Action.benchmark)) {
+            if (i == @backingInt(Action.benchmark)) {
                 if (self.comparison) |comparison| {
                     comparison.mode.setSelected(2);
                     comparison.expander.setExpanded(1);
@@ -552,7 +552,7 @@ pub const View = struct {
                 }
                 return;
             }
-            self.begin(@enumFromInt(i)) catch |err| {
+            self.begin(@fromBackingInt(@intCast(i))) catch |err| {
                 self.status.setText(@errorName(err));
                 self.revealOperation();
             };
@@ -696,7 +696,7 @@ pub const View = struct {
                 const current = self.document(alloc) catch null;
                 const tested_json = std.json.Stringify.valueAlloc(alloc, job.config, .{}) catch "";
                 const current_json = if (current) |value| std.json.Stringify.valueAlloc(alloc, value.assistant, .{}) catch "" else "invalid";
-                self.runtime_details.setText(if (std.mem.eql(u8, tested_json, current_json)) alloc.dupeZ(u8, job.details) catch "Check completed" else @import("i18n").dtr("pearl", "The tested draft has changed. Check the new selection before use."));
+                self.runtime_details.setText(if (std.mem.eql(u8, tested_json, current_json)) alloc.dupeSentinel(u8, job.details, 0) catch "Check completed" else @import("i18n").dtr("pearl", "The tested draft has changed. Check the new selection before use."));
                 self.checked_fingerprint = runtimeFingerprint(alloc, job.config) catch null;
             }
             if (job.action == .apply_status) {
@@ -729,7 +729,7 @@ pub const View = struct {
         const self: *View = @ptrCast(@alignCast(data.?));
         if (self.job) |job| if (job.action == .download) {
             var buffer: [96]u8 = undefined;
-            const text = std.fmt.bufPrintZ(&buffer, "Downloaded {d} MB…", .{job.progress.load(.monotonic) / 1000000}) catch return 1;
+            const text = std.mem.printSentinel(&buffer, "Downloaded {d} MB…", .{job.progress.load(.monotonic) / 1000000}, 0) catch return 1;
             self.status.setText(text);
         };
         if (!self.editor.editable()) if (self.cancel) |cancel| cancel.cancel();
@@ -773,7 +773,7 @@ pub const View = struct {
         for ([_]*gtk.Label{ self.model_status, self.runtime_status, self.provider_status }) |label| label.as(gtk.Widget).setVisible(@intFromBool(label.getText()[0] != 0));
         const available = self.job == null and !comparing;
         for (self.buttons, 0..) |b, i| {
-            if (i == @intFromEnum(Action.store_key) or i == @intFromEnum(Action.remove_key)) continue;
+            if (i == @backingInt(Action.store_key) or i == @backingInt(Action.remove_key)) continue;
             b.as(gtk.Widget).setSensitive(@intFromBool(available));
         }
     }
@@ -842,7 +842,7 @@ fn button(host: *gtk.Box, title: [:0]const u8) *gtk.Button {
 }
 fn fill(alloc: std.mem.Allocator, e: *gtk.Entry, text: []const u8) void {
     if (e.as(gtk.Widget).hasFocus() != 0 or e.as(gtk.Widget).getFocusChild() != null) return;
-    if (!std.mem.eql(u8, std.mem.span(e.as(gtk.Editable).getText()), text)) e.as(gtk.Editable).setText(alloc.dupeZ(u8, text) catch return);
+    if (!std.mem.eql(u8, std.mem.span(e.as(gtk.Editable).getText()), text)) e.as(gtk.Editable).setText(alloc.dupeSentinel(u8, text, 0) catch return);
 }
 fn statusLabel(host: *gtk.Box) *gtk.Label {
     const label = w.label("", "pearl-secondary");

@@ -15,7 +15,7 @@ pub fn main() !void {
     const palette = if (p.theme.variant == .dark) @import("theme/theme.zig").dark else @import("theme/theme.zig").light;
     if (glib.getenv("PEARL_QT_TEST_REVIEW")) |_| {
         const review = try @import("config/qt_integration.zig").review(a, root, cancel);
-        glib.print("%s\n", (try a.dupeZ(u8, try std.json.Stringify.valueAlloc(a, .{ .digest = review.digest[0..], .text = review.text }, .{}))).ptr);
+        glib.print("%s\n", (try a.dupeSentinel(u8, try std.json.Stringify.valueAlloc(a, .{ .digest = review.digest[0..], .text = review.text }, .{}), 0)).ptr);
         return;
     }
     const reviewed: ?[64]u8 = if (glib.getenv("PEARL_QT_TEST_REAPPLY")) |raw| blk: {
@@ -24,5 +24,5 @@ pub fn main() !void {
         break :blk value[0..64].*;
     } else null;
     const status = try @import("config/qt_integration.zig").reconcile(a, root, p, palette, cancel, reviewed);
-    glib.print("%s\n", (try a.dupeZ(u8, try std.json.Stringify.valueAlloc(a, status, .{}))).ptr);
+    glib.print("%s\n", (try a.dupeSentinel(u8, try std.json.Stringify.valueAlloc(a, status, .{}), 0)).ptr);
 }

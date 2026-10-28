@@ -79,8 +79,8 @@ pub const View = struct {
                 self.modes[i] = dropdown(&.{ "Follow Pearl theme", "Choose profile", "Off" });
                 self.pickers[i] = dropdown(&.{"No profile selected"});
                 var label: [96]u8 = undefined;
-                w.name(self.modes[i].as(gtk.Widget), try std.fmt.bufPrintZ(&label, "{s} theme assignment", .{@tagName(application)}));
-                w.name(self.pickers[i].as(gtk.Widget), try std.fmt.bufPrintZ(&label, "{s} application profile", .{@tagName(application)}));
+                w.name(self.modes[i].as(gtk.Widget), try std.mem.printSentinel(&label, "{s} theme assignment", .{@tagName(application)}, 0));
+                w.name(self.pickers[i].as(gtk.Widget), try std.mem.printSentinel(&label, "{s} application profile", .{@tagName(application)}, 0));
                 row.append(self.modes[i].as(gtk.Widget));
                 row.append(self.pickers[i].as(gtk.Widget));
                 self.details[i] = w.label("", "pearl-secondary");
@@ -170,7 +170,7 @@ pub const View = struct {
     }
     fn searched(_: *gtk.Editable, self: *View) callconv(.c) void {
         const query = std.mem.span(self.search.as(gtk.Editable).getText());
-        for (self.rows, std.enums.values(profiles.Application)) |row, app| row.as(gtk.Widget).setVisible(@intFromBool(query.len == 0 or std.ascii.indexOfIgnoreCase(@tagName(app), query) != null));
+        for (self.rows, std.enums.values(profiles.Application)) |row, app| row.as(gtk.Widget).setVisible(@intFromBool(query.len == 0 or std.ascii.findIgnoreCase(@tagName(app), query) != null));
     }
     fn defaultsClicked(_: *gtk.Button, self: *View) callconv(.c) void {
         self.adoptDefaults() catch |err| self.status.setText(@errorName(err));
@@ -324,7 +324,7 @@ pub const View = struct {
             .seed => 1,
             .wallpaper => 2,
         });
-        self.seed.as(gtk.Editable).setText(try alloc.dupeZ(u8, p.matugen.colors.seed));
+        self.seed.as(gtk.Editable).setText(try alloc.dupeSentinel(u8, p.matugen.colors.seed, 0));
         for (std.enums.values(profiles.Application), 0..) |app, i| {
             const choice = p.matugen.applications.map.get(@tagName(app)) orelse profiles.Selection{};
             self.modes[i].setSelected(switch (choice.mode) {

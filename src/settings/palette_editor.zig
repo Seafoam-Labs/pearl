@@ -148,7 +148,7 @@ pub const View = struct {
     fn setBuffer(self: *View, bytes: []const u8) void {
         self.filling = true;
         defer self.filling = false;
-        const terminated = a.dupeZ(u8, bytes) catch return;
+        const terminated = a.dupeSentinel(u8, bytes, 0) catch return;
         defer a.free(terminated);
         self.buffer.setText(terminated, @intCast(bytes.len));
     }
@@ -164,8 +164,8 @@ pub const View = struct {
         const selected = if (self.variant.getSelected() == 1) normalized.light orelse normalized.dark.? else normalized.dark orelse normalized.light.?;
         self.filling = true;
         defer self.filling = false;
-        self.title.as(gtk.Editable).setText(alloc.dupeZ(u8, source.name) catch return);
-        for (self.colors, [_][]const u8{ "surface", "on_surface", "primary" }) |entry_, role| entry_.as(gtk.Editable).setText(alloc.dupeZ(u8, model.get(selected, role)) catch return);
+        self.title.as(gtk.Editable).setText(alloc.dupeSentinel(u8, source.name, 0) catch return);
+        for (self.colors, [_][]const u8{ "surface", "on_surface", "primary" }) |entry_, role| entry_.as(gtk.Editable).setText(alloc.dupeSentinel(u8, model.get(selected, role), 0) catch return);
     }
     fn preview(self: *View) void {
         var arena = std.heap.ArenaAllocator.init(a);
@@ -243,7 +243,7 @@ pub const View = struct {
             },
             .open => {
                 if (self.path.len == 0) return error.CreateOrLoadPaletteFirst;
-                const path = try a.dupeZ(u8, self.path);
+                const path = try a.dupeSentinel(u8, self.path, 0);
                 defer a.free(path);
                 const file = gio.File.newForPath(path);
                 defer file.unref();
@@ -273,7 +273,7 @@ pub const View = struct {
         self.expected = try retained.dupe(u8, value.object.get("expected").?.string);
         self.saved = try std.json.Stringify.valueAlloc(retained, source, .{ .whitespace = .indent_2 });
         const basename = std.fs.path.basename(self.path);
-        self.slug.as(gtk.Editable).setText(try alloc.dupeZ(u8, basename[0 .. basename.len - 5]));
+        self.slug.as(gtk.Editable).setText(try alloc.dupeSentinel(u8, basename[0 .. basename.len - 5], 0));
         self.setBuffer(self.saved);
         self.fill();
         self.preview();

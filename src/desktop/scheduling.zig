@@ -56,8 +56,8 @@ pub const View = struct {
             for (config.profiles, ids, self.buttons, self.checks, self.choices, 0..) |profile, *id, *button, *check, *choice, i| {
                 id.* = try alloc.dupe(u8, profile.id);
                 const labels = w.column(2);
-                labels.append(w.label(try alloc.dupeZ(u8, profile.label), "pearl-sched-name").as(gtk.Widget));
-                if (profile.description.len > 0) labels.append(w.label(try alloc.dupeZ(u8, profile.description), "pearl-secondary").as(gtk.Widget));
+                labels.append(w.label(try alloc.dupeSentinel(u8, profile.label, 0), "pearl-sched-name").as(gtk.Widget));
+                if (profile.description.len > 0) labels.append(w.label(try alloc.dupeSentinel(u8, profile.description, 0), "pearl-secondary").as(gtk.Widget));
                 check.* = w.icon("pearl-emblem-ok-symbolic");
                 check.*.setPixelSize(16);
                 check.*.as(gtk.Widget).setValign(.center);
@@ -68,7 +68,7 @@ pub const View = struct {
                 button.*.setChild(line.as(gtk.Widget));
                 button.*.as(gtk.Widget).addCssClass("pearl-menu-item");
                 button.*.as(gtk.Widget).addCssClass("pearl-sched-row");
-                w.name(button.*.as(gtk.Widget), try alloc.dupeZ(u8, profile.label));
+                w.name(button.*.as(gtk.Widget), try alloc.dupeSentinel(u8, profile.label, 0));
                 focus_state.tag(button.*.as(gtk.Widget), "sched-profile:{s}", .{profile.id});
                 choice.* = .{ .view = self, .index = i };
                 list.append(button.*.as(gtk.Widget));
@@ -102,7 +102,7 @@ pub const View = struct {
             button.as(gtk.Widget).setSensitive(@intFromBool(usable));
         }
         var note: [600]u8 = undefined;
-        self.note.setText(if (service.applying != null) "" else if (service.err) |err| std.fmt.bufPrintZ(&note, "{s}", .{err}) catch "" else service.describeNotice(&note));
+        self.note.setText(if (service.applying != null) "" else if (service.err) |err| std.mem.printSentinel(&note, "{s}", .{err}, 0) catch "" else service.describeNotice(&note));
         self.note.as(gtk.Widget).setVisible(@intFromBool(self.note.getText()[0] != 0));
     }
 

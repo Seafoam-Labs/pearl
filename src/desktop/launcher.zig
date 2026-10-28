@@ -210,7 +210,7 @@ pub const Launcher = struct {
             const title = w.title orelse app_id;
             if (title.len > 4096 or app_id.len > 1024) continue;
             const detail = try std.fmt.allocPrintSentinel(alloc, "{s} · {s} · {s} · {s}", .{ app_id, output.?.name, if (workspace) |ws| ws.name else "—", if (w.minimized) @import("i18n").dtr("pearl", "Minimized") else if (w.visible) @import("i18n").dtr("pearl", "Visible window") else @import("i18n").dtr("pearl", "Other workspace") }, 0);
-            try job.windows.append(alloc, .{ .id = try alloc.dupeZ(u8, w.id), .name = try alloc.dupeZ(u8, title), .detail = detail, .keywords = try alloc.dupeZ(u8, app_id), .visible = w.visible });
+            try job.windows.append(alloc, .{ .id = try alloc.dupeSentinel(u8, w.id, 0), .name = try alloc.dupeSentinel(u8, title, 0), .detail = detail, .keywords = try alloc.dupeSentinel(u8, app_id, 0), .visible = w.visible });
         }
         self.pending = true;
         self.index.searches += 1;
@@ -236,7 +236,7 @@ pub const Launcher = struct {
         if (cancel.isCancelled() != 0) return error.Canceled;
         job.calculation = calculator.evaluate(job.query);
         if (job.calculation.outcome == .value) {
-            const value = try alloc.dupeZ(u8, job.calculation.outcome.value.text());
+            const value = try alloc.dupeSentinel(u8, job.calculation.outcome.value.text(), 0);
             const detail = try std.fmt.allocPrintSentinel(alloc, "{s} · {s}", .{ job.query, @import("i18n").dtr("pearl", "Calculation · Enter to copy · = to continue") }, 0);
             try job.hits.append(alloc, .{ .kind = .calculator, .index = 0, .score = std.math.maxInt(i32), .id = job.query, .name = value, .detail = detail });
         }
@@ -337,8 +337,8 @@ pub const Launcher = struct {
         self.selection.setSelected(selected);
         if (old) |j| j.destroy();
         var buffer: [180]u8 = undefined;
-        const message = if (self.count == 0) (if (self.index.pending) @import("i18n").dtr("pearl", "Loading applications…") else if (self.index.failed) @import("i18n").dtr("pearl", "Application discovery unavailable") else @import("i18n").dtr("pearl", "No matches. Try another name.")) else std.fmt.bufPrintZ(&buffer, "{d} · {s}", .{ job.hits.items.len, @import("i18n").dtr("pearl", "results · ↑ ↓ to choose · Enter to open") }) catch unreachable;
-        const detail = if (job.hits.items.len > self.count) std.fmt.bufPrintZ(&buffer, "{d} / {d} · {s}", .{ self.count, job.hits.items.len, @import("i18n").dtr("pearl", "Refine your search for more results") }) catch unreachable else message;
+        const message = if (self.count == 0) (if (self.index.pending) @import("i18n").dtr("pearl", "Loading applications…") else if (self.index.failed) @import("i18n").dtr("pearl", "Application discovery unavailable") else @import("i18n").dtr("pearl", "No matches. Try another name.")) else std.mem.printSentinel(&buffer, "{d} · {s}", .{ job.hits.items.len, @import("i18n").dtr("pearl", "results · ↑ ↓ to choose · Enter to open") }, 0) catch unreachable;
+        const detail = if (job.hits.items.len > self.count) std.mem.printSentinel(&buffer, "{d} / {d} · {s}", .{ self.count, job.hits.items.len, @import("i18n").dtr("pearl", "Refine your search for more results") }, 0) catch unreachable else message;
         self.message.setText(self.action_message orelse if (job.calculation.explicit and job.calculation.outcome != .value) calculationMessage(job.calculation.outcome) else if (job.calculation.outcome == .value) @import("i18n").dtr("pearl", "↑ ↓ to choose · Enter to copy calculation · = to continue") else detail);
         self.render_started = job.started;
         log.debug("event=launcher-results count={d} shown={d} publish_us={d}", .{ job.hits.items.len, self.count, glib.getMonotonicTime() - job.started });
@@ -380,7 +380,7 @@ pub const Launcher = struct {
         var end: c_int = 0;
         if (editable.getPosition() != length or editable.getSelectionBounds(&start, &end) != 0) return false;
         var buffer: [132]u8 = undefined;
-        const text = std.fmt.bufPrintZ(&buffer, "{s}{s}", .{ if (job.calculation.explicit) "=" else "", job.calculation.outcome.value.text() }) catch unreachable;
+        const text = std.mem.printSentinel(&buffer, "{s}{s}", .{ if (job.calculation.explicit) "=" else "", job.calculation.outcome.value.text() }, 0) catch unreachable;
         self.activate_pending = null;
         editable.setText(text);
         editable.setPosition(-1);

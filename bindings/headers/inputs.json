@@ -42,7 +42,8 @@
     "sha256": "39861c0b59cc7ab42bdb710a44a02a138509a7bd8d5f065b765a2d2457365b4b",
     "declaration": "typedef struct _GMainContext            GMainContext;"
   },
-  "zig": "0.16.0",
+  "zig": "0.17.0",
   "translation_target": "x86_64-linux-gnu",
-  "generated_sha256": "14ceb08f4aa8e64533eaef3e748ccd4b1ce74c969912723641049cc2e28c2a74"
+  "generated_sha256": "18fb76cd925868194758d103b9a43695b60d59eed324c606262603b178eeaeb1",
+  "translator": "translate-c 2.0.2 (package integrity in build.zig.zon)"
 }

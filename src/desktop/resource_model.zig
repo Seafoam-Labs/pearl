@@ -65,7 +65,7 @@ pub fn abbreviation(kind: Series) [:0]const u8 {
 
 /// One metric's retained samples, oldest to newest.
 pub const History = struct {
-    values: [window]f64 = [_]f64{0} ** window,
+    values: [window]f64 = @as([window]f64, @splat(0)),
     count: usize = 0,
     /// Index of the oldest retained sample once the ring wraps.
     start: usize = 0,

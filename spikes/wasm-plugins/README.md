@@ -7,7 +7,7 @@ host configuration. It is not wired into the production build.
 
 ## Pinned tools
 
-- Host and guest compiler: Zig 0.16.0, using its bundled C compiler for `guest.c`.
+- Host and guest compiler: Zig 0.17.0, using its bundled C compiler for `guest.c`.
 - [Wasmtime 48.0.2 Linux x86_64 C API archive](https://github.com/bytecodealliance/wasmtime/releases/download/v48.0.2/wasmtime-v48.0.2-x86_64-linux-c-api.tar.xz).
   SHA-256: `d9a2b5dfaf688035f288a7ae81a4b96c3acdd3e849262c2ab577b61908c3f9f9`.
 - [wasm-tools 1.259.0 Linux x86_64 archive](https://github.com/bytecodealliance/wasm-tools/releases/download/v1.259.0/wasm-tools-1.259.0-x86_64-linux.tar.gz).
@@ -29,10 +29,11 @@ python3 spikes/wasm-plugins/reproduce.py \
   --output /tmp/pearl-wasm-feasibility/probe
 ```
 
-The script downloads nothing. It copies the probe sources to the output directory,
+The script copies the probe sources to the output directory,
 compiles C and Zig guests to core Wasm, prints their generated modules using
 `wasm-tools`, and constructs component wrappers. Its native Zig host translates
-the released C headers through `addTranslateC` and links `libwasmtime.so` with a
+the released C headers through upstream `translate-c` 2.0.2 (downloaded by Zig
+unless already cached) and links `libwasmtime.so` with a
 scratch-directory RPATH. Component text is converted to binary through Wasmtime
 before instantiation. Each check receives its own store and linker.
 
@@ -54,7 +55,7 @@ control. The loop check confirms a fuel-related error, not a generic failure.
 
 ## Findings and limits
 
-- Released Component Model hosting works directly from Zig 0.16; a Rust helper
+- Released Component Model hosting works directly from Zig 0.17; a Rust helper
   or handwritten C bridge was not needed for these checks.
 - Both tested guest languages use the same component contract and host callback.
 - The 48.0.2 call implementation requires initialized result slots in practice:

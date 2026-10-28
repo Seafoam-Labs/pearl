@@ -1,6 +1,6 @@
 {
-  "generator": "zig-wayland v0.6.0 (package integrity in build.zig.zon)",
-  "zig": "0.16.0",
+  "generator": "zig-wayland v0.7.0 (package integrity in build.zig.zon)",
+  "zig": "0.17.0",
   "globals": {
     "wl_compositor": 6,
     "ext_background_effect_manager_v1": 1,
@@ -82,5 +82,5 @@
       "sha256": "4065cbc291a80348b7ef311168fbfb5cf245efe977a6dc32211291ef1a9529a1"
     }
   },
-  "generated_sha256": "88c449f52b2c5ba95c65d5818a550781c5edfe93c181a7d01eb02acf0b900559"
+  "generated_sha256": "91d20aef77ecb30e1efcd06ecb6d5ab4baa6b7efe752c541949a4145173f4b38"
 }

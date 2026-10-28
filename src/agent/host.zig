@@ -81,7 +81,7 @@ pub const Host = struct {
         var buffer: [4096]u8 = undefined;
         const exe = try @import("../settings/distribution.zig").executable(&buffer);
         const helper = if (@import("build_options").test_hooks and glib.getenv("PEARL_TEST_AGENT") != null)
-            try alloc.dupeZ(u8, std.mem.span(glib.getenv("PEARL_TEST_AGENT").?))
+            try alloc.dupeSentinel(u8, std.mem.span(glib.getenv("PEARL_TEST_AGENT").?), 0)
         else
             try std.fmt.allocPrintSentinel(alloc, "{s}/pearl-agent{s}", .{ std.fs.path.dirname(exe).?, if (@import("../settings/distribution.zig").isGit(exe)) "-git" else "" }, 0);
         if (std.c.access(helper, std.c.X_OK) != 0) return error.AssistantNotInstalled;

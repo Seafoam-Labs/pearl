@@ -404,7 +404,7 @@ fn collectMounts(s: *m.Snapshot) void {
         item.device.major = std.fmt.parseInt(u32, parts.next() orelse "", 10) catch continue;
         item.device.minor = std.fmt.parseInt(u32, parts.next() orelse "", 10) catch continue;
         var stat: c.struct_statvfs = undefined;
-        const raw_path = a.dupeZ(u8, decoded[0..n]) catch unreachable;
+        const raw_path = a.dupeSentinel(u8, decoded[0..n], 0) catch unreachable;
         if (c.statvfs(raw_path, &stat) != 0) continue;
         item.total = std.math.mul(u64, stat.f_blocks, stat.f_frsize) catch continue;
         item.available = std.math.mul(u64, stat.f_bavail, stat.f_frsize) catch continue;

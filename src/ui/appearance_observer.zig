@@ -20,7 +20,7 @@ pub const Observer = struct {
             gtk.StyleContext.addProviderForDisplay(gdk.Display.getDefault().?, self.native_css.?.as(gtk.StyleProvider), gtk.STYLE_PROVIDER_PRIORITY_APPLICATION - 2);
         }
         if (s.mode == .gtk and s.gtk_name.len > 0) {
-            const name = try a.dupeZ(u8, s.gtk_name);
+            const name = try a.dupeSentinel(u8, s.gtk_name, 0);
             defer a.free(name);
             self.native_css.?.loadNamed(name, if (s.variant == .dark) "dark" else null);
         } else self.native_css.?.loadFromString("");

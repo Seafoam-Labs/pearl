@@ -522,7 +522,7 @@ pub const Editor = struct {
                 if (state.error_code) |code| {
                     self.err = error.BackendOperationFailed;
                     @memset(&self.detail, 0);
-                    _ = std.fmt.bufPrintZ(&self.detail, "{s}{s}{s}", .{ code, if (state.detail.len > 0) ": " else "", state.detail }) catch {};
+                    _ = std.mem.printSentinel(&self.detail, "{s}{s}{s}", .{ code, if (state.detail.len > 0) ": " else "", state.detail }, 0) catch {};
                 } else if (state.detail.len > 0) {
                     @memset(&self.detail, 0);
                     @memcpy(self.detail[0..@min(state.detail.len, 256)], state.detail[0..@min(state.detail.len, 256)]);

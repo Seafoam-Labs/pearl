@@ -9,6 +9,17 @@ gate=module('gate');source=module('source')
 def write(root,path,value):
     p=root/path;p.parent.mkdir(parents=True,exist_ok=True);p.write_text(json.dumps(value))
 class ReleaseTools(unittest.TestCase):
+    def test_helper_provenance_uses_pinned_version_not_compatibility_floor(self):
+        with tempfile.TemporaryDirectory() as t:
+            root=Path(t);project=root/'project';evidence=root/'evidence'
+            release=dict(aqueous_revision='revision',aqueous_binary_sha256='shell',aqueousctl_binary_sha256='ctl',aqueous_config_binary_sha256='config',aqueous_wlroots_sha256='wlroots',aqueous_config_floor='0.8.2',aqueous_config_version='1.0.12')
+            write(project,'packaging/release.json',release)
+            baseline=dict(revision='revision',binary_sha256={'aqueous':'shell','aqueousctl':'ctl','aqueous-config':'config'},wlroots_sha256='wlroots',helper={'version':'1.0.12'})
+            write(evidence,'functional/test-aqueous-settings/metadata.json',{'baseline':baseline})
+            self.assertTrue(gate.evaluate(evidence,project)['checks']['master-provenance'])
+            baseline['helper']['version']='0.8.2'
+            write(evidence,'functional/test-aqueous-settings/metadata.json',{'baseline':baseline})
+            self.assertFalse(gate.evaluate(evidence,project)['checks']['master-provenance'])
     def test_missing_evidence_is_not_release_ready(self):
         with tempfile.TemporaryDirectory() as t:
             result=gate.evaluate(Path(t));self.assertFalse(result['release_ready']);self.assertIn('functional',result['pending_or_failed']);self.assertIn('accessibility',result['pending_or_failed'])

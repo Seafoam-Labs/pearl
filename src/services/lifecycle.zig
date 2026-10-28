@@ -537,7 +537,7 @@ pub const Lifecycle = struct {
         self.changed(self.context);
     }
     fn lockerPath(_: *Lifecycle, alloc: std.mem.Allocator) ![:0]const u8 {
-        if (@import("build_options").test_hooks) if (glib.getenv("PEARL_TEST_LOCKER")) |value| return alloc.dupeZ(u8, std.mem.span(value));
+        if (@import("build_options").test_hooks) if (glib.getenv("PEARL_TEST_LOCKER")) |value| return alloc.dupeSentinel(u8, std.mem.span(value), 0);
         var exe: [4096]u8 = undefined;
         const n = std.c.readlink("/proc/self/exe", &exe, exe.len);
         if (n > 0) {
@@ -546,7 +546,7 @@ pub const Lifecycle = struct {
         }
         const path_value = glib.findProgramInPath("pearl-lock") orelse return error.LockerMissing;
         defer glib.free(path_value);
-        return alloc.dupeZ(u8, std.mem.span(path_value));
+        return alloc.dupeSentinel(u8, std.mem.span(path_value), 0);
     }
     fn syncLockState(self: *Lifecycle) void {
         self.gate.available = self.client.availability == .ready;

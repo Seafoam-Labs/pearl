@@ -64,7 +64,7 @@ pub const Client = struct {
 
     pub fn init(path: []const u8, runtime: []const u8, context: *anyopaque, observer: *const fn (*anyopaque, Event) void) !Client {
         try validateEndpoint(path, runtime);
-        const owned = try a.dupeZ(u8, path);
+        const owned = try a.dupeSentinel(u8, path, 0);
         errdefer a.free(owned);
         return .{ .path = owned, .model = try Model.init(a, (codec.Limits{}).state_bytes), .context = context, .observer = observer };
     }
@@ -277,7 +277,7 @@ pub const Client = struct {
                         if (self.request.hello and self.events.hello) {
                             if (!eql(u8, &self.request.session, &self.events.session)) return error.SessionChanged;
                             self.capabilities = self.request.caps;
-                            inline for (@typeInfo(codec.Capabilities).@"struct".fields) |f| @field(self.capabilities, f.name) = @field(self.capabilities, f.name) and @field(self.events.caps, f.name);
+                            inline for (@typeInfo(codec.Capabilities).@"struct".field_names) |f| @field(self.capabilities, f) = @field(self.capabilities, f) and @field(self.events.caps, f);
                             if (!self.capabilities.state) return error.Unsupported;
                             self.model.limit = @min(self.request.limits.state_bytes, self.events.limits.state_bytes);
                             self.initial_deadline = now() + @as(i64, self.subscription_ms) * 1000;
@@ -452,5 +452,5 @@ test "adapter endpoint validation rejects traversal, overlap and long Unix paths
     try validateEndpoint("/tmp/runtime/aqueous-intel-git/instance/ipc.sock", "/tmp/runtime");
     for ([_][]const u8{ "relative", "/tmp/runtime/aqueous/ipc.sock", "/tmp/runtime/aqueous//ipc.sock", "/tmp/runtime/aqueous/../ipc.sock", "/tmp/runtime/aqueous/a/b/ipc.sock", "/tmp/runtime-other/aqueous/a/ipc.sock", "/tmp/runtime/aqueous/a/ipc.sock\x00" }) |path| try t.expectError(error.InvalidEndpoint, validateEndpoint(path, "/tmp/runtime"));
     try t.expectError(error.InvalidEndpoint, validateEndpoint("/tmp//runtime/aqueous/a/ipc.sock", "/tmp//runtime"));
-    try t.expectError(error.InvalidEndpoint, validateEndpoint("/tmp/runtime/aqueous/" ++ "a" ** 90 ++ "/ipc.sock", "/tmp/runtime"));
+    try t.expectError(error.InvalidEndpoint, validateEndpoint("/tmp/runtime/aqueous/" ++ @import("test_strings").string("a", 90) ++ "/ipc.sock", "/tmp/runtime"));
 }

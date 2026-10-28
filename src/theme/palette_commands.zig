@@ -17,7 +17,7 @@ pub fn run(a: std.mem.Allocator, request: @import("commands.zig").Request, cance
         const resolved: @import("resolve.zig").Resolved = .{ .palette = if (light) document.light else document.dark, .palette_css = try compiler.shellCss(a, document, light), .digest = &document.digest };
         return std.json.Stringify.valueAlloc(a, .{ .valid = true, .resolved = resolved, .source = document.source }, .{});
     }
-    const path = if (request.path.len > 0) try a.dupeZ(u8, request.path) else try file.filename(a, request.name);
+    const path = if (request.path.len > 0) try a.dupeSentinel(u8, request.path, 0) else try file.filename(a, request.name);
     var loaded: file.File = undefined;
     switch (request.action) {
         .palette_init => loaded = file.write(a, request.name, if (request.contents.len > 0) request.contents else file.starter, "", cancel, &diagnostic) catch |err| return failure(a, err, diagnostic),
@@ -34,11 +34,11 @@ pub fn run(a: std.mem.Allocator, request: @import("commands.zig").Request, cance
     }
     if (request.action == .palette_export) {
         const publication = request.publication orelse if (request.metadata_path.len > 0) blk: {
-            const metadata = try io.read(a, try a.dupeZ(u8, request.metadata_path), 65536, cancel);
+            const metadata = try io.read(a, try a.dupeSentinel(u8, request.metadata_path, 0), 65536, cancel);
             if (metadata.missing) return error.PublicationMetadataRequired;
             break :blk try @import("package_model.zig").parse(model.Publication, a, metadata.bytes, 65536);
         } else loaded.document.source.publication orelse return error.PublicationMetadataRequired;
-        const exported = try file.exportPackage(a, loaded, try a.dupeZ(u8, request.output), publication);
+        const exported = try file.exportPackage(a, loaded, try a.dupeSentinel(u8, request.output, 0), publication);
         return std.json.Stringify.valueAlloc(a, .{ .valid = true, .path = request.output, .manifest = exported.manifest, .digest = exported.digest[0..] }, .{});
     }
     const final_path = if (request.action == .palette_init or request.action == .palette_import or request.action == .palette_write) try file.filename(a, request.name) else path;

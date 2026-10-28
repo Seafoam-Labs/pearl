@@ -137,7 +137,7 @@ pub const View = struct {
 
     fn render(self: *View) void {
         var text: [32:0]u8 = undefined;
-        self.heading.setText(std.fmt.bufPrintZ(&text, "{s} {d}", .{ @import("i18n").tr(month_names[self.shown.month - 1]), self.shown.year }) catch unreachable);
+        self.heading.setText(std.mem.printSentinel(&text, "{s} {d}", .{ @import("i18n").tr(month_names[self.shown.month - 1]), self.shown.year }, 0) catch unreachable);
 
         const lead = @import("i18n").region.leading(firstWeekday(self.shown.year, self.shown.month), self.week_start);
         const count = daysInMonth(self.shown.year, self.shown.month);
@@ -162,9 +162,9 @@ pub const View = struct {
             const date = shift(self.shown.year, self.shown.month, @as(i32, @intCast(i)) - @as(i32, @intCast(lead)) + 1);
             const outside = !model.sameMonth(date, self.shown);
             var label: [8:0]u8 = undefined;
-            day.button.as(gtk.Button).setLabel(std.fmt.bufPrintZ(&label, "{d}", .{date.day}) catch unreachable);
+            day.button.as(gtk.Button).setLabel(std.mem.printSentinel(&label, "{d}", .{date.day}, 0) catch unreachable);
             var name: [48:0]u8 = undefined;
-            w.name(widget, std.fmt.bufPrintZ(&name, "{d} {s} {d}", .{ date.day, @import("i18n").tr(month_names[date.month - 1]), date.year }) catch unreachable);
+            w.name(widget, std.mem.printSentinel(&name, "{d} {s} {d}", .{ date.day, @import("i18n").tr(month_names[date.month - 1]), date.year }, 0) catch unreachable);
             widget.setVisible(1);
             setClass(widget, "pearl-calendar-outside", outside);
             setClass(widget, "pearl-calendar-today", model.sameDate(date, self.today));

@@ -1,16 +1,7 @@
 //! Read immutable package snapshots through NOFOLLOW directory-relative opens.
 const std = @import("std");
 const m = @import("model.zig");
-pub const c = @cImport({
-    @cDefine("_GNU_SOURCE", "1");
-    @cUndef("_FORTIFY_SOURCE");
-    @cDefine("_FORTIFY_SOURCE", "0");
-    @cInclude("fcntl.h");
-    @cInclude("unistd.h");
-    @cInclude("sys/stat.h");
-    @cInclude("dirent.h");
-    @cInclude("errno.h");
-});
+pub const c = @import("pearl_libc");
 const a = std.heap.c_allocator;
 pub const Image = struct { id: []const u8, bytes: []const u8 };
 pub const Package = struct {
@@ -89,7 +80,7 @@ pub fn read(alloc: std.mem.Allocator, base: c_int, path: []const u8, limit: usiz
     var parts = std.mem.splitScalar(u8, path, '/');
     while (parts.next()) |part| {
         var name: [257]u8 = undefined;
-        const z = try std.fmt.bufPrintZ(&name, "{s}", .{part});
+        const z = try std.mem.printSentinel(&name, "{s}", .{part}, 0);
         const last = parts.peek() == null;
         const next = c.openat(current, z, c.O_RDONLY | c.O_NOFOLLOW | c.O_CLOEXEC | c.O_NONBLOCK | (if (last) @as(c_int, 0) else c.O_DIRECTORY));
         if (next < 0) return error.PluginFile;

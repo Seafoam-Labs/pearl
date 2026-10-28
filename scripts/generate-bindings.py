@@ -22,7 +22,9 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--check", action="store_true", help="fail if generated files differ")
     parser.add_argument("--update-input-lock", action="store_true", help="explicitly accept changed system GIR inputs")
+    parser.add_argument("--gir-dir", action="append", type=Path, default=[], help="Additional directories containing pinned GIR metadata")
     args = parser.parse_args()
+    gir_dirs = [ROOT / "bindings/gir", *[p.resolve() for p in args.gir_dir], Path("/usr/share/gir-1.0")]
     if args.check and args.update_input_lock:
         parser.error("--check and --update-input-lock are mutually exclusive")
     os.chdir(ROOT)
@@ -32,9 +34,9 @@ def main():
     lock_path = ROOT / "bindings/gir-inputs.json"
     if not args.update_input_lock:
         for name, expected in json.loads(lock_path.read_text()).items():
-            path = ROOT / "bindings/gir" / name
-            if not path.exists():
-                path = Path("/usr/share/gir-1.0") / name
+            path = next((directory / name for directory in gir_dirs if (directory / name).exists()), None)
+            if path is None:
+                raise SystemExit(f"Missing GIR input: {name}; install its development package or use --gir-dir")
             if digest(path) != expected:
                 raise SystemExit(f"GIR input changed: {name}; review before --update-input-lock")
     with tempfile.TemporaryDirectory(prefix="pearl-gir-", dir=ROOT / ".cache") as tmp:
@@ -43,7 +45,7 @@ def main():
         codegen = ROOT / "zig-out/share/gir-codegen"
         subprocess.run([
             str(ROOT / "zig-out/bin/translate-gir"),
-            f"--gir-dir={ROOT / 'bindings/gir'}", "--gir-dir=/usr/share/gir-1.0",
+            *[f"--gir-dir={directory}" for directory in gir_dirs],
             f"--gir-fixes-dir={codegen / 'gir-fixes'}",
             f"--bindings-dir={codegen / 'binding-overrides'}",
             f"--extensions-dir={codegen / 'extensions'}",

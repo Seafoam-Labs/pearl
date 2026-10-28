@@ -112,13 +112,13 @@ pub const Sound = struct {
         };
         if (different) self.rebuild();
         var buffer: [1024]u8 = undefined;
-        const sound_text = if (!self.audio.ready) @import("i18n").dtr("pearl", "Audio unavailable") else if (self.audio.count == 0) @import("i18n").dtr("pearl", "No audio devices") else std.fmt.bufPrintZ(&buffer, "{s}: {s}\n{s}: {s}{s}", .{ @import("i18n").dtr("pearl", "Output"), if (self.audio.default(.sink)) |d| d.label.slice() else "—", @import("i18n").dtr("pearl", "Input"), if (self.audio.default(.source)) |d| d.label.slice() else "—", if (self.audio.active != null or self.audio.queue.len > 0 or self.audio.feedback != null) @import("i18n").dtr("pearl", " · Applying…") else "" }) catch "Audio";
+        const sound_text = if (!self.audio.ready) @import("i18n").dtr("pearl", "Audio unavailable") else if (self.audio.count == 0) @import("i18n").dtr("pearl", "No audio devices") else std.mem.printSentinel(&buffer, "{s}: {s}\n{s}: {s}{s}", .{ @import("i18n").dtr("pearl", "Output"), if (self.audio.default(.sink)) |d| d.label.slice() else "—", @import("i18n").dtr("pearl", "Input"), if (self.audio.default(.source)) |d| d.label.slice() else "—", if (self.audio.active != null or self.audio.queue.len > 0 or self.audio.feedback != null) @import("i18n").dtr("pearl", " · Applying…") else "" }, 0) catch "Audio";
         self.audio_status.setText(sound_text);
-        if (self.audio.err) |message| self.audio_status.setText(std.fmt.bufPrintZ(&buffer, "{s}", .{message}) catch "Audio unavailable");
+        if (self.audio.err) |message| self.audio_status.setText(std.mem.printSentinel(&buffer, "{s}", .{message}, 0) catch "Audio unavailable");
         self.state_icon.setFromIconName(if (self.audio.err != null or !self.audio.ready) "pearl-dialog-warning-symbolic" else "pearl-emblem-ok-symbolic");
         for (self.rows[0..self.count], self.audio.devices[0..self.count]) |*row, d| {
             const kind = if (d.key.kind == .sink) @import("i18n").dtr("pearl", "Output") else if (d.key.kind == .source) @import("i18n").dtr("pearl", "Input") else if (d.key.kind == .playback) @import("i18n").dtr("pearl", "Playback") else @import("i18n").dtr("pearl", "Recording");
-            row.title.setText(std.fmt.bufPrintZ(&buffer, "{s} · {s}", .{ kind, d.label.slice() }) catch d.label.z());
+            row.title.setText(std.mem.printSentinel(&buffer, "{s} · {s}", .{ kind, d.label.slice() }, 0) catch d.label.z());
             row.scale.as(gtk.Widget).setTooltipText(row.title.getText());
             const pending = self.audio.active != null or self.audio.queue.len > 0 or self.audio.feedback != null;
             if (!pending) row.scale.as(gtk.Range).setValue(@floatFromInt(d.volume));
@@ -241,9 +241,9 @@ pub const PowerView = struct {
         const battery = if (!power.battery_observed)
             @import("i18n").dtr("pearl", "No battery reported")
         else if (percent) |n|
-            std.fmt.bufPrintZ(&buffer, "{d:.0}% · {s}", .{ n, chargeState(power.battery_state) }) catch chargeState(power.battery_state)
+            std.mem.printSentinel(&buffer, "{d:.0}% · {s}", .{ n, chargeState(power.battery_state) }, 0) catch chargeState(power.battery_state)
         else
-            std.fmt.bufPrintZ(&buffer, "{s} · {s}", .{ @import("i18n").dtr("pearl", "Charge unavailable"), chargeState(power.battery_state) }) catch "Battery";
+            std.mem.printSentinel(&buffer, "{s} · {s}", .{ @import("i18n").dtr("pearl", "Charge unavailable"), chargeState(power.battery_state) }, 0) catch "Battery";
         self.power_status.setText(battery);
         self.brightness_view.?.update();
         self.profile_status.setText(if (!power.profiles[0] and !power.profiles[1] and !power.profiles[2]) @import("i18n").dtr("pearl", "Power profiles unavailable") else @import("i18n").dtr("pearl", "Power profile"));
@@ -252,7 +252,7 @@ pub const PowerView = struct {
             if (std.mem.eql(u8, power.profile.slice(), Power.profile_names[i])) button.as(gtk.Widget).addCssClass("pearl-selected") else button.as(gtk.Widget).removeCssClass("pearl-selected");
         }
         self.actions.update();
-        self.error_label.setText(if (power.err) |e| std.fmt.bufPrintZ(&buffer, "{s}", .{e}) catch "Power error" else if (power.profile_pending or power.profile_wanted != null) @import("i18n").dtr("pearl", "Applying power profile…") else if (power.action_pending) @import("i18n").dtr("pearl", "Waiting for the power service…") else power.degraded.z());
+        self.error_label.setText(if (power.err) |e| std.mem.printSentinel(&buffer, "{s}", .{e}, 0) catch "Power error" else if (power.profile_pending or power.profile_wanted != null) @import("i18n").dtr("pearl", "Applying power profile…") else if (power.action_pending) @import("i18n").dtr("pearl", "Waiting for the power service…") else power.degraded.z());
     }
     pub fn probe(self: *PowerView, window: *gtk.Window) void {
         const focus = window.getFocus();
@@ -322,7 +322,7 @@ pub const PowerActions = struct {
         self.off.as(gtk.Widget).setSensitive(@intFromBool(power.can_off and !power.action_pending and !power.preparing));
         self.reboot.as(gtk.Widget).setSensitive(@intFromBool(power.can_reboot and !power.action_pending and !power.preparing));
         var buffer: [1024]u8 = undefined;
-        self.error_label.setText(if (power.err) |e| std.fmt.bufPrintZ(&buffer, "{s}", .{e}) catch "Power error" else if (power.action_pending) @import("i18n").dtr("pearl", "Waiting for the power service…") else "");
+        self.error_label.setText(if (power.err) |e| std.mem.printSentinel(&buffer, "{s}", .{e}, 0) catch "Power error" else if (power.action_pending) @import("i18n").dtr("pearl", "Waiting for the power service…") else "");
         self.error_label.as(gtk.Widget).setVisible(@intFromBool(self.show_status and (power.err != null or power.action_pending)));
     }
     fn cancelClicked(_: *gtk.Button, self: *PowerActions) callconv(.c) void {

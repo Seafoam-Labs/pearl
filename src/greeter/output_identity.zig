@@ -45,9 +45,9 @@ test "Aqueous identity compatibility and strict hash syntax" {
     const digest = hash("Acme", "Panel", "ABC123").?;
     try std.testing.expectEqual(try parseHash("sha256:daf5f59252c5a28c00c8f13b516d7ccb8afdce47b8f664ff18f3059e18f3057e"), digest);
     try std.testing.expectEqual(digest, try parseHash("DAF5F59252C5A28C00C8F13B516D7CCB8AFDCE47B8F664FF18F3059E18F3057E"));
-    for ([_][]const u8{ "", "sha256:", "DP-1", "g" ** 64, "0" ** 65 }) |invalid| try std.testing.expectError(error.InvalidOutputEdid, parseHash(invalid));
+    for ([_][]const u8{ "", "sha256:", "DP-1", @import("test_strings").string("g", 64), @import("test_strings").string("0", 65) }) |invalid| try std.testing.expectError(error.InvalidOutputEdid, parseHash(invalid));
     try std.testing.expect(hash(null, null, null) == null);
-    try std.testing.expect(hash("x" ** 769, null, null) == null);
+    try std.testing.expect(hash(@import("test_strings").string("x", 769), null, null) == null);
 }
 
 test "identity survives port changes, connector fallback and duplicate identities" {

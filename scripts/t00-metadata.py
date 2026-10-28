@@ -66,8 +66,8 @@ def main():
         tools={name: dict(path=shutil.which(name), version=run(name, *switches),
                          sha256=sha(shutil.which(name)) if shutil.which(name) else None)
                for name, switches in [('zig', ['version']), ('quickshell', ['--version']), ('dms', ['version']), ('aqueous-config', ['version', '--shell', 'none'])]},
-        builds=dict(pearl='zig build -Doptimize=ReleaseSafe (native target)',
-                    aqueous='-Dvulkan-effects=false -Dman-pages=false -Doptimize=ReleaseSafe -Dllvm; pinned patched wlroots from source .deps/wlroots-render-hook'),
+        builds=dict(pearl='zig build -Doptimize=safe (native target)',
+                    aqueous='-Dvulkan-effects=false -Dman-pages=false -Doptimize=safe -Dllvm; pinned patched wlroots from source .deps/wlroots-render-hook'),
         binding_inventory=re.findall(r'pub const (\w+): Library', gobject.read_text()),
         elf_dynamic=dynamic, ldd=linked, aqueous_ldd=compositor_linked,
         shared_library_sha256={path: sha(path) for path in libraries},

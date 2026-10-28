@@ -6,10 +6,7 @@ const io = @import("../config/io.zig");
 const pkg = @import("package.zig");
 const model = @import("package_model.zig");
 const c = pkg.c;
-const archive = @cImport({
-    @cInclude("archive.h");
-    @cInclude("archive_entry.h");
-});
+const archive = @import("pearl_archive");
 extern fn renameat2(c_int, [*:0]const u8, c_int, [*:0]const u8, c_uint) c_int;
 extern fn mkdtemp([*:0]u8) ?[*:0]u8;
 extern fn flock(c_int, c_int) c_int;
@@ -155,7 +152,7 @@ pub const Store = struct {
         defer if (!journaled) removeTree(self.a, tmp) catch {};
         for (package.files) |file| {
             const target = try std.fmt.allocPrintSentinel(self.a, "{s}/{s}", .{ tmp, file.path }, 0);
-            try io.mkdir(try self.a.dupeZ(u8, std.fs.path.dirname(target).?));
+            try io.mkdir(try self.a.dupeSentinel(u8, std.fs.path.dirname(target).?, 0));
             try io.atomic(target, file.bytes, true);
         }
         const staged = try pkg.load(self.a, tmp);
@@ -244,7 +241,7 @@ pub const Store = struct {
             }
             var extra: u8 = undefined;
             if (archive.archive_read_data(handle, &extra, 1) != 0) return error.ThemeArchive;
-            try io.mkdir(try self.a.dupeZ(u8, std.fs.path.dirname(path_).?));
+            try io.mkdir(try self.a.dupeSentinel(u8, std.fs.path.dirname(path_).?, 0));
             try io.atomic(path_, data, true);
         }
         return pkg.load(self.a, temp);
@@ -269,7 +266,7 @@ pub fn removeTree(a: std.mem.Allocator, path: [:0]const u8) anyerror!void {
     while (c.readdir(dir)) |entry| {
         const name = std.mem.sliceTo(entry.*.d_name[0..], 0);
         if (std.mem.eql(u8, name, ".") or std.mem.eql(u8, name, "..")) continue;
-        const z = try a.dupeZ(u8, name);
+        const z = try a.dupeSentinel(u8, name, 0);
         var info: c.struct_stat = undefined;
         if (c.fstatat(fd, z, &info, c.AT_SYMLINK_NOFOLLOW) != 0) return error.ThemeFile;
         if (info.st_mode & c.S_IFMT == c.S_IFDIR) try removeTree(a, try std.fmt.allocPrintSentinel(a, "{s}/{s}", .{ path, name }, 0)) else if (c.unlinkat(fd, z, 0) != 0) return error.ThemeRemoveFailed;

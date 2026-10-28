@@ -88,7 +88,7 @@ pub fn main(init: std.process.Init) void {
             glib.print("Phyto — native Pearl file explorer\nUsage: phyto [--follow-pearl|--light|--dark|--native-theme] [--compact] [--width=N] [--height=N]\n             [--log-level LEVEL] [--log-scopes LIST] [PATH_OR_URI]\n\nCtrl+L location, Ctrl+F filter, Ctrl+T new tab, F3 split panes, F6 switch pane.\nFollow Pearl is the first-run default; without Pearl it uses Phyto's own dark palette.\n--log-level: error, warning, info or debug. Release builds default to info.\n--log-scopes: comma-separated scopes, all for every scope, ~scope to exclude.\n");
             return;
         } else if (std.mem.eql(u8, arg, "--version")) {
-            glib.print("Phyto 0.1.1 (Zig 0.16.0 / GTK4)\n");
+            glib.print("Phyto 0.1.1 (Zig 0.17.0 / GTK4)\n");
             return;
         } else if (std.mem.eql(u8, arg, "--follow-pearl")) options.theme = .follow_pearl else if (std.mem.eql(u8, arg, "--light")) options.theme = .light else if (std.mem.eql(u8, arg, "--dark")) options.theme = .dark else if (std.mem.eql(u8, arg, "--compact")) options.compact = true else if (std.mem.eql(u8, arg, "--native-theme")) options.theme = .native_gtk else if (std.mem.startsWith(u8, arg, "--width=")) {
             options.width = std.fmt.parseInt(c_int, arg[8..], 10) catch 1180;
@@ -99,7 +99,7 @@ pub fn main(init: std.process.Init) void {
         } else if (std.mem.startsWith(u8, arg, "--") or location != null) {
             log.err("Unknown option or extra location: {f}", .{diagnostics.safe(arg)});
             std.process.exit(2);
-        } else location = init.arena.allocator().dupeZ(u8, arg) catch return;
+        } else location = init.arena.allocator().dupeSentinel(u8, arg, 0) catch return;
     }
     initial = if (location) |path| gio.File.newForCommandlineArg(path) else gio.File.newForPath(glib.getHomeDir());
     defer initial.?.unref();

@@ -71,13 +71,13 @@ fn reading(state: *const model.State, kind: model.Series, buffer: []u8) [:0]cons
         var sent: [12]u8 = undefined;
         // Both directions on one line, compact enough for the fixed card width;
         // anything longer is ellipsised rather than resizing the grid.
-        return std.fmt.bufPrintZ(buffer, "I:{s} O:{s}", .{
+        return std.mem.printSentinel(buffer, "I:{s} O:{s}", .{
             model.compactLabel(&received, state.throughput_in),
             model.compactLabel(&sent, state.throughput_out),
-        }) catch "—";
+        }, 0) catch "—";
     }
     if (!available(state, kind)) return @import("i18n").dtr("pearl", "Unavailable");
-    return std.fmt.bufPrintZ(buffer, "{d:.0}%", .{history(state, kind).newest() orelse 0}) catch "—";
+    return std.mem.printSentinel(buffer, "{d:.0}%", .{history(state, kind).newest() orelse 0}, 0) catch "—";
 }
 
 /// Every series on one line, for the bar item's tooltip and accessible name. The
@@ -310,7 +310,7 @@ pub const Detail = struct {
     }
     fn select(self: *Detail, selection: model.Selection) void {
         for (self.placed[0..self.placed_count]) |kind| {
-            const card = &self.cards[@intFromEnum(kind)];
+            const card = &self.cards[@backingInt(kind)];
             self.grid.remove(card.area.as(gtk.Widget));
             self.grid.remove(card.column.as(gtk.Widget));
         }
@@ -318,7 +318,7 @@ pub const Detail = struct {
         var column: c_int = 0;
         for (model.series) |kind| {
             if (!kind.enabled(selection)) continue;
-            const card = &self.cards[@intFromEnum(kind)];
+            const card = &self.cards[@backingInt(kind)];
             self.grid.attach(card.area.as(gtk.Widget), column, 0, 1, 1);
             self.grid.attach(card.column.as(gtk.Widget), column, 1, 1, 1);
             self.placed[self.placed_count] = kind;
@@ -336,7 +336,7 @@ pub const Detail = struct {
         const state = &self.sampler.state;
         var value: [48]u8 = undefined;
         for (self.placed[0..self.placed_count]) |kind| {
-            const card = &self.cards[@intFromEnum(kind)];
+            const card = &self.cards[@backingInt(kind)];
             card.area.as(gtk.Widget).queueDraw();
             card.value.setText(reading(state, kind, &value));
         }
@@ -349,7 +349,7 @@ pub const Detail = struct {
 /// library stays resident once a session has used it.
 const Utilization = extern struct { gpu: c_uint, memory: c_uint };
 const Nvml = struct {
-    handles: [4]?*anyopaque = [_]?*anyopaque{null} ** 4,
+    handles: [4]?*anyopaque = @as([4]?*anyopaque, @splat(null)),
     count: usize = 0,
     probed: bool = false,
     rates: ?*const fn (?*anyopaque, *Utilization) callconv(.c) c_int = null,
@@ -448,7 +448,7 @@ const Sampler = struct {
         var path: [64]u8 = undefined;
         var index: usize = 0;
         while (index < gpu_cards) : (index += 1) {
-            const name = std.fmt.bufPrintZ(&path, "/sys/class/drm/card{d}/device/gpu_busy_percent", .{index}) catch continue;
+            const name = std.mem.printSentinel(&path, "/sys/class/drm/card{d}/device/gpu_busy_percent", .{index}, 0) catch continue;
             if (read(name, &self.scratch)) |text| {
                 if (model.gpu(text)) |value| peak = @max(peak orelse 0, value);
             }

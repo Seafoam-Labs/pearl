@@ -30,7 +30,7 @@ test "clipboard rejects invalid UTF-8, NUL, oversized text and decompression bom
     try t.expect(valid(.text, "hello 👋"));
     try t.expect(!valid(.text, "\xff"));
     try t.expect(!valid(.text, "a\x00b"));
-    try t.expect(!valid(.text, "x" ** (text_limit + 1)));
+    try t.expect(!valid(.text, @import("test_strings").string("x", (text_limit + 1))));
     var png: [33]u8 = @splat(0);
     @memcpy(png[0..16], "\x89PNG\r\n\x1a\n\x00\x00\x00\x0dIHDR");
     std.mem.writeInt(u32, png[16..20], 8192, .big);
@@ -93,7 +93,7 @@ pub fn pngPayload(alloc: std.mem.Allocator, input: []const u8) ![]u8 {
 pub fn preview(alloc: std.mem.Allocator, input: []const u8) ![:0]u8 {
     var n = @min(input.len, 120);
     while (n > 0 and !std.unicode.utf8ValidateSlice(input[0..n])) n -= 1;
-    const text = try alloc.dupeZ(u8, input[0..n]);
+    const text = try alloc.dupeSentinel(u8, input[0..n], 0);
     for (text) |*ch| if (ch.* < 32 or ch.* == 127) {
         ch.* = ' ';
     };

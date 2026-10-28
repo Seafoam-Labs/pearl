@@ -79,10 +79,10 @@ const Usage = struct { rss: u64, hwm: u64 };
 fn processTree(pid: c_int, depth: u8) ?Usage {
     var path: [128]u8 = undefined;
     var bytes: [8192]u8 = undefined;
-    const status = memory.read(std.fmt.bufPrintZ(&path, "/proc/{d}/status", .{pid}) catch return null, &bytes) catch return null;
+    const status = memory.read(std.mem.printSentinel(&path, "/proc/{d}/status", .{pid}, 0) catch return null, &bytes) catch return null;
     var usage: Usage = .{ .rss = memory.kibField(status, "VmRSS:") orelse return null, .hwm = memory.kibField(status, "VmHWM:") orelse 0 };
     if (depth >= 16) return usage;
-    const children = memory.read(std.fmt.bufPrintZ(&path, "/proc/{d}/task/{d}/children", .{ pid, pid }) catch return usage, &bytes) catch return usage;
+    const children = memory.read(std.mem.printSentinel(&path, "/proc/{d}/task/{d}/children", .{ pid, pid }, 0) catch return usage, &bytes) catch return usage;
     var tokens = std.mem.tokenizeAny(u8, children, " \n");
     while (tokens.next()) |child| {
         const id = std.fmt.parseInt(c_int, child, 10) catch continue;

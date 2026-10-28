@@ -57,7 +57,7 @@ pub fn main(init: std.process.Init) void {
             return;
         }
         if (std.mem.eql(u8, arg, "--version")) {
-            c.g_print("Dome 0.1.1 (Zig 0.16.0 / GTK4)\n");
+            c.g_print("Dome 0.1.1 (Zig 0.17.0 / GTK4)\n");
             return;
         }
         if (std.mem.eql(u8, arg, "--dump")) {

@@ -55,7 +55,7 @@ pub fn For(comptime Parent: type) type {
             a.destroy(self);
         }
         fn z(self: *Self, bytes: []const u8) [:0]const u8 {
-            return self.arena.allocator().dupeZ(u8, bytes) catch "";
+            return self.arena.allocator().dupeSentinel(u8, bytes, 0) catch "";
         }
         fn text(host: *gtk.Box, value: [:0]const u8, css: ?[*:0]const u8) void {
             const label = w.label(value, css);
@@ -79,7 +79,7 @@ pub fn For(comptime Parent: type) type {
             if (self.shell) |shell| {
                 builder.style(shell.dialog, self.parent.window);
                 shell.dialog.as(gtk.Widget).setVisible(@intFromBool(self.canPresent()));
-                for ([_]c_int{ 1, @intFromEnum(gtk.ResponseType.accept) }) |response| if (shell.dialog.getWidgetForResponse(response)) |response_button| response_button.setSensitive(@intFromBool(self.editable()));
+                for ([_]c_int{ 1, @backingInt(gtk.ResponseType.accept) }) |response| if (shell.dialog.getWidgetForResponse(response)) |response_button| response_button.setSensitive(@intFromBool(self.editable()));
             }
         }
         fn control(self: *Self, id: []const u8, widget: *gtk.Widget, dialog: bool) !void {
@@ -113,7 +113,7 @@ pub fn For(comptime Parent: type) type {
                     try out.writer.print("{s}: {s}", .{ labelFor(e.key_ptr.*), value });
                 }
             }
-            return alloc.dupeZ(u8, if (out.written().len == 0) (if (conditions) "No conditions — this rule does not match windows" else "No explicit effects — later matching rules are still skipped") else out.written());
+            return alloc.dupeSentinel(u8, if (out.written().len == 0) (if (conditions) "No conditions — this rule does not match windows" else "No explicit effects — later matching rules are still skipped") else out.written(), 0);
         }
         pub fn render(self: *Self, host: *gtk.Box, snapshot: m.Value) !void {
             self.host = host;
@@ -320,9 +320,9 @@ pub fn For(comptime Parent: type) type {
                 const delete = shell.dialog.addButton("Delete rule", 1);
                 try self.control("rules.delete", delete, true);
             }
-            const cancel = shell.dialog.addButton("Cancel", @intFromEnum(gtk.ResponseType.cancel));
+            const cancel = shell.dialog.addButton("Cancel", @backingInt(gtk.ResponseType.cancel));
             try self.control("rules.cancel", cancel, true);
-            const save_button = shell.dialog.addButton("Save rule", @intFromEnum(gtk.ResponseType.accept));
+            const save_button = shell.dialog.addButton("Save rule", @backingInt(gtk.ResponseType.accept));
             save_button.addCssClass("pearl-primary");
             try self.control("rules.save", save_button, true);
             _ = gtk.Dialog.signals.response.connect(shell.dialog, *Self, responded, self, .{});
@@ -418,7 +418,7 @@ pub fn For(comptime Parent: type) type {
             self.parent.syncRequest();
         }
         fn responded(_: *gtk.Dialog, response: c_int, self: *Self) callconv(.c) void {
-            if (response == 1 or response == @intFromEnum(gtk.ResponseType.accept)) {
+            if (response == 1 or response == @backingInt(gtk.ResponseType.accept)) {
                 self.save(response == 1) catch |err| {
                     if (err != error.FieldValidation) self.error_label.?.setText(switch (err) {
                         error.StaleDraft => @import("i18n").dtr("pearl", "The shared draft or snapshot changed. Your input is retained. Cancel and reopen the rule to review the latest version."),

@@ -256,16 +256,16 @@ pub const View = struct {
     }
     fn name(alloc: std.mem.Allocator, id: []const u8, plugins: model.Catalog, bar: prefs.Bar) ![:0]const u8 {
         if (clock_policy.reference(id)) |clock_id| {
-            const definition = clock_policy.find(bar.clocks, clock_id) orelse return alloc.dupeZ(u8, id);
+            const definition = clock_policy.find(bar.clocks, clock_id) orelse return alloc.dupeSentinel(u8, id, 0);
             if (std.mem.eql(u8, id, "clock") and definition.label.len == 0 and std.mem.eql(u8, definition.timezone, "local")) return "Clock";
             return clock_policy.displayName(alloc, definition);
         }
         if (std.meta.stringToEnum(policy.Item, id)) |item| return model.metadata(item).name;
         if (plugins.bar_widgets) |items| for (items) |plugin| {
             const ref = try std.fmt.allocPrint(alloc, "plugin:{s}/main", .{plugin.id});
-            if (std.mem.eql(u8, ref, id)) return alloc.dupeZ(u8, plugin.name);
+            if (std.mem.eql(u8, ref, id)) return alloc.dupeSentinel(u8, plugin.name, 0);
         };
-        return alloc.dupeZ(u8, id);
+        return alloc.dupeSentinel(u8, id, 0);
     }
     fn pluginDetail(alloc: std.mem.Allocator, document: prefs.Preferences, id: []const u8, plugins: model.Catalog) ![:0]const u8 {
         if (plugins.bar_widgets) |items| for (items) |plugin| {
@@ -295,7 +295,7 @@ pub const View = struct {
         preview_groups.setColumnSpacing(if (document.bar.islands) 12 else 0);
         preview.append(preview_groups.as(gtk.Widget));
         for (model.groups) |group| {
-            const items = layout.items[@intFromEnum(group)].items;
+            const items = layout.items[@backingInt(group)].items;
             const text = try std.fmt.allocPrintSentinel(alloc, "{s} · {d}", .{ model.groupLabel(group, document.bar.edge), items.len }, 0);
             const slot = w.column(0);
             preview_groups.insert(slot.as(gtk.Widget), -1);
@@ -316,7 +316,7 @@ pub const View = struct {
             b.as(gtk.Widget).setSizeRequest(-1, @intCast(@min(document.bar.size, 80)));
             const descriptions = try alloc.alloc([]const u8, items.len);
             for (items, descriptions) |id, *description| description.* = try name(alloc, id, plugins, document.bar);
-            b.as(gtk.Widget).setTooltipText(try alloc.dupeZ(u8, try std.mem.join(alloc, " → ", descriptions)));
+            b.as(gtk.Widget).setTooltipText(try alloc.dupeSentinel(u8, try std.mem.join(alloc, " → ", descriptions), 0));
             w.name(b.as(gtk.Widget), try std.fmt.allocPrintSentinel(alloc, "Edit {s} widgets", .{model.groupLabel(group, document.bar.edge)}, 0));
         }
         if (layout.find("workspaces") != null) {
@@ -337,7 +337,7 @@ pub const View = struct {
         const flow = w.flow(3);
         self.content.append(flow.as(gtk.Widget));
         for (model.groups) |group| {
-            const g = @intFromEnum(group);
+            const g = @backingInt(group);
             const card = w.column(6);
             card.as(gtk.Widget).addCssClass("settings-card");
             card.as(gtk.Widget).addCssClass("bar-group");
@@ -364,7 +364,7 @@ pub const View = struct {
                 row.as(gtk.Widget).addCssClass("bar-widget-row");
                 card.append(row.as(gtk.Widget));
                 const drag_binding = try alloc.create(DragBinding);
-                drag_binding.* = .{ .view = self, .id = try alloc.dupeZ(u8, id), .widget = row.as(gtk.Widget) };
+                drag_binding.* = .{ .view = self, .id = try alloc.dupeSentinel(u8, id, 0), .widget = row.as(gtk.Widget) };
                 const source = gtk.DragSource.new();
                 source.setActions(.{ .move = true });
                 _ = gtk.DragSource.signals.prepare.connect(source, *DragBinding, dragPrepare, drag_binding, .{});
@@ -389,14 +389,14 @@ pub const View = struct {
                 labels.append(title_label.as(gtk.Widget));
                 if (clock_policy.reference(id)) |clock_id| {
                     const definition = clock_policy.find(document.bar.clocks, clock_id).?;
-                    const detail = w.label(try alloc.dupeZ(u8, definition.timezone), "pearl-secondary");
+                    const detail = w.label(try alloc.dupeSentinel(u8, definition.timezone, 0), "pearl-secondary");
                     detail.setMaxWidthChars(18);
                     labels.append(detail.as(gtk.Widget));
                 }
                 if (builtin == .workspaces) labels.append(w.label(document.bar.workspace_mode.label(), "pearl-secondary").as(gtk.Widget));
                 if (builtin == .resources) labels.append(w.label(document.bar.resource_mode.label(), "pearl-secondary").as(gtk.Widget));
                 if (builtin == .weather) {
-                    const detail = w.label(try alloc.dupeZ(u8, document.weather.location), "pearl-secondary");
+                    const detail = w.label(try alloc.dupeSentinel(u8, document.weather.location, 0), "pearl-secondary");
                     detail.setMaxWidthChars(18);
                     labels.append(detail.as(gtk.Widget));
                 }
@@ -459,7 +459,7 @@ pub const View = struct {
             box.append(w.label(@import("i18n").dtr("pearl", "Add widget"), "settings-row-title").as(gtk.Widget));
             const names = [_:null]?[*:0]const u8{ model.groupLabel(.left, document.bar.edge), model.groupLabel(.center, document.bar.edge), model.groupLabel(.right, document.bar.edge) };
             self.destination = gtk.DropDown.newFromStrings(@ptrCast(&names));
-            self.destination.?.setSelected(@intFromEnum(destination));
+            self.destination.?.setSelected(@backingInt(destination));
             w.name(self.destination.?.as(gtk.Widget), @import("i18n").dtr("pearl", "Add widget to group"));
             box.append(self.destination.?.as(gtk.Widget));
             try self.menu_controls.append(a, .{ .id = "bar.picker.destination", .widget = self.destination.?.as(gtk.Widget) });
@@ -495,7 +495,7 @@ pub const View = struct {
             for (document.bar.clocks) |definition| {
                 const ref = try clock_policy.token(alloc, definition.id);
                 if (layout.find(ref) != null or std.mem.eql(u8, ref, "clock")) continue;
-                try self.choice(list, ref, try clock_policy.displayName(alloc, definition), try alloc.dupeZ(u8, definition.timezone), model.metadata(.clock).icon, layout, document.bar.edge, true);
+                try self.choice(list, ref, try clock_policy.displayName(alloc, definition), try alloc.dupeSentinel(u8, definition.timezone, 0), model.metadata(.clock).icon, layout, document.bar.edge, true);
             }
             for (std.enums.values(policy.Item)) |item| {
                 const meta = model.metadata(item);
@@ -504,7 +504,7 @@ pub const View = struct {
             if (plugins.bar_widgets) |items| {
                 for (items) |plugin| {
                     const ref = try std.fmt.allocPrint(alloc, "plugin:{s}/main", .{plugin.id});
-                    try self.choice(list, ref, try alloc.dupeZ(u8, plugin.name), if (model.eligible(document, plugin)) @import("i18n").dtr("pearl", "Plugin widget") else @import("i18n").dtr("pearl", "Enable and approve in Plugins"), "pearl-application-x-executable-symbolic", layout, document.bar.edge, model.eligible(document, plugin));
+                    try self.choice(list, ref, try alloc.dupeSentinel(u8, plugin.name, 0), if (model.eligible(document, plugin)) @import("i18n").dtr("pearl", "Plugin widget") else @import("i18n").dtr("pearl", "Enable and approve in Plugins"), "pearl-application-x-executable-symbolic", layout, document.bar.edge, model.eligible(document, plugin));
                 }
             } else list.append(w.label(@import("i18n").dtr("pearl", "Plugin discovery unavailable. Existing placements are retained."), "pearl-secondary").as(gtk.Widget));
             box.append(w.label(@import("i18n").dtr("pearl", "Enable additional widgets in Plugins."), "pearl-secondary").as(gtk.Widget));
@@ -524,7 +524,7 @@ pub const View = struct {
             const pos = layout.find(id) orelse return error.WidgetNotFound;
             const title = try name(alloc, id, plugins, document.bar);
             box.append(w.label(title, "settings-row-title").as(gtk.Widget));
-            box.append(w.label(try std.fmt.allocPrintSentinel(alloc, "{s} · Position {d} of {d}", .{ model.groupLabel(pos.group, document.bar.edge), pos.index + 1, layout.items[@intFromEnum(pos.group)].items.len }, 0), "pearl-secondary").as(gtk.Widget));
+            box.append(w.label(try std.fmt.allocPrintSentinel(alloc, "{s} · Position {d} of {d}", .{ model.groupLabel(pos.group, document.bar.edge), pos.index + 1, layout.items[@backingInt(pos.group)].items.len }, 0), "pearl-secondary").as(gtk.Widget));
             if (clock_policy.reference(id) != null) _ = try self.button(box, @import("i18n").dtr("pearl", "Configure clock…"), "bar.clock.open", id, .clock_open, true);
             if (std.mem.eql(u8, id, "launcher")) _ = try self.button(box, @import("i18n").dtr("pearl", "Change icon…"), "bar.icon.expand", "", .icon_open, true);
             if (std.mem.eql(u8, id, "workspaces")) {
@@ -694,7 +694,7 @@ pub const View = struct {
         if (!std.mem.eql(u8, &self.popup_hash, &try barHash(alloc, document.bar))) return error.StaleBar;
         var action = action_;
         if (action == .add) {
-            action = .{ .add = @enumFromInt(self.destination.?.getSelected()) };
+            action = .{ .add = @fromBackingInt(@intCast(self.destination.?.getSelected())) };
             if (std.mem.startsWith(u8, id, "plugin:")) {
                 const plugins = self.catalog(alloc);
                 var allowed = false;
@@ -708,7 +708,7 @@ pub const View = struct {
         const focus = if (action == .remove) try std.fmt.allocPrint(alloc, "bar.add.{s}", .{@tagName((try model.Layout.parse(alloc, document.bar.groups)).find(id).?.group)}) else try std.fmt.allocPrint(alloc, "bar.remove.{s}", .{id});
         const next_layout = try model.Layout.parse(alloc, (try prefs.parse(alloc, next)).bar.groups);
         const title = try name(alloc, id, self.catalog(alloc), document.bar);
-        const announcement = if (next_layout.find(id)) |pos| try std.fmt.allocPrintSentinel(alloc, "{s}, {s}, position {d} of {d}. Unsaved changes.", .{ title, model.groupLabel(pos.group, document.bar.edge), pos.index + 1, next_layout.items[@intFromEnum(pos.group)].items.len }, 0) else try std.fmt.allocPrintSentinel(alloc, "{s} removed from bar. Unsaved changes.", .{title}, 0);
+        const announcement = if (next_layout.find(id)) |pos| try std.fmt.allocPrintSentinel(alloc, "{s}, {s}, position {d} of {d}. Unsaved changes.", .{ title, model.groupLabel(pos.group, document.bar.edge), pos.index + 1, next_layout.items[@backingInt(pos.group)].items.len }, 0) else try std.fmt.allocPrintSentinel(alloc, "{s} removed from bar. Unsaved changes.", .{title}, 0);
         self.editing = true;
         defer self.editing = false;
         try self.editor.edit(next);
@@ -908,7 +908,7 @@ pub const View = struct {
         }
         self.cancelWeatherSearch();
         if (self.weather_results) |results| while (results.as(gtk.Widget).getFirstChild()) |child| results.remove(child);
-        const query = a.dupeZ(u8, raw) catch return;
+        const query = a.dupeSentinel(u8, raw, 0) catch return;
         const job = a.create(WeatherJob) catch {
             a.free(query);
             return;
@@ -973,7 +973,7 @@ pub const View = struct {
         self.popupMessage("");
         const alloc = self.menu_arena.allocator();
         for (places.?.*) |place| {
-            const location = alloc.dupeZ(u8, if (place.region.len != 0) std.fmt.allocPrint(alloc, "{s}, {s}", .{ place.name, place.region }) catch continue else place.name) catch continue;
+            const location = alloc.dupeSentinel(u8, if (place.region.len != 0) std.fmt.allocPrint(alloc, "{s}, {s}", .{ place.name, place.region }) catch continue else place.name, 0) catch continue;
             if (location.len > 128) continue;
             const b = self.button(results, location, "bar.weather.place", location, .{ .weather_place = .{ .location = location, .latitude = place.latitude, .longitude = place.longitude } }, true) catch continue;
             w.name(b.as(gtk.Widget), std.fmt.allocPrintSentinel(alloc, "Set weather location to {s}", .{location}, 0) catch location);
@@ -985,8 +985,8 @@ pub const View = struct {
         const alloc = temp.allocator();
         const document = try prefs.parse(alloc, self.editor.text());
         if (!std.mem.eql(u8, &self.popup_hash, &try barHash(alloc, document.bar))) return error.StaleBar;
-        const mode = if (ref) |id| try std.fmt.allocPrint(alloc, "edit-clock:{s}", .{id}) else try std.fmt.allocPrint(alloc, "new-clock:{s}", .{@tagName(@as(Group, @enumFromInt(self.destination.?.getSelected())))});
-        const focus = if (ref) |id| try std.fmt.allocPrint(alloc, "bar.widget.{s}", .{id}) else try std.fmt.allocPrint(alloc, "bar.add.{s}", .{@tagName(@as(Group, @enumFromInt(self.destination.?.getSelected())))});
+        const mode = if (ref) |id| try std.fmt.allocPrint(alloc, "edit-clock:{s}", .{id}) else try std.fmt.allocPrint(alloc, "new-clock:{s}", .{@tagName(@as(Group, @fromBackingInt(@intCast(self.destination.?.getSelected()))))});
+        const focus = if (ref) |id| try std.fmt.allocPrint(alloc, "bar.widget.{s}", .{id}) else try std.fmt.allocPrint(alloc, "bar.add.{s}", .{@tagName(@as(Group, @fromBackingInt(@intCast(self.destination.?.getSelected()))))});
         const anchor = self.popup.?.as(gtk.Widget).getParent().?;
         self.clearPopup();
         self.rememberFocus(focus);
@@ -998,7 +998,7 @@ pub const View = struct {
         const entry = gtk.Entry.new();
         entry.setMaxLength(limit);
         entry.as(gtk.Editable).setWidthChars(22);
-        entry.as(gtk.Editable).setText(try alloc.dupeZ(u8, value));
+        entry.as(gtk.Editable).setText(try alloc.dupeSentinel(u8, value, 0));
         w.name(entry.as(gtk.Widget), title);
         box.append(entry.as(gtk.Widget));
         try self.menu_controls.append(a, .{ .id = id, .widget = entry.as(gtk.Widget) });
@@ -1154,7 +1154,7 @@ pub const View = struct {
         self.icon_entry = entry;
         entry.setMaxLength(128);
         entry.as(gtk.Editable).setWidthChars(20);
-        if (config.kind == .theme) entry.as(gtk.Editable).setText(try alloc.dupeZ(u8, config.value));
+        if (config.kind == .theme) entry.as(gtk.Editable).setText(try alloc.dupeSentinel(u8, config.value, 0));
         w.name(entry.as(gtk.Widget), @import("i18n").dtr("pearl", "Icon theme name"));
         controls.append(entry.as(gtk.Widget));
         try self.menu_controls.append(a, .{ .id = "bar.icon.name", .widget = entry.as(gtk.Widget) });
@@ -1236,7 +1236,7 @@ pub const View = struct {
             self.rememberFocus("bar.widget.launcher");
             self.queue();
         }
-        if (response != @intFromEnum(gtk.ResponseType.accept) or !self.editor.editable()) return;
+        if (response != @backingInt(gtk.ResponseType.accept) or !self.editor.editable()) return;
         if (!std.mem.eql(u8, &self.picker_hash, &protocol.digest(self.editor.text()))) {
             self.report(error.StaleBar);
             return;
@@ -1351,7 +1351,7 @@ pub const View = struct {
             .weather_units => {},
             .weather_search => self.startWeatherSearch(),
             .weather_place => |place| self.mutateWeatherPlace(place.location, place.latitude, place.longitude) catch |err| self.report(err),
-            .focus => |group| if (self.cards[@intFromEnum(group)]) |card| {
+            .focus => |group| if (self.cards[@backingInt(group)]) |card| {
                 _ = card.grabFocus();
             },
             .advanced, .plugins => self.editor.navigate(.{ .page = if (binding.intent == .advanced) .advanced else .plugins }, false),

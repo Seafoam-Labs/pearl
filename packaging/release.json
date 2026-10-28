@@ -2,9 +2,9 @@
   "version": "0.3.5",
   "arch_pkgver": "0.3.5",
   "license": "LicenseRef-Pearl-Unlicensed",
-  "zig": "0.16.0",
+  "zig": "0.17.0",
   "source_date_epoch": 1792170497,
-  "aqueous_revision": "88587243059d58d72dd0fe2146d0ebdb64f26474",
+  "aqueous_revision": "debc0353e745890f205cd399613f942f83e34986",
   "aqueous_config_floor": "0.8.2",
   "runtime_floors": {
     "gtk4": "1:4.22.5",
@@ -20,10 +20,11 @@
     "cairo": "1.18.4",
     "systemd": "261.3"
   },
-  "aqueous_binary_sha256": "b1cf85ebed53fd6a87132e0170bfefe3ec0cbb721476620dcf81bc5f90178062",
-  "aqueous_effects_revision": "88587243059d58d72dd0fe2146d0ebdb64f26474",
-  "aqueous_effects_binary_sha256": "b1cf85ebed53fd6a87132e0170bfefe3ec0cbb721476620dcf81bc5f90178062",
-  "aqueous_config_binary_sha256": "5c8109a0869919d5c51b247635f273416524acaaeb59f258e804e66c7fedc8e7",
-  "aqueousctl_binary_sha256": "9c1ad078de1a72072574455edcf79a1bdf4b5210d5324a45ced9538ed78f1da5",
-  "aqueous_wlroots_sha256": "6126f6d457501aa86f0503b1238fbca3e19c1d66dc873ced9f38793eb2cc199c"
+  "aqueous_binary_sha256": "47807ebcbc6f3a3bb0199124f8282a7462b3be7d7c1a7d316934ffa8b56821d5",
+  "aqueous_effects_revision": "debc0353e745890f205cd399613f942f83e34986",
+  "aqueous_effects_binary_sha256": "47807ebcbc6f3a3bb0199124f8282a7462b3be7d7c1a7d316934ffa8b56821d5",
+  "aqueous_config_binary_sha256": "958be98308bb130429fefe94b0369fb7582f09b0510c4642142cbd4f52d981f9",
+  "aqueousctl_binary_sha256": "c24edc9fa241fab0b9bc51093015981538307c691948e27ca6e8451a2c59b62a",
+  "aqueous_wlroots_sha256": "d066d2bcb0e59831b9e0914d555f371ffac5ffb65889be319fc038e5a0620f4d",
+  "aqueous_config_version": "1.0.12"
 }

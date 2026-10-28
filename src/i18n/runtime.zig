@@ -56,7 +56,7 @@ fn read(path: [:0]const u8, limit: usize) ![]u8 {
 pub fn loadManifest(language: []const u8) !std.json.Parsed(Manifest) {
     if (!locale.valid(language)) return error.InvalidLanguagePack;
     var path: [4096]u8 = undefined;
-    const bytes = try read(try std.fmt.bufPrintZ(&path, "{s}/share/pearl/language-packs/{s}.json", .{ options.prefix, language }), 16384);
+    const bytes = try read(try std.mem.printSentinel(&path, "{s}/share/pearl/language-packs/{s}.json", .{ options.prefix, language }, 0), 16384);
     defer a.free(bytes);
     const parsed = try std.json.parseFromSlice(Manifest, a, bytes, .{ .allocate = .alloc_always });
     errdefer parsed.deinit();
@@ -66,12 +66,12 @@ pub fn loadManifest(language: []const u8) !std.json.Parsed(Manifest) {
 }
 fn savedLanguage(system: bool) []const u8 {
     var path: [4096]u8 = undefined;
-    const filename = if (system) (std.fmt.bufPrintZ(&path, "{s}", .{if (@hasDecl(options, "system_config")) options.system_config else "/etc/pearl/greeter.json"}) catch return "") else blk: {
+    const filename = if (system) (std.mem.printSentinel(&path, "{s}", .{if (@hasDecl(options, "system_config")) options.system_config else "/etc/pearl/greeter.json"}, 0) catch return "") else blk: {
         const xdg = env("XDG_CONFIG_HOME");
-        if (xdg.len > 0 and xdg[0] == '/') break :blk std.fmt.bufPrintZ(&path, "{s}/pearl/preferences.json", .{xdg}) catch return "";
+        if (xdg.len > 0 and xdg[0] == '/') break :blk std.mem.printSentinel(&path, "{s}/pearl/preferences.json", .{xdg}, 0) catch return "";
         const home = env("HOME");
         if (home.len == 0 or home[0] != '/') return "";
-        break :blk std.fmt.bufPrintZ(&path, "{s}/.config/pearl/preferences.json", .{home}) catch return "";
+        break :blk std.mem.printSentinel(&path, "{s}/.config/pearl/preferences.json", .{home}, 0) catch return "";
     };
     const bytes = read(filename, 65536) catch return "";
     defer a.free(bytes);
@@ -124,7 +124,7 @@ fn initSelected(system: bool, inherited: []const u8, configured: ?[]const u8) vo
         for (manifest.value.domains) |domain| {
             if (domain.contract != 1 or count == catalogs.len) continue;
             var path: [4096]u8 = undefined;
-            const filename = std.fmt.bufPrintZ(&path, "{s}/share/locale/{s}/LC_MESSAGES/{s}.mo", .{ options.prefix, language, domain.name }) catch continue;
+            const filename = std.mem.printSentinel(&path, "{s}/share/locale/{s}/LC_MESSAGES/{s}.mo", .{ options.prefix, language, domain.name }, 0) catch continue;
             const bytes = read(filename, @import("catalog.zig").max_bytes) catch continue;
             const catalog = Catalog.parse(bytes) catch {
                 a.free(bytes);
@@ -242,7 +242,7 @@ pub fn dfmt(domain: []const u8, buffer: []u8, comptime source: []const u8, args:
     var values: [args.len][4096]u8 = undefined;
     var named: [args.len]format.Arg = undefined;
     inline for (args, 0..) |arg, i| {
-        const value = std.fmt.bufPrint(&values[i], "{" ++ format.spec(source, i) ++ "}", .{arg}) catch return (std.fmt.bufPrintZ(buffer, source, args) catch "");
+        const value = std.fmt.bufPrint(&values[i], "{" ++ format.spec(source, i) ++ "}", .{arg}) catch return (std.mem.printSentinel(buffer, source, args, 0) catch "");
         named[i] = .{ .name = std.fmt.comptimePrint("{d}", .{i}), .value = value };
     }
     return dmessage(domain, buffer, format.sourceTemplate(source), &named);
@@ -254,7 +254,7 @@ pub fn dfmtAlloc(domain: []const u8, allocator: std.mem.Allocator, comptime sour
     var buffer: [16384]u8 = undefined;
     const value = dfmt(domain, &buffer, source, args);
     if (value.len == 0 and source.len > 0) return error.MessageTooLong;
-    return allocator.dupeZ(u8, value);
+    return allocator.dupeSentinel(u8, value, 0);
 }
 
 pub const Pack = struct { locale: [:0]const u8, name: [:0]const u8, translated: u32, total: u32 };
@@ -276,7 +276,7 @@ pub fn installed(allocator: std.mem.Allocator) ![]Pack {
         for (manifest.value.domains) |d| {
             if (d.contract != 1) continue;
             var path: [4096]u8 = undefined;
-            const filename_z = std.fmt.bufPrintZ(&path, "{s}/share/locale/{s}/LC_MESSAGES/{s}.mo", .{ options.prefix, name, d.name }) catch continue;
+            const filename_z = std.mem.printSentinel(&path, "{s}/share/locale/{s}/LC_MESSAGES/{s}.mo", .{ options.prefix, name, d.name }, 0) catch continue;
             const bytes = read(filename_z, @import("catalog.zig").max_bytes) catch continue;
             defer a.free(bytes);
             _ = Catalog.parse(bytes) catch continue;
@@ -285,7 +285,7 @@ pub fn installed(allocator: std.mem.Allocator) ![]Pack {
             total +|= d.total;
         }
         if (!compatible_domain) continue;
-        try result.append(allocator, .{ .locale = try allocator.dupeZ(u8, name), .name = try allocator.dupeZ(u8, manifest.value.native_name), .translated = translated, .total = total });
+        try result.append(allocator, .{ .locale = try allocator.dupeSentinel(u8, name, 0), .name = try allocator.dupeSentinel(u8, manifest.value.native_name, 0), .translated = translated, .total = total });
     }
     std.mem.sort(Pack, result.items, {}, struct {
         fn less(_: void, l: Pack, r: Pack) bool {

@@ -24,7 +24,7 @@ pub fn availableMiB() ?u64 {
 pub fn check(pid: c_int) !void {
     var path: [128]u8 = undefined;
     var buffer: [8192]u8 = undefined;
-    const bytes = try read(try std.fmt.bufPrintZ(&path, "/proc/{d}/status", .{pid}), &buffer);
+    const bytes = try read(try std.mem.printSentinel(&path, "/proc/{d}/status", .{pid}, 0), &buffer);
     _ = kibField(bytes, "VmRSS:") orelse return error.RuntimeExited;
 }
 test "memory fields distinguish available RAM from total RAM" {

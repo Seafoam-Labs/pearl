@@ -29,7 +29,7 @@ const Client = struct {
         log.err("event=pearlctl-failed code={s}", .{code});
         const json = std.json.Stringify.valueAlloc(a, .{ .pearl = 1, .ok = false, .err = .{ .code = code } }, .{}) catch unreachable;
         defer a.free(json);
-        const output = a.dupeZ(u8, json) catch unreachable;
+        const output = a.dupeSentinel(u8, json, 0) catch unreachable;
         defer a.free(output);
         glib.print("%s\n", output.ptr);
         self.loop.quit();
@@ -79,7 +79,7 @@ const Client = struct {
             const v = parsed.value;
             if (try e.read(u32, a, try e.field(v, "pearl")) != 1 or !std.mem.eql(u8, try e.read([]const u8, a, try e.field(v, "id")), "1")) return error.InvalidReply;
             const ok = try e.read(bool, a, try e.field(v, "ok"));
-            const text = try a.dupeZ(u8, bytes);
+            const text = try a.dupeSentinel(u8, bytes, 0);
             defer a.free(text);
             glib.print("%s\n", text.ptr);
             self.status = if (ok) 0 else 4;
@@ -140,7 +140,7 @@ pub fn main(init: std.process.Init) void {
             return;
         },
         .version => {
-            glib.print("pearlctl " ++ @import("version.zig").string ++ " (control v1, Zig 0.16.0)\n");
+            glib.print("pearlctl " ++ @import("version.zig").string ++ " (control v1, Zig 0.17.0)\n");
             return;
         },
         .request => {},

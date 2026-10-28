@@ -97,6 +97,12 @@ pub const Service = struct {
         job.cancel.unref();
         a.destroy(job);
         self.job = null;
+        // Cancellation still completes asynchronously after the UI is torn down.
+        // Drain ownership and the application hold without notifying its owner.
+        if (!self.running) {
+            if (snapshot) |s| a.destroy(s);
+            return;
+        }
         if (!current) {
             if (snapshot) |s| a.destroy(s);
             // The configuration moved on mid-flight; fetch for the new one.

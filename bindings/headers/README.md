@@ -1,6 +1,6 @@
 # libpulse ABI (T07)
 
-Zig 0.16.0 translates the vendored **libpulse 17.0-98-gb096** headers into a
+Zig 0.17.0 translates the vendored **libpulse 17.0-98-gb096** headers into a
 module shared by the application and integration targets. `pulse.h` includes
 PulseAudio's public API and its GLib main-loop adapter. There is no C source
 implementation, bridge, hand-maintained function ABI, or subprocess audio adapter.

@@ -132,7 +132,7 @@ pub const Clipboard = struct {
                 self.clear();
                 return;
             }
-            const uri = a.dupeZ(u8, line) catch unreachable;
+            const uri = a.dupeSentinel(u8, line, 0) catch unreachable;
             defer a.free(uri);
             const f = gio.File.newForUri(uri);
             var duplicate = false;

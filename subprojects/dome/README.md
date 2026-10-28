@@ -1,6 +1,6 @@
 # Dome
 
-A standalone Linux system monitor written in **Zig 0.16.0 and GTK4**, with Pearl
+A standalone Linux system monitor written in **Zig 0.17.0 and GTK4**, with Pearl
 styling and Mission Center as its functional reference.
 
 ![Native Dome overview](artifacts/native/overview-dark.png)
@@ -10,15 +10,15 @@ processes with right-click row menus, safe process termination, optional systemd
 service controls and a compact summary. Sampling, graph duration, colors, columns
 and units are configurable. It runs independently of Pearl and Aqueous.
 
-Build from the Pearl checkout with Zig 0.16.0, `pkg-config`, GTK4/GLib,
+Build from the Pearl checkout with Zig 0.17.0, `pkg-config`, GTK4/GLib,
 Wayland and libpng development headers and libc. Dome uses Pearl's shared
 appearance client and pinned Zig GObject/Wayland bindings:
 
 ```sh
 cd subprojects/dome
-zig build -Doptimize=ReleaseSafe
-zig build run -Doptimize=ReleaseSafe
-zig build test -Doptimize=ReleaseSafe
+zig build -Doptimize=safe
+zig build run -Doptimize=safe
+zig build test -Doptimize=safe
 ```
 
 The executable is `zig-out/bin/dome`. `zig build` also stages the desktop entry,
@@ -68,9 +68,9 @@ privileges. Group controls require selecting an individual raw process.
 Native verification uses Pearl's existing private Aqueous session harness:
 
 ```sh
-zig build integration -Doptimize=ReleaseSafe
-zig build integration-themes -Doptimize=ReleaseSafe -- --pearl ../../zig-out/bin/pearl
-zig build benchmark -Doptimize=ReleaseSafe
+zig build integration -Doptimize=safe
+zig build integration-themes -Doptimize=safe -- --pearl ../../zig-out/bin/pearl
+zig build benchmark -Doptimize=safe
 python3 tests/soak.py --binary zig-out/bin/dome --seconds 1800
 ```
 

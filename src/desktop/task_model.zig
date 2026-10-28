@@ -117,11 +117,11 @@ pub const Snapshot = struct {
             const slot = try map.getOrPut(a, key);
             if (!slot.found_existing) {
                 slot.value_ptr.* = groups.items.len;
-                try groups.append(a, .{ .key = key, .desktop = if (app) |v| try a.dupeZ(u8, v.id) else null, .name = if (app != null and !app.?.available) try std.fmt.allocPrintSentinel(a, "{s} — launcher unavailable", .{app.?.id}, 0) else try a.dupeZ(u8, if (app) |v| v.name else identity orelse "Application") });
+                try groups.append(a, .{ .key = key, .desktop = if (app) |v| try a.dupeSentinel(u8, v.id, 0) else null, .name = if (app != null and !app.?.available) try std.fmt.allocPrintSentinel(a, "{s} — launcher unavailable", .{app.?.id}, 0) else try a.dupeSentinel(u8, if (app) |v| v.name else identity orelse "Application", 0) });
             }
             const ws = if (win.workspace) |id| model.get(.workspace, id) else null;
             const output = if (win.output) |id| model.get(.output, id) else null;
-            try groups.items[slot.value_ptr.*].windows.append(a, .{ .id = try a.dupeZ(u8, win.id), .title = try a.dupeZ(u8, nonempty(win.title) orelse identity orelse "Application"), .workspace = if (ws) |v| try a.dupeZ(u8, v.name) else null, .output = if (output) |v| try a.dupeZ(u8, v.name) else null, .focused = win.focused, .minimized = win.minimized, .can_activate = win.can_activate, .icon = try entities.clone(?entities.Icon, a, win.icon) });
+            try groups.items[slot.value_ptr.*].windows.append(a, .{ .id = try a.dupeSentinel(u8, win.id, 0), .title = try a.dupeSentinel(u8, nonempty(win.title) orelse identity orelse "Application", 0), .workspace = if (ws) |v| try a.dupeSentinel(u8, v.name, 0) else null, .output = if (output) |v| try a.dupeSentinel(u8, v.name, 0) else null, .focused = win.focused, .minimized = win.minimized, .can_activate = win.can_activate, .icon = try entities.clone(?entities.Icon, a, win.icon) });
             const group = groups.items[slot.value_ptr.*];
             windows[i] = .{ .window = group.windows.items[group.windows.items.len - 1], .group = group.key };
         }

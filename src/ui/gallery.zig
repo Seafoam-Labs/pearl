@@ -249,7 +249,7 @@ pub const Gallery = struct {
         var first: ?*gtk.ToggleButton = null;
         for (workspaces) |workspace| {
             var buffer: [24]u8 = undefined;
-            const title = try std.fmt.bufPrintZ(&buffer, "{d}", .{workspace.number});
+            const title = try std.mem.printSentinel(&buffer, "{d}", .{workspace.number}, 0);
             const pill = w.pill(title, false);
             if (first) |group| pill.setGroup(group) else first = pill;
             pill.setActive(@intFromBool(workspace.active));
@@ -264,7 +264,7 @@ pub const Gallery = struct {
         for ([_][*:0]const u8{ "Files", "Terminal", "Settings", "Draft 🐟", "Café notes", "Musik" }) |item| self.strings.append(item);
         var buffer: [128]u8 = undefined;
         for (0..512) |i| {
-            const title = std.fmt.bufPrintZ(&buffer, "{s} {d:0>4}", .{ self.tr(.sample_window), i + 1 }) catch unreachable;
+            const title = std.mem.printSentinel(&buffer, "{s} {d:0>4}", .{ self.tr(.sample_window), i + 1 }, 0) catch unreachable;
             self.strings.append(title);
         }
     }
@@ -297,7 +297,7 @@ pub const Gallery = struct {
     fn drawPreview(self: *Gallery) void {
         var buffer: [1024]u8 = undefined;
         const text = switch (self.preview_state) {
-            .ready => std.fmt.bufPrintZ(&buffer, "{s}\n{s}", .{ self.tr(.calendar), self.tr(.calendar_detail) }) catch unreachable,
+            .ready => std.mem.printSentinel(&buffer, "{s}\n{s}", .{ self.tr(.calendar), self.tr(.calendar_detail) }, 0) catch unreachable,
             .pending => self.tr(.loading),
             .failure => self.tr(.load_error),
         };
@@ -327,7 +327,7 @@ pub const Gallery = struct {
     fn updateResults(self: *Gallery) void {
         const count = self.filtered.as(gio.ListModel).getNItems();
         var buffer: [128]u8 = undefined;
-        self.result_label.setText(std.fmt.bufPrintZ(&buffer, "{s} · {d}", .{ self.tr(.results), count }) catch unreachable);
+        self.result_label.setText(std.mem.printSentinel(&buffer, "{s} · {d}", .{ self.tr(.results), count }, 0) catch unreachable);
         self.empty.as(gtk.Widget).setVisible(@intFromBool(count == 0));
         log.info("event=search results={d}", .{count});
     }
@@ -335,7 +335,7 @@ pub const Gallery = struct {
         const item = self.selection.getSelectedItem() orelse return;
         const value = gobject.ext.cast(gtk.StringObject, item).?.getString();
         var buffer: [256]u8 = undefined;
-        self.result_label.setText(std.fmt.bufPrintZ(&buffer, "{s} · {s}", .{ self.tr(.selected), value }) catch unreachable);
+        self.result_label.setText(std.mem.printSentinel(&buffer, "{s} · {s}", .{ self.tr(.selected), value }, 0) catch unreachable);
         log.info("event=sample-activated title={s}", .{value});
     }
     pub fn deinit(self: *Gallery) void {

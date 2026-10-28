@@ -3,10 +3,7 @@ const std = @import("std");
 const config = @import("config.zig");
 const fetch = @import("fetch.zig");
 const Source = @import("providers.zig").Source;
-const c = @cImport({
-    @cInclude("libxml/parser.h");
-    @cInclude("libxml/tree.h");
-});
+const c = @import("pearl_xml");
 
 pub fn url(a: std.mem.Allocator, p: config.Provider, query: []const u8) ![]const u8 {
     return std.fmt.allocPrint(a, "https://www.bing.com/search?format=rss&q={s}&count=5&setlang={s}&adlt={s}", .{ try fetch.encode(a, query), try fetch.encode(a, p.language), if (p.safe_search) "strict" else "off" });

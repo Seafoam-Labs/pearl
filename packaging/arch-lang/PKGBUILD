@@ -7,7 +7,7 @@ pkgdesc='German translations for Pearl and its bundled applications (partial cov
 arch=('any')
 url='https://github.com/Seafoam-Labs/pearl'
 license=('LicenseRef-Pearl-Unlicensed')
-makedepends=('zig=0.16.0' 'gettext' 'tar')
+makedepends=('zig=0.17.0' 'gettext' 'tar')
 # No dependency on the shell: the greeter can use this pack independently.
 # Stable and development applications currently share catalog contract 1.
 provides=('pearl-translations-de=1')

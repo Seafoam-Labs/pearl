@@ -234,12 +234,17 @@ pub const Client = struct {
     }
     pub fn begin(self: *Client, op: Operation) !void {
         if (!self.running or self.job != null or self.reload_ticket != null) return error.Busy;
-        errdefer |err| if (@import("aqueous_instance.zig").failureDetail(err)) |detail| {
-            self.err = err;
-            self.detail = @splat(0);
-            @memcpy(self.detail[0..@min(detail.len, 255)], detail[0..@min(detail.len, 255)]);
-            self.changed(self.context);
+        return self.beginInner(op) catch |err| {
+            if (@import("aqueous_instance.zig").failureDetail(err)) |detail| {
+                self.err = err;
+                self.detail = @splat(0);
+                @memcpy(self.detail[0..@min(detail.len, 255)], detail[0..@min(detail.len, 255)]);
+                self.changed(self.context);
+            }
+            return err;
         };
+    }
+    fn beginInner(self: *Client, op: Operation) !void {
         if (op != .refresh and self.draft == null) return error.NoDraft;
         if (op == .apply and !self.can_reload(self.context)) return error.ReloadUnavailable;
         if (op == .apply and self.unresolved) return error.SaveUncertain;
@@ -259,7 +264,7 @@ pub const Client = struct {
         if (self.helper) |old| {
             if (!std.mem.eql(u8, old, j.instance.helper) and (self.draft != null or self.unresolved)) return error.OperationHelperChanged;
         }
-        const helper = try a.dupeZ(u8, j.instance.helper);
+        const helper = try a.dupeSentinel(u8, j.instance.helper, 0);
         if (self.helper) |old| a.free(old);
         self.helper = helper;
         if (op != .refresh) {
@@ -320,7 +325,7 @@ pub const Client = struct {
     }
     fn structured(j: *Job, id: []const u8, input: ?[]const u8) !contract.Result {
         const alloc = j.arena.allocator();
-        const operation = try alloc.dupeZ(u8, id);
+        const operation = try alloc.dupeSentinel(u8, id, 0);
         const argv: []const [:0]const u8 = if (input != null)
             &.{ j.owner.helper.?, "apply", "--shell", "none", "--request", "-", "--result", "v1", "--operation-id", operation }
         else

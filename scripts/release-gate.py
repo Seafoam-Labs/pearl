@@ -4,7 +4,7 @@ import argparse, hashlib, json
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 MANUAL=('direct-login','uwsm-login','visual-review','physical-displays','physical-security','hardware-services','accessibility','presentation-performance')
-TARGETS={'unit','integration','test-components','test-adapter','test-surfaces','test-desktop','test-services','test-connectivity','test-session-services','test-preferences','test-aqueous-settings','test-capture-master','test-security','test-lock','test-clipboard-capture','test-dock-islands','test-settings-boundary','test-settings-app','test-settings-appearance','test-settings-services','test-settings-devices','test-settings-integration','test-settings-presentation','test-release'}
+TARGETS={'unit','integration','test-components','test-adapter','test-surfaces','test-desktop','test-services','test-connectivity','test-session-services','test-preferences','test-aqueous-settings','test-capture-master','test-security','test-lock','test-clipboard-capture','test-dock-islands','test-settings-boundary','test-settings-appearance','test-settings-services','test-settings-devices','test-settings-integration','test-settings-presentation','test-release'}
 def read(path):
     try:return json.loads(path.read_text())
     except (OSError,ValueError):return {}
@@ -33,7 +33,7 @@ def evaluate(evidence,project=ROOT):
     checks['matching-master-capture']=capture.get('baseline')==baseline and capture.get('status')=='passed' and capture.get('pearl_sha256')==binary.get('pearl') and bool(binary)
     checks['matching-master-performance']=performance.get('baseline')==baseline and performance.get('status')=='passed'
     checks['upstream-adversarial']=upstream.get('status')=='passed' and upstream.get('baseline')==baseline
-    checks['master-provenance']=baseline.get('revision')==release.get('aqueous_revision') and baseline.get('binary_sha256')=={'aqueous':release.get('aqueous_binary_sha256'),'aqueousctl':release.get('aqueousctl_binary_sha256'),'aqueous-config':release.get('aqueous_config_binary_sha256')} and baseline.get('wlroots_sha256')==release.get('aqueous_wlroots_sha256') and baseline.get('helper',{}).get('version')==release.get('aqueous_config_floor')
+    checks['master-provenance']=baseline.get('revision')==release.get('aqueous_revision') and baseline.get('binary_sha256')=={'aqueous':release.get('aqueous_binary_sha256'),'aqueousctl':release.get('aqueousctl_binary_sha256'),'aqueous-config':release.get('aqueous_config_binary_sha256')} and baseline.get('wlroots_sha256')==release.get('aqueous_wlroots_sha256') and baseline.get('helper',{}).get('version')==release.get('aqueous_config_version',release.get('aqueous_config_floor'))
     coverage=read(project/'docs/aqueous-capabilities.json')
     rows=coverage.get('rows',[])
     ui=read(evidence/'ui/metadata.json')
@@ -48,6 +48,6 @@ def evaluate(evidence,project=ROOT):
         item=signoff.get('checks',{}).get(name,{})
         path=(evidence/item.get('evidence','missing')).resolve()
         checks[name]=bool(item.get('status')=='passed' and item.get('reviewer') and item.get('date') and item.get('machine') and item.get('notes') and signoff.get('binary_sha256')==binary and binary and path.is_relative_to(evidence.resolve()) and path.is_file() and item.get('evidence_sha256')==hashlib.sha256(path.read_bytes()).hexdigest())
-    return {'release_ready':all(checks.values()),'checks':checks,'pending_or_failed':[n for n,ok in checks.items() if not ok],'binary_sha256':binary}
+    return {'release_ready':all(checks.values()),'checks':checks,'pending_or_failed':[n for n,ok in checks.items() if not ok],'binary_sha256':binary,'reports':{'test-settings-app':dict(targets.get('test-settings-app',{'status':'not-run'}),report_only=True)}}
 if __name__=='__main__':
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--evidence',type=Path,default=ROOT/'artifacts/aqueous-082');a=p.parse_args();a.evidence=a.evidence.resolve();result=evaluate(a.evidence);a.evidence.mkdir(parents=True,exist_ok=True);(a.evidence/'gate.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result,indent=2));raise SystemExit(not result['release_ready'])

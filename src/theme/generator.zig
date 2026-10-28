@@ -87,7 +87,7 @@ pub fn fullWithContext(a: std.mem.Allocator, p: Prefs.Preferences, image: ?[]con
     defer {
         if (p.theme.source == .wallpaper) _ = std.c.unlink(input);
     }
-    const seed = try a.dupeZ(u8, p.theme.seed);
+    const seed = try a.dupeSentinel(u8, p.theme.seed, 0);
     const scheme = Prefs.matugenScheme(p.theme.scheme);
     // matugen 4 takes the scheme as the subcommand-level --type flag, after the source args.
     const args: []const [:0]const u8 = if (p.theme.source == .seed)

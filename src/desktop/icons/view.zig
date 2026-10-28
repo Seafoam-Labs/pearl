@@ -492,7 +492,7 @@ pub const View = struct {
             var ids: std.ArrayList([:0]const u8) = .empty;
             for (catalog.entries.items) |entry| if (entry.action == null) {
                 strings.append(entry.name);
-                ids.append(self.menu_arena.allocator(), self.menu_arena.allocator().dupeZ(u8, entry.id) catch continue) catch {};
+                ids.append(self.menu_arena.allocator(), self.menu_arena.allocator().dupeSentinel(u8, entry.id, 0) catch continue) catch {};
             };
             self.app_ids = ids.items;
             self.menu_choice = gtk.DropDown.new(strings.as(gio.ListModel), null);
@@ -590,9 +590,9 @@ pub const View = struct {
     fn enqueue(self: *View, request: actions.Request) void {
         const alloc = self.queue_arena.allocator();
         var copy = request;
-        copy.path = alloc.dupeZ(u8, request.path) catch return;
-        copy.name = alloc.dupeZ(u8, request.name) catch return;
-        copy.etag = if (request.etag) |v| alloc.dupeZ(u8, v) catch return else null;
+        copy.path = alloc.dupeSentinel(u8, request.path, 0) catch return;
+        copy.name = alloc.dupeSentinel(u8, request.name, 0) catch return;
+        copy.etag = if (request.etag) |v| alloc.dupeSentinel(u8, v, 0) catch return else null;
         self.queue.append(a, copy) catch {};
     }
     fn next(self: *View) void {
@@ -609,7 +609,7 @@ pub const View = struct {
         self.job = null;
         if (job.failure) |err| {
             self.failures += 1;
-            self.message(std.fmt.bufPrintZ(&self.feedback, "Desktop action failed: {s}. Retry after checking the file.", .{@errorName(err)}) catch "Desktop action failed.");
+            self.message(std.mem.printSentinel(&self.feedback, "Desktop action failed: {s}. Retry after checking the file.", .{@errorName(err)}, 0) catch "Desktop action failed.");
         } else {
             self.successes += 1;
             if ((job.request.kind == .approve or job.request.kind == .shortcut) and job.digest != null and job.uri != null) {

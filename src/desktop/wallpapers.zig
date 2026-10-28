@@ -208,13 +208,13 @@ pub const View = struct {
             const cell = &self.cells[i];
             const path = std.fmt.allocPrintSentinel(alloc, "{s}/{s}", .{ folder, name }, 0) catch break;
             cell.path = path;
-            const label = alloc.dupeZ(u8, name) catch break;
+            const label = alloc.dupeSentinel(u8, name, 0) catch break;
             w.name(cell.button.as(gtk.Widget), label.ptr);
             cell.button.as(gtk.Widget).setVisible(1);
         }
         var buffer: [32:0]u8 = undefined;
         const total = self.pages();
-        self.page_label.setText(std.fmt.bufPrintZ(&buffer, "{d} / {d}", .{ if (total == 0) 0 else self.page + 1, total }) catch "");
+        self.page_label.setText(std.mem.printSentinel(&buffer, "{d} / {d}", .{ if (total == 0) 0 else self.page + 1, total }, 0) catch "");
         self.previous.as(gtk.Widget).setSensitive(@intFromBool(self.page > 0));
         self.next.as(gtk.Widget).setSensitive(@intFromBool(self.page + 1 < total));
         self.markSelected();
@@ -303,7 +303,7 @@ pub const View = struct {
 
 fn take(current: *?[:0]u8, value: []const u8) void {
     if (current.*) |old| a.free(old);
-    current.* = a.dupeZ(u8, value) catch null;
+    current.* = a.dupeSentinel(u8, value, 0) catch null;
 }
 
 const Thumb = struct {

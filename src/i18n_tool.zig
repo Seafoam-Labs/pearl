@@ -46,8 +46,8 @@ const Tool = struct {
             try self.addFull(.{ .domain = "pearl", .source = description, .context = try std.fmt.allocPrint(self.a, "aqueous.{s}.description", .{id}), .translated = "", .reference = path });
         }
         try output.writer.writeAll("};\n");
-        const source = try self.a.dupeZ(u8, output.written());
-        var tree = try Ast.parse(self.a, source, .zig);
+        const source = try self.a.dupeSentinel(u8, output.written(), 0);
+        var tree = try Ast.parse(self.a, source, .{});
         defer tree.deinit(self.a);
         try self.write("src/i18n/aqueous_fields.zig", try tree.renderAlloc(self.a));
     }
@@ -75,7 +75,7 @@ const Tool = struct {
     fn gallery(self: *Tool) !void {
         const path = "src/ui/i18n.zig";
         const source = try std.Io.Dir.cwd().readFileAllocOptions(self.io, path, self.a, .limited(65536), .of(u8), 0);
-        var tree = try Ast.parse(self.a, source, .zig);
+        var tree = try Ast.parse(self.a, source, .{});
         defer tree.deinit(self.a);
         var english: ?Ast.Node.Index = null;
         for (tree.rootDecls()) |decl| if (tree.fullVarDecl(decl)) |v| {
@@ -126,11 +126,11 @@ const Tool = struct {
         try self.extractSource(path, source, domain);
     }
     fn extractSource(self: *Tool, path: []const u8, bytes: [:0]const u8, _: []const u8) !void {
-        var tree = try Ast.parse(self.a, bytes, .zig);
+        var tree = try Ast.parse(self.a, bytes, .{});
         defer tree.deinit(self.a);
         if (tree.errors.len > 0) return error.InvalidZig;
         for (0..tree.nodes.len) |index| {
-            const node: Ast.Node.Index = @enumFromInt(index);
+            const node: Ast.Node.Index = @fromBackingInt(@intCast(index));
             var buf: [1]Ast.Node.Index = undefined;
             const call = tree.fullCall(&buf, node) orelse continue;
             const name = tree.getNodeSource(call.ast.fn_expr);

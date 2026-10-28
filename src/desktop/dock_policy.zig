@@ -90,6 +90,6 @@ test "dock hiding gates override interaction and keep non-obscured output visibl
 }
 
 test "desktop IDs accept installed names without allowing paths or control characters" {
-    for ([_][]const u8{ "Custom App.desktop", "Éditeur 私用.desktop", "a" ** 1016 ++ ".desktop" }) |id| try std.testing.expect(desktopId(id));
-    for ([_][]const u8{ "", ".desktop", "App", "App.desktop/other", "../App.desktop", "C:\\App.desktop", "bad\x00.desktop", "bad\n.desktop", "bad\x7f.desktop", "bad\xc2\x85.desktop", "bad\xff.desktop", "a" ** 1017 ++ ".desktop" }) |id| try std.testing.expect(!desktopId(id));
+    for ([_][]const u8{ "Custom App.desktop", "Éditeur 私用.desktop", @import("test_strings").string("a", 1016) ++ ".desktop" }) |id| try std.testing.expect(desktopId(id));
+    for ([_][]const u8{ "", ".desktop", "App", "App.desktop/other", "../App.desktop", "C:\\App.desktop", "bad\x00.desktop", "bad\n.desktop", "bad\x7f.desktop", "bad\xc2\x85.desktop", "bad\xff.desktop", @import("test_strings").string("a", 1017) ++ ".desktop" }) |id| try std.testing.expect(!desktopId(id));
 }

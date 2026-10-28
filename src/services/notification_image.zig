@@ -124,7 +124,7 @@ test "decode keeps gdk-pixbuf channel order and validates the payload before cop
     const flat = fromHint(rgb) orelse return error.DecodeFailed;
     defer flat.unref();
     try t.expect(flat.getHasAlpha() == 0);
-    const padded = payload(2, 1, 16, true, 8, 4, &([_]u8{200} ** 16));
+    const padded = payload(2, 1, 16, true, 8, 4, &(@as([16]u8, @splat(200))));
     defer padded.unref();
     const wide = fromHint(padded) orelse return error.DecodeFailed;
     defer wide.unref();
@@ -138,7 +138,7 @@ test "decode keeps gdk-pixbuf channel order and validates the payload before cop
     const mixed = payload(1, 1, 4, true, 8, 3, &.{ 1, 2, 3, 4 });
     defer mixed.unref();
     try t.expect(fromHint(mixed) == null);
-    const tight = payload(2, 1, 4, true, 8, 4, &([_]u8{9} ** 8));
+    const tight = payload(2, 1, 4, true, 8, 4, &(@as([8]u8, @splat(9))));
     defer tight.unref();
     try t.expect(fromHint(tight) == null);
     // The dimension bound runs before the payload is read or copied.

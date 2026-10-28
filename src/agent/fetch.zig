@@ -2,19 +2,7 @@
 //! including redirects; credentials are never forwarded across redirects.
 const std = @import("std");
 const gio = @import("gio2");
-pub const c = @cImport({
-    // glibc's fortified variadic open/openat wrappers cannot be translated by
-    // Zig 0.16. This affects header translation only; file I/O uses std.c.
-    @cUndef("_FORTIFY_SOURCE");
-    @cDefine("_FORTIFY_SOURCE", "0");
-    @cInclude("curl/curl.h");
-    @cInclude("pthread.h");
-    @cInclude("sys/socket.h");
-    @cInclude("netinet/in.h");
-    @cInclude("unistd.h");
-    @cInclude("sys/statvfs.h");
-    @cInclude("sys/file.h");
-});
+pub const c = @import("pearl_curl");
 var once: c.pthread_once_t = c.PTHREAD_ONCE_INIT;
 var initialized: bool = false;
 fn init() callconv(.c) void {
@@ -117,13 +105,13 @@ pub fn request(a: std.mem.Allocator, opts: Options, cancel: *gio.Cancellable) !R
     defer c.curl_easy_cleanup(handle);
     var transfer: Transfer = .{ .a = a, .opts = opts, .cancel = cancel };
     errdefer transfer.data.deinit(a);
-    const address = try a.dupeZ(u8, opts.url);
+    const address = try a.dupeSentinel(u8, opts.url, 0);
     defer a.free(address);
     var headers: ?*c.curl_slist = null;
     defer c.curl_slist_free_all(headers);
     for (opts.headers) |h| {
         if (std.mem.indexOfAny(u8, h, "\r\n\x00") != null) return error.InvalidHeader;
-        const z = try a.dupeZ(u8, h);
+        const z = try a.dupeSentinel(u8, h, 0);
         defer a.free(z);
         headers = c.curl_slist_append(headers, z) orelse return error.OutOfMemory;
     }

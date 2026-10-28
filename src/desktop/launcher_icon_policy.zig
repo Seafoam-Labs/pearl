@@ -26,5 +26,5 @@ test "launcher icon kind and value are bounded and validated together" {
     try (Config{}).validate();
     try (Config{ .kind = .theme, .value = default_icon }).validate();
     try (Config{ .kind = .file, .value = "/home/user/My icon.png" }).validate();
-    for ([_]Config{ .{ .value = "unexpected" }, .{ .kind = .theme }, .{ .kind = .theme, .value = "../icon" }, .{ .kind = .theme, .value = "a" ** 129 }, .{ .kind = .file, .value = "relative.png" }, .{ .kind = .file, .value = "/bad\nname" }, .{ .kind = .file, .value = "/\xff" }, .{ .kind = .file, .value = "/" ** 1025 } }) |cfg| try t.expectError(error.InvalidLauncherIcon, cfg.validate());
+    for ([_]Config{ .{ .value = "unexpected" }, .{ .kind = .theme }, .{ .kind = .theme, .value = "../icon" }, .{ .kind = .theme, .value = @import("test_strings").string("a", 129) }, .{ .kind = .file, .value = "relative.png" }, .{ .kind = .file, .value = "/bad\nname" }, .{ .kind = .file, .value = "/\xff" }, .{ .kind = .file, .value = @import("test_strings").string("/", 1025) } }) |cfg| try t.expectError(error.InvalidLauncherIcon, cfg.validate());
 }

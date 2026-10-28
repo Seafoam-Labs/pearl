@@ -155,7 +155,7 @@ pub const View = struct {
         return prefs.parse(alloc, self.editor.text());
     }
     fn options(self: *View) benchmark.Options {
-        var result: benchmark.Options = .{ .mode = @enumFromInt(self.mode.getSelected()), .detailed = self.detail.getSelected() == 1 };
+        var result: benchmark.Options = .{ .mode = @fromBackingInt(@intCast(self.mode.getSelected())), .detailed = self.detail.getSelected() == 1 };
         for (self.candidates, 0..) |check, i| result.selected[i] = check.getActive() != 0;
         return result;
     }
@@ -214,7 +214,7 @@ pub const View = struct {
         self.report = null;
         self.ids = try benchmark.history(self.data.allocator());
         self.history_names.splice(0, self.history_names.as(gio.ListModel).getNItems(), null);
-        for (self.ids) |id| self.history_names.append(try self.data.allocator().dupeZ(u8, id));
+        for (self.ids) |id| self.history_names.append(try self.data.allocator().dupeSentinel(u8, id, 0));
         self.history.setSelected(0);
         try self.loadSelected();
         try self.availability();
@@ -298,7 +298,7 @@ pub const View = struct {
         defer arena.deinit();
         const alloc = arena.allocator();
         if (benchmark.staleReason(alloc, run, run.results[index], try benchmark.hardware(alloc))) |reason| {
-            self.status.setText(try alloc.dupeZ(u8, reason));
+            self.status.setText(try alloc.dupeSentinel(u8, reason, 0));
             return;
         }
         var value = try self.document(alloc);
@@ -323,7 +323,7 @@ pub const View = struct {
             text.appendSlice(alloc, std.fmt.allocPrint(alloc, "\n{s} · {s} · {s} · {s}\n{s}\n{s}\n{d:.0} ms · {s} · searches {d}, reads {d}\nTokens reported by runtime: input {?d}, generated including reasoning {?d}, reasoning {?d}; telemetry {d}/{d} requests\nInput time {?d} ms · generation time {?d} ms\n{s} {s}\n", .{ sample.fixture, if (sample.followup) "Follow-up" else "Question", if (sample.warmup) "Warm-up" else "Measured", @tagName(sample.outcome), question, sample.answer, sample.complete_ms, if (sample.gpu) "GPU" else "CPU", sample.searches, sample.reads, sample.tokens.prompt, sample.tokens.generated, sample.tokens.reasoning, sample.tokens.reported_requests, sample.tokens.requests, sample.tokens.prompt_ms, sample.tokens.generation_ms, sample.fallback, sample.error_code }) catch return) catch return;
             text.appendSlice(alloc, std.fmt.allocPrint(alloc, "Prompt throughput: {s} tokens/s · generation including reasoning: {s} tokens/s. Separate visible/reasoning throughput unavailable.\n", .{ if (sample.tokens.rate(true)) |rate| std.fmt.allocPrint(alloc, "{d:.1}", .{rate}) catch return else "unavailable", if (sample.tokens.rate(false)) |rate| std.fmt.allocPrint(alloc, "{d:.1}", .{rate}) catch return else "unavailable" }) catch return) catch return;
         }
-        self.details.setText(alloc.dupeZ(u8, text.items) catch return);
+        self.details.setText(alloc.dupeSentinel(u8, text.items, 0) catch return);
     }
     fn clicked(b: *gtk.Button, self: *View) callconv(.c) void {
         if (b == self.skip_button) {
@@ -460,7 +460,7 @@ pub const View = struct {
         if (self.job) |job| {
             if (!self.editor.editable()) self.cancel.?.cancel();
             var buffer: [256]u8 = undefined;
-            const text = if (job.action == .download) std.fmt.bufPrintZ(&buffer, "Downloading {s}: {d} MB…", .{ registry.models[@min(job.progress.candidate.load(.monotonic), registry.models.len - 1)].id, job.progress.download_bytes.load(.monotonic) / 1000000 }) else std.fmt.bufPrintZ(&buffer, "{s} · configuration {d}/{d} · sample {d}/{d} · {s} · completed {d}.", .{ registry.models[@min(job.progress.model_index.load(.monotonic), registry.models.len - 1)].id, job.progress.candidate.load(.monotonic) + 1, job.progress.total.load(.monotonic), job.progress.sample.load(.monotonic), benchmark.fixtures.len * 8, @tagName(job.progress.phase.load(.monotonic)), job.progress.completed.load(.monotonic) });
+            const text = if (job.action == .download) std.mem.printSentinel(&buffer, "Downloading {s}: {d} MB…", .{ registry.models[@min(job.progress.candidate.load(.monotonic), registry.models.len - 1)].id, job.progress.download_bytes.load(.monotonic) / 1000000 }, 0) else std.mem.printSentinel(&buffer, "{s} · configuration {d}/{d} · sample {d}/{d} · {s} · completed {d}.", .{ registry.models[@min(job.progress.model_index.load(.monotonic), registry.models.len - 1)].id, job.progress.candidate.load(.monotonic) + 1, job.progress.total.load(.monotonic), job.progress.sample.load(.monotonic), benchmark.fixtures.len * 8, @tagName(job.progress.phase.load(.monotonic)), job.progress.completed.load(.monotonic) }, 0);
             self.status.setText(text catch "Working…");
             const completed = job.progress.completed.load(.monotonic);
             if (completed != self.shown_completed) {
@@ -491,7 +491,7 @@ pub const View = struct {
             if (self.exported) |bytes| a.free(bytes);
             self.exported = null;
         }
-        if (response != @intFromEnum(gtk.ResponseType.accept)) return;
+        if (response != @backingInt(gtk.ResponseType.accept)) return;
         const file = picker.as(gtk.FileChooser).getFile() orelse return;
         defer file.unref();
         const filename = file.getPath() orelse {

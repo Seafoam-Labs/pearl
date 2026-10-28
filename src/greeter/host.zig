@@ -93,7 +93,7 @@ pub fn runManaged(args: []const []const u8) !void {
 fn supervise(args: []const []const u8, managed: bool) !void {
     var argv: [257:null]?[*:0]const u8 = @splat(null);
     if (args.len == 0 or args.len > 256 or args[0].len == 0 or args[0][0] != '/') return error.InvalidCommand;
-    for (args, 0..) |arg, i| argv[i] = (try a.dupeZ(u8, arg)).ptr;
+    for (args, 0..) |arg, i| argv[i] = (try a.dupeSentinel(u8, arg, 0)).ptr;
     // Become the reaper only for descendants of this supervisor.
     if (std.os.linux.prctl(36, 1, 0, 0, 0) != 0) return error.Subreaper;
     var pipe: [2]c_int = undefined;
@@ -112,7 +112,7 @@ fn supervise(args: []const []const u8, managed: bool) !void {
             if (pipe[1] != 3) _ = std.c.close(pipe[1]);
         }
         if (std.c.setsid() < 0) std.process.exit(127);
-        _ = std.os.linux.prctl(1, @intFromEnum(std.c.SIG.KILL), 0, 0, 0);
+        _ = std.os.linux.prctl(1, @backingInt(std.c.SIG.KILL), 0, 0, 0);
         _ = std.c.execve(argv[0].?, @ptrCast(&argv), @ptrCast(std.c.environ));
         std.process.exit(127);
     }
@@ -144,8 +144,8 @@ fn supervise(args: []const []const u8, managed: bool) !void {
         _ = glib.Source.remove(self.stop_timer);
     };
     const source = unix.fdAdd(self.pidfd, .{ .in = true }, Host.exited, &self);
-    const term = unix.signalAdd(@intFromEnum(std.c.SIG.TERM), Host.stop, &self);
-    const int = unix.signalAdd(@intFromEnum(std.c.SIG.INT), Host.stop, &self);
+    const term = unix.signalAdd(@backingInt(std.c.SIG.TERM), Host.stop, &self);
+    const int = unix.signalAdd(@backingInt(std.c.SIG.INT), Host.stop, &self);
     defer _ = glib.Source.remove(term);
     defer _ = glib.Source.remove(int);
     log.info("event=greeter-host-started", .{});

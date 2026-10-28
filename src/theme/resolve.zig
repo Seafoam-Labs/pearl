@@ -15,21 +15,21 @@ pub const Resolved = struct {
     blobs: []const @import("assets.zig").Blob = &.{},
     pub fn jsonStringify(self: Resolved, writer: *std.json.Stringify) !void {
         try writer.beginObject();
-        inline for (@typeInfo(Resolved).@"struct".fields) |field| {
-            if (comptime !std.mem.eql(u8, field.name, "blobs")) {
-                if (comptime std.mem.eql(u8, field.name, "images")) {
+        inline for (@typeInfo(Resolved).@"struct".field_names) |field| {
+            if (comptime !std.mem.eql(u8, field, "blobs")) {
+                if (comptime std.mem.eql(u8, field, "images")) {
                     if (self.images.len > 0) {
-                        try writer.objectField(field.name);
+                        try writer.objectField(field);
                         try writer.write(self.images);
                     }
-                } else if (comptime std.mem.eql(u8, field.name, "palette_css")) {
+                } else if (comptime std.mem.eql(u8, field, "palette_css")) {
                     if (self.palette_css.len > 0) {
-                        try writer.objectField(field.name);
+                        try writer.objectField(field);
                         try writer.write(self.palette_css);
                     }
                 } else {
-                    try writer.objectField(field.name);
-                    try writer.write(@field(self, field.name));
+                    try writer.objectField(field);
+                    try writer.write(@field(self, field));
                 }
             }
         }

@@ -1,0 +1,13 @@
+.{
+    .name = .pearl_spikes_wasm_plugins,
+    .fingerprint = 0x81a283e9751d90f,
+    .version = "0.3.5",
+    .minimum_zig_version = "0.17.0",
+    .dependencies = .{
+        .translate_c = .{
+            .url = "https://codeberg.org/ziglang/translate-c/archive/2.0.2.tar.gz",
+            .hash = "translate_c-2.0.2-Q_BUWvBNBwBgPKQJPblip6M7AHNK_IPNPmyv4rSIQMQc",
+        },
+    },
+    .paths = .{""},
+}

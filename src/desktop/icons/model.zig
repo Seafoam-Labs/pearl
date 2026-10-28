@@ -54,7 +54,7 @@ pub fn desktopPath(a: std.mem.Allocator, contents: []const u8, home: []const u8)
         const normalized = try std.fs.path.resolve(a, &.{path.items});
         defer a.free(normalized);
         if (std.mem.eql(u8, normalized, home) or std.mem.eql(u8, normalized, "/")) continue;
-        result = try a.dupeZ(u8, normalized);
+        result = try a.dupeSentinel(u8, normalized, 0);
     }
     return result;
 }
@@ -62,7 +62,7 @@ pub fn validName(name: []const u8) bool {
     return name.len > 0 and name.len <= 255 and !std.mem.eql(u8, name, ".") and !std.mem.eql(u8, name, "..") and std.mem.indexOfScalar(u8, name, '/') == null and std.mem.indexOfScalar(u8, name, 0) == null;
 }
 pub fn displayText(a: std.mem.Allocator, text: []const u8) ![:0]u8 {
-    const result = try a.dupeZ(u8, text);
+    const result = try a.dupeSentinel(u8, text, 0);
     for (result) |*byte| if (byte.* < 32 or byte.* == 127) {
         byte.* = ' ';
     };
@@ -98,7 +98,7 @@ test "desktop directory grammar rejects execution and disabled roots" {
     for ([_][]const u8{ "", "XDG_DESKTOP_DIR=\"$HOME\"", "XDG_DESKTOP_DIR=\"$HOME/../u\"", "XDG_DESKTOP_DIR=\"$(touch /tmp/x)\"", "XDG_DESKTOP_DIR=\"/tmp/`id`\"", "XDG_DESKTOP_DIR=\"/\"" }) |input| try std.testing.expectEqual(@as(?[:0]u8, null), try desktopPath(a, input, "/home/u"));
 }
 test "selection range toggle and names" {
-    var bits = [_]bool{false} ** 5;
+    var bits = @as([5]bool, @splat(false));
     var s: Selection = .{ .bits = &bits };
     s.select(1, false, false);
     s.select(3, false, true);

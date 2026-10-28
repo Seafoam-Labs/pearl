@@ -4,7 +4,7 @@ const glib = @import("glib2");
 const io = @import("io.zig");
 const prefs = @import("preferences.zig");
 pub fn file(alloc: std.mem.Allocator, path: []const u8) ![]const u8 {
-    const result = try io.read(alloc, try alloc.dupeZ(u8, path), prefs.max_bytes, null);
+    const result = try io.read(alloc, try alloc.dupeSentinel(u8, path, 0), prefs.max_bytes, null);
     if (result.missing) return error.FileNotFound;
     return result.bytes;
 }
@@ -25,7 +25,7 @@ pub fn run(alloc: std.mem.Allocator, args: []const []const u8) !void {
     const report = try @import("dms_import.zig").plan(alloc, source, state, try prefs.parse(alloc, old));
     const bytes = try std.json.Stringify.valueAlloc(alloc, .{ .format = report.format, .dry_run = true, .source_sha256 = io.digest(source), .session_sha256 = if (state) |value| @as(?[64]u8, io.digest(value)) else null, .base_sha256 = io.digest(old), .preferences = report.preferences, .mapped = report.mapped.items, .unsupported = report.unsupported.items, .notes = report.notes.items }, .{ .whitespace = .indent_2 });
     if (bundle) |directory| {
-        const dir = try alloc.dupeZ(u8, directory);
+        const dir = try alloc.dupeSentinel(u8, directory, 0);
         if (std.c.mkdir(dir, 0o700) != 0) return error.BundleMustBeNewDirectory;
         // Publishing report.json last marks a complete bundle. Partial failures
         // leave a private directory for inspection; they never touch source files.
@@ -33,6 +33,6 @@ pub fn run(alloc: std.mem.Allocator, args: []const []const u8) !void {
         try io.atomic(try std.fmt.allocPrintSentinel(alloc, "{s}/preferences.json", .{directory}, 0), try std.json.Stringify.valueAlloc(alloc, report.preferences, .{ .whitespace = .indent_2 }), true);
         try io.atomic(try std.fmt.allocPrintSentinel(alloc, "{s}/report.json", .{directory}, 0), bytes, true);
     }
-    const output = try alloc.dupeZ(u8, bytes);
+    const output = try alloc.dupeSentinel(u8, bytes, 0);
     glib.print("%s\n", output.ptr);
 }

@@ -65,7 +65,7 @@ test "discovery and resolution reject expressions and paths while retaining alia
 
 test "local zone is resolved afresh after the process local-zone setting changes" {
     // Mutate only this isolated test process, never the desktop or system zone.
-    const saved = if (glib.getenv("TZ")) |value| try std.testing.allocator.dupeZ(u8, std.mem.span(value)) else null;
+    const saved = if (glib.getenv("TZ")) |value| try std.testing.allocator.dupeSentinel(u8, std.mem.span(value), 0) else null;
     defer {
         if (saved) |value| {
             _ = glib.setenv("TZ", value, 1);

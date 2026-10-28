@@ -116,9 +116,9 @@ pub const Entity = union(Kind) {
         try writer.objectField("kind");
         try writer.write(@tagName(std.meta.activeTag(self)));
         switch (self) {
-            inline else => |value| inline for (@typeInfo(@TypeOf(value)).@"struct".fields) |f| {
-                try writer.objectField(f.name);
-                try writer.write(@field(value, f.name));
+            inline else => |value| inline for (@typeInfo(@TypeOf(value)).@"struct".field_names) |f| {
+                try writer.objectField(f);
+                try writer.write(@field(value, f));
             },
         }
         try writer.endObject();
@@ -189,11 +189,11 @@ pub fn read(comptime T: type, allocator: Allocator, value: std.json.Value) anyer
         .@"struct" => |info| {
             if (value != .object) return error.InvalidType;
             var result: T = undefined;
-            inline for (info.fields) |f| {
-                if (value.object.get(f.name)) |item| {
-                    @field(result, f.name) = try read(f.type, allocator, item);
-                } else if (f.defaultValue()) |default| {
-                    @field(result, f.name) = default;
+            inline for (info.field_names, info.field_types, info.field_attrs) |f, FieldType, attrs| {
+                if (value.object.get(f)) |item| {
+                    @field(result, f) = try read(FieldType, allocator, item);
+                } else if (attrs.defaultValue(FieldType)) |default| {
+                    @field(result, f) = default;
                 } else return error.MissingField;
             }
             return result;
@@ -213,7 +213,7 @@ pub fn clone(comptime T: type, allocator: Allocator, value: T) Allocator.Error!T
         .optional => |info| return if (value) |v| try clone(info.child, allocator, v) else null,
         .@"struct" => |info| {
             var result: T = undefined;
-            inline for (info.fields) |f| @field(result, f.name) = try clone(f.type, allocator, @field(value, f.name));
+            inline for (info.field_names, info.field_types) |f, FieldType| @field(result, f) = try clone(FieldType, allocator, @field(value, f));
             return result;
         },
         .@"union" => return switch (value) {
@@ -234,7 +234,7 @@ pub fn ownedBytes(value: anytype) usize {
         .optional => if (value) |v| ownedBytes(v) - @sizeOf(@TypeOf(v)) else 0,
         .@"struct" => |info| blk: {
             var size: usize = 0;
-            inline for (info.fields) |f| size += ownedBytes(@field(value, f.name)) - @sizeOf(f.type);
+            inline for (info.field_names, info.field_types) |f, FieldType| size += ownedBytes(@field(value, f)) - @sizeOf(FieldType);
             break :blk size;
         },
         .@"union" => switch (value) {

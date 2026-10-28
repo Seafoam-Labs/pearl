@@ -158,8 +158,8 @@ pub const View = struct {
                 const text = @import("../services/policy.zig").Text(120);
                 var s: text = .{};
                 s.set(err);
-                break :blk std.fmt.bufPrintZ(&buf, "{s}", .{s.slice()}) catch unreachable;
-            } else std.fmt.bufPrintZ(&buf, "{d}:{d:0>2} / {d}:{d:0>2}", .{ @as(u64, @intCast(@divTrunc(pos, 60000000))), @as(u64, @intCast(@mod(@divTrunc(pos, 1000000), 60))), @as(u64, @intCast(@divTrunc(player.length, 60000000))), @as(u64, @intCast(@mod(@divTrunc(player.length, 1000000), 60))) }) catch "");
+                break :blk std.mem.printSentinel(&buf, "{s}", .{s.slice()}, 0) catch unreachable;
+            } else std.mem.printSentinel(&buf, "{d}:{d:0>2} / {d}:{d:0>2}", .{ @as(u64, @intCast(@divTrunc(pos, 60000000))), @as(u64, @intCast(@mod(@divTrunc(pos, 1000000), 60))), @as(u64, @intCast(@divTrunc(player.length, 60000000))), @as(u64, @intCast(@mod(@divTrunc(player.length, 1000000), 60))) }, 0) catch "");
         } else {
             self.progress.as(gtk.Range).setValue(0);
             self.state.setText("");

@@ -10,9 +10,9 @@ class CapturedIPC(IPC):
   value=super().call(op,**params)
   if op=='hello':self.hello=value
   return value
-from aqueous_target import REV
+from aqueous_target import REV,PREFIX
 def main():
- p=argparse.ArgumentParser(description=__doc__);p.add_argument('--prefix',type=Path,default=ROOT/'.cache/aqueous-activity-production');p.add_argument('--output',type=Path,default=ROOT/'artifacts/aqueous-082/contracts');a=p.parse_args();a.prefix=a.prefix.resolve();a.output=a.output.resolve();a.output.mkdir(parents=True,exist_ok=True)
+ p=argparse.ArgumentParser(description=__doc__);p.add_argument('--prefix',type=Path,default=PREFIX);p.add_argument('--output',type=Path,default=ROOT/'artifacts/aqueous-082/contracts');a=p.parse_args();a.prefix=a.prefix.resolve();a.output=a.output.resolve();a.output.mkdir(parents=True,exist_ok=True)
  meta=json.loads((a.prefix/'metadata.json').read_text());assert meta['status']=='passed' and meta['revision']==REV
  source=a.prefix/'source';fixtures=ROOT/'tests/fixtures/aqueous-master';fixtures.mkdir(parents=True,exist_ok=True)
  def save(name,v):

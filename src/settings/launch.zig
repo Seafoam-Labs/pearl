@@ -2,10 +2,7 @@
 const std = @import("std");
 const gio = @import("gio2");
 const glib = @import("glib2");
-const c = @cImport({
-    @cDefine("_GNU_SOURCE", "1");
-    @cInclude("spawn.h");
-});
+const c = @import("pearl_libc");
 const nav = @import("../desktop/settings_navigation.zig");
 const distribution = @import("distribution.zig");
 const a = std.heap.c_allocator;
@@ -47,7 +44,7 @@ pub fn open(target: nav.Target, context: *gio.AppLaunchContext, activation: ?[]c
     const token = activation orelse if (generated) |value| std.mem.span(value) else null;
     const startup: ?[:0]u8 = if (token) |value| blk: {
         if (value.len == 0 or value.len > 4096 or std.mem.indexOfScalar(u8, value, 0) != null) return error.InvalidActivation;
-        break :blk try a.dupeZ(u8, value);
+        break :blk try a.dupeSentinel(u8, value, 0);
     } else null;
     defer if (startup) |value| a.free(value);
     if (startup) |value| {
@@ -57,7 +54,7 @@ pub fn open(target: nav.Target, context: *gio.AppLaunchContext, activation: ?[]c
     errdefer if (startup) |value| context.launchFailed(value);
     const environment = context.getEnvironment();
     defer glib.strfreev(@ptrCast(environment));
-    const section = if (target.section) |value| try a.dupeZ(u8, value) else null;
+    const section = if (target.section) |value| try a.dupeSentinel(u8, value, 0) else null;
     defer if (section) |value| a.free(value);
     const argv = [_:null]?[*:0]const u8{ program, "--page", target.page.id(), if (section != null) "--section" else null, if (section) |value| value.ptr else null };
     var actions: c.posix_spawn_file_actions_t = undefined;

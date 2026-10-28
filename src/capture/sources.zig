@@ -13,7 +13,7 @@ pub const Sources = struct {
         while (lines.next()) |line| {
             if (line.len == 0) continue;
             if (result.lines.items.len >= 4096) return error.TooManySources;
-            const copy = try allocator.dupeZ(u8, line);
+            const copy = try allocator.dupeSentinel(u8, line, 0);
             errdefer allocator.free(copy);
             try result.lines.append(allocator, copy);
         }

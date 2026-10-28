@@ -14,7 +14,7 @@ pub const History = struct {
     }
     pub fn visit(self: *History, uri: []const u8) !void {
         if (self.items.items.len > 0 and std.mem.eql(u8, self.items.items[self.cursor], uri)) return;
-        const owned = try self.allocator.dupeZ(u8, uri);
+        const owned = try self.allocator.dupeSentinel(u8, uri, 0);
         errdefer self.allocator.free(owned);
         try self.items.ensureUnusedCapacity(self.allocator, 1);
         const keep = if (self.items.items.len == 0) 0 else self.cursor + 1;

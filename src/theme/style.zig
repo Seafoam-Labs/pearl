@@ -125,8 +125,8 @@ pub fn compileWithImages(a: std.mem.Allocator, source: []const u8, images: anyty
             var value = trim(d[sep + 1 ..]);
             if (one(key, &.{ "color", "background-color", "border-color" })) {
                 var valid = @import("../config/preferences.zig").hex(value);
-                inline for (@typeInfo(@import("theme.zig").Palette).@"struct".fields) |field| {
-                    if (std.mem.eql(u8, value, "$" ++ field.name ++ "$")) valid = true;
+                inline for (@typeInfo(@import("theme.zig").Palette).@"struct".field_names) |field| {
+                    if (std.mem.eql(u8, value, "$" ++ field ++ "$")) valid = true;
                 }
                 if (!valid) return error.InvalidThemeCssColor;
             } else if (one(key, &.{ "border-radius", "border-width" })) {

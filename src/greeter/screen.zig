@@ -99,7 +99,7 @@ const Screen = struct {
     focused_prompt: u64 = 0,
     last_ready: ?bool = null,
     fn z(text: []const u8) [:0]u8 {
-        return a.dupeZ(u8, text) catch unreachable;
+        return a.dupeSentinel(u8, text, 0) catch unreachable;
     }
     fn setMessage(self: *Screen, text: [*:0]const u8) void {
         if (!std.mem.eql(u8, std.mem.span(self.message.getText()), std.mem.span(text))) self.message.as(gtk.Accessible).announce(text, .medium);
@@ -961,7 +961,7 @@ pub fn run() !void {
         _ = glib.setenv("XDG_STATE_HOME", "/var/lib/pearl-greeter", 1);
     }
     if (config.gtk_theme) |theme| {
-        const z = try a.dupeZ(u8, theme);
+        const z = try a.dupeSentinel(u8, theme, 0);
         defer a.free(z);
         _ = glib.setenv("GTK_THEME", z, 1);
     }
@@ -992,10 +992,10 @@ pub fn run() !void {
         log.info("event=greeter-palette custom={}", .{custom != null});
     }
     const sizing = gtk.CssProvider.new();
-    const background_css = if (config.wallpaper_color) |color| try std.fmt.allocPrintSentinel(a, ".pearl-lock.pearl-wallpaper {{ background: {s}; background-image: none; }}", .{color}, 0) else try a.dupeZ(u8, "");
+    const background_css = if (config.wallpaper_color) |color| try std.fmt.allocPrintSentinel(a, ".pearl-lock.pearl-wallpaper {{ background: {s}; background-image: none; }}", .{color}, 0) else try a.dupeSentinel(u8, "", 0);
     defer a.free(background_css);
     // A synced custom bar opacity retints the frost alpha over the wallpaper.
-    const opacity_css = if (config.surface_opacity) |percent| try std.fmt.allocPrintSentinel(a, ".pearl-greeter.pearl-dark .pearl-lock-card, .pearl-greeter.pearl-dark .pearl-cluster {{background: alpha({s}, {d:.2});}} .pearl-greeter.pearl-light .pearl-lock-card, .pearl-greeter.pearl-light .pearl-cluster {{background: alpha({s}, {d:.2});}}", .{ palettes.dark.container, @as(f32, @floatFromInt(percent)) / 100, palettes.light.container, @as(f32, @floatFromInt(percent)) / 100 }, 0) else try a.dupeZ(u8, "");
+    const opacity_css = if (config.surface_opacity) |percent| try std.fmt.allocPrintSentinel(a, ".pearl-greeter.pearl-dark .pearl-lock-card, .pearl-greeter.pearl-dark .pearl-cluster {{background: alpha({s}, {d:.2});}} .pearl-greeter.pearl-light .pearl-lock-card, .pearl-greeter.pearl-light .pearl-cluster {{background: alpha({s}, {d:.2});}}", .{ palettes.dark.container, @as(f32, @floatFromInt(percent)) / 100, palettes.light.container, @as(f32, @floatFromInt(percent)) / 100 }, 0) else try a.dupeSentinel(u8, "", 0);
     defer a.free(opacity_css);
     // The greeter's spacing rhythm and drop shadows. Box spacing is zero;
     // every gap is an explicit margin so hidden rows collapse cleanly.

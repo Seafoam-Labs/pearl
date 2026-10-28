@@ -18,7 +18,7 @@ pub const Profile = struct {
 };
 pub const Error = error{ InvalidAddress, InvalidName, Duplicate, ReadOnly, SaveFailed, Conflict, Missing };
 pub fn dup(value: []const u8) [:0]u8 {
-    return a.dupeZ(u8, value) catch unreachable;
+    return a.dupeSentinel(u8, value, 0) catch unreachable;
 }
 pub fn eq(x: []const u8, y: []const u8) bool {
     return std.mem.eql(u8, x, y);
@@ -104,7 +104,7 @@ pub const Store = struct {
         if (file.loadContents(null, &bytes, &n, &tag, &err) == 0) {
             if (err) |e| {
                 defer e.free();
-                if (e.matches(gio.ioErrorQuark(), @intFromEnum(gio.IOErrorEnum.not_found)) == 0) {
+                if (e.matches(gio.ioErrorQuark(), @backingInt(gio.IOErrorEnum.not_found)) == 0) {
                     self.writable = false;
                     self.warning = "Saved connections could not be read. Check configuration permissions.";
                 }
@@ -225,7 +225,7 @@ pub const Store = struct {
         if (file.replaceContents(data, n, self.etag, 0, .{ .private = true, .replace_destination = true }, null, null, &err) == 0) {
             if (err) |e| {
                 defer e.free();
-                if (e.matches(gio.ioErrorQuark(), @intFromEnum(gio.IOErrorEnum.wrong_etag)) != 0) return error.Conflict;
+                if (e.matches(gio.ioErrorQuark(), @backingInt(gio.IOErrorEnum.wrong_etag)) != 0) return error.Conflict;
             }
             return error.SaveFailed;
         }

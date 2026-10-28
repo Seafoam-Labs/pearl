@@ -76,12 +76,13 @@ class Environment:
         self.env = dict(os.environ)
         model = self.env.get('PEARL_TEST_AGENT_MODEL')
         self.agent_model = Path(model).expanduser().resolve() if model else None
-        self.env['ZIG_GLOBAL_CACHE_DIR'] = str(root / '.cache/zig')
+        self.env.setdefault('ZIG_GLOBAL_CACHE_DIR', str(root / '.cache/zig'))
         self.env['PYTHONUNBUFFERED'] = '1'
         # Honor the interpreter that launches the runner, including a caller's venv.
         python = self.cache / 'python/bin/python3'
         self.python = str(python if python.exists() else Path(sys.executable).absolute())
-        zigdir = self.cache / 'tools/zig'
+        zigdir = self.cache / 'tools' / ('zig-' + self.version)
+        self.zigdir = zigdir
         self.zig = str(zigdir / 'zig') if (zigdir / 'zig').exists() else 'zig'
         self.env['PATH'] = os.pathsep.join([str(Path(self.python).parent), str(zigdir), self.env.get('PATH', '')])
         state = self.cache / 'prepared.json'
@@ -319,8 +320,8 @@ class Environment:
         if 'zig' in caps:
             code, version = capture([self.zig, 'version'], self.env)
             if code or version != self.version:
-                self.fetch('zig', self.cache / 'tools/zig', logdir)
-                self.zig = str(self.cache / 'tools/zig/zig')
+                self.fetch('zig', self.zigdir, logdir)
+                self.zig = str(self.zigdir / 'zig')
                 code, version = capture([self.zig, 'version'], self.env)
                 if code or version != self.version:
                     raise PrerequisiteError('Downloaded Zig does not match .zigversion; update the pinned download manifest.')

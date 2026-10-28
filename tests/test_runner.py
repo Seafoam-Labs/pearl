@@ -176,7 +176,7 @@ class EvidenceTests(unittest.TestCase):
         spec = importlib.util.spec_from_file_location('pearl_release_validation', ROOT / 'scripts/release-validate.py')
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
-        prior = dict(source_fingerprint='old', environment_fingerprint={'zig': '0.16.0'})
+        prior = dict(source_fingerprint='old', environment_fingerprint={'zig': '0.17.0'})
         with self.assertRaisesRegex(ValueError, 'different source'):
             module.validate_resume(prior, 'new', prior['environment_fingerprint'])
         with self.assertRaisesRegex(ValueError, 'different dependencies'):

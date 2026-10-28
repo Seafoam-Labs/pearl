@@ -118,7 +118,7 @@ pub const Tab = struct {
         const network_body = u.box(.vertical, 12, "network-page");
         _ = root.addNamed(u.scroll(network_body.as(gtk.Widget)).as(gtk.Widget), "network");
         owner.next_tab_id += 1;
-        self.* = .{ .id = owner.next_tab_id, .sorter = sorter, .owner = owner, .pane = pane, .root = root, .views = views, .network_body = network_body, .grid = grid, .list = list, .directory = directory, .filter = filter, .selection = selection, .error_label = error_label, .error_title = error_title, .uri = a.dupeZ(u8, "") catch unreachable, .title = a.dupeZ(u8, "") catch unreachable, .query = a.dupeZ(u8, "") catch unreachable };
+        self.* = .{ .id = owner.next_tab_id, .sorter = sorter, .owner = owner, .pane = pane, .root = root, .views = views, .network_body = network_body, .grid = grid, .list = list, .directory = directory, .filter = filter, .selection = selection, .error_label = error_label, .error_title = error_title, .uri = a.dupeSentinel(u8, "", 0) catch unreachable, .title = a.dupeSentinel(u8, "", 0) catch unreachable, .query = a.dupeSentinel(u8, "", 0) catch unreachable };
         // Restore before enumeration, without syncing a tab not yet in its pane.
         self.list_mode = owner.preferences.view_mode == .list;
         self.hidden = owner.preferences.show_hidden;
@@ -181,8 +181,8 @@ pub const Tab = struct {
             self.directory.setFile(null);
             a.free(self.uri);
             a.free(self.title);
-            self.uri = a.dupeZ(u8, @import("network_ui.zig").overview_uri) catch unreachable;
-            self.title = a.dupeZ(u8, "Network") catch unreachable;
+            self.uri = a.dupeSentinel(u8, @import("network_ui.zig").overview_uri, 0) catch unreachable;
+            self.title = a.dupeSentinel(u8, "Network", 0) catch unreachable;
             if (add_history) self.history.visit(self.uri) catch {};
             self.refreshNetwork();
             self.root.setVisibleChildName("network");
@@ -213,8 +213,8 @@ pub const Tab = struct {
         defer glib.free(title);
         a.free(self.uri);
         a.free(self.title);
-        self.uri = a.dupeZ(u8, std.mem.span(uri)) catch unreachable;
-        self.title = a.dupeZ(u8, if (file.equal(self.owner.home) != 0) "Home" else std.mem.span(title)) catch unreachable;
+        self.uri = a.dupeSentinel(u8, std.mem.span(uri), 0) catch unreachable;
+        self.title = a.dupeSentinel(u8, if (file.equal(self.owner.home) != 0) "Home" else std.mem.span(title), 0) catch unreachable;
         _ = self.selection.as(gtk.SelectionModel).unselectAll();
         self.directory.setFile(file);
         if (self.ready) {
@@ -238,7 +238,7 @@ pub const Tab = struct {
     pub fn setQuery(self: *Tab, query: []const u8) void {
         self.invalidate();
         a.free(self.query);
-        self.query = a.dupeZ(u8, query) catch unreachable;
+        self.query = a.dupeSentinel(u8, query, 0) catch unreachable;
         self.filter.as(gtk.Filter).changed(.different);
         self.owner.queueUpdate();
     }
@@ -430,14 +430,14 @@ pub const Tab = struct {
 const Column = enum(usize) { grid, name, size, modified };
 fn factory(kind: Column) *gtk.SignalListItemFactory {
     const f = gtk.SignalListItemFactory.new();
-    _ = gtk.SignalListItemFactory.signals.setup.connect(f, ?*anyopaque, setup, @ptrFromInt(@intFromEnum(kind)), .{});
-    _ = gtk.SignalListItemFactory.signals.bind.connect(f, ?*anyopaque, bind, @ptrFromInt(@intFromEnum(kind)), .{});
+    _ = gtk.SignalListItemFactory.signals.setup.connect(f, ?*anyopaque, setup, @ptrFromInt(@backingInt(kind)), .{});
+    _ = gtk.SignalListItemFactory.signals.bind.connect(f, ?*anyopaque, bind, @ptrFromInt(@backingInt(kind)), .{});
     _ = gtk.SignalListItemFactory.signals.unbind.connect(f, ?*anyopaque, unbind, null, .{});
     return f;
 }
 fn setup(_: *gtk.SignalListItemFactory, item_object: *object.Object, data: ?*anyopaque) callconv(.c) void {
     const item = object.ext.cast(gtk.ListItem, item_object).?;
-    const kind: Column = @enumFromInt(@intFromPtr(data));
+    const kind: Column = @fromBackingInt(@intCast(@intFromPtr(data)));
     if (kind == .grid or kind == .name) {
         const row = u.box(if (kind == .grid) .vertical else .horizontal, if (kind == .grid) 10 else 12, if (kind == .grid) "file-card" else "file-name");
         const visual = preview.Slot.create(if (kind == .grid) .grid else .list);
@@ -461,7 +461,7 @@ fn setup(_: *gtk.SignalListItemFactory, item_object: *object.Object, data: ?*any
 fn bind(_: *gtk.SignalListItemFactory, item_object: *object.Object, data: ?*anyopaque) callconv(.c) void {
     const item = object.ext.cast(gtk.ListItem, item_object).?;
     const info = object.ext.cast(gio.FileInfo, item.getItem().?).?;
-    const kind: Column = @enumFromInt(@intFromPtr(data));
+    const kind: Column = @fromBackingInt(@intCast(@intFromPtr(data)));
     item.setAccessibleLabel(info.getDisplayName());
     item.getChild().?.as(object.Object).setData("phyto-item", item);
     item.getChild().?.setVexpand(1);

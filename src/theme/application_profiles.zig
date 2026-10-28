@@ -45,7 +45,7 @@ pub fn save(a: std.mem.Allocator, root: []const u8, snapshot: provider.Snapshot)
     if (bytes.len > max_snapshot) return error.ProfileSnapshotLimit;
     const digest = try a.dupe(u8, &model.hash(bytes));
     const path = try snapshotPath(a, root, digest);
-    const directory = try a.dupeZ(u8, std.fs.path.dirname(path).?);
+    const directory = try a.dupeSentinel(u8, std.fs.path.dirname(path).?, 0);
     const fd = try safe.directory(a, directory, true);
     const dir = c.fdopendir(fd) orelse {
         _ = c.close(fd);
@@ -129,7 +129,7 @@ pub fn renderWithContext(a: std.mem.Allocator, captured: provider.Captured, snap
     const slot = std.fmt.parseInt(u8, key[0..2], 16) catch unreachable;
     // Three bounded slots per adapter prevent another application's render from
     // evicting the current input. Retrying a failed target reuses the others.
-    const cache_path = try std.fmt.allocPrintSentinel(a, "{s}/render-cache-{d}.json", .{ scratch_root, @as(usize, @intFromEnum(captured.application)) * 3 + slot % 3 }, 0);
+    const cache_path = try std.fmt.allocPrintSentinel(a, "{s}/render-cache-{d}.json", .{ scratch_root, @as(usize, @backingInt(captured.application)) * 3 + slot % 3 }, 0);
     const Cache = struct { key: []const u8, outputs: []const Output, digest: []const u8 };
     if (io.read(a, cache_path, 2 * 1024 * 1024, cancel)) |cache| {
         if (!cache.missing) if (model.parse(Cache, a, cache.bytes, 2 * 1024 * 1024)) |value| {
@@ -209,7 +209,7 @@ fn ownedFile(a: std.mem.Allocator, root_fd: c_int, name: []const u8) !OwnedFile 
     errdefer _ = c.close(fd);
     var parts = std.mem.splitScalar(u8, name, '/');
     while (parts.next()) |part| {
-        const z = try a.dupeZ(u8, part);
+        const z = try a.dupeSentinel(u8, part, 0);
         if (parts.peek() == null) return .{ .fd = fd, .name = z, .path = try std.fmt.allocPrintSentinel(a, "/proc/self/fd/{d}/{s}", .{ fd, z }, 0) };
         if (c.mkdirat(fd, z, 0o700) != 0 and std.posix.errno(-1) != .EXIST) return error.ProfileDirectory;
         const next = c.openat(fd, z, c.O_RDONLY | c.O_DIRECTORY | c.O_CLOEXEC | c.O_NOFOLLOW);
@@ -496,7 +496,7 @@ test "GTK import follows existing CSS and migrates owned imports without losing 
     try std.testing.expectEqualStrings(desired, try gtkImport(a, desired));
     try std.testing.expectEqualStrings(desired, try gtkImport(a, gtk_import_line ++ original));
 
-    const root = try a.dupeZ(u8, "/tmp/pearl-gtk-import-XXXXXX");
+    const root = try a.dupeSentinel(u8, "/tmp/pearl-gtk-import-XXXXXX", 0);
     try std.testing.expect(mkdtemp(root) != null);
     defer @import("install.zig").removeTree(a, root) catch {};
     const state = try std.fmt.allocPrintSentinel(a, "{s}/state", .{root}, 0);
@@ -525,7 +525,7 @@ test "application ownership preserves edits, restores absence and recovers pendi
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
     const a = arena.allocator();
-    const root = try a.dupeZ(u8, "/tmp/pearl-profile-owned-XXXXXX");
+    const root = try a.dupeSentinel(u8, "/tmp/pearl-profile-owned-XXXXXX", 0);
     try std.testing.expect(mkdtemp(root) != null);
     defer @import("install.zig").removeTree(a, root) catch {};
     const state = try std.fmt.allocPrintSentinel(a, "{s}/state", .{root}, 0);
@@ -554,7 +554,7 @@ test "runtime colors bind to committed settings and survive snapshot pruning" {
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
     const a = arena.allocator();
-    const root = try a.dupeZ(u8, "/tmp/pearl-profile-runtime-XXXXXX");
+    const root = try a.dupeSentinel(u8, "/tmp/pearl-profile-runtime-XXXXXX", 0);
     try std.testing.expect(mkdtemp(root) != null);
     defer @import("install.zig").removeTree(a, root) catch {};
     const original: provider.Snapshot = .{ .render_json = "original" };
@@ -584,7 +584,7 @@ test "Matugen full JSON renders exact colors through private config and caches t
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
     const a = arena.allocator();
-    const root = try a.dupeZ(u8, "/tmp/pearl-profile-render-XXXXXX");
+    const root = try a.dupeSentinel(u8, "/tmp/pearl-profile-render-XXXXXX", 0);
     try std.testing.expect(mkdtemp(root) != null);
     defer @import("install.zig").removeTree(a, root) catch {};
     const cancel = gio.Cancellable.new();
@@ -612,7 +612,7 @@ test "all attributed Seafoam templates render supported variants and Starship re
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
     const a = arena.allocator();
-    const root = try a.dupeZ(u8, "/tmp/pearl-profile-fixtures-XXXXXX");
+    const root = try a.dupeSentinel(u8, "/tmp/pearl-profile-fixtures-XXXXXX", 0);
     try std.testing.expect(mkdtemp(root) != null);
     _ = glib.setenv("XDG_CACHE_HOME", root, 1);
     _ = glib.unsetenv("STARSHIP_CONFIG");
@@ -656,9 +656,9 @@ pub fn verifyPackage(a: std.mem.Allocator, path: [:0]const u8, output_directory:
     const package = try @import("package.zig").load(a, path);
     if (output_directory.len > 0) {
         if (!std.fs.path.isAbsolute(output_directory)) return error.AbsolutePublicationPathRequired;
-        if (c.mkdir(try a.dupeZ(u8, output_directory), 0o700) != 0) return error.PublicationOutputExists;
+        if (c.mkdir(try a.dupeSentinel(u8, output_directory, 0), 0o700) != 0) return error.PublicationOutputExists;
     }
-    const scratch = try a.dupeZ(u8, "/tmp/pearl-profile-check-XXXXXX");
+    const scratch = try a.dupeSentinel(u8, "/tmp/pearl-profile-check-XXXXXX", 0);
     if (mkdtemp(scratch) == null) return error.ProfileStagingFailed;
     defer @import("install.zig").removeTree(a, scratch) catch {};
     const Check = struct { profile: []const u8, variant: []const u8, sha256: []const u8 };
@@ -697,7 +697,7 @@ test "all built-in Material templates render complete static palettes and packag
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
     const a = arena.allocator();
-    const root = try a.dupeZ(u8, "/tmp/pearl-material-render-XXXXXX");
+    const root = try a.dupeSentinel(u8, "/tmp/pearl-material-render-XXXXXX", 0);
     try std.testing.expect(mkdtemp(root) != null);
     defer @import("install.zig").removeTree(a, root) catch {};
     const cancel = gio.Cancellable.new();
@@ -731,7 +731,7 @@ test "nested application ownership preflights every file and rejects redirected 
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
     const a = arena.allocator();
-    const root = try a.dupeZ(u8, "/tmp/pearl-material-owned-XXXXXX");
+    const root = try a.dupeSentinel(u8, "/tmp/pearl-material-owned-XXXXXX", 0);
     try std.testing.expect(mkdtemp(root) != null);
     defer @import("install.zig").removeTree(a, root) catch {};
     const state = try std.fmt.allocPrintSentinel(a, "{s}/state", .{root}, 0);

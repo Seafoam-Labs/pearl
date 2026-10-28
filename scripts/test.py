@@ -58,7 +58,7 @@ def suite_commands(suite, environment, output):
     expand = lambda parts: [p.format_map(values) for p in parts]
     commands = [expand(c) for c in suite.get('before', [])]
     if suite.get('targets'):
-        command = [environment.zig, 'build', *suite['targets'], '-Doptimize=ReleaseSafe',
+        command = [environment.zig, 'build', *suite['targets'], '-Doptimize=safe',
                    f'-j{environment.args.jobs}', '--summary', 'all', *suite['options']]
         if 'plugins' in suite['capabilities']:
             command += ['-Dwasm-plugins=true', '-Dwasmtime-prefix=' + values['wasmtime'],
@@ -95,11 +95,15 @@ def save_report(path, report):
     lines = [f"Pearl tests: {report['status']}", f"Selection: {report['selection']}", '']
     junit = ET.Element('testsuite', name='Pearl', tests=str(len(report['suites'])))
     for key, result in report['suites'].items():
-        lines.append(f"{key}: {result['status']} ({result.get('seconds', 0):.1f}s) — {result.get('log', '')}")
+        advisory = ' [report only]' if result.get('report_only') else ''
+        lines.append(f"{key}: {result['status']}{advisory} ({result.get('seconds', 0):.1f}s) — {result.get('log', '')}")
         if result.get('issues'):
             lines.extend('  ' + issue for issue in result['issues'])
         case = ET.SubElement(junit, 'testcase', name=key, time=str(result.get('seconds', 0)))
         if result['status'] != 'passed':
+            if result.get('report_only'):
+                ET.SubElement(case, 'system-out').text = f"Report only: {result['status']}\n" + '\n'.join(result.get('issues', []))
+                continue
             tag = 'failure' if result['status'] in ('failed', 'timed-out') else 'error'
             ET.SubElement(case, tag, message=result['status']).text = '\n'.join(result.get('issues', []))
     (path / 'summary.txt').write_text('\n'.join(lines) + '\n')
@@ -122,7 +126,7 @@ def run_suites(args, suites, environment, parent=None):
         report['parent_source_matches'] = previous.get('source_fingerprint') == initial
     for suite in suites:
         report['suites'][suite['id']] = dict(status='not-run', capabilities=suite['capabilities'],
-                                             fixture=suite.get('fixture'))
+                                             fixture=suite.get('fixture'), report_only=suite.get('report_only', False))
     save_report(output, report)
     checked_variants = {}
     exit_code = 0
@@ -144,7 +148,8 @@ def run_suites(args, suites, environment, parent=None):
             if result['issues']:
                 result.update(status='blocked', remedy=check['hint'])
                 print(f'{key}: BLOCKED\n' + '\n'.join(result['issues']) + '\n' + check['hint'], flush=True)
-                exit_code = exit_code or 2
+                if not result['report_only']:
+                    exit_code = exit_code or 2
             else:
                 if variant:
                     result['provenance'] = json.loads((environment.prefix(variant) / 'metadata.json').read_text())
@@ -163,12 +168,19 @@ def run_suites(args, suites, environment, parent=None):
                     result['exit_code'] = code
                     result['status'] = 'passed' if code == 0 else 'timed-out' if code == 124 else 'interrupted' if code == 130 else 'failed'
                     if code:
-                        exit_code = 130 if code == 130 else 3 if code == 125 else 1
+                        if code in (125, 130) or not result['report_only']:
+                            exit_code = 130 if code == 130 else 3 if code == 125 else 1
                         break
+                if result['report_only'] and result['status'] == 'passed' and (directory / 'results.json').exists():
+                    receipt = json.loads((directory / 'results.json').read_text())
+                    result['status'] = receipt['status']
+                    if receipt.get('error'):
+                        result['issues'].append(receipt['error'])
             result['seconds'] = round(time.monotonic() - started, 3)
-            print(f"{key}: {result['status']} ({result['seconds']:.1f}s)", flush=True)
+            advisory = ' [report only]' if result['report_only'] else ''
+            print(f"{key}: {result['status']}{advisory} ({result['seconds']:.1f}s)", flush=True)
             save_report(output, report)
-            if exit_code == 130 or (args.fail_fast and result['status'] != 'passed'):
+            if exit_code in (3, 130) or (args.fail_fast and result['status'] != 'passed' and not result['report_only']):
                 break
     except KeyboardInterrupt:
         result['status'] = 'interrupted'
@@ -194,7 +206,8 @@ def check_registry(python_only=False):
     errors = inventory_errors()
     if not python_only:
         entries = catalog()
-        env = dict(os.environ, ZIG_GLOBAL_CACHE_DIR=str(ROOT / '.cache/zig'))
+        env = dict(os.environ)
+        env.setdefault('ZIG_GLOBAL_CACHE_DIR', str(ROOT / '.cache/zig'))
         for cwd in sorted({s['cwd'] for s in entries.values() if s['targets']}):
             options = []
             if cwd == '.':

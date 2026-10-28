@@ -206,7 +206,7 @@ const App = struct {
                 self.suspended = false;
                 if (!self.config.enabled) return error.AssistantDisabled;
                 if (self.window == null) self.createWindow();
-                if (req.activation.len > 0) self.window.?.setStartupId(try self.config_arena.allocator().dupeZ(u8, req.activation));
+                if (req.activation.len > 0) self.window.?.setStartupId(try self.config_arena.allocator().dupeSentinel(u8, req.activation, 0));
                 self.window.?.present();
                 if (req.op == .ask) {
                     if (self.job != null) return error.AssistantBusy;
@@ -493,14 +493,14 @@ const App = struct {
         self.cpu_button.as(gtk.Widget).setVisible(@intFromBool(self.config.compute.mode == .gpu and !self.config.compute.fallback() and (RuntimeModule.recoverable(err) or err == error.AmbiguousGpuDevice)));
         // Do not replace a follow-up the user has already started typing.
         if (self.composer.getBuffer().getCharCount() == 0) {
-            const text = a.dupeZ(u8, question) catch return;
+            const text = a.dupeSentinel(u8, question, 0) catch return;
             defer a.free(text);
             self.composer.getBuffer().setText(text, @intCast(text.len));
         }
     }
     fn bubble(self: *App, text: []const u8, user: bool) void {
         const label = gtk.Label.new(null);
-        const value = a.dupeZ(u8, text) catch return;
+        const value = a.dupeSentinel(u8, text, 0) catch return;
         defer a.free(value);
         label.setText(value);
         label.setWrap(1);
@@ -529,7 +529,7 @@ const App = struct {
                 var arena = std.heap.ArenaAllocator.init(a);
                 defer arena.deinit();
                 const label = std.fmt.allocPrintSentinel(arena.allocator(), "[{d}] {s}", .{ source.id, source.title }, 0) catch continue;
-                const url = arena.allocator().dupeZ(u8, source.url) catch continue;
+                const url = arena.allocator().dupeSentinel(u8, source.url, 0) catch continue;
                 const link = gtk.LinkButton.newWithLabel(url, label);
                 if (object.ext.cast(gtk.Label, link.as(gtk.Button).getChild().?)) |l| {
                     l.setWrap(1);
@@ -564,7 +564,7 @@ const App = struct {
             return;
         }
         var buffer: [2048]u8 = undefined;
-        const text = if (self.runtime.process == null) "Model unloaded" else if (self.runtime.device) |d| std.fmt.bufPrintZ(&buffer, "GPU · {s} · {s} · {d} layers", .{ @tagName(d.backend), d.description, self.runtime.offload_layers }) catch "GPU" else if (self.runtime.fallback_reason.len > 0) "CPU · fallback" else "CPU · local inference";
+        const text = if (self.runtime.process == null) "Model unloaded" else if (self.runtime.device) |d| std.mem.printSentinel(&buffer, "GPU · {s} · {s} · {d} layers", .{ @tagName(d.backend), d.description, self.runtime.offload_layers }, 0) catch "GPU" else if (self.runtime.fallback_reason.len > 0) "CPU · fallback" else "CPU · local inference";
         self.compute_label.setText(text);
         if (self.runtime.process != null) {
             const detail = std.fmt.allocPrintSentinel(a, "{s}\n{s}\n{s}\nHost memory: no Pearl limit", .{ self.runtime.executable, self.runtime.version, self.runtime.fallback_reason }, 0) catch return;
@@ -601,7 +601,7 @@ const App = struct {
         if (self.job != null) if (self.partial) |partial| {
             var buffer: [16384]u8 = undefined;
             if (self.live.copy(&buffer, &self.live_revision)) |text| {
-                const value = a.dupeZ(u8, text) catch return 1;
+                const value = a.dupeSentinel(u8, text, 0) catch return 1;
                 defer a.free(value);
                 partial.setText(value);
                 if (text.len > 0) self.status.setText(@import("i18n").dtr("pearl-agent", "Writing a draft… sources will be checked when complete."));

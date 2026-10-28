@@ -19,7 +19,7 @@ pub fn main(init: std.process.Init) void {
         return;
     }
     if (parsed.version) {
-        @import("glib2").print("pearl-settings " ++ @import("version.zig").string ++ " (Zig 0.16.0, Settings v1)\n");
+        @import("glib2").print("pearl-settings " ++ @import("version.zig").string ++ " (Zig 0.17.0, Settings v1)\n");
         return;
     }
     const code = @import("settings/application.zig").run(parsed.target) catch |err| {

@@ -123,7 +123,7 @@ test "crop validation rejects duplicates, relative paths and bad rectangles" {
     const t = std.testing;
     try validate(&.{});
     try validate(&.{.{ .path = "/p/a.png", .x = 0.25, .y = 0, .width = 0.5, .height = 1 }});
-    try t.expectError(error.TooManyCrops, validate(&[_]Crop{.{ .path = "/p/a.png" }} ** (max + 1)));
+    try t.expectError(error.TooManyCrops, validate(&@as([max + 1]Crop, @splat(.{ .path = "/p/a.png" }))));
     try t.expectError(error.DuplicateCrop, validate(&.{ .{ .path = "/p/a.png" }, .{ .path = "/p/a.png" } }));
     for ([_]Crop{ .{ .path = "" }, .{ .path = "p/a.png" }, .{ .path = "/p/a\npng" } }) |bad|
         try t.expectError(error.InvalidCropPath, validate(&.{bad}));

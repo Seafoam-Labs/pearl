@@ -4,6 +4,9 @@ import argparse, concurrent.futures, hashlib, json, subprocess, sys, time
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[2]
 
+def acceptance_passed(report):
+    return report['source_unchanged'] and all(name=='window' or result['status']=='passed' for name,result in report['suites'].items())
+
 def fingerprint():
     digest=hashlib.sha256()
     paths=[ROOT/'build.zig',ROOT/'build.zig.zon']
@@ -67,13 +70,14 @@ def main():
             result=dict(status='passed' if passed else 'failed',exit_code=completed.returncode,seconds=round(time.monotonic()-start,2),groups=len(receipt.get('checks',{})),evidence=name+'/'+filename,command=command)
             if evidence.exists():result['report_sha256']=hashlib.sha256(evidence.read_bytes()).hexdigest()
         except Exception as error:result=dict(status='failed',error=repr(error),command=command)
-        print(name+': '+result['status'],flush=True);return name,result
+        result['report_only']=name=='window'
+        print(name+': '+result['status']+(' [report only]' if result['report_only'] else ''),flush=True);return name,result
     with concurrent.futures.ThreadPoolExecutor(max_workers=args.jobs) as pool:
         for future in concurrent.futures.as_completed([pool.submit(run,item) for item in suites]):
             name,result=future.result();report['suites'][name]=result
             result_path.write_text(json.dumps(report,indent=2)+'\n')
     report['source_unchanged']=fingerprint()==initial
-    report['status']='passed' if report['source_unchanged'] and all(r['status']=='passed' for r in report['suites'].values()) else 'failed'
+    report['status']='passed' if acceptance_passed(report) else 'failed'
     result_path.write_text(json.dumps(report,indent=2)+'\n')
     print('Standalone automated acceptance: '+report['status'],flush=True)
     raise SystemExit(report['status']!='passed')

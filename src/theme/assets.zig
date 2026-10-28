@@ -2,9 +2,7 @@
 //! never handed to GTK, and supplied GResource containers are never accepted.
 const std = @import("std");
 const model = @import("package_model.zig");
-pub const c = @cImport({
-    @cInclude("png.h");
-});
+pub const c = @import("pearl_png");
 const Resource = opaque {};
 const Bytes = opaque {};
 extern fn g_bytes_new(?*const anyopaque, usize) *Bytes;

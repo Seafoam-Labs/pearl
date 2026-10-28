@@ -161,7 +161,7 @@ pub const View = struct {
         if (self.dialog) |dialog| {
             const visible = !self.editor.suspended and !self.editor.state.locked and self.editor.online and self.editor.target.page == .notifications;
             dialog.as(gtk.Widget).setVisible(@intFromBool(visible));
-            if (dialog.getWidgetForResponse(@intFromEnum(gtk.ResponseType.accept))) |button| button.setSensitive(@intFromBool(enabled));
+            if (dialog.getWidgetForResponse(@backingInt(gtk.ResponseType.accept))) |button| button.setSensitive(@intFromBool(enabled));
             if (dialog.getWidgetForResponse(1)) |button| button.setSensitive(@intFromBool(enabled));
         }
         var scratch = std.heap.ArenaAllocator.init(a);
@@ -201,7 +201,7 @@ pub const View = struct {
                 } }) catch return;
                 for (result.matches) |match| out.writer.print("\n• {s}", .{match.name}) catch return;
                 if (!result.filters_enabled) out.writer.writeAll(@import("i18n").dtr("pearl", "\nFiltering is paused.")) catch return;
-                self.test_result.setText(alloc.dupeZ(u8, out.written()) catch return);
+                self.test_result.setText(alloc.dupeSentinel(u8, out.written(), 0) catch return);
             }
         };
     }
@@ -215,7 +215,7 @@ pub const View = struct {
         for (config.rules) |r| {
             const card = builder.card();
             const top = w.row(10);
-            const title = w.label(try alloc.dupeZ(u8, r.name), "settings-row-title");
+            const title = w.label(try alloc.dupeSentinel(u8, r.name, 0), "settings-row-title");
             title.setWrap(1);
             title.as(gtk.Widget).setHexpand(1);
             top.append(title.as(gtk.Widget));
@@ -235,7 +235,7 @@ pub const View = struct {
             var out: std.Io.Writer.Allocating = .init(alloc);
             try out.writer.print("{s} · {s}", .{ if (r.action == .block) @import("i18n").dtr("pearl", "Block") else @import("i18n").dtr("pearl", "History only"), if (r.match == .all) @import("i18n").dtr("pearl", "Match all") else @import("i18n").dtr("pearl", "Match any") });
             for (r.conditions) |c| try out.writer.print("\n{s} {s} “{s}”", .{ fieldLabel(c.field), if (c.operator == .equals) @import("i18n").dtr("pearl", "is") else @import("i18n").dtr("pearl", "contains"), c.value });
-            const summary = w.label(try alloc.dupeZ(u8, out.written()), "pearl-secondary");
+            const summary = w.label(try alloc.dupeSentinel(u8, out.written(), 0), "pearl-secondary");
             summary.setWrap(1);
             card.append(summary.as(gtk.Widget));
             self.rows.append(card.as(gtk.Widget));
@@ -317,7 +317,7 @@ pub const View = struct {
         self.test_result.setText("");
     }
     fn testClicked(_: *gtk.Button, self: *View) callconv(.c) void {
-        self.editor.testNotifications(.{ .app_name = std.mem.span(self.sample[0].as(gtk.Editable).getText()), .desktop_entry = std.mem.span(self.sample[1].as(gtk.Editable).getText()), .summary = std.mem.span(self.sample[2].as(gtk.Editable).getText()), .body = std.mem.span(self.sample[3].as(gtk.Editable).getText()), .urgency = @enumFromInt(@min(2, self.sample_urgency.getSelected())) }) catch |err| self.editor.notification_test_error.set(@errorName(err));
+        self.editor.testNotifications(.{ .app_name = std.mem.span(self.sample[0].as(gtk.Editable).getText()), .desktop_entry = std.mem.span(self.sample[1].as(gtk.Editable).getText()), .summary = std.mem.span(self.sample[2].as(gtk.Editable).getText()), .body = std.mem.span(self.sample[3].as(gtk.Editable).getText()), .urgency = @fromBackingInt(@intCast(@min(2, self.sample_urgency.getSelected()))) }) catch |err| self.editor.notification_test_error.set(@errorName(err));
         self.test_result.setText(@import("i18n").dtr("pearl", "Testing the synchronized draft…"));
     }
     fn styleDialog(self: *View) void {
@@ -365,9 +365,9 @@ pub const View = struct {
         self.rule_match = choiceRow(body, @import("i18n").dtr("pearl", "Conditions"), &.{ @import("i18n").dtr("pearl", "Match all conditions"), @import("i18n").dtr("pearl", "Match any condition"), null });
         try self.dialog_controls.appendSlice(a, &.{ .{ .id = "filters.rule.name", .widget = self.rule_name.?.as(gtk.Widget) }, .{ .id = "filters.rule.action", .widget = self.rule_action.?.as(gtk.Widget) }, .{ .id = "filters.rule.match", .widget = self.rule_match.?.as(gtk.Widget) } });
         if (rule) |r| {
-            self.rule_name.?.as(gtk.Editable).setText(try alloc.dupeZ(u8, r.name));
-            self.rule_action.?.setSelected(@intFromEnum(r.action));
-            self.rule_match.?.setSelected(@intFromEnum(r.match));
+            self.rule_name.?.as(gtk.Editable).setText(try alloc.dupeSentinel(u8, r.name, 0));
+            self.rule_action.?.setSelected(@backingInt(r.action));
+            self.rule_match.?.setSelected(@backingInt(r.match));
         }
         self.condition_count = if (rule) |r| r.conditions.len else 1;
         for (&self.condition_widgets, 0..) |*cw, i| {
@@ -434,18 +434,18 @@ pub const View = struct {
             const delete = dialog.addButton(@import("i18n").dtr("pearl", "Delete filter"), 1);
             try self.dialog_controls.append(a, .{ .id = "filters.rule.delete", .widget = delete });
         }
-        const cancel = dialog.addButton(@import("i18n").dtr("pearl", "Cancel"), @intFromEnum(gtk.ResponseType.cancel));
-        const save = dialog.addButton(@import("i18n").dtr("pearl", "Save rule"), @intFromEnum(gtk.ResponseType.accept));
+        const cancel = dialog.addButton(@import("i18n").dtr("pearl", "Cancel"), @backingInt(gtk.ResponseType.cancel));
+        const save = dialog.addButton(@import("i18n").dtr("pearl", "Save rule"), @backingInt(gtk.ResponseType.accept));
         try self.dialog_controls.appendSlice(a, &.{ .{ .id = "filters.rule.cancel", .widget = cancel }, .{ .id = "filters.rule.save", .widget = save }, .{ .id = "filters.condition.add", .widget = self.add_condition.?.as(gtk.Widget) } });
         _ = gtk.Dialog.signals.response.connect(dialog, *View, response, self, .{});
         dialog.as(gtk.Window).present();
         _ = self.rule_name.?.as(gtk.Widget).grabFocus();
     }
     fn fillCondition(cw: *ConditionWidgets, c: f.Condition) void {
-        cw.field.setSelected(@intFromEnum(c.field));
-        cw.comparison.setSelected(@intFromEnum(c.operator));
+        cw.field.setSelected(@backingInt(c.field));
+        cw.comparison.setSelected(@backingInt(c.operator));
         var buffer: [257]u8 = undefined;
-        cw.value.as(gtk.Editable).setText(std.fmt.bufPrintZ(&buffer, "{s}", .{c.value}) catch "");
+        cw.value.as(gtk.Editable).setText(std.mem.printSentinel(&buffer, "{s}", .{c.value}, 0) catch "");
         cw.case_sensitive.setActive(@intFromBool(c.case_sensitive));
         cw.urgency.setSelected(if (std.mem.eql(u8, c.value, "low")) 0 else if (std.mem.eql(u8, c.value, "critical")) 2 else 1);
         configureCondition(cw);
@@ -454,7 +454,7 @@ pub const View = struct {
         configureCondition(cw);
     }
     fn configureCondition(cw: *ConditionWidgets) void {
-        const field: f.Field = @enumFromInt(@min(4, cw.field.getSelected()));
+        const field: f.Field = @fromBackingInt(@intCast(@min(4, cw.field.getSelected())));
         const fixed = field == .desktop_entry or field == .urgency;
         cw.comparison.as(gtk.Widget).setSensitive(@intFromBool(!fixed));
         if (fixed) {
@@ -467,8 +467,8 @@ pub const View = struct {
         cw.urgency.as(gtk.Widget).setVisible(@intFromBool(field == .urgency));
     }
     fn readCondition(cw: *ConditionWidgets) f.Condition {
-        const field: f.Field = @enumFromInt(@min(4, cw.field.getSelected()));
-        return .{ .field = field, .operator = @enumFromInt(@min(1, cw.comparison.getSelected())), .value = if (field == .urgency) switch (cw.urgency.getSelected()) {
+        const field: f.Field = @fromBackingInt(@intCast(@min(4, cw.field.getSelected())));
+        return .{ .field = field, .operator = @fromBackingInt(@intCast(@min(1, cw.comparison.getSelected()))), .value = if (field == .urgency) switch (cw.urgency.getSelected()) {
             0 => "low",
             2 => "critical",
             else => "normal",
@@ -519,7 +519,7 @@ pub const View = struct {
                 if (std.os.linux.getrandom(&random, random.len, 0) != random.len) return error.RandomUnavailable;
                 id = std.fmt.bytesToHex(random, .lower);
             }
-            try rules.append(alloc, .{ .id = if (self.rule_id.len > 0) self.rule_id.slice() else &id, .name = std.mem.trim(u8, std.mem.span(self.rule_name.?.as(gtk.Editable).getText()), " \t\r\n"), .enabled = self.rule_enabled, .action = @enumFromInt(@min(1, self.rule_action.?.getSelected())), .match = @enumFromInt(@min(1, self.rule_match.?.getSelected())), .conditions = conditions });
+            try rules.append(alloc, .{ .id = if (self.rule_id.len > 0) self.rule_id.slice() else &id, .name = std.mem.trim(u8, std.mem.span(self.rule_name.?.as(gtk.Editable).getText()), " \t\r\n"), .enabled = self.rule_enabled, .action = @fromBackingInt(@intCast(@min(1, self.rule_action.?.getSelected()))), .match = @fromBackingInt(@intCast(@min(1, self.rule_match.?.getSelected()))), .conditions = conditions });
             prefs.notifications.rules = rules.items;
             try self.saveConfig(prefs);
         } else {
@@ -529,7 +529,7 @@ pub const View = struct {
         }
     }
     fn response(_: *gtk.Dialog, code: c_int, self: *View) callconv(.c) void {
-        if (code == @intFromEnum(gtk.ResponseType.accept) or code == 1) {
+        if (code == @backingInt(gtk.ResponseType.accept) or code == 1) {
             self.commitRule(code == 1) catch |err| {
                 self.rule_error.?.setText(if (err == error.FilterDraftChanged) @import("i18n").dtr("pearl", "Filters changed elsewhere. Your input is retained; cancel and reopen to review the current rules.") else @import("i18n").dtr("pearl", "Check the name and conditions. Values must be nonempty, within their byte limits, and valid for the selected field."));
                 _ = self.rule_error.?.as(gtk.Widget).grabFocus();

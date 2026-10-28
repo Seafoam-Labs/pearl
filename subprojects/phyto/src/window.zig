@@ -224,7 +224,7 @@ pub const Window = struct {
             self.volume_signals[i] = object.signalConnectData(self.volume_monitor.as(object.Object), name, @ptrCast(&volumesChanged), self, null, .{});
         }
         for (std.enums.values(Command)) |command| {
-            const idx = @intFromEnum(command);
+            const idx = @backingInt(command);
             self.actions[idx] = .{ .owner = self, .command = command };
             const action = if (command == .advanced or command == .allow_delete or command == .thumbnails or command == .preview_details) gio.SimpleAction.newStateful(@tagName(command), null, glib.Variant.newBoolean(@intFromBool(switch (command) {
                 .advanced => self.preferences.advanced,
@@ -282,7 +282,7 @@ pub const Window = struct {
         return self;
     }
     fn connect(self: *Window, button: *gtk.Button, command: Command) void {
-        _ = gtk.Button.signals.clicked.connect(button, *Action, buttonClicked, &self.actions[@intFromEnum(command)], .{});
+        _ = gtk.Button.signals.clicked.connect(button, *Action, buttonClicked, &self.actions[@backingInt(command)], .{});
     }
     fn actionActivated(_: *gio.SimpleAction, _: ?*glib.Variant, action: *Action) callconv(.c) void {
         action.owner.dispatch(action.command);
@@ -506,7 +506,7 @@ pub const Window = struct {
     }
     pub fn setStatus(self: *Window, text: []const u8) void {
         if (self.status_message) |old| a.free(old);
-        self.status_message = a.dupeZ(u8, text) catch unreachable;
+        self.status_message = a.dupeSentinel(u8, text, 0) catch unreachable;
         self.queueUpdate();
     }
     pub fn resort(self: *Window) void {
@@ -1286,7 +1286,7 @@ pub const Window = struct {
         scroll.setMaxContentHeight(420);
         scroll.setPropagateNaturalHeight(1);
         body.append(scroll.as(gtk.Widget));
-        _ = dialog.addButton("Close", @intFromEnum(gtk.ResponseType.close));
+        _ = dialog.addButton("Close", @backingInt(gtk.ResponseType.close));
         _ = gtk.Dialog.signals.response.connect(dialog, *Window, messageResponse, self, .{});
         dialog.as(gtk.Window).present();
     }

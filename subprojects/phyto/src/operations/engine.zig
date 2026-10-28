@@ -82,14 +82,14 @@ pub const Job = struct {
     }
     fn setError(self: *Job, msg: []const u8) void {
         if (self.error_message) |old| a.free(old);
-        self.error_message = a.dupeZ(u8, msg) catch unreachable;
+        self.error_message = a.dupeSentinel(u8, msg, 0) catch unreachable;
     }
     fn io(self: *Job, err: ?*glib.Error) Failure {
         if (err) |e| {
             defer e.free();
             self.setError(std.mem.span(e.f_message orelse "I/O error"));
-            if (e.matches(gio.ioErrorQuark(), @intFromEnum(gio.IOErrorEnum.exists)) != 0) return error.Conflict;
-            if (e.matches(gio.ioErrorQuark(), @intFromEnum(gio.IOErrorEnum.cancelled)) != 0) return error.Cancelled;
+            if (e.matches(gio.ioErrorQuark(), @backingInt(gio.IOErrorEnum.exists)) != 0) return error.Conflict;
+            if (e.matches(gio.ioErrorQuark(), @backingInt(gio.IOErrorEnum.cancelled)) != 0) return error.Cancelled;
         }
         return error.Io;
     }
@@ -299,7 +299,7 @@ pub const Job = struct {
         var err: ?*glib.Error = null;
         if (src.move(dst, .{ .nofollow_symlinks = true, .no_fallback_for_move = true }, self.cancel, null, null, &err) != 0) return;
         if (err) |e| {
-            const fallback = e.matches(gio.ioErrorQuark(), @intFromEnum(gio.IOErrorEnum.not_supported)) != 0 or e.matches(gio.ioErrorQuark(), @intFromEnum(gio.IOErrorEnum.would_recurse)) != 0;
+            const fallback = e.matches(gio.ioErrorQuark(), @backingInt(gio.IOErrorEnum.not_supported)) != 0 or e.matches(gio.ioErrorQuark(), @backingInt(gio.IOErrorEnum.would_recurse)) != 0;
             if (!fallback) return self.io(err);
             e.free();
             err = null;
@@ -329,7 +329,7 @@ pub const Job = struct {
         var err: ?*glib.Error = null;
         const info = file.queryInfo(attrs, .{ .nofollow_symlinks = true }, self.cancel, &err) orelse return self.io(err);
         defer info.unref();
-        hash.update(&.{@intCast(@intFromEnum(info.getFileType()))});
+        hash.update(&.{@intCast(@backingInt(info.getFileType()))});
         // Undo also checks identity, mode and timestamp; transfer verification compares contents.
         if (metadata) {
             const mode = info.getAttributeUint32("unix::mode");
@@ -361,7 +361,7 @@ pub const Job = struct {
                     };
                     defer child.unref();
                     if (names.items.len >= 100_000) return error.Limit;
-                    names.append(a, a.dupeZ(u8, std.mem.span(child.getName())) catch unreachable) catch unreachable;
+                    names.append(a, a.dupeSentinel(u8, std.mem.span(child.getName()), 0) catch unreachable) catch unreachable;
                 }
                 std.mem.sort([:0]u8, names.items, {}, struct {
                     fn less(_: void, x: [:0]u8, y: [:0]u8) bool {

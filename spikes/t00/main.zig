@@ -81,7 +81,7 @@ fn showPopup() void {
     entry.setPlaceholderText("Type here; Escape or click outside to close");
     _ = gtk.Editable.signals.changed.connect(entry.as(gtk.Editable), ?*anyopaque, textChanged, null, .{});
     panel.append(entry.as(gtk.Widget));
-    panel.append(gtk.Label.new("Zig 0.16.0 · generated GTK layer-shell bindings").as(gtk.Widget));
+    panel.append(gtk.Label.new("Zig 0.17.0 · generated GTK layer-shell bindings").as(gtk.Widget));
     window.setChild(panel.as(gtk.Widget));
     const key = gtk.EventControllerKey.new().as(gtk.EventControllerKey);
     _ = gtk.EventControllerKey.signals.key_pressed.connect(key, ?*anyopaque, keyPressed, null, .{});
@@ -242,10 +242,10 @@ pub fn main() void {
 }
 
 test "generated APIs share Ghostty GTK types and expose complete lock signals" {
-    try std.testing.expect(@typeInfo(@TypeOf(layer.initForWindow)).@"fn".params[0].type.? == *gtk.Window);
-    try std.testing.expect(@typeInfo(@TypeOf(session_lock.Instance.assignWindowToMonitor)).@"fn".params[1].type.? == *gtk.Window);
-    try std.testing.expectEqual(@as(c_int, 2), @intFromEnum(layer.Edge.top));
-    try std.testing.expectEqual(@as(c_int, 1), @intFromEnum(layer.KeyboardMode.exclusive));
+    try std.testing.expect(@typeInfo(@TypeOf(layer.initForWindow)).@"fn".param_types[0].? == *gtk.Window);
+    try std.testing.expect(@typeInfo(@TypeOf(session_lock.Instance.assignWindowToMonitor)).@"fn".param_types[1].? == *gtk.Window);
+    try std.testing.expectEqual(@as(c_int, 2), @backingInt(layer.Edge.top));
+    try std.testing.expectEqual(@as(c_int, 1), @backingInt(layer.KeyboardMode.exclusive));
     std.testing.refAllDecls(layer);
     std.testing.refAllDecls(session_lock.Instance);
     std.testing.refAllDecls(session_lock.Instance.signals);
@@ -254,7 +254,7 @@ test "generated APIs share Ghostty GTK types and expose complete lock signals" {
 test "generated polkit session shares Ghostty GObject identity types" {
     const polkit = @import("polkit1");
     const agent = @import("polkitagent1");
-    try std.testing.expect(@typeInfo(@TypeOf(agent.Session.new)).@"fn".params[0].type.? == *polkit.Identity);
+    try std.testing.expect(@typeInfo(@TypeOf(agent.Session.new)).@"fn".param_types[0].? == *polkit.Identity);
     try std.testing.expect(agent.Session.Parent == gobject.Object);
     std.testing.refAllDecls(agent.Session.signals);
 }

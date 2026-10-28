@@ -211,7 +211,7 @@ pub fn load(a: std.mem.Allocator, release: repository.Release, cancel: *gio.Canc
         if (std.mem.eql(u8, entry.type, "tree")) continue;
         const bytes = try blob(a, snapshot.repository, snapshot.revision, try std.fmt.allocPrint(a, "{s}/{s}", .{ snapshot.path, entry.path }), entry, cancel, progress);
         const destination = try std.fmt.allocPrintSentinel(a, "{s}/{s}", .{ temporary, entry.path }, 0);
-        try io.mkdir(try a.dupeZ(u8, std.fs.path.dirname(destination).?));
+        try io.mkdir(try a.dupeSentinel(u8, std.fs.path.dirname(destination).?, 0));
         try io.atomic(destination, bytes, true);
     }
     if (cancel.isCancelled() != 0) return error.Cancelled;

@@ -15,7 +15,7 @@ pub fn animation(transition: Transition, seed: u64) ?Animation {
         .slide => .slide,
         .rotate => .rotate,
         .cover => .cover,
-        .random => @enumFromInt(seed % @typeInfo(Animation).@"enum".fields.len),
+        .random => @fromBackingInt(@intCast(seed % @typeInfo(Animation).@"enum".field_names.len)),
     };
 }
 
@@ -97,7 +97,7 @@ test "transitions resolve to one animation and random covers them all" {
     try std.testing.expectEqual(Animation.rotate, animation(.rotate, 3).?);
     try std.testing.expectEqual(Animation.cover, animation(.cover, 3).?);
     var seen = [_]usize{ 0, 0, 0, 0 };
-    for (0..64) |seed| seen[@intFromEnum(animation(.random, seed).?)] += 1;
+    for (0..64) |seed| seen[@backingInt(animation(.random, seed).?)] += 1;
     for (seen) |count| try std.testing.expect(count > 0);
 }
 

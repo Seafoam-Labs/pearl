@@ -43,7 +43,7 @@ pub fn prune(a: std.mem.Allocator, directory: [:0]const u8, current: []const u8,
         model.digest(name[0..64]) catch continue;
         if (std.mem.eql(u8, current, name[0..64]) or std.mem.eql(u8, previous, name[0..64])) continue;
         if (items.items.len >= 1024) break;
-        const z = try a.dupeZ(u8, name);
+        const z = try a.dupeSentinel(u8, name, 0);
         var info: c.struct_stat = undefined;
         if (c.fstatat(fd, z, &info, c.AT_SYMLINK_NOFOLLOW) != 0 or info.st_mode & c.S_IFMT != c.S_IFREG) continue;
         try items.append(a, .{ .name = z, .modified = info.st_mtim.tv_sec });

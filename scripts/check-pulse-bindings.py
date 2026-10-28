@@ -19,11 +19,12 @@ for name, expected in manifest['headers'].items():
     actual = hashlib.sha256((directory / name).read_bytes()).hexdigest()
     if actual != expected:
         raise SystemExit(f'{name}: input changed; review source and update its pin explicitly')
-env = dict(os.environ, ZIG_GLOBAL_CACHE_DIR=str(ROOT / '.cache/zig'))
+env = dict(os.environ)
+env.setdefault('ZIG_GLOBAL_CACHE_DIR', str(ROOT / '.cache/zig'))
 with tempfile.TemporaryDirectory(prefix='pearl-bindings-') as tmp:
     prefix = Path(tmp) / 'out'
     subprocess.run(['zig', 'build', 'generate-pulse', '--cache-dir', str(Path(tmp) / 'cache'),
-                    '--prefix', str(prefix), '-Doptimize=ReleaseSafe'], cwd=ROOT, env=env, check=True)
+                    '--prefix', str(prefix), '-Doptimize=safe'], cwd=ROOT, env=env, check=True)
     digest = hashlib.sha256((prefix / 'share/pearl/bindings/pulse.zig').read_bytes()).hexdigest()
 if args.update:
     manifest['generated_sha256'] = digest

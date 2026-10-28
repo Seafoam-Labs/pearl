@@ -18,26 +18,26 @@ pub const Snapshot = struct {
     images: []const @import("../theme/asset_model.zig").Image = &.{},
     pub fn jsonStringify(self: Snapshot, writer: *std.json.Stringify) !void {
         try writer.beginObject();
-        inline for (@typeInfo(Snapshot).@"struct".fields) |field| {
-            try writer.objectField(field.name);
-            if (comptime std.mem.eql(u8, field.name, "revision")) {
+        inline for (@typeInfo(Snapshot).@"struct".field_names) |field| {
+            try writer.objectField(field);
+            if (comptime std.mem.eql(u8, field, "revision")) {
                 var buf: [20]u8 = undefined;
                 try writer.write(std.fmt.bufPrint(&buf, "{d}", .{self.revision}) catch unreachable);
-            } else try writer.write(@field(self, field.name));
+            } else try writer.write(@field(self, field));
         }
         try writer.endObject();
     }
     pub fn read(alloc: std.mem.Allocator, value: std.json.Value) !Snapshot {
         var result: Snapshot = .{};
-        inline for (@typeInfo(Snapshot).@"struct".fields) |field| {
-            if (comptime std.mem.eql(u8, field.name, "style_tokens") or std.mem.eql(u8, field.name, "style_css") or std.mem.eql(u8, field.name, "images")) {
-                if (value.object.get(field.name)) |v| @field(result, field.name) = try e.read(field.type, alloc, v);
-            } else if (comptime std.mem.eql(u8, field.name, "revision")) {
-                const v = try e.field(value, field.name);
+        inline for (@typeInfo(Snapshot).@"struct".field_names) |field| {
+            if (comptime std.mem.eql(u8, field, "style_tokens") or std.mem.eql(u8, field, "style_css") or std.mem.eql(u8, field, "images")) {
+                if (value.object.get(field)) |v| @field(result, field) = try e.read(@FieldType(Snapshot, field), alloc, v);
+            } else if (comptime std.mem.eql(u8, field, "revision")) {
+                const v = try e.field(value, field);
                 const text = try e.read([]const u8, alloc, v);
                 try e.decimal(text);
                 result.revision = try std.fmt.parseInt(u64, text, 10);
-            } else @field(result, field.name) = try e.read(field.type, alloc, try e.field(value, field.name));
+            } else @field(result, field) = try e.read(@FieldType(Snapshot, field), alloc, try e.field(value, field));
         }
         return result;
     }

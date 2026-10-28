@@ -159,7 +159,7 @@ test "weather config defaults to New York and rejects unsafe or out-of-range val
     const t = std.testing;
     try (Config{}).validate();
     try t.expectError(error.InvalidWeatherLocation, (Config{ .location = "" }).validate());
-    try t.expectError(error.InvalidWeatherLocation, (Config{ .location = "a" ** 129 }).validate());
+    try t.expectError(error.InvalidWeatherLocation, (Config{ .location = @import("test_strings").string("a", 129) }).validate());
     try t.expectError(error.InvalidWeatherLocation, (Config{ .location = "Berlin\x7f" }).validate());
     try t.expectError(error.InvalidWeatherCoordinates, (Config{ .latitude = 90.5 }).validate());
     try t.expectError(error.InvalidWeatherCoordinates, (Config{ .longitude = -181 }).validate());

@@ -24,7 +24,7 @@ fn callerName(pid_text: []const u8) [64:0]u8 {
     const pid = std.fmt.parseInt(u32, pid_text, 10) catch return name;
     if (pid == 0 or pid > 4194304) return name;
     var path: [32:0]u8 = undefined;
-    const target = std.fmt.bufPrintZ(&path, "/proc/{d}/comm", .{pid}) catch return name;
+    const target = std.mem.printSentinel(&path, "/proc/{d}/comm", .{pid}, 0) catch return name;
     var contents: [*]u8 = undefined;
     var length: usize = 0;
     if (glib.fileGetContents(target, &contents, &length, null) == 0) return name;
@@ -198,7 +198,7 @@ pub const Agent = struct {
             self.identities[i] = identity;
             self.identity_count += 1;
             const user = object.ext.cast(polkit.UnixUser, identity).?;
-            const label = try std.fmt.bufPrintZ(&labels[i], "{s} (UID {d})", .{ user.getName() orelse "User", uid });
+            const label = try std.mem.printSentinel(&labels[i], "{s} (UID {d})", .{ user.getName() orelse "User", uid }, 0);
             label_ptrs[i] = label.ptr;
         }
         self.cookie.set(cookie_text);
@@ -262,9 +262,9 @@ pub const Agent = struct {
         const comm_text = std.mem.sliceTo(&comm, 0);
         var provenance: [256:0]u8 = @splat(0);
         const origin_text: ?[*:0]const u8 = if (comm_text.len != 0 and vendor.slice().len != 0)
-            std.fmt.bufPrintZ(&provenance, "Requested by {s} · {s}", .{ comm_text, vendor.slice() }) catch null
+            std.mem.printSentinel(&provenance, "Requested by {s} · {s}", .{ comm_text, vendor.slice() }, 0) catch null
         else if (comm_text.len != 0)
-            std.fmt.bufPrintZ(&provenance, "Requested by {s}", .{comm_text}) catch null
+            std.mem.printSentinel(&provenance, "Requested by {s}", .{comm_text}, 0) catch null
         else if (vendor.slice().len != 0)
             vendor.z()
         else

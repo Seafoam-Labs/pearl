@@ -97,12 +97,12 @@ pub const Graph = struct {
             c.cairo_set_font_size(ctx, 10);
             var buf: [128]u8 = undefined;
             const scaled = u.bytes(maximum);
-            const scale = if (self.unit == .bytes or self.unit == .rate) std.fmt.bufPrintZ(&buf, "0 – {s}{s} · {d}s", .{ scaled.slice(), if (self.unit == .rate) "/s" else "", @divTrunc(duration, 1000000) }) catch return else std.fmt.bufPrintZ(&buf, "0 – {d:.1}{s} · {d}s", .{ maximum, switch (self.unit) {
+            const scale = if (self.unit == .bytes or self.unit == .rate) std.mem.printSentinel(&buf, "0 – {s}{s} · {d}s", .{ scaled.slice(), if (self.unit == .rate) "/s" else "", @divTrunc(duration, 1000000) }, 0) catch return else std.mem.printSentinel(&buf, "0 – {d:.1}{s} · {d}s", .{ maximum, switch (self.unit) {
                 .percent => "%",
                 .celsius => "°C",
                 .rpm => " RPM",
                 else => "",
-            }, @divTrunc(duration, 1000000) }) catch return;
+            }, @divTrunc(duration, 1000000) }, 0) catch return;
             c.cairo_move_to(ctx, 4, @floatFromInt(height - 1));
             c.cairo_show_text(ctx, scale);
         }

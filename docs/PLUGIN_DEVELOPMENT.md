@@ -48,7 +48,7 @@ For a manual Pearl build, follow [runtime build instructions](PLUGINS.md#build).
 
 For this C tutorial, install or unpack:
 
-- **Zig 0.16.0**, which provides the C compiler used below.
+- **Zig 0.17.0**, which provides the C compiler used below.
 - [**wit-bindgen 0.62.0**](https://github.com/bytecodealliance/wit-bindgen/releases/tag/v0.62.0), which generates the interface bindings.
 - [**wasm-tools 1.259.0**](https://github.com/bytecodealliance/wasm-tools/releases/tag/v1.259.0), which creates and validates components.
 

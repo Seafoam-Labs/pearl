@@ -11,11 +11,12 @@ import time
 from xml.sax.saxutils import escape
 
 ROOT = Path(__file__).resolve().parents[1]
+from aqueous_target import PREFIX
 
 
 def fixture_prefix():
     """Production fixture location shared by runners and standalone harnesses."""
-    return Path(os.environ.get('PEARL_TEST_AQUEOUS_PREFIX', ROOT / '.cache/aqueous-activity-production')).resolve()
+    return Path(os.environ.get('PEARL_TEST_AQUEOUS_PREFIX', PREFIX)).resolve()
 
 
 def fixture_source():

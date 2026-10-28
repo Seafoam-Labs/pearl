@@ -1,0 +1,14 @@
+.{
+    .name = .pearl_translations,
+    .fingerprint = 0x257b77044a1516e8,
+    .version = "0.3.5",
+    .minimum_zig_version = "0.17.0",
+    .dependencies = .{
+        .pearl_ffi = .{ .path = "../bindings/c" },
+        .translate_c = .{
+            .url = "https://codeberg.org/ziglang/translate-c/archive/2.0.2.tar.gz",
+            .hash = "translate_c-2.0.2-Q_BUWvBNBwBgPKQJPblip6M7AHNK_IPNPmyv4rSIQMQc",
+        },
+    },
+    .paths = .{""},
+}

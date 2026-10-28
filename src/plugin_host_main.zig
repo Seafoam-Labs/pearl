@@ -4,13 +4,7 @@ const m = @import("plugins/model.zig");
 const wire = @import("plugins/protocol.zig");
 const Package = @import("plugins/package.zig").Package;
 const Runtime = @import("plugins/runtime.zig").Runtime;
-const c = @cImport({
-    @cInclude("unistd.h");
-    @cInclude("signal.h");
-    @cInclude("sys/prctl.h");
-    @cInclude("sys/socket.h");
-    @cInclude("sys/resource.h");
-});
+const c = @import("pearl_libc");
 const a = std.heap.c_allocator;
 extern "c" fn getenv([*:0]const u8) ?[*:0]u8;
 

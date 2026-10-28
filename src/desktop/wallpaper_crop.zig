@@ -60,7 +60,7 @@ pub const Window = struct {
     /// `display_width` and `display_height` are the output the crop will fill.
     pub fn open(parent: *gtk.Window, service: *Service, effects: *native.Effects, path: []const u8, display_width: i32, display_height: i32, owner: ?Owner) !*Window {
         if (display_width < 1 or display_height < 1) return error.InvalidOutput;
-        const owned = try a.dupeZ(u8, path);
+        const owned = try a.dupeSentinel(u8, path, 0);
         errdefer a.free(owned);
         const image = try load(service, owned);
         errdefer image.unref();
@@ -177,7 +177,7 @@ pub const Window = struct {
         self.panel.addCssClass("pearl-popup-panel");
         self.service.style(window.as(gtk.Widget), self.panel);
         var buffer: [1025:0]u8 = undefined;
-        const title = std.fmt.bufPrintZ(&buffer, "{s}", .{std.fs.path.basename(self.path)}) catch "wallpaper";
+        const title = std.mem.printSentinel(&buffer, "{s}", .{std.fs.path.basename(self.path)}, 0) catch "wallpaper";
         content.append(w.label(title, "pearl-card-title").as(gtk.Widget));
         content.append(w.label(@import("i18n").dtr("pearl", "Drag to place, scroll to zoom. The frame is this display's shape."), "pearl-secondary").as(gtk.Widget));
 
@@ -249,7 +249,7 @@ pub const Window = struct {
         if (self.commit()) self.destroy();
     }
     fn closed(_: *gtk.Dialog, response: c_int, self: *Window) callconv(.c) void {
-        if (response == @intFromEnum(gtk.ResponseType.delete_event)) self.destroy();
+        if (response == @backingInt(gtk.ResponseType.delete_event)) self.destroy();
     }
 
     fn draw(_: *gtk.DrawingArea, cr: *cairo.Context, width: c_int, height: c_int, data: ?*anyopaque) callconv(.c) void {

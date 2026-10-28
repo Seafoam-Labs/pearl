@@ -43,5 +43,5 @@ pub fn validate(a: std.mem.Allocator, bytes: []const u8, variant: []const u8, sh
         }
     }
     const projected = try theme.matugenPalette(a, bytes, variant);
-    inline for (@typeInfo(theme.Palette).@"struct".fields) |field| if (!std.ascii.eqlIgnoreCase(@field(projected, field.name), @field(shell, field.name))) return error.RenderPaletteMismatch;
+    inline for (@typeInfo(theme.Palette).@"struct".field_names) |field| if (!std.ascii.eqlIgnoreCase(@field(projected, field), @field(shell, field))) return error.RenderPaletteMismatch;
 }

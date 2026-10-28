@@ -61,7 +61,7 @@ These checks need GLib development files, pkg-config, Python 3 and timezone data
 GTK binding tests and desktop integration tests use the `native` and `integration`
 groups. Their prerequisites and preparation commands are in [TESTING.md](TESTING.md).
 
-Use **Zig 0.16.0** and the packages in [COMPATIBILITY.md](COMPATIBILITY.md).
+Use **Zig 0.17.0** and the packages in [COMPATIBILITY.md](COMPATIBILITY.md).
 `glib-compile-resources` is also required for ordinary application builds.
 
 Use an ASCII-only checkout path with the pinned Zig toolchain. A path containing
@@ -72,18 +72,18 @@ the pinned headers and assertion settings intact.
 
 ```sh
 export ZIG_GLOBAL_CACHE_DIR="$PWD/.cache/zig"
-zig build -Doptimize=ReleaseSafe
-zig build test -Doptimize=ReleaseSafe
-zig build test-bindings -Doptimize=ReleaseSafe
-zig build test-components -Doptimize=ReleaseSafe
-zig build test-desktop -Doptimize=ReleaseSafe
-zig build test-services -Doptimize=ReleaseSafe
-zig build test-connectivity -Doptimize=ReleaseSafe
-zig build test-session-services -Doptimize=ReleaseSafe
-zig build test-preferences -Doptimize=ReleaseSafe
-zig build test-security -Doptimize=ReleaseSafe
-zig build test-lock -Doptimize=ReleaseSafe
-zig build integration -Doptimize=ReleaseSafe
+zig build -Doptimize=safe
+zig build test -Doptimize=safe
+zig build test-bindings -Doptimize=safe
+zig build test-components -Doptimize=safe
+zig build test-desktop -Doptimize=safe
+zig build test-services -Doptimize=safe
+zig build test-connectivity -Doptimize=safe
+zig build test-session-services -Doptimize=safe
+zig build test-preferences -Doptimize=safe
+zig build test-security -Doptimize=safe
+zig build test-lock -Doptimize=safe
+zig build integration -Doptimize=safe
 ```
 
 `zig build` installs `zig-out/bin/pearl`, `pearlctl`, the native `pearl-lock` and the retained `pearl-t00`. The `test` target
@@ -94,7 +94,7 @@ headless and nested Aqueous sessions. It needs the T00 compositor/aqueousctl
 binaries, Python 3, `dbus-daemon`, `busctl` and `grim`. Override binary locations:
 
 ```sh
-zig build integration -Doptimize=ReleaseSafe -- \
+zig build integration -Doptimize=safe -- \
   --aqueous /path/to/aqueous --ctl /path/to/aqueousctl
 ```
 
@@ -102,7 +102,7 @@ The gallery is explicitly sample content. To see it inside your current Wayland
 desktop, run:
 
 ```sh
-zig build gallery -Doptimize=ReleaseSafe -Ddev-backend=nested
+zig build gallery -Doptimize=safe -Ddev-backend=nested
 ```
 
 T03 adds dark/light palettes, compact density, larger text, reduced motion,
@@ -123,8 +123,8 @@ The default development backend is headless, so these commands do not open a
 window on your desktop:
 
 ```sh
-zig build gallery -Doptimize=ReleaseSafe
-zig build run -Doptimize=ReleaseSafe
+zig build gallery -Doptimize=safe
+zig build run -Doptimize=safe
 ```
 
 They run until Pearl exits or you press Ctrl+C. `run` selects session mode;
@@ -238,16 +238,16 @@ the tasks specified in [TASKS.md](TASKS.md).
 
 ## Adapter regression tests (T04)
 
-`zig build test-adapter-unit -Doptimize=ReleaseSafe` checks endpoint validation,
+`zig build test-adapter-unit -Doptimize=safe` checks endpoint validation,
 credential rejection and bounded icon handling through the generated bindings.
-`zig build test-adapter -Doptimize=ReleaseSafe` adds scripted socket faults and
+`zig build test-adapter -Doptimize=safe` adds scripted socket faults and
 real commands in private nested Aqueous. See [AQUEOUS_ADAPTER.md](AQUEOUS_ADAPTER.md)
 for full commands, completion semantics and test-driver isolation.
 
 
 ## Desktop preview tests (T06)
 
-`zig build test-desktop -Doptimize=ReleaseSafe` drives real private desktop files,
+`zig build test-desktop -Doptimize=safe` drives real private desktop files,
 application launches, bar workspace/window actions, keyboard state, native layout
 changes and the calendar/control center. It needs Python/PyGObject GTK4 and the
 T00 input fixture compiler dependencies in addition to the normal integration
@@ -263,18 +263,18 @@ page. `aqueous status`, `draft --text JSON`, `validate`, `apply`, `refresh`,
 workflow. The canonical helper is required; the old settings frontend is not.
 See [AQUEOUS_SETTINGS.md](AQUEOUS_SETTINGS.md) for request examples and gates.
 
-Run `zig build test-aqueous-settings -Doptimize=ReleaseSafe` with the workspace
+Run `zig build test-aqueous-settings -Doptimize=safe` with the workspace
 `ZIG_GLOBAL_CACHE_DIR`. The suite only modifies private HOME/configuration,
 synthetic keyboard bindings and headless outputs, including a deliberate Pearl
 SIGKILL to verify independent rollback. It does not reconfigure host displays.
 
 ## Release validation and migration
 
-Use `-Drelease=true -Doptimize=ReleaseSafe` for stripped production builds.
+Use `-Drelease=true -Doptimize=safe` for stripped production builds.
 `zig build test-release-tools` checks the fail-closed gate and source archive;
 `zig build test-release` verifies staged binaries and offline migration against
 a private compositor. `zig build test-release-performance` performs the 60-second
-idle measurement and 1,000-cycle soak. Supply `-Doptimize=ReleaseSafe` to these
+idle measurement and 1,000-cycle soak. Supply `-Doptimize=safe` to these
 commands (and `-Drelease=true` when measuring production artifacts).
 
 `python3 scripts/release-validate.py` runs the release regression matrix through
@@ -290,7 +290,7 @@ The normal Settings window and its backend adapters are Zig. Run the complete
 private-session acceptance target with:
 
 ```sh
-ZIG_GLOBAL_CACHE_DIR="$PWD/.cache/zig" zig build test-settings-acceptance -Doptimize=ReleaseSafe
+ZIG_GLOBAL_CACHE_DIR="$PWD/.cache/zig" zig build test-settings-acceptance -Doptimize=safe
 ```
 
 It runs pure tests and eighteen isolated suites covering the normal window,
@@ -328,7 +328,7 @@ rendering, automatic discovery, exact fixed app colors and offline recovery.
 migration in private roots. These require libpng and Matugen 4.2.0; Python remains
 only development orchestration. Evidence is in artifacts/theme-completion.
 
-`zig build test-wallpaper-profiles -Doptimize=ReleaseSafe` runs the live wallpaper
+`zig build test-wallpaper-profiles -Doptimize=safe` runs the live wallpaper
 suite with all five application profiles in private XDG/compositor/D-Bus roots.
 It covers shared extraction, image edits/replacement, draft preservation,
 generation cancellation, independent color sources, ownership conflicts, snapshot
@@ -342,10 +342,10 @@ The suite requires permission to create local sockets for the private session.
 
 `zig build test` includes configuration/lifecycle tests and the GLib Unicode
 matcher tests. The latter can also run independently with
-`zig build test-notification-filters -Doptimize=ReleaseSafe`; they require GLib
+`zig build test-notification-filters -Doptimize=safe`; they require GLib
 but no GTK display or compositor.
 
-`zig build test-notification-filter-settings -Doptimize=ReleaseSafe` drives
+`zig build test-notification-filter-settings -Doptimize=safe` drives
 the native Settings rule editor and tester against a real private notification
 bus. It checks shared drafts, Apply/Discard, Block and History only, replacements,
 Unicode/desktop identity, external reloads, startup publication, and native
@@ -355,7 +355,7 @@ existing private Aqueous fixture under `.cache/aqueous-activity-production`.
 
 ### Native window-rule builder
 
-`zig build test-window-rule-settings -Doptimize=ReleaseSafe` exercises the shared
+`zig build test-window-rule-settings -Doptimize=safe` exercises the shared
 native rule builder in private Aqueous/D-Bus sessions. It checks creation,
 pending additions, explicit false, null removals, repeated edits, stale modal
 saves, isolated moves, canonical Apply and 390/560-pixel dialogs. It uses the
@@ -369,11 +369,11 @@ focus restoration, receipts and the complete shared Aqueous boundary.
 
 ## Base Material application profiles
 
-`zig build test-base-material-profiles -Doptimize=ReleaseSafe` checks all 23
+`zig build test-base-material-profiles -Doptimize=safe` checks all 23
 built-in targets with real Matugen, independent JSON/TOML/INI/SVG/Lua parsers,
 local VSIX contents, Neovim when available, upgrade defaults, committed snapshots,
 owned installation, conflicts and restoration in private XDG roots.
-`zig build test-base-material-session -Doptimize=ReleaseSafe` exercises the actual
+`zig build test-base-material-session -Doptimize=safe` exercises the actual
 Settings defaults button, Apply/Discard, restart and real GTK 3/4 named colors
 inside nested Aqueous. It needs permission to create private D-Bus/Wayland sockets.
 Evidence is under `artifacts/base-material-matugen/`.

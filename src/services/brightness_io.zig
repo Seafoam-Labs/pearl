@@ -49,8 +49,8 @@ fn api() ?*const Api {
         attempted = true;
         const lib = dlopen("libddcutil.so.5", 2) orelse dlopen("libddcutil.so.4", 2) orelse return null;
         var next: Api = undefined;
-        inline for (@typeInfo(Api).@"struct".fields) |field| {
-            @field(next, field.name) = @ptrCast(dlsym(lib, field.name ++ "\x00") orelse return null);
+        inline for (@typeInfo(Api).@"struct".field_names) |field| {
+            @field(next, field) = @ptrCast(dlsym(lib, field ++ "\x00") orelse return null);
         }
         library = next;
     }
@@ -88,8 +88,8 @@ pub fn discover(backlight_root: [:0]const u8, drm_root: [:0]const u8, cancel: *g
             const name = std.mem.span(raw_name);
             if (!policy.deviceName(name)) continue;
             var path: [768]u8 = undefined;
-            const max = number(std.fmt.bufPrintZ(&path, "{s}/{s}/max_brightness", .{ backlight_root, name }) catch continue) orelse continue;
-            const value = number(std.fmt.bufPrintZ(&path, "{s}/{s}/brightness", .{ backlight_root, name }) catch continue) orelse continue;
+            const max = number(std.mem.printSentinel(&path, "{s}/{s}/max_brightness", .{ backlight_root, name }, 0) catch continue) orelse continue;
+            const value = number(std.mem.printSentinel(&path, "{s}/{s}/brightness", .{ backlight_root, name }, 0) catch continue) orelse continue;
             if (max == 0 or max > std.math.maxInt(i32) or value > max) continue;
             var d: Device = .{ .backend = .backlight, .maximum = max, .value = value };
             d.id.set(name);
@@ -120,7 +120,7 @@ pub fn discover(backlight_root: [:0]const u8, drm_root: [:0]const u8, cancel: *g
         if (!std.mem.startsWith(u8, name, "card") or !policy.deviceName(name)) continue;
         var path: [768]u8 = undefined;
         var content: [32768]u8 = undefined;
-        const status = read(std.fmt.bufPrintZ(&path, "{s}/{s}/status", .{ drm_root, name }) catch continue, &content) orelse continue;
+        const status = read(std.mem.printSentinel(&path, "{s}/{s}/status", .{ drm_root, name }, 0) catch continue, &content) orelse continue;
         if (!std.mem.eql(u8, std.mem.trim(u8, status, "\n"), "connected")) continue;
         const output = name[dash + 1 ..];
         if (std.mem.startsWith(u8, output, "eDP-") or std.mem.startsWith(u8, output, "LVDS-")) {
@@ -132,7 +132,7 @@ pub fn discover(backlight_root: [:0]const u8, drm_root: [:0]const u8, cancel: *g
         d.connector.set(name);
         d.output.set(output);
         d.name.set(output);
-        if (read(std.fmt.bufPrintZ(&path, "{s}/{s}/edid", .{ drm_root, name }) catch continue, &content)) |edid| {
+        if (read(std.mem.printSentinel(&path, "{s}/{s}/edid", .{ drm_root, name }, 0) catch continue, &content)) |edid| {
             if (edid.len >= 128) {
                 @memcpy(&d.edid, edid[0..128]);
                 d.backend = .ddc;
@@ -241,8 +241,8 @@ pub fn refresh(result: *model.List, previous: *model.List, targets: *model.List,
 
 pub fn readBacklight(device: *Device, root: [:0]const u8) ?[]const u8 {
     var path: [768]u8 = undefined;
-    const max = number(std.fmt.bufPrintZ(&path, "{s}/{s}/max_brightness", .{ root, device.name.slice() }) catch return "Invalid backlight path.") orelse return "Backlight disappeared.";
-    const value = number(std.fmt.bufPrintZ(&path, "{s}/{s}/brightness", .{ root, device.name.slice() }) catch return "Invalid backlight path.") orelse return "Backlight disappeared.";
+    const max = number(std.mem.printSentinel(&path, "{s}/{s}/max_brightness", .{ root, device.name.slice() }, 0) catch return "Invalid backlight path.") orelse return "Backlight disappeared.";
+    const value = number(std.mem.printSentinel(&path, "{s}/{s}/brightness", .{ root, device.name.slice() }, 0) catch return "Invalid backlight path.") orelse return "Backlight disappeared.";
     if (max == 0 or max > std.math.maxInt(i32) or value > max) return "Invalid backlight range.";
     device.maximum = max;
     device.value = value;

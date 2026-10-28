@@ -190,7 +190,7 @@ const Function = enum {
     trunc,
     mod,
     fn from(name: []const u8) ?Function {
-        inline for (std.meta.fields(Function)) |field| if (std.ascii.eqlIgnoreCase(name, field.name)) return @enumFromInt(field.value);
+        inline for (@typeInfo(Function).@"enum".field_names) |field| if (std.ascii.eqlIgnoreCase(name, field)) return @field(Function, field);
         return null;
     }
     fn call(self: Function, x: f64, y: f64) Failure!f64 {
@@ -338,9 +338,9 @@ test "classification, incomplete expressions and diagnostics" {
     try std.testing.expect(evaluate("=2+3").explicit);
 }
 test "resource limits and seeded malformed input never panic" {
-    const too_long = [_]u8{'1'} ** 513;
+    const too_long = @as([513]u8, @splat('1'));
     try std.testing.expectEqual(error.Limit, evaluate(&too_long).outcome.diagnostic.kind);
-    for ([_][]const u8{ "=" ++ "(" ** 32 ++ "1" ++ ")" ** 32, "=" ++ "-" ** 32 ++ "1", "=" ++ "2^" ** 32 ++ "1", "=" ++ "1+" ** 128 ++ "1" }) |query| {
+    for ([_][]const u8{ "=" ++ @import("test_strings").string("(", 32) ++ "1" ++ @import("test_strings").string(")", 32), "=" ++ @import("test_strings").string("-", 32) ++ "1", "=" ++ @import("test_strings").string("2^", 32) ++ "1", "=" ++ @import("test_strings").string("1+", 128) ++ "1" }) |query| {
         try std.testing.expectEqual(error.Limit, evaluate(query).outcome.diagnostic.kind);
     }
     var parser: Parser = .{ .input = "1+2", .advanced = true, .operations = operation_limit };

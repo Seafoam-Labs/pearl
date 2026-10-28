@@ -1,6 +1,6 @@
 {
   "source_url": "https://github.com/Seafoam-Labs/Aqueous.git",
-  "revision": "88587243059d58d72dd0fe2146d0ebdb64f26474",
+  "revision": "debc0353e745890f205cd399613f942f83e34986",
   "helper": "0.8.2",
-  "prefix": ".cache/aqueous-activity-production"
+  "prefix": ".cache/aqueous-zig17-debc035"
 }

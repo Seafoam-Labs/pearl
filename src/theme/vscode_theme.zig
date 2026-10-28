@@ -1,9 +1,6 @@
 //! A local, installable VSIX; no marketplace or editor process is required.
 const std = @import("std");
-const c = @cImport({
-    @cInclude("archive.h");
-    @cInclude("archive_entry.h");
-});
+const c = @import("pearl_archive");
 const Output = @import("application_profiles.zig").Output;
 pub fn pack(a: std.mem.Allocator, outputs: []const Output) ![]const u8 {
     const archive = c.archive_write_new() orelse return error.ThemeArchive;
@@ -22,7 +19,7 @@ pub fn pack(a: std.mem.Allocator, outputs: []const Output) ![]const u8 {
 fn entry(a: std.mem.Allocator, archive: *c.struct_archive, name: []const u8, bytes: []const u8) !void {
     const e = c.archive_entry_new() orelse return error.OutOfMemory;
     defer c.archive_entry_free(e);
-    c.archive_entry_set_pathname(e, try a.dupeZ(u8, name));
+    c.archive_entry_set_pathname(e, try a.dupeSentinel(u8, name, 0));
     c.archive_entry_set_filetype(e, 0o100000);
     c.archive_entry_set_perm(e, 0o644);
     c.archive_entry_set_size(e, @intCast(bytes.len));

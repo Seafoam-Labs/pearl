@@ -338,8 +338,8 @@ test "preferences enforce JSON bounds and own parsed strings" {
     const p = try parse(a, &bytes);
     @memset(&bytes, ' ');
     try std.testing.expectEqualStrings("Inter", p.font);
-    try std.testing.expectError(error.InvalidConfig, parse(a, "[" ** 9));
-    try std.testing.expectError(error.InvalidConfig, parse(a, " " ** (max_bytes + 1)));
+    try std.testing.expectError(error.InvalidConfig, parse(a, @import("test_strings").string("[", 9)));
+    try std.testing.expectError(error.InvalidConfig, parse(a, @import("test_strings").string(" ", (max_bytes + 1))));
     try std.testing.expectError(error.DuplicateField, parse(a, "{\"version\":1,\"version\":1}"));
 }
 
@@ -480,12 +480,12 @@ test "notification preferences default empty, own strings, roundtrip and enforce
     const again = try parse(a, try std.json.Stringify.valueAlloc(a, original, .{}));
     try t.expectEqualStrings("Mail", again.notifications.rules[0].conditions[0].value);
     const f = @import("../services/notification_filter_policy.zig");
-    var condition: f.Condition = .{ .field = .body, .value = "x" ** 257 };
+    var condition: f.Condition = .{ .field = .body, .value = @import("test_strings").string("x", 257) };
     var rules = [_]f.Rule{.{ .id = "one", .name = "One", .conditions = @as(*[1]f.Condition, @ptrCast(&condition)) }};
     var prefs: Preferences = .{ .notifications = .{ .rules = &rules } };
     try t.expectError(error.InvalidNotificationFilterText, prefs.validate());
     condition.value = "valid";
-    rules[0].name = "x" ** 81;
+    rules[0].name = @import("test_strings").string("x", 81);
     try t.expectError(error.InvalidNotificationFilterText, prefs.validate());
     rules[0].name = "One";
     prefs.notifications.rules = &(@as([33]f.Rule, @splat(rules[0])));
@@ -496,7 +496,7 @@ test "notification preferences default empty, own strings, roundtrip and enforce
     try t.expectError(error.InvalidEnumTag, parse(a,
         \\{"notifications":{"rules":[{"id":"bad","name":"Bad","action":"allow","conditions":[{"field":"body","value":"x"}]}]}}
     ));
-    try t.expectError(error.InvalidConfig, parse(a, document ++ " " ** max_bytes));
+    try t.expectError(error.InvalidConfig, parse(a, document ++ @import("test_strings").string(" ", max_bytes)));
 }
 
 test "per-window taskbar preference defaults off and supports output overrides" {

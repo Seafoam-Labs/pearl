@@ -116,7 +116,7 @@ pub const Control = struct {
         settings_button.as(gtk.Widget).setSensitive(@intFromBool(installed));
         for ([_]*gtk.Button{ logout, reboot, off, settings_button }) |button| session_actions.append(button.as(gtk.Widget));
         const heading = w.label(title(initial), "pearl-page-title");
-        heading.as(object.Object).set("accessible-role", @intFromEnum(gtk.AccessibleRole.heading), @as(?[*:0]const u8, null));
+        heading.as(object.Object).set("accessible-role", @backingInt(gtk.AccessibleRole.heading), @as(?[*:0]const u8, null));
         heading.as(gtk.Accessible).updateProperty(.level, @as(c_int, 1), @as(c_int, -1));
         heading.setWrap(1);
         // GtkLabel's focus implementation requires selectable text. Give the
@@ -528,7 +528,7 @@ pub const Control = struct {
         const label = self.label orelse return;
         const layout = self.layout;
         var buffer: [100]u8 = undefined;
-        const text = if (layout.manager != null) @import("i18n").dtr("pearl", "Waiting for Aqueous…") else if (layout.global == null or layout.err != null) @import("i18n").dtr("pearl", "Layout unavailable. Refresh to retry.") else if (layout.value_len == 0) @import("i18n").dtr("pearl", "Querying the active workspace") else std.fmt.bufPrintZ(&buffer, "{s} · {d}", .{ layout.value[0..layout.value_len], layout.workspace }) catch unreachable;
+        const text = if (layout.manager != null) @import("i18n").dtr("pearl", "Waiting for Aqueous…") else if (layout.global == null or layout.err != null) @import("i18n").dtr("pearl", "Layout unavailable. Refresh to retry.") else if (layout.value_len == 0) @import("i18n").dtr("pearl", "Querying the active workspace") else std.mem.printSentinel(&buffer, "{s} · {d}", .{ layout.value[0..layout.value_len], layout.workspace }, 0) catch unreachable;
         label.setText(text);
         for (self.buttons, native.names) |button, name| {
             button.as(gtk.Widget).setSensitive(@intFromBool(layout.manager == null and layout.global != null));

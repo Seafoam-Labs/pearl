@@ -6,5 +6,7 @@
     "security/_pam_types.h": "44600b6b087dd93b850c418a397c0b837573ceb863de127265fbf74a2a2b6e16",
     "security/_pam_compat.h": "675a39fb8e51edceb66de0d6399f4a027a49ce0e47d2d14fad519019efdede0f"
   },
-  "generated_sha256": "44df2f0e32032b8e4938ace39456eb2a7dc7e85b5ccd73a1bb45dd8568296cf9"
+  "generated_sha256": "4b97c4cc787e4b0accedfc1714de5e6e3fd85daf69a9effcff2d57386f89aefa",
+  "zig": "0.17.0",
+  "translator": "translate-c 2.0.2 (package integrity in build.zig.zon)"
 }

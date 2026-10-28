@@ -43,7 +43,7 @@ fn includes(list: []const []const u8, id: []const u8) bool {
 pub fn executable(a: std.mem.Allocator, command: []const u8) !?[]const u8 {
     if (command.len == 0) return null;
     if (command[0] == '/') {
-        const z = try a.dupeZ(u8, command);
+        const z = try a.dupeSentinel(u8, command, 0);
         if ((glib.fileTest(z, .{ .is_executable = true }) == 0 or glib.fileTest(z, .{ .is_regular = true }) == 0)) return null;
         return command;
     }
@@ -63,7 +63,7 @@ pub fn load(allocator: std.mem.Allocator, config: cfg.Config, locale: []const u8
     var scanned: usize = 0;
     var count: usize = 0;
     for (config.roots) |root| {
-        const rootz = try a.dupeZ(u8, root.path);
+        const rootz = try a.dupeSentinel(u8, root.path, 0);
         // A missing optional system directory is normal; any present root must be trusted.
         if (glib.fileTest(rootz, .{ .exists = true }) == 0) continue;
         const fd = try trusted.open(root.path, true);

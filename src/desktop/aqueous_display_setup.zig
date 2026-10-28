@@ -764,16 +764,16 @@ pub fn For(comptime View: type) type {
                 cr.setSourceRgba(1, 1, 1, 1);
                 cr.setFontSize(26);
                 var buffer: [64]u8 = undefined;
-                const number = std.fmt.bufPrintZ(&buffer, "{d}", .{h.number}) catch "";
+                const number = std.mem.printSentinel(&buffer, "{d}", .{h.number}, 0) catch "";
                 centered(cr, number, px + rw / 2, py + rh / 2);
                 if (rw > 100 and rh > 65) {
                     cr.setFontSize(11);
 
-                    const name = std.fmt.bufPrintZ(&buffer, "{s}", .{model.connector(h.output)}) catch "Display";
+                    const name = std.mem.printSentinel(&buffer, "{s}", .{model.connector(h.output)}, 0) catch "Display";
                     centered(cr, name, px + rw / 2, py + rh / 2 + 24);
                     if (rh > 100) {
                         cr.setFontSize(10);
-                        const resolution = std.fmt.bufPrintZ(&buffer, "{d:.0} × {d:.0}", .{ r.width * model.num(model.value(f.base, f.draft, h.output, "scale"), 1), r.height * model.num(model.value(f.base, f.draft, h.output, "scale"), 1) }) catch "";
+                        const resolution = std.mem.printSentinel(&buffer, "{d:.0} × {d:.0}", .{ r.width * model.num(model.value(f.base, f.draft, h.output, "scale"), 1), r.height * model.num(model.value(f.base, f.draft, h.output, "scale"), 1) }, 0) catch "";
                         centered(cr, resolution, px + rw / 2, py + rh / 2 + 40);
                     }
                 }

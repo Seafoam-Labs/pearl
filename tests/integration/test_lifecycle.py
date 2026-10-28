@@ -46,7 +46,7 @@ def main():
     try:
         isolated_cli = dict(PATH=os.environ.get('PATH', '/usr/bin'), LANG='C.UTF-8')
         for argv, code, text in [(['--help'], 0, 'Usage: pearl'), (['--help'], 0, '--log-scopes LIST'),
-                                 (['--version'], 0, 'Zig 0.16.0'), (['--bogus'], 2, 'Unknown argument'),
+                                 (['--version'], 0, 'Zig 0.17.0'), (['--bogus'], 2, 'Unknown argument'),
                                  (['--log-level'], 2, 'Unknown argument'), (['--log-level', 'bogus'], 2, 'Unknown argument'),
                                  (['--log-level', 'Debug'], 2, 'Unknown argument'), (['--log-scopes', '~bogus'], 2, 'Unknown argument'),
                                  ([], 2, 'requires a Wayland display')]:

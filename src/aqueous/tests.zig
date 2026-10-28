@@ -52,9 +52,9 @@ test "captured server envelopes decode with operation-specific results" {
 }
 
 test "reject codes map to the declared vocabulary and nothing else" {
-    inline for (@typeInfo(c.FailureCode).@"enum".fields) |field| {
-        if (comptime std.mem.eql(u8, field.name, "other")) continue;
-        try t.expectEqual(@field(c.FailureCode, field.name), c.FailureCode.parse(field.name));
+    inline for (@typeInfo(c.FailureCode).@"enum".field_names) |field| {
+        if (comptime std.mem.eql(u8, field, "other")) continue;
+        try t.expectEqual(@field(c.FailureCode, field), c.FailureCode.parse(field));
     }
     for ([_][]const u8{ "", "stale-session", "Stale_Session", "OutOfMemory", "not_found " }) |code|
         try t.expectEqual(c.FailureCode.other, c.FailureCode.parse(code));

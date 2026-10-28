@@ -4,7 +4,7 @@ pub const Id = @import("policy.zig").Text(128);
 
 pub fn read(pid: u32) !?Id {
     var path_buffer: [64]u8 = undefined;
-    const path = try std.fmt.bufPrintZ(&path_buffer, "/proc/{d}/environ", .{pid});
+    const path = try std.mem.printSentinel(&path_buffer, "/proc/{d}/environ", .{pid}, 0);
     const fd = std.c.open(path, .{ .ACCMODE = .RDONLY, .CLOEXEC = true, .NOFOLLOW = true }, @as(c_uint, 0));
     // Restricted procfs may hide other processes, including same-user ones.
     if (fd < 0) return null;
@@ -47,5 +47,5 @@ test "extract only a complete bounded session hint from procfs environment" {
     try std.testing.expect(try parse("OTHER_XDG_SESSION_ID=3\x00XDG_SESSION_ID=\x00") == null);
     try std.testing.expectError(error.IncompleteEnvironment, parse("XDG_SESSION_ID=5"));
     try std.testing.expectError(error.DuplicateSession, parse("XDG_SESSION_ID=3\x00XDG_SESSION_ID=5\x00"));
-    try std.testing.expectError(error.InvalidSession, parse("XDG_SESSION_ID=" ++ "5" ** 128 ++ "\x00"));
+    try std.testing.expectError(error.InvalidSession, parse("XDG_SESSION_ID=" ++ @import("test_strings").string("5", 128) ++ "\x00"));
 }

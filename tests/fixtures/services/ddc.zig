@@ -27,7 +27,7 @@ var displays: DisplayInfoList = undefined;
 fn file(id: usize, suffix: []const u8, mode: [*:0]const u8) ?*anyopaque {
     const root = getenv("PEARL_TEST_DDC") orelse return null;
     var buf: [1024]u8 = undefined;
-    const path = std.fmt.bufPrintZ(&buf, "{s}/{d}{s}", .{ std.mem.span(root), id, suffix }) catch return null;
+    const path = std.mem.printSentinel(&buf, "{s}/{d}{s}", .{ std.mem.span(root), id, suffix }, 0) catch return null;
     return fopen(path, mode);
 }
 fn number(id: usize, suffix: []const u8) ?u16 {

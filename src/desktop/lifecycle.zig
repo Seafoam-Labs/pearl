@@ -62,7 +62,7 @@ pub const View = struct {
         // though clicks now run after the emission that may close the pane.
         if (s.pending != null) self.confirmation = s.confirmation;
         var buffer: [768]u8 = undefined;
-        const text = if (s.pending) |action| std.fmt.bufPrintZ(&buffer, "Confirm {s}? This confirmation expires after 20 seconds.", .{@tagName(action)}) catch "Confirm session action?" else if (s.err) |err| std.fmt.bufPrintZ(&buffer, "{s}", .{err}) catch "Session action failed" else if (self.auth.err) |err| std.fmt.bufPrintZ(&buffer, "{s}", .{err}) catch "Authentication unavailable" else if (s.gate.requesting) "Acquiring native session lock…" else "Pearl lock · Automatic idle follows your AC/battery policy";
+        const text = if (s.pending) |action| std.mem.printSentinel(&buffer, "Confirm {s}? This confirmation expires after 20 seconds.", .{@tagName(action)}, 0) catch "Confirm session action?" else if (s.err) |err| std.mem.printSentinel(&buffer, "{s}", .{err}, 0) catch "Session action failed" else if (self.auth.err) |err| std.mem.printSentinel(&buffer, "{s}", .{err}, 0) catch "Authentication unavailable" else if (s.gate.requesting) "Acquiring native session lock…" else "Pearl lock · Automatic idle follows your AC/battery policy";
         self.label.setText(text);
         self.buttons[0].as(gtk.Widget).setSensitive(@intFromBool(s.gate.available and s.lock_supported and !s.gate.requesting));
         self.buttons[1].as(gtk.Widget).setSensitive(@intFromBool(s.gate.active and s.lock_supported and s.can_suspend and s.delay_fd >= 0 and !s.action_busy));

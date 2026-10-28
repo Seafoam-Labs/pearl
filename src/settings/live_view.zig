@@ -157,7 +157,7 @@ pub const View = struct {
         const page = e.read(Page, arena, std.json.parseFromSliceLeaky(std.json.Value, arena, bytes, .{}) catch return) catch return;
         self.offset = std.fmt.parseInt(u64, page.offset, 10) catch 0;
         self.next_offset = if (page.next_offset) |offset| std.fmt.parseInt(u64, offset, 10) catch null else null;
-        self.host.append(w.label(arena.dupeZ(u8, page.summary) catch return, "pearl-secondary").as(gtk.Widget));
+        self.host.append(w.label(arena.dupeSentinel(u8, page.summary, 0) catch return, "pearl-secondary").as(gtk.Widget));
         if (page.pending) self.host.append(w.label(@import("i18n").dtr("pearl", "Request in progress…"), "pearl-secondary").as(gtk.Widget));
         if (page.truncated) self.host.append(w.label(@import("i18n").dtr("pearl", "The service reported more items than it can expose. This list is incomplete."), "pearl-secondary").as(gtk.Widget));
         var shown_rows: std.ArrayList(ui.Row) = .empty;
@@ -170,25 +170,25 @@ pub const View = struct {
             const card = w.column(4);
             card.as(gtk.Widget).addCssClass("settings-card");
             card.as(gtk.Widget).addCssClass("settings-live-card");
-            card.append(w.label(arena.dupeZ(u8, row.title) catch continue, "pearl-card-title").as(gtk.Widget));
-            if (row.detail.len > 0) card.append(w.label(arena.dupeZ(u8, row.detail) catch continue, "pearl-secondary").as(gtk.Widget));
+            card.append(w.label(arena.dupeSentinel(u8, row.title, 0) catch continue, "pearl-card-title").as(gtk.Widget));
+            if (row.detail.len > 0) card.append(w.label(arena.dupeSentinel(u8, row.detail, 0) catch continue, "pearl-secondary").as(gtk.Widget));
             const actions = w.flow(3);
             actions.setHomogeneous(0);
             actions.as(gtk.Widget).addCssClass("settings-live-actions");
             for (row.controls) |spec| {
                 const binding = arena.create(Binding) catch continue;
-                const label = arena.dupeZ(u8, spec.label) catch continue;
+                const label = arena.dupeSentinel(u8, spec.label, 0) catch continue;
                 const widget = switch (spec.kind) {
                     .button => w.wrappingButton(label).as(gtk.Widget),
                     .number => gtk.SpinButton.newWithRange(spec.min, spec.max, if (std.mem.eql(u8, spec.field, "position")) 1000000 else 1).as(gtk.Widget),
                     .choice => blk: {
                         const names = arena.alloc(?[*:0]const u8, spec.choices.len + 1) catch continue;
-                        for (spec.choices, 0..) |choice, i| names[i] = arena.dupeZ(u8, choice.label) catch "";
+                        for (spec.choices, 0..) |choice, i| names[i] = arena.dupeSentinel(u8, choice.label, 0) catch "";
                         names[spec.choices.len] = null;
                         break :blk gtk.DropDown.newFromStrings(@ptrCast(names.ptr)).as(gtk.Widget);
                     },
                 };
-                w.name(widget, arena.dupeZ(u8, std.fmt.allocPrint(arena, "{s}: {s}", .{ row.title, spec.label }) catch continue) catch continue);
+                w.name(widget, arena.dupeSentinel(u8, std.fmt.allocPrint(arena, "{s}: {s}", .{ row.title, spec.label }) catch continue, 0) catch continue);
                 widget.setSensitive(@intFromBool(spec.enabled));
                 if (spec.kind == .number) object.ext.cast(gtk.SpinButton, widget).?.setValue(spec.value);
                 if (spec.kind == .choice) for (spec.choices, 0..) |choice, i| {
@@ -206,7 +206,7 @@ pub const View = struct {
                 };
                 if (spec.kind == .number or spec.kind == .choice) {
                     const field = w.column(4);
-                    field.append(w.label(arena.dupeZ(u8, spec.label) catch continue, "pearl-secondary").as(gtk.Widget));
+                    field.append(w.label(arena.dupeSentinel(u8, spec.label, 0) catch continue, "pearl-secondary").as(gtk.Widget));
                     field.append(widget);
                     actions.insert(field.as(gtk.Widget), -1);
                 } else actions.insert(widget, -1);
@@ -361,14 +361,14 @@ pub const View = struct {
             w.name(entry.as(gtk.Widget), @import("i18n").dtr("pearl", "Password, PIN or passkey"));
             content.append(entry.as(gtk.Widget));
         }
-        _ = dialog.addButton("Cancel", @intFromEnum(gtk.ResponseType.cancel));
-        if (data.editable) _ = dialog.addButton(if (self.prompt_service == .network) @import("i18n").dtr("pearl", "Connect") else "Confirm", @intFromEnum(gtk.ResponseType.accept));
+        _ = dialog.addButton("Cancel", @backingInt(gtk.ResponseType.cancel));
+        if (data.editable) _ = dialog.addButton(if (self.prompt_service == .network) @import("i18n").dtr("pearl", "Connect") else "Confirm", @backingInt(gtk.ResponseType.accept));
         _ = gtk.Dialog.signals.response.connect(dialog, *View, answered, self, .{});
         dialog.as(gtk.Window).present();
         if (self.secret) |entry| _ = entry.as(gtk.Widget).grabFocus();
     }
     fn passwordActivated(_: *gtk.PasswordEntry, self: *View) callconv(.c) void {
-        if (self.prompt) |dialog| dialog.response(@intFromEnum(gtk.ResponseType.accept));
+        if (self.prompt) |dialog| dialog.response(@backingInt(gtk.ResponseType.accept));
     }
     fn answered(_: *gtk.Dialog, response: c_int, self: *View) callconv(.c) void {
         var memory: [32768]u8 = undefined;
@@ -382,7 +382,7 @@ pub const View = struct {
             return;
         }
         const serial = self.prompt_serial;
-        const encoded = std.json.Stringify.valueAlloc(alloc, .{ .service = self.prompt_service, .prompt = @import("editor_protocol.zig").num(serial), .accept = response == @intFromEnum(gtk.ResponseType.accept), .text = text }, .{}) catch return;
+        const encoded = std.json.Stringify.valueAlloc(alloc, .{ .service = self.prompt_service, .prompt = @import("editor_protocol.zig").num(serial), .accept = response == @backingInt(gtk.ResponseType.accept), .text = text }, .{}) catch return;
         defer std.crypto.secureZero(u8, encoded);
         const params = std.json.parseFromSliceLeaky(std.json.Value, alloc, encoded, .{}) catch return;
         self.editor.liveAction(.@"prompt.answer", params) catch |err| {

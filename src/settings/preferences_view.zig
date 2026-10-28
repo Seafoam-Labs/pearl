@@ -422,7 +422,7 @@ pub const View = struct {
         const text_ = self.editor.text();
         const changed = self.shown == null or !std.mem.eql(u8, self.shown.?, text_);
         if (changed and !self.filling) {
-            const copy = a.dupeZ(u8, text_) catch return;
+            const copy = a.dupeSentinel(u8, text_, 0) catch return;
             if (self.shown) |old| a.free(old);
             self.shown = copy;
             self.filling = true;
@@ -473,10 +473,10 @@ pub const View = struct {
         if (self.editor.target.page == .appearance) self.desktop_preview.update(p);
         if (self.themes.preview_is_draft and self.editor.theme_error.len > 0 and !self.themes.preview_cancel_requested) self.desktop_preview.status.setText(self.editor.theme_error.z());
         var buf: [1024]u8 = undefined;
-        self.text_section.summary.setText(std.fmt.bufPrintZ(&buf, "{s} · {d} px · {s}{s}", .{ if (p.font.len == 0) @import("i18n").dtr("pearl", "System font") else p.font, p.font_size, if (p.density == .compact) @import("i18n").dtr("pearl", "Compact") else @import("i18n").dtr("pearl", "Comfortable"), if (p.reduced_motion) @import("i18n").dtr("pearl", " · Reduced motion") else "" }) catch "");
-        self.desktop_section.summary.setText(std.fmt.bufPrintZ(&buf, "{s} · {d} px · {s}", .{ if (p.desktop_icons.enabled) @import("i18n").dtr("pearl", "On") else @import("i18n").dtr("pearl", "Off"), p.desktop_icons.icon_size, if (@intFromEnum(p.desktop_icons.arrangement) == 0) @import("i18n").dtr("pearl", "Automatic arrangement") else @import("i18n").dtr("pearl", "Manual arrangement") }) catch "");
+        self.text_section.summary.setText(std.mem.printSentinel(&buf, "{s} · {d} px · {s}{s}", .{ if (p.font.len == 0) @import("i18n").dtr("pearl", "System font") else p.font, p.font_size, if (p.density == .compact) @import("i18n").dtr("pearl", "Compact") else @import("i18n").dtr("pearl", "Comfortable"), if (p.reduced_motion) @import("i18n").dtr("pearl", " · Reduced motion") else "" }, 0) catch "");
+        self.desktop_section.summary.setText(std.mem.printSentinel(&buf, "{s} · {d} px · {s}", .{ if (p.desktop_icons.enabled) @import("i18n").dtr("pearl", "On") else @import("i18n").dtr("pearl", "Off"), p.desktop_icons.icon_size, if (@backingInt(p.desktop_icons.arrangement) == 0) @import("i18n").dtr("pearl", "Automatic arrangement") else @import("i18n").dtr("pearl", "Manual arrangement") }, 0) catch "");
         const night_summary = self.editor.night_summary.slice();
-        self.night_section.summary.setText(if (night_summary.len > 0) std.fmt.bufPrintZ(&buf, "{s}", .{night_summary[0 .. std.mem.indexOfScalar(u8, night_summary, '\n') orelse night_summary.len]}) catch "" else if (p.night_light.enabled) @import("i18n").dtr("pearl", "On · warmer screen colors") else @import("i18n").dtr("pearl", "Off · warmer screen colors on supported displays"));
+        self.night_section.summary.setText(if (night_summary.len > 0) std.mem.printSentinel(&buf, "{s}", .{night_summary[0 .. std.mem.indexOfScalar(u8, night_summary, '\n') orelse night_summary.len]}, 0) catch "" else if (p.night_light.enabled) @import("i18n").dtr("pearl", "On · warmer screen colors") else @import("i18n").dtr("pearl", "Off · warmer screen colors on supported displays"));
         var qt_attention = false;
         for ([_][]const u8{ "failed", "conflict", "missing_dependency", "restore_incomplete", "Restart", "Log in" }) |needle| if (std.mem.indexOf(u8, self.editor.qt_summary.slice(), needle) != null) {
             qt_attention = true;
@@ -487,9 +487,9 @@ pub const View = struct {
         if (self.editor.application_command and self.editor.theme_error.len > 0) self.apps_section.summary.setText(self.editor.theme_error.z());
         self.login_section.summary.setText(std.mem.span(self.greeter_sync.status.getText()));
         const fit_names: [4][:0]const u8 = .{ @import("i18n").dtr("pearl", "Material gradient"), @import("i18n").dtr("pearl", "Solid color"), @import("i18n").dtr("pearl", "Cover"), @import("i18n").dtr("pearl", "Contain") };
-        const fit_name = fit_names[@intFromEnum(p.wallpaper.mode)];
+        const fit_name = fit_names[@backingInt(p.wallpaper.mode)];
         const filename = if (p.wallpaper.path.len > 0) std.fs.path.basename(p.wallpaper.path) else @import("i18n").dtr("pearl", "No image selected");
-        self.wallpaper_summary.setText(if (@intFromEnum(p.wallpaper.mode) < 2) fit_name else std.fmt.bufPrintZ(&buf, "{s}\n{s}", .{ filename, fit_name }) catch fit_name);
+        self.wallpaper_summary.setText(if (@backingInt(p.wallpaper.mode) < 2) fit_name else std.mem.printSentinel(&buf, "{s}\n{s}", .{ filename, fit_name }, 0) catch fit_name);
         self.image_section.summary.setText(if (p.wallpaper.slideshow.enabled) @import("i18n").dtr("pearl", "Slideshow on · path, fit and timing") else @import("i18n").dtr("pearl", "Slideshow off · path, fit and background color"));
     }
     fn modeChosen(button: *gtk.CheckButton, self: *View) callconv(.c) void {
@@ -498,7 +498,7 @@ pub const View = struct {
         // while opening its picker, rather than stranding it in an invalid mode.
         if (self.mode.getSelected() == 3 and self.prefs.theme.package_id.len == 0 and self.prefs.theme.palette_id.len == 0) {
             self.filling = true;
-            self.mode.setSelected(@intFromEnum(self.prefs.theme.mode));
+            self.mode.setSelected(@backingInt(self.prefs.theme.mode));
             self.filling = false;
             self.themes_section.expander.setExpanded(1);
             _ = self.themes_section.expander.as(gtk.Widget).grabFocus();
@@ -523,7 +523,7 @@ pub const View = struct {
         };
         if (language_index == null) {
             const alloc = self.language_arena.allocator();
-            const code = alloc.dupeZ(u8, prefs.language) catch return;
+            const code = alloc.dupeSentinel(u8, prefs.language, 0) catch return;
             const label = @import("i18n").fmtAlloc(alloc, "{s} (language pack not installed)", .{code}) catch return;
             language_index = self.language_codes.items.len;
             self.language_codes.append(alloc, code) catch return;
@@ -532,12 +532,12 @@ pub const View = struct {
         self.language.setSelected(@intCast(language_index.?));
         self.desktop_enabled.setActive(@intFromBool(prefs.desktop_icons.enabled));
         self.desktop_hidden.setActive(@intFromBool(prefs.desktop_icons.show_hidden));
-        self.desktop_output.as(gtk.Editable).setText(self.arena.allocator().dupeZ(u8, prefs.desktop_icons.output) catch "");
+        self.desktop_output.as(gtk.Editable).setText(self.arena.allocator().dupeSentinel(u8, prefs.desktop_icons.output, 0) catch "");
         self.desktop_size.setSelected(@intCast(std.mem.indexOfScalar(u16, &@import("../desktop/icons/model.zig").sizes, prefs.desktop_icons.icon_size) orelse 1));
-        self.desktop_arrangement.setSelected(@intFromEnum(prefs.desktop_icons.arrangement));
+        self.desktop_arrangement.setSelected(@backingInt(prefs.desktop_icons.arrangement));
         self.night_enabled.setActive(@intFromBool(prefs.night_light.enabled));
         self.night_temperature.setValue(@floatFromInt(prefs.night_light.temperature_kelvin));
-        self.night_schedule.setSelected(@intFromEnum(prefs.night_light.schedule));
+        self.night_schedule.setSelected(@backingInt(prefs.night_light.schedule));
         const night_times = [_]u16{ prefs.night_light.start_minute / 60, prefs.night_light.start_minute % 60, prefs.night_light.end_minute / 60, prefs.night_light.end_minute % 60 };
         for (self.night_times, night_times) |control, number| control.setValue(@floatFromInt(number));
         self.mode.setSelected(switch (prefs.theme.mode) {
@@ -547,26 +547,26 @@ pub const View = struct {
             .package => 3,
         });
         self.sync_borders.setActive(@intFromBool(prefs.theme.sync_borders));
-        self.variant.setSelected(@intFromEnum(prefs.theme.variant));
-        self.source.setSelected(@intFromEnum(prefs.theme.source));
-        self.scheme.setSelected(@intFromEnum(prefs.theme.scheme));
-        self.fit.setSelected(@intFromEnum(prefs.wallpaper.mode));
+        self.variant.setSelected(@backingInt(prefs.theme.variant));
+        self.source.setSelected(@backingInt(prefs.theme.source));
+        self.scheme.setSelected(@backingInt(prefs.theme.scheme));
+        self.fit.setSelected(@backingInt(prefs.wallpaper.mode));
         self.slideshow_enabled.setActive(@intFromBool(prefs.wallpaper.slideshow.enabled));
-        self.slideshow_folder.as(gtk.Editable).setText(self.arena.allocator().dupeZ(u8, prefs.wallpaper.slideshow.folder) catch "");
+        self.slideshow_folder.as(gtk.Editable).setText(self.arena.allocator().dupeSentinel(u8, prefs.wallpaper.slideshow.folder, 0) catch "");
         self.slideshow_interval.setValue(@floatFromInt(prefs.wallpaper.slideshow.interval_seconds));
-        self.slideshow_order.setSelected(@intFromEnum(prefs.wallpaper.slideshow.order));
-        self.slideshow_transition.setSelected(@intFromEnum(prefs.wallpaper.slideshow.transition));
+        self.slideshow_order.setSelected(@backingInt(prefs.wallpaper.slideshow.order));
+        self.slideshow_transition.setSelected(@backingInt(prefs.wallpaper.slideshow.transition));
         self.slideshow_duration.setValue(@floatFromInt(prefs.wallpaper.slideshow.transition_ms));
-        self.density.setSelected(@intFromEnum(prefs.density));
-        for (self.entries, [_][]const u8{ prefs.theme.gtk_name, prefs.theme.seed, prefs.wallpaper.path, prefs.wallpaper.color, prefs.font }) |control, value| control.as(gtk.Editable).setText(self.arena.allocator().dupeZ(u8, value) catch "");
+        self.density.setSelected(@backingInt(prefs.density));
+        for (self.entries, [_][]const u8{ prefs.theme.gtk_name, prefs.theme.seed, prefs.wallpaper.path, prefs.wallpaper.color, prefs.font }) |control, value| control.as(gtk.Editable).setText(self.arena.allocator().dupeSentinel(u8, value, 0) catch "");
         self.font_size.setValue(@floatFromInt(prefs.font_size));
         self.motion.setActive(@intFromBool(prefs.reduced_motion));
         self.qt_enabled.setActive(@intFromBool(prefs.qt.enabled));
         self.qt5.setActive(@intFromBool(prefs.qt.targets.qt5));
         self.qt6.setActive(@intFromBool(prefs.qt.targets.qt6));
-        self.qt_palette.setSelected(@intFromEnum(prefs.qt.palette));
+        self.qt_palette.setSelected(@backingInt(prefs.qt.palette));
         self.qt_font.setActive(@intFromBool(prefs.qt.sync_font));
-        self.qt_icon.as(gtk.Editable).setText(self.arena.allocator().dupeZ(u8, prefs.qt.icon_theme) catch "");
+        self.qt_icon.as(gtk.Editable).setText(self.arena.allocator().dupeSentinel(u8, prefs.qt.icon_theme, 0) catch "");
         self.qt_radius.setValue(@floatFromInt(prefs.qt.darkly.corner_radius orelse 0));
         self.qt_motion.setActive(@intFromBool(prefs.qt.darkly.sync_reduced_motion));
         self.qt_kde.setActive(@intFromBool(prefs.qt.darkly.sync_kde_colors));
@@ -575,11 +575,11 @@ pub const View = struct {
     fn saveForm(self: *View) void {
         if (self.filling or !self.editor.editable()) return;
         var prefs = self.prefs;
-        prefs.desktop_icons = .{ .enabled = self.desktop_enabled.getActive() != 0, .show_hidden = self.desktop_hidden.getActive() != 0, .output = text(self.desktop_output), .icon_size = @import("../desktop/icons/model.zig").sizes[@min(3, self.desktop_size.getSelected())], .arrangement = @enumFromInt(self.desktop_arrangement.getSelected()) };
+        prefs.desktop_icons = .{ .enabled = self.desktop_enabled.getActive() != 0, .show_hidden = self.desktop_hidden.getActive() != 0, .output = text(self.desktop_output), .icon_size = @import("../desktop/icons/model.zig").sizes[@min(3, self.desktop_size.getSelected())], .arrangement = @fromBackingInt(@intCast(self.desktop_arrangement.getSelected())) };
         prefs.night_light = .{
             .enabled = self.night_enabled.getActive() != 0,
             .temperature_kelvin = @intCast(self.night_temperature.getValueAsInt()),
-            .schedule = @enumFromInt(self.night_schedule.getSelected()),
+            .schedule = @fromBackingInt(@intCast(self.night_schedule.getSelected())),
             .start_minute = @intCast(self.night_times[0].getValueAsInt() * 60 + self.night_times[1].getValueAsInt()),
             .end_minute = @intCast(self.night_times[2].getValueAsInt() * 60 + self.night_times[3].getValueAsInt()),
         };
@@ -590,9 +590,9 @@ pub const View = struct {
             else => .static,
         };
         prefs.theme.sync_borders = self.sync_borders.getActive() != 0;
-        prefs.theme.variant = @enumFromInt(self.variant.getSelected());
-        prefs.theme.source = @enumFromInt(self.source.getSelected());
-        prefs.theme.scheme = @enumFromInt(self.scheme.getSelected());
+        prefs.theme.variant = @fromBackingInt(@intCast(self.variant.getSelected()));
+        prefs.theme.source = @fromBackingInt(@intCast(self.source.getSelected()));
+        prefs.theme.scheme = @fromBackingInt(@intCast(self.scheme.getSelected()));
         prefs.theme.gtk_name = text(self.entries[0]);
         prefs.theme.seed = text(self.entries[1]);
         // A rotating image is only visible in an image fit, so enabling the
@@ -600,7 +600,7 @@ pub const View = struct {
         const slideshow_on = self.slideshow_enabled.getActive() != 0;
         const chosen_fit = self.fit.getSelected();
         prefs.wallpaper = .{
-            .mode = @enumFromInt(if (slideshow_on and chosen_fit != 2 and chosen_fit != 3) @as(c_uint, 2) else chosen_fit),
+            .mode = @fromBackingInt(@intCast(if (slideshow_on and chosen_fit != 2 and chosen_fit != 3) @as(c_uint, 2) else chosen_fit)),
             .path = text(self.entries[2]),
             .color = text(self.entries[3]),
             // The form has no crop editor, so a save must not drop placements
@@ -610,19 +610,19 @@ pub const View = struct {
                 .enabled = slideshow_on,
                 .folder = text(self.slideshow_folder),
                 .interval_seconds = @intCast(self.slideshow_interval.getValueAsInt()),
-                .order = @enumFromInt(self.slideshow_order.getSelected()),
-                .transition = @enumFromInt(self.slideshow_transition.getSelected()),
+                .order = @fromBackingInt(@intCast(self.slideshow_order.getSelected())),
+                .transition = @fromBackingInt(@intCast(self.slideshow_transition.getSelected())),
                 .transition_ms = @intCast(self.slideshow_duration.getValueAsInt()),
             },
         };
         prefs.font = text(self.entries[4]);
         prefs.language = self.language_codes.items[@min(self.language.getSelected(), self.language_codes.items.len - 1)];
         prefs.font_size = @intCast(self.font_size.getValueAsInt());
-        prefs.density = @enumFromInt(self.density.getSelected());
+        prefs.density = @fromBackingInt(@intCast(self.density.getSelected()));
         prefs.reduced_motion = self.motion.getActive() != 0;
         prefs.qt.enabled = self.qt_enabled.getActive() != 0;
         prefs.qt.targets = .{ .qt5 = self.qt5.getActive() != 0, .qt6 = self.qt6.getActive() != 0 };
-        prefs.qt.palette = @enumFromInt(self.qt_palette.getSelected());
+        prefs.qt.palette = @fromBackingInt(@intCast(self.qt_palette.getSelected()));
         prefs.qt.sync_font = self.qt_font.getActive() != 0;
         prefs.qt.icon_theme = text(self.qt_icon);
         const radius = self.qt_radius.getValueAsInt();
@@ -704,7 +704,7 @@ pub const View = struct {
         };
         self.filling = false;
         if (self.shown) |old| a.free(old);
-        self.shown = a.dupeZ(u8, std.mem.span(bytes)) catch null;
+        self.shown = a.dupeSentinel(u8, std.mem.span(bytes), 0) catch null;
         var arena = std.heap.ArenaAllocator.init(a);
         const prefs = model.parse(arena.allocator(), std.mem.span(bytes)) catch null;
         if (prefs) |value| {
@@ -762,7 +762,7 @@ pub const View = struct {
     }
     fn wallpaperChosen(dialog: *gtk.Dialog, response: c_int, self: *View) callconv(.c) void {
         defer self.closePicker();
-        if (response != @intFromEnum(gtk.ResponseType.accept) or !self.editor.editable()) return;
+        if (response != @backingInt(gtk.ResponseType.accept) or !self.editor.editable()) return;
         const file = files.getFile(dialog) orelse return;
         defer file.unref();
         const path = file.getPath() orelse {
@@ -778,7 +778,7 @@ pub const View = struct {
         }
         self.filling = true;
         self.entries[2].as(gtk.Editable).setText(path);
-        self.fit.setSelected(@intFromEnum(@as(model.Wallpaper, .{ .mode = .cover }).mode));
+        self.fit.setSelected(@backingInt(@as(model.Wallpaper, .{ .mode = .cover }).mode));
         self.filling = false;
         self.saveForm();
     }
@@ -816,7 +816,7 @@ pub const View = struct {
     }
     fn folderChosen(dialog: *gtk.Dialog, response: c_int, self: *View) callconv(.c) void {
         defer self.closeFolderPicker();
-        if (response != @intFromEnum(gtk.ResponseType.accept) or !self.editor.editable()) return;
+        if (response != @backingInt(gtk.ResponseType.accept) or !self.editor.editable()) return;
         const file = files.getFile(dialog) orelse return;
         defer file.unref();
         const path = file.getPath() orelse {
@@ -834,7 +834,7 @@ pub const View = struct {
         self.filling = true;
         self.slideshow_folder.as(gtk.Editable).setText(path);
         // Validation needs an image fit and an initial image once the slideshow runs.
-        if (self.fit.getSelected() != 2 and self.fit.getSelected() != 3) self.fit.setSelected(@intFromEnum(@as(model.Wallpaper, .{ .mode = .cover }).mode));
+        if (self.fit.getSelected() != 2 and self.fit.getSelected() != 3) self.fit.setSelected(@backingInt(@as(model.Wallpaper, .{ .mode = .cover }).mode));
         if (self.entries[2].as(gtk.Editable).getText()[0] != '/') {
             var arena = std.heap.ArenaAllocator.init(a);
             defer arena.deinit();
@@ -941,7 +941,7 @@ pub const View = struct {
         self.preview_css.loadFromString(css);
         self.preview_note.setText(@import("i18n").dtr("pearl", "Draft preview · Changes take effect after Apply & save."));
         if (mode < 2 or path.len == 0 or path[0] != '/') return 0;
-        const z = a.dupeZ(u8, path) catch return 0;
+        const z = a.dupeSentinel(u8, path, 0) catch return 0;
         defer a.free(z);
         const preview = a.create(Preview) catch return 0;
         self.preview_note.setText(@import("i18n").dtr("pearl", "Loading wallpaper preview…"));

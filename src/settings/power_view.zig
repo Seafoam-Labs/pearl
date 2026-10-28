@@ -290,7 +290,7 @@ pub const View = struct {
         self.visibility(self.source_row.as(gtk.Widget), s.battery_present);
         self.visibility(self.saver_row.as(gtk.Widget), s.battery_present);
         var buf: [512]u8 = undefined;
-        self.percentage.setText(if (s.percentage) |n| std.fmt.bufPrintZ(&buf, "{d:.0}%", .{n}) catch "" else @import("i18n").dtr("pearl", "Charge unavailable"));
+        self.percentage.setText(if (s.percentage) |n| std.mem.printSentinel(&buf, "{d:.0}%", .{n}, 0) catch "" else @import("i18n").dtr("pearl", "Charge unavailable"));
         self.battery_icon.setValue(s.percentage orelse 0);
         self.battery_icon.as(gtk.Widget).setVisible(@intFromBool(s.percentage != null));
         self.charge.setText(switch (s.state) {
@@ -312,7 +312,7 @@ pub const View = struct {
             if (active) mode.as(gtk.Widget).addCssClass("power-selected") else mode.as(gtk.Widget).removeCssClass("power-selected");
             mode.as(gtk.Widget).setTooltipText(if (s.profiles[i]) null else @import("i18n").dtr("pearl", "This power mode is unavailable"));
         }
-        self.mode_detail.setText(alloc.dupeZ(u8, if (s.profile_pending) @import("i18n").dtr("pearl", "Applying power mode…") else s.degraded) catch "");
+        self.mode_detail.setText(alloc.dupeSentinel(u8, if (s.profile_pending) @import("i18n").dtr("pearl", "Applying power mode…") else s.degraded, 0) catch "");
         self.mode_detail.as(gtk.Widget).setVisible(@intFromBool(s.profile_pending or s.degraded.len > 0));
         var display_hash = std.hash.Wyhash.init(0);
         for (s.displays) |d| {
@@ -322,7 +322,7 @@ pub const View = struct {
         if (display_hash.final() != self.display_signature) {
             const names = gtk.StringList.new(null);
             defer names.unref();
-            for (s.displays) |d| names.append(alloc.dupeZ(u8, d.name) catch "");
+            for (s.displays) |d| names.append(alloc.dupeSentinel(u8, d.name, 0) catch "");
             self.display_picker.setModel(names.as(@import("gio2").ListModel));
             self.display_signature = display_hash.final();
         }
@@ -336,13 +336,13 @@ pub const View = struct {
         }
         if (self.brightness_target == null and self.wanted == null and !s.brightness_pending and self.editor.live_command == null) self.brightness.as(gtk.Range).setValue(@floatFromInt(s.brightness));
         self.brightness.as(gtk.Widget).setSensitive(@intFromBool(s.brightness_available));
-        self.percent.setText(std.fmt.bufPrintZ(&buf, "{d:.0}%", .{self.brightness.as(gtk.Range).getValue()}) catch "");
+        self.percent.setText(std.mem.printSentinel(&buf, "{d:.0}%", .{self.brightness.as(gtk.Range).getValue()}, 0) catch "");
         self.brightness_detail.setText(if (s.brightness_available) "" else @import("i18n").dtr("pearl", "Brightness control is unavailable for this display"));
         var detail: []const u8 = if (s.brightness_available) "" else @import("i18n").dtr("pearl", "Brightness control is unavailable for this display");
         for (s.displays) |d| if (std.mem.eql(u8, d.id, s.selected_display)) {
             if (d.reason.len != 0) detail = d.reason;
         };
-        self.brightness_detail.setText(alloc.dupeZ(u8, detail) catch "");
+        self.brightness_detail.setText(alloc.dupeSentinel(u8, detail, 0) catch "");
         self.brightness_detail.as(gtk.Widget).setVisible(@intFromBool(detail.len != 0));
         self.source.setSelected(if (self.battery_selected) 0 else 1);
         self.updateSettings();
@@ -351,13 +351,13 @@ pub const View = struct {
             action.button.as(gtk.Widget).setVisible(0);
         }
         for (rows) |r| if (std.mem.eql(u8, r.id, "session")) {
-            self.action_detail.setText(alloc.dupeZ(u8, r.detail) catch "");
+            self.action_detail.setText(alloc.dupeSentinel(u8, r.detail, 0) catch "");
             self.action_detail.as(gtk.Widget).setVisible(@intFromBool(r.detail.len > 0));
             for (r.controls) |spec| for (&self.actions) |*action| if (std.mem.eql(u8, action.id, spec.id) or (std.mem.eql(u8, action.id, "inhibit") and std.mem.eql(u8, spec.id, "uninhibit"))) {
                 const params = alloc.dupe(u8, spec.params) catch continue;
                 action.spec = spec;
                 action.spec.?.params = params;
-                action.button.setLabel(alloc.dupeZ(u8, self.actionLabel(spec)) catch "");
+                action.button.setLabel(alloc.dupeSentinel(u8, self.actionLabel(spec), 0) catch "");
                 action.button.as(gtk.Widget).setVisible(1);
                 action.button.as(gtk.Widget).setSensitive(@intFromBool(spec.enabled));
                 if (spec.op == .@"power.action") {
@@ -365,7 +365,7 @@ pub const View = struct {
                     if (confirmation.confirmation != null and !confirmation.cancel) {
                         const confirm = &self.actions[10];
                         confirm.spec = action.spec;
-                        confirm.button.setLabel(alloc.dupeZ(u8, self.actionLabel(spec)) catch "");
+                        confirm.button.setLabel(alloc.dupeSentinel(u8, self.actionLabel(spec), 0) catch "");
                         confirm.button.as(gtk.Widget).setVisible(1);
                         confirm.button.as(gtk.Widget).setSensitive(@intFromBool(spec.enabled));
                         action.button.as(gtk.Widget).setVisible(0);
@@ -375,7 +375,7 @@ pub const View = struct {
             };
         };
         const message = if (s.saving) @import("i18n").dtr("pearl", "Saving power settings…") else if (s.error_message.len > 0) s.error_message else if (!s.available) @import("i18n").dtr("pearl", "Battery service unavailable") else "";
-        self.status.setText(alloc.dupeZ(u8, message) catch "");
+        self.status.setText(alloc.dupeSentinel(u8, message, 0) catch "");
         self.status.as(gtk.Widget).setVisible(@intFromBool(message.len > 0));
     }
     fn updateSettings(self: *View) void {
@@ -471,7 +471,7 @@ pub const View = struct {
         self.wanted_generation = std.fmt.parseInt(u64, self.snapshot.brightness_generation, 10) catch return;
         self.deadline = glib.getMonotonicTime() + 5_000_000;
         var buffer: [16]u8 = undefined;
-        self.percent.setText(std.fmt.bufPrintZ(&buffer, "{d}%", .{self.wanted.?}) catch "");
+        self.percent.setText(std.mem.printSentinel(&buffer, "{d}%", .{self.wanted.?}, 0) catch "");
         if (self.timer == 0) self.timer = glib.timeoutAdd(80, dispatch, self);
     }
     fn dispatch(data: ?*anyopaque) callconv(.c) c_int {

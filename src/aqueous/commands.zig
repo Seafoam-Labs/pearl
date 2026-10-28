@@ -60,7 +60,7 @@ fn strings(value: anytype) !void {
             if (value.len > 1024 or !std.unicode.utf8ValidateSlice(value) or std.mem.indexOfScalar(u8, value, 0) != null) return error.Invalid;
         },
         .optional => if (value) |v| try strings(v),
-        .@"struct" => inline for (@typeInfo(T).@"struct".fields) |f| try strings(@field(value, f.name)),
+        .@"struct" => inline for (@typeInfo(T).@"struct".field_names) |f| try strings(@field(value, f)),
         else => {},
     }
 }

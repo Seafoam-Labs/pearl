@@ -229,7 +229,7 @@ pub const Capture = struct {
     fn outputEvent(_: *wl.Output, event: wl.Output.Event, o: *Output) void {
         if (event == .geometry or event == .mode or event == .scale) if (o.owner.target == o) o.owner.cancel();
         switch (event) {
-            .geometry => |g| o.transform = @intCast(@intFromEnum(g.transform)),
+            .geometry => |g| o.transform = @intCast(@backingInt(g.transform)),
             .name => |n| o.name.set(std.mem.span(n.name)),
             else => {},
         }
@@ -271,7 +271,7 @@ pub const Capture = struct {
         self.mapping = @as([*]u8, @ptrCast(ptr))[0..size];
         const pool = try self.shm.?.createPool(fd, @intCast(size));
         defer pool.destroy();
-        self.buffer = try pool.createBuffer(0, @intCast(self.width), @intCast(self.height), @intCast(self.stride), @enumFromInt(self.format));
+        self.buffer = try pool.createBuffer(0, @intCast(self.width), @intCast(self.height), @intCast(self.stride), @fromBackingInt(@intCast(self.format)));
         self.buffer.?.setListener(*Capture, bufferEvent, self);
         if (self.native.frame) |frame| {
             frame.attachBuffer(self.buffer.?);
@@ -421,7 +421,7 @@ pub const Capture = struct {
         if (self.locked) return error.Locked;
         if (generation != self.generation) return error.Stale;
         const bytes = self.image orelse return error.Unavailable;
-        const destination = if (path) |p| try a.dupeZ(u8, p) else blk: {
+        const destination = if (path) |p| try a.dupeSentinel(u8, p, 0) else blk: {
             const pictures = glib.getUserSpecialDir(.directory_pictures) orelse glib.getHomeDir();
             const dir = try std.fmt.allocPrintSentinel(a, "{s}/Pearl Screenshots", .{pictures}, 0);
             defer a.free(dir);

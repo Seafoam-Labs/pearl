@@ -426,7 +426,7 @@ pub const Dock = struct {
     fn button(self: *Dock, text: [:0]const u8, action: Action, id: []const u8, value: bool, desktop_action: ?[]const u8, window_id: ?[]const u8, desktop_id: ?[]const u8) !*gtk.Button {
         const alloc = self.arena.allocator();
         const cb = try alloc.create(Callback);
-        cb.* = .{ .dock = self, .resolution_hash = self.resolutionHash(), .window_id = if (window_id) |v| try alloc.dupeZ(u8, v) else null, .action = action, .id = try alloc.dupeZ(u8, id), .value = value, .desktop_action = if (desktop_action) |v| try alloc.dupeZ(u8, v) else null, .desktop_id = if (desktop_id) |v| try alloc.dupeZ(u8, v) else null };
+        cb.* = .{ .dock = self, .resolution_hash = self.resolutionHash(), .window_id = if (window_id) |v| try alloc.dupeSentinel(u8, v, 0) else null, .action = action, .id = try alloc.dupeSentinel(u8, id, 0), .value = value, .desktop_action = if (desktop_action) |v| try alloc.dupeSentinel(u8, v, 0) else null, .desktop_id = if (desktop_id) |v| try alloc.dupeSentinel(u8, v, 0) else null };
         const button_ = gtk.Button.newWithLabel(text);
         w.name(button_.as(gtk.Widget), text);
         if (button_.getChild()) |child| if (object.ext.cast(gtk.Label, child)) |label| {
@@ -480,7 +480,7 @@ pub const Dock = struct {
             box.append(primary.as(gtk.Widget));
             if (group.pinned) if (group.desktop) |id| {
                 const drag = try alloc.create(DragBinding);
-                drag.* = .{ .dock = self, .key = try alloc.dupeZ(u8, id), .widget = primary.as(gtk.Widget) };
+                drag.* = .{ .dock = self, .key = try alloc.dupeSentinel(u8, id, 0), .widget = primary.as(gtk.Widget) };
                 const source = gtk.DragSource.new();
                 source.setActions(.{ .move = true });
                 // Drag the bare icon centered on the pointer instead of an empty default surface.
@@ -558,7 +558,7 @@ pub const Dock = struct {
             items.append(choose.as(gtk.Widget));
             if (request) |r| {
                 const cb = try alloc.create(Callback);
-                cb.* = .{ .dock = self, .action = .choose_launcher, .id = "", .resolution_hash = self.resolutionHash(), .window_id = if (r.window_id) |v| try alloc.dupeZ(u8, v) else null, .picker = .{
+                cb.* = .{ .dock = self, .action = .choose_launcher, .id = "", .resolution_hash = self.resolutionHash(), .window_id = if (r.window_id) |v| try alloc.dupeSentinel(u8, v, 0) else null, .picker = .{
                     .key = .{ .backend = r.key.backend, .identity = try alloc.dupe(u8, r.key.identity) },
                     .window_id = if (r.window_id) |id| try alloc.dupe(u8, id) else null,
                     .source_pin = if (r.source_pin) |id| try alloc.dupe(u8, id) else null,
@@ -573,7 +573,7 @@ pub const Dock = struct {
             if (group.windows.items.len > 0) items.append(gtk.Separator.new(.horizontal).as(gtk.Widget));
             for (group.windows.items) |win| {
                 const title_text = win.title orelse "Untitled window";
-                const label = try alloc.dupeZ(u8, title_text);
+                const label = try alloc.dupeSentinel(u8, title_text, 0);
                 const activate = try self.button(label, .activate, win.id, false, null, null, null);
                 activate.as(gtk.Widget).setSensitive(@intFromBool(win.can_activate));
                 items.append(activate.as(gtk.Widget));

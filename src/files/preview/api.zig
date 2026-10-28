@@ -25,7 +25,7 @@ var helper: ?[:0]u8 = null;
 pub export fn pearl_preview_set_helper(path: [*:0]const u8) void {
     // Paths are chosen by the host, never by the portal request.
     if (helper != null) return;
-    helper = std.heap.c_allocator.dupeZ(u8, std.mem.span(path)) catch return;
+    helper = std.heap.c_allocator.dupeSentinel(u8, std.mem.span(path), 0) catch return;
     scheduler.helper_executable = helper.?.ptr;
 }
 pub export fn pearl_preview_watch(info: *gio.FileInfo, edge: u32, callback: @FieldType(Watch, "callback"), data: ?*anyopaque) ?*Watch {

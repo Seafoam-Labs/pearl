@@ -12,7 +12,7 @@ pub const Groups = struct {
         var plugin_count: usize = 0;
         var clocks: [8][]const u8 = undefined;
         var clock_count: usize = 0;
-        var seen = std.EnumSet(Item).initEmpty();
+        var seen = std.EnumSet(Item).empty;
         for ([_][]const u8{ self.left, self.center, self.right }) |group| {
             if (group.len > 512) return error.InvalidGroups;
             if (group.len == 0) continue;

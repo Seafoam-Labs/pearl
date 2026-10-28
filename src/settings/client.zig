@@ -292,7 +292,7 @@ pub const Client = struct {
 pub fn ownedEndpoint(path: [:0]const u8) !void {
     var dir = std.fs.path.dirname(path) orelse return error.UnsafeEndpoint;
     for (0..2) |_| {
-        const z = try a.dupeZ(u8, dir);
+        const z = try a.dupeSentinel(u8, dir, 0);
         defer a.free(z);
         const file = gio.File.newForPath(z);
         defer file.unref();

@@ -318,7 +318,7 @@ test "journal lines cannot fake report structure" {
         .status = "{}",
         .journal = .{
             .command = "journalctl --user -u pea\x1brl.service -n 500 --no-pager",
-            .text = "line\x1b[one\n" ++ "x" ** 600,
+            .text = "line\x1b[one\n" ++ @import("test_strings").string("x", 600),
         },
     };
     try write(&writer, sections);
@@ -328,7 +328,7 @@ test "journal lines cannot fake report structure" {
     try t.expect(std.mem.indexOf(u8, text, "=== journalctl --user -u pea?rl.service -n 500 --no-pager ===\nline?[one\n") != null);
     try t.expect(std.mem.indexOf(u8, text, "…[truncated]") != null);
     // The long line stayed one line: exactly one newline between it and the footer.
-    const tail = std.mem.indexOf(u8, text, "x" ** 100).?;
+    const tail = std.mem.indexOf(u8, text, @import("test_strings").string("x", 100)).?;
     const end = std.mem.indexOf(u8, text[tail..], footer).? + tail;
     try t.expectEqual(@as(usize, 1), std.mem.count(u8, text[tail..end], "\n"));
 }
@@ -356,7 +356,7 @@ test "the assembled artifact stays within a documented bound" {
     var journal: std.ArrayList(u8) = .empty;
     defer journal.deinit(t.allocator);
     for (0..500) |_| {
-        try journal.appendSlice(t.allocator, "x" ** 600);
+        try journal.appendSlice(t.allocator, @import("test_strings").string("x", 600));
         try journal.append(t.allocator, '\n');
     }
     const buffer = try t.allocator.alloc(u8, 512 * 1024);
@@ -376,5 +376,5 @@ test "the assembled artifact stays within a documented bound" {
     // 500 lines cut to 512 bytes plus a marker, an 8 KiB status, small headers.
     try t.expect(text.len < 300 * 1024);
     // The per-line cap held across the whole batch: no oversized run survived.
-    try t.expect(std.mem.indexOf(u8, text, "x" ** 513) == null);
+    try t.expect(std.mem.indexOf(u8, text, @import("test_strings").string("x", 513)) == null);
 }

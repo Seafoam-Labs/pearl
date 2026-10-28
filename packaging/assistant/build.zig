@@ -12,7 +12,7 @@ pub fn add(b: *std.Build) void {
     }
     const source: std.Build.LazyPath = if (source_option) |path| .{ .cwd_relative = path } else blk: {
         const archive: std.Build.LazyPath = .{ .cwd_relative = archive_option.? };
-        const verifier = b.addExecutable(.{ .name = "pearl-verify-assistant-source", .root_module = b.createModule(.{ .root_source_file = b.path("src/verify_assistant_source.zig"), .target = b.graph.host, .optimize = .ReleaseSafe }) });
+        const verifier = b.addExecutable(.{ .name = "pearl-verify-assistant-source", .root_module = b.createModule(.{ .root_source_file = b.path("src/verify_assistant_source.zig"), .target = b.graph.host, .optimize = .safe }) });
         const verify = b.addRunArtifact(verifier);
         verify.addArg(checksum.?);
         verify.addFileArg(archive);
@@ -31,7 +31,7 @@ pub fn add(b: *std.Build) void {
     const compile = b.addSystemCommand(&.{ "cmake", "--build" });
     compile.addDirectoryArg(build);
     compile.addArgs(&.{ "--target", "llama-server", "--parallel", "2" });
-    const staging_tool = b.addExecutable(.{ .name = "pearl-stage-assistant-runtime", .root_module = b.createModule(.{ .root_source_file = b.path("src/stage_assistant_runtime.zig"), .target = b.graph.host, .optimize = .ReleaseSafe }) });
+    const staging_tool = b.addExecutable(.{ .name = "pearl-stage-assistant-runtime", .root_module = b.createModule(.{ .root_source_file = b.path("src/stage_assistant_runtime.zig"), .target = b.graph.host, .optimize = .safe }) });
     const stage = b.addRunArtifact(staging_tool);
     stage.addDirectoryArg(build.path(b, "bin"));
     const staged = stage.addOutputDirectoryArg("runtime");

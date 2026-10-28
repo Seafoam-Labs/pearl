@@ -5,6 +5,7 @@ import hashlib
 import json
 import socket
 import sys
+import traceback
 import time
 from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
@@ -113,11 +114,12 @@ def main():
     p = argparse.ArgumentParser(description=__doc__)
     for name in ('settings', 'production', 'pearl', 'ctl'): p.add_argument('--' + name, type=Path, required=True)
     p.add_argument('--output', type=Path, default=ROOT / 'artifacts/settings-app/s2')
+    p.add_argument('--strict', action='store_true', help='Return failure for this otherwise report-only diagnostic')
     args = p.parse_args()
     for name in ('settings', 'production', 'pearl', 'ctl', 'output'): setattr(args, name, getattr(args, name).resolve())
     args.output.mkdir(parents=True, exist_ok=True)
     checks = {}
-    report = dict(status='running', checks=checks, binaries={name: hashlib.sha256(getattr(args, name).read_bytes()).hexdigest() for name in ('settings', 'production', 'pearl', 'ctl')})
+    report = dict(status='running', report_only=not args.strict, checks=checks, binaries={name: hashlib.sha256(getattr(args, name).read_bytes()).hexdigest() for name in ('settings', 'production', 'pearl', 'ctl')})
     try:
         with PrivateSession(args.output / 'session', tool_prefix=fixture_prefix()) as s:
             ipc = IPC(s)
@@ -384,8 +386,14 @@ def main():
             checks['frontend-crash-stale-instance-recovery'] = True
             parent_ipc.close()
         report['status'] = 'passed'
+    except Exception as error:
+        report.update(status='failed', error=repr(error))
+        traceback.print_exc()
     finally:
         (args.output / 'results.json').write_text(json.dumps(report, indent=2) + '\n')
     print(json.dumps(report, indent=2))
+    if report['status'] != 'passed':
+        print('Settings window diagnostic failed' + (' (strict)' if args.strict else ' [report only; does not block release]'), file=sys.stderr)
+    return int(args.strict and report['status'] != 'passed')
 
-if __name__ == '__main__': main()
+if __name__ == '__main__': raise SystemExit(main())

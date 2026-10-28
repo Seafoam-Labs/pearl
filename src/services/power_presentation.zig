@@ -119,7 +119,7 @@ pub const Alarm = struct {
             return;
         }
         const crossed = levelOf(n) orelse return;
-        if (@intFromEnum(crossed) <= @intFromEnum(self.seen)) return;
+        if (@backingInt(crossed) <= @backingInt(self.seen)) return;
         self.seen = crossed;
         self.pending = crossed;
     }
@@ -249,7 +249,7 @@ const shipped_icons = [_][:0]const u8{
 };
 
 test "every battery icon the policy selects is a shipped, reachable glyph" {
-    var reachable = [_]bool{false} ** shipped_icons.len;
+    var reachable = @as([shipped_icons.len]bool, @splat(false));
     // Sweep states past the documented UPower range and the whole percent grid.
     var state: u32 = 0;
     while (state <= 8) : (state += 1) {

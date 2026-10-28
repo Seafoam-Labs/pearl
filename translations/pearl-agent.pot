@@ -67,7 +67,7 @@ msgstr ""
 msgid "New"
 msgstr ""
 
-#: src/agent_main.zig:15
+#: src/agent_main.zig:11
 msgid "Open Pearl Assistant from the Super+Space launcher."
 msgstr ""
 

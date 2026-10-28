@@ -14,7 +14,7 @@ pub fn main(init: std.process.Init) !void {
     _ = std.c.setrlimit(.CORE, &limits);
     const args = try init.minimal.args.toSlice(std.heap.c_allocator);
     if (args.len == 2 and std.mem.eql(u8, args[1], "--version")) {
-        glib.print("pearl-greeter " ++ @import("version.zig").string ++ " (Zig 0.16.0)\n");
+        glib.print("pearl-greeter " ++ @import("version.zig").string ++ " (Zig 0.17.0)\n");
         return;
     }
     if (options.test_hooks and args.len == 2 and std.mem.eql(u8, args[1], "--services-probe")) return @import("greeter/services_probe.zig").run();
@@ -26,7 +26,7 @@ pub fn main(init: std.process.Init) !void {
         defer catalog.deinit();
         const json = try std.json.Stringify.valueAlloc(std.heap.c_allocator, .{ .sessions = catalog.entries.items, .skipped = catalog.skipped }, .{});
         defer std.heap.c_allocator.free(json);
-        const z = try std.heap.c_allocator.dupeZ(u8, json);
+        const z = try std.heap.c_allocator.dupeSentinel(u8, json, 0);
         defer std.heap.c_allocator.free(z);
         glib.print("%s\n", z.ptr);
         return;

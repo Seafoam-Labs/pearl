@@ -86,7 +86,7 @@ pub const View = struct {
             self.rows_arena.deinit();
             self.disconnect();
         }
-        self.selected_id = if (owned.current_desktop) |id| try a.dupeZ(u8, id) else null;
+        self.selected_id = if (owned.current_desktop) |id| try a.dupeSentinel(u8, id, 0) else null;
         self.signals[0] = gtk.SearchEntry.signals.search_changed.connect(search, *View, searchChanged, self, .{});
         self.signals[1] = gtk.ListBox.signals.row_selected.connect(list, *View, selected, self, .{});
         self.signals[2] = gtk.Button.signals.clicked.connect(apply_button, *View, applyClicked, self, .{});
@@ -129,7 +129,7 @@ pub const View = struct {
         if (self.filling) return;
         const index: usize = @intCast((row orelse return).getIndex());
         if (index >= self.rows.items.len) return;
-        const copy = a.dupeZ(u8, self.rows.items[index]) catch return;
+        const copy = a.dupeSentinel(u8, self.rows.items[index], 0) catch return;
         if (self.selected_id) |old| a.free(old);
         self.selected_id = copy;
         self.sensitivity();
@@ -161,7 +161,7 @@ pub const View = struct {
             if (query.len != 0 and std.mem.indexOf(u8, entry.folded, query) == null and std.mem.indexOf(u8, try Apps.fold(alloc, entry.id), query) == null) continue;
             matches += 1;
             if (self.rows.items.len >= self.limit) continue;
-            try self.rows.append(alloc, try alloc.dupeZ(u8, entry.id));
+            try self.rows.append(alloc, try alloc.dupeSentinel(u8, entry.id, 0));
             const box = gtk.Box.new(.horizontal, 8);
             const icon = if (entry.info.getIcon()) |gicon| gtk.Image.newFromGicon(gicon) else gtk.Image.newFromIconName("pearl-application-x-executable-symbolic");
             icon.setPixelSize(28);

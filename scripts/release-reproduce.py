@@ -8,7 +8,7 @@ spec=importlib.util.spec_from_file_location('release_source',ROOT/'scripts/relea
 
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--output',type=Path,default=ROOT/'artifacts/aqueous-082/reproducibility');a=p.parse_args();a.output=a.output.resolve();a.output.mkdir(parents=True,exist_ok=True)
-    report={'status':'running','runs':[],'method':'Two source archives and two distinct extracted roots, fresh local build caches, common content-addressed dependency cache, stripped ReleaseSafe binaries.'}
+    report={'status':'running','runs':[],'method':'Two source archives and two distinct extracted roots, fresh local build caches, common content-addressed dependency cache, stripped safe binaries.'}
     try:
         with tempfile.TemporaryDirectory(prefix='pearl-reproduce-') as temp:
             for index in range(2):
@@ -18,7 +18,7 @@ def main():
                 if (ROOT/'zig-pkg').is_dir():shutil.copytree(ROOT/'zig-pkg',root/'zig-pkg')
                 print(f'Building fresh root {index+1}',flush=True)
                 env=dict(os.environ,ZIG_GLOBAL_CACHE_DIR=str(ROOT/'.cache/zig'),SOURCE_DATE_EPOCH=str(meta['source_date_epoch']))
-                with (a.output/f'build-{index}.log').open('w') as log:subprocess.run(['zig','build','-Drelease=true','-Doptimize=ReleaseSafe','--summary','all'],cwd=root,env=env,stdout=log,stderr=subprocess.STDOUT,check=True,timeout=600)
+                with (a.output/f'build-{index}.log').open('w') as log:subprocess.run(['zig','build','-Drelease=true','-Doptimize=safe','--summary','all'],cwd=root,env=env,stdout=log,stderr=subprocess.STDOUT,check=True,timeout=600)
                 binaries={n:hashlib.sha256((root/'zig-out/bin'/n).read_bytes()).hexdigest() for n in ('pearl','pearlctl','pearl-lock','pearl-settings')}
                 report['runs'].append({'source':meta,'binary_sha256':binaries})
             assert report['runs'][0]==report['runs'][1],report

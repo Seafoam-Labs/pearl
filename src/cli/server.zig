@@ -64,7 +64,7 @@ pub const Server = struct {
             defer info.unref();
             if (info.getAttributeUint32("unix::uid") != std.os.linux.getuid() or info.getAttributeUint32("unix::mode") & 0o170000 != 0o140000) return error.UnsafeEndpoint;
             if (file.delete(null, &err) == 0) return error.UnsafeEndpoint;
-        } else if (err.?.matches(gio.ioErrorQuark(), @intFromEnum(gio.IOErrorEnum.not_found)) == 0) return error.UnsafeEndpoint;
+        } else if (err.?.matches(gio.ioErrorQuark(), @backingInt(gio.IOErrorEnum.not_found)) == 0) return error.UnsafeEndpoint;
         if (err) |v| {
             v.free();
             err = null;
@@ -216,7 +216,7 @@ const Slot = struct {
     }
 };
 pub fn privateDirectory(path: []const u8) !void {
-    const name = try a.dupeZ(u8, path);
+    const name = try a.dupeSentinel(u8, path, 0);
     defer a.free(name);
     if (glib.mkdirWithParents(name, 0o700) != 0) return error.RuntimeDirectory;
     const file = gio.File.newForPath(name);
@@ -236,7 +236,12 @@ fn envValue(name: [*:0]const u8) []const u8 {
 /// the file itself is best effort: a degraded section carries a marker line
 /// instead of failing the report.
 fn writeReport(owner: *Server, request: protocol.Request, alloc: std.mem.Allocator) ![]const u8 {
-    errdefer |err| log.err("event=report-failed error={s}", .{@errorName(err)});
+    return writeReportInner(owner, request, alloc) catch |err| {
+        log.err("event=report-failed error={s}", .{@errorName(err)});
+        return err;
+    };
+}
+fn writeReportInner(owner: *Server, request: protocol.Request, alloc: std.mem.Allocator) ![]const u8 {
     var status_request = request;
     status_request.op = .status;
     // A failed or oversized probe degrades to a marker object naming the Zig
@@ -321,14 +326,14 @@ fn commandLine(alloc: std.mem.Allocator) []const u8 {
 fn processStart(pid: u32) ?u64 {
     var path: [64]u8 = undefined;
     var storage: [4096]u8 = undefined;
-    const name = std.fmt.bufPrintZ(&path, "/proc/{d}/stat", .{pid}) catch return null;
+    const name = std.mem.printSentinel(&path, "/proc/{d}/stat", .{pid}, 0) catch return null;
     return journal.startTicks(procText(name, &storage) orelse return null) catch null;
 }
 
 fn sessionSince(owner: *Server) ?u64 {
     const ticks = owner.compositor_start orelse return null;
     if (processStart(owner.compositor_pid orelse return null) != ticks) return null;
-    const hz = std.c.getauxval(std.elf.AT_CLKTCK);
+    const hz = std.c.getauxval(std.elf.AT.CLKTCK);
     if (hz <= 0) return null;
     var storage: [65536]u8 = undefined;
     const stat = procText("/proc/stat", &storage) orelse return null;
@@ -358,7 +363,7 @@ fn collectJournal(alloc: std.mem.Allocator, owner: *Server) !report.Journal {
     defer cancel.unref();
     var boot_storage: [64]u8 = undefined;
     const boot = std.mem.trim(u8, procText("/proc/sys/kernel/random/boot_id", &boot_storage) orelse return error.BootIdentityUnavailable, "\r\n");
-    const boot_arg = try alloc.dupeZ(u8, boot);
+    const boot_arg = try alloc.dupeSentinel(u8, boot, 0);
     var argv: std.ArrayList([:0]const u8) = .empty;
     try argv.appendSlice(alloc, &.{ "journalctl", "--user", "-b", boot_arg, "--no-pager", "-o", "json", "-n", "501", "--output-fields=MESSAGE,_PID,_SYSTEMD_INVOCATION_ID,__REALTIME_TIMESTAMP" });
     try argv.append(alloc, try std.fmt.allocPrintSentinel(alloc, "--since=@{d}", .{since}, 0));

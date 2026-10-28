@@ -1,6 +1,6 @@
 # Native Wayland bindings
 
-Pearl generates native protocols directly in Zig using **zig-wayland v0.6.0**,
+Pearl generates native protocols directly in Zig using **zig-wayland v0.7.0**,
 whose URL/integrity hash is pinned in `build.zig.zon`. GObject/GTK declarations
 continue to come from Ghostty's package; there is no custom C bridge or
 handwritten Wayland wire marshalling.

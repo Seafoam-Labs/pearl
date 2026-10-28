@@ -33,12 +33,12 @@ for folder in ('src','resources','bindings','tests','scripts','docs'):
 manifest={str(p.relative_to(ROOT)):sha(p) for p in sorted(set(files))}
 (VERIFY/'source-manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
 snapshot=json.loads((VERIFY/'schema.json').read_text())
-report=dict(recorded_utc=datetime.datetime.now(datetime.timezone.utc).isoformat(),zig=command('zig','version'),gtk=command('pkg-config','--modversion','gtk4'),glib=command('pkg-config','--modversion','glib-2.0'),optimize='ReleaseSafe',aqueous_revision=command('git','-C','/home/zoey/RiderProjects/Aqueous','rev-parse','HEAD'),helper_version=snapshot['helper_version'],helper_sha256=sha(Path('/usr/bin/aqueous-config')),schema_fields=len(snapshot['fields']),production_sha256=production,instrumented_sha256=instrumented,ctl_sha256=ctl,all_suite_binaries_match=True,unit_counts=dict(zip(('pure','adapter_services','bindings'),counts)),unit_total=sum(counts),integration_total=sum(s['checks'] for s in suites.values()),suites=suites,source_manifest_sha256=sha(VERIFY/'source-manifest.json'))
+report=dict(recorded_utc=datetime.datetime.now(datetime.timezone.utc).isoformat(),zig=command('zig','version'),gtk=command('pkg-config','--modversion','gtk4'),glib=command('pkg-config','--modversion','glib-2.0'),optimize='safe',aqueous_revision=command('git','-C','/home/zoey/RiderProjects/Aqueous','rev-parse','HEAD'),helper_version=snapshot['helper_version'],helper_sha256=sha(Path('/usr/bin/aqueous-config')),schema_fields=len(snapshot['fields']),production_sha256=production,instrumented_sha256=instrumented,ctl_sha256=ctl,all_suite_binaries_match=True,unit_counts=dict(zip(('pure','adapter_services','bindings'),counts)),unit_total=sum(counts),integration_total=sum(s['checks'] for s in suites.values()),suites=suites,source_manifest_sha256=sha(VERIFY/'source-manifest.json'))
 (VERIFY/'summary.json').write_text(json.dumps(report,indent=2)+'\n')
 rows='\n'.join(f'| {name} | {s["checks"]} passed |' for name,s in suites.items())
 (VERIFY/'README.md').write_text(f'''# T11 verification — September 13, 2026
 
-Zig 0.16.0 ReleaseSafe and pinned Ghostty bindings. All suites use the same final
+Zig 0.17.0 safe and pinned Ghostty bindings. All suites use the same final
 production/instrumented binaries; `scripts/t11-evidence.py` checks their hashes.
 See [summary.json](summary.json) and [source checksums](source-manifest.json).
 

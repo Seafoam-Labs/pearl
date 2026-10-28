@@ -71,11 +71,11 @@ pub fn matches(saved: anytype, ap: anytype) bool {
 }
 fn key(alloc: std.mem.Allocator, section: Section, path: []const u8, ssid: []const u8, security: policy.Security) ![]const u8 {
     var hash = std.crypto.hash.sha2.Sha256.init(.{});
-    hash.update(&.{@intFromEnum(section)});
+    hash.update(&.{@backingInt(section)});
     hash.update(path);
     hash.update(&.{0});
     hash.update(ssid);
-    hash.update(&.{@intFromEnum(security)});
+    hash.update(&.{@backingInt(security)});
     var digest: [32]u8 = undefined;
     hash.final(&digest);
     return std.fmt.allocPrint(alloc, "{s}:{s}", .{ @tagName(section), std.fmt.bytesToHex(digest, .lower) });
@@ -173,7 +173,7 @@ pub fn build(alloc: std.mem.Allocator, n: anytype, owner: anytype, now: i64) !Sn
     };
     std.mem.sort(Row, rows.items, {}, struct {
         fn less(_: void, left: Row, right: Row) bool {
-            if (left.section != right.section) return @intFromEnum(left.section) < @intFromEnum(right.section);
+            if (left.section != right.section) return @backingInt(left.section) < @backingInt(right.section);
             if (left.section == .nearby and left.strength != right.strength) return left.strength > right.strength;
             if (!same(left.title, right.title)) return std.mem.lessThan(u8, left.title, right.title);
             return std.mem.lessThan(u8, left.key, right.key);
@@ -289,9 +289,9 @@ test "maximum network projection fits a bounded frontend frame with fallback bud
     f.device_count = 8;
     f.ap_count = 64;
     f.saved_count = 32;
-    var path = [_]u8{'a'} ** 512;
+    var path = @as([512]u8, @splat('a'));
     path[0] = '/';
-    const name = [_]u8{'"'} ** 128;
+    const name = @as([128]u8, @splat('"'));
     for (&f.devices, 0..) |*dev, i| {
         path[511] = @intCast('a' + i);
         dev.path.set(&path);

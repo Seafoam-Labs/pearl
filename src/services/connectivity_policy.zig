@@ -57,8 +57,8 @@ test "passwords, PINs and passkeys validate without retaining inputs" {
     const t = std.testing;
     try t.expect(!password("short", .psk));
     try t.expect(password("abcdefgh", .psk));
-    try t.expect(password("a" ** 64, .psk));
-    try t.expect(!password("z" ** 64, .psk));
+    try t.expect(password(@import("test_strings").string("a", 64), .psk));
+    try t.expect(!password(@import("test_strings").string("z", 64), .psk));
     try t.expect(password("x", .sae));
     try t.expectEqual(@as(?u32, 42), passkey("000042"));
     try t.expect(passkey("-1") == null and passkey("1000000") == null);

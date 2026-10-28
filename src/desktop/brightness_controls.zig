@@ -77,7 +77,7 @@ pub const View = struct {
             defer names.unref();
             for (self.power.displays.slice()) |d| {
                 var buf: [300]u8 = undefined;
-                names.append(std.fmt.bufPrintZ(&buf, "{s}{s}{s}", .{ d.name.slice(), if (d.output.len != 0 and !std.mem.eql(u8, d.name.slice(), d.output.slice())) " · " else "", if (!std.mem.eql(u8, d.name.slice(), d.output.slice())) d.output.slice() else "" }) catch d.name.z());
+                names.append(std.mem.printSentinel(&buf, "{s}{s}{s}", .{ d.name.slice(), if (d.output.len != 0 and !std.mem.eql(u8, d.name.slice(), d.output.slice())) " · " else "", if (!std.mem.eql(u8, d.name.slice(), d.output.slice())) d.output.slice() else "" }, 0) catch d.name.z());
             }
             self.picker.setModel(names.as(gio.ListModel));
             self.signature = signature;
@@ -97,10 +97,10 @@ pub const View = struct {
         if (d) |device| {
             if (device.wanted) |wanted| self.scale.as(gtk.Range).setValue(@floatFromInt(wanted)) else if (!device.pending) self.scale.as(gtk.Range).setValue(@floatFromInt(device.percent()));
             var buf: [32]u8 = undefined;
-            self.value.setText(if (device.maximum == 0) "—" else std.fmt.bufPrintZ(&buf, "{d:.0}%", .{self.scale.as(gtk.Range).getValue()}) catch "");
+            self.value.setText(if (device.maximum == 0) "—" else std.mem.printSentinel(&buf, "{d:.0}%", .{self.scale.as(gtk.Range).getValue()}, 0) catch "");
         } else self.value.setText("—");
         var status_buffer: [512]u8 = undefined;
-        self.status.setText(if (if (d) |device| device.write_error else null) |err| std.fmt.bufPrintZ(&status_buffer, "{s}", .{err}) catch "" else if (!awake) @import("i18n").dtr("pearl", "Screen is off. Move the mouse or press a key to wake.") else if (d) |device| if (device.reason) |reason| std.fmt.bufPrintZ(&status_buffer, "{s}", .{reason}) catch "" else if (device.pending or device.wanted != null) @import("i18n").dtr("pearl", "Applying brightness…") else if (!self.power.brightnessAvailable()) @import("i18n").dtr("pearl", "Brightness unavailable · an active session is required") else @import("i18n").dtr("pearl", "Changes apply to the selected display") else @import("i18n").dtr("pearl", "No supported display brightness controls"));
+        self.status.setText(if (if (d) |device| device.write_error else null) |err| std.mem.printSentinel(&status_buffer, "{s}", .{err}, 0) catch "" else if (!awake) @import("i18n").dtr("pearl", "Screen is off. Move the mouse or press a key to wake.") else if (d) |device| if (device.reason) |reason| std.mem.printSentinel(&status_buffer, "{s}", .{reason}, 0) catch "" else if (device.pending or device.wanted != null) @import("i18n").dtr("pearl", "Applying brightness…") else if (!self.power.brightnessAvailable()) @import("i18n").dtr("pearl", "Brightness unavailable · an active session is required") else @import("i18n").dtr("pearl", "Changes apply to the selected display") else @import("i18n").dtr("pearl", "No supported display brightness controls"));
     }
     fn selected(_: *object.Object, _: *object.ParamSpec, self: *View) callconv(.c) void {
         if (self.updating) return;

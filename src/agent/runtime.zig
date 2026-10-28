@@ -8,12 +8,7 @@ const registry = @import("model_registry.zig");
 const probe = @import("runtime_probe.zig");
 const compute = @import("compute.zig");
 const memory = @import("memory.zig");
-const c = @cImport({
-    @cInclude("sys/prctl.h");
-    @cInclude("signal.h");
-    @cInclude("unistd.h");
-    @cInclude("sys/resource.h");
-});
+const c = @import("pearl_libc");
 const a = std.heap.c_allocator;
 pub const Runtime = struct {
     process: ?*gio.Subprocess = null,
@@ -54,7 +49,7 @@ pub const Runtime = struct {
         defer scratch.deinit();
         const temporary = scratch.allocator();
         const resolved = try probe.resolve(temporary, cfg.runtime);
-        const model_path = if (registry.find(cfg.model_id)) |model| try @import("downloads.zig").path(temporary, model) else try temporary.dupeZ(u8, cfg.custom_model);
+        const model_path = if (registry.find(cfg.model_id)) |model| try @import("downloads.zig").path(temporary, model) else try temporary.dupeSentinel(u8, cfg.custom_model, 0);
         const model_identity = probe.fingerprint(temporary, model_path) catch return error.ModelNotInstalled;
         const identity = try std.json.Stringify.valueAlloc(a, .{ cfg.model_id, cfg.custom_model, cfg.cpu_threads, cfg.contextTokens(), cfg.answerTokens(), cfg.runtime, cfg.compute, try probe.fingerprint(temporary, resolved), model_identity }, .{});
         defer a.free(identity);
@@ -90,7 +85,7 @@ pub const Runtime = struct {
         const model = registry.find(cfg.model_id);
         const reasoning = if (model) |m| m.reasoning else false;
         self.check_tokens = if (reasoning) cfg.answerTokens() else 256;
-        const filename = if (model) |m| try @import("downloads.zig").path(alloc, m) else try alloc.dupeZ(u8, cfg.custom_model);
+        const filename = if (model) |m| try @import("downloads.zig").path(alloc, m) else try alloc.dupeSentinel(u8, cfg.custom_model, 0);
         {
             const verify_start = glib.getMonotonicTime();
             defer if (self.telemetry) |metrics| {
@@ -166,7 +161,7 @@ pub const Runtime = struct {
         if (info.has("--poll")) try args.appendSlice(alloc, &.{ "--poll", "0" });
         // Keep internal reasoning out of answer text and citation validation.
         if (info.has("--reasoning-format")) try args.appendSlice(alloc, &.{ "--reasoning-format", "deepseek" });
-        if (info.has("--device")) try args.appendSlice(alloc, &.{ "--device", if (self.device) |d| try alloc.dupeZ(u8, d.name) else "none" });
+        if (info.has("--device")) try args.appendSlice(alloc, &.{ "--device", if (self.device) |d| try alloc.dupeSentinel(u8, d.name, 0) else "none" });
         if (self.gpu) try args.appendSlice(alloc, &.{ "--split-mode", "none" });
         try args.append(alloc, null);
         if (!std.mem.eql(u8, info.fingerprint, try probe.fingerprint(alloc, info.executable))) return error.RuntimeChanged;

@@ -41,7 +41,7 @@ const schema: c.SecretSchema = .{
     },
 };
 pub fn lookup(a: std.mem.Allocator, id: []const u8) ![]const u8 {
-    const key = try a.dupeZ(u8, id);
+    const key = try a.dupeSentinel(u8, id, 0);
     defer a.free(key);
     var err: ?*c.GError = null;
     const value = c.secret_password_lookup_sync(&schema, null, &err, @as([*:0]const u8, "provider"), key.ptr, @as(?*anyopaque, null));
@@ -53,9 +53,9 @@ pub fn lookup(a: std.mem.Allocator, id: []const u8) ![]const u8 {
 pub fn store(id: []const u8, secret: []const u8, session_only: bool) !void {
     const a = std.heap.c_allocator;
     if (secret.len == 0 or secret.len > 1024 or std.mem.indexOfAny(u8, secret, "\r\n\x00") != null) return error.InvalidCredential;
-    const key = try a.dupeZ(u8, id);
+    const key = try a.dupeSentinel(u8, id, 0);
     defer a.free(key);
-    const value = try a.dupeZ(u8, secret);
+    const value = try a.dupeSentinel(u8, secret, 0);
     defer {
         std.crypto.secureZero(u8, value);
         a.free(value);
@@ -66,7 +66,7 @@ pub fn store(id: []const u8, secret: []const u8, session_only: bool) !void {
 }
 pub fn remove(id: []const u8) !void {
     const a = std.heap.c_allocator;
-    const key = try a.dupeZ(u8, id);
+    const key = try a.dupeSentinel(u8, id, 0);
     defer a.free(key);
     var err: ?*c.GError = null;
     defer if (err) |e| c.g_error_free(e);

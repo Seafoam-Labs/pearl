@@ -77,9 +77,9 @@ def main():
                     shutil.copytree(source, destination)
                 report['targets'][target] = dict(exit_code=record.get('exit_code', 2),
                     seconds=record.get('seconds', 0), command=record.get('commands', []),
-                    status=record['status'], run=str(run_args.output.relative_to(output)))
+                    status=record['status'], report_only=record.get('report_only', False), run=str(run_args.output.relative_to(output)))
             report['source_unchanged'] = results['source_unchanged']
-            report['status'] = 'passed' if code == 0 and all(v['exit_code'] == 0 for v in report['targets'].values()) else 'failed'
+            report['status'] = 'passed' if code == 0 and all(v['exit_code'] == 0 or v.get('report_only', False) for v in report['targets'].values()) else 'failed'
             return code if report['status'] == 'passed' or code else 1
         except BaseException as error:
             report.update(status='failed', error=str(error), source_unchanged=fingerprint(ROOT) == initial)

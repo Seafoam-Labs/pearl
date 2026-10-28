@@ -89,14 +89,14 @@ pub const View = struct {
         for (scene.nodes) |node| {
             const widget = switch (node.kind) {
                 .label => blk: {
-                    const label = gtk.Label.new(alloc.dupeZ(u8, node.text) catch continue);
+                    const label = gtk.Label.new(alloc.dupeSentinel(u8, node.text, 0) catch continue);
                     label.as(gtk.Widget).addCssClass("pearl-plugin-label");
                     label.setMaxWidthChars(40);
                     label.setEllipsize(.end);
                     break :blk label.as(gtk.Widget);
                 },
                 .button => blk: {
-                    const button = gtk.Button.newWithLabel(alloc.dupeZ(u8, node.text) catch continue);
+                    const button = gtk.Button.newWithLabel(alloc.dupeSentinel(u8, node.text, 0) catch continue);
                     if (button.getChild()) |child| if (@import("gobject2").ext.cast(gtk.Label, child)) |label| {
                         label.setEllipsize(.end);
                         label.setMaxWidthChars(24);
@@ -107,7 +107,7 @@ pub const View = struct {
                     const picture = gtk.Picture.new();
                     picture.setCanShrink(1);
                     picture.setContentFit(.contain);
-                    picture.setAlternativeText(alloc.dupeZ(u8, node.text) catch continue);
+                    picture.setAlternativeText(alloc.dupeSentinel(u8, node.text, 0) catch continue);
                     picture.as(gtk.Widget).setSizeRequest(if (self.overlay) 96 else 32, if (self.overlay) 72 else 32);
                     break :blk picture.as(gtk.Widget);
                 },

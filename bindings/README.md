@@ -10,11 +10,10 @@ main-loop ABI from [pinned headers](headers/README.md). T12 adds pinned Linux-PA
 
 ## Pinned inputs
 
-- Zig: **0.16.0**, enforced by `build.zig` and recorded in `.zigversion`.
-- Ghostty artifact: `https://deps.files.ghostty.org/gobject-2026-07-28-36-1.tar.zst`.
+- Zig: **0.17.0**, enforced by `build.zig` and recorded in `.zigversion`.
+- Ghostty artifact: `https://github.com/ghostty-org/zig-gobject/releases/download/0.11.0-zig-0.17.0-2026-10-02-38-1/ghostty-gobject-0.11.0-zig-0.17.0-2026-10-02-38-1.tar.gz`.
 - Generator: `jcollie/zig-gobject` commit
-  `4ff7b4d030465b50796b90af72fec41eb9b3b5c6`, the generator selected by the
-  inspected Ghostty binding repository.
+  `4272fe9e0a1b7d8c0e6bd8ffe258e787b80ed038`, the upstream generator’s `zig-0.17` branch.
 - Exact package integrity hashes: [build.zig.zon](../build.zig.zon).
 - Root GIRs: [gir/](gir/), copied from gtk4-layer-shell **1.3.0**.
 - Transitive GIR input hashes: [gir-inputs.json](gir-inputs.json).
@@ -34,8 +33,8 @@ window from Ghostty therefore has exactly the type expected by both new APIs.
 Normal builds use the checked-in generated files and do not need a GIR generator:
 
 ```sh
-ZIG_GLOBAL_CACHE_DIR="$PWD/.cache/zig" zig build -Doptimize=ReleaseSafe
-ZIG_GLOBAL_CACHE_DIR="$PWD/.cache/zig" zig build test-bindings -Doptimize=ReleaseSafe
+ZIG_GLOBAL_CACHE_DIR="$PWD/.cache/zig" zig build -Doptimize=safe
+ZIG_GLOBAL_CACHE_DIR="$PWD/.cache/zig" zig build test-bindings -Doptimize=safe
 ```
 
 For generation, install `xsltproc` and the system GIR files matching the lock,
@@ -81,3 +80,18 @@ on worker threads. No generated headers, C implementation bridge, or required
 build-time dependency are introduced. Packaging recommends `ddcutil` for its
 library and device-access setup. The Zig fixture in `tests/fixtures/services/ddc.zig`
 implements the same ABI for isolated integration checks.
+
+## Zig 0.17 migration
+
+Dependencies remain upstream packages: zig-wayland 0.7.0, translate-c 2.0.2,
+Ghostty's `0.11.0-zig-0.17.0-2026-10-02-38-1` bindings, and the pinned upstream
+GIR generator `zig-0.17` revision above. No dependency implementations are vendored.
+`bindings/c` contains Pearl-owned build tooling and header declarations for the
+removed `@cImport` sites; translation outputs live in the build cache. Each ABI
+module is shared between roots with the same target and optimization mode.
+
+The GIR input lock was refreshed against GLib 2.90.0 and GTK 4.24.1. Regeneration
+left the four checked-in extra namespaces byte-for-byte unchanged. Cairo and
+FreeType GIR metadata retain their previous hashes. For systems with GIR files
+in a separate development prefix, pass `--gir-dir DIRECTORY` to
+`scripts/generate-bindings.py`; its normal hash verification still applies.

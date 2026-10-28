@@ -20,8 +20,8 @@ pub fn fields(comptime T: type, a: std.mem.Allocator, value: std.json.Value) !T 
     if (value != .object) return error.InvalidRequest;
     var it = value.object.iterator();
     while (it.next()) |entry| {
-        inline for (@typeInfo(T).@"struct".fields) |field| {
-            if (std.mem.eql(u8, field.name, entry.key_ptr.*)) {
+        inline for (@typeInfo(T).@"struct".field_names) |field| {
+            if (std.mem.eql(u8, field, entry.key_ptr.*)) {
                 if (entry.value_ptr.* == .null) return error.InvalidRequest;
                 break;
             }

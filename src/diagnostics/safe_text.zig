@@ -136,9 +136,9 @@ test "control bytes cannot split or fake a journal line" {
 
 test "oversized text is cut at the limit and marked" {
     var storage: [limit + truncated_marker.len + 16]u8 = undefined;
-    const at_limit = render(&storage, "{f}", .{safe("y" ** limit)});
+    const at_limit = render(&storage, "{f}", .{safe(@import("test_strings").string("y", limit))});
     try std.testing.expectEqual(@as(usize, limit), at_limit.len);
-    const over = render(&storage, "{f}", .{safe("x" ** (limit + 100))});
+    const over = render(&storage, "{f}", .{safe(@import("test_strings").string("x", (limit + 100)))});
     try std.testing.expectEqual(@as(usize, limit + truncated_marker.len), over.len);
     try std.testing.expect(std.mem.endsWith(u8, over, truncated_marker));
     try std.testing.expect(std.mem.startsWith(u8, over, "xxx"));
@@ -146,7 +146,7 @@ test "oversized text is cut at the limit and marked" {
 
 test "the cut never splits a character" {
     var storage: [limit + truncated_marker.len + 16]u8 = undefined;
-    const out = render(&storage, "{f}", .{safe(("a" ** (limit - 1)) ++ "é")});
+    const out = render(&storage, "{f}", .{safe((@import("test_strings").string("a", (limit - 1))) ++ "é")});
     try std.testing.expectEqual(@as(usize, limit - 1 + truncated_marker.len), out.len);
     try std.testing.expect(std.mem.endsWith(u8, out, truncated_marker));
     try std.testing.expect(std.unicode.utf8ValidateSlice(out));
@@ -168,9 +168,9 @@ test "url credentials are redacted and hosts kept" {
 test "a cut inside a url exposes no userinfo" {
     var storage: [limit + truncated_marker.len + 16]u8 = undefined;
     const cases = [_][]const u8{
-        "a" ** (limit - 4) ++ "https://user:hunter2@example.com",
-        "a" ** (limit + 4) ++ "https://user:hunter2@example.com",
-        "a" ** (limit - 20) ++ "https://user:hunter2@example.com",
+        @import("test_strings").string("a", (limit - 4)) ++ "https://user:hunter2@example.com",
+        @import("test_strings").string("a", (limit + 4)) ++ "https://user:hunter2@example.com",
+        @import("test_strings").string("a", (limit - 20)) ++ "https://user:hunter2@example.com",
     };
     for (cases) |text| {
         const out = render(&storage, "{f}", .{safe(text)});

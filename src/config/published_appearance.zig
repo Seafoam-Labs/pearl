@@ -21,7 +21,7 @@ pub fn write(palette: theme.Palette) void {
     const pz = path(a) catch return;
     defer a.free(pz);
     const dir = std.fs.path.dirname(pz) orelse return;
-    const dir_z = a.dupeZ(u8, dir) catch return;
+    const dir_z = a.dupeSentinel(u8, dir, 0) catch return;
     defer a.free(dir_z);
     io.mkdir(dir_z) catch return;
     const json = std.json.Stringify.valueAlloc(a, .{ .version = 1, .palette = palette }, .{}) catch return;

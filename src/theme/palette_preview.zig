@@ -87,7 +87,7 @@ const Preview = struct {
         gtk.StyleContext.addProviderForDisplay(gdk.Display.getDefault().?, self.provider.as(gtk.StyleProvider), 602);
         self.refresh();
         if (self.watch) {
-            const dirname = a.dupeZ(u8, std.fs.path.dirname(self.path) orelse ".") catch return;
+            const dirname = a.dupeSentinel(u8, std.fs.path.dirname(self.path) orelse ".", 0) catch return;
             defer a.free(dirname);
             const dir = gio.File.newForPath(dirname);
             defer dir.unref();

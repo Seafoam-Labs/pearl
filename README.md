@@ -1,12 +1,12 @@
 # Pearl
 
-Pearl is a **Zig 0.16 + GTK4 desktop shell built exclusively for Aqueous**, with a look and feel closely modeled on Dank Material Shell.
+Pearl is a **Zig 0.17 + GTK4 desktop shell built exclusively for Aqueous**, with a look and feel closely modeled on Dank Material Shell.
 
 Pearl's initial design and implementation used **spec-driven development**. Written specifications defined the product's behavior, visual direction, architecture and acceptance criteria before implementation. Those specifications guided AI-assisted implementation and verification, keeping the work tied to explicit requirements and testable outcomes.
 
 Version **0.3.5** removes periodic DDC brightness polling that caused frame drops during gaming. Brightness now refreshes on demand and on hardware changes, with targeted writes and safe idle-dim restoration. It retains the libddcutil startup fix and bundles Phyto, Dome and Coral **0.1.1** with refreshed Arch and Devario packaging. It includes live Pearl theme following in Dome, updated Settings pages, the local launcher assistant with Bing RSS search by default, floating islands, a dock and migration tooling. Release acceptance is pending the physical, real-login, accessibility and license gates in [RELEASE.md](docs/RELEASE.md).
 
-The pinned Zig 0.16.0 stack has generated
+The pinned Zig 0.17.0 stack has generated
 layer-shell/session-lock bindings, an application lifecycle, compiled GTK
 resources and a demo gallery. Private Aqueous tests cover startup, shutdown,
 cancellation and session isolation. A bounded Aqueous decoder and atomic state
@@ -110,14 +110,14 @@ See [Preferences](docs/PREFERENCES.md) and [Aqueous Settings](docs/AQUEOUS_SETTI
 ## Development commands
 
 ```sh
-ZIG_GLOBAL_CACHE_DIR="$PWD/.cache/zig" zig build -Doptimize=ReleaseSafe
-ZIG_GLOBAL_CACHE_DIR="$PWD/.cache/zig" zig build test -Doptimize=ReleaseSafe
+ZIG_GLOBAL_CACHE_DIR="$PWD/.cache/zig" zig build -Doptimize=safe
+ZIG_GLOBAL_CACHE_DIR="$PWD/.cache/zig" zig build test -Doptimize=safe
 ```
 
 To see the gallery inside a separate compositor window on your Wayland desktop:
 
 ```sh
-ZIG_GLOBAL_CACHE_DIR="$PWD/.cache/zig" zig build gallery -Doptimize=ReleaseSafe -Ddev-backend=nested
+ZIG_GLOBAL_CACHE_DIR="$PWD/.cache/zig" zig build gallery -Doptimize=safe -Ddev-backend=nested
 ```
 
 See the development guide for prerequisites and test commands, and the release

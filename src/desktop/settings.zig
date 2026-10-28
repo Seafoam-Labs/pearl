@@ -238,7 +238,7 @@ pub const View = struct {
     }
     fn wallpaperChosen(dialog: *gtk.Dialog, response: c_int, self: *View) callconv(.c) void {
         defer self.closeWallpaperPicker(true);
-        if (response != @intFromEnum(gtk.ResponseType.accept)) return;
+        if (response != @backingInt(gtk.ResponseType.accept)) return;
         const chooser = dialog;
         const file = files.getFile(chooser) orelse return;
         defer file.unref();
@@ -253,7 +253,7 @@ pub const View = struct {
         }
         self.filling = true;
         self.entries[2].as(gtk.Editable).setText(path);
-        const cover = @intFromEnum(@as(model.Wallpaper, .{ .mode = .cover }).mode);
+        const cover = @backingInt(@as(model.Wallpaper, .{ .mode = .cover }).mode);
         self.fit.setSelected(cover);
         self.filling = false;
         self.saveForm();
@@ -273,34 +273,34 @@ pub const View = struct {
         self.revision = if (self.service.draft.text != null) self.service.draft.base_revision else self.service.revision;
         self.draft_serial = self.service.draft.revision;
         const p = self.base;
-        for (self.entries, [_][]const u8{ p.theme.gtk_name, p.theme.seed, p.wallpaper.path, p.wallpaper.color, p.font }) |e, value| e.as(gtk.Editable).setText(alloc.dupeZ(u8, value) catch "");
+        for (self.entries, [_][]const u8{ p.theme.gtk_name, p.theme.seed, p.wallpaper.path, p.wallpaper.color, p.font }) |e, value| e.as(gtk.Editable).setText(alloc.dupeSentinel(u8, value, 0) catch "");
         self.mode.setSelected(switch (p.theme.mode) {
             .static => 0,
             .dynamic => 1,
             .gtk => 2,
             .package => 3,
         });
-        self.variant.setSelected(@intFromEnum(p.theme.variant));
-        self.source.setSelected(@intFromEnum(p.theme.source));
-        self.scheme.setSelected(@intFromEnum(p.theme.scheme));
-        self.fit.setSelected(@intFromEnum(p.wallpaper.mode));
-        self.density.setSelected(@intFromEnum(p.density));
+        self.variant.setSelected(@backingInt(p.theme.variant));
+        self.source.setSelected(@backingInt(p.theme.source));
+        self.scheme.setSelected(@backingInt(p.theme.scheme));
+        self.fit.setSelected(@backingInt(p.wallpaper.mode));
+        self.density.setSelected(@backingInt(p.density));
         self.islands.setActive(@intFromBool(p.bar.islands));
         self.attached.setActive(@intFromBool(p.bar.attached));
         self.running_apps_per_window.setActive(@intFromBool(p.bar.running_apps_per_window));
         self.dock_enabled.setActive(@intFromBool(p.dock.enabled));
-        self.dock_edge.setSelected(@intFromEnum(p.dock.edge));
-        self.dock_mode.setSelected(@intFromEnum(p.dock.mode));
+        self.dock_edge.setSelected(@backingInt(p.dock.edge));
+        self.dock_mode.setSelected(@backingInt(p.dock.mode));
         self.dock_size.setValue(@floatFromInt(p.dock.icon_size));
         self.dock_margin.setValue(@floatFromInt(p.dock.margin));
-        self.edge.setSelected(@intFromEnum(p.bar.edge));
-        self.placement.setSelected(@intFromEnum(p.popup.placement));
+        self.edge.setSelected(@backingInt(p.bar.edge));
+        self.placement.setSelected(@backingInt(p.popup.placement));
         for (self.idle_spins, [_]u32{ p.idle.ac.lock_seconds, p.idle.ac.suspend_seconds, p.idle.battery.lock_seconds, p.idle.battery.suspend_seconds }) |control, value| control.setValue(@floatFromInt(value));
         self.font_size.setValue(@floatFromInt(p.font_size));
         self.bar_size.setValue(@floatFromInt(p.bar.size));
         self.motion.setActive(@intFromBool(p.reduced_motion));
         self.outside.setActive(@intFromBool(p.popup.dismiss_outside));
-        self.raw.setText(alloc.dupeZ(u8, json) catch "{}", @intCast(json.len));
+        self.raw.setText(alloc.dupeSentinel(u8, json, 0) catch "{}", @intCast(json.len));
     }
     fn saveForm(self: *View) void {
         if (self.filling) return;
@@ -311,17 +311,17 @@ pub const View = struct {
             3 => .package,
             else => .static,
         };
-        p.theme.variant = @enumFromInt(self.variant.getSelected());
-        p.theme.source = @enumFromInt(self.source.getSelected());
-        p.theme.scheme = @enumFromInt(self.scheme.getSelected());
-        p.wallpaper.mode = @enumFromInt(self.fit.getSelected());
-        p.density = @enumFromInt(self.density.getSelected());
+        p.theme.variant = @fromBackingInt(@intCast(self.variant.getSelected()));
+        p.theme.source = @fromBackingInt(@intCast(self.source.getSelected()));
+        p.theme.scheme = @fromBackingInt(@intCast(self.scheme.getSelected()));
+        p.wallpaper.mode = @fromBackingInt(@intCast(self.fit.getSelected()));
+        p.density = @fromBackingInt(@intCast(self.density.getSelected()));
         p.bar.islands = self.islands.getActive() != 0;
         p.bar.attached = self.attached.getActive() != 0;
         p.bar.running_apps_per_window = self.running_apps_per_window.getActive() != 0;
-        p.dock = .{ .enabled = self.dock_enabled.getActive() != 0, .edge = @enumFromInt(self.dock_edge.getSelected()), .mode = @enumFromInt(self.dock_mode.getSelected()), .icon_size = @intCast(self.dock_size.getValueAsInt()), .margin = @intCast(self.dock_margin.getValueAsInt()) };
-        p.bar.edge = @enumFromInt(self.edge.getSelected());
-        p.popup.placement = @enumFromInt(self.placement.getSelected());
+        p.dock = .{ .enabled = self.dock_enabled.getActive() != 0, .edge = @fromBackingInt(@intCast(self.dock_edge.getSelected())), .mode = @fromBackingInt(@intCast(self.dock_mode.getSelected())), .icon_size = @intCast(self.dock_size.getValueAsInt()), .margin = @intCast(self.dock_margin.getValueAsInt()) };
+        p.bar.edge = @fromBackingInt(@intCast(self.edge.getSelected()));
+        p.popup.placement = @fromBackingInt(@intCast(self.placement.getSelected()));
         p.theme.gtk_name = text(self.entries[0]);
         p.theme.seed = text(self.entries[1]);
         p.wallpaper.path = text(self.entries[2]);
@@ -338,7 +338,7 @@ pub const View = struct {
         const json = std.json.Stringify.valueAlloc(a, p, .{ .whitespace = .indent_2 }) catch return;
         defer a.free(json);
         if (!self.retain(json)) return;
-        const z = a.dupeZ(u8, json) catch return;
+        const z = a.dupeSentinel(u8, json, 0) catch return;
         defer a.free(z);
         self.filling = true;
         self.raw.setText(z, @intCast(json.len));
@@ -365,11 +365,11 @@ pub const View = struct {
         self.merge_button.as(gtk.Widget).setSensitive(@intFromBool(!busy and conflict));
         self.apply_button.as(gtk.Widget).setSensitive(@intFromBool(!busy and !conflict and self.local_error == null and self.service.draft.text != null));
         var buffer: [256]u8 = undefined;
-        const message = if (busy) "Preparing settings…" else if (conflict) "Settings changed externally. Your draft is retained. Merge independent edits, or review conflicting fields in Advanced." else if (self.service.err) |err| std.fmt.bufPrintZ(&buffer, "Could not apply: {s}. Your draft and working appearance are retained.", .{@errorName(err)}) catch "Could not apply settings." else if (self.service.export_error) |err| std.fmt.bufPrintZ(&buffer, "Settings saved. Export needs attention: {s}", .{@errorName(err)}) catch "Export failed." else if (self.service.draft.text != null) "Unsaved draft" else "Settings are up to date.";
+        const message = if (busy) "Preparing settings…" else if (conflict) "Settings changed externally. Your draft is retained. Merge independent edits, or review conflicting fields in Advanced." else if (self.service.err) |err| std.mem.printSentinel(&buffer, "Could not apply: {s}. Your draft and working appearance are retained.", .{@errorName(err)}, 0) catch "Could not apply settings." else if (self.service.export_error) |err| std.mem.printSentinel(&buffer, "Settings saved. Export needs attention: {s}", .{@errorName(err)}, 0) catch "Export failed." else if (self.service.draft.text != null) "Unsaved draft" else "Settings are up to date.";
         self.message.setText(message);
         var qt_buffer: [256]u8 = undefined;
         const status = self.service.qt_status;
-        self.qt_status.setText(std.fmt.bufPrintZ(&qt_buffer, "Qt 5: {s} · Qt 6: {s}{s}", .{ @tagName(status.qt5.state), @tagName(status.qt6.state), if (status.restart_session) " · Sign out to update the session environment" else "" }) catch "Qt appearance status unavailable");
+        self.qt_status.setText(std.mem.printSentinel(&qt_buffer, "Qt 5: {s} · Qt 6: {s}{s}", .{ @tagName(status.qt5.state), @tagName(status.qt6.state), if (status.restart_session) " · Sign out to update the session environment" else "" }, 0) catch "Qt appearance status unavailable");
     }
     fn openBarSettings(_: *gtk.Button, self: *View) callconv(.c) void {
         const context = self.host.as(gtk.Widget).getDisplay().getAppLaunchContext();

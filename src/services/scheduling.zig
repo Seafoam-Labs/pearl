@@ -315,7 +315,7 @@ pub const Service = struct {
     /// exit status is used instead.
     fn readReason(self: *Service) void {
         var from_buffer: [32]u8 = undefined;
-        const from = std.fmt.bufPrintZ(&from_buffer, "@{d}", .{self.failed_since}) catch unreachable;
+        const from = std.mem.printSentinel(&from_buffer, "@{d}", .{self.failed_since}, 0) catch unreachable;
         var argv = [_:null]?[*:0]const u8{ "/usr/bin/journalctl", "--quiet", "--no-pager", "--output=cat", "--unit=scx.service", "--lines=200", "--since", from };
         if (self.failed_since == 0) argv[6] = null;
         var err: ?*glib.Error = null;
@@ -348,7 +348,7 @@ pub const Service = struct {
         const failed = self.failed orelse return;
         var buffer: [64]u8 = undefined;
         const reason = logged orelse self.processReason(&buffer);
-        self.reason = if (reason) |text| std.fmt.bufPrintZ(&self.reason_buffer, "{s}", .{text[0..@min(text.len, self.reason_buffer.len - 1)]}) catch null else null;
+        self.reason = if (reason) |text| std.mem.printSentinel(&self.reason_buffer, "{s}", .{text[0..@min(text.len, self.reason_buffer.len - 1)]}, 0) catch null else null;
         const label = if (self.config) |config| if (config.find(failed)) |i| config.profiles[i].label else failed else failed;
         self.setNotice(.stopped, label, self.reason orelse "");
         // Only the shell reports failures and falls back; Settings would
@@ -472,7 +472,7 @@ pub const Service = struct {
         _ = config.find(id) orelse return error.InvalidProfile;
         if (id.len > self.applying_buffer.len) return error.InvalidProfile;
         @memcpy(self.applying_buffer[0..id.len], id);
-        const owned = try a.dupeZ(u8, id);
+        const owned = try a.dupeSentinel(u8, id, 0);
         defer a.free(owned);
         var argv = [_:null]?[*:0]const u8{ "/usr/bin/pkexec", store.helperPath(), "apply", owned };
         var err: ?*glib.Error = null;
@@ -521,7 +521,7 @@ pub const Service = struct {
                 self.notifyFailure();
                 self.fallBack();
             } else {
-                self.err = std.fmt.bufPrintZ(&self.err_buffer, "The profile could not be applied{s}{s}", .{ if (raw.len > 0) ": " else ".", raw[0..@min(raw.len, 400)] }) catch "The profile could not be applied.";
+                self.err = std.mem.printSentinel(&self.err_buffer, "The profile could not be applied{s}{s}", .{ if (raw.len > 0) ": " else ".", raw[0..@min(raw.len, 400)] }, 0) catch "The profile could not be applied.";
             }
         }
         self.refresh();
@@ -613,7 +613,7 @@ pub const Service = struct {
         const text = self.describeNotice(&body);
         if (text.len == 0) return;
         var title_buffer: [96]u8 = undefined;
-        const title = std.fmt.bufPrintZ(&title_buffer, "CPU scheduler switched to {s}", .{self.defaultLabel()}) catch "CPU scheduler switched to Default";
+        const title = std.mem.printSentinel(&title_buffer, "CPU scheduler switched to {s}", .{self.defaultLabel()}, 0) catch "CPU scheduler switched to Default";
         const connection = self.app.getDbusConnection() orelse return;
         const strings = glib.VariantType.new("s");
         defer strings.free();

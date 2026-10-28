@@ -18,7 +18,7 @@ pub const Section = struct {
     arrow: ?*gtk.Label = null,
     fn changed(button: *gtk.ToggleButton, self: *Section) callconv(.c) void {
         const active = button.getActive() != 0;
-        if (!self.state.filtering) self.state.expanded[@intFromEnum(self.id)] = active;
+        if (!self.state.filtering) self.state.expanded[@backingInt(self.id)] = active;
         self.body.as(gtk.Widget).setVisible(@intFromBool(active));
         self.arrow.?.setText(if (active) @import("i18n").dtr("pearl", "⌄") else @import("i18n").dtr("pearl", "›"));
         button.as(gtk.Accessible).updateState(.expanded, @as(c_int, @intFromBool(active)), @as(c_int, -1));
@@ -112,7 +112,7 @@ pub fn For(comptime View: type) type {
             return @import("i18n").tr(spec.en);
         }
         pub fn group(view: *View, host: *gtk.Box, id: map.Group) !*gtk.Box {
-            if (view.layout.sections[@intFromEnum(id)]) |s| return s.body;
+            if (view.layout.sections[@backingInt(id)]) |s| return s.body;
             const spec = map.spec(id);
             const s = try view.arena.allocator().create(Section);
             const box = w.column(12);
@@ -121,7 +121,7 @@ pub fn For(comptime View: type) type {
             host.append(box.as(gtk.Widget));
             const body = w.column(12);
             s.* = .{ .state = &view.layout, .id = id, .box = box, .body = body };
-            view.layout.sections[@intFromEnum(id)] = s;
+            view.layout.sections[@backingInt(id)] = s;
             const heading = w.column(4);
             heading.append(w.label(title(view, id), "pearl-section-title").as(gtk.Widget));
             heading.append(w.label(@import("i18n").tr(spec.detail_en), "pearl-secondary").as(gtk.Widget));
@@ -141,7 +141,7 @@ pub fn For(comptime View: type) type {
                 body.as(gtk.Widget).setVisible(0);
                 view.form_signals.add(toggle.as(object.Object), gtk.ToggleButton.signals.toggled.connect(toggle, *Section, Section.changed, s, .{}));
                 toggle.as(gtk.Accessible).updateState(.expanded, @as(c_int, 0), @as(c_int, -1));
-                toggle.setActive(@intFromBool(view.layout.expanded[@intFromEnum(id)]));
+                toggle.setActive(@intFromBool(view.layout.expanded[@backingInt(id)]));
                 try view.layout.controls.append(view.arena.allocator(), .{ .id = try std.fmt.allocPrint(view.arena.allocator(), "aqueous.section.{s}", .{@tagName(id)}), .widget = toggle.as(gtk.Widget) });
             } else box.append(heading.as(gtk.Widget));
             box.append(body.as(gtk.Widget));
@@ -281,7 +281,7 @@ pub fn For(comptime View: type) type {
                 const visible = map.matches(query, m.str(m.get(editor.field, "id")), m.str(m.get(editor.field, "label")), value);
                 if (editor.row) |row| row.as(gtk.Widget).setVisible(@intFromBool(visible));
                 if (visible) {
-                    matches[@intFromEnum(editor.group)] += 1;
+                    matches[@backingInt(editor.group)] += 1;
                     total += 1;
                 }
             }
@@ -366,7 +366,7 @@ pub fn For(comptime View: type) type {
                                 border = .{ .f_red = @as(f32, @floatFromInt((argb >> 16) & 255)) / 255, .f_green = @as(f32, @floatFromInt((argb >> 8) & 255)) / 255, .f_blue = @as(f32, @floatFromInt(argb & 255)) / 255, .f_alpha = @as(f32, @floatFromInt(argb >> 24)) / 255 };
                             } else |_| {}
                         } else {
-                            const text = arena.allocator().dupeZ(u8, value.string) catch return;
+                            const text = arena.allocator().dupeSentinel(u8, value.string, 0) catch return;
                             _ = border.parse(text);
                         }
                     }

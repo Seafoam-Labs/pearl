@@ -96,7 +96,7 @@ fn tempDir() ![:0]u8 {
 }
 
 fn removeTree(path: []const u8) void {
-    const z = allocator.dupeZ(u8, path) catch return;
+    const z = allocator.dupeSentinel(u8, path, 0) catch return;
     defer allocator.free(z);
     if (c.g_dir_open(z, 0, null)) |dir| {
         defer c.g_dir_close(dir);

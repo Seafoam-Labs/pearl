@@ -14,7 +14,7 @@ pub fn read(a: std.mem.Allocator, base: c_int, path: []const u8, limit: usize) !
     var parts = std.mem.splitScalar(u8, path, '/');
     while (parts.next()) |part| {
         var name: [256]u8 = undefined;
-        const z = try std.fmt.bufPrintZ(&name, "{s}", .{part});
+        const z = try std.mem.printSentinel(&name, "{s}", .{part}, 0);
         const last = parts.peek() == null;
         const next = c.openat(current, z, c.O_RDONLY | c.O_NOFOLLOW | c.O_CLOEXEC | c.O_NONBLOCK | (if (last) @as(c_int, 0) else c.O_DIRECTORY));
         if (next < 0) return error.ThemeFile;
@@ -169,7 +169,7 @@ fn scan(a: std.mem.Allocator, fd: c_int, prefix: []const u8, files: *std.ArrayLi
         if (std.mem.eql(u8, name, ".") or std.mem.eql(u8, name, "..")) continue;
         entries.* += 1;
         if (entries.* > model.max_entries) return error.ThemeEntryLimit;
-        const z = try a.dupeZ(u8, name);
+        const z = try a.dupeSentinel(u8, name, 0);
         const path = if (prefix.len == 0) try a.dupe(u8, name) else try std.fmt.allocPrint(a, "{s}/{s}", .{ prefix, name });
         try model.relative(path);
         var info: c.struct_stat = undefined;

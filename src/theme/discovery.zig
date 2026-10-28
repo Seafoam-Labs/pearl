@@ -101,7 +101,7 @@ pub const Discovery = struct {
             self.degraded = true;
             return;
         }
-        const z = a.dupeZ(u8, path) catch return;
+        const z = a.dupeSentinel(u8, path, 0) catch return;
         const file = gio.File.newForPath(z);
         defer file.unref();
         if (file.queryFileType(.{ .nofollow_symlinks = true }, null) != .directory) {
@@ -170,7 +170,7 @@ fn walk(job: *Job, fd: c_int, path: []const u8, depth: usize) anyerror!void {
         return;
     }
     const alloc = job.arena.allocator();
-    try job.dirs.append(alloc, try alloc.dupeZ(u8, path));
+    try job.dirs.append(alloc, try alloc.dupeSentinel(u8, path, 0));
     const copy = c.openat(fd, ".", c.O_RDONLY | c.O_DIRECTORY | c.O_CLOEXEC);
     if (copy < 0) return error.ThemeDirectory;
     const dir = c.fdopendir(copy) orelse {
@@ -256,7 +256,7 @@ test "local discovery detects missing roots, nested edits and removal without id
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
     const alloc = arena.allocator();
-    const root = try alloc.dupeZ(u8, "/tmp/pearl-theme-watch-XXXXXX");
+    const root = try alloc.dupeSentinel(u8, "/tmp/pearl-theme-watch-XXXXXX", 0);
     const native = struct {
         extern fn mkdtemp([*:0]u8) ?[*:0]u8;
     };

@@ -40,7 +40,7 @@ pub const Group = enum {
     request,
     receipts,
 };
-pub const count = @typeInfo(Group).@"enum".fields.len;
+pub const count = @typeInfo(Group).@"enum".field_names.len;
 pub const Spec = struct { page: []const u8, en: [:0]const u8, detail_en: [:0]const u8, collapsed: bool = true };
 pub fn spec(g: Group) Spec {
     return switch (g) {
@@ -138,7 +138,7 @@ pub fn group(field: m.Value) Group {
 }
 pub fn matches(query: []const u8, id: []const u8, label: []const u8, value: []const u8) bool {
     const q = std.mem.trim(u8, query, " \t\r\n");
-    return q.len == 0 or std.ascii.indexOfIgnoreCase(id, q) != null or std.ascii.indexOfIgnoreCase(label, q) != null or std.ascii.indexOfIgnoreCase(value, q) != null;
+    return q.len == 0 or std.ascii.findIgnoreCase(id, q) != null or std.ascii.findIgnoreCase(label, q) != null or std.ascii.findIgnoreCase(value, q) != null;
 }
 pub fn draftValue(base: m.Value, draft: m.Value, id: []const u8) m.Value {
     for (m.list(m.get(draft, "changes"))) |change| if (eq(m.str(m.get(change, "id")), id)) return m.get(change, "value");
@@ -181,7 +181,7 @@ pub fn footer(a: std.mem.Allocator, base: m.Value, draft: m.Value) ![:0]const u8
         first = false;
     };
     if (first) try out.writer.writeAll(@import("i18n").dtr("pearl", "Review the full request"));
-    return a.dupeZ(u8, out.written());
+    return a.dupeSentinel(u8, out.written(), 0);
 }
 /// Human review includes display operations too; source metadata is not an edit.
 pub fn summary(a: std.mem.Allocator, base: m.Value, draft: m.Value) ![]const u8 {

@@ -49,7 +49,7 @@ pub const Store = struct {
     save_error: bool = false,
     pub fn create(app: *gio.Application) !*Store {
         const self = try a.create(Store);
-        self.* = .{ .app = app, .state = .init(a), .state_dir = try std.fmt.allocPrintSentinel(a, "{s}/pearl", .{std.mem.span(glib.getUserStateDir())}, 0), .config = try std.fmt.allocPrintSentinel(a, "{s}/user-dirs.dirs", .{std.mem.span(glib.getUserConfigDir())}, 0), .home = try a.dupeZ(u8, std.mem.span(glib.getHomeDir())) };
+        self.* = .{ .app = app, .state = .init(a), .state_dir = try std.fmt.allocPrintSentinel(a, "{s}/pearl", .{std.mem.span(glib.getUserStateDir())}, 0), .config = try std.fmt.allocPrintSentinel(a, "{s}/user-dirs.dirs", .{std.mem.span(glib.getUserConfigDir())}, 0), .home = try a.dupeSentinel(u8, std.mem.span(glib.getHomeDir()), 0) };
         return self;
     }
     fn retain(self: *Store) void {
@@ -103,7 +103,7 @@ pub const Store = struct {
             _ = m.cancel();
             m.unref();
         }
-        const z = a.dupeZ(u8, path) catch return;
+        const z = a.dupeSentinel(u8, path, 0) catch return;
         defer a.free(z);
         const file = gio.File.newForPath(z);
         defer file.unref();
@@ -194,7 +194,7 @@ pub const Store = struct {
         var err: ?*glib.Error = null;
         const enumerator = dir.enumerateChildren(attrs, .{ .nofollow_symlinks = true }, cancel, &err) orelse {
             if (err) |e| {
-                result.missing = e.matches(gio.ioErrorQuark(), @intFromEnum(gio.IOErrorEnum.not_found)) != 0;
+                result.missing = e.matches(gio.ioErrorQuark(), @backingInt(gio.IOErrorEnum.not_found)) != 0;
                 e.free();
             }
             result.message = if (result.missing) "The configured Desktop folder does not exist. Create folder or Retry." else "Cannot read the Desktop folder. Check permissions, then Retry.";
@@ -214,7 +214,7 @@ pub const Store = struct {
                 continue;
             };
             defer glib.free(local);
-            var item: Item = .{ .uri = try alloc.dupeZ(u8, std.mem.span(uri)), .path = try alloc.dupeZ(u8, std.mem.span(local)), .name = try policy.displayText(alloc, std.mem.span(info.getDisplayName())), .info = info, .launcher = std.mem.endsWith(u8, std.mem.span(info.getName()), ".desktop") };
+            var item: Item = .{ .uri = try alloc.dupeSentinel(u8, std.mem.span(uri), 0), .path = try alloc.dupeSentinel(u8, std.mem.span(local), 0), .name = try policy.displayText(alloc, std.mem.span(info.getDisplayName())), .info = info, .launcher = std.mem.endsWith(u8, std.mem.span(info.getName()), ".desktop") };
             if (item.launcher and info.getIsSymlink() == 0 and info.getFileType() == .regular) {
                 var scratch = std.heap.ArenaAllocator.init(a);
                 defer scratch.deinit();
@@ -222,7 +222,7 @@ pub const Store = struct {
                 if (read) |r| if (!r.missing) {
                     const key = glib.KeyFile.new();
                     defer key.unref();
-                    if (key.loadFromData((try scratch.allocator().dupeZ(u8, r.bytes)).ptr, r.bytes.len, .{}, null) != 0) if (unix.DesktopAppInfo.newFromKeyfile(key)) |app| {
+                    if (key.loadFromData((try scratch.allocator().dupeSentinel(u8, r.bytes, 0)).ptr, r.bytes.len, .{}, null) != 0) if (unix.DesktopAppInfo.newFromKeyfile(key)) |app| {
                         defer app.unref();
                         item.digest = r.hash;
                         item.command = try policy.displayText(alloc, std.mem.span(app.as(gio.AppInfo).getCommandline() orelse "D-Bus application activation"));

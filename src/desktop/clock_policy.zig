@@ -61,9 +61,9 @@ pub fn validate(definitions: []const Definition, groups: anytype) !void {
     if (definitions.len + @intFromBool(implicit_local) > max_clocks) return error.TooManyClocks;
 }
 pub fn displayName(a: std.mem.Allocator, d: Definition) ![:0]const u8 {
-    if (d.label.len > 0) return a.dupeZ(u8, d.label);
+    if (d.label.len > 0) return a.dupeSentinel(u8, d.label, 0);
     const city = if (std.mem.eql(u8, d.timezone, "local")) "System local time" else d.timezone[(if (std.mem.lastIndexOfScalar(u8, d.timezone, '/')) |i| i + 1 else 0)..];
-    const name = try a.dupeZ(u8, city);
+    const name = try a.dupeSentinel(u8, city, 0);
     for (name) |*c| if (c.* == '_') {
         c.* = ' ';
     };

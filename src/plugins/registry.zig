@@ -59,7 +59,7 @@ pub const Registry = struct {
     pub fn directory(self: *Registry, path: []const u8) !void {
         if (self.containsDirectory(path)) return;
         if (self.directories.items.len >= 512) return error.PluginTraversalLimit;
-        const copy = try a.dupeZ(u8, path);
+        const copy = try a.dupeSentinel(u8, path, 0);
         errdefer a.free(copy);
         try self.directories.append(a, copy);
     }
@@ -97,7 +97,7 @@ pub const Registry = struct {
                     else => {},
                 }
                 self.rejected += 1;
-                const copy = try a.dupeZ(u8, path);
+                const copy = try a.dupeSentinel(u8, path, 0);
                 errdefer a.free(copy);
                 try self.issues.append(a, .{ .path = copy, .code = @errorName(err) });
             };
@@ -175,7 +175,7 @@ pub const Registry = struct {
         }
         try self.nested(path, loaded.manifest.component);
         for (loaded.manifest.assets) |asset| try self.nested(path, asset.path);
-        const owned = try a.dupeZ(u8, path);
+        const owned = try a.dupeSentinel(u8, path, 0);
         errdefer a.free(owned);
         const record = try a.create(Entry);
         errdefer a.destroy(record);

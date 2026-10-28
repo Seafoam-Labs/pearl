@@ -49,7 +49,7 @@ pub const Appearance = struct {
     pub fn apply(self: *Appearance, snapshot: client.Snapshot) !void {
         if (self.mode != .follow_pearl) return;
         try client.theme.validate(snapshot.palette);
-        const name = try u.a.dupeZ(u8, snapshot.gtk_name);
+        const name = try u.a.dupeSentinel(u8, snapshot.gtk_name, 0);
         const font = try u.a.dupe(u8, snapshot.font);
         const palette = dupePalette(u.a, snapshot.palette);
         if (self.gtk_name.len > 0) u.a.free(self.gtk_name);
@@ -71,7 +71,7 @@ pub const Appearance = struct {
         return self.mode == .follow_pearl and self.revision != null and self.snapshot_gtk;
     }
     pub fn sheet(self: *const Appearance, a: std.mem.Allocator) ![:0]u8 {
-        if (self.mode == .native_gtk or self.followsGtk()) return a.dupeZ(u8, "");
+        if (self.mode == .native_gtk or self.followsGtk()) return a.dupeSentinel(u8, "", 0);
         const scope = self.themeClass();
         const palette = if (self.mode == .follow_pearl and self.revision != null) self.palette else if (self.mode == .light) client.theme.light else client.theme.dark;
         try client.theme.validate(palette);
@@ -198,13 +198,13 @@ pub const Appearance = struct {
 
 fn dupePalette(alloc: std.mem.Allocator, p: client.theme.Palette) client.theme.Palette {
     var result: client.theme.Palette = undefined;
-    inline for (@typeInfo(client.theme.Palette).@"struct".fields) |field| {
-        @field(result, field.name) = alloc.dupe(u8, @field(p, field.name)) catch unreachable;
+    inline for (@typeInfo(client.theme.Palette).@"struct".field_names) |field| {
+        @field(result, field) = alloc.dupe(u8, @field(p, field)) catch unreachable;
     }
     return result;
 }
 fn freePalette(alloc: std.mem.Allocator, p: client.theme.Palette) void {
-    inline for (@typeInfo(client.theme.Palette).@"struct".fields) |field| alloc.free(@field(p, field.name));
+    inline for (@typeInfo(client.theme.Palette).@"struct".field_names) |field| alloc.free(@field(p, field));
 }
 
 test "committed palette, font and motion render into the coral sheet" {

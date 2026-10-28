@@ -6,10 +6,7 @@ const model = @import("package_model.zig");
 const io = @import("../config/io.zig");
 const diagnostics = @import("../diagnostics/safe_text.zig");
 const log = std.log.scoped(.theme);
-pub const c = @cImport({
-    @cInclude("curl/curl.h");
-    @cInclude("pthread.h");
-});
+pub const c = @import("pearl_curl");
 var curl_once: c.pthread_once_t = c.PTHREAD_ONCE_INIT;
 var curl_ready: bool = false;
 fn initializeCurl() callconv(.c) void {
@@ -38,10 +35,10 @@ pub const Release = struct {
     pub fn jsonStringify(self: Release, writer: *std.json.Stringify) !void {
         try writer.beginObject();
         // Archive indexes retain their schema-1/2 wire format for older clients.
-        inline for (std.meta.fields(Release)) |field| {
-            if (!std.mem.eql(u8, field.name, "github") or self.github != null) {
-                try writer.objectField(field.name);
-                try writer.write(@field(self, field.name));
+        inline for (@typeInfo(Release).@"struct".field_names) |field| {
+            if (!std.mem.eql(u8, field, "github") or self.github != null) {
+                try writer.objectField(field);
+                try writer.write(@field(self, field));
             }
         }
         try writer.endObject();
@@ -77,7 +74,7 @@ fn sourcePath(a: std.mem.Allocator) ![:0]const u8 {
 pub fn saveSources(a: std.mem.Allocator, value: Sources) !void {
     try validateSources(value);
     const path = try sourcePath(a);
-    try io.mkdir(try a.dupeZ(u8, std.fs.path.dirname(path).?));
+    try io.mkdir(try a.dupeSentinel(u8, std.fs.path.dirname(path).?, 0));
     try io.atomic(path, try std.json.Stringify.valueAlloc(a, value, .{}), false);
 }
 pub fn parseIndex(a: std.mem.Allocator, bytes: []const u8, source: Source) !Index {
@@ -141,7 +138,7 @@ pub fn download(a: std.mem.Allocator, address: []const u8, max: usize, cancel: *
     const handle = c.curl_easy_init() orelse return error.NetworkUnavailable;
     defer c.curl_easy_cleanup(handle);
     var context: Download = .{ .a = a, .max = max, .cancel = cancel, .progress = report };
-    const address_z = try a.dupeZ(u8, address);
+    const address_z = try a.dupeSentinel(u8, address, 0);
     if (@import("build_options").test_hooks) {
         if (glib.getenv("PEARL_TEST_THEME_CA")) |ca| {
             if (c.curl_easy_setopt(handle, c.CURLOPT_CAINFO, ca) != c.CURLE_OK) return error.NetworkUnavailable;
@@ -212,10 +209,10 @@ pub fn refresh(a: std.mem.Allocator, source: Source, address: []const u8, cancel
         if (previous.missing) additions += 1;
     }
     try quota(history, 4096, additions);
-    if (glib.fileTest(history, .{ .exists = true }) == 0) try quota(try a.dupeZ(u8, std.fs.path.dirname(history).?), 64, 1);
+    if (glib.fileTest(history, .{ .exists = true }) == 0) try quota(try a.dupeSentinel(u8, std.fs.path.dirname(history).?, 0), 64, 1);
     if (cancel.isCancelled() != 0) return error.Cancelled;
     const prior = try io.read(a, path, 1048576, cancel);
-    if (prior.missing) try quota(try a.dupeZ(u8, std.fs.path.dirname(path).?), 512, 1);
+    if (prior.missing) try quota(try a.dupeSentinel(u8, std.fs.path.dirname(path).?, 0), 512, 1);
     if (!prior.missing) {
         const old = try parseIndex(a, prior.bytes, source);
         for (old.releases) |previous| for (value.releases) |release| {
@@ -223,7 +220,7 @@ pub fn refresh(a: std.mem.Allocator, source: Source, address: []const u8, cancel
             if (std.mem.eql(u8, previous.id, release.id) and std.mem.eql(u8, previous.version, release.version) and !std.mem.eql(u8, previous.sha256, release.sha256)) return error.MutableThemeRelease;
         };
     }
-    try io.mkdir(try a.dupeZ(u8, std.fs.path.dirname(path).?));
+    try io.mkdir(try a.dupeSentinel(u8, std.fs.path.dirname(path).?, 0));
     try io.mkdir(history);
     for (value.releases) |release| {
         const record = try std.fmt.allocPrintSentinel(a, "{s}/{s}-{s}.sha256", .{ history, release.id, release.version }, 0);

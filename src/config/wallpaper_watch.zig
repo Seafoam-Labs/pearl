@@ -27,9 +27,9 @@ pub const Watch = struct {
         if (self.path) |old| if (std.mem.eql(u8, old, path) and self.monitor != null and self.monitor.?.isCancelled() == 0) return;
         self.stop();
         if (path.len == 0) return;
-        self.path = try a.dupeZ(u8, path);
+        self.path = try a.dupeSentinel(u8, path, 0);
         errdefer self.stop();
-        self.directory = try a.dupeZ(u8, std.fs.path.dirname(path) orelse return error.InvalidImage);
+        self.directory = try a.dupeSentinel(u8, std.fs.path.dirname(path) orelse return error.InvalidImage, 0);
         const file = gio.File.newForPath(self.directory.?);
         defer file.unref();
         self.monitor = file.monitorDirectory(.{ .watch_moves = true }, null, null) orelse return error.WallpaperMonitorUnavailable;

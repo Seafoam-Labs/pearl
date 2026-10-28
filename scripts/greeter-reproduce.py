@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build greeter ReleaseSafe artifacts in two fresh source/build roots and compare."""
+"""Build greeter safe artifacts in two fresh source/build roots and compare."""
 import argparse,hashlib,json,os
 from pathlib import Path
 import shutil,subprocess,tempfile
@@ -17,12 +17,12 @@ def main():
             # Pinned dependency sources are reused; compiler outputs/build caches are fresh.
             (work/'zig-pkg').symlink_to(ROOT/'zig-pkg',target_is_directory=True)
             with (work/'build.log').open('w') as log:
-                subprocess.run(['zig','build','build-greeter',*(['build-locker'] if args.include_locker else []),'-Doptimize=ReleaseSafe','-Drelease=true','--global-cache-dir',str(work/'global-cache')],cwd=work,env=dict(os.environ,ZIG_GLOBAL_CACHE_DIR=str(work/'global-cache')),stdout=log,stderr=subprocess.STDOUT,check=True)
+                subprocess.run(['zig','build','build-greeter',*(['build-locker'] if args.include_locker else []),'-Doptimize=safe','-Drelease=true','--global-cache-dir',str(work/'global-cache')],cwd=work,env=dict(os.environ,ZIG_GLOBAL_CACHE_DIR=str(work/'global-cache')),stdout=log,stderr=subprocess.STDOUT,check=True)
             binaries={name:sha(work/'zig-out/greeter/bin'/name) for name in ('pearl-greeter','pearl-greeter-session','pearl-greeter-host','pearl-greeter-sync')}
             if args.include_locker:binaries['pearl-lock']=sha(work/'zig-out/bin/pearl-lock')
             results.append(binaries)
         assert results[0]==results[1],results
     args.output.parent.mkdir(parents=True,exist_ok=True)
-    args.output.write_text(json.dumps({'status':'passed','fresh_build_roots':2,'compiler':'0.16.0','optimize':'ReleaseSafe','stripped':True,'binaries':results[0],'production_accepted':False},indent=2)+'\n')
+    args.output.write_text(json.dumps({'status':'passed','fresh_build_roots':2,'compiler':'0.17.0','optimize':'safe','stripped':True,'binaries':results[0],'production_accepted':False},indent=2)+'\n')
     print(args.output)
 if __name__=='__main__':main()

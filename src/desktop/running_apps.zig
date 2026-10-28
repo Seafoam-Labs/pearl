@@ -112,7 +112,7 @@ pub const Strip = struct {
             const minimized = if (win) |v| v.minimized else group.minimized();
             const window_count = if (win != null) 1 else group.windows.items.len;
             const callback = try alloc.create(StripButton);
-            callback.* = .{ .owner = self, .key = try alloc.dupeZ(u8, group.key), .window = if (win) |v| try alloc.dupeZ(u8, v.id) else null };
+            callback.* = .{ .owner = self, .key = try alloc.dupeSentinel(u8, group.key, 0), .window = if (win) |v| try alloc.dupeSentinel(u8, v.id, 0) else null };
             try self.rows.append(alloc, callback);
             const button = gtk.Button.new();
             button.as(gtk.Widget).addCssClass("pearl-task-button");
@@ -275,7 +275,7 @@ pub const Chooser = struct {
         self.rows = .empty;
     }
     pub fn select(self: *Chooser, group: ?[]const u8, skip: usize) !void {
-        const owned = if (group) |v| try a.dupeZ(u8, v) else null;
+        const owned = if (group) |v| try a.dupeSentinel(u8, v, 0) else null;
         if (self.group) |v| a.free(v);
         self.group = owned;
         if (self.group_anchor) |v| a.free(v);
@@ -306,7 +306,7 @@ pub const Chooser = struct {
         // Catalog reclassification follows the selected opaque window, when possible.
         if (self.group != null and self.snapshot.find(self.group.?) == null) outer: for (self.snapshot.groups) |group| {
             for (group.windows.items) |win| if ((focused != null and std.mem.eql(u8, win.id, focused.?)) or (self.group_anchor != null and std.mem.eql(u8, win.id, self.group_anchor.?))) {
-                const owned = try a.dupeZ(u8, group.key);
+                const owned = try a.dupeSentinel(u8, group.key, 0);
                 a.free(self.group.?);
                 self.group = owned;
                 break :outer;
@@ -370,7 +370,7 @@ pub const Chooser = struct {
         const alloc = self.arena.allocator();
         const cb = try alloc.create(Row);
         const button = gtk.Button.new();
-        cb.* = .{ .owner = self, .button = button, .id = try alloc.dupeZ(u8, id), .kind = kind };
+        cb.* = .{ .owner = self, .button = button, .id = try alloc.dupeSentinel(u8, id, 0), .kind = kind };
         try self.rows.append(alloc, cb);
         const box = gtk.Box.new(.horizontal, 12);
         box.append(appIcon(self.index, desktop, self.host.as(gtk.Widget)).as(gtk.Widget));

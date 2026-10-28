@@ -3,9 +3,9 @@
 import argparse,hashlib,io,json,os,shutil,subprocess,tarfile,tempfile
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
-from aqueous_target import REV
+from aqueous_target import REV, PREFIX
 def main():
- p=argparse.ArgumentParser(description=__doc__);p.add_argument('--source',type=Path,default=ROOT/'.cache/test-runner/aqueous.git');p.add_argument('--prefix',type=Path,default=ROOT/'.cache/aqueous-activity-production');p.add_argument('--revision',default=REV);p.add_argument('--jobs',type=int,default=min(os.cpu_count() or 2,4));p.add_argument('--offline',action='store_true');p.add_argument('--bootstrap-testing',action='store_true',help='Production policy with private instance name for systemd bootstrap test');p.add_argument('--activity-testing',action='store_true',help='Private pixman diagnostic build; never package');a=p.parse_args();revision=a.revision;assert not (a.activity_testing and a.bootstrap_testing);a.source=a.source.resolve();a.prefix=a.prefix.resolve()
+ p=argparse.ArgumentParser(description=__doc__);p.add_argument('--source',type=Path,default=ROOT/'.cache/test-runner/aqueous.git');p.add_argument('--prefix',type=Path,default=PREFIX);p.add_argument('--revision',default=REV);p.add_argument('--jobs',type=int,default=min(os.cpu_count() or 2,4));p.add_argument('--offline',action='store_true');p.add_argument('--bootstrap-testing',action='store_true',help='Production policy with private instance name for systemd bootstrap test');p.add_argument('--activity-testing',action='store_true',help='Private pixman diagnostic build; never package');a=p.parse_args();revision=a.revision;assert not (a.activity_testing and a.bootstrap_testing);a.source=a.source.resolve();a.prefix=a.prefix.resolve()
  assert a.prefix.is_relative_to(ROOT/'.cache'),'Use a private workspace cache prefix'
  work=a.prefix/'source';a.prefix.mkdir(parents=True,exist_ok=True)
  if not work.exists():
@@ -18,10 +18,11 @@ def main():
  for part in ('compositor','settingsApplication'):
   cached=a.source/part/'zig-pkg'
   if cached.exists() and not (work/part/'zig-pkg').exists():shutil.copytree(cached,work/part/'zig-pkg')
- env=dict(os.environ,ZIG_GLOBAL_CACHE_DIR=str(ROOT/'.cache/zig'),PKG_CONFIG_PATH=str(work/'compositor/.deps/wlroots-render-hook/lib/pkgconfig'))
+ env=dict(os.environ,PKG_CONFIG_PATH=str(work/'compositor/.deps/wlroots-render-hook/lib/pkgconfig'))
+ env.setdefault('ZIG_GLOBAL_CACHE_DIR',str(ROOT/'.cache/zig'))
  commands={
- 'compositor':['zig','build','--prefix',str(a.prefix),'-Dvulkan-effects='+('false' if a.activity_testing or a.bootstrap_testing else 'true'),'-Dinput-activity-testing='+str(a.activity_testing).lower(),'-Dxwayland='+str(a.activity_testing or a.bootstrap_testing).lower(),'-Dinstance-name='+('aqueous-activity-fixture' if a.bootstrap_testing else 'aqueous'),'-Dman-pages=false','-Doptimize=ReleaseSafe','-Dllvm'],
- 'settingsApplication':['zig','build','config','--prefix',str(a.prefix),'-Doptimize=ReleaseSafe']}
+ 'compositor':['zig','build','--prefix',str(a.prefix),'-Dvulkan-effects='+('false' if a.activity_testing or a.bootstrap_testing else 'true'),'-Dinput-activity-testing='+str(a.activity_testing).lower(),'-Dxwayland='+str(a.activity_testing or a.bootstrap_testing).lower(),'-Dinstance-name='+('aqueous-activity-fixture' if a.bootstrap_testing else 'aqueous'),'-Dman-pages=false','-Doptimize=safe','-Dllvm'],
+ 'settingsApplication':['zig','build','config','--prefix',str(a.prefix),'-Doptimize=safe']}
  meta={'revision':revision,'input_activity_testing':a.activity_testing,'bootstrap_testing':a.bootstrap_testing,'status':'building','commands':commands,'patched_wlroots_pkgconfig':env['PKG_CONFIG_PATH'],'binary_sha256':{}}
  try:
   dependency=work/'compositor/.deps/wlroots-render-hook'
@@ -40,7 +41,7 @@ def main():
   meta['wlroots_patch_sha256']=patches
   for part,command in commands.items():
    command.append('-j'+str(a.jobs))
-   if a.offline:command.extend(['--system',str(ROOT/'.cache/zig/p')])
+   if a.offline:command.extend(['--system',str(work/part/'zig-pkg')])
    print('Building '+part,flush=True)
    with (a.prefix/(part+'.log')).open('w') as log:subprocess.run(command,cwd=work/part,env=env,stdout=log,stderr=subprocess.STDOUT,check=True)
   for name in ('aqueous','aqueousctl','aqueous-config'):meta['binary_sha256'][name]=hashlib.sha256((a.prefix/'bin'/name).read_bytes()).hexdigest()

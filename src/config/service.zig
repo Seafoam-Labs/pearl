@@ -432,7 +432,7 @@ pub const Service = struct {
                 self.application_status.applied_generation = job.generation;
             }
         } else if (self.theme_jobs.last_action == .application_install) {
-            self.application_status.targets[@intFromEnum(@import("../theme/matugen_profiles.zig").Application.starship)].state = .applied;
+            self.application_status.targets[@backingInt(@import("../theme/matugen_profiles.zig").Application.starship)].state = .applied;
         } else return;
         self.application_job_serial = self.theme_jobs.serial;
         self.notify();
@@ -651,7 +651,7 @@ pub const Service = struct {
         var image_bytes: ?[]const u8 = null;
         const p = j.prefs;
         if (usesWallpaper(p, self.shell_appearance)) {
-            const path = try alloc.dupeZ(u8, p.wallpaper.path);
+            const path = try alloc.dupeSentinel(u8, p.wallpaper.path, 0);
             const image = try io.read(alloc, path, null, j.cancel);
             if (image.missing or (!std.mem.startsWith(u8, image.bytes, "\x89PNG\r\n\x1a\n") and !std.mem.startsWith(u8, image.bytes, "\xff\xd8\xff"))) return error.InvalidImage;
             image_bytes = image.bytes;
@@ -730,8 +730,8 @@ pub const Service = struct {
             // Wallpaper content may have changed in place: only seed palettes can
             // bypass the generator/cache adapter based on preference equality alone.
             if (same_source and p.theme.source == .seed) {
-                inline for (@typeInfo(theme.Palette).@"struct".fields) |field|
-                    @field(j.palette, field.name) = try alloc.dupe(u8, @field(previous.?.palette, field.name));
+                inline for (@typeInfo(theme.Palette).@"struct".field_names) |field|
+                    @field(j.palette, field) = try alloc.dupe(u8, @field(previous.?.palette, field));
                 j.cache_hit = true;
                 if (previous.?.dynamic_json) |json| j.dynamic_json = try alloc.dupe(u8, json);
                 if (previous.?.renderer.version) |version| j.renderer.version = try alloc.dupe(u8, version);
@@ -742,7 +742,7 @@ pub const Service = struct {
             }
         }
         if (p.theme.mode == .gtk and p.theme.gtk_name.len > 0) {
-            j.native_name = try alloc.dupeZ(u8, p.theme.gtk_name);
+            j.native_name = try alloc.dupeSentinel(u8, p.theme.gtk_name, 0);
             try installedTheme(alloc, j.native_name);
         }
         const bytes = blk: {
@@ -750,7 +750,7 @@ pub const Service = struct {
             defer resource.unref();
             var n: usize = 0;
             const raw = resource.getData(&n).?;
-            if (p.theme.mode == .gtk) break :blk try alloc.dupeZ(u8, @as([*]const u8, @ptrCast(raw))[0..n]);
+            if (p.theme.mode == .gtk) break :blk try alloc.dupeSentinel(u8, @as([*]const u8, @ptrCast(raw))[0..n], 0);
             break :blk try theme.scopedCss(alloc, @as([*]const u8, @ptrCast(raw))[0..n], "pearl-custom", j.palette);
         };
         const font = if (p.font.len > 0) try std.fmt.allocPrint(alloc, ".pearl-root.pearl-shell {{ font-family: \"{s}\", sans-serif; font-size: {d}px; }}\n", .{ p.font, p.font_size }) else if (p.theme.mode != .gtk or p.font_size != 14) try std.fmt.allocPrint(alloc, ".pearl-root.pearl-shell {{ font-size: {d}px; }}\n", .{p.font_size}) else "";
@@ -826,7 +826,7 @@ pub const Service = struct {
         if (j.verify_image) {
             var scratch = std.heap.ArenaAllocator.init(a);
             defer scratch.deinit();
-            const current = io.read(scratch.allocator(), try scratch.allocator().dupeZ(u8, j.watch_path), null, j.cancel) catch null;
+            const current = io.read(scratch.allocator(), try scratch.allocator().dupeSentinel(u8, j.watch_path, 0), null, j.cancel) catch null;
             j.image_changed = current == null or current.?.missing or !std.mem.eql(u8, &current.?.hash, &j.image_hash.?);
         }
         if (!j.recovered and self.shell_appearance and j.prefs.matugen.enabled and j.application_error == null) {
@@ -902,7 +902,7 @@ pub const Service = struct {
                 self.application_status.desired_generation = j.generation;
                 self.application_status.applied_generation = j.previous_applied_generation;
                 for (j.application_snapshot.profiles) |profile| {
-                    self.application_status.targets[@intFromEnum(profile.application)] = .{
+                    self.application_status.targets[@backingInt(profile.application)] = .{
                         .profile = profile.id,
                         .state = .failed,
                         .error_code = "ApplicationDeadlineExceeded",
@@ -1128,7 +1128,7 @@ pub const Service = struct {
         if (self.prefs().theme.mode == .gtk and panel.getStyleContext().lookupColor("theme_bg_color", &color) != 0) return color;
         const palette = if (self.live) |job| job.palette else theme.dark;
         var buffer: [8]u8 = undefined;
-        const hex = std.fmt.bufPrintZ(&buffer, "{s}", .{palette.container}) catch unreachable;
+        const hex = std.mem.printSentinel(&buffer, "{s}", .{palette.container}, 0) catch unreachable;
         _ = color.parse(hex);
         return color;
     }
@@ -1204,7 +1204,7 @@ fn exports(j: *Job) !void {
         // A digest sidecar grants ownership of precisely the last exported bytes.
         if (!old.missing and (owner.missing or !std.mem.eql(u8, owner.bytes, &old.hash))) return error.ExportOwnershipConflict;
         var text = e.template;
-        inline for (@typeInfo(theme.Palette).@"struct".fields) |field| text = try std.mem.replaceOwned(u8, alloc, text, "{{" ++ field.name ++ "}}", @field(j.palette, field.name));
+        inline for (@typeInfo(theme.Palette).@"struct".field_names) |field| text = try std.mem.replaceOwned(u8, alloc, text, "{{" ++ field ++ "}}", @field(j.palette, field));
         if (std.mem.indexOf(u8, text, "{{") != null) return error.UnknownExportToken;
         if (std.mem.eql(u8, text, old.bytes) and !old.missing) continue;
         if (!old.missing) {

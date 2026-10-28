@@ -185,7 +185,7 @@ test "protocol identity is published on done and cleared when disabled or ambigu
     watch.heads[1] = head.*;
     try std.testing.expect(watch.digestFor("DP-9") == null);
     watch.heads[1] = .{};
-    Watch.headEvent(proxy, .{ .serial_number = .{ .serial_number = "x" ** 769 } }, head);
+    Watch.headEvent(proxy, .{ .serial_number = .{ .serial_number = @import("test_strings").string("x", 769) } }, head);
     Watch.managerEvent(undefined, .{ .done = .{ .serial = 4 } }, &watch);
     try std.testing.expect(watch.digestFor("DP-9") == null);
 }

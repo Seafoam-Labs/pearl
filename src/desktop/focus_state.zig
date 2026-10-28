@@ -4,7 +4,7 @@ const gtk = @import("gtk4");
 pub const prefix = "settings-focus:";
 pub fn tag(widget: *gtk.Widget, comptime format: []const u8, args: anytype) void {
     var buffer: [1024]u8 = undefined;
-    widget.setName(std.fmt.bufPrintZ(&buffer, prefix ++ format, args) catch @panic("Focus identity too long"));
+    widget.setName(std.mem.printSentinel(&buffer, prefix ++ format, args, 0) catch @panic("Focus identity too long"));
 }
 pub fn find(widget: *gtk.Widget, name: []const u8) ?*gtk.Widget {
     if (widget.getMapped() == 0 or widget.getSensitive() == 0) return null;

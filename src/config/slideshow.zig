@@ -77,14 +77,14 @@ pub fn firstImage(alloc: std.mem.Allocator, folder: []const u8) ?[:0]u8 {
     const names = listImages(alloc, folder) catch return null;
     if (names.len == 0) return null;
     var buffer: [1300]u8 = undefined;
-    const path = std.fmt.bufPrintZ(&buffer, "{s}/{s}", .{ folder, names[0] }) catch return null;
-    return alloc.dupeZ(u8, path) catch null;
+    const path = std.mem.printSentinel(&buffer, "{s}/{s}", .{ folder, names[0] }, 0) catch return null;
+    return alloc.dupeSentinel(u8, path, 0) catch null;
 }
 
 /// Sorted, decodable image basenames in `folder`. An unreadable directory yields
 /// an error the caller drops; the timer simply retries on the next interval.
 pub fn listImages(alloc: std.mem.Allocator, folder: []const u8) ![][]const u8 {
-    const z = try alloc.dupeZ(u8, folder);
+    const z = try alloc.dupeSentinel(u8, folder, 0);
     const root = gio.File.newForPath(z);
     defer root.unref();
     var failure: ?*glib.Error = null;

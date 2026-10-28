@@ -148,7 +148,7 @@ fn removeTree(path: []const u8) void {
             allocator.free(child);
         }
     }
-    const z = allocator.dupeZ(u8, path) catch return;
+    const z = allocator.dupeSentinel(u8, path, 0) catch return;
     defer allocator.free(z);
     _ = c.unlink(z);
     _ = c.rmdir(z);

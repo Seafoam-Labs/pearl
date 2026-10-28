@@ -39,8 +39,8 @@ test "tester shares sanitization, truncation and literal markup with ingestion" 
     const rule: f.Rule = .{ .id = "one", .name = "One", .conditions = &.{.{ .field = .summary, .value = "hi <b>字</b>" }} };
     try t.expectEqual(.block, (try evaluate(&.{rule}, .{ .summary = "hi \x1b<b>字</b>\u{202e}" })).decision);
     const tail: f.Rule = .{ .id = "tail", .name = "Tail", .conditions = &.{.{ .field = .body, .value = "tail", .operator = .contains }} };
-    try t.expectEqual(.normal, (try evaluate(&.{tail}, .{ .body = "a" ** 2048 ++ "tail" })).decision);
-    try t.expectEqualStrings("", (f.Sample{ .desktop_entry = "a" ** 257 }).record().desktop_entry.slice());
+    try t.expectEqual(.normal, (try evaluate(&.{tail}, .{ .body = @import("test_strings").string("a", 2048) ++ "tail" })).decision);
+    try t.expectEqualStrings("", (f.Sample{ .desktop_entry = @import("test_strings").string("a", 257) }).record().desktop_entry.slice());
 }
 test "compiled snapshot owns patterns and IDs across caller mutation" {
     var value = "Mail".*;

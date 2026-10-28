@@ -39,7 +39,7 @@ pub const Appearance = struct {
     pub fn apply(self: *Appearance, snapshot: client.Snapshot) !void {
         if (self.mode != .follow_pearl) return;
         try client.theme.validate(snapshot.palette);
-        const name = try u.a.dupeZ(u8, snapshot.gtk_name);
+        const name = try u.a.dupeSentinel(u8, snapshot.gtk_name, 0);
         const font = try u.a.dupe(u8, snapshot.font);
         if (self.gtk_name.len > 0) u.a.free(self.gtk_name);
         if (self.font.len > 0) u.a.free(self.font);
@@ -58,7 +58,7 @@ pub const Appearance = struct {
         return self.mode == .follow_pearl and self.revision != null and self.snapshot_gtk;
     }
     pub fn sheet(self: *const Appearance, a: std.mem.Allocator) ![:0]u8 {
-        if (self.mode == .native_gtk or self.followsGtk()) return a.dupeZ(u8, "");
+        if (self.mode == .native_gtk or self.followsGtk()) return a.dupeSentinel(u8, "", 0);
         const scope = self.themeClass();
         const palette = if (self.mode == .follow_pearl and self.revision != null) self.palette else if (self.mode == .light) client.theme.light else client.theme.dark;
         try client.theme.validate(palette);

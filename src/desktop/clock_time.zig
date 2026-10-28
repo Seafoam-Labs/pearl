@@ -11,13 +11,13 @@ pub fn resolve(name: []const u8) ?*glib.TimeZone {
     // Requiring an installed TZif file excludes POSIX expressions and offsets,
     // while allowing historical aliases not listed in zone.tab.
     var buffer: [160:0]u8 = undefined;
-    const path = std.fmt.bufPrintZ(&buffer, "/usr/share/zoneinfo/{s}", .{name}) catch return null;
+    const path = std.mem.printSentinel(&buffer, "/usr/share/zoneinfo/{s}", .{name}, 0) catch return null;
     const fd = std.c.open(path, .{ .ACCMODE = .RDONLY, .CLOEXEC = true, .NONBLOCK = true }, @as(c_uint, 0));
     if (fd < 0) return null;
     defer _ = std.c.close(fd);
     var magic: [4]u8 = undefined;
     if (std.c.read(fd, &magic, magic.len) != 4 or !std.mem.eql(u8, &magic, "TZif")) return null;
-    const id = a.dupeZ(u8, name) catch return null;
+    const id = a.dupeSentinel(u8, name, 0) catch return null;
     defer a.free(id);
     return glib.TimeZone.newIdentifier(id);
 }
@@ -50,7 +50,7 @@ pub fn catalog(alloc: std.mem.Allocator) ![]const [:0]const u8 {
         const name = fields.next() orelse continue;
         if (!policy.validZone(name)) continue;
         if (names.items.len >= 1024) break;
-        try names.append(alloc, try alloc.dupeZ(u8, name));
+        try names.append(alloc, try alloc.dupeSentinel(u8, name, 0));
     }
     std.mem.sort([:0]const u8, names.items[2..], {}, struct {
         fn less(_: void, lhs: [:0]const u8, rhs: [:0]const u8) bool {
@@ -70,7 +70,7 @@ pub fn format(alloc: std.mem.Allocator, d: policy.Definition, utc: *glib.DateTim
     defer glib.free(date);
     const detail = local.format("%A, %d %B %Y · %H:%M · UTC%:z") orelse return error.ClockUnavailable;
     defer glib.free(detail);
-    return .{ .time = try alloc.dupeZ(u8, std.mem.span(time)), .date = try alloc.dupeZ(u8, std.mem.span(date)), .detail = try std.fmt.allocPrintSentinel(alloc, "{s} · {s} · {s}", .{ try policy.displayName(alloc, d), d.timezone, detail }, 0) };
+    return .{ .time = try alloc.dupeSentinel(u8, std.mem.span(time), 0), .date = try alloc.dupeSentinel(u8, std.mem.span(date), 0), .detail = try std.fmt.allocPrintSentinel(alloc, "{s} · {s} · {s}", .{ try policy.displayName(alloc, d), d.timezone, detail }, 0) };
 }
 /// File identity/mtime catches atomic replacement as well as in-place tzdata updates.
 pub fn databaseStamp() u64 {

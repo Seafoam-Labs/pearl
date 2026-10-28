@@ -10,7 +10,7 @@ pub fn main(init: std.process.Init) !void {
     _ = std.c.setrlimit(.CORE, &limits);
     const args = try init.minimal.args.toSlice(std.heap.c_allocator);
     if (args.len == 2 and std.mem.eql(u8, args[1], "--version")) {
-        @import("glib2").print("pearl-lock " ++ @import("version.zig").string ++ " (Zig 0.16.0)\n");
+        @import("glib2").print("pearl-lock " ++ @import("version.zig").string ++ " (Zig 0.17.0)\n");
         return;
     }
     if (args.len == 2 and std.mem.eql(u8, args[1], "--pam")) {

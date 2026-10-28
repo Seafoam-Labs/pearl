@@ -48,7 +48,7 @@ pub const View = struct {
         header.append(glyph.as(gtk.Widget));
         const summary = w.column(2);
         summary.as(gtk.Widget).setValign(.center);
-        const location = w.label(alloc.dupeZ(u8, self.service.config.location) catch return, "heading");
+        const location = w.label(alloc.dupeSentinel(u8, self.service.config.location, 0) catch return, "heading");
         location.setEllipsize(.end);
         location.setMaxWidthChars(24);
         location.as(gtk.Widget).setHalign(.start);
@@ -134,6 +134,6 @@ pub const View = struct {
         defer time.unref();
         const text = time.format(pattern) orelse return "—";
         defer glib.free(text);
-        return alloc.dupeZ(u8, std.mem.span(text)) catch "—";
+        return alloc.dupeSentinel(u8, std.mem.span(text), 0) catch "—";
     }
 };

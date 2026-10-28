@@ -55,7 +55,7 @@ pub fn detected(app: Application) bool {
     };
     for (flatpaks(app)) |id| {
         var buffer: [4096]u8 = undefined;
-        const path = std.fmt.bufPrintZ(&buffer, "{s}/.var/app/{s}/config", .{ std.mem.span(glib.getHomeDir()), id }) catch continue;
+        const path = std.mem.printSentinel(&buffer, "{s}/.var/app/{s}/config", .{ std.mem.span(glib.getHomeDir()), id }, 0) catch continue;
         if (glib.fileTest(path, .{ .is_dir = true }) != 0) return true;
     }
     return false;

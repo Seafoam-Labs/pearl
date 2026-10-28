@@ -13,10 +13,7 @@ const Broker = @import("../platform/wayland/input_activity.zig").Broker;
 const diagnostics = @import("../diagnostics/safe_text.zig");
 const log = std.log.scoped(.plugins);
 const a = std.heap.c_allocator;
-const c = @cImport({
-    @cInclude("sys/socket.h");
-    @cInclude("unistd.h");
-});
+const c = @import("pearl_libc");
 pub const Status = enum { disabled, starting, active, suspended, failed, unavailable };
 pub const Slot = struct {
     owner: *Manager,
@@ -310,11 +307,11 @@ pub const Manager = struct {
     }
 
     pub fn create(app: *gio.Application, context: *anyopaque, notify: *const fn (*anyopaque) void) !*Manager {
-        const root = if (glib.getenv("XDG_DATA_HOME")) |v| try a.dupeZ(u8, std.mem.span(v)) else try std.fmt.allocPrintSentinel(a, "{s}/.local/share", .{std.mem.span(glib.getenv("HOME") orelse return error.PluginHome)}, 0);
+        const root = if (glib.getenv("XDG_DATA_HOME")) |v| try a.dupeSentinel(u8, std.mem.span(v), 0) else try std.fmt.allocPrintSentinel(a, "{s}/.local/share", .{std.mem.span(glib.getenv("HOME") orelse return error.PluginHome)}, 0);
         defer a.free(root);
         const user_path = try std.fs.path.resolve(a, &.{ root, "pearl", "plugins" });
         defer a.free(user_path);
-        const user = try a.dupeZ(u8, user_path);
+        const user = try a.dupeSentinel(u8, user_path, 0);
         errdefer a.free(user);
         var executable: [4096]u8 = undefined;
         const path = try @import("../settings/distribution.zig").executable(&executable);
@@ -322,7 +319,7 @@ pub const Manager = struct {
         defer a.free(system_path);
         const normalized = try std.fs.path.resolve(a, &.{system_path});
         defer a.free(normalized);
-        const system = try a.dupeZ(u8, normalized);
+        const system = try a.dupeSentinel(u8, normalized, 0);
         errdefer a.free(system);
         const self = try a.create(Manager);
         self.* = .{ .app = app, .context = context, .notify = notify, .cancel = gio.Cancellable.new(), .roots = .{ user, system } };
@@ -700,7 +697,7 @@ pub const Manager = struct {
         var empty = [_:null]?[*:0]const u8{};
         launcher.setEnviron(@ptrCast(&empty));
         launcher.setenv("PEARL_PLUGIN_PACKAGE", slot.entry.path, 1);
-        const hash = try alloc.dupeZ(u8, &slot.entry.package.digest);
+        const hash = try alloc.dupeSentinel(u8, &slot.entry.package.digest, 0);
         launcher.setenv("PEARL_PLUGIN_DIGEST", hash, 1);
         slot.generation = self.next_generation;
         self.next_generation += 1;

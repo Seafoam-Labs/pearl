@@ -23,5 +23,5 @@ pub fn main(init: std.process.Init) !void {
     const status = try apps.reconcileGuarded(a, config, p.matugen.enabled, snapshot, cancel, &context, .{});
     const digest = try apps.save(a, root, snapshot);
     const text = try std.json.Stringify.valueAlloc(a, .{ .status = status, .snapshot = digest, .captured = snapshot }, .{});
-    glib.print("%s\n", (try a.dupeZ(u8, text)).ptr);
+    glib.print("%s\n", (try a.dupeSentinel(u8, text, 0)).ptr);
 }

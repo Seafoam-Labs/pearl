@@ -2,10 +2,7 @@
 const std = @import("std");
 const pkg = @import("package.zig");
 const model = @import("package_model.zig");
-const c = @cImport({
-    @cInclude("archive.h");
-    @cInclude("archive_entry.h");
-});
+const c = @import("pearl_archive");
 pub fn pack(a: std.mem.Allocator, package: pkg.Package) ![]const u8 {
     const archive = c.archive_write_new() orelse return error.ThemeArchive;
     defer _ = c.archive_write_free(archive);
@@ -17,7 +14,7 @@ pub fn pack(a: std.mem.Allocator, package: pkg.Package) ![]const u8 {
     for (package.files) |file| {
         const entry = c.archive_entry_new() orelse return error.OutOfMemory;
         defer c.archive_entry_free(entry);
-        c.archive_entry_set_pathname(entry, try a.dupeZ(u8, file.path));
+        c.archive_entry_set_pathname(entry, try a.dupeSentinel(u8, file.path, 0));
         c.archive_entry_set_filetype(entry, 0o100000);
         c.archive_entry_set_perm(entry, 0o644);
         c.archive_entry_set_size(entry, @intCast(file.bytes.len));

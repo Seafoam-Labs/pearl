@@ -1209,8 +1209,4 @@ pub fn items(array: [*c]GPtrArray) []?*anyopaque {
 
 // Obtain platform-dependent libc layouts from the target's headers.
 
-const platform = @cImport({
-    @cDefine("_GNU_SOURCE", "1");
-    @cInclude("sys/stat.h");
-    @cInclude("sys/resource.h");
-});
+const platform = @import("pearl_libc");

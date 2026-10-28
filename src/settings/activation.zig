@@ -20,8 +20,8 @@ pub fn parse(a: std.mem.Allocator, bytes: []const u8, test_hooks: bool) !Request
     for ([_][]const u8{ "settings", "session", "display" }) |key| if (!v.object.contains(key)) return error.InvalidRequest;
     var it = v.object.iterator();
     while (it.next()) |field| {
-        inline for (@typeInfo(Request).@"struct".fields) |known| {
-            if (std.mem.eql(u8, known.name, field.key_ptr.*)) break;
+        inline for (@typeInfo(Request).@"struct".field_names) |known| {
+            if (std.mem.eql(u8, known, field.key_ptr.*)) break;
         } else return error.InvalidRequest;
     }
     const r = try e.read(Request, a, v);

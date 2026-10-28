@@ -148,7 +148,7 @@ const Screen = struct {
     fn bootWallpaper(self: *Screen, prefs: model.Preferences) void {
         if (prefs.wallpaper.mode != .cover and prefs.wallpaper.mode != .contain) return;
         if (prefs.wallpaper.path.len == 0) return;
-        const pz = a.dupeZ(u8, prefs.wallpaper.path) catch return;
+        const pz = a.dupeSentinel(u8, prefs.wallpaper.path, 0) catch return;
         defer a.free(pz);
         const disk = io.read(a, pz, 16 * 1024 * 1024, null) catch return;
         defer a.free(disk.bytes);

@@ -44,7 +44,7 @@ pub const Context = struct {
     pub fn clone(self: *const Context) Context {
         self.directory.ref();
         var c: Context = .{ .kind = self.kind, .directory = self.directory, .tab_id = self.tab_id, .generation = self.generation, .pane = self.pane };
-        if (self.connection_id) |id| c.connection_id = a.dupeZ(u8, id) catch unreachable;
+        if (self.connection_id) |id| c.connection_id = a.dupeSentinel(u8, id, 0) catch unreachable;
         for (self.items.items) |i| c.add(i.file, i.info);
         if (self.directory_info) |i| {
             i.ref();

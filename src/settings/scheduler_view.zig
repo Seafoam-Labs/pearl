@@ -52,15 +52,15 @@ pub const View = struct {
                 button.* = gtk.CheckButton.new();
                 if (i > 0) button.*.setGroup(self.buttons[0]);
                 const labels = w.column(5);
-                labels.append(w.label(try alloc.dupeZ(u8, profile.label), "settings-row-title").as(gtk.Widget));
+                labels.append(w.label(try alloc.dupeSentinel(u8, profile.label, 0), "settings-row-title").as(gtk.Widget));
                 if (profile.description.len > 0) {
-                    const detail = w.label(try alloc.dupeZ(u8, profile.description), "pearl-secondary");
+                    const detail = w.label(try alloc.dupeSentinel(u8, profile.description, 0), "pearl-secondary");
                     detail.setWrap(1);
                     labels.append(detail.as(gtk.Widget));
                 }
                 button.*.setChild(labels.as(gtk.Widget));
                 button.*.as(gtk.Widget).addCssClass("power-mode");
-                w.name(button.*.as(gtk.Widget), try alloc.dupeZ(u8, profile.label));
+                w.name(button.*.as(gtk.Widget), try alloc.dupeSentinel(u8, profile.label, 0));
                 binding.* = .{ .view = self, .index = i };
                 flow.insert(button.*.as(gtk.Widget), -1);
                 try self.connections.append(a, .{ .obj = button.*.as(object.Object), .id = gtk.CheckButton.signals.toggled.connect(button.*, *Binding, toggled, binding, .{}) });
@@ -95,7 +95,7 @@ pub const View = struct {
             button.as(gtk.Widget).setSensitive(@intFromBool(usable));
         }
         var message: [600]u8 = undefined;
-        self.message.setText(if (service.applying != null) "" else if (service.err) |err| std.fmt.bufPrintZ(&message, "{s}", .{err}) catch "" else service.describeNotice(&message));
+        self.message.setText(if (service.applying != null) "" else if (service.err) |err| std.mem.printSentinel(&message, "{s}", .{err}, 0) catch "" else service.describeNotice(&message));
         self.message.as(gtk.Widget).setVisible(@intFromBool(self.message.getText()[0] != 0));
     }
 

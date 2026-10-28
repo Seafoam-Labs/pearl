@@ -87,7 +87,7 @@ fn chooserFreed(data: ?*anyopaque) callconv(.c) void {
     a.destroy(r);
 }
 fn chose(dialog: *gtk.Dialog, response: c_int, r: *Chooser) callconv(.c) void {
-    if (response == @intFromEnum(gtk.ResponseType.ok)) {
+    if (response == @backingInt(gtk.ResponseType.ok)) {
         if (u.object.ext.cast(gtk.AppChooserDialog, dialog).?.as(gtk.AppChooser).getAppInfo()) |app| {
             defer app.unref();
             launch(r.owner, &r.context, app);
@@ -409,7 +409,7 @@ pub const Providers = struct {
                 continue;
             }
             const p = a.create(Provider) catch unreachable;
-            p.* = .{ .name = a.dupeZ(u8, std.mem.span(name_)) catch unreachable, .argv = argv, .directories = key.getBoolean("Phyto Action", "Directories", null) != 0 };
+            p.* = .{ .name = a.dupeSentinel(u8, std.mem.span(name_), 0) catch unreachable, .argv = argv, .directories = key.getBoolean("Phyto Action", "Directories", null) != 0 };
             if (key.getString("Phyto Action", "Selection", null)) |sel| {
                 defer glib.free(sel);
                 p.selection = std.meta.stringToEnum(@FieldType(Provider, "selection"), std.mem.span(sel)) orelse .any;

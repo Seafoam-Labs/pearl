@@ -1,37 +1,5 @@
 const std = @import("std");
-pub const c = @cImport({
-    @cDefine("_GNU_SOURCE", "1");
-    @cUndef("_FORTIFY_SOURCE");
-    @cDefine("_FORTIFY_SOURCE", "0");
-    @cDefine("__GI_SCANNER__", "1");
-    @cDefine("__GLIB_H_INSIDE__", "1");
-    @cInclude("glibconfig.h");
-    @cInclude("glib/gmacros.h");
-    @cInclude("glib/glib-typeof.h");
-    @cUndef("glib_typeof");
-    @cUndef("G_GNUC_BEGIN_IGNORE_DEPRECATIONS");
-    @cUndef("G_GNUC_END_IGNORE_DEPRECATIONS");
-    @cDefine("G_GNUC_BEGIN_IGNORE_DEPRECATIONS", "");
-    @cDefine("G_GNUC_END_IGNORE_DEPRECATIONS", "");
-    @cDefine("GLIB_DISABLE_DEPRECATION_WARNINGS", "1");
-    @cDefine("GDK_DISABLE_DEPRECATION_WARNINGS", "1");
-    @cDefine("GTK_COMPILATION", "1"); // GTK 4.22 version-header import guard precedes pragma once.
-
-    @cInclude("gtk/gtk.h");
-    @cInclude("glib/gstdio.h");
-    @cDefine("GTK_SOURCE_COMPILATION", "1");
-    @cInclude("gtksourceview/gtksourceinit.h");
-    @cInclude("gtksourceview/gtksourcebuffer.h");
-    @cInclude("gtksourceview/gtksourceview.h");
-    @cInclude("gtksourceview/gtksourcesearchcontext.h");
-    @cInclude("gtksourceview/gtksourcesearchsettings.h");
-    @cInclude("gtksourceview/gtksourcelanguagemanager.h");
-    @cInclude("gtksourceview/gtksourcestyleschememanager.h");
-
-    @cInclude("enchant.h");
-    @cInclude("stdlib.h");
-    @cInclude("unistd.h");
-});
+pub const c = @import("pearl_app_c");
 pub const a = std.heap.c_allocator;
 pub const W = *c.GtkWidget;
 pub fn cast(comptime T: type, p: anytype) *T {
@@ -41,7 +9,7 @@ pub fn connect(p: anytype, signal: [*:0]const u8, callback: anytype, data: ?*any
     _ = c.g_signal_connect_data(@ptrCast(p), signal, @ptrCast(callback), data, null, 0);
 }
 pub fn z(s: []const u8) [:0]u8 {
-    return a.dupeZ(u8, s) catch unreachable;
+    return a.dupeSentinel(u8, s, 0) catch unreachable;
 }
 pub fn fmt(comptime f: []const u8, args: anytype) [:0]u8 {
     return std.fmt.allocPrintSentinel(a, f, args, 0) catch unreachable;

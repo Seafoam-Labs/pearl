@@ -2,21 +2,26 @@
     .name = .pearl,
     .fingerprint = 0x231087f3fa26aa9b,
     .version = "0.3.5",
-    .minimum_zig_version = "0.16.0",
+    .minimum_zig_version = "0.17.0",
     .paths = .{ "build.zig", "build.zig.zon", ".zigversion", "spikes", "bindings", "scripts", "src", "resources", "tests", "packaging", "docs", "themes", "translations", "community-repository", "README.md" },
     .dependencies = .{
+        .pearl_ffi = .{ .path = "bindings/c" },
+        .translate_c = .{
+            .url = "https://codeberg.org/ziglang/translate-c/archive/2.0.2.tar.gz",
+            .hash = "translate_c-2.0.2-Q_BUWvBNBwBgPKQJPblip6M7AHNK_IPNPmyv4rSIQMQc",
+        },
         .wayland = .{
-            .url = "https://codeberg.org/ifreund/zig-wayland/archive/v0.6.0.tar.gz",
-            .hash = "wayland-0.6.0-lQa1kqz8AQADQmdNJsNhLoNHcnEGEUjrOaPV-dtEnEmX",
+            .url = "https://codeberg.org/ifreund/zig-wayland/archive/v0.7.0.tar.gz",
+            .hash = "wayland-0.7.0-lQa1kuP8AQD5dW7_o-VKLVD_QbqXe7Zob78r2su7Pyex",
         },
         .gobject_codegen = .{
-            .url = "https://codeload.github.com/jcollie/zig-gobject/tar.gz/4ff7b4d030465b50796b90af72fec41eb9b3b5c6",
-            .hash = "gobject_codegen-0.3.2-B33qzUZkBwClXYYiisnB18xbuUvR8B2Z9C28-bnLxbnA",
+            .url = "https://codeload.github.com/jcollie/zig-gobject/tar.gz/4272fe9e0a1b7d8c0e6bd8ffe258e787b80ed038",
+            .hash = "gobject_codegen-0.3.2-B33qzT1tBwDUtGyPtJiDaCl7H0nO7xpOjms_iHnEuWq1",
             .lazy = true,
         },
         .gobject = .{
-            .url = "https://deps.files.ghostty.org/gobject-2026-07-28-36-1.tar.zst",
-            .hash = "gobject-0.3.2-Skun7F6HogCMynX2JqeSHS7xr-8pK4ob-qRFIcEasVi3",
+            .url = "https://github.com/ghostty-org/zig-gobject/releases/download/0.11.0-zig-0.17.0-2026-10-02-38-1/ghostty-gobject-0.11.0-zig-0.17.0-2026-10-02-38-1.tar.gz",
+            .hash = "gobject-0.3.2-Skun7LuIogBbEh-6WrLeEzMaRCnOMB3eOf__RaPYSMCZ",
         },
     },
 }

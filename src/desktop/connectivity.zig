@@ -182,7 +182,7 @@ pub const View = struct {
             self.updatePrompt(&self.prompt, n.prompt_serial, visible, true);
             view.prompt_host.as(gtk.Widget).setVisible(@intFromBool(visible));
             if (was_visible and !visible) view.restoreFocus();
-            self.prompt.title.setText(if (!visible) "" else std.fmt.bufPrintZ(&buffer, "{s} {s}\n{s}", .{ @import("i18n").dtr("pearl", "Connect to"), n.title.slice(), if (n.selected_profile.len == 0) @import("i18n").dtr("pearl", "This network will be saved after you connect.") else @import("i18n").dtr("pearl", "Enter this network’s Wi-Fi password.") }) catch "Wi-Fi password");
+            self.prompt.title.setText(if (!visible) "" else std.mem.printSentinel(&buffer, "{s} {s}\n{s}", .{ @import("i18n").dtr("pearl", "Connect to"), n.title.slice(), if (n.selected_profile.len == 0) @import("i18n").dtr("pearl", "This network will be saved after you connect.") else @import("i18n").dtr("pearl", "Enter this network’s Wi-Fi password.") }, 0) catch "Wi-Fi password");
             return;
         }
         var t: Text(1024) = .{};
@@ -223,7 +223,7 @@ pub const View = struct {
             row.secondary.as(gtk.Widget).setSensitive(1);
             switch (row.kind) {
                 .device => if (n.findDevice(row.path.slice())) |dev| {
-                    row.title.setText(std.fmt.bufPrintZ(&buffer, "{s} · {s}", .{ dev.name.slice(), if (dev.state == 100) "Connected" else if (dev.state < 30) "Unavailable" else "Disconnected" }) catch "Network adapter");
+                    row.title.setText(std.mem.printSentinel(&buffer, "{s} · {s}", .{ dev.name.slice(), if (dev.state == 100) "Connected" else if (dev.state < 30) "Unavailable" else "Disconnected" }, 0) catch "Network adapter");
                     row.primary.setLabel(@import("i18n").dtr("pearl", "Disconnect"));
                     row.primary.as(gtk.Widget).setSensitive(@intFromBool(!n.pending and dev.state >= 40));
                     row.secondary.setLabel(@import("i18n").dtr("pearl", "Scan Wi-Fi"));
@@ -231,7 +231,7 @@ pub const View = struct {
                     row.secondary.as(gtk.Widget).setSensitive(@intFromBool(n.enabled and n.hardware_enabled and !n.scan_pending));
                 },
                 .ap => if (n.findAP(row.path.slice())) |ap| {
-                    row.title.setText(std.fmt.bufPrintZ(&buffer, "{s} · {d}% · {s}", .{ ap.label.slice(), ap.strength, @tagName(ap.security) }) catch "Wi-Fi network");
+                    row.title.setText(std.mem.printSentinel(&buffer, "{s} · {d}% · {s}", .{ ap.label.slice(), ap.strength, @tagName(ap.security) }, 0) catch "Wi-Fi network");
                     row.primary.setLabel(if (ap.security == .advanced) @import("i18n").dtr("pearl", "Use network editor…") else @import("i18n").dtr("pearl", "Connect"));
                     const available = if (n.findDevice(ap.device.slice())) |dev| n.canConnectDevice(dev) else false;
                     row.primary.as(gtk.Widget).setSensitive(@intFromBool(!n.pending and (ap.security == .advanced or available)));
@@ -239,7 +239,7 @@ pub const View = struct {
                 },
                 .saved => for (n.saved[0..n.saved_count]) |*saved| {
                     if (!std.mem.eql(u8, saved.path.slice(), row.path.slice())) continue;
-                    row.title.setText(std.fmt.bufPrintZ(&buffer, "{s} · Saved", .{saved.label.slice()}) catch "Saved network");
+                    row.title.setText(std.mem.printSentinel(&buffer, "{s} · Saved", .{saved.label.slice()}, 0) catch "Saved network");
                     row.primary.setLabel(if (saved.security == .advanced) @import("i18n").dtr("pearl", "Use network editor…") else @import("i18n").dtr("pearl", "Connect saved"));
                     const available = if (n.findDevice(saved.device.slice())) |dev| n.canConnectDevice(dev) else false;
                     row.primary.as(gtk.Widget).setSensitive(@intFromBool(saved.loaded and !n.pending and (available or saved.security == .advanced)));
@@ -247,13 +247,13 @@ pub const View = struct {
                     break;
                 },
                 .adapter => if (b.findAdapter(row.path.slice())) |adapter| {
-                    row.title.setText(std.fmt.bufPrintZ(&buffer, "{s} · {s}", .{ adapter.label.slice(), if (adapter.powered) "On" else "Off" }) catch "Bluetooth adapter");
+                    row.title.setText(std.mem.printSentinel(&buffer, "{s} · {s}", .{ adapter.label.slice(), if (adapter.powered) "On" else "Off" }, 0) catch "Bluetooth adapter");
                     row.primary.setLabel(if (adapter.powered) @import("i18n").dtr("pearl", "Turn off") else @import("i18n").dtr("pearl", "Turn on"));
                     row.secondary.setLabel(@import("i18n").dtr("pearl", "Discover"));
                     row.secondary.as(gtk.Widget).setSensitive(@intFromBool(adapter.powered and b.discovery_path.len == 0));
                 },
                 .bluetooth => if (b.findDevice(row.path.slice())) |dev| {
-                    row.title.setText(std.fmt.bufPrintZ(&buffer, "{s} · {s}{s}\n{s}", .{ dev.label.slice(), if (dev.connected) "Connected" else if (dev.paired) "Paired" else "Not paired", if (dev.trusted) " · Trusted" else "", dev.address.slice() }) catch "Bluetooth device");
+                    row.title.setText(std.mem.printSentinel(&buffer, "{s} · {s}{s}\n{s}", .{ dev.label.slice(), if (dev.connected) "Connected" else if (dev.paired) "Paired" else "Not paired", if (dev.trusted) " · Trusted" else "", dev.address.slice() }, 0) catch "Bluetooth device");
                     row.primary.setLabel(if (dev.connected) @import("i18n").dtr("pearl", "Disconnect") else if (dev.paired) @import("i18n").dtr("pearl", "Connect") else @import("i18n").dtr("pearl", "Pair…"));
                     const powered = if (b.findAdapter(dev.adapter.slice())) |adapter| adapter.powered else false;
                     row.primary.as(gtk.Widget).setSensitive(@intFromBool(!b.pending and !dev.blocked and powered));
@@ -264,10 +264,10 @@ pub const View = struct {
         }
         if (self.page == .network) {
             self.updatePrompt(&self.prompt, n.prompt_serial, n.ownsPrompt(self.owner) and n.prompt != null, true);
-            self.prompt.title.setText(if (!n.ownsPrompt(self.owner)) "" else std.fmt.bufPrintZ(&buffer, "Password for {s}\n{s}", .{ n.title.slice(), if (n.selected_profile.len == 0) "Used for this connection only." else "Sent to NetworkManager. Pearl does not store it." }) catch "Wi-Fi password");
+            self.prompt.title.setText(if (!n.ownsPrompt(self.owner)) "" else std.mem.printSentinel(&buffer, "Password for {s}\n{s}", .{ n.title.slice(), if (n.selected_profile.len == 0) "Used for this connection only." else "Sent to NetworkManager. Pearl does not store it." }, 0) catch "Wi-Fi password");
         } else {
             self.updatePrompt(&self.prompt, b.prompt_serial, b.ownsPrompt(self.owner) and b.prompt_kind != .none, b.prompt_kind == .pin or b.prompt_kind == .passkey);
-            self.prompt.title.setText(if (!b.ownsPrompt(self.owner)) "" else std.fmt.bufPrintZ(&buffer, "{s}\n{s}", .{ b.title.slice(), b.prompt_text.slice() }) catch "Bluetooth authentication");
+            self.prompt.title.setText(if (!b.ownsPrompt(self.owner)) "" else std.mem.printSentinel(&buffer, "{s}\n{s}", .{ b.title.slice(), b.prompt_text.slice() }, 0) catch "Bluetooth authentication");
             self.prompt.accept.as(gtk.Widget).setVisible(@intFromBool(b.prompt != null));
         }
     }

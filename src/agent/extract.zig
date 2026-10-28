@@ -1,9 +1,6 @@
 //! libxml2 parses bounded HTML without loading external resources or scripts.
 const std = @import("std");
-const c = @cImport({
-    @cInclude("libxml/HTMLparser.h");
-    @cInclude("libxml/tree.h");
-});
+const c = @import("pearl_xml");
 pub fn html(a: std.mem.Allocator, bytes: []const u8) ![]const u8 {
     if (bytes.len > 2 * 1024 * 1024) return error.ResponseTooLarge;
     const doc = c.htmlReadMemory(bytes.ptr, @intCast(bytes.len), null, "UTF-8", c.HTML_PARSE_NONET | c.HTML_PARSE_NOERROR | c.HTML_PARSE_NOWARNING | c.HTML_PARSE_RECOVER) orelse return error.InvalidPage;

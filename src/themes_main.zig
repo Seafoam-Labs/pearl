@@ -11,7 +11,7 @@ pub fn main(init: std.process.Init) !void {
     const a = arena.allocator();
     const args = try init.minimal.args.toSlice(a);
     if (args.len == 2 and std.mem.eql(u8, args[1], "--version")) {
-        glib.print("Pearl themes " ++ @import("version.zig").string ++ " (Zig 0.16.0)\n");
+        glib.print("Pearl themes " ++ @import("version.zig").string ++ " (Zig 0.17.0)\n");
         return;
     }
     if (args.len == 2 and std.mem.eql(u8, args[1], "--help")) {
@@ -45,7 +45,7 @@ pub fn main(init: std.process.Init) !void {
             glib.printerr("%s\n", @errorName(err).ptr);
             std.process.exit(1);
         }
-        glib.print("%s\n", (try a.dupeZ(u8, manager.result orelse return error.ThemePreviewFailed)).ptr);
+        glib.print("%s\n", (try a.dupeSentinel(u8, manager.result orelse return error.ThemePreviewFailed, 0)).ptr);
         return;
     }
     const cancel = gio.Cancellable.new();
@@ -54,7 +54,7 @@ pub fn main(init: std.process.Init) !void {
         glib.printerr("%s\n", @errorName(err).ptr);
         std.process.exit(1);
     };
-    glib.print("%s\n", (try a.dupeZ(u8, result)).ptr);
+    glib.print("%s\n", (try a.dupeSentinel(u8, result, 0)).ptr);
 }
 
 fn author(a: std.mem.Allocator, args: []const [:0]const u8) !void {
@@ -94,7 +94,7 @@ fn author(a: std.mem.Allocator, args: []const [:0]const u8) !void {
     const cancel = gio.Cancellable.new();
     defer cancel.unref();
     const result = try cmd.run(a, request, cancel, null);
-    glib.print("%s\n", (try a.dupeZ(u8, result)).ptr);
+    glib.print("%s\n", (try a.dupeSentinel(u8, result, 0)).ptr);
     const value = try std.json.parseFromSliceLeaky(std.json.Value, a, result, .{});
     if (value.object.get("valid")) |valid| if (valid == .bool and !valid.bool) std.process.exit(1);
 }

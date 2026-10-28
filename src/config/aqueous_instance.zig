@@ -43,12 +43,12 @@ fn linkPath(value: []const u8, executable: bool) ![]const u8 {
 
 fn link(a: std.mem.Allocator, pid: u32, name: []const u8) ![:0]const u8 {
     var path_buffer: [64]u8 = undefined;
-    const path = try std.fmt.bufPrintZ(&path_buffer, "/proc/{d}/{s}", .{ pid, name });
+    const path = try std.mem.printSentinel(&path_buffer, "/proc/{d}/{s}", .{ pid, name }, 0);
     var buffer: [4096]u8 = undefined;
     const n = std.c.readlink(path, &buffer, buffer.len);
     if (n <= 0 or n == buffer.len) return error.AqueousInstanceUnavailable;
     const value = buffer[0..@intCast(n)];
-    return a.dupeZ(u8, try linkPath(value, std.mem.eql(u8, name, "exe")));
+    return a.dupeSentinel(u8, try linkPath(value, std.mem.eql(u8, name, "exe")), 0);
 }
 
 pub fn read(a: std.mem.Allocator, pid: u32) !Context {
@@ -59,7 +59,7 @@ pub fn read(a: std.mem.Allocator, pid: u32) !Context {
     if (glib.fileTest(helper, .{ .is_executable = true }) == 0) return error.InstanceHelperUnavailable;
     const cwd = try link(a, pid, "cwd");
     var path_buffer: [64]u8 = undefined;
-    const path = try std.fmt.bufPrintZ(&path_buffer, "/proc/{d}/environ", .{pid});
+    const path = try std.mem.printSentinel(&path_buffer, "/proc/{d}/environ", .{pid}, 0);
     const fd = std.c.open(path, .{ .ACCMODE = .RDONLY, .CLOEXEC = true, .NOFOLLOW = true }, @as(c_uint, 0));
     if (fd < 0) return error.AqueousInstanceUnavailable;
     defer _ = std.c.close(fd);
@@ -87,7 +87,7 @@ fn parse(a: std.mem.Allocator, bytes: []const u8) ![keys.len]?[:0]const u8 {
         for (keys, 0..) |key, i| {
             if (!std.mem.eql(u8, entry[0..eq], key)) continue;
             if (values[i] != null) return error.DuplicateConfigEnvironment;
-            values[i] = try a.dupeZ(u8, entry[eq + 1 ..]);
+            values[i] = try a.dupeSentinel(u8, entry[eq + 1 ..], 0);
         }
     }
     return values;

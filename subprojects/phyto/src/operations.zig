@@ -28,7 +28,7 @@ pub const Operations = struct {
     journal_origin: ?*engine.Job = null,
     result: [:0]u8,
     pub fn init(owner: *Window) Operations {
-        return .{ .owner = owner, .result = a.dupeZ(u8, "No file operations are running.") catch unreachable };
+        return .{ .owner = owner, .result = a.dupeSentinel(u8, "No file operations are running.", 0) catch unreachable };
     }
     pub fn deinit(self: *Operations) void {
         self.closeDialogs();
@@ -118,7 +118,7 @@ pub const Operations = struct {
             self.error_label.?.setText(@import("i18n").dtr("phyto", "Enter a name without /; . and .. are not allowed."));
             return;
         }
-        const name_ = a.dupeZ(u8, std.mem.span(raw)) catch unreachable;
+        const name_ = a.dupeSentinel(u8, std.mem.span(raw), 0) catch unreachable;
         defer a.free(name_);
         const c = &self.pending.?;
         if (self.naming == .bookmark) {
@@ -359,7 +359,7 @@ pub const Operations = struct {
         };
         if (relocated) self.owner.refreshPlaces();
         if (j.failures.items.len > 0) {
-            const msg = a.dupeZ(u8, j.failures.items) catch unreachable;
+            const msg = a.dupeSentinel(u8, j.failures.items, 0) catch unreachable;
             defer a.free(msg);
             self.owner.message("Some items did not complete", msg);
         }

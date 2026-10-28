@@ -1,18 +1,18 @@
 # Phyto
 
-A native **Zig 0.16.0 / GTK4** file explorer following Pearl's design, with
+A native **Zig 0.17.0 / GTK4** file explorer following Pearl's design, with
 Nemo-inspired navigation. The revised layout is implemented: one navigation
 and view toolbar, per-pane tabs, file content and an optional details sidebar.
 There is no large Home/location heading or subtitle.
 
 ## Build and run
 
-Use Zig 0.16.0 and GTK4/GLib development packages (verified with GTK 4.22.5 and
+Use Zig 0.17.0 and GTK4/GLib development packages (verified with GTK 4.22.5 and
 GLib 2.88.3). The manifest pins Pearl's Ghostty-generated GObject bindings.
 
 ```sh
 cd subprojects/phyto
-zig build -Doptimize=ReleaseSafe
+zig build -Doptimize=safe
 ./zig-out/bin/phyto
 ./zig-out/bin/phyto --light ~/Documents
 ```
@@ -120,12 +120,12 @@ launched by double-click.
 
 ```sh
 zig build test
-zig build integration -Doptimize=ReleaseSafe
-zig build integration-themes -Doptimize=ReleaseSafe
-zig build test-context-menus -Doptimize=ReleaseSafe
-zig build test-network -Doptimize=ReleaseSafe
-zig build test-previews -Doptimize=ReleaseSafe
-zig build test-preview-providers -Doptimize=ReleaseSafe
+zig build integration -Doptimize=safe
+zig build integration-themes -Doptimize=safe
+zig build test-context-menus -Doptimize=safe
+zig build test-network -Doptimize=safe
+zig build test-previews -Doptimize=safe
+zig build test-preview-providers -Doptimize=safe
 ```
 
 The native suite uses Pearl's private Aqueous test harness, Python, `wtype`, `grim`,

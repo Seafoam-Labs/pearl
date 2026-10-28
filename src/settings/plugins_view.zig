@@ -196,7 +196,7 @@ pub const View = struct {
         const query = std.mem.trim(u8, std.mem.span(self.search.as(gtk.Editable).getText()), " \t\r\n");
         var count: usize = 0;
         for (self.rows.items) |row| {
-            const matches = (std.ascii.indexOfIgnoreCase(row.info.name, query) != null or std.ascii.indexOfIgnoreCase(row.info.id, query) != null) and switch (self.filter.getSelected()) {
+            const matches = (std.ascii.findIgnoreCase(row.info.name, query) != null or std.ascii.findIgnoreCase(row.info.id, query) != null) and switch (self.filter.getSelected()) {
                 1 => row.enabled.getActive() != 0,
                 2 => row.attention,
                 else => true,
@@ -236,7 +236,7 @@ pub const View = struct {
         const alloc = temp.allocator();
         const page = std.json.parseFromSliceLeaky(ui.PluginPage, alloc, self.editor.live orelse "{}", .{ .ignore_unknown_fields = true }) catch return;
         const issue = page.discovery_issue orelse if (!page.refresh_available) page.summary else "";
-        self.discovery_issue.setText(alloc.dupeZ(u8, issue) catch "Plugin discovery needs attention");
+        self.discovery_issue.setText(alloc.dupeSentinel(u8, issue, 0) catch "Plugin discovery needs attention");
         self.discovery_issue.as(gtk.Widget).setVisible(@intFromBool(issue.len != 0));
         self.summary.setText(std.fmt.allocPrintSentinel(alloc, "{d} on this page{s}", .{ page.plugins.len, if (page.pending) " · Refreshing…" else "" }, 0) catch return);
         self.discovery.setText(std.fmt.allocPrintSentinel(alloc, "{s}\nMonitoring: {s} · Discovery {s}\n\nUser packages: $XDG_DATA_HOME/pearl/plugins (normally ~/.local/share/pearl/plugins).\nSystem packages: the installation's share/pearl/plugins or share/pearl-git/plugins folder.\n\nInstalled packages refresh automatically. Changed packages need fresh approval and permission review. Discovery does not execute plugins.", .{ page.summary, page.monitoring, page.discovery_revision }, 0) catch return);
@@ -305,8 +305,8 @@ pub const View = struct {
             const sources = std.mem.join(alloc, "\n", paths.items) catch "";
             row.diagnostics.setText(std.fmt.allocPrintSentinel(alloc, "{s} · {s}\nSource: {s} · {s} · {d} shadowed/conflicting\nCandidates: {s}\nInput activity: {s}\nPackage fingerprint: {s}\nDraft approval: {s}\n{s}", .{ info.status, info.error_code orelse "No runtime error", info.source, info.path, info.shadowed, sources, info.input_activity, info.digest, cfg.digest, if (approved) "Current package approved in draft" else "Review permissions and approve this package" }, 0) catch continue);
             for (row.actions) |button| button.as(gtk.Widget).setSensitive(@intFromBool(info.installed and info.available));
-            row.actions[@intFromEnum(Action.retry)].as(gtk.Widget).setSensitive(@intFromBool(live_ready));
-            row.actions[@intFromEnum(Action.preview)].as(gtk.Widget).setSensitive(@intFromBool(live_ready and std.mem.eql(u8, info.status, "active")));
+            row.actions[@backingInt(Action.retry)].as(gtk.Widget).setSensitive(@intFromBool(live_ready));
+            row.actions[@backingInt(Action.preview)].as(gtk.Widget).setSensitive(@intFromBool(live_ready and std.mem.eql(u8, info.status, "active")));
             row.enabled.as(gtk.Widget).setSensitive(@intFromBool((info.installed and info.available and approved and !incompatible) or cfg.enabled));
             row.config.as(gtk.Widget).setSensitive(@intFromBool(info.installed and info.available));
             if (self.review_row == row and !info.available) self.closeReview(false);
@@ -345,7 +345,7 @@ pub const View = struct {
         return "Waiting for runtime";
     }
     fn setEntry(entry: *gtk.Entry, text: []const u8, alloc: std.mem.Allocator) void {
-        if (!std.mem.eql(u8, std.mem.span(entry.as(gtk.Editable).getText()), text)) entry.as(gtk.Editable).setText(alloc.dupeZ(u8, text) catch return);
+        if (!std.mem.eql(u8, std.mem.span(entry.as(gtk.Editable).getText()), text)) entry.as(gtk.Editable).setText(alloc.dupeSentinel(u8, text, 0) catch return);
     }
     fn add(self: *View, source: ui.PluginInfo) !*Row {
         const row = try a.create(Row);
@@ -364,7 +364,7 @@ pub const View = struct {
         header.append(w.icon("pearl-application-x-executable-symbolic").as(gtk.Widget));
         const labels = w.column(4);
         labels.as(gtk.Widget).setHexpand(1);
-        labels.append(w.label(try alloc.dupeZ(u8, info.name), "pearl-section-title").as(gtk.Widget));
+        labels.append(w.label(try alloc.dupeSentinel(u8, info.name, 0), "pearl-section-title").as(gtk.Widget));
         labels.append(w.label(try std.fmt.allocPrintSentinel(alloc, "{s} · {s}", .{ info.id, info.version }, 0), "pearl-secondary").as(gtk.Widget));
         header.append(labels.as(gtk.Widget));
         const enabled = gtk.Switch.new();
@@ -419,7 +419,7 @@ pub const View = struct {
         inline for (.{ "x", "y", "width", "height" }) |name| row.track(@field(row, name).as(object.Object), gtk.SpinButton.signals.value_changed.connect(@field(row, name), *Row, spun, row, .{}));
         row.track(row.output.as(gtk.Editable).as(object.Object), gtk.Editable.signals.changed.connect(row.output.as(gtk.Editable), *Row, edited, row, .{}));
         for (info.settings, row.values) |spec, *value| {
-            const label = try alloc.dupeZ(u8, spec.label);
+            const label = try alloc.dupeSentinel(u8, spec.label, 0);
             value.* = switch (spec.kind) {
                 .text => blk: {
                     const widget = makeEntry(config, label);
@@ -542,7 +542,7 @@ pub const View = struct {
         self.review_row = row;
         errdefer self.closeReview(false);
         const body = shell.body;
-        body.append(w.label(try alloc.dupeZ(u8, row.info.name), "pearl-section-title").as(gtk.Widget));
+        body.append(w.label(try alloc.dupeSentinel(u8, row.info.name, 0), "pearl-section-title").as(gtk.Widget));
         body.append(w.label(@import("i18n").dtr("pearl", "Approval is for this exact package. Updated packages require a fresh review."), "pearl-secondary").as(gtk.Widget));
         const info = w.label(try std.fmt.allocPrintSentinel(alloc, "{s} · {s}\nSource: {s}\n{s}\n\nPackage fingerprint:\n{s}", .{ row.info.id, row.info.version, row.info.source, row.info.path, row.info.digest }, 0), "pearl-secondary");
         info.setSelectable(1);
@@ -571,8 +571,8 @@ pub const View = struct {
         const error_label = w.label("", "pearl-secondary");
         body.append(error_label.as(gtk.Widget));
         self.review_error = error_label;
-        const cancel = shell.dialog.addButton("Cancel", @intFromEnum(gtk.ResponseType.cancel));
-        const save_button = shell.dialog.addButton("Save review to draft", @intFromEnum(gtk.ResponseType.accept));
+        const cancel = shell.dialog.addButton("Cancel", @backingInt(gtk.ResponseType.cancel));
+        const save_button = shell.dialog.addButton("Save review to draft", @backingInt(gtk.ResponseType.accept));
         save_button.addCssClass("suggested-action");
         try self.review_controls.append(a, .{ .id = "plugins.review.cancel", .widget = cancel });
         try self.review_controls.append(a, .{ .id = "plugins.review.save", .widget = save_button });
@@ -611,7 +611,7 @@ pub const View = struct {
         return .{ .review = self.review != null, .error_text = if (self.review_error) |label| std.mem.span(label.getText()) else "", .discovery_issue = std.mem.span(self.discovery_issue.getText()), .controls = controls.items, .rows = rows.items };
     }
     fn reviewResponse(_: *gtk.Dialog, response: c_int, self: *View) callconv(.c) void {
-        if (response != @intFromEnum(gtk.ResponseType.accept)) {
+        if (response != @backingInt(gtk.ResponseType.accept)) {
             self.closeReview(true);
             return;
         }

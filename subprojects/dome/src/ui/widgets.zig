@@ -23,7 +23,7 @@ pub fn clear(parent: W) void {
     while (c.gtk_widget_get_first_child(parent)) |child| c.gtk_box_remove(cast(c.GtkBox, parent), child);
 }
 pub fn label(text: []const u8, style: ?[*:0]const u8) W {
-    const z = a.dupeZ(u8, text) catch unreachable;
+    const z = a.dupeSentinel(u8, text, 0) catch unreachable;
     defer a.free(z);
     const w = c.gtk_label_new(z).?;
     c.gtk_label_set_xalign(cast(c.GtkLabel, w), 0);
@@ -32,7 +32,7 @@ pub fn label(text: []const u8, style: ?[*:0]const u8) W {
 }
 pub fn setLabel(widget: W, text: []const u8) void {
     if (std.mem.eql(u8, std.mem.span(c.gtk_label_get_text(cast(c.GtkLabel, widget))), text)) return;
-    const z = a.dupeZ(u8, text) catch unreachable;
+    const z = a.dupeSentinel(u8, text, 0) catch unreachable;
     defer a.free(z);
     c.gtk_label_set_text(cast(c.GtkLabel, widget), z);
 }
@@ -44,7 +44,7 @@ pub fn ellipsize(widget: W) void {
     c.gtk_label_set_ellipsize(cast(c.GtkLabel, widget), c.PANGO_ELLIPSIZE_END);
 }
 pub fn button(text: []const u8) W {
-    const z = a.dupeZ(u8, text) catch unreachable;
+    const z = a.dupeSentinel(u8, text, 0) catch unreachable;
     defer a.free(z);
     return c.gtk_button_new_with_label(z).?;
 }

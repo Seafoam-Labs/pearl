@@ -270,7 +270,7 @@ pub fn displayPath(a: std.mem.Allocator, runtime: []const u8, display: []const u
     if (display[0] == '/') {
         const normalized = try std.fs.path.resolve(a, &.{display});
         defer a.free(normalized);
-        return a.dupeZ(u8, normalized);
+        return a.dupeSentinel(u8, normalized, 0);
     }
     if (std.mem.indexOfScalar(u8, display, '/') != null or std.mem.eql(u8, display, ".") or std.mem.eql(u8, display, "..")) return error.InvalidDisplay;
     return std.fmt.allocPrintSentinel(a, "{s}/{s}", .{ runtime, display }, 0);
@@ -296,7 +296,7 @@ test "control schema rejects malformed, nested, unversioned and oversized reques
     try t.expectError(error.InvalidRequest, parse(a, "{\"pearl\":1," ++ prefix ++ ",\"extra\":true}"));
     try t.expectError(error.InvalidRequest, parse(a, "{\"pearl\":1," ++ prefix ++ ",\"extra\":{\"deep\":[]}}"));
     try t.expectError(error.InvalidRequest, parse(a, "\xff"));
-    try t.expectError(error.InvalidRequest, parse(a, " " ** (max_frame + 1)));
+    try t.expectError(error.InvalidRequest, parse(a, @import("test_strings").string(" ", (max_frame + 1))));
     if (parse(a, "{\"pearl\":\"1\"," ++ prefix ++ "}")) |_| return error.AcceptedWrongType else |_| {}
     if (parse(a, "{\"pearl\":1,\"pearl\":1," ++ prefix ++ "}")) |_| return error.AcceptedDuplicateField else |_| {}
 }
@@ -380,10 +380,10 @@ test "control fields have operation-specific bounds and endpoint identity is nor
     r = .{ .op = .osd_show, .session = r.session, .display = r.display, .text = "test", .duration_ms = 10001 };
     try t.expectError(error.InvalidRequest, parse(a, try std.json.Stringify.valueAlloc(a, r, .{ .emit_null_optional_fields = false })));
     r.duration_ms = 100;
-    r.text = "x" ** 513;
+    r.text = @import("test_strings").string("x", 513);
     try t.expectError(error.InvalidRequest, parse(a, try std.json.Stringify.valueAlloc(a, r, .{ .emit_null_optional_fields = false })));
     try t.expectEqualStrings("/run/user/1/wayland-1", try displayPath(a, "/run/user/1", "wayland-1"));
     try t.expectEqualStrings("/run/user/1/wayland-1", try displayPath(a, "/unused", "/run/user/1/./wayland-1"));
     try t.expectError(error.InvalidDisplay, displayPath(a, "/run/user/1", "../wayland-1"));
-    try t.expectError(error.InvalidEndpoint, endpoint(a, "/" ++ "x" ** 90, r.session));
+    try t.expectError(error.InvalidEndpoint, endpoint(a, "/" ++ @import("test_strings").string("x", 90), r.session));
 }

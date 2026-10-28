@@ -27,7 +27,7 @@ def main():
                         '--prefix', str(prefix / 'languages')], cwd=ROOT, check=True)
         if args.aqueous:
             fetching = ['--system', str(ROOT / 'zig-pkg')] if args.offline == 'true' else []
-            subprocess.run([*build, *fetching, 'build-shell', '-Doptimize=ReleaseSafe',
+            subprocess.run([*build, *fetching, 'build-shell', '-Doptimize=safe',
                             '-Di18n-prefix=' + str(prefix / 'languages'),
                             '--prefix', str(prefix / 'app')], cwd=ROOT, check=True)
             subprocess.run([sys.executable, ROOT / 'tests/integration/test_language_packs.py',

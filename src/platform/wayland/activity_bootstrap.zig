@@ -1,11 +1,7 @@
 //! Capture before GTK/worker startup. Only the broker may consume this descriptor.
 const std = @import("std");
 const glib = @import("glib2");
-const c = @cImport({
-    @cUndef("_FORTIFY_SOURCE");
-    @cInclude("unistd.h");
-    @cInclude("fcntl.h");
-});
+const c = @import("pearl_libc");
 var proof: c_int = -1;
 pub fn capture(init: std.process.Init) !void {
     const value = glib.getenv("AQUEOUS_INPUT_ACTIVITY_FD") orelse return;

@@ -3,11 +3,7 @@
 const std = @import("std");
 const gio = @import("gio2");
 const glib = @import("glib2");
-const c = @cImport({
-    @cInclude("sys/prctl.h");
-    @cInclude("unistd.h");
-    @cInclude("signal.h");
-});
+const c = @import("pearl_libc");
 extern fn memfd_create([*:0]const u8, c_uint) c_int;
 extern fn waitid(c_int, c_uint, *std.c.siginfo_t, c_int) c_int;
 extern fn setpgid(c_int, c_int) c_int;

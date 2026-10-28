@@ -1,6 +1,6 @@
 # Coral
 
-A standalone Linux text editor written in **Zig 0.16.0 and GTK4**, with
+A standalone Linux text editor written in **Zig 0.17.0 and GTK4**, with
 GtkSourceView editing and offline Enchant spell checking. Its compact tabbed
 interface follows Pearl's design and the everyday workflow of COSMIC Text Editor.
 
@@ -8,14 +8,14 @@ interface follows Pearl's design and the everyday workflow of COSMIC Text Editor
 
 ## Build and run
 
-Use Zig 0.16.0, `pkg-config`, a C toolchain, GTK **4.12+**, GtkSourceView **5**,
+Use Zig 0.17.0, `pkg-config`, a C toolchain, GTK **4.12+**, GtkSourceView **5**,
 Enchant **2**, and their development headers. GTK 4.22.5, GtkSourceView 5.20.0,
 and Enchant 2.8.21 are the tested versions. Older supported API baselines have
 not been tested in a separate distribution image.
 
 ```sh
 cd subprojects/coral
-zig build -Doptimize=ReleaseSafe
+zig build -Doptimize=safe
 zig build run -- /path/to/notes.txt
 zig build test
 ```
@@ -102,7 +102,7 @@ uses Pearl's existing private Wayland harness, temporary XDG directories and
 files, and a small pinned Hunspell fixture:
 
 ```sh
-zig build integration -Doptimize=ReleaseSafe
+zig build integration -Doptimize=safe
 ```
 
 The harness needs the prepared `.cache/aqueous-activity-production` prefix,

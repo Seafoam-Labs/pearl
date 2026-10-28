@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build/run the standalone spike; downloads nothing and changes no host setup."""
+"""Build/run the standalone spike using upstream translate-c; changes no host setup."""
 import argparse
 import os
 from pathlib import Path
@@ -14,19 +14,20 @@ args = parser.parse_args()
 source = Path(__file__).resolve().parent
 out = args.output.resolve()
 out.mkdir(parents=True, exist_ok=True)
-env = dict(os.environ, ZIG_GLOBAL_CACHE_DIR=str(out / "zig-global-cache"))
+env = dict(os.environ)
+env.setdefault("ZIG_GLOBAL_CACHE_DIR", str(out / "zig-global-cache"))
 
 
 def run(*argv):
     subprocess.run(argv, cwd=out, env=env, check=True, timeout=180)
 
 
-for name in ("main.zig", "build.zig", "guest.c", "guest.zig"):
+for name in ("main.zig", "build.zig", "build.zig.zon", "guest.c", "guest.zig"):
     shutil.copy2(source / name, out / name)
 run("zig", "cc", "-target", "wasm32-freestanding", "-nostdlib", "-O2",
     "-Wl,--no-entry", "-Wl,--export=run", "-o", "c.wasm", "guest.c")
 run("zig", "build-exe", "guest.zig", "-target", "wasm32-freestanding",
-    "-fno-entry", "-rdynamic", "-O", "ReleaseSmall", "-femit-bin=zig.wasm")
+    "-fno-entry", "-rdynamic", "-O", "small", "-femit-bin=zig.wasm")
 for language in ("c", "zig"):
     module = subprocess.check_output(
         [str(args.wasm_tools.resolve()), "print", str(out / f"{language}.wasm")],

@@ -40,9 +40,9 @@ pub const Job = struct {
             a.destroy(self);
         }
         const alloc = self.arena.allocator();
-        self.request.path = try alloc.dupeZ(u8, request.path);
-        self.request.name = try alloc.dupeZ(u8, request.name);
-        self.request.etag = if (request.etag) |v| try alloc.dupeZ(u8, v) else null;
+        self.request.path = try alloc.dupeSentinel(u8, request.path, 0);
+        self.request.name = try alloc.dupeSentinel(u8, request.name, 0);
+        self.request.etag = if (request.etag) |v| try alloc.dupeSentinel(u8, v, 0) else null;
         app.hold();
         const task = gio.Task.new(null, self.cancel, completed, self);
         task.setTaskData(self, null);
@@ -71,7 +71,7 @@ pub const Job = struct {
         defer file.unref();
         const raw_uri = file.getUri();
         defer glib.free(raw_uri);
-        self.uri = try alloc.dupeZ(u8, std.mem.span(raw_uri));
+        self.uri = try alloc.dupeSentinel(u8, std.mem.span(raw_uri), 0);
         if (self.cancel.isCancelled() != 0) return error.Cancelled;
         if (r.kind != .mkdir and r.kind != .shortcut) {
             const info = file.queryInfo("etag::value,standard::type,standard::is-symlink", .{ .nofollow_symlinks = true }, self.cancel, null) orelse return error.ItemUnavailable;
@@ -79,12 +79,12 @@ pub const Job = struct {
             if (r.etag) |expected| if (!std.mem.eql(u8, expected, std.mem.span(info.getEtag() orelse ""))) return error.ItemChanged;
             if (r.launcher) {
                 if (info.getIsSymlink() != 0 or info.getFileType() != .regular) return error.UnsafeLauncher;
-                const read = try io.read(alloc, try alloc.dupeZ(u8, r.path), 131072, self.cancel);
+                const read = try io.read(alloc, try alloc.dupeSentinel(u8, r.path, 0), 131072, self.cancel);
                 const digest = r.digest orelse return error.LauncherNotApproved;
                 if (read.missing or !std.mem.eql(u8, &digest, &read.hash)) return error.LauncherChanged;
                 const key = glib.KeyFile.new();
                 defer key.unref();
-                if (key.loadFromData((try alloc.dupeZ(u8, read.bytes)).ptr, read.bytes.len, .{}, null) == 0) return error.InvalidLauncher;
+                if (key.loadFromData((try alloc.dupeSentinel(u8, read.bytes, 0)).ptr, read.bytes.len, .{}, null) == 0) return error.InvalidLauncher;
                 self.opened = unix.DesktopAppInfo.newFromKeyfile(key) orelse return error.InvalidLauncher;
                 self.digest = read.hash;
             }
@@ -131,7 +131,7 @@ pub const Job = struct {
                     };
                     const uri = target.getUri();
                     defer glib.free(uri);
-                    self.uri = try alloc.dupeZ(u8, std.mem.span(uri));
+                    self.uri = try alloc.dupeSentinel(u8, std.mem.span(uri), 0);
                     self.digest = read.hash;
                     return;
                 }

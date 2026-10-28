@@ -46,14 +46,14 @@ pub fn main(init: std.process.Init) !void {
     try execute(selected.argv);
 }
 fn set(key: [*:0]const u8, value: []const u8) !void {
-    const z = try a.dupeZ(u8, value);
+    const z = try a.dupeSentinel(u8, value, 0);
     defer a.free(z);
     if (glib.setenv(key, z, 1) == 0) return error.Environment;
 }
 fn execute(args: []const []const u8) !void {
     var argv: [257:null]?[*:0]const u8 = @splat(null);
     if (args.len > 256) return error.Arguments;
-    for (args, 0..) |arg, i| argv[i] = (try a.dupeZ(u8, arg)).ptr;
+    for (args, 0..) |arg, i| argv[i] = (try a.dupeSentinel(u8, arg, 0)).ptr;
     _ = std.c.execve(argv[0].?, @ptrCast(&argv), @ptrCast(std.c.environ));
     return error.SessionExecFailed;
 }

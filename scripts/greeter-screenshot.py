@@ -9,6 +9,7 @@ import argparse
 import sys
 import time
 from pathlib import Path
+from aqueous_target import PREFIX
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'scripts'))
@@ -18,7 +19,7 @@ from pearl_session import PrivateSession
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--greeter', type=Path, default=ROOT / 'zig-out/test/pearl-greeter-test')
-    parser.add_argument('--prefix', type=Path, default=ROOT / '.cache/aqueous-activity-production')
+    parser.add_argument('--prefix', type=Path, default=PREFIX)
     parser.add_argument('--output', type=Path, default=ROOT / 'artifacts/greeter-screenshot')
     parser.add_argument('--name', default='latest')
     args = parser.parse_args()

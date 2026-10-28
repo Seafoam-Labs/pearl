@@ -1,5 +1,6 @@
 const std = @import("std");
 pub fn build(b: *std.Build) void {
+    defer @import("pearl_ffi").attach(b, b.path("../../bindings/c"));
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
     const bindings = b.dependency("gobject", .{ .target = target, .optimize = optimize });
@@ -11,14 +12,14 @@ pub fn build(b: *std.Build) void {
     const appearance = createModule(b, .{ .root_source_file = b.path("../../src/appearance_client.zig"), .target = target, .optimize = optimize, .link_libc = true });
     for ([_][]const u8{ "gtk4", "gdk4", "gio2", "glib2", "gobject2", "gdkwayland4" }) |name| appearance.addImport(name, bindings.module(name));
     appearance.addImport("wayland", native);
-    for ([_][]const u8{ "gtk4", "wayland-client", "libpng" }) |name| appearance.linkSystemLibrary(name, .{ .use_pkg_config = .force });
+    for ([_][]const u8{ "gtk4", "wayland-client", "libpng" }) |name| appearance.linkSystemLibrary(name, .{ .use_pkg_config = .yes });
     const options = b.addOptions();
     options.addOption(bool, "test_hooks", b.option(bool, "test-hooks", "Enable isolated integration instrumentation") orelse false);
     const git_variant = b.option(bool, "git-variant", "Use the Git application identity") orelse false;
     options.addOption(bool, "git_variant", git_variant);
     const module = createModule(b, .{ .root_source_file = b.path("src/main.zig"), .target = target, .optimize = optimize, .link_libc = true });
-    module.linkSystemLibrary("gtk4", .{ .use_pkg_config = .force });
-    module.linkSystemLibrary("gio-unix-2.0", .{ .use_pkg_config = .force });
+    module.linkSystemLibrary("gtk4", .{ .use_pkg_config = .yes });
+    module.linkSystemLibrary("gio-unix-2.0", .{ .use_pkg_config = .yes });
     module.addOptions("build_options", options);
     module.addAnonymousImport("style", .{ .root_source_file = b.path("resources/style.css") });
     module.addAnonymousImport("theme_style", .{ .root_source_file = b.path("resources/theme.css") });
@@ -41,7 +42,7 @@ pub fn build(b: *std.Build) void {
     }
     b.installFile("resources/org.aqueous.Dome.svg", b.fmt("share/icons/hicolor/scalable/apps/{s}.svg", .{identity}));
     const run = b.addRunArtifact(exe);
-    if (b.args) |args| run.addArgs(args);
+    run.addPassthruArgs();
     b.step("run", "Launch Dome").dependOn(&run.step);
     const test_step = b.step("test", "Test metric contracts, parsers, identities and live collector lifecycle");
     for ([_][]const u8{ "src/core/model.zig", "src/collectors/linux.zig" }) |path| {
@@ -49,8 +50,8 @@ pub fn build(b: *std.Build) void {
         // A common root permits collector tests to import the pure model.
         const tests = if (std.mem.eql(u8, path, "src/core/model.zig")) b.addTest(.{ .root_module = tm }) else blk: {
             tm.root_source_file = b.path("src/tests.zig");
-            tm.linkSystemLibrary("gtk4", .{ .use_pkg_config = .force });
-            tm.linkSystemLibrary("gio-unix-2.0", .{ .use_pkg_config = .force });
+            tm.linkSystemLibrary("gtk4", .{ .use_pkg_config = .yes });
+            tm.linkSystemLibrary("gio-unix-2.0", .{ .use_pkg_config = .yes });
             tm.addImport("appearance_client", appearance);
             tm.addAnonymousImport("theme_style", .{ .root_source_file = b.path("resources/theme.css") });
             break :blk b.addTest(.{ .root_module = tm });
@@ -61,8 +62,8 @@ pub fn build(b: *std.Build) void {
     test_options.addOption(bool, "test_hooks", true);
     test_options.addOption(bool, "git_variant", false);
     const im = createModule(b, .{ .root_source_file = b.path("src/main.zig"), .target = target, .optimize = optimize, .link_libc = true });
-    im.linkSystemLibrary("gtk4", .{ .use_pkg_config = .force });
-    im.linkSystemLibrary("gio-unix-2.0", .{ .use_pkg_config = .force });
+    im.linkSystemLibrary("gtk4", .{ .use_pkg_config = .yes });
+    im.linkSystemLibrary("gio-unix-2.0", .{ .use_pkg_config = .yes });
     im.addOptions("build_options", test_options);
     im.addAnonymousImport("style", .{ .root_source_file = b.path("resources/style.css") });
     im.addAnonymousImport("theme_style", .{ .root_source_file = b.path("resources/theme.css") });
@@ -71,28 +72,36 @@ pub fn build(b: *std.Build) void {
     const ie = b.addExecutable(.{ .name = "dome-test", .root_module = im });
     const integration = b.addSystemCommand(&.{ "python3", "tests/native.py", "--binary" });
     integration.addArtifactArg(ie);
-    if (b.args) |args| integration.addArgs(args);
+    integration.addPassthruArgs();
     b.step("integration", "Run native GTK tests in a private Aqueous session").dependOn(&integration.step);
     const themes = b.addSystemCommand(&.{ "python3", "tests/themes.py", "--binary" });
     themes.addArtifactArg(ie);
-    if (b.args) |args| themes.addArgs(args);
+    themes.addPassthruArgs();
     b.step("integration-themes", "Verify live committed Pearl appearance in a private session").dependOn(&themes.step);
     const bm = createModule(b, .{ .root_source_file = b.path("src/benchmark.zig"), .target = target, .optimize = optimize, .link_libc = true });
-    bm.linkSystemLibrary("gtk4", .{ .use_pkg_config = .force });
-    bm.linkSystemLibrary("gio-unix-2.0", .{ .use_pkg_config = .force });
+    bm.linkSystemLibrary("gtk4", .{ .use_pkg_config = .yes });
+    bm.linkSystemLibrary("gio-unix-2.0", .{ .use_pkg_config = .yes });
     const benchmark = b.addExecutable(.{ .name = "dome-graph-benchmark", .root_module = bm });
     b.step("benchmark", "Measure Cairo graph drawing on a software image surface").dependOn(&b.addRunArtifact(benchmark).step);
 }
 
 fn createModule(b: *std.Build, opts: std.Build.Module.CreateOptions) *std.Build.Module {
-    const m = b.createModule(opts);
+    const m = b.addModule(b.fmt("pearl_root_{d}", .{b.modules.count()}), opts);
     const runtime = b.modules.get("pearl_i18n") orelse blk: {
-        const runtime = b.addModule("pearl_i18n", .{ .root_source_file = b.path("../../src/i18n/runtime.zig"), .target = opts.target orelse b.graph.host, .optimize = opts.optimize orelse .Debug, .link_libc = true });
+        const runtime = b.addModule("pearl_i18n", .{ .root_source_file = b.path("../../src/i18n/runtime.zig"), .target = opts.target orelse b.graph.host, .optimize = opts.optimize orelse .debug, .link_libc = true });
         const options = b.addOptions();
         options.addOption([]const u8, "prefix", b.option([]const u8, "i18n-prefix", "Language pack installation prefix") orelse "/usr");
         runtime.addOptions("i18n_options", options);
         break :blk runtime;
     };
+    const app_c: @import("translate_c").Translator = .init(b.dependency("translate_c", .{}), .{
+        .name = "app_c",
+        .c_source_file = b.path("src/platform/c.h"),
+        .target = opts.target orelse b.graph.host,
+        .optimize = opts.optimize orelse .debug,
+        .link_system_libs = &.{ .{ .name = "gtk4" }, .{ .name = "gio-unix-2.0" } },
+    });
+    m.addImport("pearl_app_c", app_c.mod);
     m.addImport("i18n", runtime);
     return m;
 }

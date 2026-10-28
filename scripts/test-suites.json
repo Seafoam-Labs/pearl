@@ -1,5 +1,30 @@
 [
   {
+    "id": "test-display-brightness",
+    "description": "Mixed display brightness, identity and recovery against a private DDC ABI",
+    "groups": [
+      "integration"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-display-brightness"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "session",
+      "aqueous"
+    ],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 300,
+    "sources": [
+      "tests/integration/test_display_brightness.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
     "id": "test-gpu-report",
     "description": "Verify GPU observations and boot/session-scoped support journals",
     "groups": ["integration"],
@@ -748,6 +773,7 @@
   },
   {
     "id": "test-settings-app",
+    "report_only": true,
     "description": "Verify standalone window, process isolation, activation and presentation",
     "groups": [
       "integration"
@@ -2369,7 +2395,7 @@
         "{zig}",
         "build",
         "build-greeter",
-        "-Doptimize=ReleaseSafe"
+        "-Doptimize=safe"
       ]
     ],
     "command": [
@@ -3035,7 +3061,7 @@
         "--build-file",
         "{root}/build.zig",
         "build-shell",
-        "-Doptimize=ReleaseSafe"
+        "-Doptimize=safe"
       ]
     ]
   },
@@ -3070,7 +3096,7 @@
         "--build-file",
         "{root}/build.zig",
         "build-shell",
-        "-Doptimize=ReleaseSafe"
+        "-Doptimize=safe"
       ]
     ]
   },

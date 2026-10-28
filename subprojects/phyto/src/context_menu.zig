@@ -34,7 +34,7 @@ pub const Menu = struct {
     pub fn start(self: *Menu) void {
         self.owner.root.as(gtk.Widget).insertActionGroup("ctx", self.group.as(gio.ActionGroup));
         for (std.enums.values(Command)) |cmd| {
-            const i = @intFromEnum(cmd);
+            const i = @backingInt(cmd);
             self.actions[i] = .{ .menu = self, .command = cmd };
             const action = if (toggle(cmd)) gio.SimpleAction.newStateful(@tagName(cmd), null, glib.Variant.newBoolean(0)) else gio.SimpleAction.new(@tagName(cmd), null);
             _ = gio.SimpleAction.signals.activate.connect(action, *Action, activated, &self.actions[i], .{});
@@ -434,7 +434,7 @@ pub const Menu = struct {
             self.add(menu, @import("i18n").dtr("phyto", "Properties"), .properties);
         } else {
             const open = gio.Menu.new();
-            const label = if (c.items.items.len > 1) u.format("Open {d} items", .{c.items.items.len}) else a.dupeZ(u8, "Open") catch unreachable;
+            const label = if (c.items.items.len > 1) u.format("Open {d} items", .{c.items.items.len}) else a.dupeSentinel(u8, "Open", 0) catch unreachable;
             defer a.free(label);
             self.add(open, label, .open);
             if (f.all_directories) {

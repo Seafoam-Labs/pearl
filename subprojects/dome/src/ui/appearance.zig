@@ -29,7 +29,7 @@ pub fn colors(s: shared.Snapshot) !Colors {
 
 pub fn render(a: std.mem.Allocator, s: shared.Snapshot) ![:0]u8 {
     try shared.theme.validate(s.palette);
-    const base = if (s.mode == .gtk) try a.dupeZ(u8, "") else try shared.theme.scopedCss(a, @embedFile("theme_style"), "pearl", s.palette);
+    const base = if (s.mode == .gtk) try a.dupeSentinel(u8, "", 0) else try shared.theme.scopedCss(a, @embedFile("theme_style"), "pearl", s.palette);
     defer a.free(base);
     const tokens = try shared.style.tokenCss(a, s.style_tokens, s.reduced_motion);
     defer a.free(tokens);
@@ -79,7 +79,7 @@ pub const Appearance = struct {
         const css = try render(u.a, snapshot);
         defer u.a.free(css);
         const palette = try colors(snapshot);
-        const name = try u.a.dupeZ(u8, snapshot.gtk_name);
+        const name = try u.a.dupeSentinel(u8, snapshot.gtk_name, 0);
         defer u.a.free(name);
         if (self.provider == null) {
             self.provider = c.gtk_css_provider_new().?;

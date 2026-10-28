@@ -183,7 +183,7 @@ test "invalid destinations and removed outputs cannot dismiss a matching flyout"
     const visible: Selection = .{ .page = .sound, .output = "removed-output" };
     try t.expectError(error.InvalidOutput, transition(visible, visible, .toggle, &.{"live-output"}));
     try t.expectError(error.InvalidRoute, transition(visible, .{ .page = .appearance, .output = "live-output" }, .show, &.{"live-output"}));
-    for ([_][]const u8{ "", "x\x00y", "x" ** 1025 }) |output|
+    for ([_][]const u8{ "", "x\x00y", @import("test_strings").string("x", 1025) }) |output|
         try t.expectError(error.InvalidOutput, transition(null, .{ .page = .sound, .output = output }, .show, &.{output}));
     // IDs compare by value, independent of the event's storage.
     const copy = try t.allocator.dupe(u8, visible.output);

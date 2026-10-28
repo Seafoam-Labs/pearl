@@ -103,7 +103,7 @@ fn resolveVariant(a: std.mem.Allocator, authored: std.json.Value, variant: []con
 }
 fn project(v: std.json.Value) theme.Palette {
     var result: theme.Palette = undefined;
-    inline for (@typeInfo(theme.Palette).@"struct".fields, shell_roles) |field, role| @field(result, field.name) = model.get(v, role);
+    inline for (@typeInfo(theme.Palette).@"struct".field_names, shell_roles) |field, role| @field(result, field) = model.get(v, role);
     return result;
 }
 fn colorValue(a: std.mem.Allocator, hex: []const u8) !std.json.Value {
@@ -234,7 +234,7 @@ test "a light-only source supplies identical semantic and terminal colors in bot
     const doc = try compile(a,
         \\{"light":{"surface":"#f5fbf6","on_surface":"#17231a","primary":"#28633b","hover":"#d2e3d6","on_hover":"#17231a","terminal":{"bright":{"red":"#a12835"}}}}
     , &d);
-    inline for (@typeInfo(theme.Palette).@"struct".fields) |field| try std.testing.expectEqualStrings(@field(doc.dark, field.name), @field(doc.light, field.name));
+    inline for (@typeInfo(theme.Palette).@"struct".field_names) |field| try std.testing.expectEqualStrings(@field(doc.dark, field), @field(doc.light, field));
     const full = try @import("package_model.zig").parse(std.json.Value, a, doc.render_json, 131072);
     for (full.object.get("colors").?.object.values()) |value| try std.testing.expectEqualStrings(value.object.get("dark").?.object.get("color").?.string, value.object.get("light").?.object.get("color").?.string);
     try std.testing.expect(std.mem.indexOf(u8, try shellCss(a, doc, false), "#d2e3d6") != null);

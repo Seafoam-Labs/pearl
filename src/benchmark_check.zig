@@ -7,7 +7,7 @@ pub fn main(init: std.process.Init) !void {
     const a = init.arena.allocator();
     const args = try init.minimal.args.toSlice(a);
     if (args.len != 2) return error.ExpectedBenchmarkInputFile;
-    const input = try @import("config/io.zig").read(a, try a.dupeZ(u8, args[1]), 65536, null);
+    const input = try @import("config/io.zig").read(a, try a.dupeSentinel(u8, args[1], 0), 65536, null);
     const options = try std.json.parseFromSliceLeaky(struct { config: @import("agent/config.zig").Config, options: benchmark.Options = .{}, cancel_after_ms: u32 = 0, skip_after_ms: u32 = 0 }, a, input.bytes, .{});
     const cancel = gio.Cancellable.new();
     defer cancel.unref();

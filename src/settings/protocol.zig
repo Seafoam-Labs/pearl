@@ -57,8 +57,8 @@ pub fn parse(a: std.mem.Allocator, bytes: []const u8) !Request {
     for ([_][]const u8{ "settings", "id", "session", "display", "op" }) |key| if (!value.object.contains(key)) return error.InvalidRequest;
     var it = value.object.iterator();
     while (it.next()) |field| {
-        inline for (@typeInfo(Request).@"struct".fields) |known| {
-            if (std.mem.eql(u8, known.name, field.key_ptr.*)) break;
+        inline for (@typeInfo(Request).@"struct".field_names) |known| {
+            if (std.mem.eql(u8, known, field.key_ptr.*)) break;
         } else return error.InvalidRequest;
     }
     const Header = struct { settings: u32, id: []const u8, session: []const u8, display: []const u8, op: @FieldType(Request, "op"), epoch: ?[]const u8 = null };
@@ -111,7 +111,7 @@ test "settings handshake rejects malformed fields and versions before connection
     const valid = "{\"settings\":1" ++ suffix;
     _ = try parse(a, valid);
     try t.expectError(error.Version, parse(a, "{\"settings\":2" ++ suffix));
-    for ([_][]const u8{ "{\"settings\":\"1\"" ++ suffix, "{\"extra\":1,\"settings\":1" ++ suffix, "{\"settings\":1,\"settings\":1" ++ suffix, "[]", "{}", " " ** 8193 }) |bad| try t.expectError(error.InvalidRequest, parse(a, bad));
+    for ([_][]const u8{ "{\"settings\":\"1\"" ++ suffix, "{\"extra\":1,\"settings\":1" ++ suffix, "{\"settings\":1,\"settings\":1" ++ suffix, "[]", "{}", @import("test_strings").string(" ", 8193) }) |bad| try t.expectError(error.InvalidRequest, parse(a, bad));
     for ([_][]const u8{ "0", "-1", "18446744073709551616" }) |id| {
         const bad = try std.json.Stringify.valueAlloc(a, Request{ .settings = 1, .id = id, .session = "0123456789abcdef0123456789abcdef", .display = "/tmp/wayland-1", .op = .hello }, .{ .emit_null_optional_fields = false });
         try t.expectError(error.InvalidRequest, parse(a, bad));
@@ -142,7 +142,7 @@ test "settings endpoint is distinct and document budgets cover existing complete
     const path = try endpoint(t.allocator, "/tmp/r", "0123456789abcdef0123456789abcdef");
     defer t.allocator.free(path);
     try t.expectEqualStrings("/tmp/r/pearl/0123456789abcdef0123456789abcdef/settings.sock", path);
-    try t.expectError(error.InvalidEndpoint, endpoint(t.allocator, "/" ++ "x" ** 90, "0123456789abcdef0123456789abcdef"));
+    try t.expectError(error.InvalidEndpoint, endpoint(t.allocator, "/" ++ @import("test_strings").string("x", 90), "0123456789abcdef0123456789abcdef"));
     const limits: Limits = .{};
     try t.expectEqual(limits.aqueous_response_bytes, limits.document_chunks * limits.document_chunk_bytes);
     // JSON's worst-case escaping still fits a full transfer chunk in one frame.

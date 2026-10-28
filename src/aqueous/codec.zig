@@ -12,9 +12,9 @@ pub const Limits = struct {
 
     pub fn validate(self: Limits) !void {
         const hard: Limits = .{};
-        inline for (@typeInfo(Limits).@"struct".fields) |f| {
-            const n = @field(self, f.name);
-            if (n == 0 or n > @field(hard, f.name)) return error.InvalidLimits;
+        inline for (@typeInfo(Limits).@"struct".field_names) |f| {
+            const n = @field(self, f);
+            if (n == 0 or n > @field(hard, f)) return error.InvalidLimits;
         }
     }
 };

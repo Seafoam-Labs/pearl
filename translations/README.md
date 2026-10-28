@@ -8,7 +8,7 @@ English. Installing a pack does not change an already running process.
 
 ## Build and install
 
-Catalog builds require Zig 0.16 and GNU gettext (`msgfmt`). They do not require
+Catalog builds require Zig 0.17 and GNU gettext (`msgfmt`). They do not require
 GTK, the compositor, or application builds. From the repository root:
 
 ```sh

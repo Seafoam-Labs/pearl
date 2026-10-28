@@ -124,7 +124,7 @@ pub const Power = struct {
         self.running = true;
         self.cancel = gio.Cancellable.new();
         if (self.backlight_root.len == 0) self.backlight_root.set("/sys/class/backlight");
-        for (&self.slots, 0..) |*slot, i| slot.* = .{ .service = self, .tag = @enumFromInt(i) };
+        for (&self.slots, 0..) |*slot, i| slot.* = .{ .service = self, .tag = @fromBackingInt(@intCast(i)) };
         for (&self.slots) |*slot| if (slot.tag != .session) self.create(slot);
         const file = gio.File.newForPath(self.backlight_root.z());
         defer file.unref();
@@ -213,7 +213,7 @@ pub const Power = struct {
         job.* = .{ .slot = slot, .generation = slot.generation };
         slot.creating = true;
         self.app.hold();
-        const i = @intFromEnum(slot.tag);
+        const i = @backingInt(slot.tag);
         gio.DBusProxy.newForBus(.system, .{ .do_not_auto_start = true, .get_invalidated_properties = true }, null, names[i], if (slot.tag == .session) self.session_path.z() else paths[i], interfaces[i], self.cancel, created, job);
     }
     fn created(_: ?*object.Object, result: *gio.AsyncResult, data: ?*anyopaque) callconv(.c) void {
@@ -301,7 +301,7 @@ pub const Power = struct {
                     self.action_pending = false;
                     self.session_path = .{};
                     self.session_active = false;
-                    closeSlot(&self.slots[@intFromEnum(Tag.session)]);
+                    closeSlot(&self.slots[@backingInt(Tag.session)]);
                     self.brightness_wanted = null;
                     self.brightness_pending = false;
                     if (name.len != 0) self.capabilities();
@@ -335,7 +335,7 @@ pub const Power = struct {
         }
     }
     fn available(self: *Power, tag: Tag) ?*Slot {
-        const slot = &self.slots[@intFromEnum(tag)];
+        const slot = &self.slots[@backingInt(tag)];
         return if (slot.proxy != null and slot.owner.len != 0) slot else null;
     }
     fn profilesSlot(self: *Power) ?*Slot {
@@ -630,7 +630,7 @@ pub const Power = struct {
         self.arm();
     }
     pub fn brightnessGeneration(self: *Power) u64 {
-        var hash = std.hash.Wyhash.init(self.slots[@intFromEnum(Tag.session)].generation);
+        var hash = std.hash.Wyhash.init(self.slots[@backingInt(Tag.session)].generation);
         hash.update(self.selected_display.slice());
         if (self.selectedDisplay()) |d| hash.update(std.mem.asBytes(&d.generation));
         return hash.final();
@@ -642,7 +642,7 @@ pub const Power = struct {
         return hash.final();
     }
     pub fn epoch(self: *Power) u64 {
-        return self.slots[@intFromEnum(Tag.login)].generation;
+        return self.slots[@backingInt(Tag.login)].generation;
     }
     pub fn powerAction(self: *Power, reboot: bool) !void {
         if (self.action_pending) return error.Busy;
@@ -664,7 +664,7 @@ pub const Power = struct {
         self.session_active = false;
         self.brightness_wanted = null;
         self.brightness_pending = false;
-        const slot = &self.slots[@intFromEnum(Tag.session)];
+        const slot = &self.slots[@backingInt(Tag.session)];
         closeSlot(slot);
         if (path.len != 0) self.create(slot);
         self.refresh();
@@ -695,7 +695,7 @@ pub const Power = struct {
             self.profile_wanted = null;
             if (self.profilesSlot()) |slot| {
                 if (!self.profiles[index]) return 0;
-                self.call(slot, .profile, "Set", tuple(&.{ glib.Variant.newString(interfaces[@intFromEnum(slot.tag)]), glib.Variant.newString("ActiveProfile"), glib.Variant.newVariant(glib.Variant.newString(profile_names[index])) }), "org.freedesktop.DBus.Properties") catch {
+                self.call(slot, .profile, "Set", tuple(&.{ glib.Variant.newString(interfaces[@backingInt(slot.tag)]), glib.Variant.newString("ActiveProfile"), glib.Variant.newVariant(glib.Variant.newString(profile_names[index])) }), "org.freedesktop.DBus.Properties") catch {
                     self.err = "Power profile request failed.";
                     self.changed(self.context, .failure);
                     return 0;
@@ -718,7 +718,7 @@ pub const Power = struct {
             else => "()",
         });
         defer reply_type.free();
-        slot.proxy.?.getConnection().call(slot.owner.z(), if (slot.tag == .session) self.session_path.z() else paths[@intFromEnum(slot.tag)], interface orelse interfaces[@intFromEnum(slot.tag)], method, parameters, reply_type, .{ .no_auto_start = true }, 3000, self.cancel, called, job);
+        slot.proxy.?.getConnection().call(slot.owner.z(), if (slot.tag == .session) self.session_path.z() else paths[@backingInt(slot.tag)], interface orelse interfaces[@backingInt(slot.tag)], method, parameters, reply_type, .{ .no_auto_start = true }, 3000, self.cancel, called, job);
     }
     fn called(source: ?*object.Object, result: *gio.AsyncResult, data: ?*anyopaque) callconv(.c) void {
         const job: *Call = @ptrCast(@alignCast(data.?));
@@ -729,7 +729,7 @@ pub const Power = struct {
         const value = object.ext.cast(gio.DBusConnection, source.?).?.callFinish(result, &err);
         defer if (value) |v| v.unref();
         defer if (err) |e| e.free();
-        if (!self.running or self.slots[@intFromEnum(job.tag)].generation != job.generation) return;
+        if (!self.running or self.slots[@backingInt(job.tag)].generation != job.generation) return;
         if (job.purpose == .can_off) self.capability_pending[0] = false;
         if (job.purpose == .can_reboot) self.capability_pending[1] = false;
         const mutation = job.purpose == .brightness or job.purpose == .profile or job.purpose == .power_off or job.purpose == .reboot;
@@ -824,9 +824,9 @@ pub const Power = struct {
         for (self.displays.slice(), 0..) |d, i| {
             var buffer: [768]u8 = undefined;
             const path = if (d.backend == .backlight)
-                std.fmt.bufPrintZ(&buffer, "{s}/{s}/brightness", .{ self.backlight_root.slice(), d.name.slice() }) catch continue
+                std.mem.printSentinel(&buffer, "{s}/{s}/brightness", .{ self.backlight_root.slice(), d.name.slice() }, 0) catch continue
             else if (d.connector.len != 0)
-                std.fmt.bufPrintZ(&buffer, "{s}/{s}", .{ self.drm_root.slice(), d.connector.slice() }) catch continue
+                std.mem.printSentinel(&buffer, "{s}/{s}", .{ self.drm_root.slice(), d.connector.slice() }, 0) catch continue
             else
                 continue;
             const file = gio.File.newForPath(path.ptr);
@@ -1078,7 +1078,7 @@ pub const Power = struct {
             _ = args.refSink();
             defer args.unref();
             var err: ?*glib.Error = null;
-            const result = job.connection.?.callSync(job.owner.z(), job.path.z(), interfaces[@intFromEnum(Tag.session)], "SetBrightness", args, null, .{ .no_auto_start = true }, 3000, cancel, &err);
+            const result = job.connection.?.callSync(job.owner.z(), job.path.z(), interfaces[@backingInt(Tag.session)], "SetBrightness", args, null, .{ .no_auto_start = true }, 3000, cancel, &err);
             defer if (err) |e| e.free();
             if (result) |r| {
                 r.unref();
@@ -1121,7 +1121,7 @@ pub const Power = struct {
         if (self.displays.find(job.device.id.slice())) |d| {
             d.pending = false;
             d.requested = null;
-            if (err == null and job.epoch == self.topology_epoch and self.session_active and !self.preparing and self.slots[@intFromEnum(Tag.session)].generation == job.session_generation and d.generation == job.device.generation) {
+            if (err == null and job.epoch == self.topology_epoch and self.session_active and !self.preparing and self.slots[@backingInt(Tag.session)].generation == job.session_generation and d.generation == job.device.generation) {
                 if (job.reason) |reason| {
                     d.wanted = null;
                     d.dim_restore = null;

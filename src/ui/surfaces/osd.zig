@@ -78,7 +78,7 @@ pub const View = struct {
                 self.label.setText(if (v.label.len != 0) v.label.z() else @import("i18n").dtr("pearl", "Output volume"));
                 self.icon.setFromIconName(if (v.muted) "pearl-audio-volume-muted-symbolic" else "pearl-audio-volume-high-symbolic");
                 var buffer: [80]u8 = undefined;
-                self.value.setText(std.fmt.bufPrintZ(&buffer, "{s}{s}{d}%", .{ if (v.muted) @import("i18n").dtr("pearl", "Muted") else "", if (v.muted) " · " else "", v.percent }) catch "");
+                self.value.setText(std.mem.printSentinel(&buffer, "{s}{s}{d}%", .{ if (v.muted) @import("i18n").dtr("pearl", "Muted") else "", if (v.muted) " · " else "", v.percent }, 0) catch "");
                 self.meter.setFraction(@as(f64, @floatFromInt(v.percent)) / 100);
                 if (v.muted) self.card.as(gtk.Widget).addCssClass("pearl-volume-muted") else self.card.as(gtk.Widget).removeCssClass("pearl-volume-muted");
             },
@@ -86,7 +86,7 @@ pub const View = struct {
                 self.label.setText(@import("i18n").dtr("pearl", "Brightness"));
                 self.icon.setFromIconName("pearl-display-brightness-symbolic");
                 var buffer: [80]u8 = undefined;
-                self.value.setText(std.fmt.bufPrintZ(&buffer, "{d}%", .{b.percent}) catch "");
+                self.value.setText(std.mem.printSentinel(&buffer, "{d}%", .{b.percent}, 0) catch "");
                 self.meter.setFraction(@as(f64, @floatFromInt(b.percent)) / 100);
                 self.card.as(gtk.Widget).removeCssClass("pearl-volume-muted");
             },

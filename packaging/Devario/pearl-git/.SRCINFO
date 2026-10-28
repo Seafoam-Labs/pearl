@@ -7,7 +7,7 @@ pkgbase = pearl-git
 	arch = x86_64
 	license = LicenseRef-Pearl-Unlicensed
 	makedepends = git
-	makedepends = zig=0.16.0
+	makedepends = zig=0.17.0
 	makedepends = pkgconf
 	makedepends = gcc
 	makedepends = qt5-base
