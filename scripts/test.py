@@ -213,7 +213,9 @@ def check_registry(python_only=False):
             if cwd == '.':
                 options = ['-Dwasm-plugins=true', '-Dwasmtime-prefix=' + str(ROOT / '.cache/test-runner/tools/wasmtime'),
                            '-Dfingerprint-pam=' + str(ROOT / '.cache/test-runner/fingerprint/pam_fprintd.so')]
-            code, output = capture(['zig', 'build', '--help', *options], env, ROOT / cwd)
+            # A cold ZIG_GLOBAL_CACHE_DIR (.cache/zig) re-fetches every
+            # dependency, which routinely exceeds the default capture timeout.
+            code, output = capture(['zig', 'build', '--help', *options], env, ROOT / cwd, timeout=300)
             if code:
                 errors.append(f'{cwd}: cannot inspect build targets: {output}')
                 continue
