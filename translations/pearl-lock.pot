@@ -7,66 +7,66 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: src/lock/screen.zig:215
+#: src/lock/screen.zig:220
 msgid "Authenticating…"
 msgstr ""
 
-#: src/lock/screen.zig:205 src/lock/screen.zig:651
+#: src/lock/screen.zig:210 src/lock/screen.zig:695
 msgid "Authentication response"
 msgstr ""
 
-#: src/lock/screen.zig:709
+#: src/lock/screen.zig:753
 msgid "Cancel"
 msgstr ""
 
-#: src/lock/screen.zig:653
+#: src/lock/screen.zig:697
 msgid "Caps Lock is on"
 msgstr ""
 
-#: src/lock/screen.zig:707
+#: src/lock/screen.zig:751
 msgid "Confirm"
 msgstr ""
 
-#: src/lock/screen.zig:211
+#: src/lock/screen.zig:216
 msgid "Password"
 msgstr ""
 
-#: src/lock/screen.zig:610
+#: src/lock/screen.zig:654
 msgid "Pearl · Locked"
 msgstr ""
 
-#: src/lock/screen.zig:696
+#: src/lock/screen.zig:740
 msgid "Power off"
 msgstr ""
 
-#: src/lock/screen.zig:226
+#: src/lock/screen.zig:231
 msgid "Power off?"
 msgstr ""
 
-#: src/lock/screen.zig:211
+#: src/lock/screen.zig:216
 msgid "Response"
 msgstr ""
 
-#: src/lock/screen.zig:695
+#: src/lock/screen.zig:739
 msgid "Restart"
 msgstr ""
 
-#: src/lock/screen.zig:226 src/lock/screen.zig:702
+#: src/lock/screen.zig:231 src/lock/screen.zig:746
 msgid "Restart?"
 msgstr ""
 
-#: src/lock/screen.zig:664
+#: src/lock/screen.zig:708
 msgid "Session locked · Esc cancels authentication"
 msgstr ""
 
-#: src/lock/screen.zig:694
+#: src/lock/screen.zig:738
 msgid "Sleep"
 msgstr ""
 
-#: src/lock/screen.zig:215
+#: src/lock/screen.zig:220
 msgid "Try again"
 msgstr ""
 
-#: src/lock/screen.zig:215 src/lock/screen.zig:657
+#: src/lock/screen.zig:220 src/lock/screen.zig:701
 msgid "Unlock"
 msgstr ""

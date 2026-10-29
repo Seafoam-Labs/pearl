@@ -390,6 +390,7 @@ pub fn build(b: *std.Build) void {
         const lock_module = gtkModule(b, bindings, target, optimize, "src/lock_main.zig", pulse_module);
         configureApp(b, lock_module, resources, instrumented, false, community_theme_repository, false, portal_variant == .git);
 
+        lock_module.addImport("wayland", native);
         lock_module.addAnonymousImport("lock_style", .{ .root_source_file = b.path("resources/style.css") });
         lock_module.addImport("pam", pam_module);
         lock_module.linkSystemLibrary("pam", .{});

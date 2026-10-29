@@ -79,6 +79,8 @@ pub const events: []const Event = &.{
     .{ .name = "lock-output-limit", .scopes = &.{.lock} },
     .{ .name = "lock-power", .scopes = &.{.lock} },
     .{ .name = "lock-released", .scopes = &.{.lock} },
+    .{ .name = "lock-screen-off", .scopes = &.{.lock} },
+    .{ .name = "lock-screen-on", .scopes = &.{.lock} },
     .{ .name = "lock-ui", .scopes = &.{.lock} },
     .{ .name = "logind-session-unavailable", .scopes = &.{.services} },
     .{ .name = "logout-result", .scopes = &.{.pearl} },

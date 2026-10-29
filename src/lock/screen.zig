@@ -13,6 +13,7 @@ const wire = @import("conversation.zig");
 const options = @import("build_options");
 const presentation = @import("../ui/auth/prompt_view.zig");
 const power_mod = @import("power.zig");
+const Idle = @import("../platform/wayland/idle.zig").Idle;
 const theme = @import("../theme/theme.zig");
 const pixbuf = @import("gdkpixbuf2");
 const io = @import("../config/io.zig");
@@ -60,6 +61,10 @@ const Screen = struct {
     style_light: bool = false,
     power: power_mod.Power = undefined,
     pending_power: ?power_mod.Action = null,
+    idle: Idle = undefined,
+    idle_ready: bool = false,
+    blanked: bool = false,
+    blank_source: c_uint = 0,
     theme_ready: bool = false,
     present_source: c_uint = 0,
     boot_texture: ?*gdk.Texture = null,
@@ -466,6 +471,7 @@ const Screen = struct {
         self.reply(entry);
     }
     fn clicked(button: *gtk.Button, self: *Screen) callconv(.c) void {
+        self.activity();
         for (&self.views) |*slot| if (slot.*) |*v| if (v.button == button) {
             self.reply(v.entry);
             return;
@@ -512,9 +518,47 @@ const Screen = struct {
     fn powerChanged(context: *anyopaque) void {
         const self: *Screen = @ptrCast(@alignCast(context));
         if (self.power.failed) self.message.set("Power action was denied or is unavailable.");
+        self.armBlank();
         self.update();
     }
+    /// A held session lock pauses the compositor's idle notifications, so the
+    /// lock owns screen blanking: one deadline reset by every input that
+    /// reaches a lock surface, enforced through the same output-power path the
+    /// shell uses. Zero (the default) keeps the screen lit, matching settings.
+    fn armBlank(self: *Screen) void {
+        if (self.blank_source != 0) {
+            _ = glib.Source.remove(self.blank_source);
+            self.blank_source = 0;
+        }
+        if (!self.acquired or !self.idle_ready) return;
+        const timers = self.preferences.prefs().idle;
+        const seconds = (if (self.power.on_battery) timers.battery else timers.ac).screen_off_seconds;
+        if (seconds == 0) return;
+        self.blank_source = glib.timeoutAddSeconds(seconds, blankExpired, self);
+    }
+    fn blankExpired(data: ?*anyopaque) callconv(.c) c_int {
+        const self: *Screen = @ptrCast(@alignCast(data.?));
+        self.blank_source = 0;
+        if (!self.acquired or self.blanked) return 0;
+        self.blanked = true;
+        self.idle.setScreenOff(true);
+        if (options.test_hooks) log.info("event=lock-screen-off", .{});
+        return 0;
+    }
+    fn activity(self: *Screen) void {
+        if (self.blanked) {
+            self.blanked = false;
+            self.idle.setScreenOff(false);
+            if (options.test_hooks) log.info("event=lock-screen-on", .{});
+        }
+        self.armBlank();
+    }
+    fn idleEvent(_: *anyopaque, _: @import("../platform/wayland/idle.zig").Event) void {}
+    fn moved(_: *gtk.EventControllerMotion, _: f64, _: f64, self: *Screen) callconv(.c) void {
+        self.activity();
+    }
     fn key(_: *gtk.EventControllerKey, code: c_uint, _: c_uint, _: gdk.ModifierType, self: *Screen) callconv(.c) c_int {
+        self.activity();
         // While a power action awaits confirmation, Return belongs to the
         // focused Confirm/Cancel button, never to a fresh authentication run.
         if ((code == 0xff0d or code == 0xff8d) and self.auth == null and self.pending_power == null) {
@@ -724,6 +768,9 @@ const Screen = struct {
         const controller = gtk.EventControllerKey.new();
         _ = gtk.EventControllerKey.signals.key_pressed.connect(controller, *Screen, key, self, .{});
         window.as(gtk.Widget).addController(controller.as(gtk.EventController));
+        const motion = gtk.EventControllerMotion.new();
+        _ = gtk.EventControllerMotion.signals.motion.connect(motion, *Screen, moved, self, .{});
+        window.as(gtk.Widget).addController(motion.as(gtk.EventController));
         // Hold the window back until the session theme and wallpaper have landed
         // once, so the first painted frame is complete; the deadline bounds the
         // wait when the theme job is slow or fails.
@@ -740,17 +787,32 @@ const Screen = struct {
             self.ready_fd = false;
         }
         log.info("event=lock-acquired", .{});
+        self.armBlank();
         self.startAuth();
     }
     fn onFailed(_: *lock.Instance, self: *Screen) callconv(.c) void {
         self.failed = true;
+        self.cancelBlank();
         self.loop.quit();
     }
     fn unlocked(_: *lock.Instance, self: *Screen) callconv(.c) void {
         self.acquired = false;
         self.cancelAuth();
+        self.cancelBlank();
         log.info("event=lock-released", .{});
         self.loop.quit();
+    }
+    /// Leaving the lock must never strand a blanked output: the shell's own
+    /// idle instance only restores outputs it blanked itself.
+    fn cancelBlank(self: *Screen) void {
+        if (self.blank_source != 0) {
+            _ = glib.Source.remove(self.blank_source);
+            self.blank_source = 0;
+        }
+        if (self.blanked) {
+            self.blanked = false;
+            self.idle.setScreenOff(false);
+        }
     }
     fn changed(data: *anyopaque) void {
         const self: *Screen = @ptrCast(@alignCast(data));
@@ -826,6 +888,10 @@ pub fn run(ready_fd: bool) !void {
     screen.restyle();
     screen.power = .{ .context = &screen, .changed = Screen.powerChanged };
     screen.power.init();
+    // Output-power only: a held session lock pauses the compositor's idle
+    // notifications, so the lock times its own blanking deadline instead.
+    screen.idle = .{ .display = display, .context = &screen, .event = Screen.idleEvent };
+    screen.idle_ready = if (screen.idle.start()) true else |_| false;
     _ = lock.Instance.signals.monitor.connect(screen.instance, *Screen, Screen.monitor, &screen, .{});
     _ = lock.Instance.signals.locked.connect(screen.instance, *Screen, Screen.locked, &screen, .{});
     _ = lock.Instance.signals.failed.connect(screen.instance, *Screen, Screen.onFailed, &screen, .{});
