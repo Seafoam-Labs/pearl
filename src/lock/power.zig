@@ -12,6 +12,7 @@ pub const Power = struct {
     reboot: bool = false,
     off: bool = false,
     sleep: bool = false,
+    on_battery: bool = false,
     pending: bool = false,
     failed: bool = false,
     context: *anyopaque,
@@ -37,6 +38,11 @@ pub const Power = struct {
             bus.call("org.freedesktop.login1", "/org/freedesktop/login1", "org.freedesktop.login1.Manager", "CanReboot", null, null, .{ .no_auto_start = true }, 2000, null, capabilityReboot, self);
             bus.call("org.freedesktop.login1", "/org/freedesktop/login1", "org.freedesktop.login1.Manager", "CanPowerOff", null, null, .{ .no_auto_start = true }, 2000, null, capabilityOff, self);
             bus.call("org.freedesktop.login1", "/org/freedesktop/login1", "org.freedesktop.login1.Manager", "CanSuspend", null, null, .{ .no_auto_start = true }, 2000, null, capabilitySuspend, self);
+            // The lock owns screen blanking while held, so it must know which
+            // idle profile applies; UPower's OnBattery is the same source the
+            // shell's power service uses.
+            const get = [_]*glib.Variant{ glib.Variant.newString("org.freedesktop.UPower"), glib.Variant.newString("OnBattery") };
+            bus.call("org.freedesktop.UPower", "/org/freedesktop/UPower", "org.freedesktop.DBus.Properties", "Get", glib.Variant.newTuple(&get, get.len), null, .{ .no_auto_start = true }, 2000, null, batteryReply, self);
         }
     }
     fn yes(self: *Power, result: *gio.AsyncResult) bool {
@@ -60,6 +66,21 @@ pub const Power = struct {
     fn capabilitySuspend(_: ?*object.Object, result: *gio.AsyncResult, data: ?*anyopaque) callconv(.c) void {
         const s: *Power = @ptrCast(@alignCast(data.?));
         s.sleep = s.yes(result);
+        s.changed(s.context);
+    }
+    fn batteryReply(_: ?*object.Object, result: *gio.AsyncResult, data: ?*anyopaque) callconv(.c) void {
+        const s: *Power = @ptrCast(@alignCast(data.?));
+        const answer = s.bus.?.callFinish(result, null) orelse return;
+        defer answer.unref();
+        if (!std.mem.eql(u8, std.mem.span(answer.getTypeString()), "(v)")) return;
+        const boxed = answer.getChildValue(0);
+        defer boxed.unref();
+        const value = boxed.getVariant();
+        defer value.unref();
+        if (!std.mem.eql(u8, std.mem.span(value.getTypeString()), "b")) return;
+        const on_battery = value.getBoolean() != 0;
+        if (on_battery == s.on_battery) return;
+        s.on_battery = on_battery;
         s.changed(s.context);
     }
     pub fn request(self: *Power, action: Action) !void {
