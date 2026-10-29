@@ -76,7 +76,7 @@ class CatalogTests(unittest.TestCase):
     def test_registry_checks_named_integration_targets(self):
         entries = catalog()
 
-        def listing(command, env, cwd):
+        def listing(command, env, cwd, timeout=None):
             relative = str(cwd.relative_to(ROOT))
             targets = {t for s in entries.values() if s['cwd'] == relative for t in s['targets']}
             if relative == 'subprojects/phyto':
