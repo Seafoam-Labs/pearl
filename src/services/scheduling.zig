@@ -38,8 +38,27 @@ pub const Service = struct {
     process: ?*gio.DBusProxy = null,
     process_signal: c_ulong = 0,
     arena: std.heap.ArenaAllocator = .init(a),
-    /// Null when no profile file is installed or it is invalid.
+    /// The profiles to choose from: the administrator's file when there is
+    /// one, else the shipped profiles. Null when neither is installed or the
+    /// file used is invalid.
     config: ?p.Config = null,
+    /// The profiles the package ships, which restoring the defaults returns
+    /// to.
+    shipped: ?p.Config = null,
+    /// config is an edited list that restoring the defaults would replace.
+    custom: bool = false,
+    /// Watches the administrator's file, so edits show up at once.
+    monitor: ?*gio.FileMonitor = null,
+    monitor_signal: c_ulong = 0,
+    /// The helper is saving or resetting the profiles; it asks for a
+    /// password first.
+    saving: bool = false,
+    /// What saving the profiles stdin carries to the helper.
+    save_input: ?[:0]u8 = null,
+    /// The profile to apply once the profiles are saved, so the running
+    /// scheduler keeps matching its profile.
+    after_save: ?[]const u8 = null,
+    after_save_buffer: [32]u8 = undefined,
     /// Why the profile file could not be used.
     problem: ?[:0]const u8 = null,
     env: p.Env = .{},
@@ -79,7 +98,7 @@ pub const Service = struct {
     fallback_pending: bool = false,
     /// Profile id being applied; the helper is still running.
     applying: ?[]const u8 = null,
-    applying_buffer: [32]u8 = undefined,
+    applying_buffer: [33]u8 = undefined,
     err: ?[:0]const u8 = null,
     err_buffer: [512]u8 = undefined,
     /// Rechecks once the switching window closes or the attach deadline
@@ -103,6 +122,7 @@ pub const Service = struct {
             log.warn("event=sched-profile-systemd result=uevents-unavailable", .{});
             self.poll_source = glib.timeoutAddSeconds(3, poll, self);
         }
+        self.watchProfiles();
         self.refresh();
         self.app.hold();
         gio.DBusProxy.newForBus(.system, .{ .do_not_load_properties = true }, null, systemd, "/org/freedesktop/systemd1", systemd ++ ".Manager", self.cancel, managerReady, self);
@@ -118,6 +138,12 @@ pub const Service = struct {
         self.events_fd = -1;
         if (self.failure_source != 0) _ = glib.Source.remove(self.failure_source);
         if (self.poll_source != 0) _ = glib.Source.remove(self.poll_source);
+        if (self.monitor) |m| {
+            object.signalHandlerDisconnect(m.as(object.Object), self.monitor_signal);
+            _ = m.cancel();
+            m.unref();
+        }
+        self.monitor = null;
         self.failure_source = 0;
         self.poll_source = 0;
         if (self.cancel) |cancel| {
@@ -156,7 +182,7 @@ pub const Service = struct {
             .unavailable => if (self.config == null) @import("i18n").dtr("pearl", "No scheduler profiles are installed.") else if (self.kernel == .unavailable) @import("i18n").dtr("pearl", "This kernel does not support sched_ext schedulers.") else if (self.unit_state == .missing) @import("i18n").dtr("pearl", "scx.service is not installed.") else @import("i18n").dtr("pearl", "Checking the scheduler..."),
             .off => @import("i18n").fmt(buffer, "{s} - kernel scheduler (EEVDF)", .{name}),
             .running => blk: {
-                const sched = self.env.sched;
+                const sched = p.schedName(self.env.sched);
                 const version = p.opsVersion(sched, self.ops);
                 var time: [48]u8 = undefined;
                 const uptime = self.since(&time);
@@ -233,12 +259,20 @@ pub const Service = struct {
         _ = self.arena.reset(.retain_capacity);
         const alloc = self.arena.allocator();
         self.config = null;
+        self.shipped = null;
+        self.custom = false;
         self.problem = null;
         if (store.load(alloc)) |loaded| {
-            if (loaded) |file| self.config = file.config;
+            if (loaded) |file| {
+                self.config = file.config;
+                self.custom = file.admin;
+            }
         } else |err| {
             self.problem = std.fmt.allocPrintSentinel(alloc, "Scheduler profiles could not be read ({s}).", .{@errorName(err)}, 0) catch "Scheduler profiles could not be read.";
         }
+        self.shipped = store.loadShipped(alloc) catch null;
+        // Without shipped profiles there is nothing to restore.
+        self.custom = self.custom and self.shipped != null;
         self.env = store.readEnv(alloc) catch .{};
         const previous = self.kernel;
         self.kernel = kernelState();
@@ -316,8 +350,9 @@ pub const Service = struct {
     fn readReason(self: *Service) void {
         var from_buffer: [32]u8 = undefined;
         const from = std.mem.printSentinel(&from_buffer, "@{d}", .{self.failed_since}, 0) catch unreachable;
-        var argv = [_:null]?[*:0]const u8{ "/usr/bin/journalctl", "--quiet", "--no-pager", "--output=cat", "--unit=scx.service", "--lines=200", "--since", from };
-        if (self.failed_since == 0) argv[6] = null;
+        // A failure seen now happened in this boot; the file may predate it.
+        var argv = [_:null]?[*:0]const u8{ "/usr/bin/journalctl", "--quiet", "--no-pager", "--output=cat", "--unit=scx.service", "--boot", "--lines=200", "--since", from };
+        if (self.failed_since == 0) argv[7] = null;
         var err: ?*glib.Error = null;
         const process = gio.Subprocess.newv(@ptrCast(&argv), .{ .stdout_pipe = true, .stderr_silence = true }, &err) orelse {
             if (err) |e| e.free();
@@ -459,6 +494,101 @@ pub const Service = struct {
         return 1;
     }
 
+    fn watchProfiles(self: *Service) void {
+        var scratch = std.heap.ArenaAllocator.init(a);
+        defer scratch.deinit();
+        const path = (store.paths(scratch.allocator()) catch return)[0];
+        // GLib keeps watching for a file whose directory does not exist yet.
+        const file = gio.File.newForPath(path);
+        defer file.unref();
+        self.monitor = file.monitorFile(.{ .watch_moves = true }, self.cancel, null) orelse return log.warn("event=sched-profile-watch result=monitor-unavailable", .{});
+        self.monitor_signal = gio.FileMonitor.signals.changed.connect(self.monitor.?, *Service, profilesChanged, self, .{});
+    }
+
+    fn profilesChanged(_: *gio.FileMonitor, _: *gio.File, _: ?*gio.File, _: gio.FileMonitorEvent, self: *Service) callconv(.c) void {
+        // The file is replaced whole, so every event leaves a complete file.
+        if (self.running) self.refresh();
+    }
+
+    /// Save the profiles for every user, and apply the selected one again if
+    /// its command changed, or Default if it was deleted. The helper asks for
+    /// an administrator password.
+    pub fn saveProfiles(self: *Service, config: p.Config) !void {
+        const before = try self.startEdit();
+        var arena = std.heap.ArenaAllocator.init(a);
+        defer arena.deinit();
+        const bytes = try p.serialize(arena.allocator(), config);
+        // Never send a list the helper would reject.
+        _ = try p.parse(arena.allocator(), bytes);
+        try self.runEdit("save", try a.dupeSentinel(u8, bytes, 0), p.reapply(before, config, self.env));
+    }
+
+    /// Return to the shipped profiles, and switch the running scheduler to
+    /// the shipped profile of the same id, or Default when there is none.
+    pub fn restoreDefaults(self: *Service) !void {
+        const before = try self.startEdit();
+        const shipped = self.shipped orelse return error.Unavailable;
+        try self.runEdit("reset", null, p.reapply(before, shipped, self.env));
+    }
+
+    fn startEdit(self: *Service) !p.Config {
+        if (!self.running or !self.enabled) return error.Unavailable;
+        if (self.applying != null or self.saving) return error.Busy;
+        return self.config orelse error.Unavailable;
+    }
+
+    fn runEdit(self: *Service, command: [:0]const u8, input: ?[:0]u8, reapply: ?[]const u8) !void {
+        errdefer if (input) |value| a.free(value);
+        if (reapply) |id| if (id.len > self.after_save_buffer.len) return error.InvalidProfile;
+        var argv = [_:null]?[*:0]const u8{ "/usr/bin/pkexec", store.helperPath(), "profiles", command };
+        var err: ?*glib.Error = null;
+        const process = gio.Subprocess.newv(@ptrCast(&argv), .{ .stdin_pipe = input != null, .stdout_silence = true, .stderr_pipe = true }, &err) orelse {
+            if (err) |e| e.free();
+            return error.HelperUnavailable;
+        };
+        self.after_save = if (reapply) |id| blk: {
+            @memcpy(self.after_save_buffer[0..id.len], id);
+            break :blk self.after_save_buffer[0..id.len];
+        } else null;
+        self.save_input = input;
+        self.saving = true;
+        self.err = null;
+        self.app.hold();
+        process.communicateUtf8Async(if (input) |value| value.ptr else null, self.cancel, edited, self);
+        self.changed(self.context);
+    }
+
+    fn edited(source: ?*object.Object, result: *gio.AsyncResult, data: ?*anyopaque) callconv(.c) void {
+        const self: *Service = @ptrCast(@alignCast(data.?));
+        defer self.app.release();
+        const process = object.ext.cast(gio.Subprocess, source.?).?;
+        defer process.unref();
+        var stderr_buffer: [*:0]u8 = undefined;
+        var err: ?*glib.Error = null;
+        const finished = process.communicateUtf8Finish(result, null, &stderr_buffer, &err) != 0;
+        const stderr: ?[*:0]u8 = if (finished) stderr_buffer else null;
+        defer if (stderr) |text| glib.free(text);
+        defer if (err) |e| e.free();
+        if (self.save_input) |value| a.free(value);
+        self.save_input = null;
+        self.saving = false;
+        if (!self.running) return;
+        const succeeded = finished and process.getSuccessful() != 0;
+        log.info("event=sched-profile-edit result={s}", .{if (succeeded) "ok" else "failed"});
+        // pkexec reports a dismissed or refused authentication as 126 or 127:
+        // nothing changed.
+        const status = if (finished) process.getExitStatus() else 0;
+        if (!succeeded and status != 126 and status != 127) {
+            const raw = if (stderr) |text| std.mem.trim(u8, std.mem.span(text), " \r\n\t") else "";
+            const line = raw[if (std.mem.lastIndexOfScalar(u8, raw, '\n')) |i| i + 1 else 0..];
+            const detail = if (std.mem.indexOf(u8, line, "helper: ")) |i| line[i + 8 ..] else line;
+            self.err = std.mem.printSentinel(&self.err_buffer, "The profiles could not be saved{s}{s}", .{ if (detail.len > 0) ": " else ".", detail[0..@min(detail.len, 400)] }, 0) catch "The profiles could not be saved.";
+        }
+        self.refresh();
+        if (succeeded) if (self.after_save) |id| self.apply(id) catch |e| log.warn("event=sched-profile-select profile={s} result={s}", .{ id, @errorName(e) });
+        self.after_save = null;
+    }
+
     pub fn apply(self: *Service, id: []const u8) !void {
         try self.startApply(id, false);
         self.notice = .none;
@@ -467,14 +597,13 @@ pub const Service = struct {
 
     fn startApply(self: *Service, id: []const u8, reverting: bool) !void {
         if (!self.running or !self.enabled) return error.Unavailable;
-        if (self.applying != null) return error.Busy;
+        if (self.applying != null or self.saving) return error.Busy;
         const config = self.config orelse return error.Unavailable;
-        _ = config.find(id) orelse return error.InvalidProfile;
-        if (id.len > self.applying_buffer.len) return error.InvalidProfile;
+        if (config.find(id) == null or id.len >= self.applying_buffer.len) return error.InvalidProfile;
         @memcpy(self.applying_buffer[0..id.len], id);
-        const owned = try a.dupeSentinel(u8, id, 0);
-        defer a.free(owned);
-        var argv = [_:null]?[*:0]const u8{ "/usr/bin/pkexec", store.helperPath(), "apply", owned };
+        self.applying_buffer[id.len] = 0;
+        // The helper reads the command line from the profile file itself.
+        var argv = [_:null]?[*:0]const u8{ "/usr/bin/pkexec", store.helperPath(), "apply", self.applying_buffer[0..id.len :0] };
         var err: ?*glib.Error = null;
         const process = gio.Subprocess.newv(@ptrCast(&argv), .{ .stdout_silence = true, .stderr_pipe = true }, &err) orelse {
             if (err) |e| e.free();

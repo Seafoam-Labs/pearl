@@ -1,6 +1,12 @@
-//! Privileged writer for scheduling profiles, run through pkexec. It accepts a
-//! profile id only; the command line comes from the system profile file, so a
-//! caller can choose among the administrator's profiles but never supply one.
+//! Privileged writer for scheduling profiles, run through pkexec.
+//!
+//! apply takes a profile id only: the command line comes from a root-owned
+//! profile file, so any active user may choose a profile without a password.
+//!
+//! profiles save reads a whole profile list on stdin and makes it the
+//! administrator's file in /etc; profiles reset removes that file, so the
+//! profiles the package ships are used again. Both change what every user may
+//! run as root, so their polkit action asks for an administrator password.
 const std = @import("std");
 const gio = @import("gio2");
 const glib = @import("glib2");
@@ -14,17 +20,25 @@ pub fn main(init: std.process.Init) !void {
         glib.print("pearl-scheduling-helper " ++ @import("version.zig").string ++ "\n");
         return;
     }
-    if (args.len != 3 or !std.mem.eql(u8, args[1], "apply") or !p.validId(args[2])) fail("usage: pearl-scheduling-helper apply PROFILE", .{});
+    const usage = "usage: pearl-scheduling-helper apply PROFILE\n       pearl-scheduling-helper profiles save < FILE\n       pearl-scheduling-helper profiles reset";
+    if (args.len != 3) fail(usage, .{});
+    const edit = std.mem.eql(u8, args[1], "profiles");
+    if (edit and !std.mem.eql(u8, args[2], "save") and !std.mem.eql(u8, args[2], "reset")) fail(usage, .{});
+    if (!edit and (!std.mem.eql(u8, args[1], "apply") or !p.validId(args[2]))) fail(usage, .{});
     if (std.os.linux.getuid() != 0) fail("administrator privileges are required", .{});
     var arena = std.heap.ArenaAllocator.init(a);
     defer arena.deinit();
     const alloc = arena.allocator();
+    if (edit) return if (std.mem.eql(u8, args[2], "save")) save(alloc) else reset(alloc);
+
     const loaded = (store.load(alloc) catch |err| fail("cannot read scheduling profiles: {s}", .{@errorName(err)})) orelse fail("no scheduling profiles are installed", .{});
     const index = loaded.config.find(args[2]) orelse fail("unknown scheduling profile: {s}", .{args[2]});
-    const profile = loaded.config.profiles[index];
-    if (profile.sched) |sched| if (!installed(alloc, sched)) fail("scheduler {s} is not installed", .{sched});
+    var profile = loaded.config.profiles[index];
+    // The unit runs the path, so a binary installed later elsewhere on its
+    // PATH cannot replace the chosen one.
+    if (profile.sched) |sched| profile.sched = (store.resolve(alloc, sched) catch null) orelse fail("scheduler {s} is not installed", .{sched});
 
-    write(try p.render(alloc, profile)) catch |err| fail("cannot write {s}: {s}", .{ p.env_path, @errorName(err) });
+    write(p.env_path, "/etc/default", try p.render(alloc, profile)) catch |err| fail("cannot write {s}: {s}", .{ p.env_path, @errorName(err) });
     // Pearl owns scheduler selection: runtime overrides would otherwise
     // replace the selected profile.
     _ = run(&.{ "/usr/bin/systemctl", "unset-environment", "SCX_SCHEDULER_OVERRIDE", "SCX_FLAGS_OVERRIDE" });
@@ -40,24 +54,49 @@ pub fn main(init: std.process.Init) !void {
     if (!run(&.{ "/usr/bin/systemctl", "restart", "scx.service" })) fail("scx.service failed to start {s}", .{profile.sched.?});
 }
 
+/// Make the profiles on stdin the administrator's file. They get the checks
+/// of any profile file, and the shipped Default, which a failing scheduler
+/// falls back to.
+fn save(alloc: std.mem.Allocator) void {
+    var bytes: std.ArrayList(u8) = .empty;
+    var chunk: [4096]u8 = undefined;
+    while (true) {
+        const n = std.c.read(0, &chunk, chunk.len);
+        if (n < 0) fail("cannot read the profiles", .{});
+        if (n == 0) break;
+        if (bytes.items.len + @as(usize, @intCast(n)) > p.max_bytes) fail("the profiles are too large", .{});
+        bytes.appendSlice(alloc, chunk[0..@intCast(n)]) catch fail("out of memory", .{});
+    }
+    const config = p.parse(alloc, bytes.items) catch |err| fail("invalid profiles: {s}", .{@errorName(err)});
+    const shipped = (store.loadShipped(alloc) catch null) orelse p.Config{ .profiles = &.{p.builtin_default} };
+    const locked = p.lockDefault(alloc, config, shipped) catch fail("out of memory", .{});
+    const text = p.serialize(alloc, locked) catch fail("out of memory", .{});
+    const path = (store.paths(alloc) catch |err| fail("cannot find the profile file: {s}", .{@errorName(err)}))[0];
+    write(path, std.fs.path.dirname(path).?, text) catch |err| fail("cannot write {s}: {s}", .{ path, @errorName(err) });
+}
+
+/// Remove the administrator's file, so the shipped profiles are used again.
+fn reset(alloc: std.mem.Allocator) void {
+    _ = (store.loadShipped(alloc) catch null) orelse fail("no default scheduling profiles are installed", .{});
+    const path = (store.paths(alloc) catch |err| fail("cannot find the profile file: {s}", .{@errorName(err)}))[0];
+    switch (std.posix.errno(std.c.unlink(path))) {
+        .SUCCESS, .NOENT => {},
+        else => |err| fail("cannot remove {s}: {s}", .{ path, @tagName(err) }),
+    }
+}
+
 fn fail(comptime format: []const u8, args: anytype) noreturn {
     std.debug.print("pearl-scheduling-helper: " ++ format ++ "\n", args);
     std.process.exit(1);
 }
 
-/// The unit runs the scheduler by name, so it must be on systemd's PATH.
-fn installed(alloc: std.mem.Allocator, sched: []const u8) bool {
-    for ([_][]const u8{ "/usr/local/bin", "/usr/bin" }) |dir| {
-        const path = std.fmt.allocPrintSentinel(alloc, "{s}/{s}", .{ dir, sched }, 0) catch return false;
-        if (std.c.access(path, std.c.X_OK) == 0) return true;
-    }
-    return false;
-}
-
-fn write(bytes: []const u8) !void {
-    const temp = try a.dupeSentinel(u8, p.env_path ++ ".XXXXXX", 0);
+/// Replace path atomically with a root-owned file anyone may read.
+fn write(path: [:0]const u8, dir: []const u8, bytes: []const u8) !void {
+    const temp = try std.fmt.allocPrintSentinel(a, "{s}.XXXXXX", .{path}, 0);
     defer a.free(temp);
-    if (glib.mkdirWithParents("/etc/default", 0o755) != 0) return error.CreateDirectoryFailed;
+    const parent = try a.dupeSentinel(u8, dir, 0);
+    defer a.free(parent);
+    if (glib.mkdirWithParents(parent, 0o755) != 0) return error.CreateDirectoryFailed;
     const fd = glib.mkstempFull(temp, @bitCast(std.c.O{ .ACCMODE = .RDWR, .CLOEXEC = true }), 0o644);
     if (fd < 0) return error.SaveFailed;
     defer _ = std.c.close(fd);
@@ -69,7 +108,7 @@ fn write(bytes: []const u8) !void {
         offset += @intCast(n);
     }
     if (std.c.fchmod(fd, 0o644) != 0 or std.c.fsync(fd) != 0) return error.SaveFailed;
-    if (std.c.rename(temp, p.env_path) != 0) return error.SaveFailed;
+    if (std.c.rename(temp, path) != 0) return error.SaveFailed;
 }
 
 fn run(argv: []const [*:0]const u8) bool {

@@ -13,4 +13,17 @@
     <annotate key="org.freedesktop.policykit.exec.path">/usr/lib/pearl/pearl-scheduling-helper</annotate>
     <annotate key="org.freedesktop.policykit.exec.argv1">apply</annotate>
   </action>
+  <!-- Editing the profiles changes what every user may run as root, so it
+       needs an administrator password. Choosing one does not. -->
+  <action id="org.aqueous.Pearl.Scheduling.Profiles">
+    <description>Edit the scheduling profiles</description>
+    <message>Authentication is required to change the CPU scheduler profiles.</message>
+    <defaults>
+      <allow_any>no</allow_any>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>auth_admin_keep</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/lib/pearl/pearl-scheduling-helper</annotate>
+    <annotate key="org.freedesktop.policykit.exec.argv1">profiles</annotate>
+  </action>
 </policyconfig>

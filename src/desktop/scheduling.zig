@@ -25,16 +25,19 @@ pub const View = struct {
     checks: []*gtk.Image = &.{},
     choices: []Choice = &.{},
     connections: std.ArrayList(Connection) = .empty,
+    context: *anyopaque,
+    /// Opens the profiles in Settings.
+    edit: *const fn (*anyopaque) void,
     const Choice = struct { view: *View, index: usize };
 
     /// Fails with error.NoProfiles when no profile file is installed, so the
     /// flyout only opens on systems that configure it.
-    pub fn create(host: *gtk.Box, service: *Service) !*View {
+    pub fn create(host: *gtk.Box, service: *Service, context: *anyopaque, edit: @FieldType(View, "edit")) !*View {
         service.refresh();
         if (!service.configured()) return error.NoProfiles;
         const self = try a.create(View);
         errdefer a.destroy(self);
-        self.* = .{ .service = service, .status = undefined, .note = undefined };
+        self.* = .{ .service = service, .context = context, .edit = edit, .status = undefined, .note = undefined };
         errdefer self.arena.deinit();
         const alloc = self.arena.allocator();
         const card = w.card();
@@ -76,6 +79,16 @@ pub const View = struct {
             }
             self.ids = ids;
         }
+        if (service.config != null) {
+            const edit_button = gtk.Button.new();
+            const label = w.label(@import("i18n").dtr("pearl", "Edit profiles..."), null);
+            label.setXalign(0);
+            edit_button.setChild(label.as(gtk.Widget));
+            edit_button.as(gtk.Widget).addCssClass("pearl-menu-item");
+            focus_state.tag(edit_button.as(gtk.Widget), "sched-profile-edit", .{});
+            card.append(edit_button.as(gtk.Widget));
+            try self.connections.append(a, .{ .object = edit_button.as(object.Object), .id = gtk.Button.signals.clicked.connect(edit_button, *View, editClicked, self, .{}) });
+        }
         self.update();
         return self;
     }
@@ -104,6 +117,10 @@ pub const View = struct {
         var note: [600]u8 = undefined;
         self.note.setText(if (service.applying != null) "" else if (service.err) |err| std.mem.printSentinel(&note, "{s}", .{err}, 0) catch "" else service.describeNotice(&note));
         self.note.as(gtk.Widget).setVisible(@intFromBool(self.note.getText()[0] != 0));
+    }
+
+    fn editClicked(_: *gtk.Button, self: *View) callconv(.c) void {
+        self.edit(self.context);
     }
 
     fn clicked(_: *gtk.Button, choice: *Choice) callconv(.c) void {
