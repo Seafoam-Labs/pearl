@@ -77,15 +77,15 @@
 .pearl-root.pearl-gtk .pearl-resource-value { font-weight: 600; }
 .pearl-root.pearl-gtk .pearl-dock { padding: 6px; border-radius: 14px; }
 /* Floating icons: transparent by default, pills appear on hover and focus. */
-.pearl-root.pearl-gtk .pearl-dock button { padding: 3px 3px 0; min-height: 24px; background: transparent; border-radius: 12px; }
+.pearl-root.pearl-gtk .pearl-dock button { padding: 3px 3px 0; min-height: 24px; background: transparent; border-radius: 12px; transition: transform 150ms ease, opacity 150ms ease, background 150ms ease; }
 .pearl-root.pearl-gtk .pearl-dock button:hover { background: mix(@theme_bg_color, @theme_fg_color, 0.12); }
 .pearl-root.pearl-gtk .pearl-dock button:active { background: mix(@theme_bg_color, @theme_fg_color, 0.20); }
 .pearl-root.pearl-gtk .pearl-dock .focused { background: mix(@theme_bg_color, @theme_selected_bg_color, 0.25); }
-.pearl-root.pearl-gtk .pearl-dock button.pearl-dragging { opacity: 0.45; transform: scale(1.15); }
-.pearl-root.pearl-gtk .pearl-dock .pearl-drop-before { box-shadow: -2px 0 0 0 @theme_selected_bg_color; }
-.pearl-root.pearl-gtk .pearl-dock .pearl-drop-after { box-shadow: 2px 0 0 0 @theme_selected_bg_color; }
-.pearl-root.pearl-gtk .pearl-dock-vertical .pearl-drop-before { box-shadow: 0 -2px 0 0 @theme_selected_bg_color; }
-.pearl-root.pearl-gtk .pearl-dock-vertical .pearl-drop-after { box-shadow: 0 2px 0 0 @theme_selected_bg_color; }
+/* The grabbed icon hides: its slot travels to the landing spot as an empty gap. */
+.pearl-root.pearl-gtk .pearl-dock button.pearl-dragging { opacity: 0; }
+.pearl-root.pearl-gtk .pearl-dock-ghost { filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.45)); }
+@keyframes pearl-dock-landed { from { opacity: 0.35; transform: scale(1.15); } to { opacity: 1; transform: scale(1); } }
+.pearl-root.pearl-gtk .pearl-dock > box.pearl-drop-landed { animation: pearl-dock-landed 240ms ease-out; }
 .pearl-root.pearl-gtk .pearl-dock-indicator { color: @theme_selected_bg_color; font-size: 0.75em; margin-top: -3px; margin-bottom: -2px; }
 
 .pearl-root.pearl-gtk .pearl-bar-panel button.pearl-task-button { min-width: 24px; min-height: 24px; padding: 2px 5px; }
