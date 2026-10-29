@@ -57,10 +57,10 @@ class PrerequisiteError(ValueError):
     pass
 
 
-def capture(command, env=None, cwd=None):
+def capture(command, env=None, cwd=None, timeout=20):
     try:
         p = subprocess.run([str(v) for v in command], env=env, cwd=cwd,
-                           capture_output=True, text=True, timeout=20)
+                           capture_output=True, text=True, timeout=timeout)
         return p.returncode, (p.stdout + p.stderr).strip()
     except (OSError, subprocess.TimeoutExpired) as error:
         return 127, str(error)
