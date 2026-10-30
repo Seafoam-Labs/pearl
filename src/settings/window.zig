@@ -89,6 +89,8 @@ pub const Window = struct {
     appearance_updates: u64 = 0,
     activation_contexts: u64 = 0,
     key_events: u64 = 0,
+    pointer_x: f64 = -1,
+    pointer_y: f64 = -1,
     layout_id: c_ulong = 0,
     native: ?*gdk.Surface = null,
     resize_id: c_uint = 0,
@@ -322,6 +324,15 @@ pub const Window = struct {
         popup_keys.as(gtk.EventController).setPropagationPhase(.capture);
         _ = gtk.EventControllerKey.signals.key_pressed.connect(popup_keys, *Window, keyPressed, self, .{});
         popover.as(gtk.Widget).addController(popup_keys.as(gtk.EventController));
+        const wheel_guard = gtk.EventControllerScroll.new(.{ .vertical = true });
+        wheel_guard.as(gtk.EventController).setPropagationPhase(.capture);
+        _ = gtk.EventControllerScroll.signals.scroll.connect(wheel_guard, *Window, wheelScrolled, self, .{});
+        win.as(gtk.Widget).addController(wheel_guard.as(gtk.EventController));
+        // The scroll guard needs the pointer position; the opaque GdkEvent in
+        // this binding does not expose it, so track motion separately.
+        const motion = gtk.EventControllerMotion.new();
+        _ = gtk.EventControllerMotion.signals.motion.connect(motion, *Window, pointerMoved, self, .{});
+        win.as(gtk.Widget).addController(motion.as(gtk.EventController));
         _ = gtk.Widget.signals.realize.connect(win.as(gtk.Widget), *Window, realized, self, .{});
         try self.style(.{});
         self.connection(false, null);
@@ -1112,6 +1123,34 @@ pub const Window = struct {
         self.footer.as(gtk.Orientable).setOrientation(if (narrow or self.font_size > 18 or self.target.page == .notifications or self.target.page == .aqueous or self.aqueous.phase != 0) .vertical else .horizontal);
         self.actions.as(gtk.Orientable).setOrientation(if (narrow and self.font_size > 18 and !self.fixture) .vertical else .horizontal);
         return 0;
+    }
+    /// Sliders and spin buttons never respond to the scroll wheel; the wheel
+    /// keeps scrolling the page underneath them instead.
+    fn wheelScrolled(_: *gtk.EventControllerScroll, _: f64, dy: f64, self: *Window) callconv(.c) c_int {
+        if (self.pointer_x < 0) return 0;
+        var widget = self.window.as(gtk.Widget).pick(self.pointer_x, self.pointer_y, .{});
+        var adjuster: ?*gtk.Widget = null;
+        while (widget) |wgt| : (widget = wgt.getParent()) {
+            if (object.ext.cast(gtk.Scale, wgt) != null or object.ext.cast(gtk.SpinButton, wgt) != null) {
+                adjuster = wgt;
+                break;
+            }
+        }
+        if (adjuster == null) return 0;
+        widget = adjuster;
+        while (widget) |wgt| : (widget = wgt.getParent()) {
+            if (object.ext.cast(gtk.ScrolledWindow, wgt)) |scroll| {
+                const vadj = scroll.getVadjustment();
+                const step = vadj.getPageIncrement() / 10;
+                if (step > 0) vadj.setValue(vadj.getValue() + dy * step);
+                break;
+            }
+        }
+        return 1;
+    }
+    fn pointerMoved(_: *gtk.EventControllerMotion, x: f64, y: f64, self: *Window) callconv(.c) void {
+        self.pointer_x = x;
+        self.pointer_y = y;
     }
     fn keyPressed(_: *gtk.EventControllerKey, key: c_uint, _: c_uint, modifiers: gdk.ModifierType, self: *Window) callconv(.c) c_int {
         if (@import("build_options").test_hooks) self.key_events += 1;
