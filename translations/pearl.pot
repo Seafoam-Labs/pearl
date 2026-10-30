@@ -31,11 +31,11 @@ msgstr ""
 msgid " · Minimized"
 msgstr ""
 
-#: src/settings/preferences_view.zig:476
+#: src/settings/preferences_view.zig:493
 msgid " · Reduced motion"
 msgstr ""
 
-#: src/settings/preferences_view.zig:185 src/settings/profiles_view.zig:59
+#: src/settings/preferences_view.zig:187 src/settings/profiles_view.zig:60
 msgid "#6750a4"
 msgstr ""
 
@@ -115,7 +115,7 @@ msgstr ""
 msgid "90"
 msgstr ""
 
-#: src/settings/preferences_view.zig:332
+#: src/settings/preferences_view.zig:347
 msgid ":"
 msgstr ""
 
@@ -129,6 +129,10 @@ msgstr ""
 
 #: src/settings/window.zig:835
 msgid "A profile applies immediately and stays selected after a restart."
+msgstr ""
+
+#: src/settings/scheduler_view.zig:425
+msgid "A profile takes at most 32 options."
 msgstr ""
 
 #: src/desktop/dock.zig:618
@@ -200,6 +204,10 @@ msgstr ""
 
 #: src/desktop/dock.zig:842 src/desktop/dock.zig:863
 msgid "Action unavailable; the application or window may have changed."
+msgstr ""
+
+#: src/settings/profiles_view.zig:122
+msgid "Actions & recovery"
 msgstr ""
 
 #: src/settings/editor.zig:822 src/settings/editor.zig:831
@@ -327,7 +335,7 @@ msgstr ""
 msgid "Advanced JSON is invalid. Correct it before using the form."
 msgstr ""
 
-#: src/settings/preferences_view.zig:463
+#: src/settings/preferences_view.zig:480
 msgid "Advanced JSON is invalid. Correct it there to use these controls."
 msgstr ""
 
@@ -416,7 +424,7 @@ msgstr ""
 msgid "An answer is running. Leave it running, or choose Stop answer and benchmark."
 msgstr ""
 
-#: src/settings/preferences_view.zig:462
+#: src/settings/preferences_view.zig:479
 msgid "An empty GTK theme name follows the system."
 msgstr ""
 
@@ -425,7 +433,7 @@ msgctxt "aqueous.workspace_transition.enabled.description"
 msgid "Animate workspace changes."
 msgstr ""
 
-#: src/settings/preferences_view.zig:240
+#: src/settings/preferences_view.zig:242
 msgid "Animation length (ms)"
 msgstr ""
 
@@ -462,7 +470,7 @@ msgstr ""
 msgid "Application"
 msgstr ""
 
-#: src/settings/preferences_view.zig:253
+#: src/settings/preferences_view.zig:255
 msgid "Application appearance"
 msgstr ""
 
@@ -470,7 +478,7 @@ msgstr ""
 msgid "Application closed"
 msgstr ""
 
-#: src/settings/profiles_view.zig:57
+#: src/settings/profiles_view.zig:58
 msgid "Application colors"
 msgstr ""
 
@@ -498,12 +506,12 @@ msgstr ""
 msgid "Application name"
 msgstr ""
 
-#: src/settings/profiles_view.zig:61
+#: src/settings/profiles_view.zig:62
 msgid "Application seed"
 msgstr ""
 
-#: src/settings/profiles_view.zig:49
-msgid "Application themes · Matugen profiles"
+#: src/settings/preferences_view.zig:261
+msgid "Application themes"
 msgstr ""
 
 #: src/desktop/bar.zig:342 src/settings/sound_view.zig:265
@@ -634,7 +642,7 @@ msgstr ""
 msgid "Arrange your displays"
 msgstr ""
 
-#: src/settings/preferences_view.zig:313
+#: src/settings/preferences_view.zig:328
 msgid "Arrangement"
 msgstr ""
 
@@ -691,7 +699,7 @@ msgstr ""
 msgid "Autohide reveals the bar at the screen edge and gives applications more space. Display overrides in Advanced take priority."
 msgstr ""
 
-#: src/settings/preferences_view.zig:311
+#: src/settings/preferences_view.zig:326
 msgid "Automatic (first connected display)"
 msgstr ""
 
@@ -699,7 +707,7 @@ msgstr ""
 msgid "Automatic SDR brightness uses inherited/default settings. Other color options and display profiles are below."
 msgstr ""
 
-#: src/settings/preferences_view.zig:477
+#: src/settings/preferences_view.zig:494
 msgid "Automatic arrangement"
 msgstr ""
 
@@ -731,7 +739,7 @@ msgstr ""
 msgid "Automatic power saver"
 msgstr ""
 
-#: src/settings/preferences_view.zig:313
+#: src/settings/preferences_view.zig:328
 msgid "Automatic · Name"
 msgstr ""
 
@@ -757,7 +765,7 @@ msgctxt "aqueous.blur.radius.description"
 msgid "Backdrop blur radius in pixels."
 msgstr ""
 
-#: src/desktop/settings.zig:89 src/settings/preferences_view.zig:217
+#: src/desktop/settings.zig:89 src/settings/preferences_view.zig:219
 msgid "Background color"
 msgstr ""
 
@@ -805,7 +813,7 @@ msgstr ""
 msgid "Bar opacity and widgets…"
 msgstr ""
 
-#: src/settings/profiles_view.zig:70
+#: src/settings/profiles_view.zig:68
 msgid "Base Material defaults preserve individual choices and Off. QtEngine + Darkly is managed by the Qt applications controls on this page. qtct palettes remain individually selectable exports."
 msgstr ""
 
@@ -1003,6 +1011,10 @@ msgstr ""
 msgid "Browse months and dates. Calendar accounts are not connected."
 msgstr ""
 
+#: src/settings/profiles_view.zig:77
+msgid "Browsers"
+msgstr ""
+
 #: src/settings/window.zig:619
 msgid "Built-in adapter · Available"
 msgstr ""
@@ -1130,7 +1142,7 @@ msgstr ""
 msgid "Change device"
 msgstr ""
 
-#: src/settings/preferences_view.zig:236
+#: src/settings/preferences_view.zig:238
 msgid "Change every (seconds)"
 msgstr ""
 
@@ -1171,11 +1183,15 @@ msgstr ""
 msgid "Charging · About 35 minutes until full"
 msgstr ""
 
-#: src/settings/preferences_view.zig:260
+#: src/settings/profiles_view.zig:78
+msgid "Chat"
+msgstr ""
+
+#: src/settings/preferences_view.zig:265
 msgid "Check Qt 5"
 msgstr ""
 
-#: src/settings/preferences_view.zig:261
+#: src/settings/preferences_view.zig:266
 msgid "Check Qt 6"
 msgstr ""
 
@@ -1211,7 +1227,7 @@ msgstr ""
 msgid "Choose PNG…"
 msgstr ""
 
-#: src/settings/preferences_view.zig:823
+#: src/settings/preferences_view.zig:840
 msgid "Choose a folder stored on this computer."
 msgstr ""
 
@@ -1251,7 +1267,7 @@ msgstr ""
 msgid "Choose an identity, then authenticate."
 msgstr ""
 
-#: src/desktop/settings.zig:246 src/settings/preferences_view.zig:769
+#: src/desktop/settings.zig:246 src/settings/preferences_view.zig:786
 msgid "Choose an image stored on this computer."
 msgstr ""
 
@@ -1263,7 +1279,7 @@ msgstr ""
 msgid "Choose device"
 msgstr ""
 
-#: src/settings/preferences_view.zig:230
+#: src/settings/preferences_view.zig:232
 msgid "Choose folder…"
 msgstr ""
 
@@ -1291,7 +1307,7 @@ msgstr ""
 msgid "Choose image and sync…"
 msgstr ""
 
-#: src/desktop/settings.zig:84 src/settings/preferences_view.zig:209
+#: src/desktop/settings.zig:84 src/settings/preferences_view.zig:211
 msgid "Choose image…"
 msgstr ""
 
@@ -1299,11 +1315,11 @@ msgstr ""
 msgid "Choose profile…"
 msgstr ""
 
-#: src/settings/preferences_view.zig:798
+#: src/settings/preferences_view.zig:815
 msgid "Choose wallpaper folder"
 msgstr ""
 
-#: src/settings/preferences_view.zig:738
+#: src/settings/preferences_view.zig:755
 msgid "Choose wallpaper image"
 msgstr ""
 
@@ -1364,11 +1380,11 @@ msgstr ""
 msgid "Collecting battery history…"
 msgstr ""
 
-#: src/settings/preferences_view.zig:323
+#: src/settings/preferences_view.zig:338
 msgid "Color temperature (K) · lower is warmer"
 msgstr ""
 
-#: src/desktop/settings.zig:67 src/settings/preferences_view.zig:179
+#: src/desktop/settings.zig:67 src/settings/preferences_view.zig:181
 msgid "Color variant"
 msgstr ""
 
@@ -1376,7 +1392,7 @@ msgstr ""
 msgid "Colors · use selected theme"
 msgstr ""
 
-#: src/settings/preferences_view.zig:476
+#: src/settings/preferences_view.zig:493
 msgid "Comfortable"
 msgstr ""
 
@@ -1434,7 +1450,7 @@ msgstr ""
 msgid "Community · refresh"
 msgstr ""
 
-#: src/ui/i18n.zig:8 src/settings/preferences_view.zig:476
+#: src/ui/i18n.zig:8 src/settings/preferences_view.zig:493
 msgid "Compact"
 msgstr ""
 
@@ -1610,7 +1626,7 @@ msgstr ""
 msgid "Connection unavailable"
 msgstr ""
 
-#: src/settings/preferences_view.zig:216 src/settings/preferences_view.zig:489
+#: src/settings/preferences_view.zig:218 src/settings/preferences_view.zig:506
 msgid "Contain"
 msgstr ""
 
@@ -1643,7 +1659,7 @@ msgstr ""
 msgid "Copy"
 msgstr ""
 
-#: src/settings/preferences_view.zig:353
+#: src/settings/preferences_view.zig:370
 msgid "Copy appearance with administrator authentication"
 msgstr ""
 
@@ -1655,7 +1671,7 @@ msgstr ""
 msgid "Copy text or a PNG image to start. History is cleared when locking."
 msgstr ""
 
-#: src/settings/preferences_view.zig:267
+#: src/settings/preferences_view.zig:272
 msgid "Corner radius (0: keep existing)"
 msgstr ""
 
@@ -1695,7 +1711,7 @@ msgstr ""
 msgid "Could not open this result. Try again or choose another."
 msgstr ""
 
-#: src/settings/preferences_view.zig:971
+#: src/settings/preferences_view.zig:988
 msgid "Could not preview this image. Apply will validate the file."
 msgstr ""
 
@@ -1727,7 +1743,7 @@ msgstr ""
 msgid "Could not sync. Check that Pearl Greeter is installed and authentication completed."
 msgstr ""
 
-#: src/settings/preferences_view.zig:216 src/settings/preferences_view.zig:238 src/settings/preferences_view.zig:489
+#: src/settings/preferences_view.zig:218 src/settings/preferences_view.zig:240 src/settings/preferences_view.zig:506
 msgid "Cover"
 msgstr ""
 
@@ -1853,7 +1869,7 @@ msgstr ""
 msgid "Custom shortcuts"
 msgstr ""
 
-#: src/settings/preferences_view.zig:324
+#: src/settings/preferences_view.zig:339
 msgid "Custom times"
 msgstr ""
 
@@ -1951,7 +1967,7 @@ msgstr ""
 msgid "Delivered normally"
 msgstr ""
 
-#: src/desktop/settings.zig:92 src/settings/preferences_view.zig:250
+#: src/desktop/settings.zig:92 src/settings/preferences_view.zig:252
 msgid "Density"
 msgstr ""
 
@@ -2009,7 +2025,7 @@ msgctxt "aqueous.desktop.font.width.label"
 msgid "Desktop font width"
 msgstr ""
 
-#: src/settings/preferences_view.zig:306
+#: src/settings/preferences_view.zig:321
 msgid "Desktop icons"
 msgstr ""
 
@@ -2136,7 +2152,7 @@ msgstr ""
 msgid "Display colors could not be updated."
 msgstr ""
 
-#: src/settings/preferences_view.zig:310
+#: src/settings/preferences_view.zig:325
 msgid "Display connector"
 msgstr ""
 
@@ -2265,7 +2281,7 @@ msgstr ""
 msgid "Draft preview and window borders"
 msgstr ""
 
-#: src/settings/preferences_view.zig:942
+#: src/settings/preferences_view.zig:959
 msgid "Draft preview · Changes take effect after Apply & save."
 msgstr ""
 
@@ -2312,15 +2328,15 @@ msgstr ""
 msgid "Dynamic"
 msgstr ""
 
-#: src/desktop/settings.zig:67 src/settings/preferences_view.zig:180
+#: src/desktop/settings.zig:67 src/settings/preferences_view.zig:182
 msgid "Dynamic colors from"
 msgstr ""
 
-#: src/settings/preferences_view.zig:462
+#: src/settings/preferences_view.zig:479
 msgid "Dynamic colors need matugen 4.x."
 msgstr ""
 
-#: src/settings/preferences_view.zig:186
+#: src/settings/preferences_view.zig:188
 msgid "Dynamic colors need matugen 4.x. An empty GTK theme name follows the system."
 msgstr ""
 
@@ -2377,6 +2393,10 @@ msgstr ""
 msgid "Editing a command never executes it"
 msgstr ""
 
+#: src/settings/profiles_view.zig:76
+msgid "Editors"
+msgstr ""
+
 #: src/config/aqueous_presentation.zig:49
 msgid "Effect tuning"
 msgstr ""
@@ -2403,7 +2423,7 @@ msgstr ""
 msgid "Enable HDR"
 msgstr ""
 
-#: src/settings/preferences_view.zig:321
+#: src/settings/preferences_view.zig:336
 msgid "Enable Night Light"
 msgstr ""
 
@@ -2419,7 +2439,7 @@ msgstr ""
 msgid "Enable and approve in Plugins"
 msgstr ""
 
-#: src/settings/profiles_view.zig:55
+#: src/settings/profiles_view.zig:56
 msgid "Enable application themes"
 msgstr ""
 
@@ -2444,7 +2464,7 @@ msgstr ""
 msgid "Enable notification filters"
 msgstr ""
 
-#: src/settings/preferences_view.zig:227
+#: src/settings/preferences_view.zig:229
 msgid "Enable slideshow"
 msgstr ""
 
@@ -2456,15 +2476,15 @@ msgstr ""
 msgid "Enabled in draft"
 msgstr ""
 
-#: src/settings/preferences_view.zig:334
+#: src/settings/preferences_view.zig:349
 msgid "End (local time)"
 msgstr ""
 
-#: src/settings/preferences_view.zig:329
+#: src/settings/preferences_view.zig:344
 msgid "End hour"
 msgstr ""
 
-#: src/settings/preferences_view.zig:330
+#: src/settings/preferences_view.zig:345
 msgid "End minute"
 msgstr ""
 
@@ -2472,7 +2492,7 @@ msgstr ""
 msgid "Engine enabled"
 msgstr ""
 
-#: src/settings/preferences_view.zig:242
+#: src/settings/preferences_view.zig:244
 msgid "English"
 msgstr ""
 
@@ -2524,7 +2544,7 @@ msgstr ""
 msgid "Extend battery life"
 msgstr ""
 
-#: src/settings/preferences_view.zig:485
+#: src/settings/preferences_view.zig:502
 msgid "External Qt changes need review"
 msgstr ""
 
@@ -2532,7 +2552,7 @@ msgstr ""
 msgid "FR"
 msgstr ""
 
-#: src/settings/preferences_view.zig:238
+#: src/settings/preferences_view.zig:240
 msgid "Fade"
 msgstr ""
 
@@ -2570,7 +2590,7 @@ msgstr ""
 msgid "File already exists; choose another path using pearlctl"
 msgstr ""
 
-#: src/settings/preferences_view.zig:308
+#: src/settings/preferences_view.zig:323
 msgid "Files and application shortcuts from your Desktop folder. Enabled automatically for new installations."
 msgstr ""
 
@@ -2677,7 +2697,7 @@ msgstr ""
 msgid "Fog"
 msgstr ""
 
-#: src/settings/preferences_view.zig:262
+#: src/settings/preferences_view.zig:267
 msgid "Follow Pearl"
 msgstr ""
 
@@ -2686,11 +2706,11 @@ msgctxt "aqueous.layout.options.scrolling.follow_new_windows.label"
 msgid "Follow new windows"
 msgstr ""
 
-#: src/settings/preferences_view.zig:242
+#: src/settings/preferences_view.zig:244
 msgid "Follow system"
 msgstr ""
 
-#: src/desktop/settings.zig:90 src/settings/preferences_view.zig:246
+#: src/desktop/settings.zig:90 src/settings/preferences_view.zig:248
 msgid "Font family"
 msgstr ""
 
@@ -2699,7 +2719,7 @@ msgctxt "aqueous.desktop.font.family.description"
 msgid "Font family synchronized across Noctalia, GTK, qt5ct, and qt6ct."
 msgstr ""
 
-#: src/desktop/settings.zig:91 src/settings/preferences_view.zig:249
+#: src/desktop/settings.zig:91 src/settings/preferences_view.zig:251
 msgid "Font size"
 msgstr ""
 
@@ -2734,7 +2754,7 @@ msgstr ""
 msgid "Freezing rain"
 msgstr ""
 
-#: src/settings/preferences_view.zig:292
+#: src/settings/preferences_view.zig:305
 msgid "Full Pearl preferences JSON"
 msgstr ""
 
@@ -2803,7 +2823,7 @@ msgstr ""
 msgid "GTK sample · native theme controls the appearance."
 msgstr ""
 
-#: src/desktop/settings.zig:75 src/settings/preferences_view.zig:182
+#: src/desktop/settings.zig:75 src/settings/preferences_view.zig:184
 msgid "GTK theme name"
 msgstr ""
 
@@ -2933,7 +2953,7 @@ msgctxt "aqueous.input.touchpad.scroll_method.description"
 msgid "How touchpad scrolling is recognized."
 msgstr ""
 
-#: src/settings/preferences_view.zig:312
+#: src/settings/preferences_view.zig:327
 msgid "Icon size"
 msgstr ""
 
@@ -2965,11 +2985,11 @@ msgstr ""
 msgid "Illustrative · Default bar and dock."
 msgstr ""
 
-#: src/settings/preferences_view.zig:228
+#: src/settings/preferences_view.zig:230
 msgid "Image folder"
 msgstr ""
 
-#: src/settings/preferences_view.zig:213
+#: src/settings/preferences_view.zig:215
 msgid "Image options & slideshow"
 msgstr ""
 
@@ -3020,11 +3040,11 @@ msgstr ""
 msgid "Install Pearl Greeter to sync its appearance."
 msgstr ""
 
-#: src/settings/preferences_view.zig:244
+#: src/settings/preferences_view.zig:246
 msgid "Install language packs with your package manager. Changes take full effect after signing out and back in."
 msgstr ""
 
-#: src/settings/profiles_view.zig:116
+#: src/settings/profiles_view.zig:143
 msgid "Install reviewed Starship configuration and keep backup"
 msgstr ""
 
@@ -3058,7 +3078,7 @@ msgstr ""
 msgid "Installed themes"
 msgstr ""
 
-#: src/settings/preferences_view.zig:188
+#: src/settings/preferences_view.zig:190
 msgid "Installed themes & customization…"
 msgstr ""
 
@@ -3066,7 +3086,7 @@ msgstr ""
 msgid "Installed themes changed. Preview again before applying changed selections."
 msgstr ""
 
-#: src/settings/preferences_view.zig:348
+#: src/settings/preferences_view.zig:365
 msgid "Installed themes, palettes and widget styles"
 msgstr ""
 
@@ -3074,7 +3094,7 @@ msgstr ""
 msgid "Installed themes. Choose colors and widget style, then Apply & save."
 msgstr ""
 
-#: src/settings/preferences_view.zig:243
+#: src/settings/preferences_view.zig:245
 msgid "Interface language"
 msgstr ""
 
@@ -3130,7 +3150,7 @@ msgstr ""
 msgid "Keep displays"
 msgstr ""
 
-#: src/settings/preferences_view.zig:265
+#: src/settings/preferences_view.zig:270
 msgid "Keep existing setting"
 msgstr ""
 
@@ -3435,7 +3455,7 @@ msgstr ""
 msgid "Loading settings…"
 msgstr ""
 
-#: src/settings/preferences_view.zig:947
+#: src/settings/preferences_view.zig:964
 msgid "Loading wallpaper preview…"
 msgstr ""
 
@@ -3472,7 +3492,7 @@ msgstr ""
 msgid "Log out"
 msgstr ""
 
-#: src/settings/preferences_view.zig:353
+#: src/settings/preferences_view.zig:370
 msgid "Login screen"
 msgstr ""
 
@@ -3508,7 +3528,7 @@ msgstr ""
 msgid "Make your screens match your workspace."
 msgstr ""
 
-#: src/settings/preferences_view.zig:259
+#: src/settings/preferences_view.zig:264
 msgid "Manage Qt appearance"
 msgstr ""
 
@@ -3537,11 +3557,11 @@ msgstr ""
 msgid "Manage your connections and nearby networks."
 msgstr ""
 
-#: src/settings/preferences_view.zig:313 src/settings/preferences_view.zig:324
+#: src/settings/preferences_view.zig:328 src/settings/preferences_view.zig:339
 msgid "Manual"
 msgstr ""
 
-#: src/settings/preferences_view.zig:477
+#: src/settings/preferences_view.zig:494
 msgid "Manual arrangement"
 msgstr ""
 
@@ -3587,11 +3607,15 @@ msgstr ""
 msgid "Material"
 msgstr ""
 
-#: src/settings/preferences_view.zig:216 src/settings/preferences_view.zig:489
+#: src/settings/preferences_view.zig:218 src/settings/preferences_view.zig:506
 msgid "Material gradient"
 msgstr ""
 
-#: src/desktop/settings.zig:67 src/settings/preferences_view.zig:181
+#: src/settings/preferences_view.zig:261 src/settings/preferences_view.zig:504
+msgid "Matugen profiles · per-application colors"
+msgstr ""
+
+#: src/desktop/settings.zig:67 src/settings/preferences_view.zig:183
 msgid "Matugen scheme"
 msgstr ""
 
@@ -3858,7 +3882,7 @@ msgstr ""
 msgid "Next to"
 msgstr ""
 
-#: src/desktop/panels.zig:261 src/settings/preferences_view.zig:318
+#: src/desktop/panels.zig:261 src/settings/preferences_view.zig:333
 msgid "Night Light"
 msgstr ""
 
@@ -3918,7 +3942,7 @@ msgstr ""
 msgid "No filters yet. Add a filter to hide matching notifications."
 msgstr ""
 
-#: src/settings/preferences_view.zig:229
+#: src/settings/preferences_view.zig:231
 msgid "No folder selected"
 msgstr ""
 
@@ -3926,7 +3950,7 @@ msgstr ""
 msgid "No graphs selected. Enable them in Settings → Bar & dock."
 msgstr ""
 
-#: src/desktop/settings.zig:80 src/settings/preferences_view.zig:215 src/settings/preferences_view.zig:491
+#: src/desktop/settings.zig:80 src/settings/preferences_view.zig:217 src/settings/preferences_view.zig:508
 msgid "No image selected"
 msgstr ""
 
@@ -4018,7 +4042,7 @@ msgstr ""
 msgid "No windows remain. Choose another application."
 msgstr ""
 
-#: src/settings/preferences_view.zig:238
+#: src/settings/preferences_view.zig:240
 msgid "None"
 msgstr ""
 
@@ -4076,7 +4100,7 @@ msgstr ""
 msgid "October"
 msgstr ""
 
-#: src/ui/i18n.zig:22 src/desktop/bar.zig:623 src/settings/editor.zig:818 src/settings/power_view.zig:125 src/settings/preferences_view.zig:477
+#: src/ui/i18n.zig:22 src/desktop/bar.zig:623 src/settings/editor.zig:818 src/settings/power_view.zig:125 src/settings/preferences_view.zig:494
 msgid "Off"
 msgstr ""
 
@@ -4084,7 +4108,7 @@ msgstr ""
 msgid "Off · Configure the assistant before enabling it"
 msgstr ""
 
-#: src/settings/preferences_view.zig:479
+#: src/settings/preferences_view.zig:496
 msgid "Off · warmer screen colors on supported displays"
 msgstr ""
 
@@ -4092,7 +4116,7 @@ msgstr ""
 msgid "Offline · showing cached repository metadata"
 msgstr ""
 
-#: src/ui/i18n.zig:23 src/desktop/bar.zig:623 src/settings/preferences_view.zig:477
+#: src/ui/i18n.zig:23 src/desktop/bar.zig:623 src/settings/preferences_view.zig:494
 msgid "On"
 msgstr ""
 
@@ -4120,7 +4144,7 @@ msgstr ""
 msgid "On · Wireless connections"
 msgstr ""
 
-#: src/settings/preferences_view.zig:479
+#: src/settings/preferences_view.zig:496
 msgid "On · warmer screen colors"
 msgstr ""
 
@@ -4264,7 +4288,7 @@ msgstr ""
 msgid "Options may contain only letters, digits and - _ . = , : + / % @, separated by spaces."
 msgstr ""
 
-#: src/settings/preferences_view.zig:237
+#: src/settings/preferences_view.zig:239
 msgid "Order"
 msgstr ""
 
@@ -4274,6 +4298,10 @@ msgstr ""
 
 #: src/desktop/aqueous_display_setup.zig:434
 msgid "Orientation"
+msgstr ""
+
+#: src/settings/profiles_view.zig:79
+msgid "Other"
 msgstr ""
 
 #: src/desktop/launcher.zig:212
@@ -4398,7 +4426,7 @@ msgstr ""
 msgid "Password, PIN or passkey"
 msgstr ""
 
-#: src/settings/preferences_view.zig:213
+#: src/settings/preferences_view.zig:215
 msgid "Path, fit and rotating images"
 msgstr ""
 
@@ -4840,23 +4868,27 @@ msgstr ""
 msgid "Prioritize speed"
 msgstr ""
 
-#: src/settings/preferences_view.zig:257
-msgid "Qt applications · QtEngine + Darkly"
+#: src/settings/preferences_view.zig:260
+msgid "Qt applications"
 msgstr ""
 
-#: src/settings/preferences_view.zig:262
+#: src/settings/preferences_view.zig:267
 msgid "Qt colors"
 msgstr ""
 
-#: src/settings/preferences_view.zig:264
+#: src/settings/preferences_view.zig:269
 msgid "Qt icon theme"
 msgstr ""
 
-#: src/settings/preferences_view.zig:485
+#: src/settings/preferences_view.zig:502
 msgid "Qt needs attention · expand to review status"
 msgstr ""
 
-#: src/settings/preferences_view.zig:258
+#: src/settings/preferences_view.zig:260 src/settings/preferences_view.zig:502
+msgid "QtEngine + Darkly · shared Qt 5 and Qt 6 configuration"
+msgstr ""
+
+#: src/settings/preferences_view.zig:263
 msgid "QtEngine shares one configuration across Qt 5 and Qt 6. Selected checks verify the installed runtimes. Changes affect this user account. GTK mode uses Pearl's static colors. Disabling restores previous values that have not been edited elsewhere."
 msgstr ""
 
@@ -4892,7 +4924,7 @@ msgctxt "aqueous.input.raise_on_focus.label"
 msgid "Raise focused windows"
 msgstr ""
 
-#: src/settings/preferences_view.zig:237 src/settings/preferences_view.zig:238
+#: src/settings/preferences_view.zig:239 src/settings/preferences_view.zig:240
 msgid "Random"
 msgstr ""
 
@@ -4952,7 +4984,7 @@ msgstr ""
 msgid "Reduced"
 msgstr ""
 
-#: src/settings/preferences_view.zig:252
+#: src/settings/preferences_view.zig:254
 msgid "Reduced motion"
 msgstr ""
 
@@ -4964,11 +4996,11 @@ msgstr ""
 msgid "Refresh"
 msgstr ""
 
-#: src/settings/profiles_view.zig:91
+#: src/settings/profiles_view.zig:114
 msgid "Refresh Pywalfox from committed colors"
 msgstr ""
 
-#: src/settings/profiles_view.zig:100
+#: src/settings/profiles_view.zig:126
 msgid "Refresh application profiles"
 msgstr ""
 
@@ -4990,6 +5022,10 @@ msgstr ""
 
 #: src/ui/components/network.zig:364
 msgid "Refresh to look for nearby networks."
+msgstr ""
+
+#: src/settings/profiles_view.zig:122
+msgid "Refresh, retry and Starship review"
 msgstr ""
 
 #: src/ui/components/network.zig:383
@@ -5048,7 +5084,7 @@ msgstr ""
 msgid "Rename…"
 msgstr ""
 
-#: src/settings/preferences_view.zig:914
+#: src/settings/preferences_view.zig:931
 msgid "Rendering draft colors…"
 msgstr ""
 
@@ -5070,7 +5106,7 @@ msgctxt "aqueous.input.repeat_rate.label"
 msgid "Repeat rate"
 msgstr ""
 
-#: src/settings/preferences_view.zig:281
+#: src/settings/preferences_view.zig:286
 msgid "Replace reviewed values with saved Qt settings"
 msgstr ""
 
@@ -5162,7 +5198,7 @@ msgstr ""
 msgid "Resume conversation"
 msgstr ""
 
-#: src/desktop/panels.zig:268 src/settings/preferences_view.zig:340
+#: src/desktop/panels.zig:268 src/settings/preferences_view.zig:355
 msgid "Resume saved policy"
 msgstr ""
 
@@ -5170,7 +5206,7 @@ msgstr ""
 msgid "Retry"
 msgstr ""
 
-#: src/settings/profiles_view.zig:106
+#: src/settings/profiles_view.zig:132
 msgid "Retry committed application themes"
 msgstr ""
 
@@ -5178,7 +5214,7 @@ msgstr ""
 msgid "Retry compositor reload"
 msgstr ""
 
-#: src/settings/preferences_view.zig:274
+#: src/settings/preferences_view.zig:279
 msgid "Retry saved Qt settings"
 msgstr ""
 
@@ -5213,7 +5249,7 @@ msgstr ""
 msgid "Review Aqueous changes"
 msgstr ""
 
-#: src/settings/profiles_view.zig:109
+#: src/settings/profiles_view.zig:135
 msgid "Review Starship installation"
 msgstr ""
 
@@ -5225,7 +5261,7 @@ msgstr ""
 msgid "Review drafts"
 msgstr ""
 
-#: src/settings/preferences_view.zig:276
+#: src/settings/preferences_view.zig:281
 msgid "Review external Qt changes"
 msgstr ""
 
@@ -5271,11 +5307,11 @@ msgstr ""
 msgid "Room for every state"
 msgstr ""
 
-#: src/settings/preferences_view.zig:238
+#: src/settings/preferences_view.zig:240
 msgid "Rotate"
 msgstr ""
 
-#: src/settings/preferences_view.zig:226
+#: src/settings/preferences_view.zig:228
 msgid "Rotates through the images in one folder. Only PNG and JPEG are used. Each change re-runs wallpaper colors when the theme follows the image."
 msgstr ""
 
@@ -5450,7 +5486,7 @@ msgstr ""
 msgid "Scan Wi-Fi"
 msgstr ""
 
-#: src/settings/preferences_view.zig:324
+#: src/settings/preferences_view.zig:339
 msgid "Schedule"
 msgstr ""
 
@@ -5505,7 +5541,7 @@ msgstr ""
 msgid "Search all enabled engines (maximum 3)"
 msgstr ""
 
-#: src/settings/profiles_view.zig:63
+#: src/settings/profiles_view.zig:64
 msgid "Search applications"
 msgstr ""
 
@@ -5582,7 +5618,7 @@ msgstr ""
 msgid "Secured · Strong signal"
 msgstr ""
 
-#: src/desktop/settings.zig:76 src/settings/preferences_view.zig:184
+#: src/desktop/settings.zig:76 src/settings/preferences_view.zig:186
 msgid "Seed color"
 msgstr ""
 
@@ -5599,7 +5635,7 @@ msgctxt "aqueous.input.pointer_acceleration.description"
 msgid "Select adaptive pointer acceleration globally."
 msgstr ""
 
-#: src/settings/preferences_view.zig:462
+#: src/settings/preferences_view.zig:479
 msgid "Select an installed community theme below."
 msgstr ""
 
@@ -5631,7 +5667,7 @@ msgstr ""
 msgid "September"
 msgstr ""
 
-#: src/settings/preferences_view.zig:237
+#: src/settings/preferences_view.zig:239
 msgid "Sequential"
 msgstr ""
 
@@ -6321,11 +6357,11 @@ msgstr ""
 msgid "Show date"
 msgstr ""
 
-#: src/settings/preferences_view.zig:309
+#: src/settings/preferences_view.zig:324
 msgid "Show desktop icons"
 msgstr ""
 
-#: src/settings/preferences_view.zig:314
+#: src/settings/preferences_view.zig:329
 msgid "Show hidden files"
 msgstr ""
 
@@ -6365,19 +6401,19 @@ msgstr ""
 msgid "Sleep & energy saving"
 msgstr ""
 
-#: src/settings/preferences_view.zig:238
+#: src/settings/preferences_view.zig:240
 msgid "Slide"
 msgstr ""
 
-#: src/settings/preferences_view.zig:225
+#: src/settings/preferences_view.zig:227
 msgid "Slideshow"
 msgstr ""
 
-#: src/settings/preferences_view.zig:493
+#: src/settings/preferences_view.zig:510
 msgid "Slideshow off · path, fit and background color"
 msgstr ""
 
-#: src/settings/preferences_view.zig:493
+#: src/settings/preferences_view.zig:510
 msgid "Slideshow on · path, fit and timing"
 msgstr ""
 
@@ -6420,7 +6456,7 @@ msgstr ""
 msgid "Snowfall"
 msgstr ""
 
-#: src/settings/preferences_view.zig:216 src/settings/preferences_view.zig:489
+#: src/settings/preferences_view.zig:218 src/settings/preferences_view.zig:506
 msgid "Solid color"
 msgstr ""
 
@@ -6475,15 +6511,15 @@ msgstr ""
 msgid "Stage explicit values or remove local overrides. Keep current leaves a field untouched. Aqueous validates the complete candidate; live apply depends on each output's preview support. Policy identify_by and rollback_seconds are compatibility settings; rollback_seconds does not change the confirmation timer."
 msgstr ""
 
-#: src/settings/preferences_view.zig:334
+#: src/settings/preferences_view.zig:349
 msgid "Start (local time)"
 msgstr ""
 
-#: src/settings/preferences_view.zig:329
+#: src/settings/preferences_view.zig:344
 msgid "Start hour"
 msgstr ""
 
-#: src/settings/preferences_view.zig:330
+#: src/settings/preferences_view.zig:345
 msgid "Start minute"
 msgstr ""
 
@@ -6499,11 +6535,11 @@ msgstr ""
 msgid "Startup, reload, fallback and compatibility"
 msgstr ""
 
-#: src/settings/preferences_view.zig:262
+#: src/settings/preferences_view.zig:267
 msgid "Static dark"
 msgstr ""
 
-#: src/settings/preferences_view.zig:262
+#: src/settings/preferences_view.zig:267
 msgid "Static light"
 msgstr ""
 
@@ -6574,19 +6610,19 @@ msgstr ""
 msgid "Synced. The login screen will use this appearance next time it starts."
 msgstr ""
 
-#: src/settings/preferences_view.zig:270
+#: src/settings/preferences_view.zig:275
 msgid "Synchronize Darkly focus colors in KDE"
 msgstr ""
 
-#: src/settings/preferences_view.zig:269
+#: src/settings/preferences_view.zig:274
 msgid "Synchronize density"
 msgstr ""
 
-#: src/settings/preferences_view.zig:263
+#: src/settings/preferences_view.zig:268
 msgid "Synchronize font"
 msgstr ""
 
-#: src/settings/preferences_view.zig:268
+#: src/settings/preferences_view.zig:273
 msgid "Synchronize reduced motion"
 msgstr ""
 
@@ -6608,11 +6644,11 @@ msgctxt "aqueous.bell.mode.label"
 msgid "System bell"
 msgstr ""
 
-#: src/settings/preferences_view.zig:183 src/settings/preferences_view.zig:247
+#: src/settings/preferences_view.zig:185 src/settings/preferences_view.zig:249
 msgid "System default"
 msgstr ""
 
-#: src/settings/preferences_view.zig:476
+#: src/settings/preferences_view.zig:493
 msgid "System font"
 msgstr ""
 
@@ -6642,6 +6678,10 @@ msgctxt "aqueous.actions.spawn_terminal.label"
 msgid "Terminal command"
 msgstr ""
 
+#: src/settings/profiles_view.zig:75
+msgid "Terminals"
+msgstr ""
+
 #: tests/fixtures/aqueous-master/snapshot.json
 msgctxt "aqueous.layout.slots.tertiary.label"
 msgid "Tertiary slot"
@@ -6663,7 +6703,7 @@ msgstr ""
 msgid "Testing the synchronized draft…"
 msgstr ""
 
-#: src/settings/preferences_view.zig:241
+#: src/settings/preferences_view.zig:243
 msgid "Text & layout"
 msgstr ""
 
@@ -6715,11 +6755,11 @@ msgstr ""
 msgid "The expression is too long or complex"
 msgstr ""
 
-#: src/settings/preferences_view.zig:830
+#: src/settings/preferences_view.zig:847
 msgid "The folder path is too long or is not valid UTF-8."
 msgstr ""
 
-#: src/settings/preferences_view.zig:775
+#: src/settings/preferences_view.zig:792
 msgid "The image path is too long or is not valid UTF-8."
 msgstr ""
 
@@ -6787,7 +6827,7 @@ msgstr ""
 msgid "Theme"
 msgstr ""
 
-#: src/settings/preferences_view.zig:177
+#: src/settings/preferences_view.zig:179
 msgid "Theme & colors"
 msgstr ""
 
@@ -6799,7 +6839,7 @@ msgstr ""
 msgid "Theme selection is in the draft. Use Apply & save to activate it."
 msgstr ""
 
-#: src/settings/preferences_view.zig:348
+#: src/settings/preferences_view.zig:365
 msgid "Themes & customization"
 msgstr ""
 
@@ -6915,6 +6955,10 @@ msgstr ""
 msgid "Too many saved crops. Reset one of the others first."
 msgstr ""
 
+#: src/settings/profiles_view.zig:74
+msgid "Toolkits"
+msgstr ""
+
 #: tests/fixtures/aqueous-master/snapshot.json
 msgctxt "aqueous.layout.options.float.top_edge_maximize.label"
 msgid "Top edge maximizes"
@@ -6950,7 +6994,7 @@ msgctxt "aqueous.input.touchpad.accel_speed.label"
 msgid "Touchpad speed"
 msgstr ""
 
-#: src/settings/preferences_view.zig:238
+#: src/settings/preferences_view.zig:240
 msgid "Transition"
 msgstr ""
 
@@ -7088,7 +7132,7 @@ msgstr ""
 msgid "Use CPU if the selected GPU is unavailable"
 msgstr ""
 
-#: src/settings/profiles_view.zig:66
+#: src/settings/profiles_view.zig:67
 msgid "Use Material defaults"
 msgstr ""
 
@@ -7125,7 +7169,7 @@ msgstr ""
 msgid "Use colors"
 msgstr ""
 
-#: src/settings/profiles_view.zig:103
+#: src/settings/profiles_view.zig:129
 msgid "Use current profile versions on Apply"
 msgstr ""
 
@@ -7305,31 +7349,31 @@ msgstr ""
 msgid "Waiting for the saved schedule."
 msgstr ""
 
-#: src/settings/preferences_view.zig:255
+#: src/settings/preferences_view.zig:257
 msgid "Waits for pending Aqueous edits. Turning off keeps the last colors; GTK mode pauses synchronization."
 msgstr ""
 
-#: src/desktop/bar.zig:349 src/desktop/wallpapers.zig:60 src/settings/preferences_view.zig:192
+#: src/desktop/bar.zig:349 src/desktop/wallpapers.zig:60 src/settings/preferences_view.zig:194
 msgid "Wallpaper"
 msgstr ""
 
-#: src/settings/profiles_view.zig:50
+#: src/settings/profiles_view.zig:52
 msgid "Wallpaper colors update automatically after wallpaper changes are committed, including when the image file changes. Some applications still require activation."
 msgstr ""
 
-#: src/settings/preferences_view.zig:194
+#: src/settings/preferences_view.zig:196
 msgid "Wallpaper draft preview"
 msgstr ""
 
-#: src/settings/preferences_view.zig:1000
+#: src/settings/preferences_view.zig:1017
 msgid "Wallpaper draft preview · Changes take effect after Apply & save."
 msgstr ""
 
-#: src/desktop/settings.zig:88 src/settings/preferences_view.zig:216
+#: src/desktop/settings.zig:88 src/settings/preferences_view.zig:218
 msgid "Wallpaper fit"
 msgstr ""
 
-#: src/desktop/settings.zig:82 src/desktop/settings.zig:86 src/settings/preferences_view.zig:214
+#: src/desktop/settings.zig:82 src/desktop/settings.zig:86 src/settings/preferences_view.zig:216
 msgid "Wallpaper image"
 msgstr ""
 
@@ -7337,7 +7381,7 @@ msgstr ""
 msgid "Wallpaper or seed"
 msgstr ""
 
-#: src/settings/preferences_view.zig:320
+#: src/settings/preferences_view.zig:335
 msgid "Warmer screen colors on supported displays. The status below shows which displays can apply your saved schedule."
 msgstr ""
 
@@ -7417,17 +7461,17 @@ msgstr ""
 msgid "Window appearance"
 msgstr ""
 
+#: src/settings/preferences_view.zig:255
+msgid "Window border synchronization"
+msgstr ""
+
 #: tests/fixtures/aqueous-master/snapshot.json
 msgctxt "aqueous.layout.border_width.description"
 msgid "Window border width in pixels."
 msgstr ""
 
-#: src/settings/preferences_view.zig:254
+#: src/settings/preferences_view.zig:256
 msgid "Window borders follow Pearl theme"
-msgstr ""
-
-#: src/settings/preferences_view.zig:253 src/settings/preferences_view.zig:485
-msgid "Window borders, Qt and application colors"
 msgstr ""
 
 #: src/settings/window.zig:693
@@ -7535,7 +7579,7 @@ msgstr ""
 msgid "Your local calendar"
 msgstr ""
 
-#: src/settings/profiles_view.zig:99
+#: src/settings/profiles_view.zig:123
 msgid "Zed and Equibop need activation in the application. Fluxer and Steam use the generated CSS. Starship generates a full prompt configuration; review it before installing. Off restores only unchanged Pearl-owned files."
 msgstr ""
 
@@ -8827,7 +8871,7 @@ msgstr ""
 msgid "x,y,width,height"
 msgstr ""
 
-#: src/settings/preferences_view.zig:527
+#: src/settings/preferences_view.zig:544
 msgid "{0} (language pack not installed)"
 msgstr ""
 

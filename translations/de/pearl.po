@@ -211,6 +211,10 @@ msgstr "Aktion nicht verfügbar oder fehlgeschlagen. Erneut versuchen."
 msgid "Action unavailable; the application or window may have changed."
 msgstr ""
 
+#: src/settings/profiles_view.zig:128
+msgid "Actions & recovery"
+msgstr "Aktionen & Wiederherstellung"
+
 #: src/settings/editor.zig:822 src/settings/editor.zig:831
 msgid "Active"
 msgstr "Aktiv"
@@ -524,9 +528,9 @@ msgstr "Anwendungsname"
 msgid "Application seed"
 msgstr ""
 
-#: src/settings/profiles_view.zig:49
-msgid "Application themes · Matugen profiles"
-msgstr ""
+#: src/settings/preferences_view.zig:261
+msgid "Application themes"
+msgstr "Anwendungsthemen"
 
 #: src/desktop/bar.zig:319 src/settings/sound_view.zig:265
 msgid "Applications"
@@ -1057,6 +1061,10 @@ msgstr ""
 msgid "Browse months and dates. Calendar accounts are not connected."
 msgstr "Blättere durch Monate und Tage. Kalenderkonten sind nicht verbunden."
 
+#: src/settings/profiles_view.zig:77
+msgid "Browsers"
+msgstr "Browser"
+
 #: src/settings/window.zig:619
 msgid "Built-in adapter · Available"
 msgstr ""
@@ -1218,6 +1226,10 @@ msgstr "Wird geladen"
 #: src/settings/window.zig:638
 msgid "Charging · About 35 minutes until full"
 msgstr ""
+
+#: src/settings/profiles_view.zig:78
+msgid "Chat"
+msgstr "Chat"
 
 #: src/settings/preferences_view.zig:258
 msgid "Check Qt 5"
@@ -2447,6 +2459,10 @@ msgstr ""
 #: src/config/aqueous_presentation.zig:70
 msgid "Editing a command never executes it"
 msgstr "Bearbeiten führt keinen Befehl aus"
+
+#: src/settings/profiles_view.zig:76
+msgid "Editors"
+msgstr "Editoren"
 
 #: src/config/aqueous_presentation.zig:49
 msgid "Effect tuning"
@@ -3681,6 +3697,10 @@ msgstr "Material"
 msgid "Material gradient"
 msgstr "Material-Verlauf"
 
+#: src/settings/preferences_view.zig:261 src/settings/preferences_view.zig:504
+msgid "Matugen profiles · per-application colors"
+msgstr "Matugen-Profile · Farben pro Anwendung"
+
 #: tests/fixtures/aqueous-master/snapshot.json
 msgctxt "aqueous.state.maximize_full_output.label"
 msgid "Maximize to full output"
@@ -4336,6 +4356,10 @@ msgstr "Geordnete Bedingungen und Wirkungen"
 msgid "Orientation"
 msgstr ""
 
+#: src/settings/profiles_view.zig:79
+msgid "Other"
+msgstr "Weitere"
+
 #: src/desktop/launcher.zig:212
 msgid "Other workspace"
 msgstr "Andere Arbeitsfläche"
@@ -4928,9 +4952,9 @@ msgstr ""
 msgid "Prioritize speed"
 msgstr "Geschwindigkeit bevorzugen"
 
-#: src/settings/preferences_view.zig:255
-msgid "Qt applications · QtEngine + Darkly"
-msgstr "Qt-Anwendungen · QtEngine + Darkly"
+#: src/settings/preferences_view.zig:260
+msgid "Qt applications"
+msgstr "Qt-Anwendungen"
 
 #: src/settings/preferences_view.zig:260
 msgid "Qt colors"
@@ -4943,6 +4967,10 @@ msgstr "Qt-Symboldesign"
 #: src/settings/preferences_view.zig:483
 msgid "Qt needs attention · expand to review status"
 msgstr "Qt benötigt Aufmerksamkeit · Status aufklappen"
+
+#: src/settings/preferences_view.zig:260 src/settings/preferences_view.zig:502
+msgid "QtEngine + Darkly · shared Qt 5 and Qt 6 configuration"
+msgstr "QtEngine + Darkly · gemeinsame Qt-5- und Qt-6-Konfiguration"
 
 #: src/settings/preferences_view.zig:256
 msgid ""
@@ -5092,6 +5120,10 @@ msgstr "Status aktualisieren"
 #: src/ui/components/network.zig:364
 msgid "Refresh to look for nearby networks."
 msgstr "Aktualisieren, um nach Netzwerken zu suchen."
+
+#: src/settings/profiles_view.zig:128
+msgid "Refresh, retry and Starship review"
+msgstr "Aktualisieren, wiederholen und Starship prüfen"
 
 #: src/ui/components/network.zig:383
 msgid "Refreshing…"
@@ -6771,6 +6803,10 @@ msgctxt "aqueous.actions.spawn_terminal.label"
 msgid "Terminal command"
 msgstr ""
 
+#: src/settings/profiles_view.zig:75
+msgid "Terminals"
+msgstr "Terminals"
+
 #: tests/fixtures/aqueous-master/snapshot.json
 msgctxt "aqueous.layout.slots.tertiary.label"
 msgid "Tertiary slot"
@@ -7095,6 +7131,10 @@ msgstr ""
 #: src/desktop/wallpaper_crop.zig:334
 msgid "Too many saved crops. Reset one of the others first."
 msgstr "Zu viele gespeicherte Zuschnitte. Setze zuerst einen anderen zurück."
+
+#: src/settings/profiles_view.zig:74
+msgid "Toolkits"
+msgstr "Toolkits"
 
 #: tests/fixtures/aqueous-master/snapshot.json
 msgctxt "aqueous.layout.options.float.top_edge_maximize.label"
@@ -7725,13 +7765,13 @@ msgctxt "aqueous.layout.border_width.description"
 msgid "Window border width in pixels."
 msgstr ""
 
+#: src/settings/preferences_view.zig:255
+msgid "Window border synchronization"
+msgstr "Fensterrahmen-Synchronisierung"
+
 #: src/settings/preferences_view.zig:252
 msgid "Window borders follow Pearl theme"
 msgstr "Fensterrahmen folgen dem Pearl-Design"
-
-#: src/settings/preferences_view.zig:251 src/settings/preferences_view.zig:483
-msgid "Window borders, Qt and application colors"
-msgstr "Fensterrahmen, Qt und Anwendungsfarben"
 
 #: src/settings/window.zig:693
 msgid "Window borders, effects and desktop details."

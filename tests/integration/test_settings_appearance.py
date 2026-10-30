@@ -41,7 +41,11 @@ def click(s, ipc, field, fraction_x=.5):
         section = 'desktop'
     elif field.startswith('night_'):
         section = 'night'
-    elif field.startswith(('qt_', 'applications.')) or field == 'sync_borders':
+    elif field.startswith('qt_'):
+        section = 'qt'
+    elif field.startswith('applications.'):
+        section = 'profiles'
+    elif field == 'sync_borders':
         section = 'applications'
     elif field.startswith(('themes.', 'palettes.')):
         section = 'themes'
@@ -53,6 +57,12 @@ def click(s, ipc, field, fraction_x=.5):
         if state and not state['selected']:
             click(s, ipc, header)
             wait_for(lambda: next(c for c in probe(s, ipc)['controls'] if c['field'] == header)['selected'])
+    if field.startswith('applications.') and field.count('.') >= 2:
+        # Per-application controls live in nested group disclosures.
+        for c in list(probe(s, ipc)['controls']):
+            if c['field'].startswith('applications.group.') and not c['selected']:
+                click_widget(s, ipc, c['bounds'])
+                wait_for(lambda f=c['field']: next(x for x in probe(s, ipc)['controls'] if x['field'] == f)['selected'])
     time.sleep(.2)  # Wait for GTK to allocate controls after snapshot/layout changes.
     if field not in ('raw', 'apply', 'discard', 'merge'):
         for _ in range(30):
@@ -165,7 +175,7 @@ def main():
             assert {'mode','variant','source','gtk_name','seed','wallpaper','color','font','font_size','fit','density','motion','choose','raw'} <= fields
             capture(s, 'appearance-real-dark')
             before = peer.document()
-            for section in ('image', 'text', 'desktop', 'night', 'applications', 'themes', 'login'):
+            for section in ('image', 'text', 'desktop', 'night', 'applications', 'qt', 'profiles', 'themes', 'login'):
                 header = 'appearance.section.' + section
                 assert not next(c for c in probe(s, ipc)['controls'] if c['field'] == header)['selected']
                 click(s, ipc, header)
