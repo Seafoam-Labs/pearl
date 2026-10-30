@@ -1210,7 +1210,7 @@ pub const Window = struct {
                 const widget = button.as(gtk.Widget);
                 try controls.append(alloc, .{ .field = name, .focused = focus == widget, .enabled = widget.isSensitive() != 0, .selected = button.getActive() != 0, .bounds = self.bounds(widget) });
             }
-            for ([_]@import("preferences_view.zig").Section{ view.image_section, view.text_section, view.desktop_section, view.night_section, view.apps_section, view.themes_section, view.login_section }, [_][]const u8{ "image", "text", "desktop", "night", "applications", "themes", "login" }) |section, name| {
+            for ([_]@import("preferences_view.zig").Section{ view.image_section, view.text_section, view.desktop_section, view.night_section, view.apps_section, view.qt_section, view.profiles_section, view.themes_section, view.login_section }, [_][]const u8{ "image", "text", "desktop", "night", "applications", "qt", "profiles", "themes", "login" }) |section, name| {
                 try controls.append(alloc, .{ .field = try std.fmt.allocPrint(alloc, "appearance.section.{s}", .{name}), .focused = focus == section.expander.as(gtk.Widget), .enabled = section.expander.as(gtk.Widget).isSensitive() != 0, .selected = section.expander.getExpanded() != 0, .text = std.mem.span(section.summary.getText()), .bounds = self.bounds(section.expander.getLabelWidget().?) });
             }
             try controls.append(alloc, .{ .field = "appearance.preview", .focused = false, .text = std.mem.span(view.desktop_preview.status.getText()), .bounds = self.bounds(view.desktop_preview.root.as(gtk.Widget)) });
@@ -1239,6 +1239,10 @@ pub const Window = struct {
                 for ([_]*gtk.Widget{ view.profiles.modes[i].as(gtk.Widget), view.profiles.pickers[i].as(gtk.Widget) }, [_][]const u8{ "mode", "profile" }) |widget, name| {
                     try controls.append(alloc, .{ .field = try std.fmt.allocPrint(alloc, "applications.{s}.{s}", .{ @tagName(application), name }), .focused = if (focus) |f| f == widget else false, .enabled = widget.isSensitive() != 0, .bounds = self.bounds(widget) });
                 }
+            }
+            for (view.profiles.group_expanders, 0..) |expander, i| {
+                const widget = expander.getLabelWidget().?;
+                try controls.append(alloc, .{ .field = try std.fmt.allocPrint(alloc, "applications.group.{d}", .{i}), .focused = focus == widget, .enabled = widget.isSensitive() != 0, .visible = widget.getVisible() != 0, .selected = expander.getExpanded() != 0, .bounds = self.bounds(widget) });
             }
             for ([_]*gtk.Widget{ view.qt_enabled.as(gtk.Widget), view.qt_retry.as(gtk.Widget), view.qt_review.as(gtk.Widget), view.qt_reapply.as(gtk.Widget), view.qt_kde.as(gtk.Widget) }, [_][]const u8{ "qt_enabled", "qt_retry", "qt_review", "qt_reapply", "qt_kde" }) |widget, name|
                 try controls.append(alloc, .{ .field = name, .focused = if (focus) |f| f == widget else false, .bounds = self.bounds(widget) });
