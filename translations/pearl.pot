@@ -67,15 +67,15 @@ msgstr ""
 msgid "..."
 msgstr ""
 
-#: src/settings/power_view.zig:207 src/settings/power_view.zig:397
+#: src/settings/power_view.zig:208 src/settings/power_view.zig:392
 msgid "1 hour"
 msgstr ""
 
-#: src/settings/power_view.zig:207 src/settings/power_view.zig:397
+#: src/settings/power_view.zig:208 src/settings/power_view.zig:392
 msgid "1 minute"
 msgstr ""
 
-#: src/settings/power_view.zig:207 src/settings/power_view.zig:397
+#: src/settings/power_view.zig:208 src/settings/power_view.zig:392
 msgid "10 minutes"
 msgstr ""
 
@@ -83,7 +83,7 @@ msgstr ""
 msgid "12-hour time"
 msgstr ""
 
-#: src/settings/power_view.zig:207 src/settings/power_view.zig:397
+#: src/settings/power_view.zig:208 src/settings/power_view.zig:392
 msgid "15 minutes"
 msgstr ""
 
@@ -99,11 +99,11 @@ msgstr ""
 msgid "270"
 msgstr ""
 
-#: src/settings/power_view.zig:207 src/settings/power_view.zig:397
+#: src/settings/power_view.zig:208 src/settings/power_view.zig:392
 msgid "30 minutes"
 msgstr ""
 
-#: src/settings/power_view.zig:207 src/settings/power_view.zig:397
+#: src/settings/power_view.zig:208 src/settings/power_view.zig:392
 msgid "5 minutes"
 msgstr ""
 
@@ -127,7 +127,7 @@ msgstr ""
 msgid "A place for your day"
 msgstr ""
 
-#: src/settings/window.zig:846
+#: src/settings/window.zig:844
 msgid "A profile applies immediately and stays selected after a restart."
 msgstr ""
 
@@ -174,11 +174,11 @@ msgstr ""
 msgid "About {0} h {1} min left"
 msgstr ""
 
-#: src/settings/power_view.zig:302
+#: src/settings/power_view.zig:298
 msgid "About {0} h {1} min remaining"
 msgstr ""
 
-#: src/settings/power_view.zig:302
+#: src/settings/power_view.zig:298
 msgid "About {0} h {1} min until full"
 msgstr ""
 
@@ -327,7 +327,7 @@ msgstr ""
 msgid "Additional setup required"
 msgstr ""
 
-#: src/config/aqueous_presentation.zig:148 src/desktop/aqueous_settings.zig:264 src/desktop/settings.zig:65 src/desktop/settings_navigation.zig:38 src/settings/window.zig:427
+#: src/config/aqueous_presentation.zig:148 src/desktop/aqueous_settings.zig:264 src/desktop/settings.zig:65 src/desktop/settings_navigation.zig:36 src/settings/window.zig:425
 msgid "Advanced"
 msgstr ""
 
@@ -454,7 +454,7 @@ msgstr ""
 msgid "Another profile is being applied."
 msgstr ""
 
-#: src/config/aqueous_presentation.zig:148 src/desktop/settings.zig:63 src/desktop/settings_navigation.zig:31 src/settings/window.zig:427
+#: src/config/aqueous_presentation.zig:148 src/desktop/settings.zig:63 src/desktop/settings_navigation.zig:30 src/settings/window.zig:425
 msgid "Appearance"
 msgstr ""
 
@@ -566,11 +566,7 @@ msgctxt "aqueous.display.apply_on_reload.label"
 msgid "Apply displays on reload"
 msgstr ""
 
-#: src/settings/window.zig:846
-msgid "Apply saves Pearl preferences. Session actions take effect immediately."
-msgstr ""
-
-#: src/settings/window.zig:846
+#: src/settings/window.zig:844
 msgid "Apply saves all Pearl preferences. Filters affect future arrivals; DND and history actions are immediate."
 msgstr ""
 
@@ -586,7 +582,7 @@ msgstr ""
 msgid "Applying brightness…"
 msgstr ""
 
-#: src/settings/power_view.zig:315
+#: src/settings/power_view.zig:311
 msgid "Applying power mode…"
 msgstr ""
 
@@ -606,7 +602,7 @@ msgstr ""
 msgid "April"
 msgstr ""
 
-#: src/desktop/settings_navigation.zig:37 src/settings/window.zig:151
+#: src/desktop/settings_navigation.zig:35 src/settings/window.zig:151
 msgid "Aqueous"
 msgstr ""
 
@@ -630,7 +626,7 @@ msgstr ""
 msgid "Arrange side by side"
 msgstr ""
 
-#: src/settings/window.zig:704
+#: src/settings/window.zig:702
 msgid "Arrange windows and shape your workspace."
 msgstr ""
 
@@ -655,7 +651,7 @@ msgctxt "aqueous.layout.force_ssd.description"
 msgid "Ask SSD-capable clients to use compositor decorations."
 msgstr ""
 
-#: src/desktop/settings_navigation.zig:32
+#: src/desktop/settings_navigation.zig:31
 msgid "Assistant"
 msgstr ""
 
@@ -695,7 +691,7 @@ msgstr ""
 msgid "Authentication response"
 msgstr ""
 
-#: src/settings/preference_pages.zig:107
+#: src/settings/preference_pages.zig:101
 msgid "Autohide reveals the bar at the screen edge and gives applications more space. Display overrides in Advanced take priority."
 msgstr ""
 
@@ -719,7 +715,7 @@ msgstr ""
 msgid "Automatic discovery is degraded. Use Installed to refresh available themes."
 msgstr ""
 
-#: src/settings/preference_pages.zig:137
+#: src/settings/preference_pages.zig:131
 msgid "Automatic follows the theme and blur availability. Custom changes only the bar background, including when blur is unavailable."
 msgstr ""
 
@@ -727,15 +723,11 @@ msgstr ""
 msgid "Automatic installation supports Devario and Arch-based systems. Install llama.cpp with your distribution's package manager, then discover the runtime."
 msgstr ""
 
-#: src/settings/window.zig:652
+#: src/settings/window.zig:650
 msgid "Automatic locking and sleep"
 msgstr ""
 
-#: src/settings/window.zig:405
-msgid "Automatic locking and sleep for your session."
-msgstr ""
-
-#: src/settings/power_view.zig:213
+#: src/settings/power_view.zig:214
 msgid "Automatic power saver"
 msgstr ""
 
@@ -769,19 +761,19 @@ msgstr ""
 msgid "Background color"
 msgstr ""
 
-#: src/settings/preference_pages.zig:118
+#: src/settings/preference_pages.zig:112
 msgid "Background opacity slider (%)"
 msgstr ""
 
-#: src/settings/window.zig:401
-msgid "Balance performance and battery life."
-msgstr ""
-
-#: src/settings/window.zig:650
+#: src/settings/window.zig:648
 msgid "Balance performance and energy use"
 msgstr ""
 
-#: src/desktop/services.zig:205 src/settings/power_view.zig:159
+#: src/settings/window.zig:401
+msgid "Balance performance, battery life, sleep and locking."
+msgstr ""
+
+#: src/desktop/services.zig:205 src/settings/power_view.zig:158
 msgid "Balanced"
 msgstr ""
 
@@ -793,7 +785,7 @@ msgstr ""
 msgid "Bar & behavior"
 msgstr ""
 
-#: src/desktop/settings_navigation.zig:33
+#: src/desktop/settings_navigation.zig:32
 msgid "Bar & dock"
 msgstr ""
 
@@ -822,7 +814,7 @@ msgctxt "aqueous.desktop.cursor.size.description"
 msgid "Base cursor size in pixels before output scaling."
 msgstr ""
 
-#: src/desktop/text.zig:13 src/settings/power_view.zig:300
+#: src/desktop/text.zig:13 src/settings/power_view.zig:296
 msgid "Battery"
 msgstr ""
 
@@ -830,15 +822,15 @@ msgstr ""
 msgid "Battery empty"
 msgstr ""
 
-#: src/settings/power_view.zig:303
+#: src/settings/power_view.zig:299
 msgid "Battery health unavailable"
 msgstr ""
 
-#: src/settings/power_view.zig:303
+#: src/settings/power_view.zig:299
 msgid "Battery health: {0} ({1}%)"
 msgstr ""
 
-#: src/settings/power_view.zig:377
+#: src/settings/power_view.zig:373
 msgid "Battery service unavailable"
 msgstr ""
 
@@ -861,15 +853,15 @@ msgctxt "aqueous.bell.volume.label"
 msgid "Bell volume"
 msgstr ""
 
-#: src/settings/power_view.zig:125
+#: src/settings/power_view.zig:124
 msgid "Below 10%"
 msgstr ""
 
-#: src/settings/power_view.zig:125
+#: src/settings/power_view.zig:124
 msgid "Below 20%"
 msgstr ""
 
-#: src/settings/power_view.zig:125
+#: src/settings/power_view.zig:124
 msgid "Below 30%"
 msgstr ""
 
@@ -897,7 +889,7 @@ msgstr ""
 msgid "Blocked — no popup or history"
 msgstr ""
 
-#: src/ui/i18n.zig:19 src/desktop/settings_navigation.zig:28
+#: src/ui/i18n.zig:19 src/desktop/settings_navigation.zig:27
 msgid "Bluetooth"
 msgstr ""
 
@@ -986,7 +978,7 @@ msgctxt "aqueous.struts.bottom.label"
 msgid "Bottom reserved space"
 msgstr ""
 
-#: src/ui/i18n.zig:27 src/desktop/brightness_controls.zig:26 src/settings/power_view.zig:182 src/settings/power_view.zig:196 src/ui/surfaces/osd.zig:25 src/ui/surfaces/osd.zig:86 src/ui/surfaces/osd.zig:94
+#: src/ui/i18n.zig:27 src/desktop/brightness_controls.zig:26 src/settings/power_view.zig:181 src/settings/power_view.zig:195 src/ui/surfaces/osd.zig:25 src/ui/surfaces/osd.zig:86 src/ui/surfaces/osd.zig:94
 msgid "Brightness"
 msgstr ""
 
@@ -995,7 +987,7 @@ msgctxt "aqueous.blur.brightness.description"
 msgid "Brightness applied to the blurred backdrop; 1 is neutral."
 msgstr ""
 
-#: src/settings/power_view.zig:340 src/settings/power_view.zig:341
+#: src/settings/power_view.zig:336 src/settings/power_view.zig:337
 msgid "Brightness control is unavailable for this display"
 msgstr ""
 
@@ -1015,7 +1007,7 @@ msgstr ""
 msgid "Browsers"
 msgstr ""
 
-#: src/settings/window.zig:630
+#: src/settings/window.zig:628
 msgid "Built-in adapter · Available"
 msgstr ""
 
@@ -1023,15 +1015,15 @@ msgstr ""
 msgid "Built-in colors"
 msgstr ""
 
-#: src/settings/window.zig:651
+#: src/settings/window.zig:649
 msgid "Built-in display"
 msgstr ""
 
-#: src/settings/window.zig:609
+#: src/settings/window.zig:607
 msgid "Built-in microphone · Default device"
 msgstr ""
 
-#: src/settings/window.zig:602
+#: src/settings/window.zig:600
 msgid "Built-in speakers · Default device"
 msgstr ""
 
@@ -1039,7 +1031,7 @@ msgstr ""
 msgid "COMPONENT GALLERY · SAMPLE CONTENT"
 msgstr ""
 
-#: src/settings/window.zig:457
+#: src/settings/window.zig:455
 msgid "CONNECTIONS"
 msgstr ""
 
@@ -1158,7 +1150,7 @@ msgstr ""
 msgid "Changes apply to the selected display"
 msgstr ""
 
-#: src/settings/window.zig:846
+#: src/settings/window.zig:844
 msgid "Changes on this page take effect immediately."
 msgstr ""
 
@@ -1171,15 +1163,15 @@ msgstr ""
 msgid "Charge is running low."
 msgstr ""
 
-#: src/desktop/services.zig:246 src/settings/power_view.zig:293
+#: src/desktop/services.zig:246 src/settings/power_view.zig:289
 msgid "Charge unavailable"
 msgstr ""
 
-#: src/desktop/text.zig:8 src/settings/power_view.zig:297
+#: src/desktop/text.zig:8 src/settings/power_view.zig:293
 msgid "Charging"
 msgstr ""
 
-#: src/settings/window.zig:649
+#: src/settings/window.zig:647
 msgid "Charging · About 35 minutes until full"
 msgstr ""
 
@@ -1243,7 +1235,7 @@ msgstr ""
 msgid "Choose a network below to connect."
 msgstr ""
 
-#: src/settings/window.zig:622
+#: src/settings/window.zig:620
 msgid "Choose a network to connect"
 msgstr ""
 
@@ -1283,11 +1275,11 @@ msgstr ""
 msgid "Choose folder…"
 msgstr ""
 
-#: src/settings/window.zig:578
+#: src/settings/window.zig:576
 msgid "Choose how Pearl is styled"
 msgstr ""
 
-#: src/settings/window.zig:704
+#: src/settings/window.zig:702
 msgid "Choose how matching windows behave."
 msgstr ""
 
@@ -1355,7 +1347,7 @@ msgstr ""
 msgid "Clock saved to draft. Apply & save to update the bar."
 msgstr ""
 
-#: src/settings/window.zig:1023
+#: src/settings/window.zig:1021
 msgid "Close"
 msgstr ""
 
@@ -1376,7 +1368,7 @@ msgctxt "aqueous.layout.options.float.move_step_coarse.label"
 msgid "Coarse move step"
 msgstr ""
 
-#: src/settings/power_view.zig:305
+#: src/settings/power_view.zig:301
 msgid "Collecting battery history…"
 msgstr ""
 
@@ -1513,7 +1505,7 @@ msgstr ""
 msgid "Configuration status"
 msgstr ""
 
-#: src/settings/window.zig:704
+#: src/settings/window.zig:702
 msgid "Configuration status, sources and recovery."
 msgstr ""
 
@@ -1530,7 +1522,7 @@ msgctxt "desktop.settings.description"
 msgid "Configure the Pearl desktop shell"
 msgstr ""
 
-#: src/settings/window.zig:406
+#: src/settings/window.zig:405
 msgid "Configure your compositor by section."
 msgstr ""
 
@@ -1590,7 +1582,7 @@ msgstr ""
 msgid "Connected and offline output declarations"
 msgstr ""
 
-#: src/settings/window.zig:815
+#: src/settings/window.zig:813
 msgid "Connected to Pearl."
 msgstr ""
 
@@ -1598,15 +1590,15 @@ msgstr ""
 msgid "Connected to a network, but internet access may be restricted."
 msgstr ""
 
-#: src/settings/window.zig:620
+#: src/settings/window.zig:618
 msgid "Connected · Strong signal"
 msgstr ""
 
-#: src/settings/window.zig:632
+#: src/settings/window.zig:630
 msgid "Connected · Trusted"
 msgstr ""
 
-#: src/settings/window.zig:815
+#: src/settings/window.zig:813
 msgid "Connecting to your Pearl session…"
 msgstr ""
 
@@ -1829,7 +1821,7 @@ msgctxt "aqueous.desktop.cursor.theme.label"
 msgid "Cursor theme"
 msgstr ""
 
-#: src/desktop/bar.zig:595 src/settings/power_view.zig:207 src/settings/scheduler_view.zig:166
+#: src/desktop/bar.zig:595 src/settings/power_view.zig:208 src/settings/scheduler_view.zig:166
 msgid "Custom"
 msgstr ""
 
@@ -1873,7 +1865,7 @@ msgstr ""
 msgid "Custom times"
 msgstr ""
 
-#: src/settings/power_view.zig:396
+#: src/settings/power_view.zig:391
 msgid "Custom: {0} seconds"
 msgstr ""
 
@@ -1901,11 +1893,11 @@ msgstr ""
 msgid "DEMO · SAMPLE CONTENT"
 msgstr ""
 
-#: src/settings/window.zig:459
+#: src/settings/window.zig:457
 msgid "DESKTOP"
 msgstr ""
 
-#: src/settings/window.zig:458
+#: src/settings/window.zig:456
 msgid "DEVICES"
 msgstr ""
 
@@ -2045,7 +2037,7 @@ msgstr ""
 msgid "Desktop typography and synchronization"
 msgstr ""
 
-#: src/settings/power_view.zig:194
+#: src/settings/power_view.zig:193
 msgid "Dim screen when inactive"
 msgstr ""
 
@@ -2092,7 +2084,7 @@ msgstr ""
 msgid "Discard palette edits"
 msgstr ""
 
-#: src/settings/window.zig:962
+#: src/settings/window.zig:960
 msgid "Discard untransferred changes and close"
 msgstr ""
 
@@ -2104,7 +2096,7 @@ msgstr ""
 msgid "Disconnected"
 msgstr ""
 
-#: src/settings/window.zig:625
+#: src/settings/window.zig:623
 msgid "Disconnected · enp3s0"
 msgstr ""
 
@@ -2120,7 +2112,7 @@ msgstr ""
 msgid "Discovering plugins…"
 msgstr ""
 
-#: src/settings/window.zig:634
+#: src/settings/window.zig:632
 msgid "Discovery starts when you choose Find devices."
 msgstr ""
 
@@ -2132,7 +2124,7 @@ msgstr ""
 msgid "Dismiss popups when clicking outside"
 msgstr ""
 
-#: src/desktop/brightness_controls.zig:29 src/settings/power_view.zig:179 src/settings/power_view.zig:191
+#: src/desktop/brightness_controls.zig:29 src/settings/power_view.zig:178 src/settings/power_view.zig:190
 msgid "Display"
 msgstr ""
 
@@ -2185,7 +2177,7 @@ msgstr ""
 msgid "Display unavailable"
 msgstr ""
 
-#: src/config/aqueous_presentation.zig:148 src/settings/window.zig:427
+#: src/config/aqueous_presentation.zig:148 src/settings/window.zig:425
 msgid "Displays"
 msgstr ""
 
@@ -2225,7 +2217,7 @@ msgstr ""
 msgid "Dock icon size"
 msgstr ""
 
-#: src/settings/preference_pages.zig:118
+#: src/settings/preference_pages.zig:112
 msgid "Dock opacity slider (%)"
 msgstr ""
 
@@ -2443,10 +2435,6 @@ msgstr ""
 msgid "Enable application themes"
 msgstr ""
 
-#: src/settings/power_view.zig:407
-msgid "Enable automatic locking in Session & lock before setting a suspend timeout."
-msgstr ""
-
 #: tests/fixtures/aqueous-master/snapshot.json
 msgctxt "aqueous.opacity.enabled.description"
 msgid "Enable compositor-controlled opacity."
@@ -2540,7 +2528,7 @@ msgstr ""
 msgid "Export package"
 msgstr ""
 
-#: src/settings/power_view.zig:160
+#: src/settings/power_view.zig:159
 msgid "Extend battery life"
 msgstr ""
 
@@ -2622,7 +2610,7 @@ msgstr ""
 msgid "Find a plugin on this page…"
 msgstr ""
 
-#: src/settings/window.zig:704
+#: src/settings/window.zig:702
 msgid "Find actions and customize their shortcuts."
 msgstr ""
 
@@ -2634,7 +2622,7 @@ msgstr ""
 msgid "Finish or cancel this connection first."
 msgstr ""
 
-#: src/settings/window.zig:612
+#: src/settings/window.zig:610
 msgid "Firefox"
 msgstr ""
 
@@ -2787,7 +2775,7 @@ msgctxt "aqueous.state.fullscreen_hides_bar.label"
 msgid "Fullscreen hides bar"
 msgstr ""
 
-#: src/desktop/text.zig:11 src/settings/power_view.zig:299
+#: src/desktop/text.zig:11 src/settings/power_view.zig:295
 msgid "Fully charged"
 msgstr ""
 
@@ -2795,7 +2783,7 @@ msgstr ""
 msgid "Further fields supplied by this Aqueous helper"
 msgstr ""
 
-#: src/settings/window.zig:456
+#: src/settings/window.zig:454
 msgid "GENERAL"
 msgstr ""
 
@@ -2863,7 +2851,7 @@ msgctxt "aqueous.input.pointer_acceleration_factor.description"
 msgid "Global libinput pointer speed."
 msgstr ""
 
-#: src/settings/power_view.zig:303
+#: src/settings/power_view.zig:299
 msgid "Good"
 msgstr ""
 
@@ -2973,7 +2961,7 @@ msgstr ""
 msgid "Identity changed. Authenticate to continue."
 msgstr ""
 
-#: src/settings/power_view.zig:407
+#: src/settings/power_view.zig:402
 msgid "Idle notifications unavailable"
 msgstr ""
 
@@ -3018,7 +3006,7 @@ msgctxt "aqueous.layout.gaps_inner.label"
 msgid "Inner gaps"
 msgstr ""
 
-#: src/config/aqueous_presentation.zig:148 src/desktop/services.zig:115 src/desktop/services.zig:120 src/settings/sound_view.zig:240 src/settings/window.zig:427
+#: src/config/aqueous_presentation.zig:148 src/desktop/services.zig:115 src/desktop/services.zig:120 src/settings/sound_view.zig:240 src/settings/window.zig:425
 msgid "Input"
 msgstr ""
 
@@ -3032,7 +3020,7 @@ msgctxt "aqueous.layout.options.float.snap_gap.description"
 msgid "Inset around committed snap regions."
 msgstr ""
 
-#: src/settings/window.zig:919
+#: src/settings/window.zig:917
 msgid "Install Network Connections (nm-connection-editor) to change advanced settings."
 msgstr ""
 
@@ -3162,7 +3150,7 @@ msgstr ""
 msgid "Keep notifications quiet while you focus."
 msgstr ""
 
-#: src/settings/window.zig:961
+#: src/settings/window.zig:959
 msgid "Keep open"
 msgstr ""
 
@@ -3174,11 +3162,11 @@ msgstr ""
 msgid "Keep these display settings?"
 msgstr ""
 
-#: src/settings/window.zig:598
+#: src/settings/window.zig:596
 msgid "Keep transitions quiet"
 msgstr ""
 
-#: src/settings/window.zig:951
+#: src/settings/window.zig:949
 msgid "Keep your changes"
 msgstr ""
 
@@ -3227,7 +3215,7 @@ msgstr ""
 msgid "Larger text"
 msgstr ""
 
-#: src/settings/power_view.zig:305
+#: src/settings/power_view.zig:301
 msgid "Last {0} minutes · this session"
 msgstr ""
 
@@ -3264,7 +3252,7 @@ msgstr ""
 msgid "Launcher search"
 msgstr ""
 
-#: src/settings/window.zig:594
+#: src/settings/window.zig:592
 msgid "Lavender gradient"
 msgstr ""
 
@@ -3339,7 +3327,7 @@ msgctxt "aqueous.layout.default.description"
 msgid "Layout used without a more specific mapping."
 msgstr ""
 
-#: src/config/aqueous_presentation.zig:148 src/settings/window.zig:427
+#: src/config/aqueous_presentation.zig:148 src/settings/window.zig:425
 msgid "Layouts"
 msgstr ""
 
@@ -3427,7 +3415,7 @@ msgstr ""
 msgid "Loading Desktop…"
 msgstr ""
 
-#: src/settings/window.zig:848
+#: src/settings/window.zig:846
 msgid "Loading Pearl preferences…"
 msgstr ""
 
@@ -3435,7 +3423,7 @@ msgstr ""
 msgid "Loading applications…"
 msgstr ""
 
-#: src/settings/window.zig:858
+#: src/settings/window.zig:856
 msgid "Loading displays…"
 msgstr ""
 
@@ -3459,11 +3447,11 @@ msgstr ""
 msgid "Loading wallpaper preview…"
 msgstr ""
 
-#: src/settings/window.zig:890
+#: src/settings/window.zig:888
 msgid "Local Aqueous draft — recovery"
 msgstr ""
 
-#: src/settings/window.zig:846
+#: src/settings/window.zig:844
 msgid "Local changes need review. Merge them or discard only the local copy."
 msgstr ""
 
@@ -3475,6 +3463,10 @@ msgstr ""
 msgid "Location search failed. Check your connection and try again."
 msgstr ""
 
+#: src/settings/power_view.zig:205
+msgid "Lock after"
+msgstr ""
+
 #: tests/fixtures/aqueous-master/snapshot.json
 msgctxt "aqueous.actions.lock_screen.label"
 msgid "Lock command"
@@ -3484,7 +3476,7 @@ msgstr ""
 msgid "Lock placement"
 msgstr ""
 
-#: src/settings/preference_pages.zig:130
+#: src/settings/preference_pages.zig:124
 msgid "Locked to bar"
 msgstr ""
 
@@ -3520,11 +3512,11 @@ msgstr ""
 msgid "Make Pearl feel at home on your desktop."
 msgstr ""
 
-#: src/settings/window.zig:704
+#: src/settings/window.zig:702
 msgid "Make your keyboard and pointer feel right."
 msgstr ""
 
-#: src/settings/window.zig:704
+#: src/settings/window.zig:702
 msgid "Make your screens match your workspace."
 msgstr ""
 
@@ -3537,7 +3529,7 @@ msgctxt "aqueous.desktop.cursor.managed.label"
 msgid "Manage cursor settings"
 msgstr ""
 
-#: src/settings/window.zig:407
+#: src/settings/window.zig:406
 msgid "Manage installed plugins, permissions and placement."
 msgstr ""
 
@@ -3698,7 +3690,7 @@ msgctxt "aqueous.layout.options.monocle.show_borders.label"
 msgid "Monocle border"
 msgstr ""
 
-#: src/settings/power_view.zig:229
+#: src/settings/power_view.zig:225
 msgid "More"
 msgstr ""
 
@@ -3818,7 +3810,7 @@ msgstr ""
 msgid "Needs attention"
 msgstr ""
 
-#: src/desktop/settings_navigation.zig:27
+#: src/desktop/settings_navigation.zig:26
 msgid "Network"
 msgstr ""
 
@@ -3842,7 +3834,7 @@ msgstr ""
 msgid "Network unavailable"
 msgstr ""
 
-#: src/settings/power_view.zig:207 src/settings/power_view.zig:397
+#: src/settings/power_view.zig:208 src/settings/power_view.zig:392
 msgid "Never"
 msgstr ""
 
@@ -4075,7 +4067,7 @@ msgstr ""
 msgid "Notification filters"
 msgstr ""
 
-#: src/desktop/bar.zig:320 src/desktop/notifications.zig:28 src/desktop/settings_navigation.zig:34
+#: src/desktop/bar.zig:320 src/desktop/notifications.zig:28 src/desktop/settings_navigation.zig:33
 msgid "Notifications"
 msgstr ""
 
@@ -4100,7 +4092,7 @@ msgstr ""
 msgid "October"
 msgstr ""
 
-#: src/ui/i18n.zig:22 src/desktop/bar.zig:623 src/settings/editor.zig:818 src/settings/power_view.zig:125 src/settings/preferences_view.zig:494
+#: src/ui/i18n.zig:22 src/desktop/bar.zig:623 src/settings/editor.zig:818 src/settings/power_view.zig:124 src/settings/preferences_view.zig:494
 msgid "Off"
 msgstr ""
 
@@ -4120,7 +4112,7 @@ msgstr ""
 msgid "On"
 msgstr ""
 
-#: src/desktop/text.zig:10 src/settings/power_view.zig:124 src/settings/power_view.zig:298
+#: src/desktop/text.zig:10 src/settings/power_view.zig:123 src/settings/power_view.zig:294
 msgid "On battery"
 msgstr ""
 
@@ -4140,7 +4132,7 @@ msgstr ""
 msgid "On · Open with Super + Space"
 msgstr ""
 
-#: src/settings/window.zig:619 src/ui/components/network.zig:228
+#: src/settings/window.zig:617 src/ui/components/network.zig:228
 msgid "On · Wireless connections"
 msgstr ""
 
@@ -4171,7 +4163,7 @@ msgctxt "aqueous.opacity.unfocused.description"
 msgid "Opacity of unfocused windows."
 msgstr ""
 
-#: src/settings/preference_pages.zig:125
+#: src/settings/preference_pages.zig:119
 msgid "Opaque"
 msgstr ""
 
@@ -4227,7 +4219,7 @@ msgstr ""
 msgid "Open network"
 msgstr ""
 
-#: src/settings/window.zig:624
+#: src/settings/window.zig:622
 msgid "Open network · Good signal"
 msgstr ""
 
@@ -4341,7 +4333,7 @@ msgstr ""
 msgid "Overcast"
 msgstr ""
 
-#: src/desktop/bar.zig:347 src/desktop/settings_navigation.zig:26
+#: src/desktop/bar.zig:347 src/desktop/settings_navigation.zig:25
 msgid "Overview"
 msgstr ""
 
@@ -4369,7 +4361,7 @@ msgstr ""
 msgid "Padding"
 msgstr ""
 
-#: src/settings/window.zig:657
+#: src/settings/window.zig:655
 msgid "Page composition preview"
 msgstr ""
 
@@ -4377,7 +4369,7 @@ msgstr ""
 msgid "Page ranges"
 msgstr ""
 
-#: src/settings/window.zig:633
+#: src/settings/window.zig:631
 msgid "Paired · Not connected"
 msgstr ""
 
@@ -4482,11 +4474,11 @@ msgstr ""
 msgid "Pearl dock reveal"
 msgstr ""
 
-#: src/settings/window.zig:596
+#: src/settings/window.zig:594
 msgid "Pearl interface text"
 msgstr ""
 
-#: src/settings/window.zig:918
+#: src/settings/window.zig:916
 msgid "Pearl is busy. Your changes are retained; try again when the current work completes."
 msgstr ""
 
@@ -4498,31 +4490,31 @@ msgstr ""
 msgid "Pearl plugin"
 msgstr ""
 
-#: src/settings/window.zig:724
+#: src/settings/window.zig:722
 msgid "Pearl preferences are managed by your session."
 msgstr ""
 
-#: src/settings/window.zig:846
+#: src/settings/window.zig:844
 msgid "Pearl preferences · All changes are applied explicitly."
 msgstr ""
 
-#: src/settings/window.zig:846
+#: src/settings/window.zig:844
 msgid "Pearl preferences · Draft retained in this session. Apply saves all Pearl changes."
 msgstr ""
 
-#: src/settings/window.zig:846
+#: src/settings/window.zig:844
 msgid "Pearl preferences · Preparing settings…"
 msgstr ""
 
-#: src/settings/window.zig:724
+#: src/settings/window.zig:722
 msgid "Pearl preferences · Preview only"
 msgstr ""
 
-#: src/settings/window.zig:846
+#: src/settings/window.zig:844
 msgid "Pearl preferences · Retaining draft…"
 msgstr ""
 
-#: src/settings/window.zig:815
+#: src/settings/window.zig:813
 msgid "Pearl session unavailable. Start Pearl, then choose Retry."
 msgstr ""
 
@@ -4550,11 +4542,11 @@ msgstr ""
 msgid "Pearl's native lock screen uses your shell theme. Zero disables an automatic timeout. Suspend must follow the lock timeout; Pearl waits for verified lock acquisition."
 msgstr ""
 
-#: src/desktop/services.zig:205 src/settings/power_view.zig:159
+#: src/desktop/services.zig:205 src/settings/power_view.zig:158
 msgid "Performance"
 msgstr ""
 
-#: src/settings/power_view.zig:160
+#: src/settings/power_view.zig:159
 msgid "Performance when you need it"
 msgstr ""
 
@@ -4645,7 +4637,7 @@ msgstr ""
 msgid "Playback position"
 msgstr ""
 
-#: src/settings/window.zig:613
+#: src/settings/window.zig:611
 msgid "Playing audio"
 msgstr ""
 
@@ -4653,7 +4645,7 @@ msgstr ""
 msgid "Please wait before refreshing again."
 msgstr ""
 
-#: src/settings/power_view.zig:124
+#: src/settings/power_view.zig:123
 msgid "Plugged in"
 msgstr ""
 
@@ -4669,7 +4661,7 @@ msgstr ""
 msgid "Plugin widget"
 msgstr ""
 
-#: src/desktop/settings_navigation.zig:39
+#: src/desktop/settings_navigation.zig:37
 msgid "Plugins"
 msgstr ""
 
@@ -4729,15 +4721,15 @@ msgstr ""
 msgid "Position"
 msgstr ""
 
-#: src/desktop/settings_navigation.zig:30
-msgid "Power & battery"
+#: src/desktop/settings_navigation.zig:29
+msgid "Power & session"
 msgstr ""
 
 #: src/desktop/services.zig:185
 msgid "Power and brightness"
 msgstr ""
 
-#: src/settings/power_view.zig:156
+#: src/settings/power_view.zig:155
 msgid "Power mode"
 msgstr ""
 
@@ -4761,15 +4753,15 @@ msgstr ""
 msgid "Power profiles unavailable"
 msgstr ""
 
-#: src/desktop/services.zig:205 src/settings/power_view.zig:159
+#: src/desktop/services.zig:205 src/settings/power_view.zig:158
 msgid "Power saver"
 msgstr ""
 
-#: src/settings/window.zig:916
+#: src/settings/window.zig:914
 msgid "Power settings are still saving. Wait for completion, then try again."
 msgstr ""
 
-#: src/settings/window.zig:915
+#: src/settings/window.zig:913
 msgid "Power settings changed in another editor. Review the retained draft in Advanced, then try again."
 msgstr ""
 
@@ -4787,11 +4779,11 @@ msgstr ""
 msgid "Preferences changed. Reopen the picker to review the current choice."
 msgstr ""
 
-#: src/settings/window.zig:927
+#: src/settings/window.zig:925
 msgid "Preferences could not be saved. Your draft and working settings are retained."
 msgstr ""
 
-#: src/settings/window.zig:848
+#: src/settings/window.zig:846
 msgid "Preferences were saved. An export needs attention; your changes remain applied."
 msgstr ""
 
@@ -4811,7 +4803,7 @@ msgstr ""
 msgid "Preview current draft"
 msgstr ""
 
-#: src/settings/window.zig:724
+#: src/settings/window.zig:722
 msgid "Preview only · Sample devices"
 msgstr ""
 
@@ -4864,7 +4856,7 @@ msgstr ""
 msgid "Printer capabilities are unavailable. Choose another destination."
 msgstr ""
 
-#: src/settings/power_view.zig:160
+#: src/settings/power_view.zig:159
 msgid "Prioritize speed"
 msgstr ""
 
@@ -4940,7 +4932,7 @@ msgstr ""
 msgid "Read search result pages"
 msgstr ""
 
-#: src/settings/window.zig:1008
+#: src/settings/window.zig:1006
 msgid "Read-only saved settings. Your draft stays in Advanced. Copy values from here to resolve overlapping changes, or discard the draft to start from the saved settings."
 msgstr ""
 
@@ -4972,7 +4964,7 @@ msgstr ""
 msgid "Recording waits for Aqueous to inhibit shortcuts. Escape cancels."
 msgstr ""
 
-#: src/settings/power_view.zig:195
+#: src/settings/power_view.zig:194
 msgid "Reduce brightness before the screen turns off"
 msgstr ""
 
@@ -4980,7 +4972,7 @@ msgstr ""
 msgid "Reduce motion"
 msgstr ""
 
-#: src/settings/power_view.zig:303
+#: src/settings/power_view.zig:299
 msgid "Reduced"
 msgstr ""
 
@@ -5277,7 +5269,7 @@ msgstr ""
 msgid "Review permissions and approve this package before enabling it."
 msgstr ""
 
-#: src/settings/window.zig:408
+#: src/settings/window.zig:407
 msgid "Review the complete Pearl preferences document."
 msgstr ""
 
@@ -5319,7 +5311,7 @@ msgstr ""
 msgid "Rule order changed. Review & apply or Discard before making other Aqueous edits."
 msgstr ""
 
-#: src/config/aqueous_presentation.zig:148 src/settings/window.zig:427
+#: src/config/aqueous_presentation.zig:148 src/settings/window.zig:425
 msgid "Rules"
 msgstr ""
 
@@ -5373,7 +5365,7 @@ msgstr ""
 msgid "SU"
 msgstr ""
 
-#: src/settings/window.zig:460
+#: src/settings/window.zig:458
 msgid "SYSTEM"
 msgstr ""
 
@@ -5438,7 +5430,7 @@ msgstr ""
 msgid "Save, reload, synchronization and recovery"
 msgstr ""
 
-#: src/settings/window.zig:1003
+#: src/settings/window.zig:1001
 msgid "Saved Pearl preferences"
 msgstr ""
 
@@ -5474,7 +5466,7 @@ msgstr ""
 msgid "Saving launcher choice…"
 msgstr ""
 
-#: src/settings/power_view.zig:377
+#: src/settings/power_view.zig:373
 msgid "Saving power settings…"
 msgstr ""
 
@@ -5502,7 +5494,7 @@ msgstr ""
 msgid "Screen is off. Move the mouse or press a key to wake."
 msgstr ""
 
-#: src/settings/power_view.zig:407
+#: src/settings/power_view.zig:402
 msgid "Screen power control unavailable"
 msgstr ""
 
@@ -5614,7 +5606,7 @@ msgstr ""
 msgid "Secured"
 msgstr ""
 
-#: src/settings/window.zig:623
+#: src/settings/window.zig:621
 msgid "Secured · Strong signal"
 msgstr ""
 
@@ -5626,7 +5618,7 @@ msgstr ""
 msgid "Select Show samples to inspect answers, settings and telemetry. GPU memory and separate reasoning throughput are unavailable unless reported; RAM is sampled process-tree RSS plus OS high-water information, which may miss brief child peaks."
 msgstr ""
 
-#: src/settings/window.zig:846
+#: src/settings/window.zig:844
 msgid "Select a scheduler and mode, then use Apply scheduler. Boot defaults are unchanged."
 msgstr ""
 
@@ -5671,7 +5663,7 @@ msgstr ""
 msgid "Sequential"
 msgstr ""
 
-#: src/settings/window.zig:846
+#: src/settings/window.zig:844
 msgid "Service controls take effect immediately. Pearl preference draft retained."
 msgstr ""
 
@@ -5679,23 +5671,15 @@ msgstr ""
 msgid "Session"
 msgstr ""
 
-#: src/desktop/settings_navigation.zig:36
-msgid "Session & lock"
-msgstr ""
-
-#: src/settings/power_view.zig:217
-msgid "Session & lock settings"
-msgstr ""
-
 #: src/desktop/lifecycle.zig:26
 msgid "Session & security"
 msgstr ""
 
-#: src/settings/power_view.zig:226
+#: src/settings/power_view.zig:220
 msgid "Session actions"
 msgstr ""
 
-#: src/settings/window.zig:815
+#: src/settings/window.zig:813
 msgid "Session mismatch. Open Settings from the matching Aqueous session."
 msgstr ""
 
@@ -5707,7 +5691,7 @@ msgstr ""
 msgid "Set a wallpaper folder in Settings → Appearance → Slideshow."
 msgstr ""
 
-#: src/settings/window.zig:913
+#: src/settings/window.zig:911
 msgid "Set an automatic lock time earlier than suspend in Session & lock. This change was not saved."
 msgstr ""
 
@@ -5739,7 +5723,7 @@ msgstr ""
 msgid "Settings are updating. Wait for synchronization, then try again."
 msgstr ""
 
-#: src/settings/window.zig:848
+#: src/settings/window.zig:846
 msgid "Settings changed elsewhere. Your changes are retained. Merge independent changes, or review Advanced to resolve a conflict."
 msgstr ""
 
@@ -5747,7 +5731,7 @@ msgstr ""
 msgid "Settings changed. Review the package and reset incompatible settings."
 msgstr ""
 
-#: src/settings/power_view.zig:203
+#: src/settings/power_view.zig:202
 msgid "Settings for"
 msgstr ""
 
@@ -5755,7 +5739,7 @@ msgstr ""
 msgid "Settings is not installed."
 msgstr ""
 
-#: src/settings/window.zig:453
+#: src/settings/window.zig:451
 msgid "Settings sections"
 msgstr ""
 
@@ -6341,7 +6325,7 @@ msgstr ""
 msgid "Shortcut recording cancelled."
 msgstr ""
 
-#: src/config/aqueous_presentation.zig:148 src/settings/window.zig:427
+#: src/config/aqueous_presentation.zig:148 src/settings/window.zig:425
 msgid "Shortcuts"
 msgstr ""
 
@@ -6397,8 +6381,8 @@ msgstr ""
 msgid "Skipping this configuration after any current file verification completes…"
 msgstr ""
 
-#: src/settings/power_view.zig:202
-msgid "Sleep & energy saving"
+#: src/settings/power_view.zig:201
+msgid "Sleep & lock"
 msgstr ""
 
 #: src/settings/preferences_view.zig:240
@@ -6460,7 +6444,7 @@ msgstr ""
 msgid "Solid color"
 msgstr ""
 
-#: src/settings/window.zig:960
+#: src/settings/window.zig:958
 msgid "Some changes have not reached Pearl. Keep this window open to recover them, or close and discard only those untransferred changes. Drafts already retained by Pearl remain in the session."
 msgstr ""
 
@@ -6472,7 +6456,7 @@ msgstr ""
 msgid "Sort results"
 msgstr ""
 
-#: src/desktop/services.zig:32 src/desktop/settings_navigation.zig:29
+#: src/desktop/services.zig:32 src/desktop/settings_navigation.zig:28
 msgid "Sound"
 msgstr ""
 
@@ -6484,7 +6468,7 @@ msgstr ""
 msgid "Spacing"
 msgstr ""
 
-#: src/settings/window.zig:597
+#: src/settings/window.zig:595
 msgid "Spacing between controls"
 msgstr ""
 
@@ -6576,8 +6560,12 @@ msgctxt "aqueous.input.touchpad.dwt.description"
 msgid "Suppress touchpad motion while typing."
 msgstr ""
 
-#: src/settings/power_view.zig:209
+#: src/settings/power_view.zig:205
 msgid "Suspend after"
+msgstr ""
+
+#: src/settings/power_view.zig:402
+msgid "Suspend needs a lock timeout first."
 msgstr ""
 
 #: tests/fixtures/aqueous-master/snapshot.json
@@ -6635,7 +6623,7 @@ msgstr ""
 msgid "Syncing appearance…"
 msgstr ""
 
-#: src/desktop/settings_navigation.zig:35
+#: src/desktop/settings_navigation.zig:34
 msgid "System"
 msgstr ""
 
@@ -6719,11 +6707,11 @@ msgstr ""
 msgid "The answer is too long. Please try again."
 msgstr ""
 
-#: src/settings/window.zig:928
+#: src/settings/window.zig:926
 msgid "The change could not be completed. Your draft is retained. Review Advanced and try again."
 msgstr ""
 
-#: src/settings/window.zig:848
+#: src/settings/window.zig:846
 msgid "The connection ended during an operation. Review the current settings before applying again."
 msgstr ""
 
@@ -6743,11 +6731,11 @@ msgstr ""
 msgid "The draft cannot be edited as declarations. Open Aqueous Advanced to correct the draft JSON."
 msgstr ""
 
-#: src/settings/window.zig:848
+#: src/settings/window.zig:846
 msgid "The draft is invalid. Correct the fields or review the JSON in Advanced before applying."
 msgstr ""
 
-#: src/settings/window.zig:924
+#: src/settings/window.zig:922
 msgid "The draft is limited to 64 KiB. The previous text is retained."
 msgstr ""
 
@@ -6787,7 +6775,7 @@ msgstr ""
 msgid "The same field changed in both versions. Draft retained; review Advanced before discarding or resolving it."
 msgstr ""
 
-#: src/settings/window.zig:925
+#: src/settings/window.zig:923
 msgid "The same field changed in both versions. Review Advanced before resolving or discarding the draft."
 msgstr ""
 
@@ -6795,11 +6783,11 @@ msgstr ""
 msgid "The sample could not be tested. Wait for the draft to sync, then try again."
 msgstr ""
 
-#: src/settings/window.zig:921
+#: src/settings/window.zig:919
 msgid "The scheduler action could not be completed. Review its status and refresh before retrying."
 msgstr ""
 
-#: src/settings/window.zig:914
+#: src/settings/window.zig:912
 msgid "The screen must turn off before or at the suspend timeout. This change was not saved."
 msgstr ""
 
@@ -6819,7 +6807,7 @@ msgstr ""
 msgid "The tested draft has changed. Check the new selection before use."
 msgstr ""
 
-#: src/settings/window.zig:926
+#: src/settings/window.zig:924
 msgid "The wallpaper image could not be used. Choose a readable PNG or JPEG, then apply again."
 msgstr ""
 
@@ -6843,7 +6831,7 @@ msgstr ""
 msgid "Themes & customization"
 msgstr ""
 
-#: src/settings/window.zig:815
+#: src/settings/window.zig:813
 msgid "This Pearl session uses an incompatible Settings version."
 msgstr ""
 
@@ -6879,7 +6867,7 @@ msgstr ""
 msgid "This list is incomplete. The service reported more networks than it can expose."
 msgstr ""
 
-#: src/settings/window.zig:902
+#: src/settings/window.zig:900
 msgid "This local copy has not been resubmitted. Copy it before discarding, or use Rebase to reconcile independent changes."
 msgstr ""
 
@@ -6887,7 +6875,7 @@ msgstr ""
 msgid "This network will be saved after you connect."
 msgstr ""
 
-#: src/settings/window.zig:542
+#: src/settings/window.zig:540
 msgid "This page needs a compatible Pearl session. Your settings will appear here when they are available."
 msgstr ""
 
@@ -6895,7 +6883,7 @@ msgstr ""
 msgid "This plugin requests no optional permissions."
 msgstr ""
 
-#: src/settings/power_view.zig:313
+#: src/settings/power_view.zig:309
 msgid "This power mode is unavailable"
 msgstr ""
 
@@ -6998,7 +6986,7 @@ msgstr ""
 msgid "Transition"
 msgstr ""
 
-#: src/settings/preference_pages.zig:121
+#: src/settings/preference_pages.zig:115
 msgid "Transparent"
 msgstr ""
 
@@ -7046,7 +7034,7 @@ msgstr ""
 msgid "Turn on two displays to arrange them."
 msgstr ""
 
-#: src/settings/power_view.zig:209
+#: src/settings/power_view.zig:205
 msgid "Turn screen off after"
 msgstr ""
 
@@ -7227,7 +7215,7 @@ msgstr ""
 msgid "Use this launcher for all windows of this application."
 msgstr ""
 
-#: src/settings/window.zig:588
+#: src/settings/window.zig:586
 msgid "Used for selected controls and highlights"
 msgstr ""
 
@@ -7235,7 +7223,7 @@ msgstr ""
 msgid "Uses automatic settings."
 msgstr ""
 
-#: src/settings/window.zig:627
+#: src/settings/window.zig:625
 msgid "VPN, hidden networks, IP & DNS"
 msgstr ""
 
@@ -7291,7 +7279,7 @@ msgstr ""
 msgid "View saved JSON"
 msgstr ""
 
-#: src/settings/window.zig:626
+#: src/settings/window.zig:624
 msgid "View saved connections"
 msgstr ""
 
@@ -7333,7 +7321,7 @@ msgstr ""
 msgid "Waiting for a reply"
 msgstr ""
 
-#: src/settings/window.zig:541
+#: src/settings/window.zig:539
 msgid "Waiting for settings"
 msgstr ""
 
@@ -7474,7 +7462,7 @@ msgstr ""
 msgid "Window borders follow Pearl theme"
 msgstr ""
 
-#: src/settings/window.zig:704
+#: src/settings/window.zig:702
 msgid "Window borders, effects and desktop details."
 msgstr ""
 
@@ -7571,7 +7559,7 @@ msgstr ""
 msgid "Your desktop, taking shape."
 msgstr ""
 
-#: src/settings/window.zig:616 src/ui/components/network.zig:467
+#: src/settings/window.zig:614 src/ui/components/network.zig:467
 msgid "Your device has internet access."
 msgstr ""
 

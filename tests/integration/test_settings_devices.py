@@ -202,7 +202,7 @@ def main():
         fields=lambda:{c['field'] for c in probe(s,ipc)['controls']}
         wait_for(lambda:'power/battery' not in fields())
         assert not {'power/battery','power/source','power/automatic-saver'} & fields(),fields()
-        assert {'power/brightness','power/balanced','power/screen-off','power/suspend-after'} <= fields(),fields()
+        assert {'power/brightness','power/balanced','power/screen-off','power/lock-after','power/suspend-after'} <= fields(),fields()
         capture(s,'power-no-battery',output['name'])
         command(power,present=True,battery=0,on_battery=True)
         wait_for(lambda:'power/battery' in fields())

@@ -206,7 +206,7 @@ fn render(a: std.mem.Allocator, view: View) ![]const u8 {
     try s.text(width - 22, 32, "right muted", "−   □   ×");
     if (!narrow) {
         try s.rect(0, 52, 220, height - 52, 0, "sidebar");
-        const names = [_][]const u8{ "GENERAL", "Overview", "CONNECTIONS", "Network", "Bluetooth", "DEVICES", "Sound", "Power &amp; battery", "DESKTOP", "Appearance", "Assistant", "Bar &amp; dock", "Notifications", "SYSTEM", "System", "Session &amp; lock", "Aqueous", "Advanced", "Plugins" };
+        const names = [_][]const u8{ "GENERAL", "Overview", "CONNECTIONS", "Network", "Bluetooth", "DEVICES", "Sound", "Power &amp; session", "DESKTOP", "Appearance", "Assistant", "Bar &amp; dock", "Notifications", "SYSTEM", "System", "Aqueous", "Advanced", "Plugins" };
         var ny: i32 = 84;
         for (names, 0..) |name, i| {
             const group = i == 0 or i == 2 or i == 5 or i == 8 or i == 13;

@@ -241,7 +241,7 @@ pub const Live = struct {
                 return .none;
             },
             .@"lifecycle.action" => {
-                if (route != .overview and route != .session and route != .power) return error.WrongPage;
+                if (route != .overview and route != .power) return error.WrongPage;
                 const v = try p.fields(ui.Lifecycle, alloc, params);
                 if (v.action == .confirm or v.action == .cancel) {
                     if (scope.confirmation == null or self.lifecycle.confirmation != scope.confirmation.? or try p.number(v.confirmation orelse return error.InvalidRequest) != scope.confirmation.?) return error.StaleConfirmation;
@@ -251,7 +251,7 @@ pub const Live = struct {
                 return .lifecycle;
             },
             .@"power.action" => {
-                if (route != .overview and route != .power and route != .session) return error.WrongPage;
+                if (route != .overview and route != .power) return error.WrongPage;
                 const v = try p.fields(ui.Power, alloc, params);
                 if (v.confirmation) |serial| {
                     const confirmation = scope.power_confirmation orelse return error.StaleConfirmation;
@@ -468,10 +468,10 @@ pub const Live = struct {
                     try rows.append(alloc, .{ .id = try std.fmt.allocPrint(alloc, "{d}:{d}", .{ record.id, record.serial }), .title = record.summary.slice(), .detail = try std.fmt.allocPrint(alloc, "{s}\n{s}", .{ record.app.slice(), record.body.slice() }), .controls = controls.items });
                 };
             },
-            .overview, .session => summary = "Session controls",
+            .overview => summary = "Session controls",
             else => {},
         }
-        if (route == .overview or route == .session or route == .power) {
+        if (route == .overview or route == .power) {
             const life = self.lifecycle;
             var controls: std.ArrayList(ui.Control) = .empty;
             for ([_][]const u8{ "lock", "suspend", "hibernate", "logout", if (life.idle_held) "uninhibit" else "inhibit" }) |action| try controls.append(alloc, try ui.button(alloc, action, if (std.mem.eql(u8, action, "inhibit")) "Pause automatic idle" else if (std.mem.eql(u8, action, "uninhibit")) "Resume automatic idle" else if (std.mem.eql(u8, action, "lock")) "Lock" else if (std.mem.eql(u8, action, "suspend")) "Suspend" else if (std.mem.eql(u8, action, "hibernate")) "Hibernate" else "Log out…", .@"lifecycle.action", .{ .action = action }, life.gate.active and life.gate.available and !life.gate.preparing and (if (std.mem.eql(u8, action, "lock")) life.lock_supported else if (std.mem.eql(u8, action, "suspend")) life.can_suspend and life.delay_fd >= 0 else if (std.mem.eql(u8, action, "hibernate")) life.can_hibernate and life.delay_fd >= 0 else true)));

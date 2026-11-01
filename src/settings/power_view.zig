@@ -43,13 +43,12 @@ pub const View = struct {
     dim: *gtk.Switch,
     source_row: *gtk.FlowBox,
     source: *gtk.DropDown,
-    timeouts: [2]*gtk.DropDown = undefined,
-    time_bindings: [2]Binding = undefined,
-    custom: [2]?u32 = @splat(null),
+    timeouts: [3]*gtk.DropDown = undefined,
+    time_bindings: [3]Binding = undefined,
+    custom: [3]?u32 = @splat(null),
     saver_row: *gtk.FlowBox,
     saver: *gtk.DropDown,
     sleep_status: *gtk.Label,
-    locking: ?*gtk.Button = null,
     actions: [11]Action = undefined,
     action_detail: *gtk.Label,
     action_popover: ?*gtk.Popover = null,
@@ -199,32 +198,29 @@ pub const View = struct {
         try self.remember(brightness, gtk.Range.signals.value_changed.connect(brightness.as(gtk.Range), *View, brightnessChanged, self, .{}));
         try self.remember(dim, object.Object.signals.notify.connect(dim.as(object.Object), *View, dimChanged, self, .{ .detail = "active" }));
         const sleep = card();
-        self.section(@import("i18n").dtr("pearl", "Sleep & energy saving")).append(sleep.as(gtk.Widget));
+        self.section(@import("i18n").dtr("pearl", "Sleep & lock")).append(sleep.as(gtk.Widget));
         self.source_row = row(sleep, @import("i18n").dtr("pearl", "Settings for"), source.as(gtk.Widget));
         try self.control("power/source", source.as(gtk.Widget));
         try self.remember(source, object.Object.signals.notify.connect(source.as(object.Object), *View, sourceChanged, self, .{ .detail = "selected" }));
-        for (0..2) |i| {
+        const timeout_labels = [_][:0]const u8{ @import("i18n").dtr("pearl", "Turn screen off after"), @import("i18n").dtr("pearl", "Lock after"), @import("i18n").dtr("pearl", "Suspend after") };
+        const timeout_ids = [_][]const u8{ "power/screen-off", "power/lock-after", "power/suspend-after" };
+        for (0..3) |i| {
             self.timeouts[i] = gtk.DropDown.newFromStrings(@ptrCast(&[_]?[*:0]const u8{ @import("i18n").dtr("pearl", "Never"), @import("i18n").dtr("pearl", "1 minute"), @import("i18n").dtr("pearl", "5 minutes"), @import("i18n").dtr("pearl", "10 minutes"), @import("i18n").dtr("pearl", "15 minutes"), @import("i18n").dtr("pearl", "30 minutes"), @import("i18n").dtr("pearl", "1 hour"), @import("i18n").dtr("pearl", "Custom"), null }));
             self.time_bindings[i] = .{ .view = self, .index = i };
-            _ = row(sleep, if (i == 0) @import("i18n").dtr("pearl", "Turn screen off after") else @import("i18n").dtr("pearl", "Suspend after"), self.timeouts[i].as(gtk.Widget));
-            try self.control(if (i == 0) "power/screen-off" else "power/suspend-after", self.timeouts[i].as(gtk.Widget));
+            _ = row(sleep, timeout_labels[i], self.timeouts[i].as(gtk.Widget));
+            try self.control(timeout_ids[i], self.timeouts[i].as(gtk.Widget));
             try self.remember(self.timeouts[i], object.Object.signals.notify.connect(self.timeouts[i].as(object.Object), *Binding, timeoutChanged, &self.time_bindings[i], .{ .detail = "selected" }));
         }
         self.saver_row = row(sleep, @import("i18n").dtr("pearl", "Automatic power saver"), saver.as(gtk.Widget));
         try self.control("power/automatic-saver", saver.as(gtk.Widget));
         try self.remember(saver, object.Object.signals.notify.connect(saver.as(object.Object), *View, saverChanged, self, .{ .detail = "selected" }));
         sleep.append(sleep_status.as(gtk.Widget));
-        const locking = w.wrappingButton(@import("i18n").dtr("pearl", "Session & lock settings"));
-        self.locking = locking;
-        locking.as(gtk.Widget).setHalign(.start);
-        locking.as(gtk.Widget).addCssClass("flat");
-        sleep.append(locking.as(gtk.Widget));
-        try self.control("power/locking", locking.as(gtk.Widget));
-        try self.remember(locking, gtk.Button.signals.clicked.connect(locking, *View, lockingClicked, self, .{}));
         const actions = card();
         root.append(actions.as(gtk.Widget));
         actions.append(w.label(@import("i18n").dtr("pearl", "Session actions"), "settings-row-title").as(gtk.Widget));
-        const action_flow = w.flow(3);
+        // Natural-width row: hidden confirmation buttons collapse instead of
+        // leaving stretched empty cells like the homogeneous flow did.
+        const action_flow = w.row(8);
         const more = gtk.MenuButton.new();
         more.setLabel(@import("i18n").dtr("pearl", "More"));
         const popover = gtk.Popover.new();
@@ -235,11 +231,11 @@ pub const View = struct {
         for ([_][]const u8{ "lock", "suspend", "hibernate", "logout", "inhibit", "shutdown", "reboot", "confirm", "cancel", "power-cancel", "power-confirm" }, 0..) |id, i| {
             const button = w.wrappingButton("");
             self.actions[i] = .{ .view = self, .button = button, .id = id };
-            if (i < 2 or i >= 7) action_flow.insert(button.as(gtk.Widget), -1) else menu.append(button.as(gtk.Widget));
+            if (i < 2 or i >= 7) action_flow.append(button.as(gtk.Widget)) else menu.append(button.as(gtk.Widget));
             try self.remember(button, gtk.Button.signals.clicked.connect(button, *Action, actionClicked, &self.actions[i], .{}));
             try self.control(([_][]const u8{ "session/lock", "session/suspend", "session/hibernate", "session/logout", "session/inhibit", "session/shutdown", "session/reboot", "session/confirm", "session/cancel", "session/power-cancel", "session/power-confirm" })[i], button.as(gtk.Widget));
         }
-        action_flow.insert(more.as(gtk.Widget), -1);
+        action_flow.append(more.as(gtk.Widget));
         actions.append(action_flow.as(gtk.Widget));
         actions.append(action_detail.as(gtk.Widget));
         try self.control("session/more", more.as(gtk.Widget));
@@ -381,10 +377,9 @@ pub const View = struct {
     fn updateSettings(self: *View) void {
         const s = self.snapshot;
         const timers = if (self.battery_selected) s.config.battery else s.config.ac;
-        if (self.locking) |locking| locking.as(gtk.Widget).setVisible(@intFromBool(timers.lock_seconds == 0));
         self.dim.setActive(@intFromBool(timers.dim));
         self.dim.as(gtk.Widget).setSensitive(@intFromBool(!s.saving and s.brightness_available and s.display_power_available and s.idle_available));
-        for ([_]u32{ timers.screen_off_seconds, timers.suspend_seconds }, 0..) |seconds, i| {
+        for ([_]u32{ timers.screen_off_seconds, timers.lock_seconds, timers.suspend_seconds }, 0..) |seconds, i| {
             var index: u32 = durations.len;
             for (durations, 0..) |duration, j| if (seconds == duration) {
                 index = @intCast(j);
@@ -400,11 +395,11 @@ pub const View = struct {
                 strings.unref();
             }
             self.timeouts[i].setSelected(index);
-            self.timeouts[i].as(gtk.Widget).setSensitive(@intFromBool(!s.saving and s.idle_available and (i == 1 or s.display_power_available)));
+            self.timeouts[i].as(gtk.Widget).setSensitive(@intFromBool(!s.saving and s.idle_available and (i != 0 or s.display_power_available)));
         }
         self.saver.setSelected(s.config.automatic_saver / 10);
         self.saver.as(gtk.Widget).setSensitive(@intFromBool(!s.saving and s.profiles[0]));
-        const message = if (!s.idle_available) @import("i18n").dtr("pearl", "Idle notifications unavailable") else if (!s.display_power_available) @import("i18n").dtr("pearl", "Screen power control unavailable") else if (timers.lock_seconds == 0) @import("i18n").dtr("pearl", "Enable automatic locking in Session & lock before setting a suspend timeout.") else "";
+        const message = if (!s.idle_available) @import("i18n").dtr("pearl", "Idle notifications unavailable") else if (!s.display_power_available) @import("i18n").dtr("pearl", "Screen power control unavailable") else if (timers.suspend_seconds > 0 and timers.lock_seconds == 0) @import("i18n").dtr("pearl", "Suspend needs a lock timeout first.") else "";
         self.sleep_status.setText(message);
         self.sleep_status.as(gtk.Widget).setVisible(@intFromBool(message.len > 0));
     }
@@ -428,9 +423,6 @@ pub const View = struct {
         defer self.filling = false;
         self.updateSettings();
     }
-    fn lockingClicked(_: *gtk.Button, self: *View) callconv(.c) void {
-        self.editor.navigate(.{ .page = .session }, false);
-    }
     fn modeChanged(button: *gtk.CheckButton, binding: *Binding) callconv(.c) void {
         const self = binding.view;
         if (self.filling or button.getActive() == 0) return;
@@ -452,10 +444,17 @@ pub const View = struct {
     fn saverChanged(_: *object.Object, _: *object.ParamSpec, self: *View) callconv(.c) void {
         self.save(.automatic_saver, self.saver.getSelected() * 10);
     }
+    fn lockingField(index: usize) @import("../config/power_patch.zig").Field {
+        return switch (index) {
+            0 => .screen_off_seconds,
+            1 => .lock_seconds,
+            else => .suspend_seconds,
+        };
+    }
     fn timeoutChanged(_: *object.Object, _: *object.ParamSpec, b: *Binding) callconv(.c) void {
         const index = b.view.timeouts[b.index].getSelected();
         if (index >= durations.len) return;
-        b.view.save(if (b.index == 0) .screen_off_seconds else .suspend_seconds, durations[index]);
+        b.view.save(lockingField(b.index), durations[index]);
     }
     fn displaySelected(_: *object.Object, _: *object.ParamSpec, self: *View) callconv(.c) void {
         if (self.filling) return;

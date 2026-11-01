@@ -808,6 +808,10 @@ msgstr "Hintergrundfarbe"
 msgid "Background opacity slider (%)"
 msgstr ""
 
+#: src/settings/window.zig:401
+msgid "Balance performance, battery life, sleep and locking."
+msgstr "Leistung, Akkulaufzeit, Schlaf und Sperre ausbalancieren."
+
 #: src/settings/window.zig:390
 msgid "Balance performance and battery life."
 msgstr "Leistung und Akkulaufzeit einstellen."
@@ -3568,6 +3572,10 @@ msgstr ""
 "Lokale Änderungen müssen geprüft werden. Zusammenführen oder nur die lokale "
 "Kopie verwerfen."
 
+#: src/settings/power_view.zig:205
+msgid "Lock after"
+msgstr "Sperren nach"
+
 #: tests/fixtures/aqueous-master/snapshot.json
 msgctxt "aqueous.actions.lock_screen.label"
 msgid "Lock command"
@@ -4798,9 +4806,9 @@ msgstr ""
 msgid "Position"
 msgstr ""
 
-#: src/desktop/settings_navigation.zig:30
-msgid "Power & battery"
-msgstr ""
+#: src/desktop/settings_navigation.zig:29
+msgid "Power & session"
+msgstr "Energie & Sitzung"
 
 #: src/desktop/services.zig:184
 msgid "Power and brightness"
@@ -6513,9 +6521,9 @@ msgid ""
 "Skipping this configuration after any current file verification completes…"
 msgstr ""
 
-#: src/settings/power_view.zig:195
-msgid "Sleep & energy saving"
-msgstr "Ruhezustand und Energiesparen"
+#: src/settings/power_view.zig:201
+msgid "Sleep & lock"
+msgstr "Schlaf & Sperre"
 
 #: src/settings/preferences_view.zig:236
 msgid "Slide"
@@ -6703,6 +6711,10 @@ msgstr ""
 #: src/settings/power_view.zig:202
 msgid "Suspend after"
 msgstr "Bereitschaft nach"
+
+#: src/settings/power_view.zig:400
+msgid "Suspend needs a lock timeout first."
+msgstr "Bereitschaft braucht zuerst eine Sperre."
 
 #: tests/fixtures/aqueous-master/snapshot.json
 msgctxt "aqueous.input.mouse.left_handed.description"
