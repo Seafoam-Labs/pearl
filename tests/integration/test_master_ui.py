@@ -70,7 +70,7 @@ def main():
    assert 'Stage declaration' in names('displays'),names('displays')
    checks['native-accessibility-names-and-roles']=True
    sidebar_trees={}
-   for route,title in [('overview','Overview'),('appearance','Appearance'),('network','Network'),('bluetooth','Bluetooth'),('sound','Sound'),('power','Power & battery'),('bar','Bar & dock'),('notifications','Notifications'),('session','Session & lock'),('aqueous','Aqueous'),('advanced','Advanced')]:
+   for route,title in [('overview','Overview'),('appearance','Appearance'),('network','Network'),('bluetooth','Bluetooth'),('sound','Sound'),('power','Power & session'),('bar','Bar & dock'),('notifications','Notifications'),('aqueous','Aqueous'),('advanced','Advanced')]:
     ctl(s,a.ctl,'settings','show','--page',route);time.sleep(.3)
     tree=json.loads(s.run(['python3',inspector]).stdout);sidebar_trees[route]=tree
     assert any(n['name']==title and n['role']=='heading' for n in tree['nodes']),(route,tree)

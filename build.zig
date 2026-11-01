@@ -1058,6 +1058,8 @@ pub fn build(b: *std.Build) void {
 
     const aqueous_settings = b.addSystemCommand(&.{ "python3", "tests/integration/test_aqueous_master.py", "--pearl" });
     aqueous_settings.addArtifactArg(app);
+    aqueous_settings.addArg("--settings");
+    aqueous_settings.addArtifactArg(settings_test_app);
     aqueous_settings.addArg("--ctl");
     aqueous_settings.addArtifactArg(ctl);
     aqueous_settings.addPassthruArgs();

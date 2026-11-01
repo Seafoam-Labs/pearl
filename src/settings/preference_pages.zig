@@ -1,4 +1,4 @@
-//! Bar/dock and idle policy forms share the existing Pearl draft coordinator.
+//! Bar/dock forms share the existing Pearl draft coordinator.
 const std = @import("std");
 const gtk = @import("gtk4");
 const object = @import("gobject2");
@@ -29,12 +29,6 @@ const bar_fields = [_]Spec{
     .{ .path = "popup.max_width", .label = "Maximum flyout width", .kind = .number, .min = 320, .max = 1280 },
     .{ .path = "popup.max_height", .label = "Maximum flyout height", .kind = .number, .min = 320, .max = 1600 },
 };
-const idle_fields = [_]Spec{
-    .{ .path = "idle.ac.lock_seconds", .label = "On AC · Lock after seconds (0 disables)", .kind = .number },
-    .{ .path = "idle.ac.suspend_seconds", .label = "On AC · Suspend after seconds (0 disables)", .kind = .number },
-    .{ .path = "idle.battery.lock_seconds", .label = "On battery · Lock after seconds (0 disables)", .kind = .number },
-    .{ .path = "idle.battery.suspend_seconds", .label = "On battery · Suspend after seconds (0 disables)", .kind = .number },
-};
 const Field = struct { view: *View, spec: Spec, widget: *gtk.Widget, signal: c_ulong, slider: ?*gtk.Scale = null, lock: ?*gtk.Widget = null };
 pub const View = struct {
     editor: *Editor,
@@ -45,16 +39,16 @@ pub const View = struct {
     own_invalid: ?[64]u8 = null,
     bar: ?*@import("bar_view.zig").View = null,
     launchers: ?*@import("application_launchers_view.zig").View = null,
-    pub fn create(host: *gtk.Box, editor: *Editor, idle: bool, context: *anyopaque, invalidate: *const fn (*anyopaque, @import("../desktop/settings_navigation.zig").Route) void) !*View {
+    pub fn create(host: *gtk.Box, editor: *Editor, context: *anyopaque, invalidate: *const fn (*anyopaque, @import("../desktop/settings_navigation.zig").Route) void) !*View {
         const self = try a.create(View);
-        const specs: []const Spec = if (idle) &idle_fields else &bar_fields;
+        const specs: []const Spec = &bar_fields;
         self.* = .{ .editor = editor, .host = host, .fields = try a.alloc(Field, specs.len) };
         var card = w.column(0);
         card.as(gtk.Widget).addCssClass("settings-card");
         host.append(card.as(gtk.Widget));
         for (specs, self.fields) |spec, *field| {
             const dock_start = std.mem.eql(u8, spec.path, "dock.enabled");
-            if (!idle and (dock_start or std.mem.eql(u8, spec.path, "popup.dismiss_outside"))) {
+            if (dock_start or std.mem.eql(u8, spec.path, "popup.dismiss_outside")) {
                 if (dock_start) self.bar = try @import("bar_view.zig").View.create(host, editor, context, invalidate);
                 const title: [:0]const u8 = if (dock_start) "Dock" else "Flyouts";
                 const expander = gtk.Expander.new(null);
@@ -149,7 +143,7 @@ pub const View = struct {
                 .choice => object.Object.signals.notify.connect(widget.as(object.Object), *Field, changed, field, .{ .detail = "selected" }),
             };
         }
-        if (!idle) self.launchers = try @import("application_launchers_view.zig").View.create(host, editor);
+        self.launchers = try @import("application_launchers_view.zig").View.create(host, editor);
         self.update();
         return self;
     }

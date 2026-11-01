@@ -101,6 +101,8 @@ pub const View = struct {
     desktop_section: Section = undefined,
     night_section: Section = undefined,
     apps_section: Section,
+    qt_section: Section = undefined,
+    profiles_section: Section = undefined,
     themes_section: Section = undefined,
     login_section: Section = undefined,
     sync_borders: *gtk.Switch = undefined,
@@ -250,11 +252,14 @@ pub const View = struct {
         const density = dropdown(typography, @import("i18n").dtr("pearl", "Density"), &.{ "Comfortable", "Compact" });
         const motion = gtk.Switch.new();
         row(typography, @import("i18n").dtr("pearl", "Reduced motion"), motion.as(gtk.Widget));
-        const apps_section = Section.create(host, @import("i18n").dtr("pearl", "Application appearance"), @import("i18n").dtr("pearl", "Window borders, Qt and application colors"));
+        const apps_section = Section.create(host, @import("i18n").dtr("pearl", "Application appearance"), @import("i18n").dtr("pearl", "Window border synchronization"));
         const sync_borders = toggle(apps_section.body, @import("i18n").dtr("pearl", "Window borders follow Pearl theme"));
         apps_section.body.append(w.label(@import("i18n").dtr("pearl", "Waits for pending Aqueous edits. Turning off keeps the last colors; GTK mode pauses synchronization."), "pearl-secondary").as(gtk.Widget));
-        const qt_card = card(apps_section.body);
-        qt_card.append(w.label(@import("i18n").dtr("pearl", "Qt applications · QtEngine + Darkly"), "settings-row-title").as(gtk.Widget));
+        // Qt and profile controls live in their own disclosures so the border
+        // toggle is not buried under a wall of integration details.
+        const qt_section = Section.create(host, @import("i18n").dtr("pearl", "Qt applications"), @import("i18n").dtr("pearl", "QtEngine + Darkly · shared Qt 5 and Qt 6 configuration"));
+        const profiles_section = Section.create(host, @import("i18n").dtr("pearl", "Application themes"), @import("i18n").dtr("pearl", "Matugen profiles · per-application colors"));
+        const qt_card = qt_section.body;
         qt_card.append(w.label(@import("i18n").dtr("pearl", "QtEngine shares one configuration across Qt 5 and Qt 6. Selected checks verify the installed runtimes. Changes affect this user account. GTK mode uses Pearl's static colors. Disabling restores previous values that have not been edited elsewhere."), "pearl-secondary").as(gtk.Widget));
         const qt_enabled = toggle(qt_card, @import("i18n").dtr("pearl", "Manage Qt appearance"));
         const qt5 = toggle(qt_card, @import("i18n").dtr("pearl", "Check Qt 5"));
@@ -280,6 +285,14 @@ pub const View = struct {
         qt_card.append(qt_comparison.as(gtk.Widget));
         const qt_reapply = w.wrappingButton(@import("i18n").dtr("pearl", "Replace reviewed values with saved Qt settings"));
         qt_card.append(qt_reapply.as(gtk.Widget));
+        // The card column has no spacing; match the 20px form-row inset so the
+        // actions do not sit flush against the card edge.
+        for ([_]*gtk.Button{ qt_retry, qt_review, qt_reapply }) |button| {
+            button.as(gtk.Widget).setMarginStart(20);
+            button.as(gtk.Widget).setMarginEnd(20);
+            button.as(gtk.Widget).setMarginTop(4);
+            button.as(gtk.Widget).setMarginBottom(4);
+        }
         const message = w.label("", "pearl-secondary");
         host.append(message.as(gtk.Widget));
         const raw_view = gtk.TextView.new();
@@ -293,6 +306,8 @@ pub const View = struct {
         // The caller installs raw_view directly in Advanced's sole viewport.
         self.* = .{ .editor = editor, .window = window, .host = host, .raw_view = raw_view, .raw = raw_view.getBuffer(), .arena = .init(a), .mode = mode, .desktop_preview = desktop_preview, .wallpaper_summary = wallpaper_summary, .wallpaper_thumbnail = thumbnail, .customize = customize, .image_section = image_section, .text_section = text_section, .apps_section = apps_section, .variant = variant, .source = source, .scheme = scheme, .fit = fit, .density = density, .entries = .{ gtk_name, seed, path, color, font }, .font_size = font_size, .motion = motion, .picture = picture, .preview_note = preview_note, .preview_css = gtk.CssProvider.new(), .choose = choose, .message = message, .mode_hint = hint, .qt_enabled = qt_enabled, .qt5 = qt5, .qt6 = qt6, .qt_palette = qt_palette, .qt_font = qt_font, .qt_icon = qt_icon, .qt_radius = qt_radius, .qt_motion = qt_motion, .qt_density = qt_density, .qt_kde = qt_kde, .qt_status = qt_status, .qt_retry = qt_retry, .qt_review = qt_review, .qt_reapply = qt_reapply, .qt_comparison = qt_comparison, .slideshow_enabled = slideshow_enabled, .slideshow_folder = slideshow_folder, .slideshow_choose = slideshow_choose, .slideshow_interval = slideshow_interval, .slideshow_order = slideshow_order, .slideshow_transition = slideshow_transition, .slideshow_duration = slideshow_duration };
         self.language = language;
+        self.qt_section = qt_section;
+        self.profiles_section = profiles_section;
         const language_alloc = self.language_arena.allocator();
         try self.language_codes.appendSlice(language_alloc, &.{ "", "en" });
         const language_strings = object.ext.cast(gtk.StringList, language.getModel().?).?;
@@ -345,11 +360,13 @@ pub const View = struct {
         _ = gtk.SpinButton.signals.value_changed.connect(self.night_temperature, *View, spun, self, .{});
         for (self.night_times) |control| _ = gtk.SpinButton.signals.value_changed.connect(control, *View, spun, self, .{});
         host.reorderChildAfter(apps_section.expander.as(gtk.Widget), self.night_section.expander.as(gtk.Widget));
+        host.reorderChildAfter(self.qt_section.expander.as(gtk.Widget), apps_section.expander.as(gtk.Widget));
+        host.reorderChildAfter(self.profiles_section.expander.as(gtk.Widget), self.qt_section.expander.as(gtk.Widget));
         self.themes_section = Section.create(host, @import("i18n").dtr("pearl", "Themes & customization"), @import("i18n").dtr("pearl", "Installed themes, palettes and widget styles"));
         self.themes = try @import("themes_view.zig").View.create(self.themes_section.body, editor);
         self.themes.preview_context = self;
         self.themes.preview_callback = previewPalette;
-        self.profiles = try @import("profiles_view.zig").View.create(apps_section.body, editor);
+        self.profiles = try @import("profiles_view.zig").View.create(self.profiles_section.body, editor);
         self.login_section = Section.create(host, @import("i18n").dtr("pearl", "Login screen"), @import("i18n").dtr("pearl", "Copy appearance with administrator authentication"));
         self.greeter_sync = try @import("greeter_sync.zig").View.create(self.login_section.body, self, syncPreferences);
         host.reorderChildAfter(message.as(gtk.Widget), null);
@@ -482,9 +499,9 @@ pub const View = struct {
             qt_attention = true;
             break;
         };
-        self.apps_section.summary.setText(if (self.editor.qt_review_text.len > 0) @import("i18n").dtr("pearl", "External Qt changes need review") else if (qt_attention) @import("i18n").dtr("pearl", "Qt needs attention · expand to review status") else @import("i18n").dtr("pearl", "Window borders, Qt and application colors"));
+        self.qt_section.summary.setText(if (self.editor.qt_review_text.len > 0) @import("i18n").dtr("pearl", "External Qt changes need review") else if (qt_attention) @import("i18n").dtr("pearl", "Qt needs attention · expand to review status") else @import("i18n").dtr("pearl", "QtEngine + Darkly · shared Qt 5 and Qt 6 configuration"));
         self.themes_section.summary.setText(if (self.editor.theme_error.len > 0 and !self.editor.application_command) self.editor.theme_error.z() else std.mem.span(self.themes.selection.getText()));
-        if (self.editor.application_command and self.editor.theme_error.len > 0) self.apps_section.summary.setText(self.editor.theme_error.z());
+        self.profiles_section.summary.setText(if (self.editor.application_command and self.editor.theme_error.len > 0) self.editor.theme_error.z() else @import("i18n").dtr("pearl", "Matugen profiles · per-application colors"));
         self.login_section.summary.setText(std.mem.span(self.greeter_sync.status.getText()));
         const fit_names: [4][:0]const u8 = .{ @import("i18n").dtr("pearl", "Material gradient"), @import("i18n").dtr("pearl", "Solid color"), @import("i18n").dtr("pearl", "Cover"), @import("i18n").dtr("pearl", "Contain") };
         const fit_name = fit_names[@backingInt(p.wallpaper.mode)];

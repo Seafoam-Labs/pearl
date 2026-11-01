@@ -52,7 +52,7 @@ pub const Window = struct {
     notification_filters: ?*@import("notification_filters_view.zig").View = null,
     preferences_view: ?*@import("preferences_view.zig").View = null,
     assistant_view: ?*@import("assistant_view.zig").View = null,
-    preference_pages: [2]?*@import("preference_pages.zig").View = .{ null, null },
+    preference_pages: [1]?*@import("preference_pages.zig").View = .{null},
     live_pages: [count]?*@import("live_view.zig").View = @splat(null),
     close_dialog: ?*gtk.Dialog = null,
     saved_dialog: ?*gtk.Dialog = null,
@@ -89,6 +89,8 @@ pub const Window = struct {
     appearance_updates: u64 = 0,
     activation_contexts: u64 = 0,
     key_events: u64 = 0,
+    pointer_x: f64 = -1,
+    pointer_y: f64 = -1,
     layout_id: c_ulong = 0,
     native: ?*gdk.Surface = null,
     resize_id: c_uint = 0,
@@ -257,10 +259,10 @@ pub const Window = struct {
             const advanced_page = &self.pages[@backingInt(nav.Route.advanced)];
             advanced_page.body = self.preferences_view.?.raw_view.as(gtk.Widget);
             advanced_page.scroll.setChild(advanced_page.body);
-            for ([_]nav.Route{ .bar, .session }, 0..) |route, i| {
+            for ([_]nav.Route{.bar}, 0..) |route, i| {
                 const host = object.ext.cast(gtk.Box, self.pages[@backingInt(route)].body).?;
                 while (host.as(gtk.Widget).getFirstChild()) |child| host.remove(child);
-                self.preference_pages[i] = try @import("preference_pages.zig").View.create(host, editor, route == .session, self, invalidatePageFocus);
+                self.preference_pages[i] = try @import("preference_pages.zig").View.create(host, editor, self, invalidatePageFocus);
             }
         }
         if (!fixture) {
@@ -277,9 +279,9 @@ pub const Window = struct {
             service.start();
             self.scheduler_view = try @import("scheduler_view.zig").View.create(body, service);
         }
-        if (!fixture) for ([_]nav.Route{ .overview, .network, .bluetooth, .sound, .power, .notifications, .session }) |route| {
+        if (!fixture) for ([_]nav.Route{ .overview, .network, .bluetooth, .sound, .power, .notifications }) |route| {
             const body = object.ext.cast(gtk.Box, self.pages[@backingInt(route)].body).?;
-            if (route != .overview and route != .session) while (body.as(gtk.Widget).getFirstChild()) |child| {
+            if (route != .overview) while (body.as(gtk.Widget).getFirstChild()) |child| {
                 body.remove(child);
             };
             var notification_header: ?*gtk.Box = null;
@@ -322,6 +324,15 @@ pub const Window = struct {
         popup_keys.as(gtk.EventController).setPropagationPhase(.capture);
         _ = gtk.EventControllerKey.signals.key_pressed.connect(popup_keys, *Window, keyPressed, self, .{});
         popover.as(gtk.Widget).addController(popup_keys.as(gtk.EventController));
+        const wheel_guard = gtk.EventControllerScroll.new(.{ .vertical = true });
+        wheel_guard.as(gtk.EventController).setPropagationPhase(.capture);
+        _ = gtk.EventControllerScroll.signals.scroll.connect(wheel_guard, *Window, wheelScrolled, self, .{});
+        win.as(gtk.Widget).addController(wheel_guard.as(gtk.EventController));
+        // The scroll guard needs the pointer position; the opaque GdkEvent in
+        // this binding does not expose it, so track motion separately.
+        const motion = gtk.EventControllerMotion.new();
+        _ = gtk.EventControllerMotion.signals.motion.connect(motion, *Window, pointerMoved, self, .{});
+        win.as(gtk.Widget).addController(motion.as(gtk.EventController));
         _ = gtk.Widget.signals.realize.connect(win.as(gtk.Widget), *Window, realized, self, .{});
         try self.style(.{});
         self.connection(false, null);
@@ -387,11 +398,10 @@ pub const Window = struct {
             .network => @import("i18n").dtr("pearl", "Manage your connections and nearby networks."),
             .bluetooth => @import("i18n").dtr("pearl", "Connect and manage your wireless devices."),
             .sound => @import("i18n").dtr("pearl", "Choose where sound plays and how you are heard."),
-            .power => @import("i18n").dtr("pearl", "Balance performance and battery life."),
+            .power => @import("i18n").dtr("pearl", "Balance performance, battery life, sleep and locking."),
             .bar => @import("i18n").dtr("pearl", "Arrange your desktop bar and dock."),
             .notifications => @import("i18n").dtr("pearl", "Manage interruptions and notification history."),
             .system => @import("i18n").dtr("pearl", "Manage system performance and CPU scheduling."),
-            .session => @import("i18n").dtr("pearl", "Automatic locking and sleep for your session."),
             .aqueous => @import("i18n").dtr("pearl", "Configure your compositor by section."),
             .plugins => @import("i18n").dtr("pearl", "Manage installed plugins, permissions and placement."),
             .advanced => @import("i18n").dtr("pearl", "Review the complete Pearl preferences document."),
@@ -408,7 +418,6 @@ pub const Window = struct {
             .assistant => "pearl-user-available-symbolic",
             .bar, .aqueous => "pearl-window-symbolic",
             .notifications => "pearl-notifications-symbolic",
-            .session => "pearl-system-lock-screen-symbolic",
             .system, .advanced, .plugins => "pearl-emblem-system-symbolic",
         };
     }
@@ -704,7 +713,7 @@ pub const Window = struct {
         }
         self.scheduleRestore(false);
         const preference = switch (target.page) {
-            .appearance, .assistant, .bar, .notifications, .session, .advanced, .plugins => true,
+            .appearance, .assistant, .bar, .notifications, .advanced, .plugins => true,
             else => false,
         };
         self.save.as(gtk.Widget).getParent().?.setVisible(@intFromBool(preference));
@@ -825,14 +834,14 @@ pub const Window = struct {
         const dirty = editor.local != null or editor.state.dirty;
         self.draft_badge.as(gtk.Widget).setVisible(@intFromBool((dirty or self.aqueous.draft != null) and !(self.target.page == .aqueous and self.aqueous_section == 5)));
         self.review_button.as(gtk.Widget).setVisible(@intFromBool((dirty or self.aqueous.draft != null) and !(self.target.page == .aqueous and self.aqueous_section == 5)));
-        const preference_page = self.target.page == .notifications or self.target.page == .appearance or self.target.page == .assistant or self.target.page == .bar or self.target.page == .session or self.target.page == .advanced or self.target.page == .plugins;
+        const preference_page = self.target.page == .notifications or self.target.page == .appearance or self.target.page == .assistant or self.target.page == .bar or self.target.page == .advanced or self.target.page == .plugins;
         self.actions.as(gtk.Widget).setVisible(@intFromBool((editor.ready or dirty) and preference_page));
         self.merge_button.as(gtk.Widget).setVisible(@intFromBool(editor.state.conflict or editor.recovery));
         const available = editor.online and editor.ready and !editor.state.locked and !editor.state.busy and editor.download == .none and editor.operation == null;
         self.save.as(gtk.Widget).setSensitive(@intFromBool(available and dirty and (if (editor.local != null) editor.local_valid else editor.state.valid) and !editor.state.conflict and !editor.recovery));
         self.discard.as(gtk.Widget).setSensitive(@intFromBool(available and dirty));
         self.merge_button.as(gtk.Widget).setSensitive(@intFromBool(available));
-        self.footer_text.setText(if (editor.recovery) @import("i18n").dtr("pearl", "Local changes need review. Merge them or discard only the local copy.") else if (editor.local != null) @import("i18n").dtr("pearl", "Pearl preferences · Retaining draft…") else if (editor.state.busy) @import("i18n").dtr("pearl", "Pearl preferences · Preparing settings…") else if (self.target.page == .system and self.scheduler_view != null) @import("i18n").dtr("pearl", "A profile applies immediately and stays selected after a restart.") else if (self.target.page == .system) @import("i18n").dtr("pearl", "Select a scheduler and mode, then use Apply scheduler. Boot defaults are unchanged.") else if (!preference_page) (if (dirty) @import("i18n").dtr("pearl", "Service controls take effect immediately. Pearl preference draft retained.") else @import("i18n").dtr("pearl", "Changes on this page take effect immediately.")) else if (self.target.page == .notifications) @import("i18n").dtr("pearl", "Apply saves all Pearl preferences. Filters affect future arrivals; DND and history actions are immediate.") else if (self.target.page == .session) @import("i18n").dtr("pearl", "Apply saves Pearl preferences. Session actions take effect immediately.") else if (editor.state.dirty) @import("i18n").dtr("pearl", "Pearl preferences · Draft retained in this session. Apply saves all Pearl changes.") else @import("i18n").dtr("pearl", "Pearl preferences · All changes are applied explicitly."));
+        self.footer_text.setText(if (editor.recovery) @import("i18n").dtr("pearl", "Local changes need review. Merge them or discard only the local copy.") else if (editor.local != null) @import("i18n").dtr("pearl", "Pearl preferences · Retaining draft…") else if (editor.state.busy) @import("i18n").dtr("pearl", "Pearl preferences · Preparing settings…") else if (self.target.page == .system and self.scheduler_view != null) @import("i18n").dtr("pearl", "A profile applies immediately and stays selected after a restart.") else if (self.target.page == .system) @import("i18n").dtr("pearl", "Select a scheduler and mode, then use Apply scheduler. Boot defaults are unchanged.") else if (!preference_page) (if (dirty) @import("i18n").dtr("pearl", "Service controls take effect immediately. Pearl preference draft retained.") else @import("i18n").dtr("pearl", "Changes on this page take effect immediately.")) else if (self.target.page == .notifications) @import("i18n").dtr("pearl", "Apply saves all Pearl preferences. Filters affect future arrivals; DND and history actions are immediate.") else if (editor.state.dirty) @import("i18n").dtr("pearl", "Pearl preferences · Draft retained in this session. Apply saves all Pearl changes.") else @import("i18n").dtr("pearl", "Pearl preferences · All changes are applied explicitly."));
         if (!self.connected) return;
         const status_text: [:0]const u8 = if (!editor.ready) @import("i18n").dtr("pearl", "Loading Pearl preferences…") else if (editor.uncertain_operation) @import("i18n").dtr("pearl", "The connection ended during an operation. Review the current settings before applying again.") else if (editor.recovery or editor.state.conflict) @import("i18n").dtr("pearl", "Settings changed elsewhere. Your changes are retained. Merge independent changes, or review Advanced to resolve a conflict.") else if (editor.error_code.len > 0) self.errorMessage(editor.error_code.slice()) else if (!editor.state.valid) @import("i18n").dtr("pearl", "The draft is invalid. Correct the fields or review the JSON in Advanced before applying.") else if (editor.export_error.len > 0) @import("i18n").dtr("pearl", "Preferences were saved. An export needs attention; your changes remain applied.") else "";
         self.status.setText(status_text);
@@ -1113,6 +1122,34 @@ pub const Window = struct {
         self.actions.as(gtk.Orientable).setOrientation(if (narrow and self.font_size > 18 and !self.fixture) .vertical else .horizontal);
         return 0;
     }
+    /// Sliders and spin buttons never respond to the scroll wheel; the wheel
+    /// keeps scrolling the page underneath them instead.
+    fn wheelScrolled(_: *gtk.EventControllerScroll, _: f64, dy: f64, self: *Window) callconv(.c) c_int {
+        if (self.pointer_x < 0) return 0;
+        var widget = self.window.as(gtk.Widget).pick(self.pointer_x, self.pointer_y, .{});
+        var adjuster: ?*gtk.Widget = null;
+        while (widget) |wgt| : (widget = wgt.getParent()) {
+            if (object.ext.cast(gtk.Scale, wgt) != null or object.ext.cast(gtk.SpinButton, wgt) != null) {
+                adjuster = wgt;
+                break;
+            }
+        }
+        if (adjuster == null) return 0;
+        widget = adjuster;
+        while (widget) |wgt| : (widget = wgt.getParent()) {
+            if (object.ext.cast(gtk.ScrolledWindow, wgt)) |scroll| {
+                const vadj = scroll.getVadjustment();
+                const step = vadj.getPageIncrement() / 10;
+                if (step > 0) vadj.setValue(vadj.getValue() + dy * step);
+                break;
+            }
+        }
+        return 1;
+    }
+    fn pointerMoved(_: *gtk.EventControllerMotion, x: f64, y: f64, self: *Window) callconv(.c) void {
+        self.pointer_x = x;
+        self.pointer_y = y;
+    }
     fn keyPressed(_: *gtk.EventControllerKey, key: c_uint, _: c_uint, modifiers: gdk.ModifierType, self: *Window) callconv(.c) c_int {
         if (@import("build_options").test_hooks) self.key_events += 1;
         if (modifiers.control_mask and (key == 'w' or key == 'W')) {
@@ -1210,7 +1247,7 @@ pub const Window = struct {
                 const widget = button.as(gtk.Widget);
                 try controls.append(alloc, .{ .field = name, .focused = focus == widget, .enabled = widget.isSensitive() != 0, .selected = button.getActive() != 0, .bounds = self.bounds(widget) });
             }
-            for ([_]@import("preferences_view.zig").Section{ view.image_section, view.text_section, view.desktop_section, view.night_section, view.apps_section, view.themes_section, view.login_section }, [_][]const u8{ "image", "text", "desktop", "night", "applications", "themes", "login" }) |section, name| {
+            for ([_]@import("preferences_view.zig").Section{ view.image_section, view.text_section, view.desktop_section, view.night_section, view.apps_section, view.qt_section, view.profiles_section, view.themes_section, view.login_section }, [_][]const u8{ "image", "text", "desktop", "night", "applications", "qt", "profiles", "themes", "login" }) |section, name| {
                 try controls.append(alloc, .{ .field = try std.fmt.allocPrint(alloc, "appearance.section.{s}", .{name}), .focused = focus == section.expander.as(gtk.Widget), .enabled = section.expander.as(gtk.Widget).isSensitive() != 0, .selected = section.expander.getExpanded() != 0, .text = std.mem.span(section.summary.getText()), .bounds = self.bounds(section.expander.getLabelWidget().?) });
             }
             try controls.append(alloc, .{ .field = "appearance.preview", .focused = false, .text = std.mem.span(view.desktop_preview.status.getText()), .bounds = self.bounds(view.desktop_preview.root.as(gtk.Widget)) });
@@ -1239,6 +1276,10 @@ pub const Window = struct {
                 for ([_]*gtk.Widget{ view.profiles.modes[i].as(gtk.Widget), view.profiles.pickers[i].as(gtk.Widget) }, [_][]const u8{ "mode", "profile" }) |widget, name| {
                     try controls.append(alloc, .{ .field = try std.fmt.allocPrint(alloc, "applications.{s}.{s}", .{ @tagName(application), name }), .focused = if (focus) |f| f == widget else false, .enabled = widget.isSensitive() != 0, .bounds = self.bounds(widget) });
                 }
+            }
+            for (view.profiles.group_expanders, 0..) |expander, i| {
+                const widget = expander.getLabelWidget().?;
+                try controls.append(alloc, .{ .field = try std.fmt.allocPrint(alloc, "applications.group.{d}", .{i}), .focused = focus == widget, .enabled = widget.isSensitive() != 0, .visible = widget.getVisible() != 0, .selected = expander.getExpanded() != 0, .bounds = self.bounds(widget) });
             }
             for ([_]*gtk.Widget{ view.qt_enabled.as(gtk.Widget), view.qt_retry.as(gtk.Widget), view.qt_review.as(gtk.Widget), view.qt_reapply.as(gtk.Widget), view.qt_kde.as(gtk.Widget) }, [_][]const u8{ "qt_enabled", "qt_retry", "qt_review", "qt_reapply", "qt_kde" }) |widget, name|
                 try controls.append(alloc, .{ .field = name, .focused = if (focus) |f| f == widget else false, .bounds = self.bounds(widget) });

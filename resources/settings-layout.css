@@ -152,6 +152,19 @@
 .settings-window .appearance-mode radio { margin-right: 8px; }
 .settings-window .appearance-section-body { padding-bottom: 12px; }
 .settings-window .appearance-section-body .pearl-secondary { margin-left: 20px; margin-right: 20px; }
+/* Application profiles: the card owns the horizontal inset, so form rows and
+   per-app rows never add a second padding and everything shares one left edge. */
+.settings-window .profiles-card { padding: 8px 20px 20px; }
+.settings-window .profiles-card > label { margin: 10px 0 0; }
+.settings-window .profiles-card .pearl-secondary { margin-left: 0; margin-right: 0; }
+.settings-window .profiles-card .settings-form-row { padding-left: 0; padding-right: 0; }
+.settings-window .profiles-app-row { padding: 10px 0 0; }
+.settings-window .profiles-actions { margin-top: 4px; }
+.settings-window .settings-section .profiles-group.settings-card { background: alpha(currentColor, 0.03); border-radius: 12px; }
+.settings-window .profiles-group .settings-section-heading { margin: 10px 12px; }
+.settings-window .profiles-group .settings-section-heading .pearl-section-title { font-size: 1em; }
+.settings-window .profiles-group-body { padding: 0 12px 12px; }
+.settings-window.settings-narrow .profiles-card { padding: 8px 14px 14px; }
 .settings-window .appearance-preview-layout { margin: 18px 20px; }
 .settings-window .appearance-wallpaper-row { margin: 0 20px 12px; }
 .settings-window .appearance-wallpaper-row .settings-draft-preview { margin: 0; min-width: 96px; min-height: 60px; }

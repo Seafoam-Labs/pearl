@@ -12,7 +12,6 @@ pub const Route = enum {
     bar,
     notifications,
     system,
-    session,
     aqueous,
     advanced,
     plugins,
@@ -27,13 +26,12 @@ pub const Route = enum {
             .network => @import("i18n").mark("Network"),
             .bluetooth => @import("i18n").mark("Bluetooth"),
             .sound => @import("i18n").mark("Sound"),
-            .power => @import("i18n").mark("Power & battery"),
+            .power => @import("i18n").mark("Power & session"),
             .appearance => @import("i18n").mark("Appearance"),
             .assistant => @import("i18n").mark("Assistant"),
             .bar => @import("i18n").mark("Bar & dock"),
             .notifications => @import("i18n").mark("Notifications"),
             .system => @import("i18n").mark("System"),
-            .session => @import("i18n").mark("Session & lock"),
             .aqueous => @import("i18n").mark("Aqueous"),
             .advanced => @import("i18n").mark("Advanced"),
             .plugins => @import("i18n").mark("Plugins"),
@@ -43,12 +41,14 @@ pub const Route = enum {
     pub fn isCompact(self: Route) bool {
         return switch (self) {
             .overview, .network, .bluetooth, .sound, .power => true,
-            .appearance, .assistant, .bar, .notifications, .system, .session, .aqueous, .advanced, .plugins => false,
+            .appearance, .assistant, .bar, .notifications, .system, .aqueous, .advanced, .plugins => false,
         };
     }
 };
 
 pub fn parse(id: []const u8) !Route {
+    // The merged Power & session page keeps the old Session & lock route id.
+    if (std.mem.eql(u8, id, "session")) return .power;
     return std.meta.stringToEnum(Route, id) orelse error.InvalidRoute;
 }
 

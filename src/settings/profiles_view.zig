@@ -8,12 +8,14 @@ const w = @import("../ui/components/widgets.zig");
 const profiles = @import("../theme/matugen_profiles.zig");
 const adapters = @import("../theme/application_adapters.zig");
 const a = std.heap.c_allocator;
+const group_total = std.enums.values(adapters.Group).len;
 const Choice = struct { id: []const u8, name: []const u8, application: profiles.Application, origin: []const u8 };
 pub const View = struct {
     editor: *@import("editor.zig").Editor,
     root: *gtk.Box,
     enabled: *gtk.Switch,
     defaults: *gtk.Button = undefined,
+    group_expanders: [group_total]*gtk.Expander = undefined,
     source: *gtk.DropDown,
     seed: *gtk.Entry,
     search: *gtk.Entry,
@@ -45,13 +47,12 @@ pub const View = struct {
         const self = try a.create(View);
         const root = w.column(8);
         root.as(gtk.Widget).addCssClass("settings-card");
+        root.as(gtk.Widget).addCssClass("profiles-card");
         host.append(root.as(gtk.Widget));
-        root.append(w.label(@import("i18n").dtr("pearl", "Application themes · Matugen profiles"), "pearl-card-title").as(gtk.Widget));
         const hint = w.label(@import("i18n").dtr("pearl", "Wallpaper colors update automatically after wallpaper changes are committed, including when the image file changes. Some applications still require activation."), "pearl-secondary");
         hint.setWrap(1);
         root.append(hint.as(gtk.Widget));
         const enabled = gtk.Switch.new();
-        enabled.as(gtk.Widget).setHalign(.start);
         add(root, @import("i18n").dtr("pearl", "Enable application themes"), enabled.as(gtk.Widget));
         const source = dropdown(&.{ "Follow Pearl", "Independent seed", "Wallpaper" });
         add(root, @import("i18n").dtr("pearl", "Application colors"), source.as(gtk.Widget));
@@ -64,25 +65,47 @@ pub const View = struct {
         root.append(search.as(gtk.Widget));
         self.* = .{ .editor = editor, .root = root, .enabled = enabled, .source = source, .seed = seed, .search = search, .rows = undefined, .details = undefined, .modes = undefined, .pickers = undefined, .status = w.label("", "pearl-secondary") };
         const defaults = w.wrappingButton(@import("i18n").dtr("pearl", "Use Material defaults"));
+        defaults.as(gtk.Widget).setTooltipText(@import("i18n").dtr("pearl", "Base Material defaults preserve individual choices and Off. QtEngine + Darkly is managed by the Qt applications controls on this page. qtct palettes remain individually selectable exports."));
         self.defaults = defaults;
         root.append(defaults.as(gtk.Widget));
         _ = gtk.Button.signals.clicked.connect(defaults, *View, defaultsClicked, self, .{});
-        root.append(w.label(@import("i18n").dtr("pearl", "Base Material defaults preserve individual choices and Off. QtEngine + Darkly is managed by the Qt applications controls on this page. qtct palettes remain individually selectable exports."), "pearl-secondary").as(gtk.Widget));
-        for (std.enums.values(adapters.Group)) |group| {
-            root.append(w.label(@tagName(group), "pearl-card-title").as(gtk.Widget));
+        for (std.enums.values(adapters.Group), 0..) |group, g| {
+            const title: [:0]const u8 = switch (group) {
+                .toolkits => @import("i18n").dtr("pearl", "Toolkits"),
+                .terminals => @import("i18n").dtr("pearl", "Terminals"),
+                .editors => @import("i18n").dtr("pearl", "Editors"),
+                .browsers => @import("i18n").dtr("pearl", "Browsers"),
+                .chat => @import("i18n").dtr("pearl", "Chat"),
+                .other => @import("i18n").dtr("pearl", "Other"),
+            };
+            var names: std.ArrayList(u8) = .empty;
+            for (std.enums.values(profiles.Application)) |application| {
+                if (adapters.group(application) != group) continue;
+                if (names.items.len > 0) try names.appendSlice(a, " · ");
+                try names.appendSlice(a, @tagName(application));
+            }
+            const group_disclosure = try disclosure(root, title, try names.toOwnedSliceSentinel(a, 0));
+            self.group_expanders[g] = group_disclosure.expander;
             for (std.enums.values(profiles.Application), 0..) |application, i| {
                 if (adapters.group(application) != group) continue;
                 const row = w.column(6);
                 self.rows[i] = row;
-                root.append(row.as(gtk.Widget));
-                row.append(w.label(@tagName(application), "settings-row-title").as(gtk.Widget));
+                group_disclosure.body.append(row.as(gtk.Widget));
+                // One compact line per app: the name expands, the dropdowns keep
+                // their natural width at the right edge.
+                const line = w.row(16);
+                line.as(gtk.Widget).addCssClass("profiles-app-row");
+                line.append(w.label(@tagName(application), "settings-row-title").as(gtk.Widget));
                 self.modes[i] = dropdown(&.{ "Follow Pearl theme", "Choose profile", "Off" });
                 self.pickers[i] = dropdown(&.{"No profile selected"});
                 var label: [96]u8 = undefined;
                 w.name(self.modes[i].as(gtk.Widget), try std.mem.printSentinel(&label, "{s} theme assignment", .{@tagName(application)}, 0));
                 w.name(self.pickers[i].as(gtk.Widget), try std.mem.printSentinel(&label, "{s} application profile", .{@tagName(application)}, 0));
-                row.append(self.modes[i].as(gtk.Widget));
-                row.append(self.pickers[i].as(gtk.Widget));
+                self.modes[i].as(gtk.Widget).setValign(.center);
+                self.pickers[i].as(gtk.Widget).setValign(.center);
+                line.append(self.modes[i].as(gtk.Widget));
+                line.append(self.pickers[i].as(gtk.Widget));
+                row.append(line.as(gtk.Widget));
                 self.details[i] = w.label("", "pearl-secondary");
                 self.details[i].setWrap(1);
                 self.details[i].setSelectable(1);
@@ -96,26 +119,30 @@ pub const View = struct {
                 _ = object.Object.signals.notify.connect(self.pickers[i].as(object.Object), *View, changed, self, .{ .detail = "selected" });
             }
         }
-        root.append(w.label(@import("i18n").dtr("pearl", "Zed and Equibop need activation in the application. Fluxer and Steam use the generated CSS. Starship generates a full prompt configuration; review it before installing. Off restores only unchanged Pearl-owned files."), "pearl-secondary").as(gtk.Widget));
+        const recovery = try disclosure(root, @import("i18n").dtr("pearl", "Actions & recovery"), @import("i18n").dtr("pearl", "Refresh, retry and Starship review"));
+        recovery.body.append(w.label(@import("i18n").dtr("pearl", "Zed and Equibop need activation in the application. Fluxer and Steam use the generated CSS. Starship generates a full prompt configuration; review it before installing. Off restores only unchanged Pearl-owned files."), "pearl-secondary").as(gtk.Widget));
+        const actions = w.flow(2);
+        actions.as(gtk.Widget).addCssClass("profiles-actions");
         const refresh = w.wrappingButton(@import("i18n").dtr("pearl", "Refresh application profiles"));
-        root.append(refresh.as(gtk.Widget));
+        actions.insert(refresh.as(gtk.Widget), -1);
         _ = gtk.Button.signals.clicked.connect(refresh, *View, refreshClicked, self, .{});
         const adopt = w.wrappingButton(@import("i18n").dtr("pearl", "Use current profile versions on Apply"));
-        root.append(adopt.as(gtk.Widget));
+        actions.insert(adopt.as(gtk.Widget), -1);
         _ = gtk.Button.signals.clicked.connect(adopt, *View, adoptClicked, self, .{});
         const retry = w.wrappingButton(@import("i18n").dtr("pearl", "Retry committed application themes"));
-        root.append(retry.as(gtk.Widget));
+        actions.insert(retry.as(gtk.Widget), -1);
         _ = gtk.Button.signals.clicked.connect(retry, *View, retryClicked, self, .{});
         const review = w.wrappingButton(@import("i18n").dtr("pearl", "Review Starship installation"));
-        root.append(review.as(gtk.Widget));
+        actions.insert(review.as(gtk.Widget), -1);
         _ = gtk.Button.signals.clicked.connect(review, *View, reviewClicked, self, .{});
+        recovery.body.append(actions.as(gtk.Widget));
         self.review_label = w.label("", "pearl-secondary");
         self.review_label.setSelectable(1);
         self.review_label.setWrap(1);
-        root.append(self.review_label.as(gtk.Widget));
+        recovery.body.append(self.review_label.as(gtk.Widget));
         self.install_button = w.wrappingButton(@import("i18n").dtr("pearl", "Install reviewed Starship configuration and keep backup"));
         self.install_button.as(gtk.Widget).setSensitive(0);
-        root.append(self.install_button.as(gtk.Widget));
+        recovery.body.append(self.install_button.as(gtk.Widget));
         _ = gtk.Button.signals.clicked.connect(self.install_button, *View, installClicked, self, .{});
         self.status.setWrap(1);
         root.append(self.status.as(gtk.Widget));
@@ -125,10 +152,43 @@ pub const View = struct {
         _ = gtk.Editable.signals.changed.connect(search.as(gtk.Editable), *View, searched, self, .{});
         return self;
     }
+    const Disclosure = struct { expander: *gtk.Expander, body: *gtk.Box };
+    /// Nested disclosure sharing the settings section chrome inside the card.
+    fn disclosure(root: *gtk.Box, title: [*:0]const u8, summary: [*:0]const u8) !Disclosure {
+        const expander = gtk.Expander.new(null);
+        expander.as(gtk.Widget).addCssClass("settings-card");
+        expander.as(gtk.Widget).addCssClass("settings-section");
+        expander.as(gtk.Widget).addCssClass("profiles-group");
+        w.tagExpanderArrow(expander, "settings-section-arrow");
+        const heading = w.column(5);
+        heading.as(gtk.Widget).addCssClass("settings-section-heading");
+        heading.append(w.label(title, "pearl-section-title").as(gtk.Widget));
+        const summary_label = w.label(summary, "pearl-secondary");
+        heading.append(summary_label.as(gtk.Widget));
+        expander.setLabelWidget(heading.as(gtk.Widget));
+        w.name(expander.as(gtk.Widget), title);
+        const body = w.column(4);
+        body.as(gtk.Widget).addCssClass("profiles-group-body");
+        expander.setChild(body.as(gtk.Widget));
+        root.append(expander.as(gtk.Widget));
+        return .{ .expander = expander, .body = body };
+    }
     fn add(root: *gtk.Box, title: [:0]const u8, control: *gtk.Widget) void {
-        root.append(w.label(title, "settings-row-title").as(gtk.Widget));
-        root.append(control);
+        // Same label-left/control-right rhythm as the shared settings form rows.
+        const box = gtk.FlowBox.new();
+        box.setSelectionMode(.none);
+        box.setHomogeneous(0);
+        box.setMinChildrenPerLine(1);
+        box.setMaxChildrenPerLine(2);
+        box.setColumnSpacing(16);
+        box.setRowSpacing(8);
+        box.as(gtk.Widget).addCssClass("settings-form-row");
+        box.insert(w.label(title, "settings-row-title").as(gtk.Widget), -1);
+        control.setHalign(.end);
+        control.setValign(.center);
         w.name(control, title);
+        box.insert(control, -1);
+        root.append(box.as(gtk.Widget));
     }
     fn dropdown(choices: []const [*:0]const u8) *gtk.DropDown {
         var strings: [4]?[*:0]const u8 = @splat(null);
@@ -170,7 +230,19 @@ pub const View = struct {
     }
     fn searched(_: *gtk.Editable, self: *View) callconv(.c) void {
         const query = std.mem.span(self.search.as(gtk.Editable).getText());
-        for (self.rows, std.enums.values(profiles.Application)) |row, app| row.as(gtk.Widget).setVisible(@intFromBool(query.len == 0 or std.ascii.findIgnoreCase(@tagName(app), query) != null));
+        var shown: [group_total]bool = undefined;
+        @memset(&shown, false);
+        for (self.rows, std.enums.values(profiles.Application)) |row, app| {
+            const visible = query.len == 0 or std.ascii.findIgnoreCase(@tagName(app), query) != null;
+            row.as(gtk.Widget).setVisible(@intFromBool(visible));
+            if (visible) shown[@intFromEnum(adapters.group(app))] = true;
+        }
+        // Groups without matches disappear, and matches open their group so
+        // filtering never hides results inside a collapsed disclosure.
+        for (self.group_expanders, 0..) |expander, i| {
+            expander.as(gtk.Widget).setVisible(@intFromBool(shown[i]));
+            if (query.len > 0 and shown[i]) expander.setExpanded(1);
+        }
     }
     fn defaultsClicked(_: *gtk.Button, self: *View) callconv(.c) void {
         self.adoptDefaults() catch |err| self.status.setText(@errorName(err));
@@ -278,7 +350,7 @@ pub const View = struct {
         if (!self.filling and (self.shown == null or !std.mem.eql(u8, self.shown.?, text))) self.fill(text) catch |err| self.status.setText(@errorName(err));
         self.showStatus() catch |err| self.status.setText(@errorName(err));
         self.enabled.as(gtk.Widget).setSensitive(@intFromBool(self.editor.editable()));
-        self.status.setText(if (self.editor.application_command and self.editor.theme_error.len > 0) self.editor.theme_error.z() else self.editor.application_summary.z());
+        if (self.editor.application_command and self.editor.theme_error.len > 0) self.status.setText(self.editor.theme_error.z());
     }
     fn showStatus(self: *View) !void {
         const bytes = self.editor.application_status.slice();
@@ -288,8 +360,28 @@ pub const View = struct {
         const alloc = memory.allocator();
         const status = try std.json.parseFromSliceLeaky(profiles.Status, alloc, bytes, .{});
         for (status.targets, 0..) |target, i| {
-            self.details[i].setText(try std.fmt.allocPrintSentinel(alloc, "{s} · {s} · {s} · {s}{s}{s}\n{s}\n{s}", .{ @tagName(target.state), target.profile, target.origin, if (target.detected) "Detected" else "Not detected / manual setup", if (target.error_code != null) " · " else "", target.error_code orelse "", target.output, target.instructions }, 0));
+            const full = try std.fmt.allocPrintSentinel(alloc, "{s} · {s} · {s} · {s}{s}{s}\n{s}\n{s}", .{ @tagName(target.state), target.profile, target.origin, if (target.detected) "Detected" else "Not detected / manual setup", if (target.error_code != null) " · " else "", target.error_code orelse "", target.output, target.instructions }, 0);
+            // Compact one-line summary; the full status stays reachable as a tooltip.
+            const summary = if (target.error_code) |code|
+                try std.fmt.allocPrintSentinel(alloc, "{s} · {s} · {s}", .{ @tagName(target.state), target.profile, code }, 0)
+            else
+                try std.fmt.allocPrintSentinel(alloc, "{s} · {s}", .{ @tagName(target.state), target.profile }, 0);
+            self.details[i].setText(summary);
+            self.details[i].as(gtk.Widget).setTooltipText(full);
         }
+        var themed: usize = 0;
+        var attention: usize = 0;
+        for (status.targets) |target| switch (target.state) {
+            // Generated profiles that still need in-app activation are themed.
+            .generated, .activation_required, .applied => themed += 1,
+            .conflict, .failed, .unavailable => attention += 1,
+            else => {},
+        };
+        // One line at the card bottom; per-application detail lives in tooltips.
+        self.status.setText(if (attention > 0)
+            try std.fmt.allocPrintSentinel(alloc, "{d} applications · {d} need attention", .{ status.targets.len, attention }, 0)
+        else
+            try std.fmt.allocPrintSentinel(alloc, "{d} applications · {d} themed", .{ status.targets.len, themed }, 0));
         if (self.shown_status) |old| a.free(old);
         self.shown_status = try a.dupe(u8, bytes);
     }
