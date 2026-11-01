@@ -2,12 +2,13 @@
 const std = @import("std");
 const model = @import("preferences.zig");
 pub const Source = enum { ac, battery };
-pub const Field = enum { screen_off_seconds, suspend_seconds, dim, automatic_saver };
+pub const Field = enum { screen_off_seconds, lock_seconds, suspend_seconds, dim, automatic_saver };
 pub fn patch(alloc: std.mem.Allocator, current: model.Preferences, source: Source, field: Field, value: u32) ![]const u8 {
     var next = current;
     const timers = if (source == .ac) &next.idle.ac else &next.idle.battery;
     switch (field) {
         .screen_off_seconds => timers.screen_off_seconds = value,
+        .lock_seconds => timers.lock_seconds = value,
         .suspend_seconds => timers.suspend_seconds = value,
         .dim => {
             if (value > 1) return error.InvalidRequest;
