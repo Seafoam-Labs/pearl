@@ -43,6 +43,16 @@ fn mix(a: std.mem.Allocator, x: []const u8, y: []const u8, weight: u8) ![]const 
     }
     return std.fmt.allocPrint(a, "#{x:0>2}{x:0>2}{x:0>2}", .{ out[0], out[1], out[2] });
 }
+pub fn ensureContrast(a: std.mem.Allocator, color: []const u8, background: []const u8, min_ratio: f64) ![]const u8 {
+    if (contrast(color, background) >= min_ratio) return color;
+    const target: []const u8 = if (luminance(background) < 0.5) "#ffffff" else "#000000";
+    var weight: u8 = 10;
+    while (weight <= 90) : (weight += 10) {
+        const adjusted = try mix(a, color, target, weight);
+        if (contrast(adjusted, background) >= min_ratio) return adjusted;
+    }
+    return target;
+}
 fn default(a: std.mem.Allocator, v: *std.json.Value, authored: std.json.Value, key: []const u8, value: []const u8) !void {
     try model.set(a, v, key, if (authored.object.get(key)) |explicit| explicit.string else value);
 }
@@ -89,6 +99,7 @@ fn resolveVariant(a: std.mem.Allocator, authored: std.json.Value, variant: []con
     while (explicit.next()) |item| if (!std.mem.eql(u8, item.key_ptr.*, "terminal")) try model.set(a, &v, item.key_ptr.*, item.value_ptr.string);
     try default(a, &v, authored, "on_error", foreground(model.get(v, "error")));
     try default(a, &v, authored, "on_error_container", foreground(model.get(v, "error_container")));
+    try model.set(a, &v, "outline", try ensureContrast(a, model.get(v, "outline"), surface, 4.5));
     const pairs = [_][2][]const u8{ .{ "on_surface", "surface" }, .{ "on_surface", "surface_container_high" }, .{ "on_surface_variant", "surface_container" }, .{ "on_primary", "primary" }, .{ "on_primary_container", "primary_container" }, .{ "error", "error_container" }, .{ "on_secondary", "secondary" }, .{ "on_secondary_container", "secondary_container" }, .{ "on_tertiary", "tertiary" }, .{ "on_tertiary_container", "tertiary_container" }, .{ "on_hover", "hover" } };
     for (pairs) |pair| {
         const fg = model.get(v, pair[0]);
@@ -161,8 +172,16 @@ pub fn compile(a: std.mem.Allocator, bytes: []const u8, d: *model.Diagnostic) !D
     var base16 = model.object();
     var it = base.object.iterator();
     while (it.next()) |item| try base16.object.put(a, item.key_ptr.*, item.value_ptr.*);
-    for ([_][]const u8{ "base00", "base01", "base02", "base03", "base04", "base05", "base06", "base07" }, [_][]const u8{ "surface", "surface_container_low", "surface_container", "outline", "on_surface_variant", "on_surface", "on_surface", "on_surface" }) |key, role| try base16.object.put(a, key, try modes(a, model.get(dark, role), model.get(light, role)));
-    for ([_][]const u8{ "base08", "base0b", "base0a", "base0d", "base0e", "base0c" }, [_][]const u8{ "red", "green", "yellow", "blue", "magenta", "cyan" }) |key, name| try base16.object.put(a, key, try modes(a, model.get(td.object.get("normal").?, name), model.get(tl.object.get("normal").?, name)));
+    for ([_][]const u8{ "base00", "base01", "base02", "base03", "base04", "base05", "base06", "base07" }, [_][]const u8{ "surface", "surface_container_low", "surface_container", "outline", "on_surface_variant", "on_surface", "on_surface", "on_surface" }) |key, role| {
+        const dark_hex = try ensureContrast(a, model.get(dark, role), model.get(dark, "surface"), 4.5);
+        const light_hex = try ensureContrast(a, model.get(light, role), model.get(light, "surface"), 4.5);
+        try base16.object.put(a, key, try modes(a, dark_hex, light_hex));
+    }
+    for ([_][]const u8{ "base08", "base0b", "base0a", "base0d", "base0e", "base0c" }, [_][]const u8{ "red", "green", "yellow", "blue", "magenta", "cyan" }) |key, name| {
+        const dark_ansi = try ensureContrast(a, model.get(td.object.get("normal").?, name), model.get(dark, "surface"), 4.5);
+        const light_ansi = try ensureContrast(a, model.get(tl.object.get("normal").?, name), model.get(light, "surface"), 4.5);
+        try base16.object.put(a, key, try modes(a, dark_ansi, light_ansi));
+    }
     try full.object.put(a, "colors", resolved);
     try full.object.put(a, "base16", base16);
     // Matugen requires these transport ramps. They are inherited defaults, not
@@ -238,4 +257,19 @@ test "a light-only source supplies identical semantic and terminal colors in bot
     const full = try @import("package_model.zig").parse(std.json.Value, a, doc.render_json, 131072);
     for (full.object.get("colors").?.object.values()) |value| try std.testing.expectEqualStrings(value.object.get("dark").?.object.get("color").?.string, value.object.get("light").?.object.get("color").?.string);
     try std.testing.expect(std.mem.indexOf(u8, try shellCss(a, doc, false), "#d2e3d6") != null);
+}
+test "dark ANSI colors are lightened to meet contrast against the surface" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    var d: model.Diagnostic = .{};
+    const doc = try compile(a,
+        \\{"dark":{"surface":"#101c19","on_surface":"#e8f4e9","primary":"#a4dfb0","terminal":{"normal":{"red":"#1a0505","green":"#051a05","yellow":"#1a1a05","blue":"#05051a","magenta":"#1a051a","cyan":"#051a1a"}}}}
+    , &d);
+    const full = try @import("package_model.zig").parse(std.json.Value, a, doc.render_json, 131072);
+    const base16 = full.object.get("base16").?;
+    for ([_][]const u8{ "base08", "base0b", "base0a", "base0d", "base0e", "base0c" }) |key| {
+        const hex = base16.object.get(key).?.object.get("dark").?.object.get("color").?.string;
+        try std.testing.expect(contrast(hex, doc.dark.surface) >= 4.5);
+    }
 }
