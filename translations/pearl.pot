@@ -131,6 +131,10 @@ msgstr ""
 msgid "A profile applies immediately and stays selected after a restart."
 msgstr ""
 
+#: src/settings/scheduler_view.zig:425
+msgid "A profile takes at most 32 options."
+msgstr ""
+
 #: src/desktop/dock.zig:618
 msgid "A unique application identity is needed. Existing choices can be removed in Settings."
 msgstr ""
@@ -2743,7 +2747,7 @@ msgid "Full draft request"
 msgstr ""
 
 #: src/desktop/aqueous_settings.zig:292
-msgid "Full draft request (JSON). Collection editors: monitor_changes, custom_keybind_changes, window_rule_changes, snap_zone_changes, snap_layouts and default_snap_layout. See docs/AQUEOUS_SETTINGS.md for exact examples. System configuration stays read-only unless create_user_override is explicitly true."
+msgid "Full draft request (JSON). Collection editors: monitor_changes, custom_keybind_changes, window_rule_changes, snap_zone_changes, snap_layouts and default_snap_layout. See docs/AQUEOUS_SETTINGS.md for exact examples. Apply saves personal copies of changed system defaults."
 msgstr ""
 
 #: src/desktop/settings.zig:131
