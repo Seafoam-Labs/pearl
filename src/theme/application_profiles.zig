@@ -161,6 +161,21 @@ pub fn renderWithContext(a: std.mem.Allocator, captured: provider.Captured, snap
             try color.object.put(a, "default", selected);
         }
     }
+    // Enforce minimum contrast for base16 syntax colors against the surface.
+    const variant_tag = @tagName(snapshot.variant);
+    if (document.object.get("colors")) |colors_section| if (colors_section.object.get("surface")) |surface_entry| if (surface_entry.object.get(variant_tag)) |surface_mode| {
+        const surface_hex = if (surface_mode.object.get("color")) |col| col.string else return error.InvalidRenderData;
+        if (document.object.getPtr("base16")) |base16_ptr| {
+            for ([_][]const u8{ "base03", "base08", "base0a", "base0b", "base0c", "base0d", "base0e" }) |b16_key| {
+                if (base16_ptr.object.getPtr(b16_key)) |entry| if (entry.object.getPtr(variant_tag)) |mode| {
+                    if (mode.object.getPtr("color")) |color_val| {
+                        const adjusted = try @import("palette_resolver.zig").ensureContrast(a, color_val.string, surface_hex, 4.5);
+                        color_val.* = .{ .string = adjusted };
+                    }
+                };
+            }
+        }
+    };
     try document.object.put(a, "mode", .{ .string = @tagName(snapshot.variant) });
     try document.object.put(a, "is_dark_mode", .{ .bool = snapshot.variant == .dark });
     try io.atomic(json, try std.json.Stringify.valueAlloc(a, document, .{}), true);
@@ -606,6 +621,42 @@ test "Matugen full JSON renders exact colors through private config and caches t
     const digest = try save(a, root, snapshot);
     const loaded = try load(a, root, digest);
     try std.testing.expectEqualStrings(captured.templates[0].bytes, loaded.profiles[0].templates[0].bytes);
+}
+
+test "rendered base16 syntax colors stay readable when Matugen emits black" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    const root = try a.dupeSentinel(u8, "/tmp/pearl-contrast-XXXXXX", 0);
+    try std.testing.expect(mkdtemp(root) != null);
+    defer @import("install.zig").removeTree(a, root) catch {};
+    const cancel = gio.Cancellable.new();
+    defer cancel.unref();
+    // Matugen derives base16 from the wallpaper and can emit pure black for
+    // every ANSI slot, which is invisible on a dark editor surface.
+    var fixture = try @import("package_model.zig").parse(std.json.Value, a, @embedFile("matugen_fixture"), 131072);
+    const syntax_keys = [_][]const u8{ "base03", "base08", "base0a", "base0b", "base0c", "base0d", "base0e" };
+    for (syntax_keys) |key| {
+        const entry = fixture.object.get("base16").?.object.getPtr(key).?;
+        for ([_][]const u8{ "dark", "light", "default" }) |mode| {
+            if (entry.object.getPtr(mode)) |value| try value.object.put(a, "color", .{ .string = "#000000" });
+        }
+    }
+    const descriptor: profiles.Descriptor = .{ .schema_version = 1, .id = "contrast.zed", .application = .zed, .adapter = .zed, .name = "Contrast", .author = "Pearl", .license = "CC0-1.0", .source = "https://example.org/contrast", .asset_version = "1.0.0", .variants = &.{ .dark, .light }, .templates = &.{.{ .path = "zed.in", .output = "theme.json" }} };
+    var template: std.ArrayList(u8) = .empty;
+    try template.appendSlice(a, "{\"themes\":[{\"name\":\"Pearl contrast\",\"appearance\":\"dark\",\"style\":{\"background\":\"{{colors.surface.dark.hex}}\"");
+    for (syntax_keys) |key| try template.appendSlice(a, try std.fmt.allocPrint(a, ",\"{s}\":\"{{{{base16.{s}.dark.hex}}}}\"", .{ key, key }));
+    try template.appendSlice(a, "}}]}");
+    const captured: provider.Captured = .{ .application = .zed, .id = descriptor.id, .descriptor = descriptor, .templates = &.{.{ .path = "theme.json", .bytes = template.items }} };
+    const snapshot: provider.Snapshot = .{ .render_json = try std.json.Stringify.valueAlloc(a, fixture, .{}), .profiles = &.{captured} };
+    const result = try render(a, captured, snapshot, root, cancel);
+    const rendered = try std.json.parseFromSliceLeaky(std.json.Value, a, result[0].bytes, .{});
+    const style = rendered.object.get("themes").?.array.items[0].object.get("style").?;
+    const surface = style.object.get("background").?.string;
+    for (syntax_keys) |key| {
+        const ratio = @import("palette_resolver.zig").contrast(style.object.get(key).?.string, surface);
+        try std.testing.expect(ratio >= 4.5);
+    }
 }
 
 test "all attributed Seafoam templates render supported variants and Starship review preserves backups" {

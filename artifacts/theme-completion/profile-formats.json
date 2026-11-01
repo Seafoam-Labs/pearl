@@ -23,13 +23,13 @@
       "profile": "seafoam.starship",
       "variant": "dark",
       "format": ".toml",
-      "sha256": "06a5a18b1e36e070730f0e922915efbe119b278272a3cb777ad9373081424aae"
+      "sha256": "3c0d4e5dbed063d68ff215160106f5ba5ef079354f25de4412cf92b20bd301d1"
     },
     {
       "profile": "seafoam.starship",
       "variant": "light",
       "format": ".toml",
-      "sha256": "32e4b5d2d08b1bf67173cc921e4e5d33c961cd183b8cbb6749935b4388a2a014"
+      "sha256": "9498ac363d03a6385b275f12fa1ab26398d1cdaf7dd68735228da7cc9b04be41"
     },
     {
       "profile": "seafoam.steam",
@@ -41,13 +41,13 @@
       "profile": "seafoam.zed",
       "variant": "dark",
       "format": ".json",
-      "sha256": "e7f26e7bfde2f1eba97d3fbcc2b86f4bf33f13c4541dee603837aeff401fc8f5"
+      "sha256": "279185aebc11f66542cda2ed4818d711d83867d1e3f1eef0814c30eac5d0bbee"
     },
     {
       "profile": "seafoam.zed",
       "variant": "light",
       "format": ".json",
-      "sha256": "e7f26e7bfde2f1eba97d3fbcc2b86f4bf33f13c4541dee603837aeff401fc8f5"
+      "sha256": "420a7487c45d6bed346cb6e2c157ae6ef433982f9686079e4d9e31b81d0b3627"
     }
   ]
 }
