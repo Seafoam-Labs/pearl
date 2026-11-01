@@ -9,6 +9,9 @@ if op=='operation-status' and fault in ('lost-and-unqueryable','unknown'):
  id=args[args.index('--operation-id')+1]
  print(json.dumps(dict(ok=True,protocol=1,result_version=1,operation_id=id,receipt='unknown',reason='fixture-unavailable',save='uncertain',reload='unknown',display='unknown',retry_allowed=False)));sys.exit(0)
 request=sys.stdin.buffer.read() if '--request' in args else None
+if op in ('validate','apply') and fault in ('system-read-only','require-user-override'):
+ if fault=='system-read-only' or json.loads(request).get('create_user_override') is not True:
+  print(json.dumps(dict(ok=False,protocol=1,code='system_config_read_only',message='SystemConfigReadOnly')));sys.exit(1)
 if op=='apply' and fault in ('admission-busy','admission-busy-once','legacy-admission-busy','lost-admission-busy'):
  # Hold the real shared lock only around Apply admission, after validation.
  lock=Path(os.environ['XDG_STATE_HOME'])/'aqueous/config-writer/lock'

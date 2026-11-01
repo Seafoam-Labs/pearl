@@ -116,8 +116,10 @@ an unknown semantic impact still blocks persistence. Pure comment edits can be
 saved without a display lease when the helper classifies them as having no runtime
 effect. Unknown effects never become a runtime-only save by assumption.
 
-System configuration requires an explicit `"create_user_override": true` in the
-draft. Multi-file backups are written by the helper below
+The user-session backend adds `"create_user_override": true` to validation and
+Apply requests, including retained drafts. Apply creates personal copies of
+changed system defaults; no JSON edit or administrator access is required.
+The helper keeps system files unchanged. Multi-file backups are written below
 `$XDG_STATE_HOME/pearl/aqueous-backups/<original-generation>/`. Advanced cannot
 redirect that backup directory.
 

@@ -11,6 +11,7 @@ from test_aqueous_settings import state,settled,stage
 
 def main():
  p=argparse.ArgumentParser(description=__doc__)
+ p.add_argument('--settings',type=Path,help='Instrumented standalone Settings frontend for shared-error recovery')
  p.add_argument('--pearl',type=Path,default=ROOT/'zig-out/bin/pearl');p.add_argument('--ctl',type=Path,default=ROOT/'zig-out/bin/pearlctl');p.add_argument('--prefix',type=Path,default=fixture_prefix());p.add_argument('--output',type=Path,default=ROOT/'artifacts/aqueous-082/integration');args=p.parse_args();args.pearl=args.pearl.resolve();args.ctl=args.ctl.resolve();args.prefix=args.prefix.resolve();args.output=args.output.resolve();args.output.mkdir(parents=True,exist_ok=True)
  checks={};report=dict(status='running',checks=checks,pearl_sha256=hashlib.sha256(args.pearl.read_bytes()).hexdigest(),baseline=json.loads((args.prefix/'metadata.json').read_text()))
  tools=tempfile.TemporaryDirectory(prefix='pearl-instance-tools-');tool_dir=Path(tools.name)
@@ -55,6 +56,52 @@ def main():
    checks['structured-runtime-save-and-review']=True
    record=Path(s.env['XDG_STATE_HOME'])/'pearl/aqueous-operations/pending.json';assert json.loads(record.read_text())['pending'] is False
    checks['durable-pending-record-resolved']=True
+   # A retained failure used to block every page sharing this draft. Retry the
+   # same input + layout edits through the common backend; the old draft carries
+   # no override flag, while both Validate and Apply must now supply it.
+   gui=None
+   if args.settings:
+    from test_settings_app import probe,request,keys
+    from test_settings_appearance import click,type_text
+    for output in ipc.outputs().values():
+     s.run(['wlr-randr','--output',output['name'],'--custom-mode','1600x1100@60Hz'])
+    rules=Path(s.env['XDG_CONFIG_HOME'])/'aqueous/rules.toml';original_rules=rules.read_text()
+    rules.write_text(original_rules+'\n[[window]]\napp_id="org.aqueous.Pearl.Settings"\nfloating=true\nwidth=1040\nheight=850\n')
+    ipc.call('command',action='session.reload',fields={})
+    ctl(s,args.ctl,'aqueous','refresh');settled(s,args.ctl)
+    gui=s.child('settings-overrides',[args.settings.resolve(),'--page','aqueous','--section','input'],G_DEBUG='fatal-warnings')
+    gui.expect('event=settings-window-created')
+    wait_for(lambda:probe(s,ipc)['aqueous']['ready'])
+    click(s,ipc,'input.repeat_rate');type_text(s,'31');keys(s,'Tab')
+    wait_for(lambda:state(s,args.ctl)['draft'] and not probe(s,ipc)['aqueous']['dirty'])
+    assert request(s,ipc,page='aqueous',section='layouts')['ok']
+    wait_for(lambda:probe(s,ipc)['section']=='layouts')
+    click(s,ipc,'layout.gaps_outer');type_text(s,'20');keys(s,'Tab')
+    wait_for(lambda:not probe(s,ipc)['aqueous']['dirty'])
+   else:
+    stage(s,args.ctl,changes=[dict(id='input.repeat_rate',value=31),dict(id='layout.gaps_outer',value=20)])
+   fault.write_text('system-read-only')
+   ctl(s,args.ctl,'aqueous','apply');v=settled(s,args.ctl)
+   assert v['err']=='HelperRejected' and v['detail']=='system_config_read_only' and v['draft'],v
+   if gui:wait_for(lambda:probe(s,ipc)['aqueous']['err']=='BackendOperationFailed')
+   fault.write_text('require-user-override')
+   ctl(s,args.ctl,'aqueous','validate');v=settled(s,args.ctl)
+   assert v['outcome']=='validated' and v['err'] is None and v['draft'],v
+   if gui:
+    try:wait_for(lambda:probe(s,ipc)['aqueous']['err'] is None)
+    except TimeoutError:raise AssertionError(('frontend after successful validation',probe(s,ipc)['aqueous'],state(s,args.ctl)))
+   ctl(s,args.ctl,'aqueous','apply');v=settled(s,args.ctl)
+   assert v['outcome']=='saved' and v['reload']=='applied' and not v['draft'] and v['err'] is None,v
+   assert state(s,args.ctl,'input.repeat_rate')['value']==31
+   assert state(s,args.ctl,'layout.gaps_outer')['value']==20
+   if gui:
+    wait_for(lambda:probe(s,ipc)['aqueous']['ready'] and probe(s,ipc)['aqueous']['err'] is None)
+    gui.stop()
+    rules.write_text(original_rules)
+    ctl(s,args.ctl,'aqueous','refresh');settled(s,args.ctl)
+    checks['standalone-cross-page-edits-and-remote-error-recovery']=True
+   fault.write_text('')
+   checks['personal-overrides-authorized-for-validation-save-and-retained-mixed-drafts']=True
    # Replacing a package executable leaves the live peer's /proc/exe deleted.
    replacement=tool_dir/'aqueous.next';shutil.copy2(args.prefix/'bin/aqueous',replacement);replacement.replace(tool_dir/'aqueous')
    assert os.readlink(f'/proc/{s.compositor.proc.pid}/exe').endswith(' (deleted)')

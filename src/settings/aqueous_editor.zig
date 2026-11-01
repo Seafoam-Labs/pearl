@@ -455,6 +455,18 @@ pub const Editor = struct {
                 self.needs_state = true;
                 return;
             }
+            if (mode == .get and std.mem.eql(u8, code, "StaleDraft")) {
+                // Another operation can publish a new report between state
+                // discovery and document.get. Re-read its revisions without
+                // turning an optimistic read race into a persistent UI error.
+                // Upload/action conflicts still take the failure path below.
+                self.queue = @splat(null);
+                self.synced_revision = null;
+                self.synced_version = null;
+                self.ready = false;
+                self.needs_state = true;
+                return;
+            }
             @memset(&self.detail, 0);
             @memcpy(self.detail[0..@min(code.len, 256)], code[0..@min(code.len, 256)]);
             if (mode == .begin or mode == .write or mode == .finish) {
@@ -519,6 +531,15 @@ pub const Editor = struct {
                 self.seconds = state.seconds;
                 self.owns_preview = state.owns_preview;
                 inline for (.{ "outcome", "reload_state", "toolkit", "save_state", "receipt", "display_state", "impact_route", "unresolved" }) |field| @field(self, field) = @field(state, field);
+                // A successful operation from another settings peer must also
+                // retire the old backend failure in this window. Keep local
+                // transport/edit errors until their own recovery completes.
+                if (self.err) |err| {
+                    if (err == error.BackendOperationFailed) {
+                        self.err = null;
+                        self.detail = @splat(0);
+                    }
+                }
                 if (state.error_code) |code| {
                     self.err = error.BackendOperationFailed;
                     @memset(&self.detail, 0);

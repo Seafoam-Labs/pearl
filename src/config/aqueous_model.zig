@@ -122,7 +122,7 @@ pub fn request(a: std.mem.Allocator, base: Value, bytes: []const u8, backups: []
     if (v != .object) return error.InvalidRequest;
     if (!equal(get(v, "expected_generation"), get(base, "generation"))) return error.StaleDraft;
     if (!equal(get(v, "protocol"), .{ .integer = 1 })) return error.UnsupportedHelper;
-    // Never let advanced edits redirect backups or silently opt into system overrides.
+    // Never let advanced edits redirect the backend's backup directory.
     const allowed = [_][]const u8{ "protocol", "expected_generation", "changes", "raw_files", "monitor_changes", "custom_keybind_changes", "window_rule_changes", "snap_zone_changes", "snap_layouts", "default_snap_layout", "normalize_stacking", "sync_cursor", "sync_typography", "create_user_override", "collection_preconditions", "display_declaration_changes" };
     var it = v.object.iterator();
     while (it.next()) |e| {
@@ -146,6 +146,33 @@ pub fn request(a: std.mem.Allocator, base: Value, bytes: []const u8, backups: []
     try @import("aqueous_display_mutations.zig").check(base, v);
     try v.object.put(a, "backup_dir", .{ .string = backups });
     return v;
+}
+
+/// Apply's user-session scope authorizes personal copies of system defaults.
+/// Normalize at the backend boundary so old drafts work without inserting
+/// housekeeping flags into the frontend's edit counts or shared-page review.
+pub fn userRequest(a: std.mem.Allocator, base: Value, bytes: []const u8, backups: []const u8) !Value {
+    var v = try request(a, base, bytes, backups);
+    try v.object.put(a, "create_user_override", .{ .bool = true });
+    return v;
+}
+
+test "user session requests authorize personal overrides without changing retained edits" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    const base = try parse(a, "{\"generation\":\"123456789abcdef0\",\"fields\":[{\"id\":\"input.repeat_rate\",\"file\":\"input\"}]}", 4096);
+    for ([_][]const u8{
+        "{\"protocol\":1,\"expected_generation\":\"123456789abcdef0\",\"changes\":[{\"id\":\"input.repeat_rate\",\"value\":31}],\"raw_files\":{\"wm\":\"# retained edit\\n\"}}",
+        "{\"protocol\":1,\"expected_generation\":\"123456789abcdef0\",\"create_user_override\":false,\"window_rule_changes\":[]}",
+    }) |bytes| {
+        const original = try parse(a, bytes, 4096);
+        const prepared = try userRequest(a, base, bytes, "/private/backups");
+        try std.testing.expectEqual(Value{ .bool = true }, get(prepared, "create_user_override"));
+        for ([_][]const u8{ "expected_generation", "changes", "raw_files", "window_rule_changes" }) |key|
+            try std.testing.expect(equal(get(original, key), get(prepared, key)));
+        try std.testing.expectEqualStrings("/private/backups", str(get(prepared, "backup_dir")));
+    }
 }
 pub fn displayChanged(base: Value, candidate: Value) bool {
     if (!equal(get(base, "monitors"), get(candidate, "monitors"))) return true;

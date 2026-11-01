@@ -289,7 +289,7 @@ pub fn ViewFor(comptime ClientType: type) type {
             self.form_signals.add(self.raw_buffer.?.as(object.Object), gtk.TextBuffer.signals.changed.connect(self.raw_buffer.?, *Self, rawEdited, self, .{}));
             self.form_signals.add(self.raw_file.?.as(object.Object), object.Object.signals.notify.connect(self.raw_file.?.as(object.Object), *Self, rawSelected, self, .{ .detail = "selected" }));
             const request_host = try Layout.group(self, advanced, .request);
-            request_host.append(w.label(@import("i18n").dtr("pearl", "Full draft request (JSON). Collection editors: monitor_changes, custom_keybind_changes, window_rule_changes, snap_zone_changes, snap_layouts and default_snap_layout. See docs/AQUEOUS_SETTINGS.md for exact examples. System configuration stays read-only unless create_user_override is explicitly true."), "pearl-secondary").as(gtk.Widget));
+            request_host.append(w.label(@import("i18n").dtr("pearl", "Full draft request (JSON). Collection editors: monitor_changes, custom_keybind_changes, window_rule_changes, snap_zone_changes, snap_layouts and default_snap_layout. See docs/AQUEOUS_SETTINGS.md for exact examples. Apply saves personal copies of changed system defaults."), "pearl-secondary").as(gtk.Widget));
             self.request_buffer = textArea(request_host, "Aqueous draft request JSON", 280);
             try self.layout.controls.append(alloc, .{ .id = "aqueous.request", .widget = request_host.as(gtk.Widget).getLastChild().? });
             self.request_buffer.?.setText(self.z(self.client.draft orelse try self.client.emptyDraft(alloc)), -1);

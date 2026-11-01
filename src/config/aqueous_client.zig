@@ -513,7 +513,7 @@ pub const Client = struct {
             return;
         }
         if (!caps.apply) return error.HelperUpgradeRequired;
-        var req = try model.request(alloc, j.base, j.draft.?, j.owner.backups.?);
+        var req = try model.userRequest(alloc, j.base, j.draft.?, j.owner.backups.?);
         if (model.get(req, "display_declaration_changes") != .null and !caps.display_mutations) return error.DisplayMutationCapabilityUnavailable;
         const collection_only = try transactions.prepare(alloc, j.base, &req, caps);
         const candidate = try Document.create(try call(j, "validate", try std.json.Stringify.valueAlloc(alloc, req, .{})));
