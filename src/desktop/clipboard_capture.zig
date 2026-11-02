@@ -12,6 +12,8 @@ const apps = @import("apps.zig");
 const Clipboard = @import("../services/clipboard.zig").Clipboard;
 const Capture = @import("../services/capture.zig").Capture;
 const history = @import("../services/clipboard_policy.zig");
+const presentation = @import("../services/clipboard/presentation.zig");
+const history_limit = presentation.capacity;
 const test_hooks = @import("build_options").test_hooks;
 const a = std.heap.c_allocator;
 const Action = enum { take, region, window, cancel, save, copy, clear };
@@ -66,12 +68,13 @@ pub const View = struct {
     picture: *gtk.Picture,
     buttons: std.ArrayList(*Button) = .empty,
     rows: std.ArrayList(*Row) = .empty,
-    records: [history.entries_limit]Record = undefined,
+    records: [history_limit]Record = undefined,
     record_count: usize = 0,
-    visible: [history.entries_limit]usize = undefined,
+    visible: [history_limit]usize = undefined,
     visible_count: usize = 0,
     query: ?[:0]u8 = null,
     composing: bool = false,
+    redacting: bool = false,
     stamp: u64 = 0,
     image_generation: u64 = 0,
     connections: [8]struct { instance: *object.Object, id: c_ulong } = undefined,
@@ -229,7 +232,10 @@ pub const View = struct {
         clearButtons(&self.buttons);
         self.buttons.deinit(a);
         self.freeRecords();
-        if (self.query) |query| a.free(query);
+        if (self.query) |query| {
+            std.crypto.secureZero(u8, query);
+            a.free(query);
+        }
         self.selection.unref();
         self.strings.unref();
         a.destroy(self);
@@ -253,6 +259,7 @@ pub const View = struct {
     }
     fn report(label: *gtk.Label, err: anyerror) void {
         label.setText(switch (err) {
+            error.Busy => @import("i18n").dtr("pearl", "Clipboard storage is busy. Try again."),
             error.InvalidRegion => @import("i18n").dtr("pearl", "Enter a region inside this output: x,y,width,height"),
             error.Conflict => @import("i18n").dtr("pearl", "File already exists; choose another path using pearlctl"),
             else => @import("i18n").dtr("pearl", "Action unavailable or failed. Try again."),
@@ -270,15 +277,14 @@ pub const View = struct {
             .cancel => self.capture.cancel(),
             .save => try self.capture.save(self.capture.generation, null),
             .copy => try self.capture.copy(self.clipboard, self.capture.generation),
-            .clear => self.clipboard.clear(),
+            .clear => try self.clipboard.clear(),
         }
     }
     fn entryAt(self: *const View, position: c_uint) ?u64 {
-        if (position >= self.visible_count) return null;
-        return self.records[self.visible[position]].id;
+        return presentation.entryId(self.records[0..self.record_count], self.visible[0..self.visible_count], position);
     }
     fn recordAt(self: *const View, position: c_uint) ?*const Record {
-        if (position >= self.visible_count) return null;
+        if (position >= self.visible_count or self.visible[position] >= self.record_count) return null;
         return &self.records[self.visible[position]];
     }
     fn rowAt(self: *const View, item: *gtk.ListItem) ?*Row {
@@ -287,11 +293,14 @@ pub const View = struct {
     }
     fn cursor(self: *View) Cursor {
         const position = self.selection.getSelected();
-        if (position >= self.visible_count) return .{};
-        return .{ .id = self.records[self.visible[position]].id, .position = position };
+        return .{ .id = self.entryAt(position) orelse return .{}, .position = position };
     }
     fn changed(_: *gtk.SearchEntry, self: *View) callconv(.c) void {
-        if (self.query) |query| a.free(query);
+        if (self.redacting) return;
+        if (self.query) |query| {
+            std.crypto.secureZero(u8, query);
+            a.free(query);
+        }
         self.query = apps.fold(a, std.mem.span(self.search.as(gtk.Editable).getText())) catch null;
         self.publish(.{});
     }
@@ -308,12 +317,9 @@ pub const View = struct {
     fn key(_: *gtk.EventControllerKey, value: c_uint, _: c_uint, _: gdk.ModifierType, self: *View) callconv(.c) c_int {
         switch (value) {
             0xff52, 0xff54 => {
-                if (self.visible_count == 0) return 1;
-                const last: c_uint = @intCast(self.visible_count - 1);
-                const old = @min(self.selection.getSelected(), last);
-                const position = if (value == 0xff54) @min(old + 1, last) else old -| 1;
-                self.selection.setSelected(position);
-                self.list.scrollTo(position, .{}, null);
+                const position = presentation.navigate(self.selection.getSelected(), self.visible_count, value == 0xff54) orelse return 1;
+                self.selection.setSelected(@intCast(position));
+                self.list.scrollTo(@intCast(position), .{}, null);
                 return 1;
             },
             // Delete removes the entry instead of deleting a character of the filter.
@@ -391,6 +397,8 @@ pub const View = struct {
     }
     fn freeRecords(self: *View) void {
         for (self.records[0..self.record_count]) |*record| {
+            std.crypto.secureZero(u8, record.label);
+            std.crypto.secureZero(u8, record.folded);
             a.free(record.label);
             a.free(record.folded);
             if (record.image) |image| image.unref();
@@ -399,7 +407,7 @@ pub const View = struct {
     }
     fn rebuild(self: *View, keep: Cursor) void {
         self.freeRecords();
-        if (!self.clipboard.locked) for (self.clipboard.entries.items) |entry| {
+        for (self.clipboard.entries()) |entry| {
             if (self.record_count == self.records.len) break;
             const label = history.preview(a, if (entry.kind == .text) entry.bytes else @import("i18n").dtr("pearl", "PNG image")) catch continue;
             const folded = apps.fold(a, label) catch {
@@ -408,28 +416,23 @@ pub const View = struct {
             };
             self.records[self.record_count] = .{ .id = entry.id, .label = label, .folded = folded, .image = if (entry.kind == .png) decode(entry.bytes) else null };
             self.record_count += 1;
-        };
+        }
         self.publish(keep);
     }
     fn publish(self: *View, keep: Cursor) void {
-        self.visible_count = 0;
-        for (self.records[0..self.record_count], 0..) |*record, index| {
-            if (self.query) |query| if (query.len > 0 and std.mem.indexOf(u8, record.folded, query) == null) continue;
-            self.visible[self.visible_count] = index;
-            self.visible_count += 1;
+        if (!self.clipboard.accessible()) {
+            self.redact();
+            return;
         }
-        var values: [history.entries_limit + 1:null]?[*:0]const u8 = @splat(null);
-        var selected: ?c_uint = null;
+        self.visible_count = presentation.filter(self.records[0..self.record_count], self.query orelse "", &self.visible).len;
+        var values: [history_limit + 1:null]?[*:0]const u8 = @splat(null);
         for (self.visible[0..self.visible_count], 0..) |index, position| {
             values[position] = self.records[index].label;
-            if (keep.id) |id| {
-                if (self.records[index].id == id) selected = @intCast(position);
-            }
         }
         self.strings.splice(0, self.strings.as(gio.ListModel).getNItems(), @ptrCast(&values));
-        const last: c_uint = if (self.visible_count == 0) 0 else @intCast(self.visible_count - 1);
-        self.selection.setSelected(selected orelse @min(keep.position, last));
-        self.hint.setText(if (self.record_count == 0) @import("i18n").dtr("pearl", "Copy text or a PNG image to start. History is cleared when locking.") else @import("i18n").dtr("pearl", "No matching entries"));
+        const selected = presentation.selection(self.records[0..self.record_count], self.visible[0..self.visible_count], keep.id, keep.position);
+        self.selection.setSelected(if (selected) |position| @intCast(position) else std.math.maxInt(c_uint));
+        self.hint.setText(if (self.record_count == 0) @import("i18n").dtr("pearl", "Copy text or a PNG image to start. Text can be restored for seven days. Locking hides history; PNG images stay in memory.") else @import("i18n").dtr("pearl", "No matching entries"));
         self.hint.as(gtk.Widget).setVisible(@intFromBool(self.visible_count == 0));
     }
     fn updateWindows(self: *View) void {
@@ -471,7 +474,7 @@ pub const View = struct {
             .take, .region => !self.capture.locked and !busy and self.capture.manager != null,
             .save, .copy => !self.capture.locked and self.capture.image != null and !busy,
             .cancel => busy,
-            .clear => !self.clipboard.locked and self.clipboard.entries.items.len > 0,
+            .clear => self.clipboard.accessible() and self.clipboard.entries().len > 0,
         }));
         if (self.capture.image == null) {
             self.picture.setPaintable(null);
@@ -487,12 +490,34 @@ pub const View = struct {
             }
             self.image_generation = self.capture.generation;
         }
-        var hash = std.hash.Wyhash.init(@intFromBool(self.clipboard.locked));
-        for (self.clipboard.entries.items) |entry| hash.update(std.mem.asBytes(&entry.id));
-        const stamp = hash.final();
+        const stamp = presentation.stamp(self.clipboard.entries(), self.clipboard.accessible());
         if (stamp == self.stamp) return;
         self.stamp = stamp;
         self.rebuild(self.cursor());
+    }
+    /// Called synchronously when a privacy gate closes, including from a UI
+    /// callback. Keep the view alive until normal reconciliation destroys it.
+    pub fn redact(self: *View) void {
+        self.redacting = true;
+        defer self.redacting = false;
+        self.composing = false;
+        if (self.query) |query| {
+            std.crypto.secureZero(u8, query);
+            a.free(query);
+            self.query = null;
+        }
+        self.search.as(gtk.Editable).setText("");
+        self.strings.splice(0, self.strings.as(gio.ListModel).getNItems(), null);
+        for (self.rows.items) |row| {
+            row.label.setText("");
+            row.image.setPaintable(null);
+        }
+        self.freeRecords();
+        self.visible_count = 0;
+        self.stamp = presentation.stamp(&.{}, false);
+        self.clipboard_info.setText("");
+        self.hint.setText(@import("i18n").dtr("pearl", "History is hidden while clipboard access is paused"));
+        self.hint.as(gtk.Widget).setVisible(1);
     }
     /// Compiled only when called by the private integration control hook.
     pub fn testReport(self: *View, alloc: std.mem.Allocator, root: *gtk.Widget) ![]const u8 {

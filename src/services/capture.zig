@@ -407,15 +407,9 @@ pub const Capture = struct {
         if (self.locked) return error.Locked;
         if (generation != self.generation) return error.Stale;
         const bytes = self.image orelse return error.Unavailable;
-        try history.add(.png, bytes);
-        // A duplicate may already exist deeper in history.
-        for (history.entries.items) |e| if (e.kind == .png and std.mem.eql(u8, e.bytes, bytes)) {
-            try history.select(e.id);
-            self.message = "Screenshot copied";
-            self.changed(self.context);
-            return;
-        };
-        return error.InvalidPayload;
+        try history.copyPng(bytes);
+        self.message = "Screenshot copied";
+        self.changed(self.context);
     }
     pub fn save(self: *Capture, generation: u64, path: ?[]const u8) !void {
         if (self.locked) return error.Locked;

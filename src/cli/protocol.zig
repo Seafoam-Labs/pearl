@@ -3,7 +3,7 @@ const std = @import("std");
 const e = @import("../aqueous/entities.zig");
 pub const settings_navigation = @import("../desktop/settings_navigation.zig");
 pub const Edge = @import("../ui/surfaces/policy.zig").Edge;
-pub const max_frame = 8192;
+pub const max_frame = @import("frame.zig").max_frame;
 pub const ConnectivityService = enum { network, bluetooth };
 pub const ConnectivityAction = enum { scan, connect, connect_saved, disconnect, enable, disable, cancel, pair, trust, untrust, discover, stop_discovery };
 pub const SessionAction = enum { dnd_on, dnd_off, clear_history, dismiss, invoke, select, play_pause, play, pause, stop, next, previous, seek, tray_activate, tray_secondary, tray_menu, tray_click };
@@ -33,6 +33,9 @@ pub const Request = struct {
     delta: ?i16 = null,
     profile: ?u8 = null,
     offset: ?u16 = null,
+    limit: ?u8 = null,
+    instance: ?[]const u8 = null,
+    operation: ?u64 = null,
     output: ?[]const u8 = null,
     page: ?settings_navigation.Route = null,
     section: ?[]const u8 = null,
@@ -98,10 +101,13 @@ pub fn parse(a: std.mem.Allocator, bytes: []const u8) !Request {
             .assistant_status, .assistant_show, .assistant_stop, .assistant_clear, .assistant_release, .assistant_cancel, .night_light_status => &[_][]const u8{},
             .night_light_action => &[_][]const u8{"text"},
             .lifecycle_status, .aqueous_reload, .aqueous_keep, .aqueous_revert, .aqueous_rebase, .aqueous_refresh, .aqueous_validate, .aqueous_apply, .aqueous_discard, .preferences_status, .preferences_reload, .status, .report, .popup_hide, .launcher_hide, .quit => &[_][]const u8{},
-            .clipboard_status, .clipboard_clear, .capture_status, .capture_cancel => &[_][]const u8{},
+            .clipboard_status => &[_][]const u8{ "offset", "limit", "revision", "instance", "operation" },
+            .clipboard_clear => &[_][]const u8{"instance"},
+            .capture_status, .capture_cancel => &[_][]const u8{},
             .dock_pin, .dock_unpin => &[_][]const u8{ "output", "text" },
             .dock_show, .dock_hide, .clipboard_show, .clipboard_toggle, .capture_show, .capture_output => &[_][]const u8{"output"},
-            .clipboard_delete, .clipboard_select, .capture_copy => &[_][]const u8{"generation"},
+            .clipboard_delete, .clipboard_select => &[_][]const u8{ "generation", "instance" },
+            .capture_copy => &[_][]const u8{"generation"},
             .capture_save => &[_][]const u8{ "generation", "path" },
             .wm_action => &[_][]const u8{"text"},
             .capture_window => &[_][]const u8{"text"},
@@ -152,7 +158,14 @@ pub fn parse(a: std.mem.Allocator, bytes: []const u8) !Request {
         if (value.object.contains("activation") and r.activation == null) return error.InvalidRequest;
         if (r.activation) |token| if (token.len == 0 or token.len > 4096 or std.mem.indexOfScalar(u8, token, 0) != null) return error.InvalidRequest;
     }
+    if (r.instance) |instance| e.sessionToken(instance) catch return error.InvalidRequest;
+    if (value.object.contains("instance") and r.instance == null) return error.InvalidRequest;
     switch (r.op) {
+        .clipboard_status => {
+            inline for (.{ "offset", "limit", "revision", "operation" }) |field| if (value.object.contains(field) and @field(r, field) == null) return error.InvalidRequest;
+            if ((r.offset orelse 0) > 100 or (r.limit orelse 20) == 0 or (r.limit orelse 20) > 20) return error.InvalidRequest;
+            if (r.operation) |operation| if (operation == 0 or r.instance == null) return error.InvalidRequest;
+        },
         .night_light_action => {
             _ = std.meta.stringToEnum(@import("../services/night_light_policy.zig").Action, r.text orelse return error.InvalidRequest) orelse return error.InvalidRequest;
         },
@@ -299,6 +312,24 @@ test "control schema rejects malformed, nested, unversioned and oversized reques
     try t.expectError(error.InvalidRequest, parse(a, @import("test_strings").string(" ", (max_frame + 1))));
     if (parse(a, "{\"pearl\":\"1\"," ++ prefix ++ "}")) |_| return error.AcceptedWrongType else |_| {}
     if (parse(a, "{\"pearl\":1,\"pearl\":1," ++ prefix ++ "}")) |_| return error.AcceptedDuplicateField else |_| {}
+}
+
+test "clipboard wire pagination validates limits and refuses unrelated or invalid fields" {
+    const t = std.testing;
+    var arena = std.heap.ArenaAllocator.init(t.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    const prefix = "{\"pearl\":1,\"id\":\"7\",\"session\":\"0123456789abcdef0123456789abcdef\",\"display\":\"/validation\",\"op\":\"clipboard_status\"";
+    const page = try parse(a, prefix ++ ",\"offset\":20,\"limit\":20,\"revision\":9,\"instance\":\"0123456789abcdef0123456789abcdef\"}");
+    try t.expectEqual(@as(?u16, 20), page.offset);
+    try t.expectEqual(@as(?u8, 20), page.limit);
+    for ([_][]const u8{
+        ",\"offset\":101}",   ",\"limit\":0}",          ",\"limit\":21}",
+        ",\"limit\":null}",   ",\"instance\":\"bad\"}", ",\"operation\":12}",
+        ",\"generation\":1}",
+    }) |suffix| try t.expectError(error.InvalidRequest, parse(a, try std.mem.concat(a, u8, &.{ prefix, suffix })));
+    try t.expectError(error.InvalidRange, parse(a, prefix ++ ",\"offset\":-1}"));
+    try t.expectError(error.InvalidType, parse(a, prefix ++ ",\"limit\":\"20\"}"));
 }
 
 test "wire compact pages reject malformed, duplicate, app-only and unrelated fields" {

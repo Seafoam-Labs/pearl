@@ -48,6 +48,7 @@ const State = struct {
     session_source: c_uint = 0,
     identity_source: c_uint = 0,
     logout_source: c_uint = 0,
+    clipboard_drain_source: c_uint = 0,
     logout_requested: bool = false,
     logout_ticket: ?u64 = null,
     cleaned: bool = false,
@@ -108,6 +109,22 @@ const State = struct {
             server.deinit();
             self.control_server = null;
         }
+        if (self.surfaces) |*surfaces| if (surfaces.services_started) {
+            surfaces.clipboard.beginStop();
+            if (surfaces.popup) |popup| if (popup.clipboard_capture) |view| {
+                view.redact();
+                popup.window.as(gtk.Widget).setVisible(0);
+            };
+            if (!surfaces.clipboard.drained()) {
+                // The application's existing hold keeps State, Manager and the
+                // GTK context alive. Never join an in-flight fsync on this thread.
+                self.clipboard_drain_source = glib.timeoutAdd(20, clipboardDrained, self);
+                return;
+            }
+        };
+        self.finishStop();
+    }
+    fn finishStop(self: *State) void {
         if (self.surfaces) |*surfaces| surfaces.deinit();
         if (!self.logout_requested) {
             if (self.aqueous) |*client| client.stop();
@@ -118,6 +135,14 @@ const State = struct {
         self.app.as(gio.Application).release();
     }
 };
+
+fn clipboardDrained(data: ?*anyopaque) callconv(.c) c_int {
+    const self = state(data);
+    if (self.surfaces) |*surfaces| if (!surfaces.clipboard.drained()) return 1;
+    self.clipboard_drain_source = 0;
+    self.finishStop();
+    return 0;
+}
 
 fn state(data: ?*anyopaque) *State {
     return @ptrCast(@alignCast(data.?));
@@ -429,6 +454,7 @@ fn workFinished(_: ?*gobject.Object, result: *gio.AsyncResult, data: ?*anyopaque
 fn cleanup(self: *State) void {
     if (self.cleaned) return;
     self.cleaned = true;
+    std.debug.assert(self.clipboard_drain_source == 0);
     for (self.sources) |id| if (id != 0) {
         _ = glib.Source.remove(id);
     };

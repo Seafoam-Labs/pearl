@@ -115,6 +115,12 @@ pub fn parse(args: []const []const u8) !Options {
             r.menu_id = std.fmt.parseInt(i32, value, 10) catch return error.Usage;
         } else if (std.mem.eql(u8, flag, "--revision") and r.revision == null) {
             r.revision = std.fmt.parseInt(u64, value, 10) catch return error.Usage;
+        } else if (std.mem.eql(u8, flag, "--limit") and r.limit == null) {
+            r.limit = std.fmt.parseInt(u8, value, 10) catch return error.Usage;
+        } else if (std.mem.eql(u8, flag, "--instance") and r.instance == null) {
+            r.instance = value;
+        } else if (std.mem.eql(u8, flag, "--operation") and r.operation == null) {
+            r.operation = std.fmt.parseInt(u64, value, 10) catch return error.Usage;
         } else if (std.mem.eql(u8, flag, "--service") and r.service == null) {
             r.service = std.meta.stringToEnum(protocol.ConnectivityService, value) orelse return error.Usage;
         } else if (std.mem.eql(u8, flag, "--action") and r.action == null) {
@@ -182,8 +188,13 @@ pub const usage = @import("i18n").mark(
     \\Usage: pearlctl status | report | quit | lock
     \\       pearlctl assistant status|show|stop|clear|release|cancel
     \\       pearlctl night-light status|on|off|toggle|resume|retry
-    \\       pearlctl clipboard status|show|toggle|clear
-    \\       pearlctl clipboard select|delete --generation ENTRY_ID
+    \\       pearlctl clipboard status [--offset 0..100] [--limit 1..20]
+    \\                                 [--revision N] [--instance INSTANCE]
+    \\       pearlctl clipboard status --operation TOKEN --instance INSTANCE
+    \\       pearlctl clipboard show|toggle|clear
+    \\       pearlctl clipboard select|delete --generation ENTRY_ID [--instance INSTANCE]
+    \\         Use next_offset and pin revision/instance while paging. Stale pages must restart.
+    \\         Clear/Delete replies are queued receipts; poll status for durable completion.
     \\       pearlctl migrate dms --input SETTINGS [--session-file SESSION] [--base PEARL_JSON] [--bundle NEW_DIRECTORY]
     \\       pearlctl preferences apply --revision N --file PREFERENCES_JSON
     \\       pearlctl dock show|hide [--output ID]
@@ -372,6 +383,42 @@ test "clipboard and capture commands validate identities, paths and region bound
     try t.expectError(error.Usage, parse(&.{ "capture", "copy", "--generation", "1", "--path", "/tmp/private.png" }));
     try t.expectError(error.Usage, parse(&.{ "clipboard", "status", "--text", "secret" }));
     try t.expectError(error.Usage, parse(&.{ "capture", "output", "--text", "1,2,3,4" }));
+}
+
+test "clipboard status pagination preserves defaults and validates bounded flags" {
+    const t = std.testing;
+    const plain = (try parse(&.{ "clipboard", "status" })).request;
+    try t.expectEqual(protocol.Op.clipboard_status, plain.op);
+    try t.expect(plain.offset == null and plain.limit == null);
+    const page = (try parse(&.{ "clipboard", "status", "--offset", "20", "--limit", "17", "--revision", "42", "--instance", "0123456789abcdef0123456789abcdef" })).request;
+    try t.expectEqual(@as(?u16, 20), page.offset);
+    try t.expectEqual(@as(?u8, 17), page.limit);
+    try t.expectEqual(@as(?u64, 42), page.revision);
+    _ = try parse(&.{ "clipboard", "status", "--offset", "100", "--limit", "1" });
+    for ([_][]const []const u8{
+        &.{ "clipboard", "status", "--offset", "-1" },
+        &.{ "clipboard", "status", "--offset", "101" },
+        &.{ "clipboard", "status", "--offset", "65536" },
+        &.{ "clipboard", "status", "--limit", "0" },
+        &.{ "clipboard", "status", "--limit", "21" },
+        &.{ "clipboard", "status", "--limit", "-1" },
+        &.{ "clipboard", "status", "--limit", "20", "--limit", "10" },
+        &.{ "clipboard", "status", "--limit" },
+        &.{ "clipboard", "status", "--instance", "bad" },
+        &.{ "status", "--limit", "20" },
+        &.{ "clipboard", "clear", "--offset", "0" },
+    }) |args| try t.expectError(error.Usage, parse(args));
+}
+
+test "clipboard operation polling is instance qualified and retains legacy entry commands" {
+    const t = std.testing;
+    const query = (try parse(&.{ "clipboard", "status", "--operation", "12", "--instance", "0123456789abcdef0123456789abcdef" })).request;
+    try t.expectEqual(@as(?u64, 12), query.operation);
+    try t.expectError(error.Usage, parse(&.{ "clipboard", "status", "--operation", "12" }));
+    try t.expectError(error.Usage, parse(&.{ "clipboard", "status", "--operation", "0", "--instance", "0123456789abcdef0123456789abcdef" }));
+    _ = try parse(&.{ "clipboard", "delete", "--generation", "12" });
+    _ = try parse(&.{ "clipboard", "select", "--generation", "12", "--instance", "0123456789abcdef0123456789abcdef" });
+    _ = try parse(&.{ "clipboard", "clear", "--instance", "0123456789abcdef0123456789abcdef" });
 }
 
 test "standalone settings destinations and Aqueous compatibility validate before launch" {

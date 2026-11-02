@@ -16,6 +16,7 @@ from pearl_session import fixture_prefix, fixture_source
 from t00 import Session as T00Session
 from test_surfaces import IPC, ctl, status, capture, clean, click
 from test_desktop import desktop, keys
+from clipboard_history_checks import history, hidden
 
 
 def main():
@@ -62,8 +63,8 @@ def main():
             outputs = status(s, args.ctl)['outputs']
             first, second = outputs[:2]
 
-            def clip():
-                return ctl(s, args.ctl, 'clipboard', 'status')['result']
+            def clip(*flags):
+                return ctl(s, args.ctl, 'clipboard', 'status', *flags)['result']
 
             def until(fn, pred, timeout=12):
                 last = None
@@ -236,28 +237,45 @@ def main():
                 authority.proc.stdin.flush()
                 authority.expect('command=' + json.dumps(data, sort_keys=True))
 
+            retained = history(clip)
             show()
             probe(':delay:300')
             type_query('=77+1', settle=False)
             s.run(['wtype', '-k', 'Return'])
             authority_command(begin=True)
-            until(clip, lambda v: v['locked'])
+            hidden(until(clip, lambda v: v['locked']))
+            suspended = s.child('authentication-suspended-offer', [args.producer, 'text', 'external-auth-selection'])
+            suspended.expect('event=ready')
+            time.sleep(.4)
+            hidden(clip())
+            assert ctl(s, args.ctl, 'clipboard', 'show', code=4)['err']['code'] == 'Locked'
+            assert ctl(s, args.ctl, 'clipboard', 'select', '--generation', str(retained[0]['id']), code=4)['err']['code'] == 'Locked'
             authority_command(cancel=True)
             until(clip, lambda v: not v['locked'] and v['available'])
             time.sleep(.4)
-            assert not clip()['entries'], clip()
+            assert history(clip) == retained
+            pasted('external-auth-selection')
+            suspended.stop()
             checks['authentication-inhibition-cancels-copy-without-unlock-replay'] = True
             show()
             probe(':delay:300')
             type_query('=88+1', settle=False)
             s.run(['wtype', '-k', 'Return'])
             ctl(s, args.ctl, 'lock')
-            until(clip, lambda v: v['locked'])
+            hidden(until(clip, lambda v: v['locked']))
             until(lambda: ctl(s, args.ctl, 'lifecycle', 'status')['result'], lambda v: v['lock']['ready'] and v['lock']['locked'])
+            suspended = s.child('locked-offer', [args.producer, 'text', 'external-lock-selection'])
+            suspended.expect('event=ready')
+            time.sleep(.4)
+            hidden(clip())
             s.run(['wtype', '-s', '200', 'fixture-user', '-k', 'Return', '-s', '300', 'fixture-secret', '-k', 'Return', '-s', '200'])
             until(clip, lambda v: not v['locked'] and v['available'])
-            assert not clip()['entries'], clip()
-            checks['lock-clears-selection-and-cancels-pending-copy'] = True
+            time.sleep(.4)
+            assert history(clip) == retained
+            selection = s.run(['wl-paste', '--no-newline'], check=False)
+            assert selection.returncode != 0 or selection.stdout == 'external-lock-selection', (selection.stdout, clip())
+            suspended.stop()
+            checks['lock-retains-history-hides-metadata-and-cancels-pending-copy'] = True
 
             # Catalog replacement cannot invalidate the calculator's payload.
             show()
@@ -269,24 +287,23 @@ def main():
             assert v['rows'][0]['name'] == '42', v
             added.unlink()
             checks['catalog-refresh-preserves-calculation'] = True
-            # Use output-power protocol: this pinned compositor has an unrelated
-            # assertion in the wlr-output-management disable path.
-            power_dir = s.runtime / 'output-power'
-            power_dir.mkdir()
-            protocol = (fixture_source() / 'compositor/protocol/upstream/wlr-output-power-management-unstable-v1.xml')
-            normalized = power_dir / 'protocol.xml'
-            normalized.write_text(protocol.read_text().replace('<?xml version="1.0" encoding="UTF-8"?>', ''))
-            s.run(['wayland-scanner', 'client-header', normalized, power_dir / 'output-power.h'])
-            s.run(['wayland-scanner', 'private-code', normalized, power_dir / 'output-power.c'])
-            s.run(['cc', '-I' + str(power_dir), ROOT / 'tests/fixtures/desktop/output_power.c', power_dir / 'output-power.c', '-lwayland-client', '-o', power_dir / 'output-power'])
+            # wlroots allows one power-control object per output; Pearl's idle
+            # service already owns it. Use actual output-management removal,
+            # as in the security/capture suites, and verify compositor state.
+            def first_output():
+                return next(o for o in ipc.state() if o['kind'] == 'output' and o['name'] == first['connector'])
+            retained = history(clip)
             probe(':delay:300')
             type_query('=99+1', settle=False)
             s.run(['wtype', '-k', 'Return'])
-            s.run([power_dir / 'output-power', first['connector'], 'off'])
+            s.run(['wlr-randr', '--output', first['connector'], '--off'])
+            until(first_output, lambda v: not v['enabled'] and not v['powered'])
             until(lambda: status(s, args.ctl), lambda v: v['popup'] is None)
             time.sleep(.4)
-            assert not clip()['entries'], clip()
-            s.run([power_dir / 'output-power', first['connector'], 'on'])
+            # Output loss cancels the new publication; prior history stays retained.
+            assert history(clip) == retained
+            s.run(['wlr-randr', '--output', first['connector'], '--on'])
+            until(first_output, lambda v: v['enabled'] and v['powered'])
             until(lambda: status(s, args.ctl), lambda v: len(v['outputs']) == 2)
             checks['output-removal-cancels-pending-copy'] = True
 

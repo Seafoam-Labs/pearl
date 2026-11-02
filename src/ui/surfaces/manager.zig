@@ -540,6 +540,10 @@ pub const Manager = struct {
         if (self.barInhibited() and self.popup != null) self.schedule();
         self.night_light.interactive = !locked;
         self.clipboard.setLocked(locked);
+        if (!self.clipboard.accessible()) if (self.popup) |popup| if (popup.clipboard_capture) |view| {
+            view.redact();
+            if (locked) popup.window.as(gtk.Widget).setVisible(0);
+        };
         self.agent.setLocked(locked);
         self.capture.setLocked(locked);
         if (self.plugins) |plugins| plugins.setLocked(locked);
@@ -1043,6 +1047,7 @@ pub const Manager = struct {
     }
     fn nativeChanged(context: *anyopaque) void {
         const self: *Manager = @ptrCast(@alignCast(context));
+        if (!self.clipboard.accessible()) if (self.popup) |popup| if (popup.clipboard_capture) |view| view.redact();
         self.schedule();
         if (self.changed) |notify| notify(self.context.?);
     }
@@ -2021,7 +2026,15 @@ pub const Manager = struct {
             .runtime_source = self.preferences.prefs().assistant.runtime.source,
             .compute_mode = self.preferences.prefs().assistant.compute.mode,
         }, .{});
-        if (request.op == .clipboard_status) return self.clipboard.status(alloc);
+        if (request.op == .clipboard_status) return self.clipboard.pageStatus(alloc, .{
+            .offset = request.offset orelse 0,
+            .limit = request.limit orelse 20,
+            .revision = request.revision,
+            .instance = request.instance,
+            .operation = request.operation,
+            .request_id = request.id,
+        });
+        if (request.op == .clipboard_clear or request.op == .clipboard_delete or request.op == .clipboard_select) try self.clipboard.checkInstance(request.instance);
         if (request.op == .capture_status) return self.capture.status(alloc);
         if (request.op == .capture_windows) return self.capture.native.status(alloc, request.offset orelse 0);
         if (request.op == .lifecycle_status) return self.lifecycle.status(alloc, &self.auth);
@@ -2177,9 +2190,15 @@ pub const Manager = struct {
                 try self.showPane(try self.selected(request.output), .clipboard_capture);
                 if (request.op == .capture_show) self.popup.?.clipboard_capture.?.showCapture();
             },
-            .clipboard_clear => self.clipboard.clear(),
+            .clipboard_clear => {
+                try self.clipboard.clear();
+                return self.clipboard.removalStatus(alloc);
+            },
             .clipboard_select => try self.clipboard.select(request.generation.?),
-            .clipboard_delete => try self.clipboard.delete(request.generation.?),
+            .clipboard_delete => {
+                try self.clipboard.delete(request.generation.?);
+                return self.clipboard.removalStatus(alloc);
+            },
             .wm_action => {
                 const action = try std.json.parseFromSliceLeaky(@import("../../aqueous/commands.zig").Action, alloc, request.text.?, .{ .allocate = .alloc_always });
                 if (action == .session_exit) return error.UseLifecycleLogout;
