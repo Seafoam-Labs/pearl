@@ -44,6 +44,8 @@ pub const Bar = struct {
     network_label: ?*gtk.Label = null,
     bluetooth_label: ?*gtk.Label = null,
     audio_label: ?*gtk.Label = null,
+    /// Speaker glyph tracking mute state and volume level.
+    audio_icon: ?*gtk.Image = null,
     battery_label: ?*gtk.Label = null,
     /// Swapped between level and charging glyphs as the charge state changes.
     battery_icon: ?*gtk.Image = null,
@@ -128,6 +130,7 @@ pub const Bar = struct {
         self.title = null;
         self.keyboard = null;
         self.audio_label = null;
+        self.audio_icon = null;
         self.battery_label = null;
         self.battery_icon = null;
         self.network_label = null;
@@ -367,6 +370,7 @@ pub const Bar = struct {
                             else => unreachable,
                         });
                         if (item == .battery) self.battery_icon = glyph;
+                        if (item == .audio) self.audio_icon = glyph;
                         const symbol = glyph.as(gtk.Widget);
                         if (item == .scheduler) {
                             // Right-click opens the profiles in Settings.
@@ -567,6 +571,9 @@ pub const Bar = struct {
         if (self.audio_label) |label| {
             const device = self.audio_service.default(.sink);
             label.setText(if (device) |d| if (d.mute) @import("i18n").dtr("pearl", "Muted") else std.mem.printSentinel(&service_buffer, "{d}%", .{d.volume}, 0) catch "" else @import("i18n").dtr("pearl", "—"));
+            if (self.audio_icon) |glyph| {
+                if (device) |d| glyph.setFromIconName(w.volumeSymbol(self.audio_service.desiredMute(d.key), d.volume));
+            }
             const widget = self.widgets[@backingInt(policy.Item.audio)].?;
             var detail: [768]u8 = undefined;
             serviceName(widget, @import("i18n").dtr("pearl", "Open Sound controls"), if (device) |d| std.mem.printSentinel(&detail, "{s} · {s}", .{ d.label.slice(), std.mem.span(label.getText()) }, 0) catch d.label.z() else @import("i18n").dtr("pearl", "Audio unavailable"));
