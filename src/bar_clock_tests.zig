@@ -44,6 +44,26 @@ test "date boundaries and twelve hour midnight and noon" {
     try std.testing.expectEqualStrings("12:00 PM", (try clock.format(a, .{ .id = "u", .hour_format = .@"12h" }, noon, zone, false)).time);
     try std.testing.expectEqualStrings("12\n00\nPM", (try clock.format(a, .{ .id = "u", .hour_format = .@"12h" }, noon, zone, true)).time);
 }
+test "custom patterns override the built-in time and date formats" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    const utc = glib.DateTime.newFromUnixUtc(1772953200).?; // Sunday 2026-03-08 07:00 UTC
+    defer utc.unref();
+    const zone = clock.resolve("UTC").?;
+    defer zone.unref();
+    const iso = try clock.format(a, .{ .id = "u", .time_format = "%H:%M:%S", .date_format = "%Y-%m-%d", .separator = "|" }, utc, zone, false);
+    try std.testing.expectEqualStrings("07:00:00", iso.time);
+    try std.testing.expectEqualStrings("2026-03-08", iso.date);
+    // Specifiers and padding modifiers advertised in docs/PREFERENCES.md.
+    const shortcuts = try clock.format(a, .{ .id = "u", .time_format = "%R", .date_format = "%F %-d %b" }, utc, zone, false);
+    try std.testing.expectEqualStrings("07:00", shortcuts.time);
+    try std.testing.expectEqualStrings("2026-03-08 8 Mar", shortcuts.date);
+    // Custom patterns are used verbatim; only built-ins stack on vertical bars.
+    const vertical = try clock.format(a, .{ .id = "u", .time_format = "%H:%M" }, utc, zone, true);
+    try std.testing.expectEqualStrings("07:00", vertical.time);
+    try std.testing.expectEqualStrings("Sun\n08\nMar", vertical.date);
+}
 test "discovery and resolution reject expressions and paths while retaining aliases" {
     try std.testing.expect(!clock.available("NoSuch/Zone"));
     try std.testing.expect(!clock.available("/etc/localtime"));

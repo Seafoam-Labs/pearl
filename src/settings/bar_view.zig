@@ -42,6 +42,9 @@ pub const View = struct {
     clock_label: ?*gtk.Entry = null,
     clock_format: ?*gtk.DropDown = null,
     clock_date: ?*gtk.CheckButton = null,
+    clock_time_format: ?*gtk.Entry = null,
+    clock_date_format: ?*gtk.Entry = null,
+    clock_separator: ?*gtk.Entry = null,
     clock_preview: ?*gtk.Label = null,
     clock_zones: []const [:0]const u8 = &.{},
     clock_id: []const u8 = "",
@@ -136,6 +139,9 @@ pub const View = struct {
         self.clock_label = null;
         self.clock_format = null;
         self.clock_date = null;
+        self.clock_time_format = null;
+        self.clock_date_format = null;
+        self.clock_separator = null;
         self.clock_preview = null;
         self.clock_zones = &.{};
         self.clock_id = "";
@@ -675,6 +681,8 @@ pub const View = struct {
             error.TooManyClocks => @import("i18n").dtr("pearl", "Eight clocks are supported. Delete an unused saved clock first."),
             error.InvalidClockZone, error.ClockUnavailable => @import("i18n").dtr("pearl", "Choose an installed time zone, such as Europe/London, UTC or local."),
             error.InvalidClockLabel => @import("i18n").dtr("pearl", "Use a label up to 64 UTF-8 bytes without control characters."),
+            error.InvalidClockFormat => @import("i18n").dtr("pearl", "Use format patterns up to 64 bytes such as %H:%M or %a %d %b; each % needs a known specifier."),
+            error.InvalidClockSeparator => @import("i18n").dtr("pearl", "Use a separator up to 16 UTF-8 bytes without control characters."),
             error.InvalidLauncherIcon => "Enter an icon name using letters, digits, dots, underscores or hyphens (up to 128 characters).",
             error.StaleBar => "The bar changed while this menu was open. Close it and try again.",
             error.PluginUnavailable => "This plugin is no longer available for the bar. Review Plugins.",
@@ -1055,6 +1063,11 @@ pub const View = struct {
         options.append(date.as(gtk.Widget));
         try self.menu_controls.append(a, .{ .id = "bar.clock.date", .widget = date.as(gtk.Widget) });
         _ = gtk.CheckButton.signals.toggled.connect(date, *View, clockDateChanged, self, .{});
+        self.clock_time_format = try self.clockEntry(box, @import("i18n").dtr("pearl", "Time pattern (optional)"), "bar.clock.time_format", d.time_format, 64);
+        self.clock_time_format.?.setPlaceholderText(@import("i18n").dtr("pearl", "Default, e.g. %H:%M"));
+        self.clock_date_format = try self.clockEntry(box, @import("i18n").dtr("pearl", "Date pattern (optional)"), "bar.clock.date_format", d.date_format, 64);
+        self.clock_date_format.?.setPlaceholderText(@import("i18n").dtr("pearl", "Default, e.g. %a %d %b"));
+        self.clock_separator = try self.clockEntry(box, @import("i18n").dtr("pearl", "Date–time separator"), "bar.clock.separator", d.separator, 16);
         self.clock_preview = w.label("", "pearl-secondary");
         self.clock_preview.?.setMaxWidthChars(30);
         box.append(self.clock_preview.?.as(gtk.Widget));
@@ -1068,7 +1081,7 @@ pub const View = struct {
         cancel.as(gtk.Widget).setHexpand(1);
     }
     fn clockDefinition(self: *View) clock_policy.Definition {
-        return .{ .id = self.clock_id, .timezone = std.mem.trim(u8, std.mem.span(self.clock_zone.?.as(gtk.Editable).getText()), " "), .label = std.mem.span(self.clock_label.?.as(gtk.Editable).getText()), .hour_format = if (self.clock_format.?.getSelected() == 0) .@"24h" else .@"12h", .show_date = self.clock_date.?.getActive() != 0 };
+        return .{ .id = self.clock_id, .timezone = std.mem.trim(u8, std.mem.span(self.clock_zone.?.as(gtk.Editable).getText()), " "), .label = std.mem.span(self.clock_label.?.as(gtk.Editable).getText()), .hour_format = if (self.clock_format.?.getSelected() == 0) .@"24h" else .@"12h", .show_date = self.clock_date.?.getActive() != 0, .time_format = std.mem.trim(u8, std.mem.span(self.clock_time_format.?.as(gtk.Editable).getText()), " "), .date_format = std.mem.trim(u8, std.mem.span(self.clock_date_format.?.as(gtk.Editable).getText()), " "), .separator = std.mem.span(self.clock_separator.?.as(gtk.Editable).getText()) };
     }
     fn updateClockPreview(self: *View) void {
         const label = self.clock_preview orelse return;
@@ -1085,7 +1098,8 @@ pub const View = struct {
         defer utc.unref();
         const text = clock_time.format(alloc, d, utc, zone, false) catch return;
         self.popupMessage("");
-        label.setText(std.fmt.allocPrintSentinel(alloc, "{s} · {s}\n{s}{s}{s}", .{ @import("i18n").dtr("pearl", "Example"), clock_policy.displayName(alloc, d) catch return, if (d.show_date) text.date else "", if (d.show_date) " · " else "", text.time }, 0) catch return);
+        const gap = if (d.show_date) std.fmt.allocPrint(alloc, " {s} ", .{d.separator}) catch return else "";
+        label.setText(std.fmt.allocPrintSentinel(alloc, "{s} · {s}\n{s}{s}{s}", .{ @import("i18n").dtr("pearl", "Example"), clock_policy.displayName(alloc, d) catch return, if (d.show_date) text.date else "", gap, text.time }, 0) catch return);
     }
     fn clockEdited(_: *gtk.Editable, self: *View) callconv(.c) void {
         self.updateClockPreview();
