@@ -56,6 +56,7 @@ pub const Control = struct {
     tabs: [pages.len]*gtk.ToggleButton = undefined,
     tab_rows: [pages.len]TabRow = undefined,
     volume_scale: ?*gtk.Scale = null,
+    volume_icon: ?*gtk.Image = null,
     brightness_scale: ?*gtk.Scale = null,
     brightness_view: ?*@import("brightness_controls.zig").View = null,
     sliders_updating: bool = false,
@@ -250,6 +251,7 @@ pub const Control = struct {
         quick.as(gtk.Widget).addCssClass("pearl-quick-card");
         const volume = w.slider(w.label(@import("i18n").dtr("pearl", "Volume"), "pearl-secondary"), "pearl-audio-volume-high-symbolic", 0);
         self.volume_scale = volume.scale;
+        self.volume_icon = volume.symbol;
         focus_state.tag(volume.scale.as(gtk.Widget), "quick-volume", .{});
         _ = gtk.Range.signals.value_changed.connect(volume.scale.as(gtk.Range), *Control, volumeChanged, self, .{});
         quick.append(volume.box.as(gtk.Widget));
@@ -327,6 +329,7 @@ pub const Control = struct {
         self.night_toggle = null;
         self.night_resume = null;
         self.volume_scale = null;
+        self.volume_icon = null;
         self.brightness_scale = null;
         if (self.brightness_view) |view| view.destroy();
         self.brightness_view = null;
@@ -490,6 +493,9 @@ pub const Control = struct {
             const audio = self.models.audio;
             const sink = audio.default(.sink);
             scale.as(gtk.Widget).setSensitive(@intFromBool(sink != null and sink.?.writable));
+            if (self.volume_icon) |glyph| {
+                if (sink) |d| glyph.setFromIconName(w.volumeSymbol(audio.desiredMute(d.key), d.volume));
+            }
             if (!(audio.active != null or audio.queue.len > 0 or audio.feedback != null)) {
                 self.sliders_updating = true;
                 if (sink) |device| scale.as(gtk.Range).setValue(@floatFromInt(device.volume));
