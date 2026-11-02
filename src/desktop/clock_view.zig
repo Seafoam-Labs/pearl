@@ -61,7 +61,7 @@ pub const View = struct {
         const value = if (self.zone) |zone| time.format(alloc, self.definition, utc, zone, self.vertical) catch null else null;
         if (value) |text| {
             self.label.setText(text.time);
-            if (self.date) |date| date.setText(if (self.vertical) text.date else std.fmt.allocPrintSentinel(alloc, "{s} ·", .{text.date}, 0) catch text.date);
+            if (self.date) |date| date.setText(if (self.vertical) text.date else std.fmt.allocPrintSentinel(alloc, "{s} {s}", .{ text.date, self.definition.separator }, 0) catch text.date);
             const detail = std.fmt.allocPrintSentinel(alloc, "{s} · {s}", .{ text.detail, @import("i18n").dtr("pearl", "Open local calendar") }, 0) catch return;
             widget.setTooltipText(detail);
             w.name(widget, detail);
