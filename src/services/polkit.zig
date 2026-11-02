@@ -383,6 +383,13 @@ pub const Agent = struct {
             button.as(gtk.Widget).setVisible(@intFromBool(actionable));
         }
     }
+    /// The status line reserves no space while empty so the prompt sits directly
+    /// under the identity row; it grows only when a message is present.
+    fn setStatus(self: *Agent, text: [*:0]const u8) void {
+        const label = self.status_label orelse return;
+        label.setText(text);
+        label.as(gtk.Widget).setVisible(@intFromBool(text[0] != 0));
+    }
     fn remember(self: *Agent, emitter: *object.Object, signal_id: c_ulong) void {
         _ = emitter.ref();
         self.connections[self.connection_count] = .{ .emitter = emitter, .signal = signal_id };
@@ -451,7 +458,7 @@ pub const Agent = struct {
             const text = std.mem.span(self.entry.?.as(gtk.Editable).getText());
             @memcpy(response[0..@min(text.len, 1023)], text[0..@min(text.len, 1023)]);
             self.setState(.processing);
-            self.status_label.?.setText(@import("i18n").dtr("pearl", "Authenticating…"));
+            self.setStatus(@import("i18n").dtr("pearl", "Authenticating…"));
             _ = self.cancel_button.?.as(gtk.Widget).grabFocus();
             session.response(&response);
             return;
@@ -467,7 +474,7 @@ pub const Agent = struct {
         const index = if (self.selector) |selector| selector.getSelected() else 0;
         if (index >= self.identity_count) return;
         self.setState(.processing);
-        self.status_label.?.setText(@import("i18n").dtr("pearl", "Authenticating…"));
+        self.setStatus(@import("i18n").dtr("pearl", "Authenticating…"));
         _ = self.cancel_button.?.as(gtk.Widget).grabFocus();
         const session = agent.Session.new(self.identities[index].?, self.cookie.z());
         self.conversation = session;
@@ -489,7 +496,7 @@ pub const Agent = struct {
         var bounded: db.Text(1024) = .{};
         bounded.set(std.mem.span(text));
         self.setState(.answer);
-        self.status_label.?.setText("");
+        self.setStatus("");
         self.prompt.?.setText(bounded.z());
         self.entry.?.setVisibility(echo);
         self.entry.?.setInputPurpose(if (echo != 0) .free_form else .password);
@@ -500,7 +507,7 @@ pub const Agent = struct {
         if (!self.accepts(session)) return;
         var bounded: db.Text(1024) = .{};
         bounded.set(std.mem.span(text));
-        if (self.status_label) |label| label.setText(bounded.z());
+        self.setStatus(bounded.z());
     }
     fn completed(session: *agent.Session, gained: c_int, self: *Agent) callconv(.c) void {
         if (!self.accepts(session)) return;
@@ -510,7 +517,7 @@ pub const Agent = struct {
         if (gained == 0) {
             // Retry the configured conversation; it may never ask for a password.
             self.setState(.retry);
-            self.status_label.?.setText(@import("i18n").dtr("pearl", "Authentication failed. Try again."));
+            self.setStatus(@import("i18n").dtr("pearl", "Authentication failed. Try again."));
             _ = self.submit_button.?.as(gtk.Widget).grabFocus();
             return;
         }
@@ -526,7 +533,7 @@ pub const Agent = struct {
     fn selected(_: *object.Object, _: *object.ParamSpec, self: *Agent) callconv(.c) void {
         self.stopConversation();
         self.setState(if (self.activity_token.callback != null) .privacy else .choosing);
-        if (self.status_label) |label| label.setText(@import("i18n").dtr("pearl", "Identity changed. Authenticate to continue."));
+        self.setStatus(@import("i18n").dtr("pearl", "Identity changed. Authenticate to continue."));
     }
     fn submitted(_: *gtk.Button, self: *Agent) callconv(.c) void {
         self.submit();
