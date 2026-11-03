@@ -4587,6 +4587,10 @@ msgstr ""
 msgid "Pin applications using their dock action menu. Per-output dock overrides and pinned desktop IDs are available in Advanced."
 msgstr ""
 
+#: src/settings/power_view.zig:196
+msgid "Pipes"
+msgstr ""
+
 #: tests/fixtures/aqueous-master/snapshot.json
 msgctxt "aqueous.layout.options.float.cascade_step.description"
 msgid "Pixel offset between cascaded arrivals."

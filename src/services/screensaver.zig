@@ -22,12 +22,17 @@ const matrix_trail = 16;
 const mystify_shapes = 2;
 const mystify_sides = 4;
 const mystify_trail = 64;
+const pipes_cell = 24.0;
+const pipes_walkers = 2;
+const pipes_max = 4096;
 const glyphs = [_][:0]const u8{ "ア", "イ", "ウ", "エ", "オ", "カ", "キ", "ク", "ケ", "コ", "サ", "シ", "ス", "セ", "ソ", "タ", "チ", "ツ", "テ", "ト", "ナ", "ニ", "ヌ", "ネ", "ノ", "ハ", "ヒ", "フ", "ヘ", "ホ", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "Z", "X", "P", "E", "A", "R", "L" };
 
 const Star = struct { x: f64, y: f64, z: f64, pz: f64 };
 const Point = struct { x: f64, y: f64 };
 const Vertex = struct { x: f64, y: f64, vx: f64, vy: f64 };
 const Column = struct { head: f64, speed: f64 };
+const PipeWalker = struct { gx: i32, gy: i32, dx: i32, dy: i32, hue: f64 };
+const PipeSegment = struct { x0: f32, y0: f32, x1: f32, y1: f32, hue: f32, joint: bool };
 
 pub const Saver = struct {
     mode: Mode = .off,
@@ -41,6 +46,14 @@ pub const Saver = struct {
     ring: [mystify_trail][mystify_shapes][mystify_sides]Point = undefined,
     ring_i: usize = 0,
     ring_n: usize = 0,
+    pipes: [pipes_walkers]PipeWalker = undefined,
+    /// Recorded pipe artwork, repainted every frame. GTK's recorder keeps a
+    /// Cairo snapshot of anything a draw callback painted, so mutating a
+    /// presented surface would assert; a plain segment list sidesteps that.
+    pipes_segs: [pipes_max]PipeSegment = undefined,
+    pipes_n: usize = 0,
+    pipes_cols: i32 = 32,
+    pipes_rows: i32 = 24,
     /// Every drawing area currently presenting this saver; one shared
     /// animation state drives all monitors, each draw call scaling to its
     /// own width and height.
@@ -108,6 +121,26 @@ pub const Saver = struct {
                 self.ring_i = 0;
                 self.ring_n = 0;
             },
+            .pipes => {
+                self.pipes_n = 0;
+                self.pipes_cols = @max(4, @as(i32, @intFromFloat(dim.w / pipes_cell)));
+                self.pipes_rows = @max(4, @as(i32, @intFromFloat(dim.h / pipes_cell)));
+                self.initPipes();
+            },
+        }
+    }
+    fn initPipes(self: *Saver) void {
+        const r = self.prng.random();
+        const dirs = [_]struct { dx: i32, dy: i32 }{ .{ .dx = 1, .dy = 0 }, .{ .dx = -1, .dy = 0 }, .{ .dx = 0, .dy = 1 }, .{ .dx = 0, .dy = -1 } };
+        for (&self.pipes) |*walker| {
+            const dir = dirs[r.intRangeAtMost(usize, 0, dirs.len - 1)];
+            walker.* = .{
+                .gx = r.intRangeAtMost(i32, 0, self.pipes_cols - 1),
+                .gy = r.intRangeAtMost(i32, 0, self.pipes_rows - 1),
+                .dx = dir.dx,
+                .dy = dir.dy,
+                .hue = r.float(f64) * 360,
+            };
         }
     }
     fn frame(data: ?*anyopaque) callconv(.c) c_int {
@@ -155,6 +188,15 @@ pub const Saver = struct {
                 self.ring_i = (self.ring_i + 1) % mystify_trail;
                 self.ring_n = @min(self.ring_n + 1, mystify_trail);
             },
+            .pipes => {
+                // One grid step per walker every other tick keeps the crawl
+                // at a stately ~11 cells/s regardless of frame rate.
+                if (self.tick % 2 == 0) {
+                    // A full history wipes the screen and starts a new pattern.
+                    if (self.pipes_n + pipes_walkers > pipes_max) self.reset();
+                    for (&self.pipes) |*walker| self.pipeStep(walker);
+                }
+            },
         }
         for (self.areas) |slot| if (slot) |area| area.as(gtk.Widget).queueDraw();
         return 1;
@@ -165,6 +207,56 @@ pub const Saver = struct {
         s.y = r.float(f64) * 2 - 1;
         s.z = if (spread) r.float(f64) * star_depth else star_depth;
         s.pz = s.z;
+    }
+    fn pipeStep(self: *Saver, walker: *PipeWalker) void {
+        const r = self.prng.random();
+        const dirs = [_]struct { dx: i32, dy: i32 }{ .{ .dx = 1, .dy = 0 }, .{ .dx = -1, .dy = 0 }, .{ .dx = 0, .dy = 1 }, .{ .dx = 0, .dy = -1 } };
+        var dx = walker.dx;
+        var dy = walker.dy;
+        // Mostly straight runs with the occasional elbow, like the original.
+        if (r.float(f64) > 0.65) {
+            if (dx != 0) {
+                dy = if (r.boolean()) @as(i32, 1) else -1;
+                dx = 0;
+            } else {
+                dx = if (r.boolean()) @as(i32, 1) else -1;
+                dy = 0;
+            }
+        }
+        var nx = walker.gx + dx;
+        var ny = walker.gy + dy;
+        if (nx < 0 or ny < 0 or nx >= self.pipes_cols or ny >= self.pipes_rows) {
+            // Walled in: reroute along any in-bounds direction.
+            var picked = false;
+            var attempts: usize = 0;
+            while (attempts < 8 and !picked) : (attempts += 1) {
+                const dir = dirs[r.intRangeAtMost(usize, 0, dirs.len - 1)];
+                nx = walker.gx + dir.dx;
+                ny = walker.gy + dir.dy;
+                if (nx >= 0 and ny >= 0 and nx < self.pipes_cols and ny < self.pipes_rows) {
+                    dx = dir.dx;
+                    dy = dir.dy;
+                    picked = true;
+                }
+            }
+            if (!picked) return;
+        }
+        if (self.pipes_n < pipes_max) {
+            self.pipes_segs[self.pipes_n] = .{
+                .x0 = @floatCast((@as(f64, @floatFromInt(walker.gx)) + 0.5) * pipes_cell),
+                .y0 = @floatCast((@as(f64, @floatFromInt(walker.gy)) + 0.5) * pipes_cell),
+                .x1 = @floatCast((@as(f64, @floatFromInt(nx)) + 0.5) * pipes_cell),
+                .y1 = @floatCast((@as(f64, @floatFromInt(ny)) + 0.5) * pipes_cell),
+                .hue = @floatCast(walker.hue),
+                .joint = dx != walker.dx or dy != walker.dy,
+            };
+            self.pipes_n += 1;
+        }
+        walker.gx = nx;
+        walker.gy = ny;
+        walker.dx = dx;
+        walker.dy = dy;
+        walker.hue += 2;
     }
     fn hsv(h: f64, s: f64, v: f64) [3]f64 {
         const sector = @mod(h, 360) / 60;
@@ -256,6 +348,22 @@ pub const Saver = struct {
                         for (shape[1..]) |p| cr.lineTo(p.x, p.y);
                         cr.closePath();
                         cr.stroke();
+                    }
+                }
+            },
+            .pipes => {
+                cr.setLineCap(.round);
+                cr.setLineWidth(pipes_cell * 0.3);
+                for (self.pipes_segs[0..self.pipes_n]) |seg| {
+                    const rgb = hsv(seg.hue, 0.75, 1);
+                    cr.setSourceRgb(rgb[0], rgb[1], rgb[2]);
+                    cr.moveTo(seg.x0, seg.y0);
+                    cr.lineTo(seg.x1, seg.y1);
+                    cr.stroke();
+                    if (seg.joint) {
+                        // Ball joint at the elbow, slightly fatter than the pipe.
+                        cr.arc(seg.x1, seg.y1, pipes_cell * 0.26, 0, std.math.pi * 2);
+                        cr.fill();
                     }
                 }
             },
