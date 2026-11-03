@@ -19,13 +19,24 @@ const star_depth = 1.0;
 const matrix_cols = 256;
 const matrix_cell = 18.0;
 const matrix_trail = 16;
+const ocean_cell = 28.0;
 const mystify_shapes = 2;
 const mystify_sides = 4;
 const mystify_trail = 64;
 const pipes_cell = 24.0;
 const pipes_walkers = 2;
 const pipes_max = 4096;
+const qix_trail = 48;
+const maze_max = 15000;
+const maze_cell = 16.0;
+const life_max = 16000;
+const life_cell = 12.0;
 const glyphs = [_][:0]const u8{ "ア", "イ", "ウ", "エ", "オ", "カ", "キ", "ク", "ケ", "コ", "サ", "シ", "ス", "セ", "ソ", "タ", "チ", "ツ", "テ", "ト", "ナ", "ニ", "ヌ", "ネ", "ノ", "ハ", "ヒ", "フ", "ヘ", "ホ", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "Z", "X", "P", "E", "A", "R", "L" };
+const ocean_glyphs = [_][:0]const u8{ "🐟", "🐠", "", "🐬", "🐳", "", "", "", "🦑", "🦀", "", "🐚", "🌊", "⚓" };
+
+fn fallCell(mode: Mode) f64 {
+    return if (mode == .ocean_fall) ocean_cell else matrix_cell;
+}
 
 const Star = struct { x: f64, y: f64, z: f64, pz: f64 };
 const Point = struct { x: f64, y: f64 };
@@ -54,6 +65,25 @@ pub const Saver = struct {
     pipes_n: usize = 0,
     pipes_cols: i32 = 32,
     pipes_rows: i32 = 24,
+    qix_v: [2]Vertex = undefined,
+    qix_ring: [qix_trail][2]Point = undefined,
+    qix_i: usize = 0,
+    qix_n: usize = 0,
+    /// Maze carve state: bits 0-3 are opened right/down/left/up, bit 4 visited.
+    maze_walls: [maze_max]u8 = undefined,
+    maze_stack: [maze_max]u32 = undefined,
+    maze_sp: usize = 0,
+    maze_cols: i32 = 0,
+    maze_rows: i32 = 0,
+    maze_head: i32 = -1,
+    maze_hold: u32 = 0,
+    life_a: [life_max]u8 = undefined,
+    life_b: [life_max]u8 = undefined,
+    life_cols: i32 = 0,
+    life_rows: i32 = 0,
+    life_front: bool = false,
+    life_pop: u32 = 0,
+    life_gen: u32 = 0,
     /// Every drawing area currently presenting this saver; one shared
     /// animation state drives all monitors, each draw call scaling to its
     /// own width and height.
@@ -102,8 +132,8 @@ pub const Saver = struct {
         switch (self.mode) {
             .off => {},
             .starfield => for (&self.stars) |*s| self.respawn(s, true),
-            .matrix => {
-                const rows = @max(4.0, dim.h / matrix_cell);
+            .matrix, .ocean_fall => {
+                const rows = @max(4.0, dim.h / fallCell(self.mode));
                 for (&self.cols) |*c| {
                     c.head = -r.float(f64) * rows;
                     c.speed = 4 + r.float(f64) * 10;
@@ -127,7 +157,44 @@ pub const Saver = struct {
                 self.pipes_rows = @max(4, @as(i32, @intFromFloat(dim.h / pipes_cell)));
                 self.initPipes();
             },
+            .qix => {
+                for (&self.qix_v) |*v| {
+                    v.* = .{
+                        .x = r.float(f64) * dim.w,
+                        .y = r.float(f64) * dim.h,
+                        .vx = (r.float(f64) * 2 - 1) * 260,
+                        .vy = (r.float(f64) * 2 - 1) * 260,
+                    };
+                }
+                self.qix_i = 0;
+                self.qix_n = 0;
+            },
+            .maze => {
+                self.maze_cols = @min(150, @max(8, @as(i32, @intFromFloat(dim.w / maze_cell))));
+                self.maze_rows = @min(100, @max(8, @as(i32, @intFromFloat(dim.h / maze_cell))));
+                const cells: usize = @intCast(self.maze_cols * self.maze_rows);
+                @memset(self.maze_walls[0..cells], 0);
+                self.maze_stack[0] = 0;
+                self.maze_sp = 1;
+                self.maze_walls[0] = 16;
+                self.maze_head = 0;
+                self.maze_hold = 0;
+            },
+            .life => {
+                self.life_cols = @min(160, @max(16, @as(i32, @intFromFloat(dim.w / life_cell))));
+                self.life_rows = @min(100, @max(16, @as(i32, @intFromFloat(dim.h / life_cell))));
+                self.reseedLife();
+            },
         }
+    }
+    fn reseedLife(self: *Saver) void {
+        const r = self.prng.random();
+        const cells: usize = @intCast(self.life_cols * self.life_rows);
+        for (self.life_a[0..cells]) |*cell| cell.* = @intFromBool(r.int(u8) % 100 < 24);
+        @memset(self.life_b[0..cells], 0);
+        self.life_front = false;
+        self.life_gen = 0;
+        self.life_pop = 1;
     }
     fn initPipes(self: *Saver) void {
         const r = self.prng.random();
@@ -158,9 +225,10 @@ pub const Saver = struct {
                     if (s.z <= 0.02) self.respawn(s, false);
                 }
             },
-            .matrix => {
-                const rows = @max(4.0, dim.h / matrix_cell);
-                const used = @min(matrix_cols, @as(usize, @intFromFloat(@ceil(dim.w / matrix_cell))));
+            .matrix, .ocean_fall => {
+                const cell = fallCell(self.mode);
+                const rows = @max(4.0, dim.h / cell);
+                const used = @min(matrix_cols, @as(usize, @intFromFloat(@ceil(dim.w / cell))));
                 for (self.cols[0..used]) |*c| {
                     c.head += c.speed * dt;
                     if (c.head - matrix_trail > rows and self.prng.random().int(u8) < 8) {
@@ -195,6 +263,44 @@ pub const Saver = struct {
                     // A full history wipes the screen and starts a new pattern.
                     if (self.pipes_n + pipes_walkers > pipes_max) self.reset();
                     for (&self.pipes) |*walker| self.pipeStep(walker);
+                }
+            },
+            .qix => {
+                for (&self.qix_v) |*v| {
+                    v.x += v.vx * dt;
+                    v.y += v.vy * dt;
+                    if (v.x <= 0 or v.x >= dim.w) {
+                        v.x = std.math.clamp(v.x, 0, dim.w);
+                        v.vx = -v.vx;
+                    }
+                    if (v.y <= 0 or v.y >= dim.h) {
+                        v.y = std.math.clamp(v.y, 0, dim.h);
+                        v.vy = -v.vy;
+                    }
+                }
+                self.qix_ring[self.qix_i] = .{
+                    .{ .x = self.qix_v[0].x, .y = self.qix_v[0].y },
+                    .{ .x = self.qix_v[1].x, .y = self.qix_v[1].y },
+                };
+                self.qix_i = (self.qix_i + 1) % qix_trail;
+                self.qix_n = @min(self.qix_n + 1, qix_trail);
+            },
+            .maze => {
+                if (self.maze_head >= 0) {
+                    var steps: u32 = 0;
+                    while (steps < 8 and self.maze_sp > 0) : (steps += 1) self.mazeCarve();
+                    if (self.maze_sp == 0) {
+                        self.maze_head = -1;
+                        self.maze_hold = 90;
+                    }
+                } else if (self.maze_hold > 0) {
+                    self.maze_hold -= 1;
+                } else self.reset();
+            },
+            .life => {
+                if (self.tick % 4 == 0) {
+                    self.lifeStep();
+                    if (self.life_pop < 12 or self.life_gen > 900) self.reset();
                 }
             },
         }
@@ -258,6 +364,87 @@ pub const Saver = struct {
         walker.dy = dy;
         walker.hue += 2;
     }
+    /// One recursive-backtracker step: extend from the stack head into a
+    /// random unvisited neighbour, or backtrack when walled in.
+    fn mazeCarve(self: *Saver) void {
+        const r = self.prng.random();
+        const cur = self.maze_stack[self.maze_sp - 1];
+        const cx: i32 = @intCast(cur % @as(u32, @intCast(self.maze_cols)));
+        const cy: i32 = @intCast(cur / @as(u32, @intCast(self.maze_cols)));
+        var options: [4]u32 = undefined;
+        var count: usize = 0;
+        const consider = struct {
+            fn f(walls: *[maze_max]u8, ok: bool, n: u32, opts: *[4]u32, cnt: *usize) void {
+                if (ok and walls[n] & 16 == 0) {
+                    opts[cnt.*] = n;
+                    cnt.* += 1;
+                }
+            }
+        }.f;
+        const cols_u: u32 = @intCast(self.maze_cols);
+        // Saturating math: the index is only read when the bound check passes.
+        consider(&self.maze_walls, cx + 1 < self.maze_cols, cur + 1, &options, &count);
+        consider(&self.maze_walls, cy + 1 < self.maze_rows, cur + cols_u, &options, &count);
+        consider(&self.maze_walls, cx > 0, cur -| 1, &options, &count);
+        consider(&self.maze_walls, cy > 0, cur -| cols_u, &options, &count);
+        if (count == 0) {
+            self.maze_sp -= 1;
+            self.maze_head = if (self.maze_sp > 0) @intCast(self.maze_stack[self.maze_sp - 1]) else -1;
+            return;
+        }
+        const n = options[r.intRangeAtMost(usize, 0, count - 1)];
+        const nx: i32 = @intCast(n % @as(u32, @intCast(self.maze_cols)));
+        const ny: i32 = @intCast(n / @as(u32, @intCast(self.maze_cols)));
+        if (nx == cx + 1) {
+            self.maze_walls[cur] |= 1;
+            self.maze_walls[n] |= 4;
+        } else if (ny == cy + 1) {
+            self.maze_walls[cur] |= 2;
+            self.maze_walls[n] |= 8;
+        } else if (nx == cx - 1) {
+            self.maze_walls[cur] |= 4;
+            self.maze_walls[n] |= 1;
+        } else {
+            self.maze_walls[cur] |= 8;
+            self.maze_walls[n] |= 2;
+        }
+        self.maze_walls[n] |= 16;
+        self.maze_stack[self.maze_sp] = n;
+        self.maze_sp += 1;
+        self.maze_head = @intCast(n);
+    }
+    fn lifeStep(self: *Saver) void {
+        const cols = self.life_cols;
+        const rows = self.life_rows;
+        const src = if (self.life_front) &self.life_b else &self.life_a;
+        const dst = if (self.life_front) &self.life_a else &self.life_b;
+        var pop: u32 = 0;
+        var cy: i32 = 0;
+        while (cy < rows) : (cy += 1) {
+            var cx: i32 = 0;
+            while (cx < cols) : (cx += 1) {
+                var neighbors: u32 = 0;
+                var dy: i32 = -1;
+                while (dy <= 1) : (dy += 1) {
+                    var dx: i32 = -1;
+                    while (dx <= 1) : (dx += 1) {
+                        if (dx == 0 and dy == 0) continue;
+                        const px = cx + dx;
+                        const py = cy + dy;
+                        if (px < 0 or py < 0 or px >= cols or py >= rows) continue;
+                        neighbors += src[@intCast(py * cols + px)];
+                    }
+                }
+                const alive = src[@intCast(cy * cols + cx)] != 0;
+                const next = (alive and (neighbors == 2 or neighbors == 3)) or (!alive and neighbors == 3);
+                dst[@intCast(cy * cols + cx)] = @intFromBool(next);
+                pop += @intFromBool(next);
+            }
+        }
+        self.life_front = !self.life_front;
+        self.life_pop = pop;
+        self.life_gen += 1;
+    }
     fn hsv(h: f64, s: f64, v: f64) [3]f64 {
         const sector = @mod(h, 360) / 60;
         const c = v * s;
@@ -280,8 +467,15 @@ pub const Saver = struct {
         h ^= h >> 32;
         return glyphs[h % glyphs.len];
     }
-    fn text(cr: *cairo.Context, str: [:0]const u8, x: f64, y: f64, size_pt: f64) void {
-        cr.selectFontFace("sans", .normal, .normal);
+    fn oceanGlyph(col: u64, row: i64, tick: u64) [:0]const u8 {
+        var h = col *% 0x9E3779B97F4A7C15 ^ @as(u64, @bitCast(row)) *% 0xC2B2AE3D27D4EB4F ^ tick *% 0x165667B19E3779F9;
+        h ^= h >> 29;
+        h *%= 0xBF58476D1CE4E5B9;
+        h ^= h >> 32;
+        return ocean_glyphs[h % ocean_glyphs.len];
+    }
+    fn text(cr: *cairo.Context, family: [:0]const u8, str: [:0]const u8, x: f64, y: f64, size_pt: f64) void {
+        cr.selectFontFace(family, .normal, .normal);
         cr.setFontSize(size_pt);
         var extents: cairo.TextExtents = undefined;
         cr.textExtents(str, &extents);
@@ -331,7 +525,25 @@ pub const Saver = struct {
                         const x: f64 = @as(f64, @floatFromInt(col)) * matrix_cell + 2;
                         const fade = 1 - @as(f64, @floatFromInt(k)) / matrix_trail;
                         if (k == 0) cr.setSourceRgba(0.75, 1, 0.75, fade) else cr.setSourceRgba(0.1, 0.9, 0.25, fade);
-                        text(cr, glyph(col, row, self.tick / 6), x + matrix_cell / 2 - 2, y - matrix_cell / 2 + 2, matrix_cell - 4);
+                        text(cr, "sans", glyph(col, row, self.tick / 6), x + matrix_cell / 2 - 2, y - matrix_cell / 2 + 2, matrix_cell - 4);
+                    }
+                }
+            },
+            .ocean_fall => {
+                const used = @min(matrix_cols, @as(usize, @intFromFloat(@ceil(w / ocean_cell))));
+                for (self.cols[0..used], 0..) |c, col| {
+                    const base: i64 = @intFromFloat(@floor(c.head));
+                    var k: i64 = 0;
+                    while (k < matrix_trail) : (k += 1) {
+                        const row = base - k;
+                        if (row < 0) break;
+                        const y: f64 = @as(f64, @floatFromInt(row)) * ocean_cell + ocean_cell - 6;
+                        if (y > h) continue;
+                        const x: f64 = @as(f64, @floatFromInt(col)) * ocean_cell + ocean_cell / 2;
+                        const fade = 1 - @as(f64, @floatFromInt(k)) / matrix_trail;
+                        // Foam-white head, then a turquoise-to-deep-blue trail.
+                        if (k == 0) cr.setSourceRgba(0.85, 1, 1, fade) else cr.setSourceRgba(0.05 + 0.1 * fade, 0.25 + 0.5 * fade, 0.45 + 0.5 * fade, fade);
+                        text(cr, "Noto Color Emoji", oceanGlyph(col, row, self.tick / 8), x, y - ocean_cell / 2, ocean_cell - 6);
                     }
                 }
             },
@@ -366,6 +578,82 @@ pub const Saver = struct {
                         cr.fill();
                     }
                 }
+            },
+            .qix => {
+                var i: usize = 0;
+                while (i + 1 < self.qix_n) : (i += 1) {
+                    const slot = (self.qix_i + qix_trail - self.qix_n + i) % qix_trail;
+                    const next = (slot + 1) % qix_trail;
+                    const fade = @as(f64, @floatFromInt(i + 1)) / @as(f64, @floatFromInt(self.qix_n));
+                    const rgb = hsv(fade * 300 + @as(f64, @floatFromInt(self.tick)) * 0.6, 0.9, 1);
+                    cr.setSourceRgba(rgb[0], rgb[1], rgb[2], fade * 0.45);
+                    cr.moveTo(self.qix_ring[slot][0].x, self.qix_ring[slot][0].y);
+                    cr.lineTo(self.qix_ring[slot][1].x, self.qix_ring[slot][1].y);
+                    cr.lineTo(self.qix_ring[next][1].x, self.qix_ring[next][1].y);
+                    cr.lineTo(self.qix_ring[next][0].x, self.qix_ring[next][0].y);
+                    cr.closePath();
+                    cr.fill();
+                }
+                cr.setSourceRgb(1, 1, 1);
+                cr.setLineWidth(2);
+                cr.moveTo(self.qix_v[0].x, self.qix_v[0].y);
+                cr.lineTo(self.qix_v[1].x, self.qix_v[1].y);
+                cr.stroke();
+            },
+            .maze => {
+                const cw = w / @as(f64, @floatFromInt(self.maze_cols));
+                const ch = h / @as(f64, @floatFromInt(self.maze_rows));
+                cr.setSourceRgba(0.55, 0.9, 0.65, 0.85);
+                cr.setLineWidth(1.5);
+                var cy: i32 = 0;
+                while (cy < self.maze_rows) : (cy += 1) {
+                    var cx: i32 = 0;
+                    while (cx < self.maze_cols) : (cx += 1) {
+                        const cell = self.maze_walls[@intCast(cy * self.maze_cols + cx)];
+                        const x = @as(f64, @floatFromInt(cx)) * cw;
+                        const y = @as(f64, @floatFromInt(cy)) * ch;
+                        // Walls are the sides the carve never opened.
+                        if (cx + 1 >= self.maze_cols or cell & 1 == 0) {
+                            cr.moveTo(x + cw, y);
+                            cr.lineTo(x + cw, y + ch);
+                        }
+                        if (cy + 1 >= self.maze_rows or cell & 2 == 0) {
+                            cr.moveTo(x, y + ch);
+                            cr.lineTo(x + cw, y + ch);
+                        }
+                        if (cx == 0) {
+                            cr.moveTo(x, y);
+                            cr.lineTo(x, y + ch);
+                        }
+                        if (cy == 0) {
+                            cr.moveTo(x, y);
+                            cr.lineTo(x + cw, y);
+                        }
+                    }
+                }
+                cr.stroke();
+                if (self.maze_head >= 0) {
+                    const hx = @as(f64, @floatFromInt(@mod(self.maze_head, self.maze_cols))) * cw;
+                    const hy = @as(f64, @floatFromInt(@divTrunc(self.maze_head, self.maze_cols))) * ch;
+                    cr.setSourceRgb(1, 0.8, 0.2);
+                    cr.rectangle(hx + cw * 0.25, hy + ch * 0.25, cw * 0.5, ch * 0.5);
+                    cr.fill();
+                }
+            },
+            .life => {
+                const cw = w / @as(f64, @floatFromInt(self.life_cols));
+                const ch = h / @as(f64, @floatFromInt(self.life_rows));
+                const src = if (self.life_front) &self.life_b else &self.life_a;
+                cr.setSourceRgb(0.45, 1, 0.55);
+                var cy: i32 = 0;
+                while (cy < self.life_rows) : (cy += 1) {
+                    var cx: i32 = 0;
+                    while (cx < self.life_cols) : (cx += 1) {
+                        if (src[@intCast(cy * self.life_cols + cx)] == 0) continue;
+                        cr.rectangle(@as(f64, @floatFromInt(cx)) * cw + 1, @as(f64, @floatFromInt(cy)) * ch + 1, cw - 2, ch - 2);
+                    }
+                }
+                cr.fill();
             },
         }
     }

@@ -1,6 +1,6 @@
 //! Pure lock/suspend gate. Request acceptance never means the screen is locked.
 const std = @import("std");
-pub const Screensaver = enum { off, starfield, matrix, mystify, pipes };
+pub const Screensaver = enum { off, starfield, matrix, mystify, pipes, qix, maze, life, ocean_fall };
 pub const Timeouts = struct {
     lock_seconds: u32 = 0,
     suspend_seconds: u32 = 0,

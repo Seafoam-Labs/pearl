@@ -193,7 +193,7 @@ pub const View = struct {
         try self.remember(self.display_picker, object.Object.signals.notify.connect(self.display_picker.as(object.Object), *View, displaySelected, self, .{ .detail = "selected" }));
         _ = row(display, @import("i18n").dtr("pearl", "Dim screen when inactive"), dim.as(gtk.Widget));
         display.append(w.label(@import("i18n").dtr("pearl", "Reduce brightness before the screen turns off"), "pearl-secondary").as(gtk.Widget));
-        self.screensaver = gtk.DropDown.newFromStrings(@ptrCast(&[_]?[*:0]const u8{ @import("i18n").dtr("pearl", "Off"), @import("i18n").dtr("pearl", "Starfield"), @import("i18n").dtr("pearl", "Matrix"), @import("i18n").dtr("pearl", "Mystify"), @import("i18n").dtr("pearl", "Pipes"), null }));
+        self.screensaver = gtk.DropDown.newFromStrings(@ptrCast(&[_]?[*:0]const u8{ @import("i18n").dtr("pearl", "Off"), @import("i18n").dtr("pearl", "Starfield"), @import("i18n").dtr("pearl", "Matrix"), @import("i18n").dtr("pearl", "Mystify"), @import("i18n").dtr("pearl", "Pipes"), @import("i18n").dtr("pearl", "Qix"), @import("i18n").dtr("pearl", "Maze"), @import("i18n").dtr("pearl", "Life"), @import("i18n").dtr("pearl", "Ocean Fall"), null }));
         _ = row(display, @import("i18n").dtr("pearl", "Screensaver when inactive"), self.screensaver.as(gtk.Widget));
         display.append(w.label(@import("i18n").dtr("pearl", "Animate the screen at the turn-off timeout instead of blanking immediately"), "pearl-secondary").as(gtk.Widget));
         w.name(brightness.as(gtk.Widget), @import("i18n").dtr("pearl", "Brightness"));

@@ -416,6 +416,16 @@ pub fn build(b: *std.Build) void {
     bindings_test.step.dependOn(&system_versions.step);
     b.step("test-bindings", "Test generated binding types and API coverage").dependOn(&b.addRunArtifact(bindings_test).step);
 
+    // Dev-only visual harness for the shared screensaver module; run it in a
+    // nested compositor to compare modes without locking or idling.
+    const saver_preview_module = gtkModule(b, bindings, target, optimize, "spikes/screensaver/main.zig", pulse_module);
+    // The harness root lives outside src/, so the shared module reaches it by
+    // name; it is a gtkModule root itself so its GTK imports resolve.
+    saver_preview_module.addImport("screensaver", gtkModule(b, bindings, target, optimize, "src/services/screensaver.zig", pulse_module));
+    const saver_preview = b.addExecutable(.{ .name = "pearl-saver-preview", .root_module = saver_preview_module });
+    saver_preview.step.dependOn(&system_versions.step);
+    b.step("build-saver-preview", "Stage the screensaver preview harness (dev only, not installed by default)").dependOn(&b.addInstallArtifact(saver_preview, .{}).step);
+
     const pure_module = createModule(b, .{ .root_source_file = b.path("src/tests.zig"), .target = target, .optimize = optimize });
     pure_module.addAnonymousImport("aqueous_presentation_fixture", .{ .root_source_file = b.path("tests/fixtures/aqueous-master/snapshot.json") });
     pure_module.addImport("aqueous_fixtures", createModule(b, .{ .root_source_file = b.path("tests/fixtures/aqueous/fixtures.zig"), .target = target, .optimize = optimize }));

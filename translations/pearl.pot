@@ -3415,6 +3415,10 @@ msgctxt "aqueous.input.touchpad.accel_speed.description"
 msgid "Libinput speed for touchpads."
 msgstr ""
 
+#: src/settings/power_view.zig:196
+msgid "Life"
+msgstr ""
+
 #: src/ui/i18n.zig:7 src/settings/palette_editor.zig:37
 msgid "Light"
 msgstr ""
@@ -3647,6 +3651,10 @@ msgstr ""
 
 #: src/desktop/calendar.zig:21
 msgid "May"
+msgstr ""
+
+#: src/settings/power_view.zig:196
+msgid "Maze"
 msgstr ""
 
 #: src/settings/palette_editor.zig:48
@@ -4114,6 +4122,10 @@ msgstr ""
 #: tests/fixtures/aqueous-master/snapshot.json
 msgctxt "aqueous.layout.master_count.description"
 msgid "Number of windows in the master area."
+msgstr ""
+
+#: src/settings/power_view.zig:196
+msgid "Ocean Fall"
 msgstr ""
 
 #: src/desktop/calendar.zig:21
@@ -4890,6 +4902,10 @@ msgstr ""
 
 #: src/settings/power_view.zig:160
 msgid "Prioritize speed"
+msgstr ""
+
+#: src/settings/power_view.zig:196
+msgid "Qix"
 msgstr ""
 
 #: src/settings/preferences_view.zig:260

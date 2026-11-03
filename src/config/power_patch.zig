@@ -42,7 +42,7 @@ test "scoped power changes preserve unrelated configuration and reject unsafe sl
     try std.testing.expectEqual(@import("../services/idle_policy.zig").Screensaver.matrix, saver.idle.screensaver);
     const pipes = try model.parse(a, try patch(a, current, .ac, .screensaver, 4));
     try std.testing.expectEqual(@import("../services/idle_policy.zig").Screensaver.pipes, pipes.idle.screensaver);
-    try std.testing.expectError(error.InvalidRequest, patch(a, current, .ac, .screensaver, 5));
+    try std.testing.expectError(error.InvalidRequest, patch(a, current, .ac, .screensaver, 9));
     const panel = try model.parse(a, try patch(a, current, .battery, .panel_off_seconds, 120));
     try std.testing.expectEqual(@as(u32, 120), panel.idle.battery.panel_off_seconds);
     try std.testing.expectEqual(@as(u32, 0), panel.idle.ac.panel_off_seconds);
