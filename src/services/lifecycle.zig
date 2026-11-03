@@ -7,6 +7,7 @@ const glib = db.glib;
 const unix = @import("glibunix2");
 const object = @import("gobject2");
 const policy = @import("idle_policy.zig");
+const screensaver = @import("screensaver.zig");
 const Idle = @import("../platform/wayland/idle.zig").Idle;
 const a = std.heap.c_allocator;
 const path = "/org/freedesktop/login1";
@@ -24,6 +25,11 @@ pub const Lifecycle = struct {
     request_logout: *const fn (*anyopaque) void,
     peer: db.Peer = undefined,
     idle: Idle = undefined,
+    saver: screensaver.Saver = .{},
+    saver_overlay: screensaver.Overlay = .{},
+    saver_on: bool = false,
+    panel_off_source: c_uint = 0,
+    reduced_motion: bool = false,
     power: ?*@import("power.zig").Power = null,
     gate: policy.Gate = .{},
     config: policy.Config = .{},
@@ -74,6 +80,7 @@ pub const Lifecycle = struct {
         pearl_session_portal_stop();
         self.activity_token.cancel();
         self.cancelConfirmation();
+        self.stopSaver();
         self.idle.stop();
         self.peer.stop();
         self.closeDelay();
@@ -91,13 +98,15 @@ pub const Lifecycle = struct {
         return if (self.session_id.len != 0) self.session_path.z() else "";
     }
 
-    pub fn configure(self: *Lifecycle, config: policy.Config, on_battery: bool) void {
-        if (std.meta.eql(self.config, config) and self.on_battery == on_battery) return;
+    pub fn configure(self: *Lifecycle, config: policy.Config, on_battery: bool, reduced_motion: bool) void {
+        if (std.meta.eql(self.config, config) and self.on_battery == on_battery and self.reduced_motion == reduced_motion) return;
         self.config = config;
         self.on_battery = on_battery;
+        self.reduced_motion = reduced_motion;
         self.rearm();
     }
     fn rearm(self: *Lifecycle) void {
+        self.stopSaver();
         if (self.power) |power| power.dim(false);
         self.idle.configure(if (self.idle_held or (pearl_session_portal_holds() & 8) != 0 or !self.gate.available or !self.gate.active or self.gate.preparing) .{} else if (self.on_battery) self.config.battery else self.config.ac);
     }
@@ -456,19 +465,27 @@ pub const Lifecycle = struct {
         switch (event) {
             .display_changed => if (self.power) |power| power.updateOutputPower(&self.idle),
             .unavailable => {
+                self.stopSaver();
                 self.idle.setScreenOff(false);
                 if (self.power) |power| power.dim(false);
                 self.gate.sleep_pending = false;
                 self.err = "Compositor idle notifications unavailable.";
             },
             .resumed => {
+                self.stopSaver();
                 if (self.power) |power| power.dim(false);
                 if (!self.gate.preparing) self.gate.sleep_pending = false;
             },
             .dim => if (self.gate.active and !self.gate.preparing and !self.idle_held) {
                 if (self.power) |power| power.dim(true);
             },
-            .screen_off => if (self.gate.active and !self.gate.preparing and !self.idle_held) self.idle.setScreenOff(true),
+            .screen_off => if (self.gate.active and !self.gate.preparing and !self.idle_held) {
+                // With a screensaver enabled the idle deadline starts the
+                // animation; the panel only powers off after the further
+                // per-source timeout so short idle periods keep the display.
+                const mode = if (self.reduced_motion) .off else self.config.screensaver;
+                if (mode == .off) self.idle.setScreenOff(true) else self.startSaver(mode);
+            },
             .lock => self.query(.lock) catch |err| {
                 if (err != error.Busy) log.err("event=lifecycle-failed op=query-lock error={s}", .{@errorName(err)});
             },
@@ -482,6 +499,41 @@ pub const Lifecycle = struct {
             },
         }
         self.changed(self.context);
+    }
+    /// Maps the saver overlay above every application and starts the second
+    /// stage deadline. Falling back to a direct screen-off keeps the power
+    /// path intact when layer-shell or the monitor list is unavailable.
+    fn startSaver(self: *Lifecycle, mode: policy.Screensaver) void {
+        if (self.saver_on) return;
+        self.saver_overlay.show(self.display, &self.saver) catch {
+            self.idle.setScreenOff(true);
+            return;
+        };
+        self.saver.start(mode);
+        self.saver_on = true;
+        const timers = if (self.on_battery) self.config.battery else self.config.ac;
+        if (timers.panel_off_seconds > 0) self.panel_off_source = glib.timeoutAddSeconds(timers.panel_off_seconds, panelOffExpired, self);
+        log.info("event=screensaver-start mode={s} panel_off={d}", .{ @tagName(mode), timers.panel_off_seconds });
+    }
+    fn panelOffExpired(data: ?*anyopaque) callconv(.c) c_int {
+        const self: *Lifecycle = @ptrCast(@alignCast(data.?));
+        self.panel_off_source = 0;
+        if (!self.saver_on) return 0;
+        self.saver.stop();
+        self.idle.setScreenOff(true);
+        log.info("event=screensaver-off", .{});
+        return 0;
+    }
+    fn stopSaver(self: *Lifecycle) void {
+        if (self.panel_off_source != 0) {
+            _ = glib.Source.remove(self.panel_off_source);
+            self.panel_off_source = 0;
+        }
+        if (!self.saver_on) return;
+        self.saver_on = false;
+        self.saver.stop();
+        self.saver_overlay.hide(&self.saver);
+        log.info("event=screensaver-stop", .{});
     }
     pub fn lockNow(self: *Lifecycle) !void {
         self.syncLockState();

@@ -41,11 +41,12 @@ pub const View = struct {
     percent: *gtk.Label,
     brightness_detail: *gtk.Label,
     dim: *gtk.Switch,
+    screensaver: *gtk.DropDown = undefined,
     source_row: *gtk.FlowBox,
     source: *gtk.DropDown,
-    timeouts: [3]*gtk.DropDown = undefined,
-    time_bindings: [3]Binding = undefined,
-    custom: [3]?u32 = @splat(null),
+    timeouts: [4]*gtk.DropDown = undefined,
+    time_bindings: [4]Binding = undefined,
+    custom: [4]?u32 = @splat(null),
     saver_row: *gtk.FlowBox,
     saver: *gtk.DropDown,
     sleep_status: *gtk.Label,
@@ -192,19 +193,24 @@ pub const View = struct {
         try self.remember(self.display_picker, object.Object.signals.notify.connect(self.display_picker.as(object.Object), *View, displaySelected, self, .{ .detail = "selected" }));
         _ = row(display, @import("i18n").dtr("pearl", "Dim screen when inactive"), dim.as(gtk.Widget));
         display.append(w.label(@import("i18n").dtr("pearl", "Reduce brightness before the screen turns off"), "pearl-secondary").as(gtk.Widget));
+        self.screensaver = gtk.DropDown.newFromStrings(@ptrCast(&[_]?[*:0]const u8{ @import("i18n").dtr("pearl", "Off"), @import("i18n").dtr("pearl", "Starfield"), @import("i18n").dtr("pearl", "Matrix"), @import("i18n").dtr("pearl", "Mystify"), null }));
+        _ = row(display, @import("i18n").dtr("pearl", "Screensaver when inactive"), self.screensaver.as(gtk.Widget));
+        display.append(w.label(@import("i18n").dtr("pearl", "Animate the screen at the turn-off timeout instead of blanking immediately"), "pearl-secondary").as(gtk.Widget));
         w.name(brightness.as(gtk.Widget), @import("i18n").dtr("pearl", "Brightness"));
         try self.control("power/brightness", brightness.as(gtk.Widget));
         try self.control("power/dim", dim.as(gtk.Widget));
+        try self.control("power/screensaver", self.screensaver.as(gtk.Widget));
         try self.remember(brightness, gtk.Range.signals.value_changed.connect(brightness.as(gtk.Range), *View, brightnessChanged, self, .{}));
         try self.remember(dim, object.Object.signals.notify.connect(dim.as(object.Object), *View, dimChanged, self, .{ .detail = "active" }));
+        try self.remember(self.screensaver, object.Object.signals.notify.connect(self.screensaver.as(object.Object), *View, screensaverChanged, self, .{ .detail = "selected" }));
         const sleep = card();
         self.section(@import("i18n").dtr("pearl", "Sleep & lock")).append(sleep.as(gtk.Widget));
         self.source_row = row(sleep, @import("i18n").dtr("pearl", "Settings for"), source.as(gtk.Widget));
         try self.control("power/source", source.as(gtk.Widget));
         try self.remember(source, object.Object.signals.notify.connect(source.as(object.Object), *View, sourceChanged, self, .{ .detail = "selected" }));
-        const timeout_labels = [_][:0]const u8{ @import("i18n").dtr("pearl", "Turn screen off after"), @import("i18n").dtr("pearl", "Lock after"), @import("i18n").dtr("pearl", "Suspend after") };
-        const timeout_ids = [_][]const u8{ "power/screen-off", "power/lock-after", "power/suspend-after" };
-        for (0..3) |i| {
+        const timeout_labels = [_][:0]const u8{ @import("i18n").dtr("pearl", "Turn screen off after"), @import("i18n").dtr("pearl", "Lock after"), @import("i18n").dtr("pearl", "Suspend after"), @import("i18n").dtr("pearl", "Turn display off during screensaver") };
+        const timeout_ids = [_][]const u8{ "power/screen-off", "power/lock-after", "power/suspend-after", "power/panel-off" };
+        for (0..4) |i| {
             self.timeouts[i] = gtk.DropDown.newFromStrings(@ptrCast(&[_]?[*:0]const u8{ @import("i18n").dtr("pearl", "Never"), @import("i18n").dtr("pearl", "1 minute"), @import("i18n").dtr("pearl", "5 minutes"), @import("i18n").dtr("pearl", "10 minutes"), @import("i18n").dtr("pearl", "15 minutes"), @import("i18n").dtr("pearl", "30 minutes"), @import("i18n").dtr("pearl", "1 hour"), @import("i18n").dtr("pearl", "Custom"), null }));
             self.time_bindings[i] = .{ .view = self, .index = i };
             _ = row(sleep, timeout_labels[i], self.timeouts[i].as(gtk.Widget));
@@ -379,7 +385,9 @@ pub const View = struct {
         const timers = if (self.battery_selected) s.config.battery else s.config.ac;
         self.dim.setActive(@intFromBool(timers.dim));
         self.dim.as(gtk.Widget).setSensitive(@intFromBool(!s.saving and s.brightness_available and s.display_power_available and s.idle_available));
-        for ([_]u32{ timers.screen_off_seconds, timers.lock_seconds, timers.suspend_seconds }, 0..) |seconds, i| {
+        self.screensaver.setSelected(@backingInt(s.config.screensaver));
+        self.screensaver.as(gtk.Widget).setSensitive(@intFromBool(!s.saving and s.idle_available));
+        for ([_]u32{ timers.screen_off_seconds, timers.lock_seconds, timers.suspend_seconds, timers.panel_off_seconds }, 0..) |seconds, i| {
             var index: u32 = durations.len;
             for (durations, 0..) |duration, j| if (seconds == duration) {
                 index = @intCast(j);
@@ -395,7 +403,9 @@ pub const View = struct {
                 strings.unref();
             }
             self.timeouts[i].setSelected(index);
-            self.timeouts[i].as(gtk.Widget).setSensitive(@intFromBool(!s.saving and s.idle_available and (i != 0 or s.display_power_available)));
+            const needs_power = i == 0 or i == 3;
+            const usable = !s.saving and s.idle_available and (!needs_power or s.display_power_available) and (i != 3 or s.config.screensaver != .off);
+            self.timeouts[i].as(gtk.Widget).setSensitive(@intFromBool(usable));
         }
         self.saver.setSelected(s.config.automatic_saver / 10);
         self.saver.as(gtk.Widget).setSensitive(@intFromBool(!s.saving and s.profiles[0]));
@@ -444,11 +454,15 @@ pub const View = struct {
     fn saverChanged(_: *object.Object, _: *object.ParamSpec, self: *View) callconv(.c) void {
         self.save(.automatic_saver, self.saver.getSelected() * 10);
     }
+    fn screensaverChanged(_: *object.Object, _: *object.ParamSpec, self: *View) callconv(.c) void {
+        self.save(.screensaver, self.screensaver.getSelected());
+    }
     fn lockingField(index: usize) @import("../config/power_patch.zig").Field {
         return switch (index) {
             0 => .screen_off_seconds,
             1 => .lock_seconds,
-            else => .suspend_seconds,
+            2 => .suspend_seconds,
+            else => .panel_off_seconds,
         };
     }
     fn timeoutChanged(_: *object.Object, _: *object.ParamSpec, b: *Binding) callconv(.c) void {

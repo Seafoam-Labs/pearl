@@ -163,6 +163,7 @@ pub const Backend = struct {
                 if ((v.source == .battery or v.field == .automatic_saver) and !live.power.battery_present) return error.Unavailable;
                 if (v.field == .dim and (!live.power.brightnessAvailable() or !live.lifecycle.idle.screenAvailable())) return error.Unavailable;
                 if (v.field == .screen_off_seconds and !live.lifecycle.idle.screenAvailable()) return error.Unavailable;
+                if (v.field == .panel_off_seconds and !live.lifecycle.idle.screenAvailable()) return error.Unavailable;
                 if (v.field == .automatic_saver and !live.power.profiles[0]) return error.Unavailable;
                 const canonical = try std.json.Stringify.valueAlloc(alloc, .{ .op = request.op, .params = v }, .{});
                 const reserved = try self.reserve(v.operation, p.digest(canonical));
@@ -228,7 +229,7 @@ pub const Backend = struct {
                     if (!preferences.matugen.enabled) return error.ApplicationManagementDisabled;
                     if (command.action == .application_refresh) {
                         if (!std.mem.eql(u8, command.id, "pywalfox")) return error.UnsupportedApplicationRefresh;
-                        const target = self.service.application_status.targets[@intFromEnum(@import("../theme/matugen_profiles.zig").Application.pywalfox)];
+                        const target = self.service.application_status.targets[@backingInt(@import("../theme/matugen_profiles.zig").Application.pywalfox)];
                         if ((target.state != .activation_required and target.state != .applied) or target.applied_generation != self.service.application_status.desired_generation) return error.ApplicationColorsNotApplied;
                     }
                     command.sha256 = (self.service.live orelse return error.Unavailable).application_digest;

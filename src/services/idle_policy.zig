@@ -1,9 +1,14 @@
 //! Pure lock/suspend gate. Request acceptance never means the screen is locked.
 const std = @import("std");
+pub const Screensaver = enum { off, starfield, matrix, mystify };
 pub const Timeouts = struct {
     lock_seconds: u32 = 0,
     suspend_seconds: u32 = 0,
     screen_off_seconds: u32 = 0,
+    /// Extra idle time after the screensaver starts before the panel powers
+    /// off. Only consulted when a screensaver is enabled; zero keeps the
+    /// panel lit while the saver runs.
+    panel_off_seconds: u32 = 0,
     dim: bool = false,
     pub fn dimSeconds(self: Timeouts) u32 {
         return if (self.dim and self.screen_off_seconds > 1) self.screen_off_seconds - @min(30, self.screen_off_seconds / 2) else 0;
@@ -13,9 +18,10 @@ pub const Config = struct {
     ac: Timeouts = .{},
     battery: Timeouts = .{},
     automatic_saver: u8 = 0,
+    screensaver: Screensaver = .off,
     pub fn validate(self: Config) !void {
         for ([_]Timeouts{ self.ac, self.battery }) |p| {
-            if (p.lock_seconds > 86400 or p.suspend_seconds > 86400 or p.screen_off_seconds > 86400) return error.InvalidIdleTimeout;
+            if (p.lock_seconds > 86400 or p.suspend_seconds > 86400 or p.screen_off_seconds > 86400 or p.panel_off_seconds > 86400) return error.InvalidIdleTimeout;
             if (p.suspend_seconds > 0 and (p.lock_seconds == 0 or p.suspend_seconds <= p.lock_seconds)) return error.LockBeforeSuspendRequired;
             if (p.suspend_seconds > 0 and p.screen_off_seconds > p.suspend_seconds) return error.ScreenOffAfterSuspend;
         }
@@ -77,8 +83,12 @@ test "dimming precedes blanking and new policies are opt in" {
     const defaults: Config = .{};
     try std.testing.expectEqual(@as(u32, 0), defaults.ac.dimSeconds());
     try std.testing.expectEqual(@as(u8, 0), defaults.automatic_saver);
+    try std.testing.expectEqual(Screensaver.off, defaults.screensaver);
+    try std.testing.expectEqual(@as(u32, 0), defaults.ac.panel_off_seconds);
     try std.testing.expectEqual(@as(u32, 270), (Timeouts{ .dim = true, .screen_off_seconds = 300 }).dimSeconds());
     try std.testing.expectEqual(@as(u32, 2), (Timeouts{ .dim = true, .screen_off_seconds = 4 }).dimSeconds());
     try std.testing.expectError(error.ScreenOffAfterSuspend, (Config{ .ac = .{ .lock_seconds = 10, .suspend_seconds = 20, .screen_off_seconds = 30 } }).validate());
     try std.testing.expectError(error.InvalidPowerSaverThreshold, (Config{ .automatic_saver = 21 }).validate());
+    try std.testing.expectError(error.InvalidIdleTimeout, (Config{ .battery = .{ .panel_off_seconds = 86401 } }).validate());
+    try (Config{ .screensaver = .mystify, .ac = .{ .screen_off_seconds = 300, .panel_off_seconds = 600 } }).validate();
 }

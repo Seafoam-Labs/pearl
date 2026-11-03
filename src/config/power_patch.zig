@@ -2,7 +2,7 @@
 const std = @import("std");
 const model = @import("preferences.zig");
 pub const Source = enum { ac, battery };
-pub const Field = enum { screen_off_seconds, lock_seconds, suspend_seconds, dim, automatic_saver };
+pub const Field = enum { screen_off_seconds, lock_seconds, suspend_seconds, dim, automatic_saver, screensaver, panel_off_seconds };
 pub fn patch(alloc: std.mem.Allocator, current: model.Preferences, source: Source, field: Field, value: u32) ![]const u8 {
     var next = current;
     const timers = if (source == .ac) &next.idle.ac else &next.idle.battery;
@@ -18,6 +18,11 @@ pub fn patch(alloc: std.mem.Allocator, current: model.Preferences, source: Sourc
             if (value > 30) return error.InvalidPowerSaverThreshold;
             next.idle.automatic_saver = @intCast(value);
         },
+        .screensaver => {
+            if (value >= @typeInfo(@import("../services/idle_policy.zig").Screensaver).@"enum".field_names.len) return error.InvalidRequest;
+            next.idle.screensaver = @fromBackingInt(@intCast(value));
+        },
+        .panel_off_seconds => timers.panel_off_seconds = value,
     }
     try next.idle.validate();
     return std.json.Stringify.valueAlloc(alloc, next, .{});
@@ -33,6 +38,13 @@ test "scoped power changes preserve unrelated configuration and reject unsafe sl
     try std.testing.expectEqual(@as(u32, 300), next.idle.ac.screen_off_seconds);
     try std.testing.expectEqual(@as(u32, 0), next.idle.battery.screen_off_seconds);
     try std.testing.expectError(error.LockBeforeSuspendRequired, patch(a, current, .ac, .suspend_seconds, 900));
+    const saver = try model.parse(a, try patch(a, current, .ac, .screensaver, 2));
+    try std.testing.expectEqual(@import("../services/idle_policy.zig").Screensaver.matrix, saver.idle.screensaver);
+    try std.testing.expectError(error.InvalidRequest, patch(a, current, .ac, .screensaver, 4));
+    const panel = try model.parse(a, try patch(a, current, .battery, .panel_off_seconds, 120));
+    try std.testing.expectEqual(@as(u32, 120), panel.idle.battery.panel_off_seconds);
+    try std.testing.expectEqual(@as(u32, 0), panel.idle.ac.panel_off_seconds);
+    try std.testing.expectError(error.InvalidIdleTimeout, patch(a, current, .ac, .panel_off_seconds, 86401));
     const ours = "{\"font_size\":20}";
     const encoded = try patch(a, .{}, .ac, .screen_off_seconds, 300);
     const merged = try model.parse(a, try @import("merge.zig").json(a, "{}", ours, encoded));
