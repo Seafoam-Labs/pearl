@@ -438,6 +438,8 @@ pub fn build(b: *std.Build) void {
     const pure_module = createModule(b, .{ .root_source_file = b.path("src/tests.zig"), .target = target, .optimize = optimize });
     pure_module.addAnonymousImport("aqueous_presentation_fixture", .{ .root_source_file = b.path("tests/fixtures/aqueous-master/snapshot.json") });
     pure_module.addImport("aqueous_fixtures", createModule(b, .{ .root_source_file = b.path("tests/fixtures/aqueous/fixtures.zig"), .target = target, .optimize = optimize }));
+    // scx's contract fixtures for scxcli's clients.
+    pure_module.addImport("scx_fixtures", createModule(b, .{ .root_source_file = b.path("tests/fixtures/scx/fixtures.zig"), .target = target, .optimize = optimize }));
     const pure = b.addTest(.{ .root_module = pure_module });
     const filter_module = createModule(b, .{ .root_source_file = b.path("src/notification_filter_tests.zig"), .target = target, .optimize = optimize, .link_libc = true });
     filter_module.linkSystemLibrary("glib-2.0", .{ .use_pkg_config = .yes });
