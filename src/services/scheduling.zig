@@ -1,14 +1,18 @@
-//! Scheduling profiles applied through scx.service. Pearl watches the unit over
+//! Scheduling profiles through scx's own tools. scxcli lists the catalog's
+//! profiles and what the unit is set to run, starts profiles and saves the
+//! catalog; Pearl runs it as the user to read and through pkexec to change
+//! anything, under scx's polkit actions. Pearl watches the unit over
 //! systemd's D-Bus API and sched_ext through the kernel's uevents, so state
-//! changes arrive without polling, and changes it only through
-//! pearl-scheduling-helper.
+//! changes arrive without polling, and rereads the listing when the catalog
+//! or the unit's environment file changes.
 const std = @import("std");
 const gio = @import("gio2");
 const glib = @import("glib2");
 const unix = @import("glibunix2");
 const object = @import("gobject2");
 const p = @import("sched_profiles.zig");
-const store = @import("sched_profiles_store.zig");
+const sd = @import("sched_systemd.zig");
+const cw = @import("catalog_watch.zig");
 const Kernel = p.Kernel;
 const log = std.log.scoped(.services);
 const a = std.heap.c_allocator;
@@ -37,31 +41,61 @@ pub const Service = struct {
     /// how often systemd restarted it.
     process: ?*gio.DBusProxy = null,
     process_signal: c_ulong = 0,
-    arena: std.heap.ArenaAllocator = .init(a),
-    /// The profiles to choose from: the administrator's file when there is
-    /// one, else the shipped profiles. Null when neither is installed or the
-    /// file used is invalid.
-    config: ?p.Config = null,
-    /// The profiles the package ships, which restoring the defaults returns
-    /// to.
-    shipped: ?p.Config = null,
-    /// config is an edited list that restoring the defaults would replace.
-    custom: bool = false,
-    /// Watches the administrator's file, so edits show up at once.
-    monitor: ?*gio.FileMonitor = null,
-    monitor_signal: c_ulong = 0,
-    /// The helper is saving or resetting the profiles; it asks for a
-    /// password first.
+    /// Owns the listing.
+    listing_arena: std.heap.ArenaAllocator = .init(a),
+    /// Owns the listing's current state when `scxcli get` replaced it.
+    current_arena: std.heap.ArenaAllocator = .init(a),
+    /// scxcli is reading the state; another event meanwhile reads it again.
+    current_busy: bool = false,
+    current_again: bool = false,
+    /// The last read of the state failed, so what is shown is the state
+    /// before it: not confirmed, and read again with a growing delay.
+    current_stale: bool = false,
+    current_retry: p.Retry = .{},
+    current_retry_source: c_uint = 0,
+    /// `scxcli list --json`: the catalog's profiles, the installed
+    /// schedulers and what the unit is set to run. Null until scxcli has
+    /// answered, or when it cannot.
+    listing: ?p.Listing = null,
+    /// scxcli is listing; another change meanwhile lists again after it.
+    listing_busy: bool = false,
+    listing_again: bool = false,
+    /// A listing that failed is asked for again, as the state is.
+    listing_retry: p.Retry = .{},
+    listing_retry_source: c_uint = 0,
+    /// Owns the catalog texts.
+    catalog_arena: std.heap.ArenaAllocator = .init(a),
+    /// The catalog in use, as `scxcli catalog show` prints it. Saving edited
+    /// profiles replaces its recommended list and keeps the rest.
+    catalog: ?[]const u8 = null,
+    /// The profiles scx ships, which restoring the defaults returns to.
+    shipped: ?[]const p.Profile = null,
+    catalog_busy: bool = false,
+    catalog_again: bool = false,
+    /// The catalogs and the unit's environment file, so changes made anywhere
+    /// show up at once.
+    watches: [3]?cw.Watch = @splat(null),
+    /// scxcli is saving or resetting the catalog; it asks for a password
+    /// first.
     saving: bool = false,
-    /// What saving the profiles stdin carries to the helper.
+    /// What saving the catalog sends to scxcli on stdin, once scxcli has
+    /// shown that the catalog is still the one it was built from.
     save_input: ?[:0]u8 = null,
-    /// The profile to apply once the profiles are saved, so the running
+    /// The catalog text the edit was built from.
+    save_base: ?[]u8 = null,
+    /// The profile to start once the catalog is saved, so the running
     /// scheduler keeps matching its profile.
     after_save: ?[]const u8 = null,
-    after_save_buffer: [32]u8 = undefined,
-    /// Why the profile file could not be used.
+    after_save_buffer: [p.max_id]u8 = undefined,
+    /// What the unit ran when the edit was prepared. The save may wait on a
+    /// password prompt for long; the profile is started again only if that
+    /// command still runs then, so a scheduler someone else started or
+    /// stopped meanwhile is left alone.
+    after_save_arena: std.heap.ArenaAllocator = .init(a),
+    after_save_command: ?p.Command = null,
+    /// Why the profiles cannot be listed.
     problem: ?[:0]const u8 = null,
-    env: p.Env = .{},
+    problem_buffer: [400]u8 = undefined,
     status: p.Status = .{},
     unit_state: p.Unit = .unknown,
     kernel: Kernel = .unavailable,
@@ -76,10 +110,11 @@ pub const Service = struct {
     /// for example when a CPU goes offline, so it gets time to attach again.
     detached_since: i64 = 0,
     /// systemd's restart count for the unit, as last seen.
-    restarts: ?u32 = null,
+    /// What a refresh may conclude about a failure (`p.Tracker`).
+    tracker: p.Tracker = .{},
     /// The profile whose scheduler failed, until another profile is selected.
     failed: ?[]const u8 = null,
-    failed_buffer: [32]u8 = undefined,
+    failed_buffer: [p.max_id]u8 = undefined,
     /// When that profile was selected, in seconds since the epoch.
     failed_since: i64 = 0,
     /// Why the selected scheduler stopped, once known.
@@ -92,13 +127,13 @@ pub const Service = struct {
     notice_label_len: usize = 0,
     notice_detail: [400]u8 = undefined,
     notice_detail_len: usize = 0,
-    /// The profile being applied is the fallback to Default.
+    /// The profile being started is the fallback to Default.
     reverting: bool = false,
     /// A fallback that could not start yet, for example while locked.
     fallback_pending: bool = false,
-    /// Profile id being applied; the helper is still running.
+    /// Profile id being started; scxcli is still running.
     applying: ?[]const u8 = null,
-    applying_buffer: [33]u8 = undefined,
+    applying_buffer: [p.max_id + 1]u8 = undefined,
     err: ?[:0]const u8 = null,
     err_buffer: [512]u8 = undefined,
     /// Rechecks once the switching window closes or the attach deadline
@@ -112,8 +147,20 @@ pub const Service = struct {
     events_source: c_uint = 0,
     /// Rechecks sched_ext periodically only when uevents are unavailable.
     poll_source: c_uint = 0,
+    /// Watches systemd on the system bus, so a restarted or re-executed
+    /// systemd gets connected to again.
+    systemd_watch: c_uint = 0,
+    /// Whether the proxies and the subscription are whole, for systemd's
+    /// current owner.
+    link: sd.Link = .{},
+    /// Cancels the current connection attempt's calls when a new one starts.
+    systemd_cancel: ?*gio.Cancellable = null,
+    /// Asks scxcli what runs, and tries to connect again, every few seconds
+    /// while systemd's signals cannot be relied on.
+    systemd_poll_source: c_uint = 0,
 
-    pub const Notice = enum { none, stopped, start_failed };
+    pub const Notice = enum { none, stopped };
+    const Watch = enum(u2) { admin, shipped, config };
 
     pub fn start(self: *Service) void {
         self.running = true;
@@ -122,10 +169,14 @@ pub const Service = struct {
             log.warn("event=sched-profile-systemd result=uevents-unavailable", .{});
             self.poll_source = glib.timeoutAddSeconds(3, poll, self);
         }
-        self.watchProfiles();
+        self.watch(.admin, p.admin_catalog);
+        self.watch(.shipped, p.shipped_catalog);
+        self.watch(.config, p.default_config);
+        self.reload();
+        self.reloadCatalog();
         self.refresh();
-        self.app.hold();
-        gio.DBusProxy.newForBus(.system, .{ .do_not_load_properties = true }, null, systemd, "/org/freedesktop/systemd1", systemd ++ ".Manager", self.cancel, managerReady, self);
+        self.systemd_watch = gio.busWatchName(.system, systemd, .{}, systemdAppeared, systemdVanished, self, null);
+        self.connectSystemd();
     }
 
     pub fn stop(self: *Service) void {
@@ -138,12 +189,15 @@ pub const Service = struct {
         self.events_fd = -1;
         if (self.failure_source != 0) _ = glib.Source.remove(self.failure_source);
         if (self.poll_source != 0) _ = glib.Source.remove(self.poll_source);
-        if (self.monitor) |m| {
-            object.signalHandlerDisconnect(m.as(object.Object), self.monitor_signal);
-            _ = m.cancel();
-            m.unref();
-        }
-        self.monitor = null;
+        if (self.systemd_poll_source != 0) _ = glib.Source.remove(self.systemd_poll_source);
+        if (self.current_retry_source != 0) _ = glib.Source.remove(self.current_retry_source);
+        self.current_retry_source = 0;
+        if (self.listing_retry_source != 0) _ = glib.Source.remove(self.listing_retry_source);
+        self.listing_retry_source = 0;
+        if (self.systemd_watch != 0) gio.busUnwatchName(self.systemd_watch);
+        self.systemd_poll_source = 0;
+        self.systemd_watch = 0;
+        for (std.enums.values(Watch)) |which| self.unwatch(which);
         self.failure_source = 0;
         self.poll_source = 0;
         if (self.cancel) |cancel| {
@@ -151,47 +205,101 @@ pub const Service = struct {
             cancel.unref();
         }
         self.cancel = null;
-        if (self.unit) |proxy| {
-            object.signalHandlerDisconnect(proxy.as(object.Object), self.unit_signal);
-            proxy.unref();
-        }
-        if (self.process) |proxy| {
-            object.signalHandlerDisconnect(proxy.as(object.Object), self.process_signal);
-            proxy.unref();
-        }
-        self.process = null;
-        if (self.manager) |proxy| proxy.unref();
-        self.unit = null;
-        self.manager = null;
-        self.arena.deinit();
+        self.dropSystemd();
+        if (self.systemd_cancel) |cancel| cancel.unref();
+        self.systemd_cancel = null;
+        self.listing = null;
+        self.catalog = null;
+        self.shipped = null;
+        self.listing_arena.deinit();
+        self.current_arena.deinit();
+        self.after_save_arena.deinit();
+        self.catalog_arena.deinit();
+        if (self.save_input) |value| a.free(value);
+        if (self.save_base) |value| a.free(value);
+        self.save_input = null;
+        self.save_base = null;
+    }
+
+    /// How a profile row shows: what runs, or a selection kept while
+    /// stopped.
+    pub fn mark(self: *const Service, index: usize) p.Mark {
+        const listing = self.listing orelse return .none;
+        if (index >= listing.profiles.len) return .none;
+        return p.mark(listing, self.status, index);
+    }
+
+    /// Identifies the listing as views and the editor use it (`p.signature`),
+    /// so a view rebuilds its rows when it changes and an editor can tell
+    /// that what it was opened on is gone. 0 without a listing.
+    pub fn signature(self: *const Service) u64 {
+        return if (self.listing) |listing| p.signature(listing) else 0;
+    }
+
+    /// The profile a status refers to.
+    pub fn profile(self: *const Service, index: ?usize) ?p.Profile {
+        const listing = self.listing orelse return null;
+        return listing.profiles[index orelse return null];
+    }
+
+    /// The catalog in use is the administrator's, which restoring the
+    /// defaults removes.
+    pub fn customized(self: *const Service) bool {
+        const listing = self.listing orelse return false;
+        return listing.customized;
+    }
+
+    /// The profiles can be edited: scxcli has shown the catalog to edit.
+    pub fn editable(self: *const Service) bool {
+        return self.listing != null and self.catalog != null;
     }
 
     /// One line on what the scheduler is doing, shared by the flyout and
     /// Settings. A running profile is only reported once the kernel shows its
     /// scheduler attached, with the version it reports and when it started.
     pub fn describe(self: *const Service, buffer: []u8) [:0]const u8 {
+        if (self.status.stale and self.problem == null and self.applying == null) {
+            var inner: [512]u8 = undefined;
+            const text = self.describeState(&inner);
+            // Translators: The last known scheduler state, while scxcli cannot be asked again.
+            return @import("i18n").fmt(buffer, "{s} (not confirmed: scxcli could not be asked what runs now)", .{text});
+        }
+        return self.describeState(buffer);
+    }
+
+    fn describeState(self: *const Service, buffer: []u8) [:0]const u8 {
         if (self.problem) |problem| return problem;
-        // The profile being applied, before systemd reports any change.
-        if (self.applying) |id| if (self.config) |config| if (config.find(id)) |i| {
-            const target = config.profiles[i];
-            return if (target.stop) @import("i18n").dtr("pearl", "Stopping the scheduler...") else @import("i18n").fmt(buffer, "Starting {s}...", .{target.label});
+        // The profile being started, before systemd reports any change.
+        if (self.applying) |id| if (self.listing) |listing| if (listing.find(id)) |i| {
+            const target = listing.profiles[i];
+            return if (target.isDefault()) @import("i18n").dtr("pearl", "Stopping the scheduler...") else @import("i18n").fmt(buffer, "Starting {s}...", .{target.label});
         };
-        const profile: ?p.Profile = if (self.config) |c| if (self.status.profile) |i| c.profiles[i] else null else null;
-        const name = if (profile) |value| value.label else "";
+        const selected = self.profile(self.status.profile);
+        const name = if (selected) |value| value.label else "";
         return switch (self.status.kind) {
-            .unavailable => if (self.config == null) @import("i18n").dtr("pearl", "No scheduler profiles are installed.") else if (self.kernel == .unavailable) @import("i18n").dtr("pearl", "This kernel does not support sched_ext schedulers.") else if (self.unit_state == .missing) @import("i18n").dtr("pearl", "scx.service is not installed.") else @import("i18n").dtr("pearl", "Checking the scheduler..."),
+            .unavailable => if (self.listing == null) @import("i18n").dtr("pearl", "Checking the scheduler...") else if (self.listing.?.current.kernel_state == null) @import("i18n").dtr("pearl", "This kernel does not support sched_ext schedulers.") else if (self.unit_state == .missing) @import("i18n").dtr("pearl", "scx.service is not installed.") else @import("i18n").dtr("pearl", "Checking the scheduler..."),
             .off => @import("i18n").fmt(buffer, "{s} - kernel scheduler (EEVDF)", .{name}),
             .running => blk: {
-                const sched = p.schedName(self.env.sched);
+                const sched = if (selected) |value| value.scheduler() orelse "" else "";
                 const version = p.opsVersion(sched, self.ops);
                 var time: [48]u8 = undefined;
                 const uptime = self.since(&time);
                 var identity_buffer: [512]u8 = undefined;
                 const identity = std.fmt.bufPrint(&identity_buffer, "{s}{s}{s}", .{ sched, if (version != null) " " else "", version orelse "" }) catch sched;
+                // The file was changed while the unit runs: the next start
+                // runs something else.
+                const listing = self.listing.?;
+                const pick = p.selection(listing);
+                const later: ?[]const u8 = if (p.active(listing)) |runs| (if (pick.first) |i| (if (p.matchRunning(listing.profiles[i], runs)) null else listing.profiles[i].label) else if (listing.current.next != null) @import("i18n").dtr("pearl", "a command outside these profiles") else null) else null;
+                var line_buffer: [400]u8 = undefined;
                 // Translators: Scheduler identity and a regional date/time, respectively.
-                break :blk if (uptime.len > 0) @import("i18n").fmt(buffer, "Running - {s} - since {s}", .{ identity, uptime }) else @import("i18n").fmt(buffer, "Running - {s}", .{identity});
+                const line = if (uptime.len > 0) @import("i18n").fmt(&line_buffer, "Running - {s} - since {s}", .{ identity, uptime }) else @import("i18n").fmt(&line_buffer, "Running - {s}", .{identity});
+                // Translators: A running scheduler, then the profile the unit's file now selects for its next start.
+                break :blk if (later) |next| @import("i18n").fmt(buffer, "{s}. The next start runs {s}.", .{ line, next }) else std.mem.printSentinel(buffer, "{s}", .{line}, 0) catch line;
             },
-            .starting => if (profile != null and profile.?.stop) @import("i18n").dtr("pearl", "Stopping the scheduler...") else @import("i18n").fmt(buffer, "Starting {s}...", .{name}),
+            .starting => if (selected != null and selected.?.isDefault()) @import("i18n").dtr("pearl", "Stopping the scheduler...") else @import("i18n").fmt(buffer, "Starting {s}...", .{name}),
+            // Translators: A profile kept selected while scx.service is stopped, for example by scxcli stop.
+            .stopped => @import("i18n").fmt(buffer, "{s} is selected but stopped; the kernel's default scheduler is running. Choose it to start it again.", .{name}),
             .failed => if (self.reason) |reason| @import("i18n").fmt(buffer, "{s} stopped: {s}. The kernel's default scheduler is running.", .{ name, reason }) else @import("i18n").fmt(buffer, "{s} stopped unexpectedly; the kernel's default scheduler is running.", .{name}),
             .custom => if (self.ops.len > 0) @import("i18n").fmt(buffer, "Custom - scx_{s} is running outside these profiles.", .{opsName(self.ops)}) else @import("i18n").dtr("pearl", "Custom - a scheduler configured outside these profiles is running."),
         };
@@ -208,19 +316,23 @@ pub const Service = struct {
                 @import("i18n").fmt(buffer, "{s} stopped: {s}. Switched back to {s}.", .{ label, detail, default })
             else
                 @import("i18n").fmt(buffer, "{s} stopped unexpectedly. Switched back to {s}.", .{ label, default }),
-            .start_failed => @import("i18n").fmt(buffer, "{s} could not start: {s}. Switched back to {s}.", .{ label, detail, default }),
         };
     }
 
     fn defaultLabel(self: *const Service) []const u8 {
-        if (self.config) |config| if (p.firstStop(config)) |i| return config.profiles[i].label;
+        if (self.listing) |listing| if (listing.find(p.default_id)) |i| return listing.profiles[i].label;
         return @import("i18n").dtr("pearl", "Default");
+    }
+
+    /// The unit's environment file, as the listing names it.
+    fn configPath(self: *const Service) []const u8 {
+        return if (self.listing) |listing| listing.configPath() else p.default_config;
     }
 
     /// A profile was chosen in the last few seconds and the running instance
     /// predates it, so the previous scheduler may still be on its way out.
     fn switching(self: *const Service) bool {
-        const written = envWritten() orelse return false;
+        const written = modified(self.configPath()) orelse return false;
         return written > @as(i64, @intCast(self.active_since)) and glib.getRealTime() - written < switch_window;
     }
 
@@ -250,39 +362,22 @@ pub const Service = struct {
     }
 
     pub fn configured(self: *const Service) bool {
-        return self.config != null or self.problem != null;
+        return self.listing != null or self.problem != null;
     }
 
-    /// Reread the profile file, /etc/default/scx and sched_ext state, and
-    /// combine them with the unit state last reported by systemd.
+    /// Combine the listing scxcli gave last with sched_ext's state and the
+    /// unit state last reported by systemd.
     pub fn refresh(self: *Service) void {
-        _ = self.arena.reset(.retain_capacity);
-        const alloc = self.arena.allocator();
-        self.config = null;
-        self.shipped = null;
-        self.custom = false;
-        self.problem = null;
-        if (store.load(alloc)) |loaded| {
-            if (loaded) |file| {
-                self.config = file.config;
-                self.custom = file.admin;
-            }
-        } else |err| {
-            self.problem = std.fmt.allocPrintSentinel(alloc, "Scheduler profiles could not be read ({s}).", .{@errorName(err)}, 0) catch "Scheduler profiles could not be read.";
-        }
-        self.shipped = store.loadShipped(alloc) catch null;
-        // Without shipped profiles there is nothing to restore.
-        self.custom = self.custom and self.shipped != null;
-        self.env = store.readEnv(alloc) catch .{};
         const previous = self.kernel;
         self.kernel = kernelState();
         if (previous == .enabled and self.kernel != .enabled and self.unit_state == .active) self.detached_since = glib.getRealTime();
         self.ops = readOps(&self.ops_buffer);
-        self.status = if (self.config) |config| p.status(config, self.env, self.unit_state, self.kernel, self.ops, self.switching(), self.stuck()) else .{};
+        self.status = if (self.listing) |listing| p.status(listing, self.unit_state, self.switching(), self.stuck()) else .{};
+        self.status.stale = self.current_stale and self.status.kind != .unavailable;
         self.track();
         // A profile other than Default chosen anywhere replaces the notice,
         // once the failed one and the fallback are out of the way.
-        if (self.notice != .none and self.applying == null and self.failed == null) if (self.config) |config| if (self.env.profile) |id| if (config.find(id)) |i| if (!config.profiles[i].stop) {
+        if (self.notice != .none and self.applying == null and self.failed == null) if (self.selectedId()) |id| if (!std.mem.eql(u8, id, p.default_id)) {
             self.notice = .none;
         };
         if (self.fallback_pending and self.enabled and self.applying == null) self.fallBack();
@@ -290,18 +385,27 @@ pub const Service = struct {
         self.changed(self.context);
     }
 
+    /// The id of the profile the unit's environment selects.
+    fn selectedId(self: *const Service) ?[]const u8 {
+        const listing = self.listing orelse return null;
+        return listing.profiles[p.selection(listing).first orelse return null].id;
+    }
+
     /// Notice a failure of the selected scheduler, including one systemd
     /// already restarted, and act on it once its reason can be read.
     fn track(self: *Service) void {
-        const previous = self.restarts;
-        self.restarts = self.readRestarts();
-        const profile = self.env.profile orelse "";
-        if (self.failed) |failed| if (!std.mem.eql(u8, failed, profile)) self.clearFailure();
-        const count = self.restarts orelse 0;
-        if (self.failed == null and profile.len <= self.failed_buffer.len and p.crashed(self.status, count, if (self.restarts != null) previous else null)) {
-            @memcpy(self.failed_buffer[0..profile.len], profile);
-            self.failed = self.failed_buffer[0..profile.len];
-            self.failed_since = if (envWritten()) |written| @divTrunc(written, std.time.us_per_s) else 0;
+        // Only a confirmed status says which profile a failure is of, and a
+        // restart counted while there was none is put on nobody
+        // (`p.Restarts`).
+        const process = if (self.listing) |listing| listing.current.running else null;
+        const crashed = self.tracker.judge(self.status, self.current_stale, process, self.readRestarts());
+        if (self.current_stale) return;
+        const id = if (self.status.profile) |i| self.listing.?.profiles[i].id else "";
+        if (self.failed) |failed| if (!std.mem.eql(u8, failed, id)) self.clearFailure();
+        if (self.failed == null and id.len > 0 and id.len <= self.failed_buffer.len and crashed) {
+            @memcpy(self.failed_buffer[0..id.len], id);
+            self.failed = self.failed_buffer[0..id.len];
+            self.failed_since = if (modified(self.configPath())) |written| @divTrunc(written, std.time.us_per_s) else 0;
             self.notified = false;
             self.reason = null;
         }
@@ -329,7 +433,7 @@ pub const Service = struct {
 
     fn poll(data: ?*anyopaque) callconv(.c) c_int {
         const self: *Service = @ptrCast(@alignCast(data.?));
-        self.refresh();
+        self.reloadCurrent();
         return 1;
     }
 
@@ -384,7 +488,7 @@ pub const Service = struct {
         var buffer: [64]u8 = undefined;
         const reason = logged orelse self.processReason(&buffer);
         self.reason = if (reason) |text| std.mem.printSentinel(&self.reason_buffer, "{s}", .{text[0..@min(text.len, self.reason_buffer.len - 1)]}, 0) catch null else null;
-        const label = if (self.config) |config| if (config.find(failed)) |i| config.profiles[i].label else failed else failed;
+        const label = if (self.listing) |listing| if (listing.find(failed)) |i| listing.profiles[i].label else failed else failed;
         self.setNotice(.stopped, label, self.reason orelse "");
         // Only the shell reports failures and falls back; Settings would
         // duplicate them.
@@ -404,13 +508,12 @@ pub const Service = struct {
         @memcpy(self.notice_detail[0..self.notice_detail_len], detail[0..self.notice_detail_len]);
     }
 
-    /// Apply the Default profile after a failure. It waits for the session to
-    /// allow changes, such as while it is locked.
+    /// Start Default after a failure, so a scheduler that keeps failing is
+    /// not started again at the next boot. It waits for the session to allow
+    /// changes, such as while it is locked.
     fn fallBack(self: *Service) void {
-        const config = self.config orelse return;
-        const index = p.firstStop(config) orelse return;
         self.fallback_pending = false;
-        self.startApply(config.profiles[index].id, true) catch |err| {
+        self.startApply(p.default_id, true, true) catch |err| {
             log.warn("event=sched-profile-fallback result={s}", .{@errorName(err)});
             if (err == error.Unavailable or err == error.Busy) self.fallback_pending = true;
         };
@@ -429,14 +532,14 @@ pub const Service = struct {
 
     /// While a profile is starting, recheck once when the switching window
     /// closes or the attach deadline passes. Everything else that can change
-    /// the status arrives as a systemd or kernel event.
+    /// the status arrives as a systemd, kernel or file event.
     fn scheduleRecheck(self: *Service) void {
         if (self.recheck_source != 0) _ = glib.Source.remove(self.recheck_source);
         self.recheck_source = 0;
         if (!self.running or self.status.kind != .starting) return;
         const now = glib.getRealTime();
         var deadline: i64 = std.math.maxInt(i64);
-        if (envWritten()) |written| if (written + switch_window > now) {
+        if (modified(self.configPath())) |written| if (written + switch_window > now) {
             deadline = written + switch_window;
         };
         if (self.unit_state == .active and self.active_since > 0) {
@@ -452,6 +555,9 @@ pub const Service = struct {
         const self: *Service = @ptrCast(@alignCast(data.?));
         self.recheck_source = 0;
         self.refresh();
+        // A scheduler that never attached is a failure only on a state
+        // scxcli gives now.
+        self.reloadCurrent();
         return 0;
     }
 
@@ -490,240 +596,701 @@ pub const Service = struct {
                 else => break,
             }
         }
-        if (relevant) self.refresh();
+        // What runs is scxcli's to say; the event says when to ask.
+        if (relevant) self.reloadCurrent();
         return 1;
     }
 
-    fn watchProfiles(self: *Service) void {
-        var scratch = std.heap.ArenaAllocator.init(a);
-        defer scratch.deinit();
-        const path = (store.paths(scratch.allocator()) catch return)[0];
-        // GLib keeps watching for a file whose directory does not exist yet.
-        const file = gio.File.newForPath(path);
-        defer file.unref();
-        self.monitor = file.monitorFile(.{ .watch_moves = true }, self.cancel, null) orelse return log.warn("event=sched-profile-watch result=monitor-unavailable", .{});
-        self.monitor_signal = gio.FileMonitor.signals.changed.connect(self.monitor.?, *Service, profilesChanged, self, .{});
+    /// scx's clients refresh on changes to the two catalogs and to the
+    /// unit's environment file, not on a timer. Any of them, and their
+    /// directories, may not exist yet: /etc/scx appears with the first
+    /// `scxcli catalog save`.
+    fn watch(self: *Service, which: Watch, path: []const u8) void {
+        self.unwatch(which);
+        const slot = &self.watches[@intFromEnum(which)];
+        slot.* = .{ .context = self, .changed = switch (which) {
+            .admin, .shipped => catalogChanged,
+            .config => configChanged,
+        } };
+        slot.*.?.start(path);
     }
 
-    fn profilesChanged(_: *gio.FileMonitor, _: *gio.File, _: ?*gio.File, _: gio.FileMonitorEvent, self: *Service) callconv(.c) void {
-        // The file is replaced whole, so every event leaves a complete file.
-        if (self.running) self.refresh();
+    fn unwatch(self: *Service, which: Watch) void {
+        const slot = &self.watches[@intFromEnum(which)];
+        if (slot.*) |*value| value.stop();
+        slot.* = null;
     }
 
-    /// Save the profiles for every user, and apply the selected one again if
-    /// its command changed, or Default if it was deleted. The helper asks for
-    /// an administrator password.
-    pub fn saveProfiles(self: *Service, config: p.Config) !void {
+    fn catalogChanged(data: *anyopaque) void {
+        const self: *Service = @ptrCast(@alignCast(data));
+        // scxcli replaces the files whole, so every event leaves a complete
+        // file.
+        if (!self.running) return;
+        self.reloadCatalog();
+        self.reload();
+    }
+
+    fn configChanged(data: *anyopaque) void {
+        const self: *Service = @ptrCast(@alignCast(data));
+        if (self.running) self.reload();
+    }
+
+    /// Ask scxcli for the listing again; the status follows once it answers.
+    pub fn reload(self: *Service) void {
+        if (!self.running) return;
+        if (self.listing_busy) {
+            self.listing_again = true;
+            return;
+        }
+        if (std.c.access(p.scxcli, std.c.X_OK) != 0) {
+            self.setProblem(@import("i18n").dtr("pearl", "scxcli is not installed, so the scheduler catalog cannot be read."));
+            // scx is optional and may be installed later; its catalog's
+            // watch notices that too, but a retry does not depend on it.
+            self.listingFailed();
+            return;
+        }
+        var argv = [_:null]?[*:0]const u8{ p.scxcli, "list", "--json" };
+        if (!self.spawn(&argv, null, listed)) {
+            self.setProblem(@import("i18n").dtr("pearl", "scxcli could not be started."));
+            self.listingFailed();
+            return;
+        }
+        self.listing_busy = true;
+        self.listing_again = false;
+    }
+
+    fn listed(source: ?*object.Object, result: *gio.AsyncResult, data: ?*anyopaque) callconv(.c) void {
+        const self: *Service = @ptrCast(@alignCast(data.?));
+        defer self.app.release();
+        var output = finish(source, result);
+        defer output.deinit();
+        if (!self.running) return;
+        self.listing_busy = false;
+        if (output.ok()) {
+            var arena = std.heap.ArenaAllocator.init(a);
+            if (arena.allocator().dupe(u8, output.stdout)) |bytes| {
+                if (p.parseListing(arena.allocator(), bytes)) |listing| {
+                    self.listing_arena.deinit();
+                    self.listing_arena = arena;
+                    self.listing = listing;
+                    self.problem = null;
+                    self.currentConfirmed();
+                    self.listingRead();
+                    // Overtaken by a change while it was asked for: shown,
+                    // not judged; the next answer is.
+                    self.tracker.answered(self.listing_again or self.current_again);
+                    const watched = if (self.watches[@intFromEnum(Watch.config)]) |*value| value.target() else "";
+                    if (!std.mem.eql(u8, listing.configPath(), watched)) self.watch(.config, listing.configPath());
+                } else |err| {
+                    arena.deinit();
+                    log.warn("event=sched-profile-list result={s}", .{@errorName(err)});
+                    self.setProblem(if (err == error.UnsupportedVersion) @import("i18n").dtr("pearl", "This version of scxcli is not supported; update Pearl.") else @import("i18n").dtr("pearl", "scxcli printed a listing Pearl cannot read."));
+                    // Another version will not appear by asking again; the
+                    // catalog watch notices scx being updated.
+                    if (err != error.UnsupportedVersion) self.listingFailed();
+                }
+            } else |_| {
+                arena.deinit();
+                self.listingFailed();
+            }
+        } else {
+            const line = p.errorLine(output.stderr);
+            log.warn("event=sched-profile-list result=failed detail=\"{s}\"", .{line});
+            var buffer: [400]u8 = undefined;
+            self.setProblem(@import("i18n").fmt(&buffer, "The scheduler catalog could not be read: {s}", .{if (line.len > 0) line[0..@min(line.len, 300)] else "scxcli failed"}));
+            self.listingFailed();
+        }
+        if (self.listing_again) self.reload() else if (self.current_again) self.reloadCurrent();
+        self.refresh();
+    }
+
+    /// Ask scxcli what runs now, after the unit or sched_ext changed. The
+    /// unit's main process and the kernel are scxcli's to compare, so Pearl
+    /// does not rebuild that verdict from the events themselves.
+    fn reloadCurrent(self: *Service) void {
+        if (!self.running or self.listing == null) return;
+        // A read in flight may predate the event: read again after it.
+        if (self.current_busy or self.listing_busy) {
+            self.current_again = true;
+            return;
+        }
+        var argv = [_:null]?[*:0]const u8{ p.scxcli, "get", "--json" };
+        if (!self.spawn(&argv, null, currentRead)) {
+            // Not asked at all is not an answer either.
+            self.currentUnconfirmed();
+            return self.refresh();
+        }
+        self.current_busy = true;
+        self.current_again = false;
+    }
+
+    fn currentRead(source: ?*object.Object, result: *gio.AsyncResult, data: ?*anyopaque) callconv(.c) void {
+        const self: *Service = @ptrCast(@alignCast(data.?));
+        defer self.app.release();
+        var output = finish(source, result);
+        defer output.deinit();
+        if (!self.running) return;
+        self.current_busy = false;
+        var fresh = false;
+        if (output.ok()) if (self.listing) |*listing| {
+            var arena = std.heap.ArenaAllocator.init(a);
+            const parsed = if (arena.allocator().dupe(u8, output.stdout)) |bytes| p.parseCurrent(arena.allocator(), bytes) else |err| err;
+            if (parsed) |state| {
+                listing.current = state;
+                self.current_arena.deinit();
+                self.current_arena = arena;
+                fresh = true;
+            } else |err| {
+                arena.deinit();
+                log.warn("event=sched-profile-get result={s}", .{@errorName(err)});
+            }
+        } else log.warn("event=sched-profile-get result=failed detail=\"{s}\"", .{p.errorLine(output.stderr)});
+        if (fresh) self.currentConfirmed() else self.currentUnconfirmed();
+        // Overtaken by a change while it was asked for: shown, not judged;
+        // the answer to the read asked for next is.
+        if (fresh) self.tracker.answered(self.current_again);
+        if (self.current_again) self.reloadCurrent();
+        self.refresh();
+    }
+
+    /// scxcli listed the catalog: no retry is due.
+    fn listingRead(self: *Service) void {
+        self.listing_retry.reset();
+        if (self.listing_retry_source != 0) _ = glib.Source.remove(self.listing_retry_source);
+        self.listing_retry_source = 0;
+    }
+
+    /// The listing could not be had, and without it nothing else is asked
+    /// for: ask again (`p.Retry`) until scxcli answers, besides the catalog
+    /// and file watches.
+    fn listingFailed(self: *Service) void {
+        if (self.listing_retry_source != 0 or !self.running) return;
+        self.listing_retry_source = glib.timeoutAddSeconds(self.listing_retry.next(), listingRetry, self);
+    }
+
+    fn listingRetry(data: ?*anyopaque) callconv(.c) c_int {
+        const self: *Service = @ptrCast(@alignCast(data.?));
+        self.listing_retry_source = 0;
+        self.reload();
+        return 0;
+    }
+
+    /// The state shown is the one scxcli just gave.
+    fn currentConfirmed(self: *Service) void {
+        self.current_stale = false;
+        self.current_retry.reset();
+        if (self.current_retry_source != 0) _ = glib.Source.remove(self.current_retry_source);
+        self.current_retry_source = 0;
+    }
+
+    /// scxcli could not say what runs, or could not be asked. Keep the last
+    /// state on screen as not confirmed, and ask again (`p.Retry`) until it
+    /// answers.
+    fn currentUnconfirmed(self: *Service) void {
+        self.current_stale = true;
+        if (self.current_retry_source != 0 or !self.running) return;
+        self.current_retry_source = glib.timeoutAddSeconds(self.current_retry.next(), currentRetry, self);
+    }
+
+    fn currentRetry(data: ?*anyopaque) callconv(.c) c_int {
+        const self: *Service = @ptrCast(@alignCast(data.?));
+        self.current_retry_source = 0;
+        self.reloadCurrent();
+        return 0;
+    }
+
+    fn setProblem(self: *Service, text: []const u8) void {
+        self.problem = std.mem.printSentinel(&self.problem_buffer, "{s}", .{text[0..@min(text.len, self.problem_buffer.len - 1)]}, 0) catch null;
+        // Profiles from an earlier listing would no longer be what scx offers.
+        self.listing = null;
+        // Nor is what ran then known to run when the listing is back.
+        self.tracker.invalidate();
+        self.changed(self.context);
+    }
+
+    /// Ask scxcli for the catalog in use and the shipped one, which editing
+    /// and restoring the defaults work from.
+    fn reloadCatalog(self: *Service) void {
+        if (!self.running) return;
+        if (self.catalog_busy) {
+            self.catalog_again = true;
+            return;
+        }
+        if (std.c.access(p.scxcli, std.c.X_OK) != 0) return;
+        var argv = [_:null]?[*:0]const u8{ p.scxcli, "catalog", "show" };
+        if (!self.spawn(&argv, null, catalogShown)) return;
+        self.catalog_busy = true;
+        self.catalog_again = false;
+    }
+
+    fn catalogShown(source: ?*object.Object, result: *gio.AsyncResult, data: ?*anyopaque) callconv(.c) void {
+        const self: *Service = @ptrCast(@alignCast(data.?));
+        defer self.app.release();
+        var output = finish(source, result);
+        defer output.deinit();
+        if (!self.running) return;
+        _ = self.catalog_arena.reset(.retain_capacity);
+        self.catalog = null;
+        self.shipped = null;
+        if (output.ok()) {
+            self.catalog = self.catalog_arena.allocator().dupe(u8, output.stdout) catch null;
+        } else log.warn("event=sched-profile-catalog result=failed detail=\"{s}\"", .{p.errorLine(output.stderr)});
+        var argv = [_:null]?[*:0]const u8{ p.scxcli, "catalog", "show", "--shipped" };
+        if (!self.spawn(&argv, null, shippedShown)) return self.catalogDone();
+    }
+
+    fn shippedShown(source: ?*object.Object, result: *gio.AsyncResult, data: ?*anyopaque) callconv(.c) void {
+        const self: *Service = @ptrCast(@alignCast(data.?));
+        defer self.app.release();
+        var output = finish(source, result);
+        defer output.deinit();
+        if (!self.running) return;
+        if (output.ok()) {
+            const alloc = self.catalog_arena.allocator();
+            if (alloc.dupe(u8, output.stdout)) |bytes| {
+                self.shipped = p.parseCatalog(alloc, bytes) catch null;
+            } else |_| {}
+        }
+        self.catalogDone();
+    }
+
+    fn catalogDone(self: *Service) void {
+        self.catalog_busy = false;
+        if (self.catalog_again) self.reloadCatalog();
+        self.changed(self.context);
+    }
+
+    /// Save the profiles for every user, and start again what the unit runs
+    /// if its profile's command changed, or Default if it was deleted; a
+    /// stopped or failed selection stays as it is. scxcli asks for an
+    /// administrator password. renamed says which profile an edit gave a new
+    /// id, so what runs can follow it.
+    ///
+    /// The list replaces the recommended list of the catalog last shown.
+    /// scxcli has no conditional write, so right before saving Pearl asks
+    /// for the catalog again and refuses when it changed meanwhile, rather
+    /// than overwrite an edit made elsewhere.
+    pub fn saveProfiles(self: *Service, profiles: []const p.Profile, renamed: ?p.Rename) !void {
         const before = try self.startEdit();
+        const catalog = self.catalog orelse return error.Unavailable;
         var arena = std.heap.ArenaAllocator.init(a);
         defer arena.deinit();
-        const bytes = try p.serialize(arena.allocator(), config);
-        // Never send a list the helper would reject.
-        _ = try p.parse(arena.allocator(), bytes);
-        try self.runEdit("save", try a.dupeSentinel(u8, bytes, 0), p.reapply(before, config, self.env));
+        const bytes = try p.renderCatalog(arena.allocator(), catalog, profiles);
+        const reapply = p.reapply(before.profiles, profiles, p.active(before), renamed);
+        if (reapply) |id| if (id.len > self.after_save_buffer.len) return error.InvalidProfile;
+        const input = try a.dupeSentinel(u8, bytes, 0);
+        errdefer a.free(input);
+        const base = try a.dupe(u8, catalog);
+        errdefer a.free(base);
+        try self.setAfterSave(reapply, p.active(before));
+        var argv = [_:null]?[*:0]const u8{ p.scxcli, "catalog", "show" };
+        if (!self.spawn(&argv, null, saveChecked)) {
+            self.after_save = null;
+            return error.ScxcliUnavailable;
+        }
+        self.save_input = input;
+        self.save_base = base;
+        self.saving = true;
+        self.err = null;
+        self.changed(self.context);
     }
 
-    /// Return to the shipped profiles, and switch the running scheduler to
-    /// the shipped profile of the same id, or Default when there is none.
+    fn saveChecked(source: ?*object.Object, result: *gio.AsyncResult, data: ?*anyopaque) callconv(.c) void {
+        const self: *Service = @ptrCast(@alignCast(data.?));
+        defer self.app.release();
+        var output = finish(source, result);
+        defer output.deinit();
+        const base = self.save_base;
+        self.save_base = null;
+        defer if (base) |value| a.free(value);
+        if (!self.running) return;
+        const input = self.save_input orelse return;
+        const current = output.ok() and base != null and std.mem.eql(u8, output.stdout, base.?);
+        if (current) {
+            var argv = [_:null]?[*:0]const u8{ "/usr/bin/pkexec", p.scxcli, "catalog", "save" };
+            if (self.spawn(&argv, input.ptr, edited)) return;
+            self.err = @import("i18n").dtr("pearl", "The profiles could not be saved: scxcli could not be started.");
+        } else {
+            log.warn("event=sched-profile-edit result=stale", .{});
+            self.err = if (output.ok()) @import("i18n").dtr("pearl", "The scheduler catalog was changed elsewhere meanwhile. Nothing was saved; review the profiles and save again.") else @import("i18n").dtr("pearl", "The profiles could not be saved: the scheduler catalog could not be read.");
+        }
+        a.free(input);
+        self.save_input = null;
+        self.saving = false;
+        self.after_save = null;
+        self.reloadCatalog();
+        self.reload();
+        self.changed(self.context);
+    }
+
+    /// Return to the shipped catalog, and keep what the unit runs matching a
+    /// profile: the shipped profile for its command, else Default.
     pub fn restoreDefaults(self: *Service) !void {
         const before = try self.startEdit();
         const shipped = self.shipped orelse return error.Unavailable;
-        try self.runEdit("reset", null, p.reapply(before, shipped, self.env));
-    }
-
-    fn startEdit(self: *Service) !p.Config {
-        if (!self.running or !self.enabled) return error.Unavailable;
-        if (self.applying != null or self.saving) return error.Busy;
-        return self.config orelse error.Unavailable;
-    }
-
-    fn runEdit(self: *Service, command: [:0]const u8, input: ?[:0]u8, reapply: ?[]const u8) !void {
-        errdefer if (input) |value| a.free(value);
+        const reapply = p.reapply(before.profiles, shipped, p.active(before), null);
         if (reapply) |id| if (id.len > self.after_save_buffer.len) return error.InvalidProfile;
-        var argv = [_:null]?[*:0]const u8{ "/usr/bin/pkexec", store.helperPath(), "profiles", command };
-        var err: ?*glib.Error = null;
-        const process = gio.Subprocess.newv(@ptrCast(&argv), .{ .stdin_pipe = input != null, .stdout_silence = true, .stderr_pipe = true }, &err) orelse {
-            if (err) |e| e.free();
-            return error.HelperUnavailable;
-        };
-        self.after_save = if (reapply) |id| blk: {
-            @memcpy(self.after_save_buffer[0..id.len], id);
-            break :blk self.after_save_buffer[0..id.len];
-        } else null;
-        self.save_input = input;
+        try self.setAfterSave(reapply, p.active(before));
+        var argv = [_:null]?[*:0]const u8{ "/usr/bin/pkexec", p.scxcli, "catalog", "reset" };
+        if (!self.spawn(&argv, null, edited)) {
+            self.after_save = null;
+            return error.ScxcliUnavailable;
+        }
         self.saving = true;
         self.err = null;
-        self.app.hold();
-        process.communicateUtf8Async(if (input) |value| value.ptr else null, self.cancel, edited, self);
         self.changed(self.context);
+    }
+
+    /// Remember what to start after the save, and what ran when that was
+    /// decided; reapply is only ever set while something ran.
+    fn setAfterSave(self: *Service, reapply: ?[]const u8, ran: ?p.Command) !void {
+        _ = self.after_save_arena.reset(.retain_capacity);
+        self.after_save = null;
+        self.after_save_command = null;
+        const id = reapply orelse return;
+        const command = ran orelse return;
+        const alloc = self.after_save_arena.allocator();
+        const args = try alloc.alloc([]const u8, command.args.len);
+        for (command.args, args) |arg, *copy| copy.* = try alloc.dupe(u8, arg);
+        self.after_save_command = .{ .sched = try alloc.dupe(u8, command.sched), .args = args };
+        @memcpy(self.after_save_buffer[0..id.len], id);
+        self.after_save = self.after_save_buffer[0..id.len];
+    }
+
+    fn startEdit(self: *Service) !p.Listing {
+        if (!self.running or !self.enabled) return error.Unavailable;
+        if (self.applying != null or self.saving) return error.Busy;
+        return self.listing orelse error.Unavailable;
     }
 
     fn edited(source: ?*object.Object, result: *gio.AsyncResult, data: ?*anyopaque) callconv(.c) void {
         const self: *Service = @ptrCast(@alignCast(data.?));
         defer self.app.release();
-        const process = object.ext.cast(gio.Subprocess, source.?).?;
-        defer process.unref();
-        var stderr_buffer: [*:0]u8 = undefined;
-        var err: ?*glib.Error = null;
-        const finished = process.communicateUtf8Finish(result, null, &stderr_buffer, &err) != 0;
-        const stderr: ?[*:0]u8 = if (finished) stderr_buffer else null;
-        defer if (stderr) |text| glib.free(text);
-        defer if (err) |e| e.free();
+        var output = finish(source, result);
+        defer output.deinit();
         if (self.save_input) |value| a.free(value);
         self.save_input = null;
         self.saving = false;
         if (!self.running) return;
-        const succeeded = finished and process.getSuccessful() != 0;
+        const succeeded = output.ok();
         log.info("event=sched-profile-edit result={s}", .{if (succeeded) "ok" else "failed"});
         // pkexec reports a dismissed or refused authentication as 126 or 127:
         // nothing changed.
-        const status = if (finished) process.getExitStatus() else 0;
-        if (!succeeded and status != 126 and status != 127) {
-            const raw = if (stderr) |text| std.mem.trim(u8, std.mem.span(text), " \r\n\t") else "";
-            const line = raw[if (std.mem.lastIndexOfScalar(u8, raw, '\n')) |i| i + 1 else 0..];
-            const detail = if (std.mem.indexOf(u8, line, "helper: ")) |i| line[i + 8 ..] else line;
+        if (!succeeded and !output.dismissed()) {
+            const detail = p.errorLine(output.stderr);
             self.err = std.mem.printSentinel(&self.err_buffer, "The profiles could not be saved{s}{s}", .{ if (detail.len > 0) ": " else ".", detail[0..@min(detail.len, 400)] }, 0) catch "The profiles could not be saved.";
         }
-        self.refresh();
-        if (succeeded) if (self.after_save) |id| self.apply(id) catch |e| log.warn("event=sched-profile-select profile={s} result={s}", .{ id, @errorName(e) });
+        self.reloadCatalog();
+        self.reload();
+        // Ask what runs now before starting anything: the save may have
+        // waited on the password prompt while something else changed it.
+        if (succeeded and self.after_save != null) {
+            var argv = [_:null]?[*:0]const u8{ p.scxcli, "get", "--json" };
+            if (self.spawn(&argv, null, reapplyChecked)) return self.changed(self.context);
+            log.warn("event=sched-profile-reapply result=skipped detail=\"scxcli could not be started\"", .{});
+        }
         self.after_save = null;
+        self.changed(self.context);
+    }
+
+    fn reapplyChecked(source: ?*object.Object, result: *gio.AsyncResult, data: ?*anyopaque) callconv(.c) void {
+        const self: *Service = @ptrCast(@alignCast(data.?));
+        defer self.app.release();
+        var output = finish(source, result);
+        defer output.deinit();
+        if (!self.running) return;
+        const id = self.after_save orelse return;
+        defer self.after_save = null;
+        const expected = self.after_save_command orelse return;
+        var scratch = std.heap.ArenaAllocator.init(a);
+        defer scratch.deinit();
+        const now = if (output.ok()) p.parseCurrent(scratch.allocator(), output.stdout) catch null else null;
+        const still = if (now) |state| p.stillRuns(.{ .profiles = &.{}, .current = state }, expected) else false;
+        if (!still) {
+            log.info("event=sched-profile-reapply profile={s} result=skipped detail=\"what runs changed during the save\"", .{id});
+            return self.changed(self.context);
+        }
+        // The listing still predates the save, so it may not hold the id yet;
+        // scxcli checks it against the catalog it just installed.
+        if (self.startApply(id, false, false)) {
+            self.notice = .none;
+            self.fallback_pending = false;
+        } else |e| log.warn("event=sched-profile-select profile={s} result={s}", .{ id, @errorName(e) });
+        self.changed(self.context);
     }
 
     pub fn apply(self: *Service, id: []const u8) !void {
-        try self.startApply(id, false);
+        try self.startApply(id, false, true);
         self.notice = .none;
         self.fallback_pending = false;
     }
 
-    fn startApply(self: *Service, id: []const u8, reverting: bool) !void {
+    /// listed_only is whether the id must be in the current listing, with
+    /// its scheduler installed.
+    fn startApply(self: *Service, id: []const u8, reverting: bool, listed_only: bool) !void {
         if (!self.running or !self.enabled) return error.Unavailable;
         if (self.applying != null or self.saving) return error.Busy;
-        const config = self.config orelse return error.Unavailable;
-        if (config.find(id) == null or id.len >= self.applying_buffer.len) return error.InvalidProfile;
+        // Default needs no listing: the kernel's own scheduler is always
+        // there to go back to.
+        if (listed_only and !std.mem.eql(u8, id, p.default_id)) {
+            const listing = self.listing orelse return error.Unavailable;
+            const i = listing.find(id) orelse return error.InvalidProfile;
+            if (!listing.profiles[i].available) return error.NotInstalled;
+        }
+        if (id.len >= self.applying_buffer.len) return error.InvalidProfile;
         @memcpy(self.applying_buffer[0..id.len], id);
         self.applying_buffer[id.len] = 0;
-        // The helper reads the command line from the profile file itself.
-        var argv = [_:null]?[*:0]const u8{ "/usr/bin/pkexec", store.helperPath(), "apply", self.applying_buffer[0..id.len :0] };
-        var err: ?*glib.Error = null;
-        const process = gio.Subprocess.newv(@ptrCast(&argv), .{ .stdout_silence = true, .stderr_pipe = true }, &err) orelse {
-            if (err) |e| e.free();
-            return error.HelperUnavailable;
-        };
+        // scxcli takes the id only: the command comes from the installed
+        // catalog, so any active user may start a profile without a
+        // password.
+        var argv = [_:null]?[*:0]const u8{ "/usr/bin/pkexec", p.scxcli, "start", self.applying_buffer[0..id.len :0] };
+        if (!self.spawn(&argv, null, applied)) return error.ScxcliUnavailable;
         self.applying = self.applying_buffer[0..id.len];
         self.reverting = reverting;
         self.err = null;
-        self.app.hold();
-        process.communicateUtf8Async(null, self.cancel, applied, self);
         self.changed(self.context);
     }
 
     fn applied(source: ?*object.Object, result: *gio.AsyncResult, data: ?*anyopaque) callconv(.c) void {
         const self: *Service = @ptrCast(@alignCast(data.?));
         defer self.app.release();
-        const process = object.ext.cast(gio.Subprocess, source.?).?;
-        defer process.unref();
-        var stderr_buffer: [*:0]u8 = undefined;
-        var err: ?*glib.Error = null;
-        const finished = process.communicateUtf8Finish(result, null, &stderr_buffer, &err) != 0;
-        const stderr: ?[*:0]u8 = if (finished) stderr_buffer else null;
-        defer if (stderr) |text| glib.free(text);
-        defer if (err) |e| e.free();
+        var output = finish(source, result);
+        defer output.deinit();
         if (!self.running) return;
         const id = self.applying orelse return;
-        const succeeded = finished and process.getSuccessful() != 0;
+        const succeeded = output.ok();
         log.info("event=sched-profile-select profile={s} result={s}", .{ id, if (succeeded) "ok" else "failed" });
         const reverting = self.reverting;
         self.reverting = false;
         self.applying = null;
         // pkexec reports a dismissed or refused authentication as 126 or 127:
         // nothing changed, so there is nothing to fall back from.
-        const status = if (finished) process.getExitStatus() else 0;
-        if (!succeeded and status != 126 and status != 127) {
-            const raw = if (stderr) |text| std.mem.trim(u8, std.mem.span(text), " \r\n\t") else "";
-            const line = raw[if (std.mem.lastIndexOfScalar(u8, raw, '\n')) |i| i + 1 else 0..];
-            const detail = if (std.mem.indexOf(u8, line, "helper: ")) |i| line[i + 8 ..] else line;
-            const scheduler = if (self.config) |config| if (config.find(id)) |i| !config.profiles[i].stop else false else false;
-            if (scheduler and !reverting and self.notify) {
-                const label = if (self.config) |config| config.profiles[config.find(id).?].label else id;
-                self.setNotice(.start_failed, label, if (detail.len > 0) detail else @import("i18n").dtr("pearl", "the scheduler helper failed"));
-                log.warn("event=sched-profile-failed profile={s} reason=\"{s}\"", .{ label, detail });
-                self.notifyFailure();
-                self.fallBack();
-            } else {
-                self.err = std.mem.printSentinel(&self.err_buffer, "The profile could not be applied{s}{s}", .{ if (raw.len > 0) ": " else ".", raw[0..@min(raw.len, 400)] }, 0) catch "The profile could not be applied.";
-            }
+        // A refused start is not a failed scheduler: scxcli checks the id,
+        // the catalog and the configuration before it touches the unit, so
+        // whatever ran before still runs. Say why and read the state again;
+        // only a scheduler that actually fails falls back to Default, through
+        // the unit's own state.
+        if (!succeeded and !output.dismissed()) {
+            const detail = p.errorLine(output.stderr);
+            log.warn("event=sched-profile-select profile={s} reverting={} detail=\"{s}\"", .{ id, reverting, detail });
+            self.err = std.mem.printSentinel(&self.err_buffer, "The profile could not be applied{s}{s}", .{ if (detail.len > 0) ": " else ".", detail[0..@min(detail.len, 400)] }, 0) catch "The profile could not be applied.";
         }
+        // The environment file's monitor reloads the listing too; asking
+        // here covers a start that changed nothing in it.
+        self.reload();
         self.refresh();
     }
 
-    fn managerReady(_: ?*object.Object, result: *gio.AsyncResult, data: ?*anyopaque) callconv(.c) void {
+    /// Run a command, feeding it input when given, and call done with its
+    /// output. Holds the application until done runs.
+    fn spawn(self: *Service, argv: [*:null]const ?[*:0]const u8, input: ?[*:0]const u8, done: *const fn (?*object.Object, *gio.AsyncResult, ?*anyopaque) callconv(.c) void) bool {
+        var err: ?*glib.Error = null;
+        const process = gio.Subprocess.newv(@ptrCast(argv), .{ .stdin_pipe = input != null, .stdout_pipe = true, .stderr_pipe = true }, &err) orelse {
+            if (err) |e| {
+                log.warn("event=sched-profile-spawn result=failed detail=\"{s}\"", .{if (e.f_message) |m| std.mem.span(m) else ""});
+                e.free();
+            }
+            return false;
+        };
+        self.app.hold();
+        process.communicateUtf8Async(input, self.cancel, done, self);
+        return true;
+    }
+
+    /// The context of one asynchronous systemd call: a result from a
+    /// superseded connection attempt is discarded.
+    const Ticket = struct {
+        service: *Service,
+        attempt: u32,
+
+        fn issue(self: *Service) ?*Ticket {
+            const ticket = a.create(Ticket) catch return null;
+            ticket.* = .{ .service = self, .attempt = self.link.attempt };
+            self.app.hold();
+            return ticket;
+        }
+
+        /// The service, and whether the result is still wanted. Frees the
+        /// ticket.
+        fn redeem(data: ?*anyopaque) struct { *Service, bool } {
+            const ticket: *Ticket = @ptrCast(@alignCast(data.?));
+            const self = ticket.service;
+            const wanted = self.running and self.link.current(ticket.attempt);
+            a.destroy(ticket);
+            self.app.release();
+            return .{ self, wanted };
+        }
+    };
+
+    /// Drop the proxies of an earlier attempt and cancel its calls.
+    fn dropSystemd(self: *Service) void {
+        if (self.systemd_cancel) |cancel| cancel.cancel();
+        if (self.unit) |proxy| {
+            object.signalHandlerDisconnect(proxy.as(object.Object), self.unit_signal);
+            proxy.unref();
+        }
+        if (self.process) |proxy| {
+            object.signalHandlerDisconnect(proxy.as(object.Object), self.process_signal);
+            proxy.unref();
+        }
+        if (self.manager) |proxy| proxy.unref();
+        self.unit = null;
+        self.process = null;
+        self.manager = null;
+    }
+
+    /// Make the manager, unit and service proxies anew and subscribe, for
+    /// systemd's current owner. Until both the unit's proxy and the
+    /// subscription work, scxcli is polled.
+    fn connectSystemd(self: *Service) void {
+        if (!self.running or !self.link.begin()) return;
+        self.dropSystemd();
+        if (self.systemd_cancel) |cancel| cancel.unref();
+        self.systemd_cancel = gio.Cancellable.new();
+        self.linkChanged();
+        const ticket = Ticket.issue(self) orelse return self.systemdStep(.unit, false);
+        gio.DBusProxy.newForBus(.system, .{ .do_not_load_properties = true }, null, systemd, "/org/freedesktop/systemd1", systemd ++ ".Manager", self.systemd_cancel, managerReady, ticket);
+    }
+
+    const Step = enum { unit, service, subscribe };
+
+    /// Record a step of the current attempt and act on what the link says.
+    fn systemdStep(self: *Service, step: Step, ok: bool) void {
+        const attempt = self.link.attempt;
+        const again = switch (step) {
+            .unit => self.link.unitResult(attempt, ok),
+            .service => self.link.serviceResult(attempt, ok),
+            .subscribe => self.link.subscribeResult(attempt, ok),
+        };
+        if (!ok) log.warn("event=sched-profile-systemd step={t} result=failed", .{step});
+        self.linkChanged();
+        if (again) self.connectSystemd();
+    }
+
+    /// Poll while the signals cannot be relied on, and only then.
+    fn linkChanged(self: *Service) void {
+        if (!self.running) return;
+        if (self.link.polling()) {
+            if (self.systemd_poll_source == 0) {
+                log.info("event=sched-profile-systemd result=polling", .{});
+                self.systemd_poll_source = glib.timeoutAddSeconds(5, systemdPoll, self);
+            }
+        } else if (self.systemd_poll_source != 0) {
+            _ = glib.Source.remove(self.systemd_poll_source);
+            self.systemd_poll_source = 0;
+            log.info("event=sched-profile-systemd result=signals", .{});
+            // Signals may have been missed meanwhile.
+            self.reloadCurrent();
+        }
+    }
+
+    fn systemdPoll(data: ?*anyopaque) callconv(.c) c_int {
         const self: *Service = @ptrCast(@alignCast(data.?));
-        defer self.app.release();
+        self.reloadCurrent();
+        if (self.link.retry()) self.connectSystemd();
+        return 1;
+    }
+
+    /// systemd took its name on the bus: connect again when the connection
+    /// is not whole or was made against another owner (systemd
+    /// re-executed or restarted, and its subscriptions with it).
+    fn systemdAppeared(_: *gio.DBusConnection, _: [*:0]const u8, owner: [*:0]const u8, data: ?*anyopaque) callconv(.c) void {
+        const self: *Service = @ptrCast(@alignCast(data.?));
+        if (!self.running) return;
+        if (self.link.appeared(std.mem.span(owner))) {
+            log.info("event=sched-profile-systemd result=reconnecting", .{});
+            self.connectSystemd();
+        }
+        self.linkChanged();
+    }
+
+    fn systemdVanished(_: *gio.DBusConnection, _: [*:0]const u8, data: ?*anyopaque) callconv(.c) void {
+        const self: *Service = @ptrCast(@alignCast(data.?));
+        if (!self.running) return;
+        self.link.vanished();
+        self.linkChanged();
+    }
+
+    fn managerReady(_: ?*object.Object, result: *gio.AsyncResult, data: ?*anyopaque) callconv(.c) void {
+        const self, const wanted = Ticket.redeem(data);
         var err: ?*glib.Error = null;
         const proxy = gio.DBusProxy.newForBusFinish(result, &err);
         defer if (err) |e| e.free();
-        if (!self.running) {
+        if (!wanted) {
             if (proxy) |value| value.unref();
             return;
         }
-        self.manager = proxy orelse return log.warn("event=sched-profile-systemd result=unavailable", .{});
+        self.manager = proxy orelse return self.systemdStep(.unit, false);
         // Unit property changes are only broadcast to subscribed clients.
-        self.manager.?.call("Subscribe", null, .{}, -1, null, null, null);
-        self.app.hold();
-        self.manager.?.call("LoadUnit", tuple(&.{glib.Variant.newString("scx.service")}), .{}, 5000, self.cancel, unitLoaded, self);
+        if (Ticket.issue(self)) |ticket| self.manager.?.call("Subscribe", null, .{}, 5000, self.systemd_cancel, subscribed, ticket) else return self.systemdStep(.subscribe, false);
+        const ticket = Ticket.issue(self) orelse return self.systemdStep(.unit, false);
+        self.manager.?.call("LoadUnit", tuple(&.{glib.Variant.newString("scx.service")}), .{}, 5000, self.systemd_cancel, unitLoaded, ticket);
     }
 
-    fn unitLoaded(source: ?*object.Object, result: *gio.AsyncResult, data: ?*anyopaque) callconv(.c) void {
-        const self: *Service = @ptrCast(@alignCast(data.?));
-        defer self.app.release();
+    fn subscribed(source: ?*object.Object, result: *gio.AsyncResult, data: ?*anyopaque) callconv(.c) void {
+        const self, const wanted = Ticket.redeem(data);
         var err: ?*glib.Error = null;
         const reply = object.ext.cast(gio.DBusProxy, source.?).?.callFinish(result, &err);
         defer if (reply) |value| value.unref();
         defer if (err) |e| e.free();
-        if (!self.running) return;
-        const value = reply orelse return log.warn("event=sched-profile-systemd result=load-failed", .{});
+        if (!wanted) return;
+        // A client systemd already tracks is subscribed all the same.
+        const already = if (err) |e| (if (e.f_message) |m| std.mem.indexOf(u8, std.mem.span(m), "AlreadySubscribed") != null else false) else false;
+        self.systemdStep(.subscribe, reply != null or already);
+    }
+
+    fn unitLoaded(source: ?*object.Object, result: *gio.AsyncResult, data: ?*anyopaque) callconv(.c) void {
+        const self, const wanted = Ticket.redeem(data);
+        var err: ?*glib.Error = null;
+        const reply = object.ext.cast(gio.DBusProxy, source.?).?.callFinish(result, &err);
+        defer if (reply) |value| value.unref();
+        defer if (err) |e| e.free();
+        if (!wanted) return;
+        const value = reply orelse return self.systemdStep(.unit, false);
         const child = value.getChildValue(0);
         defer child.unref();
-        self.app.hold();
-        gio.DBusProxy.newForBus(.system, .{ .get_invalidated_properties = true }, null, systemd, child.getString(null), systemd ++ ".Unit", self.cancel, unitReady, self);
-        self.app.hold();
-        gio.DBusProxy.newForBus(.system, .{ .get_invalidated_properties = true }, null, systemd, child.getString(null), systemd ++ ".Service", self.cancel, processReady, self);
+        const unit_ticket = Ticket.issue(self) orelse return self.systemdStep(.unit, false);
+        gio.DBusProxy.newForBus(.system, .{ .get_invalidated_properties = true }, null, systemd, child.getString(null), systemd ++ ".Unit", self.systemd_cancel, unitReady, unit_ticket);
+        const process_ticket = Ticket.issue(self) orelse return self.systemdStep(.service, false);
+        gio.DBusProxy.newForBus(.system, .{ .get_invalidated_properties = true }, null, systemd, child.getString(null), systemd ++ ".Service", self.systemd_cancel, processReady, process_ticket);
     }
 
     fn unitReady(_: ?*object.Object, result: *gio.AsyncResult, data: ?*anyopaque) callconv(.c) void {
-        const self: *Service = @ptrCast(@alignCast(data.?));
-        defer self.app.release();
+        const self, const wanted = Ticket.redeem(data);
         var err: ?*glib.Error = null;
         const proxy = gio.DBusProxy.newForBusFinish(result, &err);
         defer if (err) |e| e.free();
-        if (!self.running) {
+        if (!wanted) {
             if (proxy) |value| value.unref();
             return;
         }
-        self.unit = proxy orelse return log.warn("event=sched-profile-systemd result=unit-unavailable", .{});
+        self.unit = proxy orelse return self.systemdStep(.unit, false);
         self.unit_signal = gio.DBusProxy.signals.g_properties_changed.connect(self.unit.?, *Service, unitChanged, self, .{});
         self.readUnit();
         self.refresh();
+        self.systemdStep(.unit, true);
     }
 
     fn processReady(_: ?*object.Object, result: *gio.AsyncResult, data: ?*anyopaque) callconv(.c) void {
-        const self: *Service = @ptrCast(@alignCast(data.?));
-        defer self.app.release();
+        const self, const wanted = Ticket.redeem(data);
         var err: ?*glib.Error = null;
         const proxy = gio.DBusProxy.newForBusFinish(result, &err);
         defer if (err) |e| e.free();
-        if (!self.running) {
+        if (!wanted) {
             if (proxy) |value| value.unref();
             return;
         }
-        self.process = proxy;
-        // NRestarts arrives on this interface, not on the Unit one.
-        if (proxy) |value| self.process_signal = gio.DBusProxy.signals.g_properties_changed.connect(value, *Service, unitChanged, self, .{});
+        self.process = proxy orelse return self.systemdStep(.service, false);
+        // NRestarts and Result arrive on this interface, not on the Unit one.
+        self.process_signal = gio.DBusProxy.signals.g_properties_changed.connect(self.process.?, *Service, unitChanged, self, .{});
+        self.refresh();
+        self.systemdStep(.service, true);
     }
 
     fn unitChanged(_: *gio.DBusProxy, _: *glib.Variant, _: [*][*:0]u8, self: *Service) callconv(.c) void {
         self.readUnit();
         self.refresh();
+        self.reloadCurrent();
     }
 
     fn readUnit(self: *Service) void {
@@ -761,10 +1328,56 @@ pub const Service = struct {
     }
 };
 
-/// When a profile was last selected, in microseconds since the epoch.
-fn envWritten() ?i64 {
+/// What a finished scxcli or pkexec run printed and how it ended.
+const Output = struct {
+    process: *gio.Subprocess,
+    finished: bool,
+    stdout: []const u8 = "",
+    stderr: []const u8 = "",
+    stdout_raw: ?[*:0]u8 = null,
+    stderr_raw: ?[*:0]u8 = null,
+
+    fn ok(self: Output) bool {
+        return self.finished and self.process.getSuccessful() != 0;
+    }
+
+    /// pkexec reports a dismissed or refused authentication as 126 or 127.
+    fn dismissed(self: Output) bool {
+        if (!self.finished or self.process.getIfExited() == 0) return false;
+        const code = self.process.getExitStatus();
+        return code == 126 or code == 127;
+    }
+
+    fn deinit(self: *Output) void {
+        if (self.stdout_raw) |text| glib.free(text);
+        if (self.stderr_raw) |text| glib.free(text);
+        self.process.unref();
+    }
+};
+
+fn finish(source: ?*object.Object, result: *gio.AsyncResult) Output {
+    const process = object.ext.cast(gio.Subprocess, source.?).?;
+    var stdout_buffer: [*:0]u8 = undefined;
+    var stderr_buffer: [*:0]u8 = undefined;
+    var err: ?*glib.Error = null;
+    const finished = process.communicateUtf8Finish(result, &stdout_buffer, &stderr_buffer, &err) != 0;
+    if (err) |e| e.free();
+    var output: Output = .{ .process = process, .finished = finished };
+    if (finished) {
+        output.stdout_raw = stdout_buffer;
+        output.stderr_raw = stderr_buffer;
+        output.stdout = std.mem.span(stdout_buffer);
+        output.stderr = std.mem.span(stderr_buffer);
+    }
+    return output;
+}
+
+/// When a file was last written, in microseconds since the epoch.
+fn modified(path: []const u8) ?i64 {
+    var buffer: [256]u8 = undefined;
+    const name = std.mem.printSentinel(&buffer, "{s}", .{path}, 0) catch return null;
     var stat: std.os.linux.Statx = std.mem.zeroes(std.os.linux.Statx);
-    if (std.os.linux.statx(std.os.linux.AT.FDCWD, p.env_path, 0, .{ .MTIME = true }, &stat) != 0) return null;
+    if (std.os.linux.statx(std.os.linux.AT.FDCWD, name, 0, .{ .MTIME = true }, &stat) != 0) return null;
     return stat.mtime.sec * std.time.us_per_s + @divTrunc(stat.mtime.nsec, std.time.ns_per_us);
 }
 

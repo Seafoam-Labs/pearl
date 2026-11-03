@@ -274,9 +274,10 @@ and [power-profiles-daemon interface](https://upower.pages.freedesktop.org/power
 ## Scheduler profiles
 
 The scheduler bar widget, its flyout and Settings -> System select one of the
-system's scheduler profiles. Each profile maps to an `scx.service` command line;
-Pearl writes `/etc/default/scx` through `pearl-scheduling-helper` and watches the
-unit over systemd's D-Bus API. See [CPU scheduler profiles](SCHEDULING_PROFILES.md).
+scx scheduler catalog's profiles. scx owns the catalog, `/etc/default/scx` and
+the rules for both; Pearl lists and starts profiles with `scxcli` (through
+`pkexec` for changes) and watches the unit over systemd's D-Bus API. See
+[CPU scheduler profiles](SCHEDULING_PROFILES.md).
 
 ### Brightness key bindings with Pearl
 
