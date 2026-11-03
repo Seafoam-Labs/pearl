@@ -40,8 +40,10 @@ pub const View = struct {
     edit: *const fn (*anyopaque) void,
     const Choice = struct { view: *View, index: usize };
 
-    /// Fails with error.NoProfiles until scxcli has listed the catalog or
-    /// said why it cannot, so the flyout only opens on systems that have it.
+    /// The flyout shows what scxcli gave the service: the catalog's
+    /// profiles, or why they could not be read. Right after start, before
+    /// scxcli has answered either way, there is nothing to show yet, and
+    /// this fails with error.NoProfiles instead of opening an empty card.
     pub fn create(host: *gtk.Box, service: *Service, context: *anyopaque, edit: @FieldType(View, "edit")) !*View {
         service.refresh();
         if (!service.configured()) return error.NoProfiles;

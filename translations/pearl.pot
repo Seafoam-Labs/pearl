@@ -450,7 +450,7 @@ msgstr ""
 msgid "Another notification service is active."
 msgstr ""
 
-#: src/desktop/scheduling.zig:189 src/settings/scheduler_view.zig:297
+#: src/desktop/scheduling.zig:191 src/settings/scheduler_view.zig:297
 msgid "Another profile is being applied."
 msgstr ""
 
@@ -1035,7 +1035,7 @@ msgstr ""
 msgid "CONNECTIONS"
 msgstr ""
 
-#: src/desktop/scheduling.zig:53 src/settings/scheduler_view.zig:70
+#: src/desktop/scheduling.zig:55 src/settings/scheduler_view.zig:70
 msgid "CPU Scheduler"
 msgstr ""
 
@@ -2373,7 +2373,7 @@ msgstr ""
 msgid "Edit profiles"
 msgstr ""
 
-#: src/desktop/scheduling.zig:61
+#: src/desktop/scheduling.zig:63
 msgid "Edit profiles..."
 msgstr ""
 
@@ -4087,7 +4087,7 @@ msgstr ""
 msgid "Not in range"
 msgstr ""
 
-#: src/desktop/scheduling.zig:115 src/settings/scheduler_view.zig:155
+#: src/desktop/scheduling.zig:117 src/settings/scheduler_view.zig:155
 msgid "Not installed"
 msgstr ""
 
@@ -5695,7 +5695,7 @@ msgstr ""
 msgid "Selected model"
 msgstr ""
 
-#: src/desktop/scheduling.zig:168 src/settings/scheduler_view.zig:161
+#: src/desktop/scheduling.zig:170 src/settings/scheduler_view.zig:161
 msgid "Selected, stopped"
 msgstr ""
 
@@ -6980,11 +6980,11 @@ msgstr ""
 msgid "This power mode is unavailable"
 msgstr ""
 
-#: src/desktop/scheduling.zig:191 src/settings/scheduler_view.zig:299
+#: src/desktop/scheduling.zig:193 src/settings/scheduler_view.zig:299
 msgid "This profile cannot be applied right now."
 msgstr ""
 
-#: src/desktop/scheduling.zig:190 src/settings/scheduler_view.zig:298
+#: src/desktop/scheduling.zig:192 src/settings/scheduler_view.zig:298
 msgid "This profile's scheduler is not installed."
 msgstr ""
 

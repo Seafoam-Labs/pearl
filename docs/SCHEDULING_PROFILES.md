@@ -17,8 +17,17 @@ only when `scxcli` is installed, the kernel supports sched_ext and
 
 Profiles need scx with `scxcli` (sched-ext/scx after 1.1.4):
 `/usr/bin/scxcli`, `/usr/share/scx/catalog.json`, `scx.service` and scxcli's
-polkit policy, `org.sched_ext.scxcli.policy`. Two versions are involved and
-they are separate contracts:
+polkit policy, `org.sched_ext.scxcli.policy`.
+
+Pearl ships no polkit policy for this any more. Its own one,
+`org.aqueous.Pearl.Scheduling`, authorized `pearl-scheduling-helper`, which
+is gone: every privileged step is now `pkexec /usr/bin/scxcli …`, and that
+is what scx's policy covers (installed by scx's `cargo xtask install` and by
+distribution packages of scx). Without it, pkexec falls back to its generic
+action and asks for an administrator password at every step, choosing a
+profile included.
+
+Two versions are involved and they are separate contracts:
 
 - scxcli's JSON output (`list --json`, `get --json`) must be version 2;
   Pearl says so when an scxcli prints another one.
