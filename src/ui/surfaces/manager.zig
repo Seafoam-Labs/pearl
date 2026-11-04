@@ -614,7 +614,7 @@ pub const Manager = struct {
         if (self.popup) |surface| if (surface.settings) |view| view.update();
         if (self.popup) |surface| if (surface.wallpapers) |view| view.update();
         if (self.popup) |surface| if (surface.resources) |view| view.update(self.preferences.prefs().forOutput(surface.output.connector).resource_series);
-        self.lifecycle.configure(self.preferences.prefs().idle, self.power.on_battery);
+        self.lifecycle.configure(self.preferences.prefs().idle, self.power.on_battery, self.preferences.prefs().reduced_motion);
         self.power.configureSaver(self.preferences.prefs().idle.automatic_saver);
         self.slideshow.configure();
         if (self.plugins) |plugins| plugins.configure(self.preferences.prefs().plugins, self.preferences.prefs().reduced_motion);
@@ -1106,7 +1106,7 @@ pub const Manager = struct {
             }
         }
         self.lifecycle.sync();
-        self.lifecycle.configure(self.preferences.prefs().idle, self.power.on_battery);
+        self.lifecycle.configure(self.preferences.prefs().idle, self.power.on_battery, self.preferences.prefs().reduced_motion);
         if (self.plugins) |plugins| plugins.configure(self.preferences.prefs().plugins, self.preferences.prefs().reduced_motion);
         self.syncClipboardPrivacy();
         if (self.barInhibited()) {
