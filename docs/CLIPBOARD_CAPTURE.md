@@ -356,6 +356,15 @@ requirement added during finalization.
 | 6.75 MiB PNG capture | 199 ms; no noticeable GTK responsiveness issue |
 | Normal `/usr/bin/pearl` service restored after testing | Passed |
 
+**Post-finalization verification (2026-11-04):** The session-instance safety
+change was manually tested on installed Devario with isolated state and the
+development Pearl binary. CLI Select and Delete rejected missing or incorrect
+instances without changing history. Correctly qualified Select and durable
+Delete succeeded, with unrelated entries preserved; GTK selection and deletion
+also passed. After testing, the temporary service override was removed and the
+normal `/usr/bin/pearl` service was verified active. These are user-observed
+manual desktop results, not private-compositor integration test results.
+
 ### Devario persistence acceptance (2026-11-02)
 
 **Passed for the cases below on an installed Devario/Aqueous desktop**, using
