@@ -1213,7 +1213,9 @@ pub const Manager = struct {
                 }
                 self.preferences.style(o.bar.?.window.as(gtk.Widget), o.bar.?.panel);
                 o.bar.?.bar.?.styleIslands();
+                try o.bar.?.bar.?.setBorderRadius(pref.radius);
                 o.bar.?.effects.islands = if (pref.islands) &o.bar.?.bar.?.sections else null;
+                o.bar.?.effects.radius = pref.radius;
                 o.preferences_revision = self.preferences.appearance;
             }
             const changed = !std.meta.eql(o.bounds, bounds) or !std.meta.eql(o.usable, usable);
@@ -1557,7 +1559,10 @@ pub const Manager = struct {
         self.styleSurface(s);
         const effect_panel = if (kind == .switcher) s.switcher_controls.? else if (kind == .popup and s.viewport != null) s.viewport.?.as(gtk.Widget) else panel_widget;
         try s.effects.init(&self.effects, window, effect_panel, kind == .bar or kind == .popup or kind == .osd or kind == .notification or kind == .switcher, if (kind == .popup) .full else if (kind == .bar or kind == .notification or kind == .switcher) .panel else .empty);
-        if (s.bar) |bar| s.effects.islands = if (bar.islands) &bar.sections else null;
+        if (s.bar) |bar| {
+            s.effects.islands = if (bar.islands) &bar.sections else null;
+            s.effects.radius = self.preferences.prefs().forOutput(output.connector).radius;
+        }
         if (kind == .bar) {
             _ = gtk.Widget.signals.map.connect(window.as(gtk.Widget), *Surface, barMapped, s, .{});
             s.autohide = BarAutohide.create(window, output.monitor, s, barVisibilityChanged) catch |err| blk: {

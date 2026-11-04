@@ -13,6 +13,8 @@ const tr = @import("text.zig").tr;
 const chargeState = @import("text.zig").chargeState;
 const presentation = @import("../services/power_presentation.zig");
 const a = std.heap.c_allocator;
+/// Matches the theme CSS; preferences at this value leave the theme in control.
+const default_radius: u8 = 14;
 const clocks = @import("clock_policy.zig");
 const Clock = @import("clock_view.zig").View;
 const Running = @import("running_apps.zig");
@@ -23,6 +25,8 @@ pub const Bar = struct {
     background_opacity: @import("bar_opacity.zig").Config = .{},
     background_css: ?*gtk.CssProvider = null,
     background_color: ?gdk.RGBA = null,
+    radius: u8 = default_radius,
+    radius_css: ?*gtk.CssProvider = null,
     launcher_icon: @import("../ui/components/launcher_icon.zig").Renderer = .{},
     host: *gtk.Box,
     tasks: *const @import("task_model.zig").Snapshot,
@@ -89,6 +93,10 @@ pub const Bar = struct {
     pub fn destroy(self: *Bar) void {
         self.clear();
         if (self.background_css) |provider| {
+            self.host.as(gtk.Widget).getStyleContext().removeProvider(provider.as(gtk.StyleProvider));
+            provider.unref();
+        }
+        if (self.radius_css) |provider| {
             self.host.as(gtk.Widget).getStyleContext().removeProvider(provider.as(gtk.StyleProvider));
             provider.unref();
         }
@@ -200,6 +208,24 @@ pub const Bar = struct {
         self.background_color = if (alpha != null) resolved else null;
         self.background_opacity = config;
     }
+    /// Overrides the theme's 14px corner radius. The default injects nothing so
+    /// community themes keep control; a custom value wins via provider priority.
+    pub fn setBorderRadius(self: *Bar, radius: u8) !void {
+        if (self.radius == radius) return;
+        self.radius = radius;
+        if (radius == default_radius) {
+            if (self.radius_css) |provider| provider.loadFromString("");
+            return;
+        }
+        const css = try std.fmt.allocPrintSentinel(a, ".pearl-bar-panel {{ border-radius: {0d}px; }} .pearl-island {{ border-radius: {0d}px; }} .pearl-bar-attached.pearl-bar-top, .pearl-bar-attached.pearl-bar-top .pearl-island {{ border-radius: 0 0 {0d}px {0d}px; }} .pearl-bar-attached.pearl-bar-bottom, .pearl-bar-attached.pearl-bar-bottom .pearl-island {{ border-radius: {0d}px {0d}px 0 0; }} .pearl-bar-attached.pearl-bar-left, .pearl-bar-attached.pearl-bar-left .pearl-island {{ border-radius: 0 {0d}px {0d}px 0; }} .pearl-bar-attached.pearl-bar-right, .pearl-bar-attached.pearl-bar-right .pearl-island {{ border-radius: {0d}px 0 0 {0d}px; }}", .{radius}, 0);
+        defer a.free(css);
+        if (self.radius_css == null) {
+            self.radius_css = gtk.CssProvider.new();
+            self.host.as(gtk.Widget).getStyleContext().addProvider(self.radius_css.?.as(gtk.StyleProvider), 602);
+            for (self.sections) |section| if (section) |widget| widget.getStyleContext().addProvider(self.radius_css.?.as(gtk.StyleProvider), 602);
+        }
+        self.radius_css.?.loadFromString(css);
+    }
     pub fn setIslands(self: *Bar, enabled: bool) void {
         if (self.islands != enabled) {
             self.islands = enabled;
@@ -252,6 +278,7 @@ pub const Bar = struct {
             const box = gtk.Box.new(if (self.vertical) .vertical else .horizontal, 4);
             self.sections[section] = if (group.len != 0) box.as(gtk.Widget) else null;
             if (self.background_css) |provider| box.as(gtk.Widget).getStyleContext().addProvider(provider.as(gtk.StyleProvider), 602);
+            if (self.radius_css) |provider| box.as(gtk.Widget).getStyleContext().addProvider(provider.as(gtk.StyleProvider), 602);
             if (self.vertical) box.as(gtk.Widget).setVexpand(@intFromBool(!self.islands and section != 1)) else box.as(gtk.Widget).setHexpand(@intFromBool(!self.islands and section != 1));
             box.as(gtk.Widget).setHalign(if (self.vertical) .fill else if (section == 2) .end else .fill);
             box.as(gtk.Widget).setValign(if (self.vertical and section == 2) .end else .fill);

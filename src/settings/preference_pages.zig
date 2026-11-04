@@ -12,6 +12,7 @@ const bar_fields = [_]Spec{
     .{ .path = "bar.mode", .label = "Bar visibility", .kind = .choice, .choices = &.{ "always", "autohide" } },
     .{ .path = "bar.edge", .label = "Bar edge", .kind = .choice, .choices = edges },
     .{ .path = "bar.size", .label = "Bar size", .kind = .number, .min = 32, .max = 160 },
+    .{ .path = "bar.radius", .label = "Bar corner radius", .kind = .number, .min = 0, .max = 48 },
     .{ .path = "bar.running_apps_per_window", .label = "One taskbar button per window", .kind = .toggle },
     .{ .path = "bar.islands", .label = "Separate bar islands", .kind = .toggle },
     .{ .path = "bar.attached", .label = "Attach bar to screen edge", .kind = .toggle },
