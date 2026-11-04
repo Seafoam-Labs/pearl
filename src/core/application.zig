@@ -48,7 +48,7 @@ const State = struct {
     session_source: c_uint = 0,
     identity_source: c_uint = 0,
     logout_source: c_uint = 0,
-    clipboard_drain_source: c_uint = 0,
+    clipboard_draining: bool = false,
     logout_requested: bool = false,
     logout_ticket: ?u64 = null,
     cleaned: bool = false,
@@ -118,7 +118,9 @@ const State = struct {
             if (!surfaces.clipboard.drained()) {
                 // The application's existing hold keeps State, Manager and the
                 // GTK context alive. Never join an in-flight fsync on this thread.
-                self.clipboard_drain_source = glib.timeoutAdd(20, clipboardDrained, self);
+                self.clipboard_draining = true;
+                surfaces.clipboard.drain_context = self;
+                surfaces.clipboard.on_drained = clipboardDrained;
                 return;
             }
         };
@@ -136,12 +138,10 @@ const State = struct {
     }
 };
 
-fn clipboardDrained(data: ?*anyopaque) callconv(.c) c_int {
+fn clipboardDrained(data: *anyopaque) void {
     const self = state(data);
-    if (self.surfaces) |*surfaces| if (!surfaces.clipboard.drained()) return 1;
-    self.clipboard_drain_source = 0;
+    self.clipboard_draining = false;
     self.finishStop();
-    return 0;
 }
 
 fn state(data: ?*anyopaque) *State {
@@ -454,7 +454,7 @@ fn workFinished(_: ?*gobject.Object, result: *gio.AsyncResult, data: ?*anyopaque
 fn cleanup(self: *State) void {
     if (self.cleaned) return;
     self.cleaned = true;
-    std.debug.assert(self.clipboard_drain_source == 0);
+    std.debug.assert(!self.clipboard_draining);
     for (self.sources) |id| if (id != 0) {
         _ = glib.Source.remove(id);
     };

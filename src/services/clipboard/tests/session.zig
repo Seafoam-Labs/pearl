@@ -32,9 +32,9 @@ const Fixture = struct {
         var result = try session.Session.init(t.allocator, t.io, self.path, hooks);
         errdefer close(&result);
         result.setLocked(false);
-        _ = try result.poll(now);
+        _ = try result.updateWorker(now);
         _ = result.worker.?.waitReady();
-        _ = try result.poll(now);
+        _ = try result.updateWorker(now);
         return result;
     }
 };
@@ -44,9 +44,9 @@ fn close(s: *session.Session) void {
     s.deinit();
 }
 fn settle(s: *session.Session, now: clock.Sample) !void {
-    _ = try s.poll(now);
+    _ = try s.updateWorker(now);
     if (s.worker) |worker| _ = worker.waitIdle();
-    _ = try s.poll(now);
+    _ = try s.updateWorker(now);
 }
 fn image(size: usize, marker: u8) ![]u8 {
     const bytes = try t.allocator.alloc(u8, size);
@@ -113,7 +113,7 @@ test "session lock preserves text and PNG but forbids collection listing selecti
     try t.expectError(error.Locked, s.delete(id, at(101)));
     try t.expectError(error.Locked, s.clear());
     s.setLocked(false);
-    _ = try s.poll(at(102));
+    _ = try s.updateWorker(at(102));
     try t.expectEqual(@as(usize, 2), s.entries().len);
     try t.expectEqual(@as(i64, 100), s.entries()[1].last_copy);
     try t.expectEqual(@as(u64, 1), s.worker.?.status().write_count);
@@ -130,19 +130,29 @@ test "session startup while locked defers payload loading and never renews resto
     }
     var s = try session.Session.init(t.allocator, t.io, fixture.path, .{});
     defer close(&s);
-    _ = try s.poll(at(200));
+    _ = try s.updateWorker(at(200));
     try t.expect(s.worker == null);
     try t.expectEqual(@as(usize, 0), s.entries().len);
     s.setLocked(false);
-    _ = try s.poll(at(200));
+    _ = try s.updateWorker(at(200));
     _ = s.worker.?.waitReady();
+    // Completion remains readable even when startup wins the race with watch
+    // attachment. No history request or periodic tick is needed for handoff.
+    var wake = [_]std.c.pollfd{.{ .fd = s.worker.?.completion.fd, .events = std.c.POLL.IN, .revents = 0 }};
+    try t.expectEqual(@as(c_int, 1), std.c.poll(&wake, 1, 0));
+    s.worker.?.completion.drain();
     s.setLocked(true); // a lock arriving during load withholds its handoff
-    _ = try s.poll(at(200));
+    _ = try s.updateWorker(at(200));
     try t.expect(!s.ready);
     s.setLocked(false);
-    _ = try s.poll(at(200));
+    _ = try s.updateWorker(at(200));
+    const first_worker = s.worker.?;
     try t.expectEqual(@as(i64, 100), s.entries()[0].last_copy);
     try t.expectEqual(@as(u64, 0), s.worker.?.status().write_count);
+    s.setLocked(true);
+    s.setLocked(false);
+    _ = try s.updateWorker(null);
+    try t.expectEqual(first_worker, s.worker.?);
 }
 
 test "session PNG-only changes never write PNG and PNG eviction persists lost text" {
@@ -170,7 +180,7 @@ fn moduleReceiptDurable() @import("../worker.zig").ReceiptState {
     return .durable;
 }
 
-test "session expiration at exactly seven days persists removal even across lock" {
+test "session idle completion and lock transitions do not expire history; access expires at seven days" {
     var fixture = try Fixture.init();
     defer fixture.deinit();
     var s = try fixture.start(at(100));
@@ -179,10 +189,85 @@ test "session expiration at exactly seven days persists removal even across lock
     try settle(&s, at(100));
     s.setLocked(true);
     try settle(&s, at(100 + 604800));
-    try t.expectEqual(@as(usize, 0), s.model.entries().len);
+    try t.expectEqual(@as(usize, 1), s.model.entries().len);
+    try t.expectEqual(@as(u64, 1), s.worker.?.status().write_count);
     s.setLocked(false);
+    _ = try s.accessHistory(at(100 + 604799));
+    try t.expectEqual(@as(usize, 1), s.entries().len);
+    _ = try s.accessHistory(at(100 + 604800));
+    try settle(&s, at(100 + 604800));
     try t.expectEqual(@as(usize, 0), s.entries().len);
     try t.expectEqual(moduleReceiptDurable(), (try s.removal()).state);
+}
+
+test "session access batches expired text into one durable barrier and idle reads cause no writes" {
+    var fixture = try Fixture.init();
+    defer fixture.deinit();
+    var s = try fixture.start(at(100));
+    defer close(&s);
+    for ([_][]const u8{ "one", "two", "three" }) |text| {
+        _ = try s.accept(.text, text, at(100));
+        try settle(&s, at(100));
+    }
+    const writes = s.worker.?.status().write_count;
+    const generation = s.model.generation;
+    for (0..100) |_| {
+        _ = try s.updateWorker(null);
+        try t.expect(!try s.accessHistory(at(101)));
+    }
+    try t.expectEqual(generation, s.model.generation);
+    try t.expectEqual(writes, s.worker.?.status().write_count);
+    // A distant worker notification is not history activity and leaves time,
+    // generation, disk and expired payloads untouched.
+    _ = try s.updateWorker(at(100 + 604801));
+    try t.expectEqual(@as(i64, 101), s.now);
+    try t.expectEqual(@as(usize, 3), s.model.len);
+    try t.expect(try s.accessHistory(at(100 + 604801)));
+    try settle(&s, at(100 + 604801));
+    try t.expectEqual(@as(usize, 0), s.entries().len);
+    try t.expectEqual(writes + 1, s.worker.?.status().write_count);
+    try t.expectEqual(session.worker.Operation.expiry, (try s.removal()).operation);
+    try t.expectEqual(moduleReceiptDurable(), (try s.removal()).state);
+}
+
+test "session recopy refreshes retention and expired selections cannot be reused" {
+    var fixture = try Fixture.init();
+    defer fixture.deinit();
+    var s = try fixture.start(at(100));
+    defer close(&s);
+    const id = try s.accept(.text, "refreshed", at(100));
+    try settle(&s, at(100));
+    try t.expectEqual(id, try s.accept(.text, "refreshed", at(200)));
+    try settle(&s, at(200));
+    _ = try s.accessHistory(at(100 + 604800));
+    try t.expectEqual(id, s.entries()[0].id);
+    try t.expectError(error.Stale, s.prepareSelection(id, at(200 + 604801)));
+    try settle(&s, at(200 + 604801));
+    try t.expectEqual(@as(usize, 0), s.entries().len);
+    try t.expectEqual(moduleReceiptDurable(), (try s.removal()).state);
+}
+
+test "session copy and Delete batch lazy expiry into their single removal barrier; Clear skips expiry" {
+    for (0..3) |action| {
+        var fixture = try Fixture.init();
+        defer fixture.deinit();
+        var s = try fixture.start(at(100));
+        defer close(&s);
+        _ = try s.accept(.text, "expired", at(100));
+        try settle(&s, at(100));
+        const live = try s.accept(.text, "live", at(200));
+        try settle(&s, at(200));
+        const revision = s.save_revision;
+        switch (action) {
+            0 => _ = try s.accept(.text, "new", at(100 + 604800)),
+            1 => try s.delete(live, at(100 + 604800)),
+            else => try s.clear(),
+        }
+        try settle(&s, at(100 + 604800));
+        try t.expectEqual(revision + 1, s.save_revision);
+        try t.expectEqual(moduleReceiptDurable(), (try s.removal()).state);
+        try t.expectEqual(@as(usize, if (action == 0) 2 else 0), s.entries().len);
+    }
 }
 
 test "session Delete and Clear expose durable receipts instead of immediate promises" {
@@ -235,9 +320,9 @@ test "session refuses untrusted saved clock floor and preserves saved bytes" {
     var s = try session.Session.init(t.allocator, t.io, fixture.path, .{});
     defer close(&s);
     s.setLocked(false);
-    _ = try s.poll(at(699));
+    _ = try s.updateWorker(at(699));
     _ = s.worker.?.waitReady();
-    try t.expectError(error.ClockUntrusted, s.poll(at(699)));
+    try t.expectError(error.ClockUntrusted, s.updateWorker(at(699)));
     try t.expect(!s.canRecoverClear());
     try t.expectError(error.ClockUntrusted, s.clear());
     try t.expectEqual(session.Health.clock_untrusted, s.health());
@@ -262,9 +347,9 @@ test "session concurrent writer stays unavailable" {
     var other = try session.Session.init(t.allocator, t.io, fixture.path, .{});
     defer close(&other);
     other.setLocked(false);
-    _ = try other.poll(at(100));
+    _ = try other.updateWorker(at(100));
     _ = other.worker.?.waitReady();
-    try t.expectError(error.Busy, other.poll(at(100)));
+    try t.expectError(error.Busy, other.updateWorker(at(100)));
     try t.expectEqual(@as(usize, 0), other.entries().len);
     try t.expectError(error.Busy, other.accept(.text, "rejected", at(100)));
     try t.expect(!other.canRecoverClear());
@@ -408,6 +493,53 @@ const Hook = struct {
     }
 };
 
+test "session Busy expiry hides all history and retries only on subsequent activity" {
+    var fixture = try Fixture.init();
+    defer fixture.deinit();
+    var hook: Hook = .{ .hold = true };
+    var s = try fixture.startHooks(at(100), hook.hooks());
+    defer close(&s);
+    defer hook.release();
+    const id = try s.accept(.text, "expires while storage busy", at(100));
+    hook.wait();
+    // Hold one active save and a required pending removal. The latter cannot
+    // be superseded by expiry or by an attempted recopy.
+    const pending = try session.worker.OwnedSnapshot.create(t.allocator, .{ .records = &.{.{ .bytes = "expires while storage busy", .last_copy = 100, .sequence = 1 }}, .floor = 100 });
+    _ = try s.worker.?.requestRemoval(.delete, 2, pending);
+    s.save_revision = 2;
+    try t.expectError(error.Busy, s.accessHistory(at(100 + 604801)));
+    try t.expectEqual(@as(usize, 0), s.entries().len);
+    try t.expectEqual(@as(usize, 1), s.model.len);
+    try t.expectError(error.Busy, s.prepareSelection(id, at(100 + 604801)));
+    hook.release();
+    try settle(&s, at(100 + 604801));
+    try t.expectEqual(@as(usize, 1), s.model.len);
+    try t.expectEqual(@as(usize, 0), s.entries().len);
+    try t.expect(try s.accessHistory(at(100 + 604801)));
+    try settle(&s, at(100 + 604801));
+    try t.expectEqual(@as(usize, 0), s.model.len);
+    try t.expectEqual(moduleReceiptDurable(), (try s.removal()).state);
+}
+
+test "session expiry snapshot allocation failure hides expired history until retried" {
+    var fixture = try Fixture.init();
+    defer fixture.deinit();
+    var s = try fixture.start(at(100));
+    defer close(&s);
+    _ = try s.accept(.text, "expired allocation failure", at(100));
+    try settle(&s, at(100));
+    var failing = std.testing.FailingAllocator.init(t.allocator, .{ .fail_index = 0 });
+    s.allocator = failing.allocator();
+    defer s.allocator = t.allocator;
+    try t.expectError(error.OutOfMemory, s.accessHistory(at(100 + 604801)));
+    try t.expectEqual(@as(usize, 0), s.entries().len);
+    try t.expectEqual(@as(usize, 1), s.model.len);
+    s.allocator = t.allocator;
+    _ = try s.accessHistory(at(100 + 604801));
+    try settle(&s, at(100 + 604801));
+    try t.expectEqual(moduleReceiptDurable(), (try s.removal()).state);
+}
+
 test "session reports write failure and post-publication uncertainty without durable success" {
     for ([_]store.Phase{ .write, .directory_sync }) |phase| {
         var fixture = try Fixture.init();
@@ -422,7 +554,7 @@ test "session reports write failure and post-publication uncertainty without dur
         try t.expectEqual(@as(u64, 0), status.durable_revision);
         try t.expectEqual(if (phase == .write) session.Health.failed else session.Health.uncertain, s.health());
         try t.expectEqual(@as(usize, 0), s.entries().len);
-        try t.expectError(expected, s.poll(at(101)));
+        try t.expectError(expected, s.updateWorker(at(101)));
         try t.expect(hook.thread.? != std.Thread.getCurrentId());
     }
 }
@@ -456,7 +588,7 @@ test "session failed and uncertain removals return admission and query receipts 
             defer parsed_status.deinit();
             try t.expectEqual(std.json.Value.null, parsed_status.value.object.get("removal").?);
             try t.expectEqualStrings(if (phase == .remove) "failed" else "uncertain", parsed_status.value.object.get("persistence").?.string);
-            try t.expectError(receipt.failure.?, s.poll(at(101)));
+            try t.expectError(receipt.failure.?, s.updateWorker(at(101)));
             // Exercise the initial response after the worker has already failed.
             const admitted = try s.removalStatus(t.allocator);
             defer t.allocator.free(admitted);
@@ -552,7 +684,7 @@ test "session corrupt unsupported and unsafe saved files remain untouched" {
         var s = try session.Session.init(t.allocator, t.io, fixture.path, .{});
         defer close(&s);
         s.setLocked(false);
-        _ = try s.poll(at(100));
+        _ = try s.updateWorker(at(100));
         const status = s.worker.?.waitReady();
         const expected: store.Error = switch (variant) {
             0 => error.Corrupt,
@@ -560,7 +692,7 @@ test "session corrupt unsupported and unsafe saved files remain untouched" {
             else => error.Unsafe,
         };
         try t.expectEqual(expected, status.failure.?);
-        try t.expectError(expected, s.poll(at(100)));
+        try t.expectError(expected, s.updateWorker(at(100)));
         if (variant == 2) {
             try t.expect(!s.canRecoverClear());
             try t.expectError(error.Unsafe, s.clear());
@@ -596,10 +728,10 @@ fn rejectedSession(fixture: *Fixture, unsupported: bool, hooks: store.Hooks) !se
     var s = try session.Session.init(t.allocator, t.io, fixture.path, hooks);
     errdefer close(&s);
     s.setLocked(false);
-    _ = try s.poll(at(100));
+    _ = try s.updateWorker(at(100));
     const status = s.worker.?.waitReady();
     try t.expectEqual(if (unsupported) error.Unsupported else error.Corrupt, status.failure.?);
-    try t.expectError(if (unsupported) error.Unsupported else error.Corrupt, s.poll(at(100)));
+    try t.expectError(if (unsupported) error.Unsupported else error.Corrupt, s.updateWorker(at(100)));
     return s;
 }
 

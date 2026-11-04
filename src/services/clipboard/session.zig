@@ -55,11 +55,16 @@ pub const Session = struct {
         self.locked = locked;
     }
     pub fn accessible(self: *const Session) bool {
-        if (self.locked or self.stopping or !self.ready or self.failure != null or self.maintenance_busy) return false;
+        return !self.maintenance_busy and self.available();
+    }
+    pub fn available(self: *const Session) bool {
+        if (self.locked or self.stopping or !self.ready or self.failure != null) return false;
         const status = (self.worker orelse return false).status();
         return status.initialized and !status.restoring and !status.stopped and status.failure == null;
     }
     pub fn entries(self: *const Session) []const history.Entry {
+        // Internal borrowed view. The service calls accessHistory with a fresh
+        // sample before exposing this view to a UI or CLI consumer.
         return if (self.accessible()) self.model.entries() else &.{};
     }
     pub fn health(self: *const Session) Health {
@@ -81,8 +86,10 @@ pub const Session = struct {
         self.failure = error.ClockUntrusted;
         if (self.worker) |w| w.beginShutdown();
     }
-    pub fn poll(self: *Session, sample: clock.Sample) Error!bool {
-        return self.pollImpl(sample) catch |err| {
+    /// Called on eligibility changes and worker wakeups, never by a timer.
+    /// Completion alone does not advance time or run expiration maintenance.
+    pub fn updateWorker(self: *Session, sample: ?clock.Sample) Error!bool {
+        return self.updateWorkerImpl(sample) catch |err| {
             self.failure = err;
             if (self.worker) |w| {
                 if (!w.status().clear_only or (err != error.Corrupt and err != error.Unsupported)) w.beginShutdown();
@@ -90,7 +97,7 @@ pub const Session = struct {
             return err;
         };
     }
-    fn pollImpl(self: *Session, sample: clock.Sample) Error!bool {
+    fn updateWorkerImpl(self: *Session, sample: ?clock.Sample) Error!bool {
         if (self.stopping) return false;
         if (self.failure) |err| return err;
         if (self.worker == null) {
@@ -110,9 +117,10 @@ pub const Session = struct {
         if (!status.initialized) return false;
         if (!self.ready) {
             if (self.locked) return false;
+            const startup = sample orelse return false;
             var loaded = w.takeRestored() catch return error.Unavailable;
             defer if (loaded) |*data| data.deinit();
-            self.now = self.clock_state.start(sample, if (loaded) |data| data.floor else sample.wall_seconds) catch {
+            self.now = self.clock_state.start(startup, if (loaded) |data| data.floor else startup.wall_seconds) catch {
                 self.failClock();
                 return error.ClockUntrusted;
             };
@@ -144,37 +152,48 @@ pub const Session = struct {
             }
             return true;
         }
-        self.now = self.clock_state.advance(sample) catch {
-            self.failClock();
-            return error.ClockUntrusted;
-        };
-        var changed = status.durable_revision != self.observed_durable;
+        const changed = status.durable_revision != self.observed_durable or self.busy;
         self.observed_durable = status.durable_revision;
         self.busy = false;
-        var prepared = try self.model.preparePrune(self.now);
-        if (prepared.len != self.model.len) {
-            var tx = try self.transaction(prepared, .expiry, false);
-            defer tx.discard();
-            self.commit(&tx) catch |err| {
-                if (err == error.Busy) {
-                    self.maintenance_busy = true;
-                    return true;
-                }
-                return err;
-            };
-            self.maintenance_busy = false;
-            changed = true;
-        } else {
-            prepared.discard();
-            self.maintenance_busy = false;
-        }
         return changed;
     }
     fn gate(self: *Session, sample: clock.Sample) Error!void {
         if (self.locked or self.stopping) return error.Locked;
-        _ = try self.poll(sample);
-        if (self.maintenance_busy) return error.Busy;
-        if (!self.accessible()) return error.Unavailable;
+        if (self.failure) |err| return err;
+        // maintenance_busy hides borrowed views, but an activity must be able
+        // to retry the removal once worker admission becomes available.
+        if (!self.available()) return error.Unavailable;
+        self.now = self.clock_state.advance(sample) catch {
+            self.failClock();
+            return error.ClockUntrusted;
+        };
+        // Preparation can fail before prune/commit (including when selecting a
+        // live row beside expired rows). Withhold the old view immediately.
+        if (self.hasExpired()) self.maintenance_busy = true;
+    }
+    /// Lazy boundary for panel/CLI history reads. Busy or allocation failure
+    /// hides the old model until a later activity can admit its removal barrier.
+    pub fn accessHistory(self: *Session, sample: clock.Sample) Error!bool {
+        try self.gate(sample);
+        return self.prune();
+    }
+    fn hasExpired(self: *const Session) bool {
+        // Copy and restoration order is newest first. Trusted time cannot
+        // rewind, so the last row is the first possible expiration.
+        return self.model.len != 0 and self.now - self.model.rows[self.model.len - 1].last_copy >= history.lifetime_seconds;
+    }
+    fn prune(self: *Session) Error!bool {
+        if (!self.hasExpired()) {
+            self.maintenance_busy = false;
+            return false;
+        }
+        self.maintenance_busy = true;
+        const prepared = try self.model.preparePrune(self.now);
+        var tx = try self.transaction(prepared, .expiry, false);
+        defer tx.discard();
+        try self.commit(&tx);
+        self.maintenance_busy = false;
+        return true;
     }
     fn transaction(self: *Session, input: history.History.Prepared, operation: worker.Operation, force: bool) Error!Transaction {
         var prepared = input;
@@ -187,18 +206,26 @@ pub const Session = struct {
         };
         var same = true;
         var old_count: usize = 0;
-        var removed_text = false;
         for (self.model.entries()) |entry| if (entry.kind == .text) {
             if (old_count >= count or rows[old_count].sequence != entry.sequence) same = false;
             old_count += 1;
+        };
+        if (old_count != count) same = false;
+        var removed_text = false;
+        // PNG-only changes preserve the text projection. Avoid the identity
+        // search as well as payload copying/hashing for those transactions.
+        if (!same and operation == .ordinary) for (self.model.entries()) |entry| {
+            if (entry.kind != .text) continue;
             var found = false;
             for (prepared.entries()) |next| if (next.id == entry.id) {
                 found = true;
                 break;
             };
-            if (!found) removed_text = true;
+            if (!found) {
+                removed_text = true;
+                break;
+            }
         };
-        if (old_count != count) same = false;
         const kind = if (removed_text and operation == .ordinary) worker.Operation.eviction else operation;
         return .{ .prepared = prepared, .operation = kind, .snapshot = if (force or !same) try worker.OwnedSnapshot.create(self.allocator, .{ .records = rows[0..count], .floor = self.now }) else null };
     }
@@ -208,7 +235,11 @@ pub const Session = struct {
     }
     pub fn prepareSelection(self: *Session, id: u64, sample: clock.Sample) Error!Transaction {
         try self.gate(sample);
-        for (self.model.entries()) |entry| if (entry.id == id) return self.prepareCopy(entry.kind, entry.bytes, sample);
+        for (self.model.entries()) |entry| if (entry.id == id) {
+            if (self.now - entry.last_copy >= history.lifetime_seconds) break;
+            return self.transaction(try self.model.prepareCopy(entry.kind, entry.bytes, self.now), .ordinary, false);
+        };
+        _ = try self.prune();
         return error.Stale;
     }
     pub fn commit(self: *Session, tx: *Transaction) Error!void {
@@ -233,6 +264,7 @@ pub const Session = struct {
             self.save_revision = revision;
         }
         tx.prepared.commit();
+        self.maintenance_busy = false;
         tx.consumed = true;
     }
     pub fn accept(self: *Session, kind: history.Kind, bytes: []const u8, sample: clock.Sample) Error!u64 {
@@ -249,8 +281,19 @@ pub const Session = struct {
             found = true;
             break;
         };
-        if (!found) return error.Stale;
-        var tx = try self.transaction(try self.model.prepareDelete(id), .delete, true);
+        // Delete and all expired entries share one required removal snapshot.
+        if (!found) {
+            _ = try self.prune();
+            return error.Stale;
+        }
+        var prepared = try self.model.preparePrune(self.now);
+        for (prepared.entries(), 0..) |entry, index| if (entry.id == id) {
+            prepared.len -= 1;
+            prepared.total_bytes -= entry.bytes.len;
+            std.mem.copyForwards(history.Entry, prepared.rows[index..prepared.len], prepared.rows[index + 1 .. prepared.len + 1]);
+            break;
+        };
+        var tx = try self.transaction(prepared, .delete, true);
         defer tx.discard();
         try self.commit(&tx);
     }
@@ -271,7 +314,8 @@ pub const Session = struct {
             return;
         }
         if (self.failure) |err| return err;
-        if (!self.accessible()) return error.Unavailable;
+        // Clear removes everything directly, even after a Busy expiry attempt.
+        if (!self.available()) return error.Unavailable;
         var tx = try self.transaction(try self.model.prepareClear(), .clear, true);
         defer tx.discard();
         try self.commit(&tx);

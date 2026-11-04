@@ -12,6 +12,7 @@ const coordination = @import("clipboard/session.zig");
 const storage = @import("clipboard/store.zig");
 const history_clock = @import("clipboard/clock.zig");
 const presentation = coordination.presentation;
+const CompletionWatch = @import("clipboard/completion_watch.zig").Watch;
 const i18n = @import("i18n");
 const log = std.log.scoped(.services);
 const a = std.heap.c_allocator;
@@ -109,9 +110,14 @@ pub const Clipboard = struct {
     offers: std.ArrayList(*Offer) = .empty,
     session: ?coordination.Session = null,
     io_state: ?std.Io.Threaded = null,
-    poll_source: c_uint = 0,
+    completion_watch: CompletionWatch = .{},
+    drain_context: ?*anyopaque = null,
+    on_drained: ?*const fn (*anyopaque) void = null,
     stopping: bool = false,
     last_health: coordination.Health = .loading,
+    history_accessing: bool = false,
+    // Deterministic samples exist only in unit-test builds.
+    test_time: if (@import("builtin").is_test) ?history_clock.Sample else void = if (@import("builtin").is_test) null else {},
     read: ?*Transfer = null,
     writes: [4]?*Transfer = @splat(null),
     skip_selection: bool = true,
@@ -126,7 +132,6 @@ pub const Clipboard = struct {
             defer a.free(path);
             self.session = coordination.Session.init(a, self.io_state.?.io(), path, .{}) catch null;
         } else |_| self.message = "Clipboard storage unavailable";
-        self.poll_source = glib.timeoutAdd(250, pollHistory, self);
         var action: std.c.Sigaction = .{ .handler = .{ .handler = std.c.SIG.IGN }, .mask = std.mem.zeroes(std.c.sigset_t), .flags = 0 };
         std.posix.sigaction(.PIPE, &action, null);
         const display = object.ext.cast(backend.WaylandDisplay, self.display) orelse return error.Unavailable;
@@ -138,8 +143,9 @@ pub const Clipboard = struct {
     pub fn stop(self: *Clipboard) void {
         self.beginStop();
         std.debug.assert(self.drained());
-        if (self.poll_source != 0) _ = glib.Source.remove(self.poll_source);
-        self.poll_source = 0;
+        // Detach the only callback borrowing self before releasing the worker's
+        // descriptor or any main-context state. Pending wakeups own no pointers.
+        self.completion_watch.detach();
         self.dropDevice();
         if (self.seat) |s| s.release();
         if (self.manager) |m| m.destroy();
@@ -195,27 +201,63 @@ pub const Clipboard = struct {
         };
     }
     pub fn accessible(self: *const Clipboard) bool {
-        return !self.locked and !self.stopping and !self.ambiguous and self.device != null and (if (self.session) |*session| session.accessible() else false);
+        return self.available() and !self.session.?.maintenance_busy;
     }
-    pub fn entries(self: *const Clipboard) []const coordination.history.Entry {
-        return if (self.accessible()) self.session.?.entries() else &.{};
+    fn available(self: *const Clipboard) bool {
+        return !self.locked and !self.stopping and !self.ambiguous and self.device != null and (if (self.session) |*session| session.available() else false);
+    }
+    pub fn entries(self: *Clipboard) []const coordination.history.Entry {
+        self.maintainHistory();
+        return if (self.accessible()) self.session.?.model.entries() else &.{};
+    }
+    fn maintainHistory(self: *Clipboard) void {
+        if (self.locked or self.stopping or self.history_accessing) return;
+        if (self.session) |*session| {
+            self.history_accessing = true;
+            defer self.history_accessing = false;
+            const before = self.historyState();
+            defer self.historyChanged(before);
+            _ = session.accessHistory(self.time() catch return) catch {};
+        }
+    }
+    const HistoryState = struct { revision: u64, accessible: bool, health: coordination.Health };
+    fn historyState(self: *const Clipboard) HistoryState {
+        const session = &self.session.?;
+        return .{ .revision = session.model.generation, .accessible = self.accessible(), .health = session.health() };
+    }
+    fn historyChanged(self: *Clipboard, before: HistoryState) void {
+        const after = self.historyState();
+        if (std.meta.eql(before, after)) return;
+        self.last_health = after.health;
+        self.message = self.baseline();
+        // Consumers may synchronously invalidate previews and read entries.
+        // Such a read observes this result without attempting maintenance again.
+        const accessing = self.history_accessing;
+        self.history_accessing = true;
+        defer self.history_accessing = accessing;
+        self.changed(self.context);
     }
     fn time(self: *Clipboard) !history_clock.Sample {
+        if (@import("builtin").is_test) if (self.test_time) |sample| return sample;
         return history_clock.read() catch {
             if (self.session) |*session| session.failClock();
             self.revoke();
             self.dropDevice();
             self.message = self.baseline();
-            self.changed(self.context);
+            if (!self.history_accessing) self.changed(self.context);
             return error.ClockUntrusted;
         };
     }
     fn refresh(self: *Clipboard) void {
         if (self.stopping) return;
         if (self.session) |*session| {
-            const changed = session.poll(self.time() catch return) catch true;
+            const sample = if (!session.ready and !self.locked and session.worker != null) self.time() catch return else null;
+            const changed = session.updateWorker(sample) catch true;
+            if (self.completion_watch.source == 0) if (session.worker) |w| {
+                self.completion_watch.attach(w.completion.fd, workerCompleted, self);
+            };
             const health = session.health();
-            if (!session.accessible()) {
+            if (!session.available()) {
                 self.revoke();
                 self.dropDevice();
             } else self.connect();
@@ -226,8 +268,20 @@ pub const Clipboard = struct {
             }
         }
     }
-    fn pollHistory(data: ?*anyopaque) callconv(.c) c_int {
+    fn workerCompleted(_: *glib.IOChannel, _: glib.IOCondition, data: ?*anyopaque) callconv(.c) c_int {
         const self: *Clipboard = @ptrCast(@alignCast(data.?));
+        self.session.?.worker.?.completion.drain();
+        if (self.stopping) {
+            if (self.drained()) if (self.on_drained) |done| {
+                const context = self.drain_context.?;
+                self.on_drained = null;
+                // done may destroy self, including its source and worker.
+                self.completion_watch.detach();
+                done(context);
+                return 0;
+            };
+            return 1;
+        }
         self.refresh();
         return 1;
     }
@@ -254,7 +308,7 @@ pub const Clipboard = struct {
     pub fn clear(self: *Clipboard) !void {
         if (self.locked or self.stopping or self.ambiguous) return error.Locked;
         const session = if (self.session) |*value| value else return error.Unavailable;
-        if (!self.accessible() and !session.canRecoverClear()) return error.Unavailable;
+        if (!self.available() and !session.canRecoverClear()) return error.Unavailable;
         session.clear() catch |err| {
             self.message = self.baseline();
             self.changed(self.context);
@@ -266,7 +320,7 @@ pub const Clipboard = struct {
     }
     pub fn delete(self: *Clipboard, id: u64) !void {
         if (self.locked) return error.Locked;
-        if (!self.accessible()) return error.Unavailable;
+        if (!self.available()) return error.Unavailable;
         self.session.?.delete(id, try self.time()) catch |err| {
             self.message = self.baseline();
             self.changed(self.context);
@@ -287,10 +341,15 @@ pub const Clipboard = struct {
     }
     fn retainEntry(self: *Clipboard, kind: policy.Kind, input: []const u8) !u64 {
         if (self.locked) return error.Locked;
-        if (!self.accessible()) return error.Unavailable;
+        if (!self.available()) return error.Unavailable;
         if (!policy.valid(kind, input)) return error.InvalidPayload;
         const clean = if (kind == .png) try sanitize(input) else null;
         defer if (clean) |bytes| wipe(bytes);
+        const accessing = self.history_accessing;
+        self.history_accessing = true;
+        defer self.history_accessing = accessing;
+        const before = self.historyState();
+        errdefer self.historyChanged(before);
         const id = try self.session.?.accept(kind, clean orelse input, try self.time());
         self.message = self.baseline();
         self.changed(self.context);
@@ -298,17 +357,27 @@ pub const Clipboard = struct {
     }
     pub fn select(self: *Clipboard, id: u64) !void {
         if (self.locked) return error.Locked;
-        if (!self.accessible()) return error.Unavailable;
+        if (!self.available()) return error.Unavailable;
+        const accessing = self.history_accessing;
+        self.history_accessing = true;
+        defer self.history_accessing = accessing;
+        const before = self.historyState();
+        errdefer self.historyChanged(before);
         var tx = try self.session.?.prepareSelection(id, try self.time());
         defer tx.discard();
         try self.publish(&tx);
     }
     fn copyValue(self: *Clipboard, kind: policy.Kind, input: []const u8) !void {
         if (self.locked) return error.Locked;
-        if (!self.accessible()) return error.Unavailable;
+        if (!self.available()) return error.Unavailable;
         if (!policy.valid(kind, input)) return error.InvalidPayload;
         const clean = if (kind == .png) try sanitize(input) else null;
         defer if (clean) |bytes| wipe(bytes);
+        const accessing = self.history_accessing;
+        self.history_accessing = true;
+        defer self.history_accessing = accessing;
+        const before = self.historyState();
+        errdefer self.historyChanged(before);
         var tx = try self.session.?.prepareCopy(kind, clean orelse input, try self.time());
         defer tx.discard();
         try self.publish(&tx);
@@ -338,7 +407,7 @@ pub const Clipboard = struct {
         return if (kind == .text) "text/plain;charset=utf-8" else "image/png";
     }
     fn connect(self: *Clipboard) void {
-        if (self.locked or self.stopping or self.ambiguous or self.device != null or self.manager == null or self.seat == null or !(if (self.session) |*session| session.accessible() else false)) return;
+        if (self.locked or self.stopping or self.ambiguous or self.device != null or self.manager == null or self.seat == null or !(if (self.session) |*session| session.available() else false)) return;
         self.skip_selection = true;
         self.device = self.manager.?.getDataDevice(self.seat.?) catch return;
         self.device.?.setListener(*Clipboard, deviceEvent, self);
@@ -434,7 +503,7 @@ pub const Clipboard = struct {
                     if (self.read) |r| r.finish(false);
                 }
                 for (self.offers.items, 0..) |o, i| if (o.proxy == id) {
-                    if (event == .selection and !skip and self.accessible() and !o.sensitive and o.mime != null) self.receive(o) catch |err| log.debug("event=clipboard-failed error={s}", .{@errorName(err)});
+                    if (event == .selection and !skip and self.available() and !o.sensitive and o.mime != null) self.receive(o) catch |err| log.debug("event=clipboard-failed error={s}", .{@errorName(err)});
                     o.proxy.destroy();
                     a.destroy(o);
                     _ = self.offers.orderedRemove(i);
@@ -478,7 +547,7 @@ pub const Clipboard = struct {
                     _ = std.c.close(ev.fd);
                 };
                 const e = self.owned orelse return;
-                if (!self.accessible() or source != self.source or !std.mem.eql(u8, std.mem.span(ev.mime_type), mime(e.kind))) return;
+                if (!self.available() or source != self.source or !std.mem.eql(u8, std.mem.span(ev.mime_type), mime(e.kind))) return;
                 for (&self.writes) |*slot| if (slot.* == null) {
                     const t = a.create(Transfer) catch return;
                     t.* = .{ .owner = self, .fd = ev.fd, .kind = e.kind, .write = true };
@@ -499,7 +568,8 @@ pub const Clipboard = struct {
         return self.pageStatus(alloc, .{});
     }
     pub fn pageStatus(self: *Clipboard, alloc: std.mem.Allocator, page: presentation.Page) ![]const u8 {
-        self.refresh();
+        // Receipt responses can also include a history page while accessible.
+        self.maintainHistory();
         if (page.operation != null and (self.locked or self.stopping or self.ambiguous)) return error.Locked;
         if (self.session) |*session| return session.pageStatus(alloc, self.accessible(), self.read != null, self.baseline(), page);
         return presentation.status(alloc, .{ .accessible = false, .health = .unavailable, .instance = "", .message = self.baseline() }, page);

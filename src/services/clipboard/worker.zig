@@ -5,6 +5,8 @@ const std = @import("std");
 const codec = @import("codec.zig");
 const storage = @import("store.zig");
 const history = @import("history.zig");
+const Completion = @import("completion.zig").Completion;
+pub const StartError = std.Thread.SpawnError || error{ OutOfMemory, NotificationUnavailable };
 
 pub const Key = [32]u8;
 pub const receipt_limit = 16;
@@ -170,10 +172,11 @@ pub const Worker = struct {
     next_token: u64 = 1,
     restored: ?codec.Loaded = null,
     restore_claimed: bool = false,
+    completion: Completion,
 
     /// Integration startup pauses admission until the main context takes and
     /// validates the loaded floor/text. Loading/decoding still happens here.
-    pub fn startPaused(allocator: std.mem.Allocator, io: std.Io, path: []const u8, hooks: storage.Hooks) (std.Thread.SpawnError || error{OutOfMemory})!*Worker {
+    pub fn startPaused(allocator: std.mem.Allocator, io: std.Io, path: []const u8, hooks: storage.Hooks) StartError!*Worker {
         const owned_path = try allocator.dupeSentinel(u8, path, 0);
         errdefer allocator.free(owned_path);
         return launch(allocator, io, .{ .filesystem = .{ .path = owned_path, .hooks = hooks, .restore = true } });
@@ -197,20 +200,21 @@ pub const Worker = struct {
         self.condition.broadcast(self.io);
     }
 
-    pub fn start(allocator: std.mem.Allocator, io: std.Io, path: []const u8, hooks: storage.Hooks) (std.Thread.SpawnError || error{OutOfMemory})!*Worker {
+    pub fn start(allocator: std.mem.Allocator, io: std.Io, path: []const u8, hooks: storage.Hooks) StartError!*Worker {
         const owned_path = try allocator.dupeSentinel(u8, path, 0);
         errdefer allocator.free(owned_path);
         return launch(allocator, io, .{ .filesystem = .{ .path = owned_path, .hooks = hooks } });
     }
 
-    pub fn startWithBackend(allocator: std.mem.Allocator, io: std.Io, backend: Backend) (std.Thread.SpawnError || error{OutOfMemory})!*Worker {
+    pub fn startWithBackend(allocator: std.mem.Allocator, io: std.Io, backend: Backend) StartError!*Worker {
         return launch(allocator, io, .{ .injected = backend });
     }
 
-    fn launch(allocator: std.mem.Allocator, io: std.Io, target: Target) (std.Thread.SpawnError || error{OutOfMemory})!*Worker {
+    fn launch(allocator: std.mem.Allocator, io: std.Io, target: Target) StartError!*Worker {
         const self = try allocator.create(Worker);
         errdefer allocator.destroy(self);
-        self.* = .{ .allocator = allocator, .io = io, .target = target };
+        self.* = .{ .allocator = allocator, .io = io, .target = target, .completion = try Completion.init() };
+        errdefer self.completion.deinit();
         self.thread = try std.Thread.spawn(.{}, run, .{self});
         return self;
     }
@@ -296,8 +300,8 @@ pub const Worker = struct {
         return self.statusLocked();
     }
 
-    /// Blocking helpers for tests/non-UI callers. UI integration must poll
-    /// status/receipts (or add a completion wakeup), never wait for disk here.
+    /// Blocking helpers for tests/non-UI callers. UI watches completion.fd and
+    /// reads status/receipts after a wakeup; it never waits for disk here.
     pub fn waitReady(self: *Worker) Status {
         self.mutex.lockUncancelable(self.io);
         defer self.mutex.unlock(self.io);
@@ -328,6 +332,7 @@ pub const Worker = struct {
 
     pub fn destroy(self: *Worker) void {
         std.debug.assert(self.thread == null and self.state.stopped);
+        self.completion.deinit();
         if (self.target == .filesystem) self.allocator.free(self.target.filesystem.path);
         self.allocator.destroy(self);
     }
@@ -361,6 +366,7 @@ pub const Worker = struct {
             self.state.clear_only = false;
             self.state.stopped = true;
             self.condition.broadcast(self.io);
+            self.completion.signal();
             self.mutex.unlock(self.io);
         }
         var saved_key = backend.load(backend.context) catch |err| recovery: {
@@ -374,6 +380,7 @@ pub const Worker = struct {
                 (file.store.?.state == .corrupt or file.store.?.state == .unsupported);
             const clear_only = self.state.clear_only;
             self.condition.broadcast(self.io);
+            self.completion.signal();
             self.mutex.unlock(self.io);
             if (!clear_only) return;
             break :recovery @as(Key, @splat(0));
@@ -384,6 +391,7 @@ pub const Worker = struct {
         self.state.restoring = file.retain_load and !self.state.clear_only;
         self.state.initialized = !self.state.clear_only;
         self.condition.broadcast(self.io);
+        self.completion.signal();
         self.mutex.unlock(self.io);
         while (true) {
             self.mutex.lockUncancelable(self.io);
@@ -420,6 +428,7 @@ pub const Worker = struct {
                 self.pending = null;
                 if (cancelled) |pending| self.setReceipt(pending.token, .cancelled, err);
                 self.condition.broadcast(self.io);
+                self.completion.signal();
                 self.mutex.unlock(self.io);
                 if (cancelled) |pending| pending.snapshot.deinit();
                 // No automatic retry/replay after any failure or uncertainty.
@@ -429,6 +438,7 @@ pub const Worker = struct {
             self.setReceipt(job.token, .durable, null);
             if (recovering) self.state.clear_only = false;
             self.condition.broadcast(self.io);
+            self.completion.signal();
             self.mutex.unlock(self.io);
             // Recovery deliberately requires a restart. Do not resume normal
             // saves/restoration in a session whose startup never completed.

@@ -99,8 +99,19 @@ no PNGs or runtime entry IDs. Its SHA-256 checksum detects corruption;
 **the contents are plaintext, not encrypted**.
 
 Successful copies renew an entry's seven-day lifetime, including copies of
-existing entries. Expiration and eviction remove older history. On startup
-Pearl restores only eligible saved text, without publishing it to the current
+existing eligible entries. Timestamps and the seven-day comparison use whole
+Unix seconds; an entry expires when its age is at least 604800 seconds.
+Expiration is lazy: copying/capturing, opening or reading history, selecting an
+entry and Delete prune expired rows before they can be returned or reused.
+Multiple expired text rows share one durable removal barrier, combined with
+the copy or Delete where possible. If admission is Busy or preparation fails,
+expired history is withheld until a later activity can retry. Clear removes
+everything directly without an expiration scan. Idle history may retain expired
+rows in memory and on disk; there is no history polling or expiration timer.
+
+On the first eligible unlock Pearl automatically loads saved history
+asynchronously, without requiring the panel to open. It restores only eligible
+saved text, without publishing it to the current
 Wayland selection or importing a pre-existing selection. The model uses
 wall-clock time plus elapsed boot time to avoid reversing expiry in one
 session. If the saved clock floor is more than five minutes ahead of the
@@ -110,6 +121,14 @@ startup wall clock, history is withheld instead of changing saved timestamps.
 Supporting Zig modules under `src/services/clipboard/` own history, time,
 the plaintext codec, storage, one background writer, coordination and status
 presentation. Filesystem reads, writes and synchronization run on the worker.
+The worker sleeps on its condition when there are no jobs. Startup, save and
+removal completion, errors and drained shutdown signal a nonblocking Linux
+eventfd. A GLib I/O watch observes the wakeup and reads worker state on the main
+context; the worker never calls GTK or Wayland. Notifications can coalesce, but
+required removal jobs cannot. The main-context watch is detached before its
+callback context or the worker descriptor is released, so queued or late
+wakeups cannot access freed objects. Shutdown uses this same notification,
+without a drain polling timer.
 Pending ordinary saves may be superseded, but removals stay ordered. A Delete
 or Clear is confirmed only when its worker receipt is `durable`, not when
 the request is queued. Removals also delete validated temporary snapshots left
@@ -268,9 +287,24 @@ control requests and no bulk payload in status responses.
 ## Validation and boundaries
 
 ```sh
+zig build test -Doptimize=safe -j2
+zig build test-clipboard-completion -Doptimize=safe -j2
+zig build test-clipboard-history -Doptimize=safe -j2
 PEARL_TEST_AQUEOUS_PREFIX="$PWD/.cache/aqueous-master" ZIG_GLOBAL_CACHE_DIR="$PWD/.cache/zig" zig build test-clipboard-capture test-capture-master -Drelease=true -Doptimize=ReleaseSafe
 python3 scripts/check-wayland-bindings.py
 ```
+
+Compositor-free tests use injected seconds for lazy expiry, recopy, batched
+removals and Busy/allocation failures. The GLib completion suite checks startup,
+saves, removal receipts, failures, shutdown, idle dispatch and detaching a watch
+before queued or late notifications. These tests demonstrate the absence of
+recurring clipboard maintenance; they do not measure a CPU or latency reduction.
+The history service regressions also verify synchronous invalidation and
+nonrecursive notification on successful expiry, Busy and allocation failures.
+Widget regressions cover filtering/navigation across expiry, unchanged-cache
+reuse, failed-maintenance redaction and preservation of lock privacy. They use
+injected timestamps and a synthetic worker, never the desktop clipboard; the
+two widget tests are skipped when GTK cannot open a display.
 
 The suite uses private Aqueous outputs, D-Bus services, generated-Zig clipboard
 producers and a private PAM fixture. `wl-paste` verifies interoperability and

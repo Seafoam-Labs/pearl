@@ -198,7 +198,7 @@ msgstr ""
 msgid "Action commands"
 msgstr ""
 
-#: src/desktop/clipboard_capture.zig:265
+#: src/desktop/clipboard_capture.zig:266
 msgid "Action unavailable or failed. Try again."
 msgstr ""
 
@@ -1047,7 +1047,7 @@ msgstr ""
 msgid "Calculation · Enter to copy · = to continue"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:770 src/desktop/clipboard_capture.zig:149 src/desktop/connectivity.zig:117 src/desktop/services.zig:296 src/desktop/wallpaper_crop.zig:226 src/services/polkit.zig:315 src/settings/bar_view.zig:1080 src/settings/greeter_sync.zig:49 src/settings/notification_filters_view.zig:437 src/settings/scheduler_view.zig:341 src/settings/scheduler_view.zig:404
+#: src/desktop/aqueous_settings.zig:770 src/desktop/clipboard_capture.zig:150 src/desktop/connectivity.zig:117 src/desktop/services.zig:296 src/desktop/wallpaper_crop.zig:226 src/services/polkit.zig:315 src/settings/bar_view.zig:1080 src/settings/greeter_sync.zig:49 src/settings/notification_filters_view.zig:437 src/settings/scheduler_view.zig:341 src/settings/scheduler_view.zig:404
 msgid "Cancel"
 msgstr ""
 
@@ -1091,19 +1091,19 @@ msgstr ""
 msgid "Cannot merge this draft. Correct its JSON and try again."
 msgstr ""
 
-#: src/desktop/clipboard_capture.zig:137
+#: src/desktop/clipboard_capture.zig:138
 msgid "Capture"
 msgstr ""
 
-#: src/desktop/clipboard_capture.zig:153
+#: src/desktop/clipboard_capture.zig:154
 msgid "Capture isolated window"
 msgstr ""
 
-#: src/desktop/clipboard_capture.zig:147
+#: src/desktop/clipboard_capture.zig:148
 msgid "Capture output"
 msgstr ""
 
-#: src/desktop/clipboard_capture.zig:148
+#: src/desktop/clipboard_capture.zig:149
 msgid "Capture region"
 msgstr ""
 
@@ -1319,7 +1319,7 @@ msgstr ""
 msgid "Choose where sound plays and how you are heard."
 msgstr ""
 
-#: src/desktop/clipboard_capture.zig:127 src/desktop/notifications.zig:34
+#: src/desktop/clipboard_capture.zig:128 src/desktop/notifications.zig:34
 msgid "Clear history"
 msgstr ""
 
@@ -1331,47 +1331,47 @@ msgstr ""
 msgid "Click a screen to change its settings."
 msgstr ""
 
-#: src/desktop/clipboard_capture.zig:123
+#: src/desktop/clipboard_capture.zig:124
 msgid "Clipboard"
 msgstr ""
 
-#: src/desktop/bar.zig:348 src/desktop/clipboard_capture.zig:113
+#: src/desktop/bar.zig:348 src/desktop/clipboard_capture.zig:114
 msgid "Clipboard & capture"
 msgstr ""
 
-#: src/services/clipboard.zig:188
+#: src/services/clipboard.zig:194
 msgid "Clipboard history is hidden because the clock is untrusted"
 msgstr ""
 
-#: src/services/clipboard.zig:178 src/services/clipboard.zig:181
+#: src/services/clipboard.zig:184 src/services/clipboard.zig:187
 msgid "Clipboard history is hidden while paused"
 msgstr ""
 
-#: src/desktop/clipboard_capture.zig:354
+#: src/desktop/clipboard_capture.zig:356
 msgid "Clipboard image preview"
 msgstr ""
 
-#: src/services/clipboard.zig:185
+#: src/services/clipboard.zig:191
 msgid "Clipboard persistence failed; saving was not confirmed"
 msgstr ""
 
-#: src/services/clipboard.zig:186
+#: src/services/clipboard.zig:192
 msgid "Clipboard save durability is uncertain"
 msgstr ""
 
-#: src/desktop/clipboard_capture.zig:262 src/services/clipboard.zig:184
+#: src/desktop/clipboard_capture.zig:263 src/services/clipboard.zig:190
 msgid "Clipboard storage is busy. Try again."
 msgstr ""
 
-#: src/services/clipboard.zig:179 src/services/clipboard.zig:187
+#: src/services/clipboard.zig:185 src/services/clipboard.zig:193
 msgid "Clipboard storage unavailable"
 msgstr ""
 
-#: src/services/clipboard.zig:183
+#: src/services/clipboard.zig:189
 msgid "Clipboard text captured; saving is pending"
 msgstr ""
 
-#: src/services/clipboard.zig:189
+#: src/services/clipboard.zig:195
 msgid "Clipboard text saved"
 msgstr ""
 
@@ -1679,7 +1679,7 @@ msgstr ""
 msgid "Copies this background and theme. Administrator authentication is required."
 msgstr ""
 
-#: src/desktop/clipboard_capture.zig:357
+#: src/desktop/clipboard_capture.zig:359
 msgid "Copy"
 msgstr ""
 
@@ -1687,11 +1687,11 @@ msgstr ""
 msgid "Copy appearance with administrator authentication"
 msgstr ""
 
-#: src/desktop/clipboard_capture.zig:163
+#: src/desktop/clipboard_capture.zig:164
 msgid "Copy image"
 msgstr ""
 
-#: src/desktop/clipboard_capture.zig:435
+#: src/desktop/clipboard_capture.zig:437
 msgid "Copy text or a PNG image to start. Text can be restored for seven days. Locking hides history; PNG images stay in memory."
 msgstr ""
 
@@ -1983,7 +1983,7 @@ msgstr ""
 msgid "Default, e.g. %a %d %b"
 msgstr ""
 
-#: src/desktop/clipboard_capture.zig:358
+#: src/desktop/clipboard_capture.zig:360
 msgid "Delete"
 msgstr ""
 
@@ -2544,7 +2544,7 @@ msgstr ""
 msgid "Enter a pattern, or explicitly allow an empty pattern in the advanced option."
 msgstr ""
 
-#: src/desktop/clipboard_capture.zig:263
+#: src/desktop/clipboard_capture.zig:264
 msgid "Enter a region inside this output: x,y,width,height"
 msgstr ""
 
@@ -2622,7 +2622,7 @@ msgstr ""
 msgid "Field"
 msgstr ""
 
-#: src/desktop/clipboard_capture.zig:264
+#: src/desktop/clipboard_capture.zig:265
 msgid "File already exists; choose another path using pearlctl"
 msgstr ""
 
@@ -2630,7 +2630,7 @@ msgstr ""
 msgid "Files and application shortcuts from your Desktop folder. Enabled automatically for new installations."
 msgstr ""
 
-#: src/desktop/clipboard_capture.zig:86
+#: src/desktop/clipboard_capture.zig:87
 msgid "Filter clipboard history"
 msgstr ""
 
@@ -2958,7 +2958,7 @@ msgctxt "aqueous.blur.passes.description"
 msgid "Higher values increase blur and GPU cost."
 msgstr ""
 
-#: src/desktop/clipboard_capture.zig:519
+#: src/desktop/clipboard_capture.zig:541
 msgid "History is hidden while clipboard access is paused"
 msgstr ""
 
@@ -2970,19 +2970,19 @@ msgstr ""
 msgid "History only — no popup"
 msgstr ""
 
-#: src/services/clipboard.zig:194
+#: src/services/clipboard.zig:200
 msgid "History removal durability is uncertain"
 msgstr ""
 
-#: src/services/clipboard.zig:193
+#: src/services/clipboard.zig:199
 msgid "History removal failed; disk completion was not confirmed"
 msgstr ""
 
-#: src/services/clipboard.zig:191
+#: src/services/clipboard.zig:197
 msgid "History removal is pending; disk completion is not confirmed"
 msgstr ""
 
-#: src/services/clipboard.zig:192
+#: src/services/clipboard.zig:198
 msgid "History removal saved"
 msgstr ""
 
@@ -3166,11 +3166,11 @@ msgstr ""
 msgid "Is exactly"
 msgstr ""
 
-#: src/desktop/clipboard_capture.zig:154
+#: src/desktop/clipboard_capture.zig:155
 msgid "Isolated capture excludes overlapping windows. PNG export requires SDR color metadata; unsupported or undescribed sources are reported without exporting."
 msgstr ""
 
-#: src/desktop/clipboard_capture.zig:151
+#: src/desktop/clipboard_capture.zig:152
 msgid "Isolated window source"
 msgstr ""
 
@@ -3491,7 +3491,7 @@ msgstr ""
 msgid "Loading applications…"
 msgstr ""
 
-#: src/services/clipboard.zig:182
+#: src/services/clipboard.zig:188
 msgid "Loading clipboard history"
 msgstr ""
 
@@ -3986,7 +3986,7 @@ msgstr ""
 msgid "No battery reported"
 msgstr ""
 
-#: src/desktop/clipboard_capture.zig:150
+#: src/desktop/clipboard_capture.zig:151
 msgid "No capturable windows"
 msgstr ""
 
@@ -4034,7 +4034,7 @@ msgstr ""
 msgid "No matches. Try another name."
 msgstr ""
 
-#: src/desktop/clipboard_capture.zig:435
+#: src/desktop/clipboard_capture.zig:437
 msgid "No matching entries"
 msgstr ""
 
@@ -4381,11 +4381,11 @@ msgstr ""
 msgid "Output"
 msgstr ""
 
-#: src/desktop/clipboard_capture.zig:141
+#: src/desktop/clipboard_capture.zig:142
 msgid "Output crop includes visible overlapping windows. Coordinates are local to this output."
 msgstr ""
 
-#: src/desktop/clipboard_capture.zig:143
+#: src/desktop/clipboard_capture.zig:144
 msgid "Output region in logical pixels"
 msgstr ""
 
@@ -4409,7 +4409,7 @@ msgstr ""
 msgid "Overview"
 msgstr ""
 
-#: src/desktop/clipboard_capture.zig:412
+#: src/desktop/clipboard_capture.zig:414
 msgid "PNG image"
 msgstr ""
 
@@ -5470,7 +5470,7 @@ msgstr ""
 msgid "Save"
 msgstr ""
 
-#: src/desktop/clipboard_capture.zig:162
+#: src/desktop/clipboard_capture.zig:163
 msgid "Save PNG"
 msgstr ""
 
@@ -5570,7 +5570,7 @@ msgstr ""
 msgid "Screen power control unavailable"
 msgstr ""
 
-#: src/desktop/clipboard_capture.zig:140
+#: src/desktop/clipboard_capture.zig:141
 msgid "Screenshot"
 msgstr ""
 
@@ -6767,7 +6767,7 @@ msgstr ""
 msgid "Text & layout"
 msgstr ""
 
-#: src/services/clipboard.zig:190
+#: src/services/clipboard.zig:196
 msgid "Text history can be restored; PNG images stay in memory"
 msgstr ""
 
@@ -8943,7 +8943,7 @@ msgstr ""
 msgid "wm"
 msgstr ""
 
-#: src/desktop/clipboard_capture.zig:142
+#: src/desktop/clipboard_capture.zig:143
 msgid "x,y,width,height"
 msgstr ""
 
