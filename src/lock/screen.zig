@@ -13,6 +13,7 @@ const wire = @import("conversation.zig");
 const options = @import("build_options");
 const presentation = @import("../ui/auth/prompt_view.zig");
 const power_mod = @import("power.zig");
+const saver_mod = @import("../services/screensaver.zig");
 const Idle = @import("../platform/wayland/idle.zig").Idle;
 const theme = @import("../theme/theme.zig");
 const pixbuf = @import("gdkpixbuf2");
@@ -23,7 +24,7 @@ const model = @import("../config/preferences.zig");
 const published = @import("../config/published_appearance.zig");
 const log = std.log.scoped(.lock);
 const a = std.heap.c_allocator;
-const View = struct { window: *gtk.Window, monitor: *gdk.Monitor, panel: *gtk.Box, picture: *gtk.Picture, clockbox: *gtk.Box, clock: *gtk.Label, date: *gtk.Label, message: *gtk.Label, hint: *gtk.Label, entry: *gtk.Entry, button: *gtk.Button, caps: *gtk.Label, viewport: *gtk.Viewport, avatar: *gtk.Image, cluster: *gtk.Box, sleep_button: *gtk.Button, power_prompt: *gtk.Label, power_menu_box: *gtk.Box, power_confirm_box: *gtk.Box, confirm: *gtk.Button, cancel_power: *gtk.Button, reboot: *gtk.Button, off: *gtk.Button, assigned: bool = false, monitor_signal: c_ulong };
+const View = struct { window: *gtk.Window, monitor: *gdk.Monitor, panel: *gtk.Box, picture: *gtk.Picture, clockbox: *gtk.Box, clock: *gtk.Label, date: *gtk.Label, message: *gtk.Label, hint: *gtk.Label, entry: *gtk.Entry, button: *gtk.Button, caps: *gtk.Label, viewport: *gtk.Viewport, avatar: *gtk.Image, cluster: *gtk.Box, sleep_button: *gtk.Button, power_prompt: *gtk.Label, power_menu_box: *gtk.Box, power_confirm_box: *gtk.Box, confirm: *gtk.Button, cancel_power: *gtk.Button, reboot: *gtk.Button, off: *gtk.Button, saver_area: *gtk.DrawingArea, assigned: bool = false, monitor_signal: c_ulong };
 /// The lock's spacing rhythm, drop shadows and float geometry, mirroring the
 /// finalized greeter. Box spacing is zero; every gap is an explicit margin so
 /// hidden rows collapse cleanly. Raw CSS only: colors belong to the session's
@@ -65,6 +66,9 @@ const Screen = struct {
     idle_ready: bool = false,
     blanked: bool = false,
     blank_source: c_uint = 0,
+    saver: saver_mod.Saver = .{},
+    saver_on: bool = false,
+    off_source: c_uint = 0,
     theme_ready: bool = false,
     present_source: c_uint = 0,
     boot_texture: ?*gdk.Texture = null,
@@ -279,6 +283,8 @@ const Screen = struct {
         // Drop removed outputs promptly, including their entry buffers and refs.
         for (&self.views) |*slot| if (slot.*) |*v| if (v.monitor.isValid() == 0) {
             v.entry.as(gtk.Editable).setText("");
+            v.saver_area.setDrawFunc(null, null, null);
+            self.saver.detach(v.saver_area);
             object.signalHandlerDisconnect(v.monitor.as(object.Object), v.monitor_signal);
             v.window.unref();
             v.monitor.unref();
@@ -525,6 +531,8 @@ const Screen = struct {
     /// lock owns screen blanking: one deadline reset by every input that
     /// reaches a lock surface, enforced through the same output-power path the
     /// shell uses. Zero (the default) keeps the screen lit, matching settings.
+    /// With a screensaver enabled the deadline starts the animation instead
+    /// and a second, per-power-source deadline powers the panel off later.
     fn armBlank(self: *Screen) void {
         if (self.blank_source != 0) {
             _ = glib.Source.remove(self.blank_source);
@@ -539,13 +547,52 @@ const Screen = struct {
     fn blankExpired(data: ?*anyopaque) callconv(.c) c_int {
         const self: *Screen = @ptrCast(@alignCast(data.?));
         self.blank_source = 0;
-        if (!self.acquired or self.blanked) return 0;
+        if (!self.acquired or self.blanked or self.saver_on) return 0;
+        const prefs = self.preferences.prefs();
+        const mode = if (prefs.reduced_motion) .off else prefs.idle.screensaver;
+        if (mode == .off) {
+            self.blanked = true;
+            self.idle.setScreenOff(true);
+            if (options.test_hooks) log.info("event=lock-screen-off", .{});
+            return 0;
+        }
+        self.saver_on = true;
+        self.saver.start(mode);
+        const cursor = gdk.Cursor.newFromName("none", null);
+        for (&self.views) |*slot| if (slot.*) |*v| if (v.monitor.isValid() != 0) {
+            v.saver_area.as(gtk.Widget).setVisible(1);
+            v.window.as(gtk.Widget).setCursor(cursor);
+        };
+        const timers = if (self.power.on_battery) prefs.idle.battery else prefs.idle.ac;
+        if (timers.panel_off_seconds > 0) self.off_source = glib.timeoutAddSeconds(timers.panel_off_seconds, panelOffExpired, self);
+        log.info("event=lock-screensaver mode={s} panel_off={d}", .{ @tagName(mode), timers.panel_off_seconds });
+        return 0;
+    }
+    fn panelOffExpired(data: ?*anyopaque) callconv(.c) c_int {
+        const self: *Screen = @ptrCast(@alignCast(data.?));
+        self.off_source = 0;
+        if (!self.acquired or self.blanked or !self.saver_on) return 0;
         self.blanked = true;
+        self.saver.stop();
         self.idle.setScreenOff(true);
         if (options.test_hooks) log.info("event=lock-screen-off", .{});
         return 0;
     }
+    fn hideSaver(self: *Screen) void {
+        if (!self.saver_on) return;
+        self.saver_on = false;
+        self.saver.stop();
+        for (&self.views) |*slot| if (slot.*) |*v| {
+            v.saver_area.as(gtk.Widget).setVisible(0);
+            v.window.as(gtk.Widget).setCursor(null);
+        };
+    }
     fn activity(self: *Screen) void {
+        self.hideSaver();
+        if (self.off_source != 0) {
+            _ = glib.Source.remove(self.off_source);
+            self.off_source = 0;
+        }
         if (self.blanked) {
             self.blanked = false;
             self.idle.setScreenOff(false);
@@ -756,7 +803,14 @@ const Screen = struct {
         power_confirm_box.as(gtk.Widget).setVisible(0);
         cluster.append(power_confirm_box.as(gtk.Widget));
         overlay.addOverlay(cluster.as(gtk.Widget));
-        slot.* = .{ .window = window, .monitor = output, .panel = panel, .picture = picture, .clockbox = clockbox, .clock = clock, .date = date, .message = message, .hint = hint, .entry = entry, .button = button, .caps = caps, .viewport = viewport, .avatar = avatar, .cluster = cluster, .sleep_button = sleep_button, .power_prompt = power_prompt, .power_menu_box = power_menu_box, .power_confirm_box = power_confirm_box, .confirm = confirm, .cancel_power = cancel_power, .reboot = reboot, .off = off_button, .monitor_signal = object.Object.signals.notify.connect(output.as(object.Object), *Screen, monitorChanged, self, .{}) };
+        // Topmost overlay: the screensaver covers the whole surface, including
+        // the form and the power cluster, while the blank deadline runs.
+        const saver_area = gtk.DrawingArea.new();
+        saver_area.as(gtk.Widget).setVisible(0);
+        saver_area.setDrawFunc(saver_mod.Saver.draw, &self.saver, null);
+        overlay.addOverlay(saver_area.as(gtk.Widget));
+        self.saver.attach(saver_area);
+        slot.* = .{ .window = window, .monitor = output, .panel = panel, .picture = picture, .clockbox = clockbox, .clock = clock, .date = date, .message = message, .hint = hint, .entry = entry, .button = button, .caps = caps, .viewport = viewport, .avatar = avatar, .cluster = cluster, .sleep_button = sleep_button, .power_prompt = power_prompt, .power_menu_box = power_menu_box, .power_confirm_box = power_confirm_box, .confirm = confirm, .cancel_power = cancel_power, .reboot = reboot, .off = off_button, .saver_area = saver_area, .monitor_signal = object.Object.signals.notify.connect(output.as(object.Object), *Screen, monitorChanged, self, .{}) };
         _ = gtk.Button.signals.clicked.connect(sleep_button, *Screen, sleepRequested, self, .{});
         _ = gtk.Button.signals.clicked.connect(reboot, *Screen, rebooted, self, .{});
         _ = gtk.Button.signals.clicked.connect(off_button, *Screen, off, self, .{});
@@ -809,6 +863,11 @@ const Screen = struct {
             _ = glib.Source.remove(self.blank_source);
             self.blank_source = 0;
         }
+        if (self.off_source != 0) {
+            _ = glib.Source.remove(self.off_source);
+            self.off_source = 0;
+        }
+        self.hideSaver();
         if (self.blanked) {
             self.blanked = false;
             self.idle.setScreenOff(false);

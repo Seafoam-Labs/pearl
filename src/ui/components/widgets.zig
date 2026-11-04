@@ -99,11 +99,12 @@ pub fn pill(text: [*:0]const u8, active: bool) *gtk.ToggleButton {
     button.as(gtk.Widget).addCssClass("pearl-pill");
     return button;
 }
-pub fn slider(title: *gtk.Label, symbol: [*:0]const u8, value: f64) struct { box: *gtk.Box, scale: *gtk.Scale } {
+pub fn slider(title: *gtk.Label, symbol: [*:0]const u8, value: f64) struct { box: *gtk.Box, scale: *gtk.Scale, symbol: *gtk.Image } {
     const box = column(4);
     box.append(title.as(gtk.Widget));
     const line = row(12);
-    line.append(icon(symbol).as(gtk.Widget));
+    const glyph = icon(symbol);
+    line.append(glyph.as(gtk.Widget));
     const scale = gtk.Scale.newWithRange(.horizontal, 0, 100, 1);
     scale.setDrawValue(0);
     scale.as(gtk.Range).setValue(value);
@@ -111,7 +112,14 @@ pub fn slider(title: *gtk.Label, symbol: [*:0]const u8, value: f64) struct { box
     name(scale.as(gtk.Widget), title.getText());
     line.append(scale.as(gtk.Widget));
     box.append(line.as(gtk.Widget));
-    return .{ .box = box, .scale = scale };
+    return .{ .box = box, .scale = scale, .symbol = glyph };
+}
+/// Speaker glyph matching the mute state and the number of sound waves to the level.
+pub fn volumeSymbol(muted: bool, percent: u8) [*:0]const u8 {
+    if (muted or percent == 0) return "pearl-audio-volume-muted-symbolic";
+    if (percent <= 33) return "pearl-audio-volume-low-symbolic";
+    if (percent <= 66) return "pearl-audio-volume-medium-symbolic";
+    return "pearl-audio-volume-high-symbolic";
 }
 pub const Status = enum { empty, failure, pending };
 pub fn status(kind: Status, title: *gtk.Label, detail: *gtk.Label) *gtk.Box {

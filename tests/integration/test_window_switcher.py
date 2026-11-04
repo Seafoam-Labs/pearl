@@ -123,9 +123,11 @@ def main():
             cycle('dismiss');wait_for(lambda:visible() is None)
             before=focused()
             s.run(['wtype','-M','logo','-k','Tab','-m','logo'])
-            wait_for(lambda:focused()!=before);wait_for(visible)
+            wait_for(lambda:focused()!=before)
+            # Releasing the initiating modifier commits immediately.
+            wait_for(lambda:visible() is None)
             s.run(['wtype','-M','logo','-M','shift','-k','Tab','-m','shift','-m','logo'])
-            wait_for(lambda:focused()==before)
+            wait_for(lambda:focused()==before);wait_for(lambda:visible() is None)
             passed('native-next-and-previous-keybindings-share-the-ring')
             cycle('dismiss');wait_for(lambda:visible() is None)
             before=focused()

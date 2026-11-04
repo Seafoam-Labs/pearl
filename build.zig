@@ -2,6 +2,8 @@ const std = @import("std");
 const Scanner = @import("wayland").Scanner;
 const builtin = @import("builtin");
 
+var pearl_version: *std.Build.Module = undefined;
+
 pub fn build(b: *std.Build) void {
     defer @import("pearl_ffi").attach(b, b.path("bindings/c"));
     @import("packaging/assistant/build.zig").add(b);
@@ -15,6 +17,13 @@ pub fn build(b: *std.Build) void {
     const optimize = b.standardOptimizeOption(.{});
     const release = b.option(bool, "release", "Strip production artifacts for reproducible safe packages") orelse false;
     if (release and optimize != .safe) @panic("-Drelease requires -Doptimize=safe");
+    // The version is not tracked in source; packaging passes -Dversion=$pkgver
+    // and CI exports PEARL_VERSION from the release tag.
+    const release_version = b.option([]const u8, "version", "Release version reported by Pearl binaries") orelse
+        b.graph.environ_map.get("PEARL_VERSION") orelse "0.0.0-dev";
+    const version_options = b.addOptions();
+    version_options.addOption([]const u8, "string", release_version);
+    pearl_version = version_options.createModule();
     if (b.option(bool, "codegen", "Build the pinned Ghostty GIR generator") orelse false) {
         if (b.lazyDependency("gobject_codegen", .{ .target = b.graph.host, .optimize = .safe })) |generator| {
             b.installArtifact(generator.artifact("translate-gir"));
@@ -415,6 +424,16 @@ pub fn build(b: *std.Build) void {
     const bindings_test = b.addTest(.{ .root_module = spike_module });
     bindings_test.step.dependOn(&system_versions.step);
     b.step("test-bindings", "Test generated binding types and API coverage").dependOn(&b.addRunArtifact(bindings_test).step);
+
+    // Dev-only visual harness for the shared screensaver module; run it in a
+    // nested compositor to compare modes without locking or idling.
+    const saver_preview_module = gtkModule(b, bindings, target, optimize, "spikes/screensaver/main.zig", pulse_module);
+    // The harness root lives outside src/, so the shared module reaches it by
+    // name; it is a gtkModule root itself so its GTK imports resolve.
+    saver_preview_module.addImport("screensaver", gtkModule(b, bindings, target, optimize, "src/services/screensaver.zig", pulse_module));
+    const saver_preview = b.addExecutable(.{ .name = "pearl-saver-preview", .root_module = saver_preview_module });
+    saver_preview.step.dependOn(&system_versions.step);
+    b.step("build-saver-preview", "Stage the screensaver preview harness (dev only, not installed by default)").dependOn(&b.addInstallArtifact(saver_preview, .{}).step);
 
     const pure_module = createModule(b, .{ .root_source_file = b.path("src/tests.zig"), .target = target, .optimize = optimize });
     pure_module.addAnonymousImport("aqueous_presentation_fixture", .{ .root_source_file = b.path("tests/fixtures/aqueous-master/snapshot.json") });
@@ -1228,5 +1247,6 @@ fn greeterModule(b: *std.Build, bindings: *std.Build.Dependency, target: std.Bui
 fn createModule(b: *std.Build, opts: std.Build.Module.CreateOptions) *std.Build.Module {
     const m = b.addModule(b.fmt("pearl_root_{d}", .{b.modules.count()}), opts);
     m.addImport("i18n", @import("src/i18n/build.zig").module(b, opts.target orelse b.graph.host, opts.optimize orelse .debug, b.path("src/i18n/runtime.zig")));
+    m.addImport("pearl_version", pearl_version);
     return m;
 }

@@ -76,7 +76,7 @@ pub const View = struct {
             .text => |t| self.text.setText(t.z()),
             .volume => |v| {
                 self.label.setText(if (v.label.len != 0) v.label.z() else @import("i18n").dtr("pearl", "Output volume"));
-                self.icon.setFromIconName(if (v.muted) "pearl-audio-volume-muted-symbolic" else "pearl-audio-volume-high-symbolic");
+                self.icon.setFromIconName(@import("../components/widgets.zig").volumeSymbol(v.muted, v.percent));
                 var buffer: [80]u8 = undefined;
                 self.value.setText(std.mem.printSentinel(&buffer, "{s}{s}{d}%", .{ if (v.muted) @import("i18n").dtr("pearl", "Muted") else "", if (v.muted) " · " else "", v.percent }, 0) catch "");
                 self.meter.setFraction(@as(f64, @floatFromInt(v.percent)) / 100);
