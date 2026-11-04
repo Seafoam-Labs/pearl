@@ -230,9 +230,12 @@ def main():
             report['locked_capture_allowed']=r.returncode==0
             unlock('incorrect');time.sleep(.6);assert locked()
             key('-k','Escape');assert locked();time.sleep(2.1)
-            # After cancellation the entry is disabled; Tab reaches the retry button.
-            key('-k','Tab','-k','Return');time.sleep(.4)
+            # Cancellation already focuses Retry. Tab would move to Sleep.
+            power_events=sum(r['event'] in ('Suspend','Reboot','PowerOff') for r in records())
+            key('-k','Return');time.sleep(.4)
             unlock();wait_for(lambda:not locked());wait(lambda v:not v['lock']['ready'])
+            assert sum(r['event'] in ('Suspend','Reboot','PowerOff') for r in records())==power_events
+            checks['cancelled-authentication-retry-does-not-activate-power']=True
             checks['pam-multi-message-failure-cancellation-and-success']=True
             # Each independent locker loads Pearl's persisted Material/GTK choice.
             original=ctl(s,args.ctl,'preferences','status')['result']['preferences']
@@ -285,7 +288,13 @@ def main():
             # A denied PAM account check must never unlock after a successful password.
             (pam_dir/'pearl').write_text(f'auth required {args.pam_module}\naccount required pam_deny.so\n')
             ctl(s,args.ctl,'lock');wait(lambda v:v['lock']['ready'] and v['lock']['locked']);unlock();time.sleep(.5);assert locked()
-            (pam_dir/'pearl').write_text(pam_stack);key('-k','Escape');time.sleep(2.1);key('-k','Tab','-k','Return');time.sleep(.3);unlock();wait_for(lambda:not locked())
+            # Same already-focused Retry path after restoring the account stack.
+            # Step 6C reached this second stale Tab sequence only after fixing
+            # the earlier retry. Preserve the denial and authenticated-unlock checks.
+            (pam_dir/'pearl').write_text(pam_stack);key('-k','Escape');time.sleep(2.1)
+            power_events=sum(r['event'] in ('Suspend','Reboot','PowerOff') for r in records())
+            key('-k','Return');time.sleep(.3);unlock();wait_for(lambda:not locked())
+            assert sum(r['event'] in ('Suspend','Reboot','PowerOff') for r in records())==power_events
             checks['account-policy-denial-never-unlocks']=True
             # Shell shutdown must leave the native locker alive and allow normal unlock.
             ctl(s,args.ctl,'lock');wait(lambda v:v['lock']['ready'] and v['lock']['locked']);ctl(s,args.ctl,'quit');clean(pearl);assert locked();unlock();wait_for(lambda:not locked())

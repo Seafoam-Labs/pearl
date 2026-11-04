@@ -10,6 +10,7 @@ from pearl_session import PrivateSession, wait_for
 from pearl_session import fixture_prefix, fixture_source
 from t00 import Session as T00Session
 from test_surfaces import IPC, click, ctl, status, capture, clean
+from clipboard_history_checks import history, durable_removal, hidden
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
@@ -33,7 +34,7 @@ def main():
             authority = s.child('authority', ['python3',ROOT/'tests/fixtures/session_security.py'], input_pipe=True); authority.expect('event=ready')
             app = s.child('pearl', [args.pearl], G_DEBUG='fatal-warnings'); app.expect('event=control-ready')
             ipc = IPC(s)
-            def clip(): return ctl(s,args.ctl,'clipboard','status')['result']
+            def clip(*flags): return ctl(s,args.ctl,'clipboard','status',*flags)['result']
             def shot(): return ctl(s,args.ctl,'capture','status')['result']
             def until(fn, pred, timeout=12): return wait_for(lambda: (lambda v: v if pred(v) else False)(fn()),timeout)
             until(clip, lambda v: v['available'] and not v['locked']); until(shot, lambda v: v['available'] and not v['locked'])
@@ -43,10 +44,13 @@ def main():
                 if producer: producer.stop()
                 serial += 1; producer = s.child('producer-'+str(serial), [args.producer,mode,payload]); producer.expect('event=ready')
                 return producer
-            def empty(): ctl(s,args.ctl,'clipboard','clear'); assert not clip()['entries']
+            def empty():
+                durable_removal(clip,ctl(s,args.ctl,'clipboard','clear')['result'])
+                assert history(clip) == []
             offer('text','hello Pearl 👋'); first = until(clip,lambda v: len(v['entries']) == 1)['entries'][0]
             producer.stop(); assert clip()['entries'][0]['id'] == first['id']
-            ctl(s,args.ctl,'clipboard','select','--generation',str(first['id']))
+            instance = clip()['instance']
+            ctl(s,args.ctl,'clipboard','select','--generation',str(first['id']),'--instance',instance)
             assert s.run(['wl-paste','--no-newline']).stdout == 'hello Pearl 👋'
             checks['owner-disappearance-and-reselection-with-real-paste'] = True
             empty()
@@ -61,7 +65,8 @@ def main():
             for n in range(24):
                 offer('text', 'entry-'+str(n)); until(clip,lambda v:v['entries'] and v['entries'][0]['preview']=='entry-'+str(n))
             assert len(clip()['entries']) == 20
-            # A re-copied duplicate is promoted, so it survives the eviction that drops the least-recently used tail.
+            assert len(history(clip)) == 24
+            # Recopy promotes the same entry; leaving the first page is not model eviction.
             recopied = clip()['entries'][-1]['preview']
             offer('text',recopied); until(clip,lambda v:v['entries'] and v['entries'][0]['preview']==recopied)
             lru = clip()['entries'][-1]['preview']
@@ -69,20 +74,34 @@ def main():
             previews = [e['preview'] for e in clip()['entries']]
             assert previews[:2]==['entry-24',recopied] and len(previews)==20, previews
             assert lru not in previews, previews
-            checks['re-copied-duplicates-are-promoted-and-survive-eviction'] = True
-            victim = clip()['entries'][0]['id']; ctl(s,args.ctl,'clipboard','delete','--generation',str(victim)); assert len(clip()['entries']) == 19
-            assert ctl(s,args.ctl,'clipboard','select','--generation',str(victim),code=4)['err']['code'] == 'Stale'
-            checks['bounded-history-and-stale-entry-actions'] = True
+            before=history(clip)
+            assert len(before)==25 and any(e['preview']==lru for e in before), before
+            checks['re-copied-duplicates-are-promoted-across-default-page-boundary'] = True
+            victim = before[0]['id']
+            assert sum(e['id']==victim for e in before)==1
+            revision = clip()['revision']
+            incorrect = ('1' if instance[0]=='0' else '0') + instance[1:]
+            for op in ('select', 'delete'):
+                ctl(s,args.ctl,'clipboard',op,'--generation',str(victim),code=2)
+                assert ctl(s,args.ctl,'clipboard',op,'--generation',str(victim),'--instance',incorrect,code=4)['err']['code'] == 'StaleInstance'
+                assert history(clip)==before and clip()['revision']==revision
+            checks['entry-commands-reject-missing-and-incorrect-instance-without-mutation'] = True
+            durable_removal(clip,ctl(s,args.ctl,'clipboard','delete','--generation',str(victim),'--instance',instance)['result'])
+            after=history(clip)
+            assert after == [e for e in before if e['id']!=victim], (before,after)
+            assert clip()['total']==24 and clip()['returned']==20, clip()
+            assert ctl(s,args.ctl,'clipboard','select','--generation',str(victim),'--instance',instance,code=4)['err']['code'] == 'Stale'
+            checks['paged-history-durable-delete-and-stale-entry-actions'] = True
             empty()
             for text in ('keep','mid1','mid2','drop'): offer('text',text); until(clip,lambda v:v['entries'] and v['entries'][0]['preview']==text)
             assert [e['preview'] for e in clip()['entries']]==['drop','mid2','mid1','keep']
-            ctl(s,args.ctl,'clipboard','select','--generation',str(clip()['entries'][-1]['id']))
+            ctl(s,args.ctl,'clipboard','select','--generation',str(clip()['entries'][-1]['id']),'--instance',instance)
             assert [e['preview'] for e in clip()['entries']]==['keep','drop','mid2','mid1'], clip()['entries']
             checks['copying-an-entry-promotes-it-to-most-recent'] = True
             empty()
             png = s.output/'input.png'; metadata=PngImagePlugin.PngInfo(); metadata.add_text('private-note','metadata-must-not-survive',zip=True); Image.new('RGB',(64,32),(234,71,106)).save(png,pnginfo=metadata)
             offer('png',str(png)); entry = until(clip,lambda v:len(v['entries'])==1)['entries'][0]; assert entry['kind']=='png'
-            ctl(s,args.ctl,'clipboard','select','--generation',str(entry['id']))
+            ctl(s,args.ctl,'clipboard','select','--generation',str(entry['id']),'--instance',instance)
             data = subprocess.run(['wl-paste','--type','image/png'],env=s.env,stdout=subprocess.PIPE,check=True,timeout=8).stdout
             copied = s.output/'clipboard.png'; copied.write_bytes(data); assert Image.open(copied).size == (64,32); assert 'private-note' not in Image.open(copied).info
             # Receiver quits early; Pearl must survive EPIPE and release the transfer.
@@ -150,7 +169,7 @@ def main():
             until(lambda:status(s,args.ctl),lambda v:v['popup'] is None)
             assert s.run(['wl-paste','--no-newline']).stdout=='beta two'
             assert [e['preview'] for e in clip()['entries']]==['beta two','alpha three']
-            ctl(s,args.ctl,'clipboard','select','--generation',str(clip()['entries'][0]['id']))
+            ctl(s,args.ctl,'clipboard','select','--generation',str(clip()['entries'][0]['id']),'--instance',instance)
             assert s.run(['wl-paste','--no-newline']).stdout=='beta two'
             ctl(s,args.ctl,'clipboard','toggle','--output',oid); shown(['beta two','alpha three'])
             point(until(panel,lambda v:len(v['rows'])==2 and v['rows'][1]['remove'])['rows'][1]['remove'])
@@ -163,14 +182,15 @@ def main():
             ctl(s,args.ctl,'clipboard','toggle','--output',oid)
             until(lambda:status(s,args.ctl),lambda v:v['popup'] is None)
             checks['clipboard-row-buttons-and-toggle-arbitration'] = True
-            # Copy feedback is transient: a reopen must report the privacy baseline, not the past copy.
+            # Reopening reports persistent text health; the CLI status is a health projection.
             ctl(s,args.ctl,'clipboard','toggle','--output',oid); shown(['beta two'])
             point(until(panel,lambda v:v['rows'] and v['rows'][0]['copy'])['rows'][0]['copy'])
             until(lambda:status(s,args.ctl),lambda v:v['popup'] is None)
-            assert 'Copied' in clip()['message'], clip()
+            assert s.run(['wl-paste','--no-newline']).stdout=='beta two'
+            until(clip,lambda v:v['persistence']=='durable' and not v['persistence_pending'])
             ctl(s,args.ctl,'clipboard','toggle','--output',oid); view=shown(['beta two'])
-            assert view['message'].startswith('History stays in memory'), view
-            checks['copied-feedback-clears-when-the-panel-reopens'] = True
+            assert view['message']=='Clipboard text saved' and 'Copied' not in view['message'], view
+            checks['copy-publication-and-persistent-feedback-on-reopen'] = True
             def target(): return next(o for o in status(s,args.ctl)['outputs'] if o['connector']==connector)
             def take(region=None):
                 old = shot()['generation']; o=target()
@@ -221,19 +241,24 @@ def main():
             authority_command(begin=True); until(clip,lambda v:v['locked']); assert not clip()['entries'] and not shot()['ready']
             authority_command(cancel=True); until(clip,lambda v:not v['locked'] and v['available']); take()
             checks['authentication-dialog-privacy'] = True
-            # Pending work is cancelled and all private previews are discarded at lock request.
+            # Pending work and previews are revoked; retained history survives lock.
+            retained=history(clip)
             offer('stall'); until(clip,lambda v:v['pending'])
-            ctl(s,args.ctl,'lock'); until(clip,lambda v:v['locked']); assert clip()['entries']==[] and not clip()['pending']
+            ctl(s,args.ctl,'lock'); hidden(until(clip,lambda v:v['locked']))
             assert shot()['locked'] and not shot()['ready']
             until(lambda:ctl(s,args.ctl,'lifecycle','status')['result'],lambda v:v['lock']['ready'] and v['lock']['locked'])
-            offer('text','copied-while-locked'); time.sleep(.2); assert not clip()['entries']
+            offer('text','copied-while-locked'); time.sleep(.2); hidden(clip())
             assert ctl(s,args.ctl,'capture','output',code=4)['err']['code']=='Locked'
             assert ctl(s,args.ctl,'clipboard','toggle',code=4)['err']['code']=='Locked'
             assert ctl(s,args.ctl,'clipboard','show',code=4)['err']['code']=='Locked'
             s.run(['wtype','-s','200','fixture-user','-k','Return','-s','300','fixture-secret','-k','Return','-s','200'])
-            until(clip,lambda v:not v['locked'] and v['available']); time.sleep(.3); assert clip()['entries']==[]
-            offer('text','after-unlock'); until(clip,lambda v:len(v['entries'])==1)
-            checks['lock-cancels-purges-denies-and-does-not-import-locked-selection'] = True
+            until(clip,lambda v:not v['locked'] and v['available']); time.sleep(.3)
+            assert history(clip)==retained
+            pasted=s.run(['wl-paste','--no-newline'],check=False)
+            assert pasted.returncode!=0 or pasted.stdout=='copied-while-locked', pasted.stdout
+            offer('text','after-unlock'); until(clip,lambda v:v['entries'] and v['entries'][0]['preview']=='after-unlock')
+            assert len(history(clip))==len(retained)+1
+            checks['lock-retains-hides-denies-and-does-not-import-or-replay-selection'] = True
             # Removing an output invalidates any in-flight target and future requests for its old ID.
             old=target()['id']; old_generation=shot()['generation']; ctl(s,args.ctl,'capture','output','--output',old)
             s.run(['wlr-randr','--output',connector,'--off']); until(shot,lambda v:not v['pending']); assert shot()['generation']==old_generation

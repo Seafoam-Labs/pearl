@@ -5,6 +5,9 @@ pub const image_limit = 8 * 1024 * 1024;
 pub const total_limit = 16 * 1024 * 1024;
 pub const entries_limit = 20;
 pub const Kind = enum { text, png };
+pub fn sensitiveMime(value: []const u8) bool {
+    return std.mem.eql(u8, value, "x-kde-passwordManagerHint") or std.mem.eql(u8, value, "application/x-keepassxc") or std.mem.eql(u8, value, "application/x-pearl-private");
+}
 pub fn valid(kind: Kind, bytes: []const u8) bool {
     if (bytes.len == 0) return false;
     return switch (kind) {

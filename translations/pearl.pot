@@ -123,7 +123,7 @@ msgstr ""
 msgid "A little less noise. A little more space for what matters."
 msgstr ""
 
-#: src/core/application.zig:186
+#: src/core/application.zig:211
 msgid "A place for your day"
 msgstr ""
 
@@ -143,7 +143,7 @@ msgstr ""
 msgid "API key (never included in preferences)"
 msgstr ""
 
-#: src/core/application.zig:184
+#: src/core/application.zig:209
 msgid "AQUEOUS"
 msgstr ""
 
@@ -170,7 +170,7 @@ msgstr ""
 msgid "Aa     +1"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:852
+#: src/ui/surfaces/manager.zig:856
 msgid "About {0} h {1} min left"
 msgstr ""
 
@@ -198,7 +198,7 @@ msgstr ""
 msgid "Action commands"
 msgstr ""
 
-#: src/desktop/clipboard_capture.zig:258
+#: src/desktop/clipboard_capture.zig:266
 msgid "Action unavailable or failed. Try again."
 msgstr ""
 
@@ -838,7 +838,7 @@ msgstr ""
 msgid "Battery service unavailable"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:842
+#: src/ui/surfaces/manager.zig:846
 msgid "Battery very low"
 msgstr ""
 
@@ -1051,7 +1051,7 @@ msgstr ""
 msgid "Calculation · Enter to copy · = to continue"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:770 src/desktop/clipboard_capture.zig:146 src/desktop/connectivity.zig:117 src/desktop/services.zig:296 src/desktop/wallpaper_crop.zig:226 src/services/polkit.zig:315 src/settings/bar_view.zig:1080 src/settings/greeter_sync.zig:49 src/settings/notification_filters_view.zig:437 src/settings/scheduler_view.zig:341 src/settings/scheduler_view.zig:404
+#: src/desktop/aqueous_settings.zig:770 src/desktop/clipboard_capture.zig:150 src/desktop/connectivity.zig:117 src/desktop/services.zig:296 src/desktop/wallpaper_crop.zig:226 src/services/polkit.zig:315 src/settings/bar_view.zig:1080 src/settings/greeter_sync.zig:49 src/settings/notification_filters_view.zig:437 src/settings/scheduler_view.zig:341 src/settings/scheduler_view.zig:404
 msgid "Cancel"
 msgstr ""
 
@@ -1095,19 +1095,19 @@ msgstr ""
 msgid "Cannot merge this draft. Correct its JSON and try again."
 msgstr ""
 
-#: src/desktop/clipboard_capture.zig:134
+#: src/desktop/clipboard_capture.zig:138
 msgid "Capture"
 msgstr ""
 
-#: src/desktop/clipboard_capture.zig:150
+#: src/desktop/clipboard_capture.zig:154
 msgid "Capture isolated window"
 msgstr ""
 
-#: src/desktop/clipboard_capture.zig:144
+#: src/desktop/clipboard_capture.zig:148
 msgid "Capture output"
 msgstr ""
 
-#: src/desktop/clipboard_capture.zig:145
+#: src/desktop/clipboard_capture.zig:149
 msgid "Capture region"
 msgstr ""
 
@@ -1163,7 +1163,7 @@ msgctxt "aqueous.input.repeat_rate.description"
 msgid "Characters per second; zero disables repeat."
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:859
+#: src/ui/surfaces/manager.zig:863
 msgid "Charge is running low."
 msgstr ""
 
@@ -1323,7 +1323,7 @@ msgstr ""
 msgid "Choose where sound plays and how you are heard."
 msgstr ""
 
-#: src/desktop/clipboard_capture.zig:124 src/desktop/notifications.zig:34
+#: src/desktop/clipboard_capture.zig:128 src/desktop/notifications.zig:34
 msgid "Clear history"
 msgstr ""
 
@@ -1335,16 +1335,48 @@ msgstr ""
 msgid "Click a screen to change its settings."
 msgstr ""
 
-#: src/desktop/clipboard_capture.zig:120
+#: src/desktop/clipboard_capture.zig:124
 msgid "Clipboard"
 msgstr ""
 
-#: src/desktop/bar.zig:351 src/desktop/clipboard_capture.zig:110
+#: src/desktop/bar.zig:351 src/desktop/clipboard_capture.zig:114
 msgid "Clipboard & capture"
 msgstr ""
 
-#: src/desktop/clipboard_capture.zig:348
+#: src/services/clipboard.zig:194
+msgid "Clipboard history is hidden because the clock is untrusted"
+msgstr ""
+
+#: src/services/clipboard.zig:184 src/services/clipboard.zig:187
+msgid "Clipboard history is hidden while paused"
+msgstr ""
+
+#: src/desktop/clipboard_capture.zig:356
 msgid "Clipboard image preview"
+msgstr ""
+
+#: src/services/clipboard.zig:191
+msgid "Clipboard persistence failed; saving was not confirmed"
+msgstr ""
+
+#: src/services/clipboard.zig:192
+msgid "Clipboard save durability is uncertain"
+msgstr ""
+
+#: src/desktop/clipboard_capture.zig:263 src/services/clipboard.zig:190
+msgid "Clipboard storage is busy. Try again."
+msgstr ""
+
+#: src/services/clipboard.zig:185 src/services/clipboard.zig:193
+msgid "Clipboard storage unavailable"
+msgstr ""
+
+#: src/services/clipboard.zig:189
+msgid "Clipboard text captured; saving is pending"
+msgstr ""
+
+#: src/services/clipboard.zig:195
+msgid "Clipboard text saved"
 msgstr ""
 
 #: src/settings/bar_view.zig:1135
@@ -1558,7 +1590,7 @@ msgstr ""
 msgid "Connect and manage your wireless devices."
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:855
+#: src/ui/surfaces/manager.zig:859
 msgid "Connect power now to avoid losing unsaved work."
 msgstr ""
 
@@ -1651,7 +1683,7 @@ msgstr ""
 msgid "Copies this background and theme. Administrator authentication is required."
 msgstr ""
 
-#: src/desktop/clipboard_capture.zig:351
+#: src/desktop/clipboard_capture.zig:359
 msgid "Copy"
 msgstr ""
 
@@ -1659,12 +1691,12 @@ msgstr ""
 msgid "Copy appearance with administrator authentication"
 msgstr ""
 
-#: src/desktop/clipboard_capture.zig:160
+#: src/desktop/clipboard_capture.zig:164
 msgid "Copy image"
 msgstr ""
 
-#: src/desktop/clipboard_capture.zig:432
-msgid "Copy text or a PNG image to start. History is cleared when locking."
+#: src/desktop/clipboard_capture.zig:437
+msgid "Copy text or a PNG image to start. Text can be restored for seven days. Locking hides history; PNG images stay in memory."
 msgstr ""
 
 #: src/settings/preferences_view.zig:272
@@ -1763,7 +1795,7 @@ msgstr ""
 msgid "Critical"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:843
+#: src/ui/surfaces/manager.zig:847
 msgid "Critical battery level"
 msgstr ""
 
@@ -1889,11 +1921,11 @@ msgstr ""
 msgid "Cycle windows requires updated Aqueous"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:1539
+#: src/ui/surfaces/manager.zig:1544
 msgid "Cycle →"
 msgstr ""
 
-#: src/core/application.zig:184
+#: src/core/application.zig:209
 msgid "DEMO · SAMPLE CONTENT"
 msgstr ""
 
@@ -1955,7 +1987,7 @@ msgstr ""
 msgid "Default, e.g. %a %d %b"
 msgstr ""
 
-#: src/desktop/clipboard_capture.zig:352
+#: src/desktop/clipboard_capture.zig:360
 msgid "Delete"
 msgstr ""
 
@@ -2516,7 +2548,7 @@ msgstr ""
 msgid "Enter a pattern, or explicitly allow an empty pattern in the advanced option."
 msgstr ""
 
-#: src/desktop/clipboard_capture.zig:256
+#: src/desktop/clipboard_capture.zig:264
 msgid "Enter a region inside this output: x,y,width,height"
 msgstr ""
 
@@ -2540,7 +2572,7 @@ msgstr ""
 msgid "Example error message"
 msgstr ""
 
-#: src/core/application.zig:185
+#: src/core/application.zig:210
 msgid "Explore Pearl’s appearance with sample content."
 msgstr ""
 
@@ -2594,7 +2626,7 @@ msgstr ""
 msgid "Field"
 msgstr ""
 
-#: src/desktop/clipboard_capture.zig:257
+#: src/desktop/clipboard_capture.zig:265
 msgid "File already exists; choose another path using pearlctl"
 msgstr ""
 
@@ -2602,7 +2634,7 @@ msgstr ""
 msgid "Files and application shortcuts from your Desktop folder. Enabled automatically for new installations."
 msgstr ""
 
-#: src/desktop/clipboard_capture.zig:83
+#: src/desktop/clipboard_capture.zig:87
 msgid "Filter clipboard history"
 msgstr ""
 
@@ -2930,12 +2962,32 @@ msgctxt "aqueous.blur.passes.description"
 msgid "Higher values increase blur and GPU cost."
 msgstr ""
 
+#: src/desktop/clipboard_capture.zig:541
+msgid "History is hidden while clipboard access is paused"
+msgstr ""
+
 #: src/settings/notification_filters_view.zig:236
 msgid "History only"
 msgstr ""
 
 #: src/settings/notification_filters_view.zig:200 src/settings/notification_filters_view.zig:364
 msgid "History only — no popup"
+msgstr ""
+
+#: src/services/clipboard.zig:200
+msgid "History removal durability is uncertain"
+msgstr ""
+
+#: src/services/clipboard.zig:199
+msgid "History removal failed; disk completion was not confirmed"
+msgstr ""
+
+#: src/services/clipboard.zig:197
+msgid "History removal is pending; disk completion is not confirmed"
+msgstr ""
+
+#: src/services/clipboard.zig:198
+msgid "History removal saved"
 msgstr ""
 
 #: src/desktop/aqueous_display_setup.zig:473
@@ -3118,11 +3170,11 @@ msgstr ""
 msgid "Is exactly"
 msgstr ""
 
-#: src/desktop/clipboard_capture.zig:151
+#: src/desktop/clipboard_capture.zig:155
 msgid "Isolated capture excludes overlapping windows. PNG export requires SDR color metadata; unsupported or undescribed sources are reported without exporting."
 msgstr ""
 
-#: src/desktop/clipboard_capture.zig:148
+#: src/desktop/clipboard_capture.zig:152
 msgid "Isolated window source"
 msgstr ""
 
@@ -3288,7 +3340,7 @@ msgstr ""
 msgid "Layout behavior"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:2633
+#: src/ui/surfaces/manager.zig:2652
 msgid "Layout change unavailable"
 msgstr ""
 
@@ -3447,6 +3499,10 @@ msgstr ""
 msgid "Loading applications…"
 msgstr ""
 
+#: src/services/clipboard.zig:188
+msgid "Loading clipboard history"
+msgstr ""
+
 #: src/settings/window.zig:856
 msgid "Loading displays…"
 msgstr ""
@@ -3455,7 +3511,7 @@ msgstr ""
 msgid "Loading network connections…"
 msgstr ""
 
-#: src/ui/i18n.zig:47 src/core/application.zig:79
+#: src/ui/i18n.zig:47 src/core/application.zig:80
 msgid "Loading preview…"
 msgstr ""
 
@@ -3520,7 +3576,7 @@ msgstr ""
 msgid "Low"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:841
+#: src/ui/surfaces/manager.zig:845
 msgid "Low battery"
 msgstr ""
 
@@ -3950,7 +4006,7 @@ msgstr ""
 msgid "No battery reported"
 msgstr ""
 
-#: src/desktop/clipboard_capture.zig:147
+#: src/desktop/clipboard_capture.zig:151
 msgid "No capturable windows"
 msgstr ""
 
@@ -3998,7 +4054,7 @@ msgstr ""
 msgid "No matches. Try another name."
 msgstr ""
 
-#: src/desktop/clipboard_capture.zig:432
+#: src/desktop/clipboard_capture.zig:437
 msgid "No matching entries"
 msgstr ""
 
@@ -4349,11 +4405,11 @@ msgstr ""
 msgid "Output"
 msgstr ""
 
-#: src/desktop/clipboard_capture.zig:138
+#: src/desktop/clipboard_capture.zig:142
 msgid "Output crop includes visible overlapping windows. Coordinates are local to this output."
 msgstr ""
 
-#: src/desktop/clipboard_capture.zig:140
+#: src/desktop/clipboard_capture.zig:144
 msgid "Output region in logical pixels"
 msgstr ""
 
@@ -4377,7 +4433,7 @@ msgstr ""
 msgid "Overview"
 msgstr ""
 
-#: src/desktop/clipboard_capture.zig:404
+#: src/desktop/clipboard_capture.zig:414
 msgid "PNG image"
 msgstr ""
 
@@ -4470,7 +4526,7 @@ msgstr ""
 msgid "Pause automatic idle"
 msgstr ""
 
-#: src/core/application.zig:179 src/ui/surfaces/manager.zig:1336
+#: src/core/application.zig:204 src/ui/surfaces/manager.zig:1341
 msgid "Pearl"
 msgstr ""
 
@@ -4574,7 +4630,7 @@ msgstr ""
 msgid "Pearl · Component gallery"
 msgstr ""
 
-#: src/core/application.zig:179
+#: src/core/application.zig:204
 msgid "Pearl · Demo gallery"
 msgstr ""
 
@@ -4855,7 +4911,7 @@ msgstr ""
 msgid "Preview only · committed appearance is unchanged. To select a package, choose Use theme, then Apply & save."
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:1538
+#: src/ui/surfaces/manager.zig:1543
 msgid "Previous"
 msgstr ""
 
@@ -5446,7 +5502,7 @@ msgstr ""
 msgid "Save"
 msgstr ""
 
-#: src/desktop/clipboard_capture.zig:159
+#: src/desktop/clipboard_capture.zig:163
 msgid "Save PNG"
 msgstr ""
 
@@ -5550,7 +5606,7 @@ msgstr ""
 msgid "Screensaver when inactive"
 msgstr ""
 
-#: src/desktop/clipboard_capture.zig:137
+#: src/desktop/clipboard_capture.zig:141
 msgid "Screenshot"
 msgstr ""
 
@@ -5735,7 +5791,7 @@ msgstr ""
 msgid "Session mismatch. Open Settings from the matching Aqueous session."
 msgstr ""
 
-#: src/core/application.zig:187
+#: src/core/application.zig:212
 msgid "Session services are not available yet."
 msgstr ""
 
@@ -6751,6 +6807,10 @@ msgstr ""
 msgid "Text & layout"
 msgstr ""
 
+#: src/services/clipboard.zig:196
+msgid "Text history can be restored; PNG images stay in memory"
+msgstr ""
+
 #: src/desktop/wallpapers.zig:265
 msgid "That selection is not a usable wallpaper."
 msgstr ""
@@ -6775,11 +6835,11 @@ msgstr ""
 msgid "The default profiles could not be restored."
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:1310
+#: src/ui/surfaces/manager.zig:1315
 msgid "The desktop action could not be completed."
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:1306
+#: src/ui/surfaces/manager.zig:1311
 msgid "The desktop action could not be confirmed."
 msgstr ""
 
@@ -6815,7 +6875,7 @@ msgstr ""
 msgid "The preference draft needs repair. Open Advanced to fix it; your text is retained."
 msgstr ""
 
-#: src/ui/i18n.zig:48 src/core/application.zig:421
+#: src/ui/i18n.zig:48 src/core/application.zig:446
 msgid "The preview could not be loaded."
 msgstr ""
 
@@ -7176,8 +7236,8 @@ msgstr ""
 msgid "Usage: pearl-settings [--page PAGE] [--section AQUEOUS_SECTION]\n\nPages: overview, network, bluetooth, sound, power, appearance, bar,\n       notifications, system, session, aqueous, advanced, plugins\nAqueous sections: appearance, layouts, input, keybinds, rules, displays, advanced\n\nA generic launch opens Overview. Repeated launches activate the existing\nwindow in this Aqueous session. Editing requires a running Pearl session.\n"
 msgstr ""
 
-#: src/cli/options.zig:181
-msgid "Usage: pearlctl status | report | quit | lock\n       pearlctl assistant status|show|stop|clear|release|cancel\n       pearlctl night-light status|on|off|toggle|resume|retry\n       pearlctl clipboard status|show|toggle|clear\n       pearlctl clipboard select|delete --generation ENTRY_ID\n       pearlctl migrate dms --input SETTINGS [--session-file SESSION] [--base PEARL_JSON] [--bundle NEW_DIRECTORY]\n       pearlctl preferences apply --revision N --file PREFERENCES_JSON\n       pearlctl dock show|hide [--output ID]\n       pearlctl dock pin|unpin --text DESKTOP_ID [--output ID]\n       pearlctl capture status|show|cancel\n       pearlctl wm action --text ACTION_JSON\n       pearlctl capture windows [--offset N]\n       pearlctl capture window --text TOPLEVEL_ID\n       pearlctl capture output [--output ID]\n       pearlctl capture region --text X,Y,WIDTH,HEIGHT [--output ID]\n       pearlctl capture copy --generation N\n       pearlctl capture save --generation N [--path /absolute/new.png]\n       pearlctl lifecycle status\n       pearlctl lifecycle action --text lock|suspend|hibernate|logout|cancel|inhibit|uninhibit\n       pearlctl lifecycle action --text confirm --generation N\n       pearlctl aqueous show [--section SECTION] (legacy --text SECTION accepted)\n       pearlctl aqueous status|refresh|validate|apply|discard|rebase|reload\n       pearlctl aqueous keep|revert\n       pearlctl aqueous record --text FIELD_ID\n       pearlctl aqueous draft --text JSON\n       pearlctl settings show [--page PAGE] [--section AQUEOUS_SECTION] [--output ID]\n       Settings pages: overview, appearance, network, bluetooth, sound, power,\n                       bar, notifications, session, aqueous, advanced\n       Aqueous sections: appearance, layouts, input, keybinds, rules, displays, advanced\n       Repeated settings launches activate the window; they never toggle it closed.\n       pearlctl plugins refresh\n       pearlctl plugins list [--offset N]\n       pearlctl plugins inspect|reload --path ID\n       pearlctl plugins enable --path ID --text PACKAGE_SHA256 --revision N\n       pearlctl plugins disable --path ID --revision N\n       pearlctl preferences status|reload\n       pearlctl preferences apply --revision N --text JSON\n       pearlctl popup show|toggle [--output ID]\n       pearlctl popup hide\n       pearlctl bar set --output ID --edge top|right|bottom|left --size 32..160\n       pearlctl frame set --output ID --edge EDGE --size 0..160\n       pearlctl osd show --text TEXT [--output ID] [--duration 100..10000]\n\n       pearlctl launcher show|hide|toggle [--output ID]\n       pearlctl control-center show|toggle [--output ID] [--page PAGE]\n       PAGE: overview (default), sound, network, bluetooth, power\n       Opens the compact flyout. Toggle closes the same page or switches to another.\n       Status popup.page reports its route; invalid pages leave the flyout unchanged.\n       pearlctl window-switcher next|previous|dismiss [--output ID]\n         Cycle all workspaces/displays on updated Aqueous; output anchors the switcher.\n       pearlctl running-apps show [--output ID]\n       pearlctl desktop focus [--output ID]\n       pearlctl calendar toggle [--output ID]\n       pearlctl overview toggle [--output ID]\n       pearlctl layout get|set --output ID [--layout NAME]\n       pearlctl bar groups --output ID --left ITEMS --center ITEMS --right ITEMS\n       ITEMS: comma-separated launcher,workspaces,title,clock,keyboard,overview,control,audio,battery,network,bluetooth,notifications,media,tray,clipboard\n       Also clock:ID for instances defined in the output's effective bar.clocks preferences.\n\n       pearlctl notifications|media|tray toggle [--output ID]\n       pearlctl session status [--offset N]\n       pearlctl session action --command COMMAND [--generation N] [--notification ID]\n                               [--position MICROSECONDS] [--menu-id ID --revision N] [--text ACTION_KEY]\n       See docs/SESSION_SERVICES.md for commands and identity fields.\n\n       pearlctl connectivity status [--offset N]\n       pearlctl connectivity action --service network|bluetooth --action ACTION --generation N [--path PATH]\n       pearlctl services status [--offset N]\n       pearlctl audio set --kind sink|source|playback|recording [--generation N --device ID]\n                          [--volume 0..100] [--mute true|false] [--default true] [--target ID]\n       pearlctl brightness set --percent 0..100 [--output NAME_OR_DEVICE_ID]\n       pearlctl brightness adjust --delta -100..100 [--output NAME_OR_DEVICE_ID]\n       pearlctl profile set --profile power-saver|balanced|performance\n\n       pearlctl report: write a bounded support report (environment, status,\n       recent journal lines) to ~/.local/state/pearl/report-*.log and print\n       its path. Contents and retention: docs/LOGGING.md.\n\nUses the current AQUEOUS_SOCKET, WAYLAND_DISPLAY and XDG_RUNTIME_DIR.\nOutput IDs come from `pearlctl status`. Replies are Pearl control v1 JSON.\n\nAny command also accepts --log-level error|warning|info|debug and\n--log-scopes LIST (all, or comma-separated scopes; ~scope excludes one).\n"
+#: src/cli/options.zig:187
+msgid "Usage: pearlctl status | report | quit | lock\n       pearlctl assistant status|show|stop|clear|release|cancel\n       pearlctl night-light status|on|off|toggle|resume|retry\n       pearlctl clipboard status [--offset 0..100] [--limit 1..20]\n                                 [--revision N] [--instance INSTANCE]\n       pearlctl clipboard status --operation TOKEN --instance INSTANCE\n       pearlctl clipboard show|toggle|clear\n       pearlctl clipboard select|delete --generation ENTRY_ID --instance INSTANCE\n         Use next_offset and pin revision/instance while paging. Stale pages must restart.\n         Clear/Delete replies are queued receipts; poll status for durable completion.\n       pearlctl migrate dms --input SETTINGS [--session-file SESSION] [--base PEARL_JSON] [--bundle NEW_DIRECTORY]\n       pearlctl preferences apply --revision N --file PREFERENCES_JSON\n       pearlctl dock show|hide [--output ID]\n       pearlctl dock pin|unpin --text DESKTOP_ID [--output ID]\n       pearlctl capture status|show|cancel\n       pearlctl wm action --text ACTION_JSON\n       pearlctl capture windows [--offset N]\n       pearlctl capture window --text TOPLEVEL_ID\n       pearlctl capture output [--output ID]\n       pearlctl capture region --text X,Y,WIDTH,HEIGHT [--output ID]\n       pearlctl capture copy --generation N\n       pearlctl capture save --generation N [--path /absolute/new.png]\n       pearlctl lifecycle status\n       pearlctl lifecycle action --text lock|suspend|hibernate|logout|cancel|inhibit|uninhibit\n       pearlctl lifecycle action --text confirm --generation N\n       pearlctl aqueous show [--section SECTION] (legacy --text SECTION accepted)\n       pearlctl aqueous status|refresh|validate|apply|discard|rebase|reload\n       pearlctl aqueous keep|revert\n       pearlctl aqueous record --text FIELD_ID\n       pearlctl aqueous draft --text JSON\n       pearlctl settings show [--page PAGE] [--section AQUEOUS_SECTION] [--output ID]\n       Settings pages: overview, appearance, network, bluetooth, sound, power,\n                       bar, notifications, session, aqueous, advanced\n       Aqueous sections: appearance, layouts, input, keybinds, rules, displays, advanced\n       Repeated settings launches activate the window; they never toggle it closed.\n       pearlctl plugins refresh\n       pearlctl plugins list [--offset N]\n       pearlctl plugins inspect|reload --path ID\n       pearlctl plugins enable --path ID --text PACKAGE_SHA256 --revision N\n       pearlctl plugins disable --path ID --revision N\n       pearlctl preferences status|reload\n       pearlctl preferences apply --revision N --text JSON\n       pearlctl popup show|toggle [--output ID]\n       pearlctl popup hide\n       pearlctl bar set --output ID --edge top|right|bottom|left --size 32..160\n       pearlctl frame set --output ID --edge EDGE --size 0..160\n       pearlctl osd show --text TEXT [--output ID] [--duration 100..10000]\n\n       pearlctl launcher show|hide|toggle [--output ID]\n       pearlctl control-center show|toggle [--output ID] [--page PAGE]\n       PAGE: overview (default), sound, network, bluetooth, power\n       Opens the compact flyout. Toggle closes the same page or switches to another.\n       Status popup.page reports its route; invalid pages leave the flyout unchanged.\n       pearlctl window-switcher next|previous|dismiss [--output ID]\n         Cycle all workspaces/displays on updated Aqueous; output anchors the switcher.\n       pearlctl running-apps show [--output ID]\n       pearlctl desktop focus [--output ID]\n       pearlctl calendar toggle [--output ID]\n       pearlctl overview toggle [--output ID]\n       pearlctl layout get|set --output ID [--layout NAME]\n       pearlctl bar groups --output ID --left ITEMS --center ITEMS --right ITEMS\n       ITEMS: comma-separated launcher,workspaces,title,clock,keyboard,overview,control,audio,battery,network,bluetooth,notifications,media,tray,clipboard\n       Also clock:ID for instances defined in the output's effective bar.clocks preferences.\n\n       pearlctl notifications|media|tray toggle [--output ID]\n       pearlctl session status [--offset N]\n       pearlctl session action --command COMMAND [--generation N] [--notification ID]\n                               [--position MICROSECONDS] [--menu-id ID --revision N] [--text ACTION_KEY]\n       See docs/SESSION_SERVICES.md for commands and identity fields.\n\n       pearlctl connectivity status [--offset N]\n       pearlctl connectivity action --service network|bluetooth --action ACTION --generation N [--path PATH]\n       pearlctl services status [--offset N]\n       pearlctl audio set --kind sink|source|playback|recording [--generation N --device ID]\n                          [--volume 0..100] [--mute true|false] [--default true] [--target ID]\n       pearlctl brightness set --percent 0..100 [--output NAME_OR_DEVICE_ID]\n       pearlctl brightness adjust --delta -100..100 [--output NAME_OR_DEVICE_ID]\n       pearlctl profile set --profile power-saver|balanced|performance\n\n       pearlctl report: write a bounded support report (environment, status,\n       recent journal lines) to ~/.local/state/pearl/report-*.log and print\n       its path. Contents and retention: docs/LOGGING.md.\n\nUses the current AQUEOUS_SOCKET, WAYLAND_DISPLAY and XDG_RUNTIME_DIR.\nOutput IDs come from `pearlctl status`. Replies are Pearl control v1 JSON.\n\nAny command also accepts --log-level error|warning|info|debug and\n--log-scopes LIST (all, or comma-separated scopes; ~scope excludes one).\n"
 msgstr ""
 
 #: src/settings/assistant_view.zig:164
@@ -7473,7 +7533,7 @@ msgstr ""
 msgid "Web answer · Enter to ask"
 msgstr ""
 
-#: src/core/application.zig:186
+#: src/core/application.zig:211
 msgid "Welcome to Pearl"
 msgstr ""
 
@@ -7581,7 +7641,7 @@ msgstr ""
 msgid "Working…"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:1616
+#: src/ui/surfaces/manager.zig:1621
 msgid "Workspace"
 msgstr ""
 
@@ -7627,7 +7687,7 @@ msgstr ""
 msgid "Your desktop, at ease."
 msgstr ""
 
-#: src/core/application.zig:185
+#: src/core/application.zig:210
 msgid "Your desktop, taking shape."
 msgstr ""
 
@@ -8927,7 +8987,7 @@ msgstr ""
 msgid "wm"
 msgstr ""
 
-#: src/desktop/clipboard_capture.zig:139
+#: src/desktop/clipboard_capture.zig:143
 msgid "x,y,width,height"
 msgstr ""
 
@@ -8975,7 +9035,7 @@ msgstr ""
 msgid "{0} unsaved changes · "
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:858
+#: src/ui/surfaces/manager.zig:862
 msgid "{0} {1}"
 msgstr ""
 
@@ -8987,7 +9047,7 @@ msgstr ""
 msgid "{0} {1}{2}{3}"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:863
+#: src/ui/surfaces/manager.zig:867
 msgid "{0} · {1}%"
 msgstr ""
 
@@ -8995,11 +9055,11 @@ msgstr ""
 msgid "{0} — {1} {2}, all workspaces{3}{4}"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:850
+#: src/ui/surfaces/manager.zig:854
 msgid "{0}% charge remaining"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:850
+#: src/ui/surfaces/manager.zig:854
 msgid "{0}% remaining · about {1} h {2} min left"
 msgstr ""
 

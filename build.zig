@@ -455,7 +455,21 @@ pub fn build(b: *std.Build) void {
     bar_clock.setEnvironmentVariable("LC_ALL", "C");
     b.step("test-bar-clock", "Verify time-zone clocks, DST, formatting and zone discovery").dependOn(&bar_clock.step);
     b.step("test-night-light-clock", "Verify Night Light schedules across timezone and DST transitions").dependOn(&night_clock.step);
-    const test_step = b.step("test", "Run model and Unicode policy tests without GTK or a compositor");
+    const test_step = b.step("test", "Run model, clipboard and Unicode policy tests");
+    const clipboard_completion_module = createModule(b, .{ .root_source_file = b.path("src/clipboard_completion_tests.zig"), .target = target, .optimize = optimize, .link_libc = true });
+    clipboard_completion_module.addImport("glib2", bindings.module("glib2"));
+    clipboard_completion_module.linkSystemLibrary("glib-2.0", .{ .use_pkg_config = .yes });
+    const clipboard_completion_tests = b.addRunArtifact(b.addTest(.{ .root_module = clipboard_completion_module }));
+    b.step("test-clipboard-completion", "Verify event-driven clipboard worker wakeups and watch lifetime").dependOn(&clipboard_completion_tests.step);
+    test_step.dependOn(&clipboard_completion_tests.step);
+    const clipboard_history_module = gtkModule(b, bindings, target, optimize, "src/clipboard_history_tests.zig", pulse_module);
+    clipboard_history_module.addImport("wayland", native);
+    configureApp(b, clipboard_history_module, resources, false, false, community_theme_repository, false, portal_variant == .git);
+    const clipboard_history_tests = b.addRunArtifact(b.addTest(.{ .root_module = clipboard_history_module }));
+    // A cached no-display skip must not replace a later widget run on a display.
+    clipboard_history_tests.has_side_effects = true;
+    b.step("test-clipboard-history", "Verify lazy history access, consumer invalidation and panel filtering/navigation (panel tests require a display)").dependOn(&clipboard_history_tests.step);
+    test_step.dependOn(&clipboard_history_tests.step);
     test_step.dependOn(&b.addRunArtifact(pure).step);
     test_step.dependOn(&filter_tests.step);
     const i18n_tests = b.addSystemCommand(&.{ b.graph.zig_exe, "build", "--build-file", "translations/build.zig", "test", "check-templates" });

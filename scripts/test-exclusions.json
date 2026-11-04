@@ -7,6 +7,7 @@
   "tests/integration/bar_clocks.py": "Shared harness helper; exercised by its importing suites.",
   "tests/integration/bar_opacity.py": "Shared harness helper; exercised by its importing suites.",
   "tests/integration/brightness_osd.py": "Shared harness helper; exercised by its importing suites.",
+  "tests/integration/clipboard_history_checks.py": "Shared paginated history and durability assertion helper; exercised by the registered clipboard, security, and calculator integration suites.",
   "tests/integration/compact_editor.py": "Shared harness helper; exercised by its importing suites.",
   "tests/integration/fake_llama_server.py": "Fixture subprocess used by assistant launcher, runtime and benchmark tests.",
   "tests/integration/reproduce_desktop_overrides.py": "Historical issue reproduction; test-desktop-overrides is the maintained regression.",
