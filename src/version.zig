@@ -1,2 +1,4 @@
-//! Release-candidate identity; release acceptance is tracked separately.
-pub const string = "0.3.6";
+//! Release identity injected by the build system (-Dversion or PEARL_VERSION);
+//! not tracked in source. Packaging and CI supply the tag/pkgver.
+const injected = @import("pearl_version").string;
+pub const string: [:0]const u8 = injected[0..injected.len :0];
