@@ -124,6 +124,7 @@ const FileBackend = struct {
         // The store and its descriptors never cross the thread boundary.
         self.store = try storage.Store.open(std.heap.page_allocator, self.path);
         self.store.?.hooks = self.hooks;
+        try self.store.?.retireTemps();
         var loaded = (try self.store.?.read()) orelse return @splat(0);
         const key = contentKey(loaded.snapshot()) catch |err| {
             loaded.deinit();

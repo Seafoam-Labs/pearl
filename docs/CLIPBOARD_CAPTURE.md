@@ -133,14 +133,18 @@ Pending ordinary saves may be superseded, but removals stay ordered. A Delete
 or Clear is confirmed only when its worker receipt is `durable`, not when
 the request is queued. Removals also delete validated temporary snapshots left
 by interrupted saves before confirming durability, including when text remains
-in the history file.
+in the history file. Worker startup also retires validated interrupted temporary
+snapshots under the writer locks and synchronizes their removal before loading
+history or accepting work. Cleanup failures stop startup; no polling is added.
 
 Unsafe, corrupt or unsupported files are not overwritten automatically.
 When a safe history file is corrupt or has an unsupported version, an unlocked
 user can explicitly run `pearlctl clipboard clear` and poll its removal receipt.
 Clear revalidates the rejected file under the exclusive writer locks, removes
-validated temporary snapshots and synchronizes the directory. After a `durable`
-receipt, restart Pearl to resume clipboard history. Other storage failures and
+validated temporary snapshots and synchronizes the directory. Clear also rejects
+unexpected replacement of valid history or appearance of a previously missing
+history file. After a `durable` receipt, restart Pearl to resume clipboard
+history. Other storage failures and
 untrusted clock state remain fail-closed; a privacy lock still denies Clear.
 Storage or clock failures currently disable Pearl's history collection and
 selection rather than falling back to memory-only history. Verify that the

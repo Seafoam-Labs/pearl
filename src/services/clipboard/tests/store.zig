@@ -253,6 +253,151 @@ test "store unsupported saved version is preserved" {
     const bytes = try readLeaf(store.directoryFd(), "history.bin");
     defer t.allocator.free(bytes);
     try t.expectEqualStrings("PEARLCH\x00\x02\x00", bytes);
+    try store.remove();
+    try t.expect((try store.read()) == null);
+}
+
+test "store Clear refuses valid replacement after ready missing or failed state and in-place changes" {
+    const Variant = enum { ready, missing, failed, in_place };
+    for ([_]Variant{ .ready, .missing, .failed, .in_place }) |variant| {
+        var fixture = try Fixture.init();
+        defer fixture.deinit();
+        var store = try fixture.open();
+        defer store.close();
+        const dir = store.directoryFd();
+        _ = try store.read();
+        try store.write(second);
+        const replacement = try readLeaf(dir, "history.bin");
+        defer t.allocator.free(replacement);
+        try t.expectEqual(@as(c_int, 0), std.c.renameat(dir, "history.bin", dir, "replacement"));
+        try t.expect((try store.read()) == null);
+        if (variant != .missing) {
+            try store.write(first);
+            try expectLoaded(&store, first);
+        }
+        if (variant == .failed) {
+            var failure: Failure = .{ .phase = .remove };
+            store.hooks = failure.hooks();
+            try t.expectError(error.RemoveFailed, store.remove());
+            store.hooks = .{};
+        }
+        if (variant == .in_place) {
+            try writeLeaf(dir, "history.bin", replacement, 0o600);
+        } else try t.expectEqual(@as(c_int, 0), std.c.renameat(dir, "replacement", dir, "history.bin"));
+        try writeLeaf(dir, orphan, "interrupted plaintext", 0o600);
+        // A failed check must not make a second Clear accept the replacement.
+        try t.expectError(error.Conflict, store.remove());
+        try t.expectError(error.Conflict, store.remove());
+        const saved = try readLeaf(dir, "history.bin");
+        defer t.allocator.free(saved);
+        try t.expectEqualSlices(u8, replacement, saved);
+        const temporary = try readLeaf(dir, orphan);
+        defer t.allocator.free(temporary);
+        try t.expectEqualStrings("interrupted plaintext", temporary);
+        // Explicitly loading the replacement permits an intentional Clear.
+        try expectLoaded(&store, second);
+        try store.remove();
+        try t.expect((try store.read()) == null);
+    }
+}
+
+test "store Clear retry after unlink refuses newly installed history" {
+    var fixture = try Fixture.init();
+    defer fixture.deinit();
+    var store = try fixture.open();
+    defer store.close();
+    _ = try store.read();
+    try store.write(first);
+    var failure: Failure = .{ .phase = .directory_sync };
+    store.hooks = failure.hooks();
+    try t.expectError(error.Uncertain, store.remove());
+    store.hooks = .{};
+    try writeLeaf(store.directoryFd(), "history.bin", "unexpected after unlink", 0o600);
+    try t.expectError(error.Conflict, store.remove());
+    const bytes = try readLeaf(store.directoryFd(), "history.bin");
+    defer t.allocator.free(bytes);
+    try t.expectEqualStrings("unexpected after unlink", bytes);
+}
+
+test "store temporary retirement preserves history and ignores malformed names" {
+    var fixture = try Fixture.init();
+    defer fixture.deinit();
+    var store = try fixture.open();
+    defer store.close();
+    _ = try store.read();
+    try store.write(first);
+    const dir = store.directoryFd();
+    try writeLeaf(dir, orphan, "incomplete plaintext", 0o600);
+    const preserved = [_][:0]const u8{
+        "unrelated",                                   "history.tmp.invalid",                           "history.tmp.0123456789ABCDEF0123456789ABCDEF",
+        "history.tmp.0123456789abcdef0123456789abcde", "history.tmp.0123456789abcdef0123456789abcdef0",
+    };
+    for (preserved) |name| try writeLeaf(dir, name, "preserved", 0o600);
+    try store.retireTemps();
+    var st: std.os.linux.Statx = undefined;
+    try t.expectEqual(std.posix.E.NOENT, std.os.linux.errno(std.os.linux.statx(dir, orphan, 0, .{ .TYPE = true }, &st)));
+    for (preserved) |name| {
+        const bytes = try readLeaf(dir, name);
+        defer t.allocator.free(bytes);
+        try t.expectEqualStrings("preserved", bytes);
+    }
+    try expectLoaded(&store, first);
+    try store.write(second);
+}
+
+test "store temporary retirement refuses unsafe exact-pattern files" {
+    const Variant = enum { permissions, hard_link, symlink, directory, fifo };
+    for ([_]Variant{ .permissions, .hard_link, .symlink, .directory, .fifo }) |variant| {
+        var fixture = try Fixture.init();
+        defer fixture.deinit();
+        var store = try fixture.open();
+        defer store.close();
+        const dir = store.directoryFd();
+        try writeLeaf(dir, "unrelated", "preserved", 0o600);
+        switch (variant) {
+            .permissions => try writeLeaf(dir, orphan, "preserved", 0o644),
+            .hard_link => try t.expectEqual(@as(c_int, 0), std.c.linkat(dir, "unrelated", dir, orphan, 0)),
+            .symlink => try t.expectEqual(@as(c_int, 0), std.c.symlinkat("unrelated", dir, orphan)),
+            .directory => try t.expectEqual(@as(c_int, 0), std.c.mkdirat(dir, orphan, 0o700)),
+            .fifo => try t.expectEqual(std.os.linux.E.SUCCESS, std.os.linux.errno(std.os.linux.mknodat(dir, orphan, std.c.S.IFIFO | 0o600, 0))),
+        }
+        try t.expectError(error.UnsafeTemporary, store.retireTemps());
+        var st: std.os.linux.Statx = undefined;
+        try t.expectEqual(std.posix.E.SUCCESS, std.os.linux.errno(std.os.linux.statx(dir, orphan, std.os.linux.AT.SYMLINK_NOFOLLOW, .{ .TYPE = true }, &st)));
+        const bytes = try readLeaf(dir, "unrelated");
+        defer t.allocator.free(bytes);
+        try t.expectEqualStrings("preserved", bytes);
+    }
+}
+
+test "store temporary retirement reports unlink partial cleanup and sync failures" {
+    const another = "history.tmp.fedcba9876543210fedcba9876543210";
+    for (0..3) |variant| {
+        var fixture = try Fixture.init();
+        defer fixture.deinit();
+        var store = try fixture.open();
+        defer store.close();
+        _ = try store.read();
+        try store.write(first);
+        const dir = store.directoryFd();
+        try writeLeaf(dir, orphan, "interrupted plaintext", 0o600);
+        try writeLeaf(dir, another, "older plaintext", 0o600);
+        var failure: Failure = .{ .phase = if (variant == 2) .temporary_sync else .temporary_remove, .pass = if (variant == 1) 1 else 0 };
+        store.hooks = failure.hooks();
+        try t.expectError(if (variant == 0) error.RemoveFailed else error.Uncertain, store.retireTemps());
+        var remaining: usize = 0;
+        for ([_][:0]const u8{ orphan, another }) |name| {
+            var st: std.os.linux.Statx = undefined;
+            const result = std.os.linux.errno(std.os.linux.statx(dir, name, 0, .{ .TYPE = true }, &st));
+            if (result == .SUCCESS) remaining += 1 else try t.expectEqual(std.posix.E.NOENT, result);
+        }
+        try t.expectEqual(@as(usize, 2 - variant), remaining);
+        // Even an empty scan must synchronize a previous failed retirement.
+        if (variant == 2) try t.expectError(error.SyncFailed, store.retireTemps());
+        store.hooks = .{};
+        try store.retireTemps();
+        try expectLoaded(&store, first);
+    }
 }
 
 test "store never restores an interrupted temporary snapshot and clear removes owned temps" {

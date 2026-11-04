@@ -23,7 +23,7 @@ pub const Error = codec.Error || error{
 
 /// Optional per-instance I/O seam, used by deterministic fault/race tests. No
 /// global hooks, timers, jobs or environment access are installed by this module.
-pub const Phase = enum { read, write, file_sync, publish, after_publish, remove, after_remove, directory_sync };
+pub const Phase = enum { read, write, file_sync, publish, after_publish, remove, after_remove, temporary_remove, temporary_sync, directory_sync };
 pub const Hooks = struct {
     context: ?*anyopaque = null,
     before: ?*const fn (?*anyopaque, Phase) error{InjectedFailure}!void = null,
@@ -439,11 +439,35 @@ pub const Store = struct {
     }
 
     fn cleanupTemp(self: *Store, name: [*:0]const u8, identity: Stat) Error!void {
+        self.hooks.check(.temporary_remove) catch return error.RemoveFailed;
         const named = (try statAt(self.directoryFd(), name, linux.AT.SYMLINK_NOFOLLOW)) orelse return;
         try privateFile(named);
         if (!sameObject(identity, named)) return error.Conflict;
         if (std.c.unlinkat(self.directoryFd(), name, 0) != 0) return error.RemoveFailed;
         try sync(self.directoryFd());
+    }
+
+    /// Retire interrupted saves while holding both writer locks. Only exact
+    /// Pearl temporary names with private, owned, single-link metadata qualify;
+    /// payloads may be incomplete and are never restored. A failed cleanup must
+    /// prevent worker startup, including when unlink durability is uncertain.
+    pub fn retireTemps(self: *Store) Error!void {
+        var changed = false;
+        self.retireTempsImpl(&changed) catch |err| {
+            const outcome = if (changed) error.Uncertain else err;
+            self.state = stateFor(outcome);
+            return outcome;
+        };
+    }
+
+    fn retireTempsImpl(self: *Store, changed: *bool) Error!void {
+        try self.guard();
+        try self.removeTemps(changed);
+        // Sync even an empty scan: a prior process may have unlinked temps but
+        // failed to synchronize their removal before exiting.
+        self.hooks.check(.temporary_sync) catch return error.SyncFailed;
+        try sync(self.directoryFd());
+        try self.guard();
     }
 
     /// Explicit Clear is allowed for safe corrupt/unsupported payload files.
@@ -467,9 +491,9 @@ pub const Store = struct {
             defer _ = std.c.close(fd);
             expected = try fdStat(fd);
         }
-        // Recovery may only remove the rejected file we inspected, never a
-        // replacement installed between the failed load and explicit Clear.
-        if (self.state == .corrupt or self.state == .unsupported) try self.checkExpected();
+        // Clear may only remove the file we loaded (including rejected codec
+        // input), never an unexpected replacement installed since that load.
+        try self.checkExpected();
         self.hooks.check(.remove) catch return error.RemoveFailed;
         try self.guard();
         const named = try statAt(self.directoryFd(), "history.bin", linux.AT.SYMLINK_NOFOLLOW);
@@ -478,6 +502,9 @@ pub const Store = struct {
             if (expected == null or !sameFile(expected.?, actual)) return error.Conflict;
             if (std.c.unlinkat(self.directoryFd(), "history.bin", 0) != 0) return if (ambiguousMutation(std.posix.errno(-1))) error.Uncertain else error.RemoveFailed;
             changed.* = true;
+            // Permit a durability retry after our own successful unlink while
+            // still refusing any new history installed before that retry.
+            self.expected = null;
         } else if (expected != null) return error.Conflict;
         self.hooks.check(.after_remove) catch return error.RemoveFailed;
         try self.removeTemps(changed);
@@ -513,6 +540,7 @@ pub const Store = struct {
                     if (!temporaryName(name)) continue;
                     var z: [44:0]u8 = @splat(0);
                     @memcpy(z[0..44], name);
+                    self.hooks.check(.temporary_remove) catch return error.RemoveFailed;
                     const st = (try statAt(self.directoryFd(), &z, linux.AT.SYMLINK_NOFOLLOW)) orelse continue;
                     privateFile(st) catch return error.UnsafeTemporary;
                     if (std.c.unlinkat(self.directoryFd(), &z, 0) != 0) return if (ambiguousMutation(std.posix.errno(-1))) error.Uncertain else error.RemoveFailed;

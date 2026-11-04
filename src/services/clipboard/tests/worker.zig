@@ -424,7 +424,143 @@ const Fixture = struct {
         try t.expectEqual(@as(?storage.Error, null), status.failure);
         return worker;
     }
+    fn directory(self: *Fixture) !c_int {
+        const fd = std.c.open(self.path, .{ .ACCMODE = .RDONLY, .DIRECTORY = true, .CLOEXEC = true, .NOFOLLOW = true }, @as(c_uint, 0));
+        try t.expect(fd >= 0);
+        return fd;
+    }
+    fn tempCount(self: *Fixture) !usize {
+        var dir = try std.Io.Dir.openDirAbsolute(t.io, self.path, .{ .iterate = true });
+        defer dir.close(t.io);
+        var iterator = dir.iterate();
+        var count: usize = 0;
+        while (try iterator.next(t.io)) |entry| {
+            if (std.mem.startsWith(u8, entry.name, "history.tmp.")) count += 1;
+        }
+        return count;
+    }
 };
+
+const InterruptedWrite = struct {
+    writes: usize = 0,
+    fn check(context: ?*anyopaque, phase: storage.Phase) error{InjectedFailure}!void {
+        const self: *InterruptedWrite = @ptrCast(@alignCast(context.?));
+        if (phase == .write) {
+            self.writes += 1;
+            if (self.writes > 1) return error.InjectedFailure;
+        }
+        // Simulate interruption with a partially written real random-name file
+        // still present when the store's descriptors/locks are released.
+        if (phase == .temporary_remove) return error.InjectedFailure;
+    }
+};
+
+fn leaveInterruptedWrite(fixture: *Fixture, saved: bool) !void {
+    var store = try storage.Store.open(t.allocator, fixture.path);
+    defer store.close();
+    _ = try store.read();
+    const old = try snapshot("durable before interruption");
+    defer old.deinit();
+    if (saved) try store.write(old.view());
+    var interruption: InterruptedWrite = .{};
+    store.hooks = .{ .context = &interruption, .before = InterruptedWrite.check };
+    const pending = try snapshot("incomplete replacement");
+    defer pending.deinit();
+    try t.expectError(error.WriteFailed, store.write(pending.view()));
+    try t.expect(store.cleanup_failed);
+    try t.expectEqual(@as(usize, 1), try fixture.tempCount());
+}
+
+test "worker startup retires interrupted writes with saved or missing history before accepting work" {
+    for ([_]bool{ false, true }) |saved| {
+        var fixture = try Fixture.init();
+        defer fixture.deinit();
+        try leaveInterruptedWrite(&fixture, saved);
+        // Neither unchanged saves nor shutdown need a subsequent disk write.
+        for (0..2) |_| {
+            const worker = try fixture.start(.{});
+            defer worker.deinit();
+            try t.expectEqual(@as(usize, 0), try fixture.tempCount());
+            try worker.requestSave(1, if (saved) try snapshot("durable before interruption") else try empty());
+            try t.expectEqual(@as(u64, 0), worker.waitIdle().write_count);
+            worker.beginShutdown();
+            worker.join();
+        }
+        var disk = try storage.Store.open(t.allocator, fixture.path);
+        defer disk.close();
+        var loaded = try disk.read();
+        defer if (loaded) |*value| value.deinit();
+        if (saved) try t.expectEqualStrings("durable before interruption", loaded.?.snapshot().records[0].bytes) else try t.expect(loaded == null);
+    }
+}
+
+test "worker startup cleanup failures fence admission preserve history and allow a clean restart" {
+    for ([_]storage.Phase{ .temporary_remove, .temporary_sync }) |phase| {
+        var fixture = try Fixture.init();
+        defer fixture.deinit();
+        try leaveInterruptedWrite(&fixture, true);
+        var fault: RealFault = .{ .phase = phase };
+        {
+            const worker = try Worker.start(t.allocator, t.io, fixture.path, fault.hooks());
+            defer worker.deinit();
+            const status = worker.waitReady();
+            try t.expectEqual(if (phase == .temporary_remove) error.RemoveFailed else error.Uncertain, status.failure.?);
+            try t.expect(!status.initialized and !status.accepting and !status.clear_only);
+            try t.expectEqual(@as(u64, 0), status.durable_revision);
+            const rejected = try empty();
+            defer rejected.deinit();
+            try t.expectError(error.Fenced, worker.requestSave(1, rejected));
+            worker.join();
+            try t.expect(fault.thread_id.? != std.Thread.getCurrentId());
+        }
+        try t.expectEqual(@as(usize, if (phase == .temporary_remove) 1 else 0), try fixture.tempCount());
+        const restarted = try fixture.start(.{});
+        defer restarted.deinit();
+        try t.expectEqual(@as(usize, 0), try fixture.tempCount());
+        try restarted.requestSave(1, try snapshot("durable before interruption"));
+        try t.expectEqual(@as(u64, 0), restarted.waitIdle().write_count);
+    }
+}
+
+test "worker Clear fails closed on valid history installed since startup" {
+    for ([_]bool{ false, true }) |saved| {
+        var fixture = try Fixture.init();
+        defer fixture.deinit();
+        {
+            var store = try storage.Store.open(t.allocator, fixture.path);
+            defer store.close();
+            _ = try store.read();
+            const replacement = try snapshot("valid unexpected history");
+            defer replacement.deinit();
+            try store.write(replacement.view());
+            const dir = store.directoryFd();
+            try t.expectEqual(@as(c_int, 0), std.c.renameat(dir, "history.bin", dir, "replacement"));
+            _ = try store.read();
+            if (saved) {
+                const old = try snapshot("original history");
+                defer old.deinit();
+                try store.write(old.view());
+            }
+        }
+        const worker = try fixture.start(.{});
+        defer worker.deinit();
+        const dir = try fixture.directory();
+        defer _ = std.c.close(dir);
+        try t.expectEqual(@as(c_int, 0), std.c.renameat(dir, "replacement", dir, "history.bin"));
+        const token = try worker.requestRemoval(.clear, 1, try empty());
+        const status = worker.waitIdle();
+        const receipt = try worker.receipt(token);
+        try t.expectEqual(module.ReceiptState.failed, receipt.state);
+        try t.expectEqual(error.Conflict, receipt.failure.?);
+        try t.expectEqual(@as(u64, 0), status.durable_revision);
+        worker.join();
+        var disk = try storage.Store.open(t.allocator, fixture.path);
+        defer disk.close();
+        var loaded = (try disk.read()).?;
+        defer loaded.deinit();
+        try t.expectEqualStrings("valid unexpected history", loaded.snapshot().records[0].bytes);
+    }
+}
 
 test "worker real store reopens saved text after thread exit and avoids rewriting unchanged restart state" {
     var fixture = try Fixture.init();
@@ -482,17 +618,20 @@ test "worker nonempty removals clean orphan plaintext and never falsely confirm 
                 const old = try snapshot("synthetic deleted plaintext");
                 defer old.deinit();
                 try store.write(old.view());
-                const fd = std.c.openat(store.directoryFd(), orphan, .{ .ACCMODE = .WRONLY, .CREAT = true, .EXCL = true, .CLOEXEC = true }, @as(c_uint, 0o600));
-                try t.expect(fd >= 0);
-                defer _ = std.c.close(fd);
-                const text = "synthetic deleted plaintext";
-                try t.expectEqual(@as(isize, text.len), std.c.write(fd, text.ptr, text.len));
-                try t.expectEqual(@as(c_int, 0), std.c.fchmod(fd, if (variant == .unsafe_temp) 0o644 else 0o600));
             }
             var fault: RealFault = .{ .phase = if (variant == .publish_failure) .publish else .directory_sync };
             const hooks: storage.Hooks = if (variant == .publish_failure or variant == .sync_failure) fault.hooks() else .{};
             const worker = try fixture.start(hooks);
             defer worker.deinit();
+            // Seed after startup so this still exercises removal-time cleanup.
+            const dir = try fixture.directory();
+            defer _ = std.c.close(dir);
+            const fd = std.c.openat(dir, orphan, .{ .ACCMODE = .WRONLY, .CREAT = true, .EXCL = true, .CLOEXEC = true }, @as(c_uint, 0o600));
+            try t.expect(fd >= 0);
+            defer _ = std.c.close(fd);
+            const text = "synthetic deleted plaintext";
+            try t.expectEqual(@as(isize, text.len), std.c.write(fd, text.ptr, text.len));
+            try t.expectEqual(@as(c_int, 0), std.c.fchmod(fd, if (variant == .unsafe_temp) 0o644 else 0o600));
             const token = try worker.requestRemoval(operation, 1, try snapshot("synthetic remaining text"));
             const status = worker.waitIdle();
             const receipt = try worker.receipt(token);
