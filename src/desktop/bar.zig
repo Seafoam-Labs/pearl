@@ -21,6 +21,15 @@ const Running = @import("running_apps.zig");
 pub const Pane = enum { launcher_picker, running_apps, clipboard_capture, aqueous_settings, settings, launcher, calendar, control, notifications, media, tray, wallpapers, resources, scheduling, weather };
 pub const Event = union(enum) { running_apps: Running.Event, pane: Pane, settings: @import("settings_navigation.zig").Route, workspace: []const u8, keyboard, overview, window_switcher };
 const Button = struct { owner: *Bar, event: Event, id: ?[]u8 = null };
+/// Manager wiring the optional `dock` widget needs to behave like the
+/// standalone dock: preferences, task matching, and the launcher picker.
+pub const DockDeps = struct {
+    preferences: *@import("../config/service.zig").Service,
+    tasks: *@import("task_apps.zig").Store,
+    context: *anyopaque,
+    changed: *const fn (*anyopaque) void,
+    choose_launcher: *const fn (*anyopaque, []const u8, @import("launcher_picker.zig").Request) anyerror!void,
+};
 pub const Bar = struct {
     background_opacity: @import("bar_opacity.zig").Config = .{},
     background_css: ?*gtk.CssProvider = null,
@@ -40,6 +49,8 @@ pub const Bar = struct {
     plugins: ?*@import("../plugins/manager.zig").Manager = null,
     plugin_views: std.ArrayList(*@import("../plugins/view.zig").View) = .empty,
     tray: ?*@import("tray.zig").Bar = null,
+    dock_widget: ?*@import("dock.zig").Dock = null,
+    dock_deps: ?DockDeps = null,
     resources: ?*@import("resource_view.zig").View = null,
     /// Geometry of the widget that last opened a pane, in bar-window coordinates.
     pane_anchor: ?struct { x: i32, y: i32, width: i32, height: i32 } = null,
@@ -127,6 +138,9 @@ pub const Bar = struct {
         self.sections = @splat(null);
         if (self.tray) |tray| tray.destroy();
         self.tray = null;
+        // Before the host children go: destroy() unparents the dock overlay.
+        if (self.dock_widget) |dock| dock.destroy();
+        self.dock_widget = null;
         if (self.resources) |view| view.destroy();
         self.resources = null;
         self.notification_label = null;
@@ -189,6 +203,10 @@ pub const Bar = struct {
     /// The bar content hash carries this, so the manager rebuilds around it.
     pub fn setResourceMode(self: *Bar, mode: @import("resource_model.zig").Mode) void {
         self.resource_mode = mode;
+    }
+    /// Must be set before configure() when a group contains the `dock` widget.
+    pub fn setDockDeps(self: *Bar, deps: DockDeps) void {
+        self.dock_deps = deps;
     }
     pub fn setBackgroundOpacity(self: *Bar, config: @import("bar_opacity.zig").Config, color: gdk.RGBA) !void {
         const alpha = config.alpha();
@@ -320,6 +338,15 @@ pub const Bar = struct {
                     .running_apps => blk: {
                         const host = gtk.Box.new(if (self.vertical) .vertical else .horizontal, 2);
                         self.running_apps = try Running.Strip.create(host, self.tasks, self.app_index, self.client, self.vertical, self, runningAction);
+                        break :blk host.as(gtk.Widget);
+                    },
+                    .dock => blk: {
+                        const host = gtk.Box.new(if (self.vertical) .vertical else .horizontal, 2);
+                        if (self.dock_deps) |deps| {
+                            const dock = try @import("dock.zig").Dock.createEmbedded(host, self.client, self.app_index, deps.tasks, deps.preferences, self.output, deps.context, deps.changed);
+                            dock.choose_launcher = deps.choose_launcher;
+                            self.dock_widget = dock;
+                        }
                         break :blk host.as(gtk.Widget);
                     },
                     .tray => blk: {

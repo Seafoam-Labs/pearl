@@ -1251,6 +1251,17 @@ pub const Manager = struct {
                 try dock.setBackgroundOpacity(opacity, self.preferences.barBackgroundColor(dock.scroll.as(gtk.Widget)));
                 try dock.update(dock_prefs, o.reservations.bar_edge, bounds, dock_locked);
             }
+            // The bar-widget dock shares the standalone dock's preferences;
+            // the bar itself owns background, blur and visibility. Icons stay
+            // at the configured dock size, only shrinking when the bar is
+            // thinner than icon + chrome (embedded: 4px padding + 1px button
+            // padding + ~3px indicator) so the strip never stretches the bar.
+            if (o.bar.?.bar.?.dock_widget) |widget| {
+                var dock_prefs = self.preferences.prefs().dockForOutput(o.connector);
+                const fit = @min(64, @max(16, @as(i32, o.reservations.bar_size) - 8));
+                dock_prefs.icon_size = @intCast(@min(@as(i32, dock_prefs.icon_size), fit));
+                try widget.update(dock_prefs, o.reservations.bar_edge, bounds, dock_locked);
+            }
             try self.syncPluginOverlays(o, dock_locked);
             if (self.osd) |surface| if (surface.output == o) positionOsd(surface);
             if (changed and self.popup != null and self.popup.?.output == o) self.positionPopup();
@@ -1426,6 +1437,7 @@ pub const Manager = struct {
                 if (bar_pref.attached) panel_widget.addCssClass("pearl-bar-attached");
                 inline for ([_]fn (*gtk.Widget, c_int) callconv(.c) void{ gtk.Widget.setMarginStart, gtk.Widget.setMarginEnd, gtk.Widget.setMarginTop, gtk.Widget.setMarginBottom }) |set| set(panel_widget, if (bar_pref.attached) 0 else 4);
                 s.bar = try Bar.Bar.create(panel, self.client, output.id, s, barAction, &self.audio, &self.power, &self.network, &self.bluetooth, &self.session_services, self.plugins, &self.tasks.snapshot, &self.index, &self.scheduling, &self.weather);
+                s.bar.?.setDockDeps(.{ .preferences = &self.preferences, .tasks = &self.tasks, .context = self, .changed = appsChanged, .choose_launcher = chooseLauncher });
                 window.setChild(panel_widget);
                 s.edge = output.reservations.bar_edge;
                 sizeEdge(s, s.edge, output.reservations.bar_size);
