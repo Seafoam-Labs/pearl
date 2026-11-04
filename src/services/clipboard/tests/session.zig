@@ -860,10 +860,12 @@ test "session pinned pages and operation queries reject old instances without mu
     defer fixture.deinit();
     var s = try fixture.start(at(100));
     defer close(&s);
-    _ = try s.accept(.text, "first", at(100));
+    const old_id = try s.accept(.text, "first", at(100));
     try settle(&s, at(100));
     const pinned = s.model.generation;
     const prior_instance = s.instance;
+    try s.checkInstance(&prior_instance);
+    try s.checkInstance(null); // Clear and other optional guards remain optional.
     const first = try s.pageStatus(t.allocator, true, false, "Ready", .{ .revision = pinned, .instance = &prior_instance });
     defer t.allocator.free(first);
     _ = try s.accept(.text, "second", at(101));
@@ -874,8 +876,24 @@ test "session pinned pages and operation queries reject old instances without mu
     close(&s);
     s = try fixture.start(at(102));
     try t.expect(!std.mem.eql(u8, &prior_instance, &s.instance));
+    // Restoration reuses an old numeric ID for a different entry. The external
+    // Select/Delete guard must reject the prior instance before touching it.
+    try t.expectEqual(old_id, s.entries()[0].id);
+    try t.expectEqualStrings("second", s.entries()[0].bytes);
+    const revision = s.model.generation;
+    const save_revision = s.save_revision;
+    var incorrect_instance = s.instance;
+    incorrect_instance[0] = if (incorrect_instance[0] == '0') '1' else '0';
+    try t.expectError(error.StaleInstance, s.checkInstance(&incorrect_instance));
     try t.expectError(error.StaleInstance, s.checkInstance(&prior_instance));
     try t.expectError(error.StaleInstance, s.pageStatus(t.allocator, true, false, "Ready", .{ .instance = &prior_instance }));
     try t.expectEqual(@as(usize, 2), s.entries().len);
+    try t.expectEqualStrings("second", s.entries()[0].bytes);
+    try t.expectEqualStrings("first", s.entries()[1].bytes);
+    try t.expectEqual(revision, s.model.generation);
+    try t.expectEqual(save_revision, s.save_revision);
+    try t.expect(s.last_token == null);
     try t.expectEqual(@as(u64, 0), s.worker.?.status().desired_revision);
+    try t.expectEqual(@as(u64, 0), s.worker.?.status().write_count);
+    try s.checkInstance(&s.instance);
 }

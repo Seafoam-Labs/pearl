@@ -174,6 +174,7 @@ pub fn parse(a: std.mem.Allocator, bytes: []const u8) !Request {
         },
         .clipboard_delete, .clipboard_select, .capture_copy, .capture_save => {
             if (r.generation == null or r.generation == 0) return error.InvalidRequest;
+            if ((r.op == .clipboard_delete or r.op == .clipboard_select) and r.instance == null) return error.InvalidRequest;
             if (r.path) |path| if (path.len == 0 or path.len >= 1024 or path[0] != '/' or std.mem.indexOfScalar(u8, path, 0) != null) return error.InvalidRequest;
         },
         .wm_action => {
@@ -312,6 +313,24 @@ test "control schema rejects malformed, nested, unversioned and oversized reques
     try t.expectError(error.InvalidRequest, parse(a, @import("test_strings").string(" ", (max_frame + 1))));
     if (parse(a, "{\"pearl\":\"1\"," ++ prefix ++ "}")) |_| return error.AcceptedWrongType else |_| {}
     if (parse(a, "{\"pearl\":1,\"pearl\":1," ++ prefix ++ "}")) |_| return error.AcceptedDuplicateField else |_| {}
+}
+
+test "clipboard entry wire commands require an instance while clear keeps it optional" {
+    const t = std.testing;
+    var arena = std.heap.ArenaAllocator.init(t.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    const prefix = "{\"pearl\":1,\"id\":\"7\",\"session\":\"0123456789abcdef0123456789abcdef\",\"display\":\"/validation\",\"op\":\"";
+    inline for (.{ "clipboard_select", "clipboard_delete" }) |op| {
+        const entry = prefix ++ op ++ "\",\"generation\":1";
+        const request = try parse(a, entry ++ ",\"instance\":\"0123456789abcdef0123456789abcdef\"}");
+        try t.expectEqualStrings("0123456789abcdef0123456789abcdef", request.instance.?);
+        try t.expectError(error.InvalidRequest, parse(a, entry ++ "}"));
+        try t.expectError(error.InvalidRequest, parse(a, entry ++ ",\"instance\":null}"));
+        try t.expectError(error.InvalidRequest, parse(a, entry ++ ",\"instance\":\"bad\"}"));
+    }
+    _ = try parse(a, prefix ++ "clipboard_clear\"}");
+    _ = try parse(a, prefix ++ "clipboard_clear\",\"instance\":\"0123456789abcdef0123456789abcdef\"}");
 }
 
 test "clipboard wire pagination validates limits and refuses unrelated or invalid fields" {

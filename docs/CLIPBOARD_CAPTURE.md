@@ -250,8 +250,8 @@ pearlctl clipboard status --offset 20 --limit 20 --revision REV --instance INSTA
 pearlctl clipboard status --operation TOKEN --instance INSTANCE
 pearlctl clipboard show --output OUTPUT_ID
 pearlctl clipboard toggle --output OUTPUT_ID
-pearlctl clipboard select --generation ENTRY_ID
-pearlctl clipboard delete --generation ENTRY_ID
+pearlctl clipboard select --generation ENTRY_ID --instance INSTANCE
+pearlctl clipboard delete --generation ENTRY_ID --instance INSTANCE
 pearlctl clipboard clear
 
 pearlctl capture output --output OUTPUT_ID
@@ -273,9 +273,13 @@ reject stale traversals. A full response, including framing and newline, fits
 8192 bytes, so pages can contain fewer than 20 previews. Delete and Clear
 return admission separately from durable completion. Check the returned token
 with `clipboard status --operation ... --instance ...`: `pending`, `busy`,
-`failed` and `uncertain` do not mean `durable`. Optional `--instance` guards
-also apply to Delete/Clear. Explicit operation queries remain available after
-storage failure while the privacy gate is open; history stays hidden. Locking,
+`failed` and `uncertain` do not mean `durable`. Select and Delete require the
+`instance` returned alongside the entry ID by `clipboard status`. Missing or
+malformed instances fail request validation; a different instance returns
+`StaleInstance` before selection, removal or history maintenance. Numeric IDs
+can be reused after restart, so callers must retain the matching instance.
+Clear keeps its optional `--instance` guard. Explicit operation queries remain
+available after storage failure while the privacy gate is open; history stays hidden. Locking,
 suspension and shutdown still deny receipt access. An accepted removal returns
 its token even if the worker fails before the initial response is produced.
 
@@ -321,6 +325,36 @@ color-corrected references and proves that an undescribed isolated source cannot
 leave a PNG ready. Hardware HDR, isolated scene pixel/color correctness after an
 upstream metadata fix, very large displays and real screen-reader interaction
 remain unaccepted. No host clipboard, output, PAM or portal service is mutated.
+
+Historical snapshot coverage: no authentic older `history.bin` fixture was
+found in the repository (including ignored retained artifacts) or reachable
+local Git history during finalization. Existing codec/store/session tests cover
+v1 round trips, corruption and restoration, but do not prove restoration of a
+snapshot produced by an older release. No historical fixture was manufactured;
+the v1 snapshot format is unchanged. An authentic older snapshot is still
+needed to close this coverage gap.
+
+### Devario finalization acceptance for `14e5f582`
+
+These are **user-supplied manual acceptance observations** from installed
+Devario at commit `14e5f5820968ccdd96c5001348a213a9048b16e9`, not
+independently reproduced automated results. They predate the CLI instance
+requirement added during finalization.
+
+| User-observed check | Result |
+| --- | --- |
+| Automatic text capture, paste and duplicate promotion | Passed |
+| GTK panel | Passed |
+| Text persistence and PNG memory-only behavior across restart | Passed |
+| Delete/Clear durability | Passed |
+| Lock privacy and exclusion of clipboard copies made while locked | Passed |
+| 100-entry, 256 KiB text and 16 MiB aggregate limits | Passed |
+| Pagination and restoration of large text entries | Passed |
+| Whole-Pearl idle CPU over 30 seconds | 0.533% of one core |
+| Maximum text capture | 56–102 ms |
+| Durable save | 108–155 ms |
+| 6.75 MiB PNG capture | 199 ms; no noticeable GTK responsiveness issue |
+| Normal `/usr/bin/pearl` service restored after testing | Passed |
 
 ### Devario persistence acceptance (2026-11-02)
 

@@ -49,7 +49,8 @@ def main():
                 assert history(clip) == []
             offer('text','hello Pearl 👋'); first = until(clip,lambda v: len(v['entries']) == 1)['entries'][0]
             producer.stop(); assert clip()['entries'][0]['id'] == first['id']
-            ctl(s,args.ctl,'clipboard','select','--generation',str(first['id']))
+            instance = clip()['instance']
+            ctl(s,args.ctl,'clipboard','select','--generation',str(first['id']),'--instance',instance)
             assert s.run(['wl-paste','--no-newline']).stdout == 'hello Pearl 👋'
             checks['owner-disappearance-and-reselection-with-real-paste'] = True
             empty()
@@ -78,22 +79,29 @@ def main():
             checks['re-copied-duplicates-are-promoted-across-default-page-boundary'] = True
             victim = before[0]['id']
             assert sum(e['id']==victim for e in before)==1
-            durable_removal(clip,ctl(s,args.ctl,'clipboard','delete','--generation',str(victim))['result'])
+            revision = clip()['revision']
+            incorrect = ('1' if instance[0]=='0' else '0') + instance[1:]
+            for op in ('select', 'delete'):
+                ctl(s,args.ctl,'clipboard',op,'--generation',str(victim),code=2)
+                assert ctl(s,args.ctl,'clipboard',op,'--generation',str(victim),'--instance',incorrect,code=4)['err']['code'] == 'StaleInstance'
+                assert history(clip)==before and clip()['revision']==revision
+            checks['entry-commands-reject-missing-and-incorrect-instance-without-mutation'] = True
+            durable_removal(clip,ctl(s,args.ctl,'clipboard','delete','--generation',str(victim),'--instance',instance)['result'])
             after=history(clip)
             assert after == [e for e in before if e['id']!=victim], (before,after)
             assert clip()['total']==24 and clip()['returned']==20, clip()
-            assert ctl(s,args.ctl,'clipboard','select','--generation',str(victim),code=4)['err']['code'] == 'Stale'
+            assert ctl(s,args.ctl,'clipboard','select','--generation',str(victim),'--instance',instance,code=4)['err']['code'] == 'Stale'
             checks['paged-history-durable-delete-and-stale-entry-actions'] = True
             empty()
             for text in ('keep','mid1','mid2','drop'): offer('text',text); until(clip,lambda v:v['entries'] and v['entries'][0]['preview']==text)
             assert [e['preview'] for e in clip()['entries']]==['drop','mid2','mid1','keep']
-            ctl(s,args.ctl,'clipboard','select','--generation',str(clip()['entries'][-1]['id']))
+            ctl(s,args.ctl,'clipboard','select','--generation',str(clip()['entries'][-1]['id']),'--instance',instance)
             assert [e['preview'] for e in clip()['entries']]==['keep','drop','mid2','mid1'], clip()['entries']
             checks['copying-an-entry-promotes-it-to-most-recent'] = True
             empty()
             png = s.output/'input.png'; metadata=PngImagePlugin.PngInfo(); metadata.add_text('private-note','metadata-must-not-survive',zip=True); Image.new('RGB',(64,32),(234,71,106)).save(png,pnginfo=metadata)
             offer('png',str(png)); entry = until(clip,lambda v:len(v['entries'])==1)['entries'][0]; assert entry['kind']=='png'
-            ctl(s,args.ctl,'clipboard','select','--generation',str(entry['id']))
+            ctl(s,args.ctl,'clipboard','select','--generation',str(entry['id']),'--instance',instance)
             data = subprocess.run(['wl-paste','--type','image/png'],env=s.env,stdout=subprocess.PIPE,check=True,timeout=8).stdout
             copied = s.output/'clipboard.png'; copied.write_bytes(data); assert Image.open(copied).size == (64,32); assert 'private-note' not in Image.open(copied).info
             # Receiver quits early; Pearl must survive EPIPE and release the transfer.
@@ -161,7 +169,7 @@ def main():
             until(lambda:status(s,args.ctl),lambda v:v['popup'] is None)
             assert s.run(['wl-paste','--no-newline']).stdout=='beta two'
             assert [e['preview'] for e in clip()['entries']]==['beta two','alpha three']
-            ctl(s,args.ctl,'clipboard','select','--generation',str(clip()['entries'][0]['id']))
+            ctl(s,args.ctl,'clipboard','select','--generation',str(clip()['entries'][0]['id']),'--instance',instance)
             assert s.run(['wl-paste','--no-newline']).stdout=='beta two'
             ctl(s,args.ctl,'clipboard','toggle','--output',oid); shown(['beta two','alpha three'])
             point(until(panel,lambda v:len(v['rows'])==2 and v['rows'][1]['remove'])['rows'][1]['remove'])

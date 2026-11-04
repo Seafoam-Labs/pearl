@@ -238,6 +238,7 @@ def main():
                 authority.expect('command=' + json.dumps(data, sort_keys=True))
 
             retained = history(clip)
+            instance = clip()['instance']
             show()
             probe(':delay:300')
             type_query('=77+1', settle=False)
@@ -249,7 +250,7 @@ def main():
             time.sleep(.4)
             hidden(clip())
             assert ctl(s, args.ctl, 'clipboard', 'show', code=4)['err']['code'] == 'Locked'
-            assert ctl(s, args.ctl, 'clipboard', 'select', '--generation', str(retained[0]['id']), code=4)['err']['code'] == 'Locked'
+            assert ctl(s, args.ctl, 'clipboard', 'select', '--generation', str(retained[0]['id']), '--instance', instance, code=4)['err']['code'] == 'Locked'
             authority_command(cancel=True)
             until(clip, lambda v: not v['locked'] and v['available'])
             time.sleep(.4)

@@ -192,7 +192,7 @@ pub const usage = @import("i18n").mark(
     \\                                 [--revision N] [--instance INSTANCE]
     \\       pearlctl clipboard status --operation TOKEN --instance INSTANCE
     \\       pearlctl clipboard show|toggle|clear
-    \\       pearlctl clipboard select|delete --generation ENTRY_ID [--instance INSTANCE]
+    \\       pearlctl clipboard select|delete --generation ENTRY_ID --instance INSTANCE
     \\         Use next_offset and pin revision/instance while paging. Stale pages must restart.
     \\         Clear/Delete replies are queued receipts; poll status for durable completion.
     \\       pearlctl migrate dms --input SETTINGS [--session-file SESSION] [--base PEARL_JSON] [--bundle NEW_DIRECTORY]
@@ -369,7 +369,7 @@ test "session controls bind generations and reject missing or unrelated action f
 
 test "clipboard and capture commands validate identities, paths and region bounds" {
     const t = std.testing;
-    _ = try parse(&.{ "clipboard", "select", "--generation", "42" });
+    _ = try parse(&.{ "clipboard", "select", "--generation", "42", "--instance", "0123456789abcdef0123456789abcdef" });
     _ = try parse(&.{ "capture", "region", "--output", "1", "--text", "5,7,101,99" });
     _ = try parse(&.{ "capture", "save", "--generation", "1", "--path", "/tmp/private.png" });
     try t.expectEqual(protocol.Op.clipboard_toggle, (try parse(&.{ "clipboard", "toggle" })).request.op);
@@ -377,7 +377,7 @@ test "clipboard and capture commands validate identities, paths and region bound
     try t.expectError(error.Usage, parse(&.{ "clipboard", "toggle", "--text", "x" }));
     try t.expectError(error.Usage, parse(&.{ "clipboard", "toggle", "--generation", "1" }));
     try t.expectError(error.Usage, parse(&.{ "clipboard", "select" }));
-    try t.expectError(error.Usage, parse(&.{ "clipboard", "delete", "--generation", "0" }));
+    try t.expectError(error.Usage, parse(&.{ "clipboard", "delete", "--generation", "0", "--instance", "0123456789abcdef0123456789abcdef" }));
     try t.expectError(error.Usage, parse(&.{ "capture", "region", "--text", "-1,0,1,1" }));
     try t.expectError(error.Usage, parse(&.{ "capture", "save", "--generation", "1", "--path", "relative.png" }));
     try t.expectError(error.Usage, parse(&.{ "capture", "copy", "--generation", "1", "--path", "/tmp/private.png" }));
@@ -410,14 +410,18 @@ test "clipboard status pagination preserves defaults and validates bounded flags
     }) |args| try t.expectError(error.Usage, parse(args));
 }
 
-test "clipboard operation polling is instance qualified and retains legacy entry commands" {
+test "clipboard operation polling and entry commands require an instance" {
     const t = std.testing;
     const query = (try parse(&.{ "clipboard", "status", "--operation", "12", "--instance", "0123456789abcdef0123456789abcdef" })).request;
     try t.expectEqual(@as(?u64, 12), query.operation);
     try t.expectError(error.Usage, parse(&.{ "clipboard", "status", "--operation", "12" }));
     try t.expectError(error.Usage, parse(&.{ "clipboard", "status", "--operation", "0", "--instance", "0123456789abcdef0123456789abcdef" }));
-    _ = try parse(&.{ "clipboard", "delete", "--generation", "12" });
-    _ = try parse(&.{ "clipboard", "select", "--generation", "12", "--instance", "0123456789abcdef0123456789abcdef" });
+    inline for (.{ "select", "delete" }) |op| {
+        _ = try parse(&.{ "clipboard", op, "--generation", "12", "--instance", "0123456789abcdef0123456789abcdef" });
+        try t.expectError(error.Usage, parse(&.{ "clipboard", op, "--generation", "12" }));
+        try t.expectError(error.Usage, parse(&.{ "clipboard", op, "--generation", "12", "--instance", "bad" }));
+    }
+    inline for (.{ "status", "show", "toggle", "clear" }) |op| _ = try parse(&.{ "clipboard", op });
     _ = try parse(&.{ "clipboard", "clear", "--instance", "0123456789abcdef0123456789abcdef" });
 }
 
