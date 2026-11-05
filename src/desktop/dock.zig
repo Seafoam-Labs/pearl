@@ -369,8 +369,16 @@ pub const Dock = struct {
         self.scroll.setPolicy(if (vertical) .never else .automatic, if (vertical) .automatic else .never);
         self.scroll.setMaxContentWidth(if (vertical) -1 else length);
         self.scroll.setMaxContentHeight(if (vertical) length else -1);
-        // The bar section owns sizing and anchoring for embedded strips.
-        if (self.embedded) return;
+        if (self.embedded) {
+            // The cross axis must clamp to the bar thickness: a NEVER policy
+            // makes GTK ignore max-content, so use EXTERNAL (bounded natural
+            // size, no scrollbar). The manager sets the cross max-content.
+            self.scroll.setPolicy(if (vertical) .external else .automatic, if (vertical) .automatic else .external);
+            // The strip hugs its icons; center it across the bar thickness.
+            self.scroll.as(gtk.Widget).setHalign(if (vertical) .center else .fill);
+            self.scroll.as(gtk.Widget).setValign(if (vertical) .fill else .center);
+            return;
+        }
         const estimate: i32 = @intCast(@max(1, self.count) * (@as(usize, self.config.icon_size) + 36) + 12);
         const width = if (vertical) @as(i32, self.config.icon_size) + 40 else @min(length, estimate);
         const height = if (vertical) @min(length, estimate) else @as(i32, self.config.icon_size) + 40;

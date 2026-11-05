@@ -1259,7 +1259,10 @@ pub const Manager = struct {
             // request to the bar thickness so the bar never resizes.
             if (o.bar.?.bar.?.dock_widget) |widget| {
                 var dock_prefs = self.preferences.prefs().dockForOutput(o.connector);
-                const bar_thickness = @as(i32, o.reservations.bar_size);
+                // Use the configured size, not reservations.bar_size: the bar's
+                // measured height is written back there after each paint, so a
+                // stretched bar would otherwise feed its own oversize icons.
+                const bar_thickness = @as(i32, self.preferences.prefs().forOutput(o.connector).size);
                 const fit = @min(64, @max(16, bar_thickness - 15));
                 dock_prefs.icon_size = @intCast(@min(@as(i32, dock_prefs.icon_size), fit));
                 try widget.update(dock_prefs, o.reservations.bar_edge, bounds, dock_locked);
