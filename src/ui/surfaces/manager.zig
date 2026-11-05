@@ -534,7 +534,7 @@ pub const Manager = struct {
         const gate = self.lifecycle.gate;
         const matched = if (self.effects.display_session) |identity| std.mem.eql(u8, &identity, self.client.model.session) else false;
         const locked = (if (self.activity) |broker| broker.inhibited() else false) or !matched or self.client.availability != .ready or !gate.available or !gate.active or gate.locked or gate.requesting or gate.preparing or self.auth.request != null or (if (self.client.model.get(.session, "session")) |session| session.locked else true);
-        for (self.outputs.items) |output| if (output.bar) |surface| if (surface.autohide) |controller| controller.inhibit(self.barInhibited());
+        for (self.outputs.items) |output| if (output.bar) |surface| if (surface.autohide) |controller| controller.inhibit(self.barInhibited(), self.lifecycle.saver_on);
         // A lock request may originate inside a flyout button callback. Revoke
         // reveal immediately, but destroy that callback's view from syncIdle.
         if (self.barInhibited() and self.popup != null) self.schedule();
@@ -1213,7 +1213,9 @@ pub const Manager = struct {
                 }
                 self.preferences.style(o.bar.?.window.as(gtk.Widget), o.bar.?.panel);
                 o.bar.?.bar.?.styleIslands();
+                try o.bar.?.bar.?.setBorderRadius(pref.radius);
                 o.bar.?.effects.islands = if (pref.islands) &o.bar.?.bar.?.sections else null;
+                o.bar.?.effects.radius = pref.radius;
                 o.preferences_revision = self.preferences.appearance;
             }
             const changed = !std.meta.eql(o.bounds, bounds) or !std.meta.eql(o.usable, usable);
@@ -1228,7 +1230,7 @@ pub const Manager = struct {
                 bar.update();
             };
             const gate = self.lifecycle.gate;
-            const dock_locked = self.client.model.get(.session, "session").?.locked or gate.locked or gate.requesting or gate.preparing or self.auth.request != null or (self.lifecycle.session_id.slice().len != 0 and (!gate.available or !gate.active));
+            const dock_locked = self.client.model.get(.session, "session").?.locked or gate.locked or gate.requesting or gate.preparing or self.auth.request != null or (self.lifecycle.session_id.slice().len != 0 and (!gate.available or !gate.active)) or self.lifecycle.saver_on;
             if (dock_locked and (self.pane == .running_apps or self.pane == .launcher_picker)) {
                 log.info("event=popup-close-reason reason=dock-locked", .{});
                 self.hidePopup();
@@ -1241,13 +1243,32 @@ pub const Manager = struct {
                     const win = entity_.window;
                     if (win.visible and !win.minimized and win.fullscreen and win.output != null and std.mem.eql(u8, win.output.?, o.id)) fullscreen = true;
                 };
-                controller.configure(self.preferences.prefs().forOutput(o.connector).mode, o.bar.?.edge, o.reservations.bar_size, self.barInhibited(), fullscreen);
+                controller.configure(self.preferences.prefs().forOutput(o.connector).mode, o.bar.?.edge, o.reservations.bar_size, self.barInhibited(), fullscreen, self.lifecycle.saver_on);
             }
             if (o.dock) |dock| {
                 const dock_prefs = self.preferences.prefs().dockForOutput(o.connector);
                 const opacity: BarOpacity.Config = if (dock_prefs.opacity_sync) self.preferences.prefs().forOutput(o.connector).background_opacity else .{ .mode = .custom, .percent = dock_prefs.background_opacity.percent };
                 try dock.setBackgroundOpacity(opacity, self.preferences.barBackgroundColor(dock.scroll.as(gtk.Widget)));
                 try dock.update(dock_prefs, o.reservations.bar_edge, bounds, dock_locked);
+            }
+            // The bar-widget dock shares the standalone dock's preferences;
+            // the bar itself owns background, blur and visibility. Icons stay
+            // at the configured dock size, only shrinking when the bar is
+            // thinner (embedded chrome: 4px padding + 1px button padding +
+            // ~10px indicator), and the scrolled window clamps the strip's
+            // request to the bar thickness so the bar never resizes.
+            if (o.bar.?.bar.?.dock_widget) |widget| {
+                var dock_prefs = self.preferences.prefs().dockForOutput(o.connector);
+                // Use the configured size, not reservations.bar_size: the bar's
+                // measured height is written back there after each paint, so a
+                // stretched bar would otherwise feed its own oversize icons.
+                const bar_thickness = @as(i32, self.preferences.prefs().forOutput(o.connector).size);
+                const fit = @min(64, @max(16, bar_thickness - 15));
+                dock_prefs.icon_size = @intCast(@min(@as(i32, dock_prefs.icon_size), fit));
+                try widget.update(dock_prefs, o.reservations.bar_edge, bounds, dock_locked);
+                const vertical = o.reservations.bar_edge == .left or o.reservations.bar_edge == .right;
+                widget.scroll.setMaxContentWidth(if (vertical) bar_thickness else -1);
+                widget.scroll.setMaxContentHeight(if (vertical) -1 else bar_thickness);
             }
             try self.syncPluginOverlays(o, dock_locked);
             if (self.osd) |surface| if (surface.output == o) positionOsd(surface);
@@ -1424,6 +1445,7 @@ pub const Manager = struct {
                 if (bar_pref.attached) panel_widget.addCssClass("pearl-bar-attached");
                 inline for ([_]fn (*gtk.Widget, c_int) callconv(.c) void{ gtk.Widget.setMarginStart, gtk.Widget.setMarginEnd, gtk.Widget.setMarginTop, gtk.Widget.setMarginBottom }) |set| set(panel_widget, if (bar_pref.attached) 0 else 4);
                 s.bar = try Bar.Bar.create(panel, self.client, output.id, s, barAction, &self.audio, &self.power, &self.network, &self.bluetooth, &self.session_services, self.plugins, &self.tasks.snapshot, &self.index, &self.scheduling, &self.weather);
+                s.bar.?.setDockDeps(.{ .preferences = &self.preferences, .tasks = &self.tasks, .context = self, .changed = appsChanged, .choose_launcher = chooseLauncher });
                 window.setChild(panel_widget);
                 s.edge = output.reservations.bar_edge;
                 sizeEdge(s, s.edge, output.reservations.bar_size);
@@ -1557,7 +1579,10 @@ pub const Manager = struct {
         self.styleSurface(s);
         const effect_panel = if (kind == .switcher) s.switcher_controls.? else if (kind == .popup and s.viewport != null) s.viewport.?.as(gtk.Widget) else panel_widget;
         try s.effects.init(&self.effects, window, effect_panel, kind == .bar or kind == .popup or kind == .osd or kind == .notification or kind == .switcher, if (kind == .popup) .full else if (kind == .bar or kind == .notification or kind == .switcher) .panel else .empty);
-        if (s.bar) |bar| s.effects.islands = if (bar.islands) &bar.sections else null;
+        if (s.bar) |bar| {
+            s.effects.islands = if (bar.islands) &bar.sections else null;
+            s.effects.radius = self.preferences.prefs().forOutput(output.connector).radius;
+        }
         if (kind == .bar) {
             _ = gtk.Widget.signals.map.connect(window.as(gtk.Widget), *Surface, barMapped, s, .{});
             s.autohide = BarAutohide.create(window, output.monitor, s, barVisibilityChanged) catch |err| blk: {
@@ -1566,7 +1591,7 @@ pub const Manager = struct {
             };
             if (s.autohide) |controller| {
                 self.styleReveal(controller);
-                controller.configure(self.preferences.prefs().forOutput(output.connector).mode, s.edge, output.reservations.bar_size, self.barInhibited(), false);
+                controller.configure(self.preferences.prefs().forOutput(output.connector).mode, s.edge, output.reservations.bar_size, self.barInhibited(), false, self.lifecycle.saver_on);
             } else window.present();
         } else if (kind != .popup and kind != .osd and kind != .frame and kind != .notification and kind != .switcher) window.present();
         return s;
@@ -2385,7 +2410,7 @@ pub const Manager = struct {
                 const s = o.bar.?;
                 s.edge = request.edge.?;
                 sizeEdge(s, s.edge, request.size.?);
-                if (s.autohide) |controller| controller.configure(controller.state.mode, s.edge, request.size.?, controller.state.inhibited, controller.fullscreen);
+                if (s.autohide) |controller| controller.configure(controller.state.mode, s.edge, request.size.?, controller.state.inhibited, controller.fullscreen, controller.state.saver);
             },
             .frame_set => {
                 const o = try self.selected(request.output);
