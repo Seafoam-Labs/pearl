@@ -534,7 +534,7 @@ pub const Manager = struct {
         const gate = self.lifecycle.gate;
         const matched = if (self.effects.display_session) |identity| std.mem.eql(u8, &identity, self.client.model.session) else false;
         const locked = (if (self.activity) |broker| broker.inhibited() else false) or !matched or self.client.availability != .ready or !gate.available or !gate.active or gate.locked or gate.requesting or gate.preparing or self.auth.request != null or (if (self.client.model.get(.session, "session")) |session| session.locked else true);
-        for (self.outputs.items) |output| if (output.bar) |surface| if (surface.autohide) |controller| controller.inhibit(self.barInhibited());
+        for (self.outputs.items) |output| if (output.bar) |surface| if (surface.autohide) |controller| controller.inhibit(self.barInhibited(), self.lifecycle.saver_on);
         // A lock request may originate inside a flyout button callback. Revoke
         // reveal immediately, but destroy that callback's view from syncIdle.
         if (self.barInhibited() and self.popup != null) self.schedule();
@@ -1230,7 +1230,7 @@ pub const Manager = struct {
                 bar.update();
             };
             const gate = self.lifecycle.gate;
-            const dock_locked = self.client.model.get(.session, "session").?.locked or gate.locked or gate.requesting or gate.preparing or self.auth.request != null or (self.lifecycle.session_id.slice().len != 0 and (!gate.available or !gate.active));
+            const dock_locked = self.client.model.get(.session, "session").?.locked or gate.locked or gate.requesting or gate.preparing or self.auth.request != null or (self.lifecycle.session_id.slice().len != 0 and (!gate.available or !gate.active)) or self.lifecycle.saver_on;
             if (dock_locked and (self.pane == .running_apps or self.pane == .launcher_picker)) {
                 log.info("event=popup-close-reason reason=dock-locked", .{});
                 self.hidePopup();
@@ -1243,7 +1243,7 @@ pub const Manager = struct {
                     const win = entity_.window;
                     if (win.visible and !win.minimized and win.fullscreen and win.output != null and std.mem.eql(u8, win.output.?, o.id)) fullscreen = true;
                 };
-                controller.configure(self.preferences.prefs().forOutput(o.connector).mode, o.bar.?.edge, o.reservations.bar_size, self.barInhibited(), fullscreen);
+                controller.configure(self.preferences.prefs().forOutput(o.connector).mode, o.bar.?.edge, o.reservations.bar_size, self.barInhibited(), fullscreen, self.lifecycle.saver_on);
             }
             if (o.dock) |dock| {
                 const dock_prefs = self.preferences.prefs().dockForOutput(o.connector);
@@ -1583,7 +1583,7 @@ pub const Manager = struct {
             };
             if (s.autohide) |controller| {
                 self.styleReveal(controller);
-                controller.configure(self.preferences.prefs().forOutput(output.connector).mode, s.edge, output.reservations.bar_size, self.barInhibited(), false);
+                controller.configure(self.preferences.prefs().forOutput(output.connector).mode, s.edge, output.reservations.bar_size, self.barInhibited(), false, self.lifecycle.saver_on);
             } else window.present();
         } else if (kind != .popup and kind != .osd and kind != .frame and kind != .notification and kind != .switcher) window.present();
         return s;
@@ -2402,7 +2402,7 @@ pub const Manager = struct {
                 const s = o.bar.?;
                 s.edge = request.edge.?;
                 sizeEdge(s, s.edge, request.size.?);
-                if (s.autohide) |controller| controller.configure(controller.state.mode, s.edge, request.size.?, controller.state.inhibited, controller.fullscreen);
+                if (s.autohide) |controller| controller.configure(controller.state.mode, s.edge, request.size.?, controller.state.inhibited, controller.fullscreen, controller.state.saver);
             },
             .frame_set => {
                 const o = try self.selected(request.output);

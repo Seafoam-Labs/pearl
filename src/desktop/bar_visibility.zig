@@ -1,11 +1,13 @@
 //! Pure autohide transitions; timestamps and dimensions are logical milliseconds/pixels.
 const std = @import("std");
 pub const Mode = enum { always, autohide };
-pub const Reason = enum { always, inhibited, pointer, interaction, delay, hidden };
+pub const Reason = enum { always, inhibited, saver, pointer, interaction, delay, hidden };
 pub const hide_delay_ms = 450;
 pub const State = struct {
     mode: Mode = .always,
     inhibited: bool = true,
+    /// Screensaver active: the bar yields in every mode so the saver covers it.
+    saver: bool = false,
     bar_pointer: bool = false,
     sensor_pointer: bool = false,
     popup: bool = false,
@@ -23,6 +25,7 @@ pub const State = struct {
     }
     pub fn update(self: *State, now: i64) void {
         self.reason = blk: {
+            if (self.saver) break :blk .saver;
             if (self.mode == .always) break :blk .always;
             if (self.inhibited) {
                 self.resetPointer();
@@ -39,17 +42,36 @@ pub const State = struct {
         };
         self.visible = switch (self.reason) {
             .always, .pointer, .interaction, .delay => true,
-            .hidden, .inhibited => false,
+            .hidden, .inhibited, .saver => false,
         };
         if (self.reason != .delay) self.deadline = null;
     }
     pub fn sensor(self: State) bool {
-        return self.mode == .autohide and !self.inhibited;
+        return self.mode == .autohide and !self.inhibited and !self.saver;
     }
     pub fn exclusiveZone(self: State, thickness: i32) i32 {
         return if (self.mode == .always) thickness else -1;
     }
 };
+
+test "screensaver hides the bar in every mode and restores it afterwards" {
+    const t = std.testing;
+    var s: State = .{ .mode = .always, .inhibited = false };
+    s.update(0);
+    try t.expect(s.visible);
+    s.saver = true;
+    s.update(10);
+    try t.expect(!s.visible and s.reason == .saver and !s.sensor());
+    s.mode = .autohide;
+    s.update(20);
+    try t.expect(!s.visible);
+    s.saver = false;
+    s.update(30);
+    try t.expect(!s.visible and s.sensor());
+    s.mode = .always;
+    s.update(40);
+    try t.expect(s.visible);
+}
 
 test "autohide starts hidden and independent pointer events cancel stale deadlines" {
     const t = std.testing;
