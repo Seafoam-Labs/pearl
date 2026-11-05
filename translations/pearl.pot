@@ -59,11 +59,11 @@ msgstr ""
 msgid ", minimized"
 msgstr ""
 
-#: src/desktop/bar.zig:630
+#: src/desktop/bar.zig:657
 msgid "-"
 msgstr ""
 
-#: src/desktop/bar.zig:627
+#: src/desktop/bar.zig:654
 msgid "..."
 msgstr ""
 
@@ -135,7 +135,7 @@ msgstr ""
 msgid "A profile takes at most 32 options."
 msgstr ""
 
-#: src/desktop/dock.zig:618
+#: src/desktop/dock.zig:669
 msgid "A unique application identity is needed. Existing choices can be removed in Settings."
 msgstr ""
 
@@ -202,7 +202,7 @@ msgstr ""
 msgid "Action unavailable or failed. Try again."
 msgstr ""
 
-#: src/desktop/dock.zig:842 src/desktop/dock.zig:863
+#: src/desktop/dock.zig:893 src/desktop/dock.zig:914
 msgid "Action unavailable; the application or window may have changed."
 msgstr ""
 
@@ -518,7 +518,7 @@ msgstr ""
 msgid "Application themes"
 msgstr ""
 
-#: src/desktop/bar.zig:372 src/settings/sound_view.zig:265
+#: src/desktop/bar.zig:399 src/settings/sound_view.zig:265
 msgid "Applications"
 msgstr ""
 
@@ -530,7 +530,7 @@ msgstr ""
 msgid "Applications are still loading. Retry shortly."
 msgstr ""
 
-#: src/desktop/dock.zig:160
+#: src/desktop/dock.zig:165 src/desktop/dock.zig:204
 msgid "Applications dock"
 msgstr ""
 
@@ -667,7 +667,7 @@ msgstr ""
 msgid "Attach bar to screen edge"
 msgstr ""
 
-#: src/desktop/bar.zig:606 src/desktop/services.zig:115
+#: src/desktop/bar.zig:633 src/desktop/services.zig:115
 msgid "Audio unavailable"
 msgstr ""
 
@@ -905,11 +905,11 @@ msgstr ""
 msgid "Bluetooth PIN or passkey"
 msgstr ""
 
-#: src/desktop/bar.zig:672
+#: src/desktop/bar.zig:699
 msgid "Bluetooth off"
 msgstr ""
 
-#: src/desktop/bar.zig:672
+#: src/desktop/bar.zig:699
 msgid "Bluetooth on"
 msgstr ""
 
@@ -917,7 +917,7 @@ msgstr ""
 msgid "Bluetooth pairing"
 msgstr ""
 
-#: src/desktop/bar.zig:672
+#: src/desktop/bar.zig:699
 msgid "Bluetooth unavailable"
 msgstr ""
 
@@ -1343,7 +1343,7 @@ msgstr ""
 msgid "Clipboard"
 msgstr ""
 
-#: src/desktop/bar.zig:378 src/desktop/clipboard_capture.zig:110
+#: src/desktop/bar.zig:405 src/desktop/clipboard_capture.zig:110
 msgid "Clipboard & capture"
 msgstr ""
 
@@ -1582,7 +1582,7 @@ msgstr ""
 msgid "Connect to"
 msgstr ""
 
-#: src/ui/i18n.zig:18 src/desktop/bar.zig:659 src/ui/components/network.zig:298 src/ui/components/network.zig:488
+#: src/ui/i18n.zig:18 src/desktop/bar.zig:686 src/ui/components/network.zig:298 src/ui/components/network.zig:488
 msgid "Connected"
 msgstr ""
 
@@ -1610,7 +1610,7 @@ msgstr ""
 msgid "Connecting to your Pearl session…"
 msgstr ""
 
-#: src/desktop/bar.zig:659 src/ui/components/network.zig:298 src/ui/components/network.zig:494
+#: src/desktop/bar.zig:686 src/ui/components/network.zig:298 src/ui/components/network.zig:494
 msgid "Connecting…"
 msgstr ""
 
@@ -1829,7 +1829,7 @@ msgctxt "aqueous.desktop.cursor.theme.label"
 msgid "Cursor theme"
 msgstr ""
 
-#: src/desktop/bar.zig:629 src/settings/power_view.zig:214 src/settings/scheduler_view.zig:166
+#: src/desktop/bar.zig:656 src/settings/power_view.zig:214 src/settings/scheduler_view.zig:166
 msgid "Custom"
 msgstr ""
 
@@ -1877,23 +1877,23 @@ msgstr ""
 msgid "Custom: {0} seconds"
 msgstr ""
 
-#: src/desktop/bar.zig:376
+#: src/desktop/bar.zig:403
 msgid "Cycle windows"
 msgstr ""
 
-#: src/desktop/bar.zig:582
+#: src/desktop/bar.zig:609
 msgid "Cycle windows across all workspaces and displays"
 msgstr ""
 
-#: src/desktop/bar.zig:582
+#: src/desktop/bar.zig:609
 msgid "Cycle windows on this workspace"
 msgstr ""
 
-#: src/desktop/bar.zig:582
+#: src/desktop/bar.zig:609
 msgid "Cycle windows requires updated Aqueous"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:1541
+#: src/ui/surfaces/manager.zig:1558
 msgid "Cycle →"
 msgstr ""
 
@@ -1930,7 +1930,7 @@ msgstr ""
 msgid "December"
 msgstr ""
 
-#: src/desktop/bar.zig:626 src/services/scheduling.zig:217
+#: src/desktop/bar.zig:653 src/services/scheduling.zig:217
 msgid "Default"
 msgstr ""
 
@@ -1995,7 +1995,7 @@ msgstr ""
 msgid "Design review"
 msgstr ""
 
-#: src/desktop/bar.zig:694 src/desktop/bar.zig:695
+#: src/desktop/bar.zig:721 src/desktop/bar.zig:722
 msgid "Desktop"
 msgstr ""
 
@@ -2572,7 +2572,7 @@ msgstr ""
 msgid "Fahrenheit (°F)"
 msgstr ""
 
-#: src/desktop/bar.zig:628
+#: src/desktop/bar.zig:655
 msgid "Failed"
 msgstr ""
 
@@ -2590,7 +2590,7 @@ msgstr ""
 msgid "February"
 msgstr ""
 
-#: src/desktop/bar.zig:687 src/desktop/weather_view.zig:35
+#: src/desktop/bar.zig:714 src/desktop/weather_view.zig:35
 msgid "Fetching weather…"
 msgstr ""
 
@@ -3292,7 +3292,7 @@ msgstr ""
 msgid "Layout behavior"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:2638
+#: src/ui/surfaces/manager.zig:2655
 msgid "Layout change unavailable"
 msgstr ""
 
@@ -3665,7 +3665,7 @@ msgstr ""
 msgid "Meadow"
 msgstr ""
 
-#: src/desktop/bar.zig:350
+#: src/desktop/bar.zig:377
 msgid "Media"
 msgstr ""
 
@@ -3812,7 +3812,7 @@ msgstr ""
 msgid "Mute"
 msgstr ""
 
-#: src/desktop/bar.zig:600 src/ui/surfaces/osd.zig:19 src/ui/surfaces/osd.zig:81
+#: src/desktop/bar.zig:627 src/ui/surfaces/osd.zig:19 src/ui/surfaces/osd.zig:81
 msgid "Muted"
 msgstr ""
 
@@ -3870,7 +3870,7 @@ msgstr ""
 msgid "Network settings"
 msgstr ""
 
-#: src/desktop/bar.zig:659
+#: src/desktop/bar.zig:686
 msgid "Network unavailable"
 msgstr ""
 
@@ -4018,11 +4018,11 @@ msgstr ""
 msgid "No open applications"
 msgstr ""
 
-#: src/desktop/bar.zig:582
+#: src/desktop/bar.zig:609
 msgid "No open windows"
 msgstr ""
 
-#: src/desktop/bar.zig:582
+#: src/desktop/bar.zig:609
 msgid "No open windows on this workspace"
 msgstr ""
 
@@ -4107,7 +4107,7 @@ msgstr ""
 msgid "Notification filters"
 msgstr ""
 
-#: src/desktop/bar.zig:350 src/desktop/notifications.zig:28 src/desktop/settings_navigation.zig:33
+#: src/desktop/bar.zig:377 src/desktop/notifications.zig:28 src/desktop/settings_navigation.zig:33
 msgid "Notifications"
 msgstr ""
 
@@ -4136,7 +4136,7 @@ msgstr ""
 msgid "October"
 msgstr ""
 
-#: src/ui/i18n.zig:22 src/desktop/bar.zig:657 src/settings/editor.zig:818 src/settings/power_view.zig:125 src/settings/power_view.zig:196 src/settings/preferences_view.zig:494
+#: src/ui/i18n.zig:22 src/desktop/bar.zig:684 src/settings/editor.zig:818 src/settings/power_view.zig:125 src/settings/power_view.zig:196 src/settings/preferences_view.zig:494
 msgid "Off"
 msgstr ""
 
@@ -4152,7 +4152,7 @@ msgstr ""
 msgid "Offline · showing cached repository metadata"
 msgstr ""
 
-#: src/ui/i18n.zig:23 src/desktop/bar.zig:657 src/settings/preferences_view.zig:494
+#: src/ui/i18n.zig:23 src/desktop/bar.zig:684 src/settings/preferences_view.zig:494
 msgid "On"
 msgstr ""
 
@@ -4193,7 +4193,7 @@ msgstr ""
 msgid "One taskbar button per window"
 msgstr ""
 
-#: src/desktop/bar.zig:582
+#: src/desktop/bar.zig:609
 msgid "Only window on this workspace"
 msgstr ""
 
@@ -4219,11 +4219,11 @@ msgstr ""
 msgid "Open Advanced"
 msgstr ""
 
-#: src/desktop/bar.zig:672
+#: src/desktop/bar.zig:699
 msgid "Open Bluetooth controls"
 msgstr ""
 
-#: src/desktop/bar.zig:636
+#: src/desktop/bar.zig:663
 msgid "Open CPU scheduler profiles"
 msgstr ""
 
@@ -4231,11 +4231,11 @@ msgstr ""
 msgid "Open Desktop folder"
 msgstr ""
 
-#: src/desktop/bar.zig:659
+#: src/desktop/bar.zig:686
 msgid "Open Network controls"
 msgstr ""
 
-#: src/desktop/bar.zig:619
+#: src/desktop/bar.zig:646
 msgid "Open Power controls"
 msgstr ""
 
@@ -4243,7 +4243,7 @@ msgstr ""
 msgid "Open Qt appearance settings…"
 msgstr ""
 
-#: src/desktop/bar.zig:606
+#: src/desktop/bar.zig:633
 msgid "Open Sound controls"
 msgstr ""
 
@@ -4272,7 +4272,7 @@ msgctxt "aqueous.layout.options.scrolling.open_new_windows_to_right.label"
 msgid "Open new windows to the right"
 msgstr ""
 
-#: src/desktop/bar.zig:380
+#: src/desktop/bar.zig:407
 msgid "Open settings Overview"
 msgstr ""
 
@@ -4280,7 +4280,7 @@ msgstr ""
 msgid "Open terminal"
 msgstr ""
 
-#: src/desktop/bar.zig:676
+#: src/desktop/bar.zig:703
 msgid "Open weather forecast"
 msgstr ""
 
@@ -4377,7 +4377,7 @@ msgstr ""
 msgid "Overcast"
 msgstr ""
 
-#: src/desktop/bar.zig:377 src/desktop/settings_navigation.zig:25
+#: src/desktop/bar.zig:404 src/desktop/settings_navigation.zig:25
 msgid "Overview"
 msgstr ""
 
@@ -4474,7 +4474,7 @@ msgstr ""
 msgid "Pause automatic idle"
 msgstr ""
 
-#: src/core/application.zig:179 src/ui/surfaces/manager.zig:1338
+#: src/core/application.zig:179 src/ui/surfaces/manager.zig:1354
 msgid "Pearl"
 msgstr ""
 
@@ -4510,11 +4510,11 @@ msgstr ""
 msgid "Pearl bar reveal"
 msgstr ""
 
-#: src/desktop/dock.zig:148
+#: src/desktop/dock.zig:153
 msgid "Pearl dock"
 msgstr ""
 
-#: src/desktop/dock.zig:148
+#: src/desktop/dock.zig:153
 msgid "Pearl dock reveal"
 msgstr ""
 
@@ -4859,7 +4859,7 @@ msgstr ""
 msgid "Preview only · committed appearance is unchanged. To select a package, choose Use theme, then Apply & save."
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:1540
+#: src/ui/surfaces/manager.zig:1557
 msgid "Previous"
 msgstr ""
 
@@ -5190,7 +5190,7 @@ msgstr ""
 msgid "Resolution"
 msgstr ""
 
-#: src/desktop/bar.zig:333 src/desktop/resource_view.zig:247
+#: src/desktop/bar.zig:360 src/desktop/resource_view.zig:247
 msgid "Resource monitor"
 msgstr ""
 
@@ -6642,7 +6642,7 @@ msgstr ""
 msgid "Switch dark / light"
 msgstr ""
 
-#: src/desktop/bar.zig:443
+#: src/desktop/bar.zig:470
 msgid "Switch keyboard layout"
 msgstr ""
 
@@ -6779,11 +6779,11 @@ msgstr ""
 msgid "The default profiles could not be restored."
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:1312
+#: src/ui/surfaces/manager.zig:1328
 msgid "The desktop action could not be completed."
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:1308
+#: src/ui/surfaces/manager.zig:1324
 msgid "The desktop action could not be confirmed."
 msgstr ""
 
@@ -7253,7 +7253,7 @@ msgstr ""
 msgid "Use launcher"
 msgstr ""
 
-#: src/desktop/dock.zig:604 src/desktop/dock.zig:605
+#: src/desktop/dock.zig:655 src/desktop/dock.zig:656
 msgid "Use launcher…"
 msgstr ""
 
@@ -7417,7 +7417,7 @@ msgstr ""
 msgid "Waits for pending Aqueous edits. Turning off keeps the last colors; GTK mode pauses synchronization."
 msgstr ""
 
-#: src/desktop/bar.zig:379 src/desktop/wallpapers.zig:60 src/settings/preferences_view.zig:194
+#: src/desktop/bar.zig:406 src/desktop/wallpapers.zig:60 src/settings/preferences_view.zig:194
 msgid "Wallpaper"
 msgstr ""
 
@@ -7461,7 +7461,7 @@ msgstr ""
 msgid "Weak signal"
 msgstr ""
 
-#: src/desktop/bar.zig:368 src/desktop/weather_policy.zig:154
+#: src/desktop/bar.zig:395 src/desktop/weather_policy.zig:154
 msgid "Weather"
 msgstr ""
 
@@ -7469,7 +7469,7 @@ msgstr ""
 msgid "Weather location search"
 msgstr ""
 
-#: src/desktop/bar.zig:687 src/desktop/weather_view.zig:35
+#: src/desktop/bar.zig:714 src/desktop/weather_view.zig:35
 msgid "Weather unavailable"
 msgstr ""
 
@@ -7485,7 +7485,7 @@ msgstr ""
 msgid "When a notification matches"
 msgstr ""
 
-#: src/ui/i18n.zig:17 src/desktop/bar.zig:657 src/desktop/connectivity.zig:75 src/ui/components/network.zig:89 src/ui/components/network.zig:92
+#: src/ui/i18n.zig:17 src/desktop/bar.zig:684 src/desktop/connectivity.zig:75 src/ui/components/network.zig:89 src/ui/components/network.zig:92
 msgid "Wi-Fi"
 msgstr ""
 
@@ -7497,11 +7497,11 @@ msgstr ""
 msgid "Wi-Fi is turned off. Turn it on to find nearby networks."
 msgstr ""
 
-#: src/desktop/bar.zig:659
+#: src/desktop/bar.zig:686
 msgid "Wi-Fi off"
 msgstr ""
 
-#: src/desktop/bar.zig:659
+#: src/desktop/bar.zig:686
 msgid "Wi-Fi on"
 msgstr ""
 
@@ -7585,7 +7585,7 @@ msgstr ""
 msgid "Working…"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:1621
+#: src/ui/surfaces/manager.zig:1638
 msgid "Workspace"
 msgstr ""
 
@@ -7755,7 +7755,7 @@ msgctxt "aqueous.desktop.font.width.option"
 msgid "condensed"
 msgstr ""
 
-#: src/desktop/bar.zig:672
+#: src/desktop/bar.zig:699
 msgid "connected"
 msgstr ""
 
@@ -9011,7 +9011,7 @@ msgstr ""
 msgid "×"
 msgstr ""
 
-#: src/desktop/bar.zig:600 src/desktop/bar.zig:612 src/desktop/bar.zig:657 src/desktop/bar.zig:667 src/desktop/bar.zig:686 src/desktop/clock_view.zig:69 src/desktop/resource_view.zig:275
+#: src/desktop/bar.zig:627 src/desktop/bar.zig:639 src/desktop/bar.zig:684 src/desktop/bar.zig:694 src/desktop/bar.zig:713 src/desktop/clock_view.zig:69 src/desktop/resource_view.zig:275
 msgid "—"
 msgstr ""
 
@@ -9023,7 +9023,7 @@ msgstr ""
 msgid "•••"
 msgstr ""
 
-#: src/desktop/bar.zig:657 src/desktop/bar.zig:686
+#: src/desktop/bar.zig:684 src/desktop/bar.zig:713
 msgid "…"
 msgstr ""
 

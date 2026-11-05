@@ -1254,13 +1254,18 @@ pub const Manager = struct {
             // The bar-widget dock shares the standalone dock's preferences;
             // the bar itself owns background, blur and visibility. Icons stay
             // at the configured dock size, only shrinking when the bar is
-            // thinner than icon + chrome (embedded: 4px padding + 1px button
-            // padding + ~3px indicator) so the strip never stretches the bar.
+            // thinner (embedded chrome: 4px padding + 1px button padding +
+            // ~10px indicator), and the scrolled window clamps the strip's
+            // request to the bar thickness so the bar never resizes.
             if (o.bar.?.bar.?.dock_widget) |widget| {
                 var dock_prefs = self.preferences.prefs().dockForOutput(o.connector);
-                const fit = @min(64, @max(16, @as(i32, o.reservations.bar_size) - 8));
+                const bar_thickness = @as(i32, o.reservations.bar_size);
+                const fit = @min(64, @max(16, bar_thickness - 15));
                 dock_prefs.icon_size = @intCast(@min(@as(i32, dock_prefs.icon_size), fit));
                 try widget.update(dock_prefs, o.reservations.bar_edge, bounds, dock_locked);
+                const vertical = o.reservations.bar_edge == .left or o.reservations.bar_edge == .right;
+                widget.scroll.setMaxContentWidth(if (vertical) bar_thickness else -1);
+                widget.scroll.setMaxContentHeight(if (vertical) -1 else bar_thickness);
             }
             try self.syncPluginOverlays(o, dock_locked);
             if (self.osd) |surface| if (surface.output == o) positionOsd(surface);

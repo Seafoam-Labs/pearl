@@ -241,7 +241,8 @@
 /* Embedded bar widget: tighter chrome so the strip fits the bar thickness. */
 .pearl-root.$scope.pearl-shell .pearl-dock-embedded { padding: 2px; }
 .pearl-root.$scope.pearl-shell .pearl-dock-embedded button { padding: 1px 3px 0; min-height: 0; }
-.pearl-root.$scope.pearl-shell .pearl-dock-embedded .pearl-dock-indicator { margin-top: -5px; margin-bottom: -5px; }
+/* Keep the running dots at their natural height; negative margins squash them. */
+.pearl-root.$scope.pearl-shell .pearl-dock-embedded .pearl-dock-indicator { font-size: 0.65em; margin-top: 0; margin-bottom: 0; }
 
 .pearl-root.$scope popover > contents { background: $container$; color: $text$; border: 1px solid alpha($outline$, 0.3); border-radius: 14px; padding: 8px; }
 
