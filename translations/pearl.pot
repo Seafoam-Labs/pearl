@@ -135,7 +135,7 @@ msgstr ""
 msgid "A profile takes at most 32 options."
 msgstr ""
 
-#: src/desktop/dock.zig:669
+#: src/desktop/dock.zig:677
 msgid "A unique application identity is needed. Existing choices can be removed in Settings."
 msgstr ""
 
@@ -202,7 +202,7 @@ msgstr ""
 msgid "Action unavailable or failed. Try again."
 msgstr ""
 
-#: src/desktop/dock.zig:893 src/desktop/dock.zig:914
+#: src/desktop/dock.zig:901 src/desktop/dock.zig:922
 msgid "Action unavailable; the application or window may have changed."
 msgstr ""
 
@@ -1893,7 +1893,7 @@ msgstr ""
 msgid "Cycle windows requires updated Aqueous"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:1558
+#: src/ui/surfaces/manager.zig:1561
 msgid "Cycle →"
 msgstr ""
 
@@ -3292,7 +3292,7 @@ msgstr ""
 msgid "Layout behavior"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:2655
+#: src/ui/surfaces/manager.zig:2658
 msgid "Layout change unavailable"
 msgstr ""
 
@@ -4474,7 +4474,7 @@ msgstr ""
 msgid "Pause automatic idle"
 msgstr ""
 
-#: src/core/application.zig:179 src/ui/surfaces/manager.zig:1354
+#: src/core/application.zig:179 src/ui/surfaces/manager.zig:1357
 msgid "Pearl"
 msgstr ""
 
@@ -4859,7 +4859,7 @@ msgstr ""
 msgid "Preview only · committed appearance is unchanged. To select a package, choose Use theme, then Apply & save."
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:1557
+#: src/ui/surfaces/manager.zig:1560
 msgid "Previous"
 msgstr ""
 
@@ -6779,11 +6779,11 @@ msgstr ""
 msgid "The default profiles could not be restored."
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:1328
+#: src/ui/surfaces/manager.zig:1331
 msgid "The desktop action could not be completed."
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:1324
+#: src/ui/surfaces/manager.zig:1327
 msgid "The desktop action could not be confirmed."
 msgstr ""
 
@@ -7253,7 +7253,7 @@ msgstr ""
 msgid "Use launcher"
 msgstr ""
 
-#: src/desktop/dock.zig:655 src/desktop/dock.zig:656
+#: src/desktop/dock.zig:663 src/desktop/dock.zig:664
 msgid "Use launcher…"
 msgstr ""
 
@@ -7585,7 +7585,7 @@ msgstr ""
 msgid "Working…"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:1638
+#: src/ui/surfaces/manager.zig:1641
 msgid "Workspace"
 msgstr ""
 
