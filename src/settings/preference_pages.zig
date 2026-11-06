@@ -1,6 +1,7 @@
 //! Bar/dock forms share the existing Pearl draft coordinator.
 const std = @import("std");
 const gtk = @import("gtk4");
+const gdk = @import("gdk4");
 const object = @import("gobject2");
 const model = @import("../config/preferences.zig");
 const w = @import("../ui/components/widgets.zig");
@@ -31,10 +32,14 @@ const bar_fields = [_]Spec{
     .{ .path = "popup.max_height", .label = "Maximum flyout height", .kind = .number, .min = 320, .max = 1600 },
 };
 const Field = struct { view: *View, spec: Spec, widget: *gtk.Widget, signal: c_ulong, slider: ?*gtk.Scale = null, lock: ?*gtk.Widget = null };
+/// One "show the bar here" switch per connected display. The connector names
+/// come from GDK, so this works on any Wayland compositor.
+const DisplayField = struct { view: *View, connector: [:0]u8, widget: *gtk.Switch, signal: c_ulong };
 pub const View = struct {
     editor: *Editor,
     host: *gtk.Box,
     fields: []Field,
+    displays: []DisplayField = &.{},
     filling: bool = false,
     editing: bool = false,
     own_invalid: ?[64]u8 = null,
@@ -102,6 +107,7 @@ pub const View = struct {
                 const hint = w.label(@import("i18n").dtr("pearl", "Autohide reveals the bar at the screen edge and gives applications more space. Display overrides in Advanced take priority."), "pearl-secondary");
                 hint.setWrap(1);
                 card.append(hint.as(gtk.Widget));
+                try self.buildDisplays();
             }
             field.* = .{ .view = self, .spec = spec, .widget = widget, .signal = 0 };
             if (spec.kind == .percent) {
@@ -148,10 +154,100 @@ pub const View = struct {
         self.update();
         return self;
     }
+    fn buildDisplays(self: *View) !void {
+        var connectors: std.ArrayList([:0]const u8) = .empty;
+        defer {
+            for (connectors.items) |connector| a.free(connector);
+            connectors.deinit(a);
+        }
+        const display = self.host.as(gtk.Widget).getDisplay();
+        const monitors = display.getMonitors();
+        outer: for (0..monitors.getNItems()) |i| {
+            const item = monitors.getItem(@intCast(i)) orelse continue;
+            const monitor: *gdk.Monitor = @ptrCast(@alignCast(item));
+            defer monitor.unref();
+            if (monitor.isValid() == 0) continue;
+            const name = monitor.getConnector() orelse continue;
+            for (connectors.items) |previous| if (std.mem.eql(u8, previous, std.mem.span(name))) continue :outer;
+            try connectors.append(a, try a.dupeSentinel(u8, std.mem.span(name), 0));
+        }
+        if (connectors.items.len == 0) return;
+        // Collapsed like the Dock and Flyouts sections; the bar fields card
+        // stays compact when the user has nothing to switch off.
+        const expander = gtk.Expander.new(null);
+        expander.as(gtk.Widget).addCssClass("settings-card");
+        expander.as(gtk.Widget).addCssClass("settings-section");
+        w.tagExpanderArrow(expander, "settings-section-arrow");
+        const heading = w.column(5);
+        heading.as(gtk.Widget).addCssClass("settings-section-heading");
+        heading.append(w.label(@import("i18n").dtr("pearl", "Bar displays"), "pearl-section-title").as(gtk.Widget));
+        expander.setLabelWidget(heading.as(gtk.Widget));
+        w.name(expander.as(gtk.Widget), @import("i18n").dtr("pearl", "Bar displays"));
+        const body = w.column(0);
+        body.as(gtk.Widget).addCssClass("settings-card");
+        expander.setChild(body.as(gtk.Widget));
+        const hint = w.label(@import("i18n").dtr("pearl", "Switch the bar off on displays you do not want it on. One display always keeps its bar."), "pearl-secondary");
+        hint.setWrap(1);
+        body.append(hint.as(gtk.Widget));
+        var list: std.ArrayList(DisplayField) = .empty;
+        errdefer {
+            for (list.items) |field| object.signalHandlerDisconnect(field.widget.as(object.Object), field.signal);
+            list.deinit(a);
+        }
+        for (connectors.items) |name| {
+            const row = w.flow(2);
+            row.setHomogeneous(0);
+            row.as(gtk.Widget).addCssClass("settings-form-row");
+            const title = w.label(try std.fmt.allocPrintSentinel(a, "{s} {s}", .{ @import("i18n").dtr("pearl", "Show bar on"), name }, 0), "settings-row-title");
+            row.insert(title.as(gtk.Widget), -1);
+            const toggle = gtk.Switch.new();
+            toggle.as(gtk.Widget).setHalign(.end);
+            toggle.as(gtk.Widget).setValign(.center);
+            w.name(toggle.as(gtk.Widget), title.getText());
+            row.insert(toggle.as(gtk.Widget), -1);
+            body.append(row.as(gtk.Widget));
+            const connector = try a.dupeSentinel(u8, name, 0);
+            errdefer a.free(connector);
+            const field = try list.addOne(a);
+            field.* = .{ .view = self, .connector = connector, .widget = toggle, .signal = 0 };
+            field.signal = object.Object.signals.notify.connect(toggle.as(gtk.Widget).as(object.Object), *DisplayField, displayChanged, field, .{ .detail = "active" });
+        }
+        self.host.append(expander.as(gtk.Widget));
+        self.displays = try list.toOwnedSlice(a);
+    }
+    fn displayChanged(_: *object.Object, _: *object.ParamSpec, field: *DisplayField) callconv(.c) void {
+        field.view.saveDisplay(field);
+    }
+    fn saveDisplay(self: *View, field: *DisplayField) void {
+        if (self.filling or self.editing or !self.editor.editable()) return;
+        self.editing = true;
+        defer {
+            self.editing = false;
+            self.update();
+        }
+        var arena = std.heap.ArenaAllocator.init(a);
+        defer arena.deinit();
+        const alloc = arena.allocator();
+        const text = patchBarDisplay(alloc, self.editor.text(), field.connector, field.widget.getActive() != 0, self.own_invalid) catch |err| {
+            self.editor.error_code.set(@errorName(err));
+            return;
+        };
+        const previous = self.own_invalid;
+        self.own_invalid = @import("editor_protocol.zig").digest(text);
+        self.editor.edit(text) catch |err| {
+            self.own_invalid = previous;
+            self.editor.error_code.set(@errorName(err));
+        };
+    }
     pub fn destroy(self: *View) void {
         if (self.launchers) |view| view.destroy();
         if (self.bar) |bar| bar.destroy();
         for (self.fields) |field| object.signalHandlerDisconnect(field.widget.as(object.Object), field.signal);
+        for (self.displays) |field| {
+            object.signalHandlerDisconnect(field.widget.as(object.Object), field.signal);
+            a.free(field.connector);
+        }
+        a.free(self.displays);
         a.free(self.fields);
         a.destroy(self);
     }
@@ -169,6 +265,7 @@ pub const View = struct {
                 field.widget.setSensitive(0);
                 if (field.slider) |slider| slider.as(gtk.Widget).setSensitive(0);
             }
+            for (self.displays) |field| field.widget.as(gtk.Widget).setSensitive(0);
             return;
         };
         for (self.fields) |field| field.widget.setSensitive(@intFromBool(self.editor.editable()));
@@ -205,6 +302,16 @@ pub const View = struct {
                     if (std.mem.eql(u8, choice, value.string)) object.ext.cast(gtk.DropDown, field.widget).?.setSelected(@intCast(i));
                 },
             }
+        }
+        var shown: usize = 0;
+        for (self.displays) |field| {
+            if (!barHiddenIn(document, field.connector)) shown += 1;
+        }
+        for (self.displays) |field| {
+            const hidden = barHiddenIn(document, field.connector);
+            // The last display showing a bar cannot be switched off.
+            field.widget.as(gtk.Widget).setSensitive(@intFromBool(self.editor.editable() and (hidden or shown > 1)));
+            field.widget.setActive(@intFromBool(!hidden));
         }
     }
     fn save(field: *Field) void {
@@ -250,6 +357,25 @@ fn lookup(document: std.json.Value, path: []const u8) ?std.json.Value {
     var parts = std.mem.splitScalar(u8, path, '.');
     while (parts.next()) |part| value = if (value == .object) value.object.get(part) orelse return null else return null;
     return value;
+}
+fn barHiddenIn(document: std.json.Value, connector: []const u8) bool {
+    const value = lookup(document, "bar_hidden_outputs") orelse return false;
+    if (value != .array) return false;
+    for (value.array.items) |entry| if (entry == .string and std.mem.eql(u8, entry.string, connector)) return true;
+    return false;
+}
+fn patchBarDisplay(alloc: std.mem.Allocator, text: []const u8, connector: []const u8, shown: bool, own: ?[64]u8) ![]const u8 {
+    var document = try formDocument(alloc, text, own);
+    var hidden = std.json.Array.init(alloc);
+    if (lookup(document, "bar_hidden_outputs")) |value| if (value == .array) for (value.array.items) |entry| {
+        if (entry == .string and std.mem.eql(u8, entry.string, connector)) continue;
+        try hidden.append(entry);
+    };
+    if (!shown) try hidden.append(.{ .string = connector });
+    try document.object.put(alloc, "bar_hidden_outputs", .{ .array = hidden });
+    const result = try std.json.Stringify.valueAlloc(alloc, document, .{ .whitespace = .indent_2 });
+    _ = try model.parse(alloc, result);
+    return result;
 }
 fn formDocument(alloc: std.mem.Allocator, text: []const u8, own: ?[64]u8) !std.json.Value {
     if (own) |hash| if (std.mem.eql(u8, &hash, &@import("editor_protocol.zig").digest(text)))

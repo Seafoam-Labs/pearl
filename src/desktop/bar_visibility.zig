@@ -1,13 +1,15 @@
 //! Pure autohide transitions; timestamps and dimensions are logical milliseconds/pixels.
 const std = @import("std");
 pub const Mode = enum { always, autohide };
-pub const Reason = enum { always, inhibited, saver, pointer, interaction, delay, hidden };
+pub const Reason = enum { always, inhibited, saver, off, pointer, interaction, delay, hidden };
 pub const hide_delay_ms = 450;
 pub const State = struct {
     mode: Mode = .always,
     inhibited: bool = true,
     /// Screensaver active: the bar yields in every mode so the saver covers it.
     saver: bool = false,
+    /// The bar is switched off for this output; it never shows or reserves space.
+    off: bool = false,
     bar_pointer: bool = false,
     sensor_pointer: bool = false,
     popup: bool = false,
@@ -25,6 +27,11 @@ pub const State = struct {
     }
     pub fn update(self: *State, now: i64) void {
         self.reason = blk: {
+            if (self.off) {
+                self.resetPointer();
+                self.popup = false;
+                break :blk .off;
+            }
             if (self.saver) break :blk .saver;
             if (self.mode == .always) break :blk .always;
             if (self.inhibited) {
@@ -42,14 +49,15 @@ pub const State = struct {
         };
         self.visible = switch (self.reason) {
             .always, .pointer, .interaction, .delay => true,
-            .hidden, .inhibited, .saver => false,
+            .hidden, .inhibited, .saver, .off => false,
         };
         if (self.reason != .delay) self.deadline = null;
     }
     pub fn sensor(self: State) bool {
-        return self.mode == .autohide and !self.inhibited and !self.saver;
+        return self.mode == .autohide and !self.off and !self.inhibited and !self.saver;
     }
     pub fn exclusiveZone(self: State, thickness: i32) i32 {
+        if (self.off) return -1;
         return if (self.mode == .always) thickness else -1;
     }
 };
@@ -119,5 +127,23 @@ test "popup and gesture holds compose and inhibition overrides deadlines and hol
     s.mode = .always;
     s.update(3000);
     try t.expect(s.visible and !s.sensor());
+    try t.expectEqual(@as(i32, 64), s.exclusiveZone(64));
+}
+
+test "switched-off outputs hide the bar in every mode and release the exclusive zone" {
+    const t = std.testing;
+    var s: State = .{ .mode = .always, .inhibited = false, .off = true };
+    s.update(0);
+    try t.expect(!s.visible and s.reason == .off and !s.sensor());
+    try t.expectEqual(@as(i32, -1), s.exclusiveZone(64));
+    s.mode = .autohide;
+    s.update(10);
+    try t.expect(!s.visible and !s.sensor());
+    s.off = false;
+    s.update(20);
+    try t.expect(!s.visible and s.sensor());
+    s.mode = .always;
+    s.update(30);
+    try t.expect(s.visible and s.reason == .always);
     try t.expectEqual(@as(i32, 64), s.exclusiveZone(64));
 }

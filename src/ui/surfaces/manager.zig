@@ -55,6 +55,9 @@ const Surface = struct {
     switcher_spoken: ?[:0]u8 = null,
     bar: ?*Bar.Bar = null,
     autohide: ?*BarAutohide = null,
+    /// Bar switched off for this output; guards exclusive-zone writes on the
+    /// rare path where the autohide controller is unavailable.
+    bar_off: bool = false,
     launcher: ?*Launcher = null,
     launcher_picker: ?*LauncherPicker.View = null,
     running_apps: ?*Running.Chooser = null,
@@ -793,6 +796,14 @@ pub const Manager = struct {
         const matched = if (self.effects.display_session) |identity| std.mem.eql(u8, &identity, self.client.model.session) else false;
         return (if (self.activity) |broker| broker.inhibited() else false) or !matched or self.client.availability != .ready or (self.lifecycle.session_id.len != 0 and (!gate.available or !gate.active)) or gate.locked or gate.requesting or gate.preparing or self.auth.request != null or (if (self.client.model.get(.session, "session")) |session| session.locked else true);
     }
+    /// The bar is switched off for this output. A hand-edited draft hiding
+    /// every output still keeps the first bar, so the shell never disappears.
+    fn barOff(self: *Manager, o: *const Output) bool {
+        const prefs = self.preferences.prefs();
+        if (!prefs.barHidden(o.connector)) return false;
+        for (self.outputs.items) |other| if (!prefs.barHidden(other.connector)) return true;
+        return self.outputs.items.len != 0 and self.outputs.items[0] != o;
+    }
     fn osdAllowed(self: *Manager) bool {
         if (!self.running or self.client.availability != .ready) return false;
         const session = self.client.model.get(.session, "session") orelse return false;
@@ -1236,6 +1247,8 @@ pub const Manager = struct {
                 self.hidePopup();
             }
             if (suspendTasks(o)) |host| host.setSensitive(@intFromBool(!dock_locked));
+            const off = self.barOff(o);
+            o.bar.?.bar_off = off;
             if (o.bar.?.autohide) |controller| {
                 var fullscreen = false;
                 var windows = self.client.model.entities.valueIterator();
@@ -1243,7 +1256,10 @@ pub const Manager = struct {
                     const win = entity_.window;
                     if (win.visible and !win.minimized and win.fullscreen and win.output != null and std.mem.eql(u8, win.output.?, o.id)) fullscreen = true;
                 };
-                controller.configure(self.preferences.prefs().forOutput(o.connector).mode, o.bar.?.edge, o.reservations.bar_size, self.barInhibited(), fullscreen, self.lifecycle.saver_on);
+                controller.configure(self.preferences.prefs().forOutput(o.connector).mode, o.bar.?.edge, o.reservations.bar_size, self.barInhibited(), fullscreen, self.lifecycle.saver_on, off);
+            } else {
+                o.bar.?.window.as(gtk.Widget).setVisible(@intFromBool(!off));
+                layer.setExclusiveZone(o.bar.?.window, if (off) -1 else o.reservations.bar_size);
             }
             if (o.dock) |dock| {
                 const dock_prefs = self.preferences.prefs().dockForOutput(o.connector);
@@ -1585,14 +1601,15 @@ pub const Manager = struct {
         }
         if (kind == .bar) {
             _ = gtk.Widget.signals.map.connect(window.as(gtk.Widget), *Surface, barMapped, s, .{});
+            s.bar_off = self.barOff(output);
             s.autohide = BarAutohide.create(window, output.monitor, s, barVisibilityChanged) catch |err| blk: {
                 log.err("event=bar-autohide-unavailable error={s}", .{@errorName(err)});
                 break :blk null;
             };
             if (s.autohide) |controller| {
                 self.styleReveal(controller);
-                controller.configure(self.preferences.prefs().forOutput(output.connector).mode, s.edge, output.reservations.bar_size, self.barInhibited(), false, self.lifecycle.saver_on);
-            } else window.present();
+                controller.configure(self.preferences.prefs().forOutput(output.connector).mode, s.edge, output.reservations.bar_size, self.barInhibited(), false, self.lifecycle.saver_on, s.bar_off);
+            } else if (s.bar_off) layer.setExclusiveZone(window, -1) else window.present();
         } else if (kind != .popup and kind != .osd and kind != .frame and kind != .notification and kind != .switcher) window.present();
         return s;
     }
@@ -2410,7 +2427,7 @@ pub const Manager = struct {
                 const s = o.bar.?;
                 s.edge = request.edge.?;
                 sizeEdge(s, s.edge, request.size.?);
-                if (s.autohide) |controller| controller.configure(controller.state.mode, s.edge, request.size.?, controller.state.inhibited, controller.fullscreen, controller.state.saver);
+                if (s.autohide) |controller| controller.configure(controller.state.mode, s.edge, request.size.?, controller.state.inhibited, controller.fullscreen, controller.state.saver, controller.state.off);
             },
             .frame_set => {
                 const o = try self.selected(request.output);
@@ -2534,7 +2551,7 @@ fn sizeEdge(s: *Surface, edge: Edge, size: u16) void {
     s.window.setDefaultSize(if (horizontal) 1 else size, if (horizontal) size else 1);
     const content = if (s.kind == .frame) size else size -| 8;
     s.panel.setSizeRequest(if (horizontal) -1 else content, if (horizontal) content else -1);
-    if (s.autohide) |controller| controller.measured(size) else layer.setExclusiveZone(s.window, size);
+    if (s.autohide) |controller| controller.measured(size) else layer.setExclusiveZone(s.window, if (s.bar_off) -1 else size);
 }
 fn serviceProbe(_: *gdk.FrameClock, s: *Surface) callconv(.c) void {
     if (s.settings) |view| view.probe(s.window);
@@ -2571,7 +2588,7 @@ fn measured(_: *gdk.FrameClock, s: *Surface) callconv(.c) void {
     const horizontal = s.edge == .top or s.edge == .bottom;
     const size = if (horizontal) s.window.as(gtk.Widget).getHeight() else s.window.as(gtk.Widget).getWidth();
     if (size > 0 and size <= 65535) {
-        if (s.autohide) |controller| controller.measured(size) else layer.setExclusiveZone(s.window, size);
+        if (s.autohide) |controller| controller.measured(size) else layer.setExclusiveZone(s.window, if (s.bar_off) -1 else size);
         if (s.output.reservations.bar_size != size) {
             s.output.reservations.bar_size = @intCast(size);
             barVisibilityChanged(s);
