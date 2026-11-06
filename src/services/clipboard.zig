@@ -1,4 +1,4 @@
-//! ext-data-control, dispatched by GTK. No primary history, disk storage or synthetic paste.
+//! ext-data-control, dispatched by GTK. Text persists; PNG history is session-only.
 const std = @import("std");
 const glib = @import("glib2");
 const gdk = @import("gdk4");
@@ -10,7 +10,12 @@ const pixbuf = @import("gdkpixbuf2");
 pub const policy = @import("clipboard_policy.zig");
 const log = std.log.scoped(.services);
 const a = std.heap.c_allocator;
-pub const Entry = struct { id: u64, kind: policy.Kind, bytes: []u8 };
+const history = @import("clipboard_history.zig");
+const file_io = @import("../config/io.zig");
+fn nowSeconds() i64 {
+    return @divFloor(glib.getRealTime(), 1_000_000);
+}
+pub const Entry = struct { id: u64, kind: policy.Kind, bytes: []u8, last_used: i64 = 0 };
 const Offer = struct { proxy: *ext.DataControlOfferV1, owner: *Clipboard, mime: ?[:0]const u8 = null, mime_text: [32:0]u8 = @splat(0), kind: policy.Kind = .text, sensitive: bool = false };
 const Transfer = struct {
     owner: *Clipboard,
@@ -49,7 +54,7 @@ const Transfer = struct {
         const self: *Transfer = @ptrCast(@alignCast(data.?));
         if (self.write) {
             const n = std.c.write(self.fd, self.bytes.items[self.offset..].ptr, @min(65536, self.bytes.items.len - self.offset));
-            if (n < 0 and std.c._errno().* == @intFromEnum(std.posix.E.AGAIN)) return 1;
+            if (n < 0 and std.c._errno().* == @backingInt(std.posix.E.AGAIN)) return 1;
             if (n > 0) self.offset += @intCast(n);
             if (n <= 0 or self.offset == self.bytes.items.len) {
                 self.watch = 0;
@@ -60,7 +65,7 @@ const Transfer = struct {
             var buffer: [65536]u8 = undefined;
             defer std.crypto.secureZero(u8, &buffer);
             const n = std.c.read(self.fd, &buffer, buffer.len);
-            if (n < 0 and std.c._errno().* == @intFromEnum(std.posix.E.AGAIN)) return 1;
+            if (n < 0 and std.c._errno().* == @backingInt(std.posix.E.AGAIN)) return 1;
             if (n <= 0) {
                 self.watch = 0;
                 self.finish(n == 0);
@@ -109,6 +114,7 @@ pub const Clipboard = struct {
     skip_selection: bool = true,
     locked: bool = true,
     ambiguous: bool = false,
+    history_loaded: bool = false,
     message: [:0]const u8 = "Clipboard history paused",
     pub fn start(self: *Clipboard) !void {
         var action: std.c.Sigaction = .{ .handler = .{ .handler = std.c.SIG.IGN }, .mask = std.mem.zeroes(std.c.sigset_t), .flags = 0 };
@@ -121,7 +127,9 @@ pub const Clipboard = struct {
     }
     pub fn stop(self: *Clipboard) void {
         self.setLocked(true);
-        self.clear();
+        self.releaseSelection();
+        for (self.entries.items) |e| wipe(e.bytes);
+        self.entries.clearRetainingCapacity();
         self.dropDevice();
         if (self.seat) |s| s.release();
         if (self.manager) |m| m.destroy();
@@ -133,23 +141,28 @@ pub const Clipboard = struct {
         if (self.locked == locked) return;
         self.locked = locked;
         if (locked) {
-            self.clear();
-            self.dropDevice();
+            self.pauseCollection();
         } else {
+            if (!self.history_loaded) {
+                self.history_loaded = true;
+                self.loadHistory() catch |err| log.warn("event=clipboard-history-load error={s}", .{@errorName(err)});
+            }
+            self.pruneExpired();
             self.connect();
         }
         self.message = self.baseline();
         self.changed(self.context);
     }
     fn baseline(self: *const Clipboard) [:0]const u8 {
-        return if (self.locked) "Clipboard history paused" else "History stays in memory; sensitive selections are excluded";
+        return if (self.locked) "Clipboard history paused" else "Text history is saved for up to 7 days. Images stay in this session.";
     }
     /// Copy feedback is transient, but the message is long-lived service state read by
     /// every consumer. Clear it as the panel opens so it never shows a past action.
     pub fn resetMessage(self: *Clipboard) void {
+        self.pruneExpired();
         self.message = self.baseline();
     }
-    pub fn clear(self: *Clipboard) void {
+    fn releaseSelection(self: *Clipboard) void {
         if (self.read) |r| r.finish(false);
         for (self.writes) |w| if (w) |t| t.finish(false);
         if (self.source) |s| {
@@ -159,14 +172,78 @@ pub const Clipboard = struct {
         self.source = null;
         if (self.owned) |e| wipe(e.bytes);
         self.owned = null;
+    }
+    fn pauseCollection(self: *Clipboard) void {
+        self.releaseSelection();
+        self.dropDevice();
+        var i: usize = 0;
+        while (i < self.entries.items.len) {
+            if (self.entries.items[i].kind == .png) {
+                wipe(self.entries.orderedRemove(i).bytes);
+            } else i += 1;
+        }
+    }
+    pub fn clear(self: *Clipboard) void {
+        self.releaseSelection();
+        self.history_loaded = true;
         for (self.entries.items) |e| wipe(e.bytes);
         self.entries.clearRetainingCapacity();
+        self.saveHistory();
         self.message = "Clipboard history cleared";
         self.changed(self.context);
     }
     fn wipe(bytes: []u8) void {
         std.crypto.secureZero(u8, bytes);
         a.free(bytes);
+    }
+    fn historyPath(alloc: std.mem.Allocator) ![:0]u8 {
+        return std.fmt.allocPrintSentinel(alloc, "{s}/pearl/clipboard.json", .{std.mem.span(glib.getUserStateDir())}, 0);
+    }
+    fn loadHistory(self: *Clipboard) !void {
+        var arena = std.heap.ArenaAllocator.init(a);
+        defer arena.deinit();
+        const alloc = arena.allocator();
+        const path = try historyPath(alloc);
+        const disk = try file_io.read(alloc, path, history.file_limit, null);
+        if (disk.missing) return;
+        const saved = try history.decode(alloc, disk.bytes, nowSeconds());
+        // Reserve before duplicating so a failed append cannot leak a payload.
+        try self.entries.ensureUnusedCapacity(a, saved.len);
+        for (saved) |entry| {
+            const bytes = try a.dupe(u8, entry.text);
+            self.entries.appendAssumeCapacity(.{ .id = self.next_id, .kind = .text, .bytes = bytes, .last_used = entry.last_used });
+            self.next_id += 1;
+        }
+        self.saveHistory();
+    }
+    fn saveHistory(self: *Clipboard) void {
+        self.writeHistory() catch |err| log.warn("event=clipboard-history-save error={s}", .{@errorName(err)});
+    }
+    fn writeHistory(self: *Clipboard) !void {
+        var arena = std.heap.ArenaAllocator.init(a);
+        defer arena.deinit();
+        const alloc = arena.allocator();
+        const path = try historyPath(alloc);
+        const directory = try alloc.dupeSentinel(u8, std.fs.path.dirname(path).?, 0);
+        try file_io.mkdir(directory);
+        const json = try history.encode(alloc, self.entries.items);
+        defer std.crypto.secureZero(u8, json);
+        try file_io.atomic(path, json, false);
+    }
+    pub fn pruneExpired(self: *Clipboard) void {
+        const now = nowSeconds();
+        var changed = false;
+        var i: usize = 0;
+        while (i < self.entries.items.len) {
+            if (history.expired(self.entries.items[i].last_used, now)) {
+                wipe(self.entries.orderedRemove(i).bytes);
+                changed = true;
+            } else i += 1;
+        }
+        if (changed) {
+            self.saveHistory();
+            self.changed(self.context);
+        }
     }
     /// Promote a retained entry to most-recent, keeping its id so pending
     /// generation-scoped actions stay valid. Eviction pops the tail, so a copy still
@@ -176,9 +253,12 @@ pub const Clipboard = struct {
         self.entries.insertAssumeCapacity(0, self.entries.orderedRemove(index));
     }
     pub fn delete(self: *Clipboard, id: u64) !void {
+        if (self.locked) return error.Locked;
+        self.pruneExpired();
         for (self.entries.items, 0..) |e, i| if (e.id == id) {
             wipe(e.bytes);
             _ = self.entries.orderedRemove(i);
+            self.saveHistory();
             self.message = "Clipboard entry removed";
             self.changed(self.context);
             return;
@@ -198,18 +278,24 @@ pub const Clipboard = struct {
     fn retainEntry(self: *Clipboard, kind: policy.Kind, input: []const u8) !u64 {
         if (self.locked) return error.Locked;
         if (!policy.valid(kind, input)) return error.InvalidPayload;
+        self.pruneExpired();
         const bytes = if (kind == .png) try sanitize(input) else try a.dupe(u8, input);
         errdefer wipe(bytes);
         if (bytes.len > policy.image_limit) return error.InvalidPayload;
         for (self.entries.items, 0..) |e, i| if (e.kind == kind and std.mem.eql(u8, e.bytes, bytes)) {
             wipe(bytes);
+            self.entries.items[i].last_used = nowSeconds();
+            self.bumpToFront(i);
+            self.saveHistory();
+            // Our own published selection echoes back as an offer. Preserve
+            // copy feedback when that offer is already the newest entry.
             if (i != 0) {
-                self.bumpToFront(i);
                 self.message = "Clipboard history updated";
                 self.changed(self.context);
             }
             return e.id;
         };
+        try self.entries.ensureUnusedCapacity(a, 1);
         var total: usize = bytes.len;
         for (self.entries.items) |e| total += e.bytes.len;
         while (self.entries.items.len > 0 and (total > policy.total_limit or self.entries.items.len >= policy.entries_limit)) {
@@ -217,14 +303,16 @@ pub const Clipboard = struct {
             total -= old.bytes.len;
             wipe(old.bytes);
         }
-        try self.entries.insert(a, 0, .{ .id = self.next_id, .kind = kind, .bytes = bytes });
+        try self.entries.insert(a, 0, .{ .id = self.next_id, .kind = kind, .bytes = bytes, .last_used = nowSeconds() });
         self.next_id += 1;
+        self.saveHistory();
         self.message = "Clipboard history updated";
         self.changed(self.context);
         return self.next_id - 1;
     }
     pub fn select(self: *Clipboard, id: u64) !void {
         if (self.locked) return error.Locked;
+        self.pruneExpired();
         const device = self.device orelse return error.Unavailable;
         for (self.entries.items, 0..) |e, i| if (e.id == id) {
             const bytes = try a.dupe(u8, e.bytes);
@@ -239,7 +327,9 @@ pub const Clipboard = struct {
             device.setSelection(source);
             self.display.flush();
             // Promotion follows publication: a copy that cannot start must leave the order alone.
+            self.entries.items[i].last_used = nowSeconds();
             self.bumpToFront(i);
+            self.saveHistory();
             self.message = "Copied — paste in the destination application";
             self.changed(self.context);
             return;
@@ -277,8 +367,7 @@ pub const Clipboard = struct {
                 if (std.mem.eql(u8, name, "wl_seat") and g.version >= 5) {
                     if (self.seat != null) {
                         self.ambiguous = true;
-                        self.clear();
-                        self.dropDevice();
+                        self.pauseCollection();
                     } else {
                         self.seat = self.registry.?.bind(g.name, wl.Seat, 5) catch return;
                         self.seat_id = g.name;
@@ -288,8 +377,7 @@ pub const Clipboard = struct {
                 self.connect();
             },
             .global_remove => |g| if (g.name == self.manager_id or g.name == self.seat_id) {
-                self.clear();
-                self.dropDevice();
+                self.pauseCollection();
                 if (g.name == self.manager_id) {
                     self.manager.?.destroy();
                     self.manager = null;
@@ -354,8 +442,7 @@ pub const Clipboard = struct {
                 };
             },
             .finished => {
-                self.clear();
-                self.dropDevice();
+                self.pauseCollection();
                 self.message = "Clipboard device unavailable";
             },
         }
@@ -407,13 +494,14 @@ pub const Clipboard = struct {
         }
     }
     pub fn status(self: *Clipboard, alloc: std.mem.Allocator) ![]const u8 {
+        self.pruneExpired();
         const Item = struct { id: u64, kind: policy.Kind, bytes: usize, preview: []const u8 };
         var items: std.ArrayList(Item) = .empty;
         if (!self.locked) for (self.entries.items) |e| {
             const text = if (e.kind == .text) try policy.preview(alloc, e.bytes) else "PNG image";
             try items.append(alloc, .{ .id = e.id, .kind = e.kind, .bytes = e.bytes.len, .preview = text });
         };
-        return std.json.Stringify.valueAlloc(alloc, .{ .available = self.device != null, .locked = self.locked, .persistent = false, .pending = self.read != null, .message = self.message, .entries = items.items }, .{});
+        return std.json.Stringify.valueAlloc(alloc, .{ .available = self.device != null, .locked = self.locked, .persistent = true, .persistent_kinds = [_][]const u8{"text"}, .entries_limit = policy.entries_limit, .retention_days = 7, .pending = self.read != null, .message = self.message, .entries = items.items }, .{});
     }
 };
 pub fn encode(image: *pixbuf.Pixbuf) ![]u8 {

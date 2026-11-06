@@ -31,12 +31,25 @@ def main():
             s.env['PEARL_TEST_PAM_DIR'] = str(pam)
             s.args = SimpleNamespace(aqueous_source=str(fixture_source())); T00Session.input_fixture(s)
             authority = s.child('authority', ['python3',ROOT/'tests/fixtures/session_security.py'], input_pipe=True); authority.expect('event=ready')
+            history_file = Path(s.env['XDG_STATE_HOME'])/'pearl/clipboard.json'
+            history_file.parent.mkdir(parents=True, exist_ok=True)
+            now = int(time.time())
+            history_file.write_text(json.dumps([
+                {'text': 'restored text', 'last_used': now},
+                {'text': 'expired text', 'last_used': now - 7*86400},
+            ]))
             app = s.child('pearl', [args.pearl], G_DEBUG='fatal-warnings'); app.expect('event=control-ready')
             ipc = IPC(s)
             def clip(): return ctl(s,args.ctl,'clipboard','status')['result']
             def shot(): return ctl(s,args.ctl,'capture','status')['result']
             def until(fn, pred, timeout=12): return wait_for(lambda: (lambda v: v if pred(v) else False)(fn()),timeout)
             until(clip, lambda v: v['available'] and not v['locked']); until(shot, lambda v: v['available'] and not v['locked'])
+            assert [e['preview'] for e in clip()['entries']] == ['restored text']
+            assert history_file.stat().st_mode & 0o777 == 0o600
+            assert [e['text'] for e in json.loads(history_file.read_text())] == ['restored text']
+            ctl(s,args.ctl,'clipboard','clear')
+            assert json.loads(history_file.read_text()) == []
+            checks['text-load-expiry-private-file-and-clear'] = True
             producer = None; serial = 0
             def offer(mode, payload='sample'):
                 nonlocal producer, serial
@@ -58,19 +71,19 @@ def main():
             assert clip()['entries'][0]['preview'] == 'replacement'
             checks['stalled-transfer-timeout-and-selection-replacement'] = True
             empty()
-            for n in range(24):
+            for n in range(104):
                 offer('text', 'entry-'+str(n)); until(clip,lambda v:v['entries'] and v['entries'][0]['preview']=='entry-'+str(n))
-            assert len(clip()['entries']) == 20
+            assert len(clip()['entries']) == 100
             # A re-copied duplicate is promoted, so it survives the eviction that drops the least-recently used tail.
             recopied = clip()['entries'][-1]['preview']
             offer('text',recopied); until(clip,lambda v:v['entries'] and v['entries'][0]['preview']==recopied)
             lru = clip()['entries'][-1]['preview']
-            offer('text','entry-24'); until(clip,lambda v:v['entries'] and v['entries'][0]['preview']=='entry-24')
+            offer('text','entry-104'); until(clip,lambda v:v['entries'] and v['entries'][0]['preview']=='entry-104')
             previews = [e['preview'] for e in clip()['entries']]
-            assert previews[:2]==['entry-24',recopied] and len(previews)==20, previews
+            assert previews[:2]==['entry-104',recopied] and len(previews)==100, previews
             assert lru not in previews, previews
             checks['re-copied-duplicates-are-promoted-and-survive-eviction'] = True
-            victim = clip()['entries'][0]['id']; ctl(s,args.ctl,'clipboard','delete','--generation',str(victim)); assert len(clip()['entries']) == 19
+            victim = clip()['entries'][0]['id']; ctl(s,args.ctl,'clipboard','delete','--generation',str(victim)); assert len(clip()['entries']) == 99
             assert ctl(s,args.ctl,'clipboard','select','--generation',str(victim),code=4)['err']['code'] == 'Stale'
             checks['bounded-history-and-stale-entry-actions'] = True
             empty()
@@ -90,6 +103,30 @@ def main():
             bad = s.output/'bad.png'; bad.write_bytes(png.read_bytes()[:33]); offer('png',str(bad)); time.sleep(.3); assert len(clip()['entries'])==1
             bomb = bytearray(png.read_bytes()); bomb[16:24] = (65535).to_bytes(4,'big')*2; bad.write_bytes(bomb); offer('png',str(bad)); time.sleep(.3); assert len(clip()['entries'])==1
             checks['png-decode-copy-truncation-and-dimension-bomb'] = True
+            offer('text', 'restart text 👋'); until(clip,lambda v:v['entries'] and v['entries'][0]['preview']=='restart text 👋')
+            assert json.loads(history_file.read_text())[0]['text'] == 'restart text 👋'
+            assert all(set(e)=={'text','last_used'} for e in json.loads(history_file.read_text()))
+            assert len(json.loads(history_file.read_text())) == 1
+            producer.stop()
+            app.stop()
+            app = s.child('pearl-restarted', [args.pearl], G_DEBUG='fatal-warnings'); app.expect('event=control-ready')
+            until(clip, lambda v: v['available'] and not v['locked'])
+            assert [e['preview'] for e in clip()['entries']] == ['restart text 👋']
+            ctl(s,args.ctl,'clipboard','select','--generation',str(clip()['entries'][0]['id']))
+            assert s.run(['wl-paste','--no-newline']).stdout == 'restart text 👋'
+            checks['text-survives-restart-png-does-not'] = True
+            app.stop()
+            history_file.write_text('{broken json')
+            app = s.child('pearl-corrupt-history', [args.pearl], G_DEBUG='fatal-warnings'); app.expect('event=control-ready')
+            until(clip, lambda v: v['available'] and not v['locked'])
+            assert clip()['entries'] == []
+            # A directory at the destination forces atomic replacement to fail.
+            history_file.unlink(); history_file.mkdir()
+            offer('text','still copies'); until(clip, lambda v:len(v['entries'])==1)
+            ctl(s,args.ctl,'clipboard','select','--generation',str(clip()['entries'][0]['id']))
+            assert s.run(['wl-paste','--no-newline']).stdout == 'still copies'
+            history_file.rmdir()
+            checks['corrupt-history-and-write-failure-keep-copying-functional'] = True
             empty()
             for n in range(8):
                 # Deterministically seeded random RGB avoids compressible test data masking the byte cap.
@@ -169,7 +206,7 @@ def main():
             until(lambda:status(s,args.ctl),lambda v:v['popup'] is None)
             assert 'Copied' in clip()['message'], clip()
             ctl(s,args.ctl,'clipboard','toggle','--output',oid); view=shown(['beta two'])
-            assert view['message'].startswith('History stays in memory'), view
+            assert view['message'].startswith('Text history is saved'), view
             checks['copied-feedback-clears-when-the-panel-reopens'] = True
             def target(): return next(o for o in status(s,args.ctl)['outputs'] if o['connector']==connector)
             def take(region=None):
@@ -215,11 +252,16 @@ def main():
             data=subprocess.run(['wl-paste','--type','image/png'],env=s.env,stdout=subprocess.PIPE,check=True,timeout=8).stdout
             assert data.startswith(b'\x89PNG'); assert not shot()['image_isolated']
             checks['save-conflict-recovery-and-screenshot-copy'] = True
+            saved_text = json.loads(history_file.read_text())
+            assert saved_text and any(e['kind']=='png' for e in clip()['entries'])
             # Authentication dialogs also pause private data collection, without depending on their MIME hints.
             def authority_command(**data):
                 authority.proc.stdin.write(json.dumps(data)+'\n'); authority.proc.stdin.flush(); authority.expect('command='+json.dumps(data,sort_keys=True))
             authority_command(begin=True); until(clip,lambda v:v['locked']); assert not clip()['entries'] and not shot()['ready']
             authority_command(cancel=True); until(clip,lambda v:not v['locked'] and v['available']); take()
+            assert json.loads(history_file.read_text()) == saved_text
+            assert [e['preview'] for e in clip()['entries']] == [e['text'] for e in saved_text]
+            assert all(e['kind']=='text' for e in clip()['entries'])
             checks['authentication-dialog-privacy'] = True
             # Pending work is cancelled and all private previews are discarded at lock request.
             offer('stall'); until(clip,lambda v:v['pending'])
@@ -231,9 +273,11 @@ def main():
             assert ctl(s,args.ctl,'clipboard','toggle',code=4)['err']['code']=='Locked'
             assert ctl(s,args.ctl,'clipboard','show',code=4)['err']['code']=='Locked'
             s.run(['wtype','-s','200','fixture-user','-k','Return','-s','300','fixture-secret','-k','Return','-s','200'])
-            until(clip,lambda v:not v['locked'] and v['available']); time.sleep(.3); assert clip()['entries']==[]
-            offer('text','after-unlock'); until(clip,lambda v:len(v['entries'])==1)
-            checks['lock-cancels-purges-denies-and-does-not-import-locked-selection'] = True
+            until(clip,lambda v:not v['locked'] and v['available']); time.sleep(.3)
+            assert all(e['kind']=='text' and e['preview']!='copied-while-locked' for e in clip()['entries'])
+            assert [e['preview'] for e in clip()['entries']] == [e['text'] for e in saved_text]
+            offer('text','after-unlock'); until(clip,lambda v:v['entries'] and v['entries'][0]['preview']=='after-unlock')
+            checks['lock-preserves-text-discards-images-and-skips-locked-selection'] = True
             # Removing an output invalidates any in-flight target and future requests for its old ID.
             old=target()['id']; old_generation=shot()['generation']; ctl(s,args.ctl,'capture','output','--output',old)
             s.run(['wlr-randr','--output',connector,'--off']); until(shot,lambda v:not v['pending']); assert shot()['generation']==old_generation

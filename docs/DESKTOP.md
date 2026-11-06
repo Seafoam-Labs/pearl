@@ -427,7 +427,7 @@ parser calls, and 256 operations. It runs inside the launcher's existing search
 worker, including with an empty application catalog. Calculator activation uses
 the same query/session freshness checks as other results and synchronizes
 clipboard privacy before copying. Expressions are not logged or persisted.
-Only an explicitly copied result enters the existing memory-only clipboard
+Only an explicitly copied result enters the existing text-persistent clipboard
 history. See the [implementation plan](LAUNCHER_CALCULATOR_IMPLEMENTATION_PLAN.md).
 
 ## Native runtime layout

@@ -429,7 +429,7 @@ pub const View = struct {
         self.strings.splice(0, self.strings.as(gio.ListModel).getNItems(), @ptrCast(&values));
         const last: c_uint = if (self.visible_count == 0) 0 else @intCast(self.visible_count - 1);
         self.selection.setSelected(selected orelse @min(keep.position, last));
-        self.hint.setText(if (self.record_count == 0) @import("i18n").dtr("pearl", "Copy text or a PNG image to start. History is cleared when locking.") else @import("i18n").dtr("pearl", "No matching entries"));
+        self.hint.setText(if (self.record_count == 0) @import("i18n").dtr("pearl", "Copy text or a PNG image to start. Text is saved; images stay in this session.") else @import("i18n").dtr("pearl", "No matching entries"));
         self.hint.as(gtk.Widget).setVisible(@intFromBool(self.visible_count == 0));
     }
     fn updateWindows(self: *View) void {
