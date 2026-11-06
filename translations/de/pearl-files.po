@@ -60,6 +60,10 @@ msgstr ""
 msgid "Places"
 msgstr ""
 
+#: src/portal/file_chooser.zig:155
+msgid "Requested by {0}"
+msgstr ""
+
 #: src/files/chooser.zig:1104 src/portal/file_chooser.zig:128
 msgid "Save"
 msgstr ""
