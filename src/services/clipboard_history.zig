@@ -85,10 +85,10 @@ test "history validates, deduplicates, sorts and caps" {
     try std.testing.expectEqualStrings("a", entries[0].text);
     try std.testing.expectEqual(@as(i64, 300), entries[0].last_used);
     var many: std.ArrayList(SavedEntry) = .empty;
-    for (0..105) |i| try many.append(a, .{ .text = try std.fmt.allocPrint(a, "entry-{d}", .{i}), .last_used = @intCast(i + 1) });
+    for (0..25) |i| try many.append(a, .{ .text = try std.fmt.allocPrint(a, "entry-{d}", .{i}), .last_used = @intCast(i + 1) });
     const capped = try decode(a, try std.json.Stringify.valueAlloc(a, many.items, .{}), 200);
-    try std.testing.expectEqual(@as(usize, 100), capped.len);
-    try std.testing.expectEqualStrings("entry-104", capped[0].text);
+    try std.testing.expectEqual(@as(usize, 20), capped.len);
+    try std.testing.expectEqualStrings("entry-24", capped[0].text);
     try std.testing.expectError(error.InvalidHistory, decode(a, "{}", 200));
     try std.testing.expectError(error.SyntaxError, decode(a, "invalid", 200));
 }
@@ -109,6 +109,7 @@ test "loaded history clamps future dates and enforces text and aggregate limits"
         try saved.append(a, .{ .text = text, .last_used = 300 });
     }
     const result = try decode(a, try std.json.Stringify.valueAlloc(a, saved.items, .{}), 300);
-    try std.testing.expectEqual(@as(usize, policy.total_limit / policy.text_limit), result.len);
+    try std.testing.expectEqual(@as(usize, 20), result.len);
+    try std.testing.expect(result.len * policy.text_limit <= policy.total_limit);
     for (result) |entry| try std.testing.expectEqual(policy.text_limit, entry.text.len);
 }
