@@ -98,7 +98,7 @@ pub const View = struct {
         const qt_settings = gtk.Button.newWithLabel(@import("i18n").dtr("pearl", "Open Qt appearance settings…"));
         appearance.append(qt_settings.as(gtk.Widget));
         _ = gtk.Button.signals.clicked.connect(qt_settings, *View, openQtSettings, self, .{});
-        self.greeter_sync = try @import("../settings/greeter_sync.zig").View.create(appearance, self, syncPreferences);
+        self.greeter_sync = try @import("../settings/greeter_sync.zig").View.create(appearance, self, syncPreferences, .{ .prepare = prepareSyncPicker, .restore = restoreSyncPicker });
         bar.append(w.label(@import("i18n").dtr("pearl", "Default layout for every output. Connector overrides are available in Advanced."), "pearl-secondary").as(gtk.Widget));
         const bar_editor = gtk.Button.newWithLabel(@import("i18n").dtr("pearl", "Bar opacity and widgets…"));
         bar.append(bar_editor.as(gtk.Widget));
@@ -181,6 +181,19 @@ pub const View = struct {
         if (self.local_error != null or self.service.job != null) return error.Unavailable;
         const bytes = self.service.draft.text orelse try std.json.Stringify.valueAlloc(alloc, self.service.prefs(), .{});
         return model.parse(alloc, bytes);
+    }
+    /// The sync chooser belongs to `greeter_sync.zig`, which the standalone
+    /// settings application also builds without layer-shell; the flyout owns it.
+    fn prepareSyncPicker(_: *anyopaque, picker: *gtk.Window, parent: *gtk.Window) void {
+        layer.initForWindow(picker);
+        layer.setNamespace(picker, "pearl:greeter-sync-picker");
+        layer.setMonitor(picker, layer.getMonitor(parent));
+        layer.setLayer(picker, .overlay);
+        layer.setKeyboardMode(parent, .none);
+        layer.setKeyboardMode(picker, .exclusive);
+    }
+    fn restoreSyncPicker(_: *anyopaque, parent: *gtk.Window) void {
+        layer.setKeyboardMode(parent, .on_demand);
     }
     fn closeWallpaperPicker(self: *View, restore_parent: bool) void {
         const picker = self.wallpaper_picker orelse return;
