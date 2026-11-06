@@ -60,15 +60,30 @@ pub fn catalog(alloc: std.mem.Allocator) ![]const [:0]const u8 {
     return names.toOwnedSlice(alloc);
 }
 pub const Text = struct { time: [:0]const u8, date: [:0]const u8, detail: [:0]const u8 };
+/// Copies a custom pattern, expanding a literal backslash-n into a newline so
+/// single-line settings entries can request stacked output.
+fn expandPattern(alloc: std.mem.Allocator, pattern: []const u8) ![:0]const u8 {
+    if (std.mem.indexOfScalar(u8, pattern, '\\') == null) return alloc.dupeSentinel(u8, pattern, 0);
+    var out = std.ArrayList(u8).empty;
+    errdefer out.deinit(alloc);
+    var i: usize = 0;
+    while (i < pattern.len) : (i += 1) {
+        if (pattern[i] == '\\' and i + 1 < pattern.len and pattern[i + 1] == 'n') {
+            try out.append(alloc, '\n');
+            i += 1;
+        } else try out.append(alloc, pattern[i]);
+    }
+    return try out.toOwnedSliceSentinel(alloc, 0);
+}
 pub fn format(alloc: std.mem.Allocator, d: policy.Definition, utc: *glib.DateTime, zone: *glib.TimeZone, vertical: bool) !Text {
     const local = utc.toTimezone(zone) orelse return error.ClockUnavailable;
     defer local.unref();
-    // Custom patterns are used verbatim in both orientations; built-in
-    // patterns stack their fields on vertical bars.
-    const pattern: [:0]const u8 = if (d.time_format.len > 0) try alloc.dupeSentinel(u8, d.time_format, 0) else if (d.hour_format == .@"12h") (if (vertical) "%I\n%M\n%p" else "%I:%M %p") else (if (vertical) "%H\n%M" else "%H:%M");
+    // Custom patterns are used in both orientations; built-in patterns stack
+    // their fields on vertical bars.
+    const pattern: [:0]const u8 = if (d.time_format.len > 0) try expandPattern(alloc, d.time_format) else if (d.hour_format == .@"12h") (if (vertical) "%I\n%M\n%p" else "%I:%M %p") else (if (vertical) "%H\n%M" else "%H:%M");
     const time = local.format(pattern) orelse return error.ClockUnavailable;
     defer glib.free(time);
-    const date_pattern: [:0]const u8 = if (d.date_format.len > 0) try alloc.dupeSentinel(u8, d.date_format, 0) else if (vertical) "%a\n%d\n%b" else "%a %d %b";
+    const date_pattern: [:0]const u8 = if (d.date_format.len > 0) try expandPattern(alloc, d.date_format) else if (vertical) "%a\n%d\n%b" else "%a %d %b";
     const date = local.format(date_pattern) orelse return error.ClockUnavailable;
     defer glib.free(date);
     const detail = local.format("%A, %d %B %Y · %H:%M · UTC%:z") orelse return error.ClockUnavailable;
