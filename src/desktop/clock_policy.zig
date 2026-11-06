@@ -20,7 +20,9 @@ pub fn validFormat(pattern: []const u8) bool {
     if (pattern.len > 64 or !std.unicode.utf8ValidateSlice(pattern)) return false;
     var i: usize = 0;
     while (i < pattern.len) : (i += 1) {
-        if (pattern[i] < 32 or pattern[i] == 127) return false;
+        // Newlines are allowed so patterns can stack lines on vertical bars;
+        // a literal backslash-n is expanded to one at render time.
+        if ((pattern[i] < 32 and pattern[i] != '\n') or pattern[i] == 127) return false;
         if (pattern[i] != '%') continue;
         i += 1;
         if (i >= pattern.len) return false;
@@ -121,7 +123,9 @@ test "clock references and bounded definitions preserve legacy identity" {
     try t.expect(!validFormat("%"));
     try t.expect(!validFormat("%Q"));
     try t.expect(!validFormat("%:x"));
-    try t.expect(!validFormat("%H\n%M"));
+    try t.expect(!validFormat("%H\t%M"));
+    try t.expect(validFormat("%H\n%M"));
+    try t.expect(validFormat("%H\\n%M"));
     try t.expectError(error.InvalidClockFormat, validateDefinition(.{ .id = "a", .time_format = "%Q" }));
     try t.expectError(error.InvalidClockFormat, validateDefinition(.{ .id = "a", .date_format = "%Y-%m-%d %Y-%m-%d %Y-%m-%d %Y-%m-%d %Y-%m-%d %Y-%m-%d %Y-%m-%d %Y" }));
     try t.expectError(error.InvalidClockSeparator, validateDefinition(.{ .id = "a", .separator = "a\tb" }));
