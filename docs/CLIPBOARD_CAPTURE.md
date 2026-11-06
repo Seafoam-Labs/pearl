@@ -35,8 +35,21 @@ result keeps history intact and says so in place of the list.
 
 Pearl uses generated **ext-data-control-v1** bindings on GTK's Wayland connection.
 GTK remains the only reader of that connection. There is no wl-copy/wl-paste
-production dependency, synthetic typing, primary-selection history, persistent
-history file, D-Bus clipboard service, or portal ownership change.
+production dependency, synthetic typing, primary-selection history, D-Bus
+clipboard service, or portal ownership change.
+
+Text history is saved in `$XDG_STATE_HOME/pearl/clipboard.json` (normally
+`~/.local/state/pearl/clipboard.json`) as an array of `{text,last_used}` records.
+PNG history stays in memory and is never serialized. Text returns after a Pearl
+restart; images do not. Files are atomically replaced with mode `0600`.
+Missing or corrupt files start empty; save failures are logged without preventing
+copying. Clear history writes an empty array, and deleting an entry updates the
+file. Restoring history does not automatically publish a selection.
+
+Entries expire seven days after their last copy/use. Copying a duplicate or
+selecting an entry refreshes that time and promotes it. Expiry is checked on
+load, mutations, status requests, and opening the panel, so an idle file is
+cleaned on the next operation. The count and byte limits include both formats.
 
 The regular selection accepts UTF-8 `text/plain;charset=utf-8` (or `text/plain`)
 and `image/png`. PNG takes precedence when both image and text are offered.
@@ -51,7 +64,8 @@ owned by another application.
 
 | Resource | Bound |
 | --- | --- |
-| Retained entries | 20, duplicates retained once; a copy promotes its entry to most-recent and eviction drops the least-recently used tail |
+| Retained entries | 100, duplicates retained once; a copy promotes its entry to most-recent and eviction drops the least-recently used tail |
+| Retention | Seven days since last copy/use; existing byte limits can evict entries sooner |
 | Retained payload total | 16 MiB |
 | Text per entry | 256 KiB |
 | PNG input and sanitized clipboard PNG | 8 MiB each |
@@ -87,7 +101,7 @@ as calculator history, and a pending copy is never replayed after unlock.
 
 ## Privacy and lock integration
 
-History is memory-only. Selections advertising `x-kde-passwordManagerHint`,
+Only text history is persisted. Selections advertising `x-kde-passwordManagerHint`,
 `application/x-keepassxc`, or `application/x-pearl-private` are excluded regardless
 of the hint's contents. Hints are advisory: an application that copies an
 unmarked secret cannot be distinguished from ordinary text.
@@ -95,8 +109,9 @@ unmarked secret cannot be distinguished from ordinary text.
 Lock requests, authoritative Aqueous lock state, sleep preparation, inactive or
 unavailable session state, mismatched native/IPC session identities, and Pearl
 polkit prompts suspend these services.
-Pearl cancels transfers/capture work, clears history and screenshot previews,
-releases its selection, and disconnects data-control collection. Status replies
+Pearl cancels transfers/capture work, discards PNG history and screenshot previews,
+releases its selection, and disconnects data-control collection. Text history
+survives suspension and is pruned and revealed on unlock. Status replies
 contain no retained clipboard content while suspended. Changes are applied when
 Aqueous state arrives and when lifecycle/authentication state changes, before
 waiting for surface reconciliation. Reconnecting skips the initial selection,

@@ -4,6 +4,7 @@ pub const text_limit = 256 * 1024;
 pub const image_limit = 8 * 1024 * 1024;
 pub const total_limit = 16 * 1024 * 1024;
 pub const entries_limit = 20;
+pub const retention_seconds: i64 = 7 * 24 * 60 * 60;
 pub const Kind = enum { text, png };
 pub fn valid(kind: Kind, bytes: []const u8) bool {
     if (bytes.len == 0) return false;
