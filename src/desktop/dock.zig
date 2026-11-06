@@ -59,13 +59,18 @@ pub const Dock = struct {
     tasks: *TaskApps.Store,
     preferences: *Preferences,
     output: []const u8,
-    window: *gtk.Window,
-    sensor: *gtk.Window,
+    /// Null when embedded as a bar widget; the bar window owns the surface.
+    window: ?*gtk.Window = null,
+    sensor: ?*gtk.Window = null,
     panel: *gtk.Box,
     scroll: *gtk.ScrolledWindow,
+    overlay: *gtk.Overlay,
     /// Hosts the drag ghost above the scroll content; never targets input.
     fixed: *gtk.Fixed,
     ghost: *gtk.Image,
+    /// Bar-widget host: no layer shell, reveal sensor, effects or fade; the
+    /// strip lives inside the bar section and is always shown.
+    embedded: bool = false,
     effects: native.Surface = undefined,
     arena: std.heap.ArenaAllocator,
     menus: std.ArrayList(*gtk.Popover) = .empty,
@@ -158,7 +163,7 @@ pub const Dock = struct {
         scroll.as(gtk.Widget).addCssClass("pearl-surface-panel");
         panel.as(gtk.Widget).addCssClass("pearl-dock");
         w.name(panel.as(gtk.Widget), @import("i18n").dtr("pearl", "Applications dock"));
-        self.* = .{ .client = client, .index = index, .tasks = tasks, .preferences = preferences, .output = output, .window = window, .sensor = sensor, .panel = panel, .scroll = scroll, .fixed = fixed, .ghost = ghost, .arena = .init(a), .context = context, .changed = changed };
+        self.* = .{ .client = client, .index = index, .tasks = tasks, .preferences = preferences, .output = output, .window = window, .sensor = sensor, .panel = panel, .scroll = scroll, .overlay = overlay, .fixed = fixed, .ghost = ghost, .arena = .init(a), .context = context, .changed = changed };
         try self.effects.init(effects, window, scroll.as(gtk.Widget), true, .panel);
         self.effects.geometry_context = self;
         self.effects.geometry_changed = measured;
@@ -173,11 +178,38 @@ pub const Dock = struct {
         window.as(gtk.Widget).addController(keys.as(gtk.EventController));
         return self;
     }
+    /// Bar-widget variant: the same strip, menus and drag machinery parented
+    /// into a bar section. The bar window owns styling, blur and visibility.
+    pub fn createEmbedded(host: *gtk.Box, client: *Client, index: *Apps.Index, tasks: *TaskApps.Store, preferences: *Preferences, output: []const u8, context: *anyopaque, changed: *const fn (*anyopaque) void) !*Dock {
+        const self = try a.create(Dock);
+        errdefer a.destroy(self);
+        const panel = gtk.Box.new(.horizontal, 4);
+        const scroll = gtk.ScrolledWindow.new();
+        scroll.setPropagateNaturalWidth(1);
+        scroll.setPropagateNaturalHeight(1);
+        scroll.setChild(panel.as(gtk.Widget));
+        const overlay = gtk.Overlay.new();
+        overlay.setChild(scroll.as(gtk.Widget));
+        const fixed = gtk.Fixed.new();
+        fixed.as(gtk.Widget).setCanTarget(0);
+        const ghost = gtk.Image.new();
+        ghost.as(gtk.Widget).addCssClass("pearl-dock-ghost");
+        ghost.as(gtk.Widget).setVisible(0);
+        fixed.put(ghost.as(gtk.Widget), 0, 0);
+        overlay.addOverlay(fixed.as(gtk.Widget));
+        overlay.setClipOverlay(fixed.as(gtk.Widget), 1);
+        host.append(overlay.as(gtk.Widget));
+        panel.as(gtk.Widget).addCssClass("pearl-dock");
+        panel.as(gtk.Widget).addCssClass("pearl-dock-embedded");
+        w.name(panel.as(gtk.Widget), @import("i18n").dtr("pearl", "Applications dock"));
+        self.* = .{ .client = client, .index = index, .tasks = tasks, .preferences = preferences, .output = output, .panel = panel, .scroll = scroll, .overlay = overlay, .fixed = fixed, .ghost = ghost, .embedded = true, .arena = .init(a), .locked = false, .context = context, .changed = changed };
+        return self;
+    }
     pub fn destroy(self: *Dock) void {
         self.destroying = true;
         if (self.timer != 0) _ = glib.Source.remove(self.timer);
         self.stopFade();
-        self.effects.deinit();
+        if (!self.embedded) self.effects.deinit();
         self.clear();
         if (self.background_css) |provider| {
             self.scroll.as(gtk.Widget).getStyleContext().removeProvider(provider.as(gtk.StyleProvider));
@@ -188,10 +220,14 @@ pub const Dock = struct {
             provider.unref();
         }
         if (self.landed) |id| a.free(id);
-        self.window.destroy();
-        self.window.unref();
-        self.sensor.destroy();
-        self.sensor.unref();
+        if (self.embedded) {
+            self.overlay.as(gtk.Widget).unparent();
+        } else {
+            self.window.?.destroy();
+            self.window.?.unref();
+            self.sensor.?.destroy();
+            self.sensor.?.unref();
+        }
         self.arena.deinit();
         self.menus.deinit(a);
         a.destroy(self);
@@ -233,7 +269,8 @@ pub const Dock = struct {
     }
     pub fn update(self: *Dock, config: p.Config, bar_edge: placement.Edge, bounds: placement.Rect, locked: bool) !void {
         var next = config;
-        next.edge = p.edge(config.edge, bar_edge);
+        // Embedded strips follow the bar edge so menus open away from the bar.
+        next.edge = if (self.embedded) bar_edge else p.edge(config.edge, bar_edge);
         self.config = next;
         self.bounds = bounds;
         self.locked = locked;
@@ -244,9 +281,11 @@ pub const Dock = struct {
         }
         if (self.appearance != self.preferences.appearance) {
             self.appearance = self.preferences.appearance;
-            self.preferences.style(self.window.as(gtk.Widget), self.scroll.as(gtk.Widget));
-            self.preferences.style(self.sensor.as(gtk.Widget), self.sensor.getChild().?);
-            self.sensor.getChild().?.removeCssClass("background");
+            if (!self.embedded) {
+                self.preferences.style(self.window.?.as(gtk.Widget), self.scroll.as(gtk.Widget));
+                self.preferences.style(self.sensor.?.as(gtk.Widget), self.sensor.?.getChild().?);
+                self.sensor.?.getChild().?.removeCssClass("background");
+            }
         }
         var temp = std.heap.ArenaAllocator.init(a);
         defer temp.deinit();
@@ -300,6 +339,7 @@ pub const Dock = struct {
         self.visibility();
     }
     fn visibility(self: *Dock) void {
+        if (self.embedded) return;
         self.fullscreen = false;
         self.obstructed = false;
         var it = self.client.model.entities.valueIterator();
@@ -329,13 +369,25 @@ pub const Dock = struct {
         self.scroll.setPolicy(if (vertical) .never else .automatic, if (vertical) .automatic else .never);
         self.scroll.setMaxContentWidth(if (vertical) -1 else length);
         self.scroll.setMaxContentHeight(if (vertical) length else -1);
+        if (self.embedded) {
+            // The cross axis must clamp to the bar thickness: a NEVER policy
+            // makes GTK ignore max-content, so use EXTERNAL (bounded natural
+            // size, no scrollbar). The manager sets the cross max-content.
+            self.scroll.setPolicy(if (vertical) .external else .automatic, if (vertical) .automatic else .external);
+            // The strip hugs its icons; center it across the bar thickness.
+            self.scroll.as(gtk.Widget).setHalign(if (vertical) .center else .fill);
+            self.scroll.as(gtk.Widget).setValign(if (vertical) .fill else .center);
+            return;
+        }
         const estimate: i32 = @intCast(@max(1, self.count) * (@as(usize, self.config.icon_size) + 36) + 12);
         const width = if (vertical) @as(i32, self.config.icon_size) + 40 else @min(length, estimate);
         const height = if (vertical) @min(length, estimate) else @as(i32, self.config.icon_size) + 40;
         // Horizontal docks hug their content height; the forced estimate left
         // dead space below the icons once the indicator got tighter.
-        self.window.setDefaultSize(if (vertical) width else -1, -1);
-        for ([_]*gtk.Window{ self.window, self.sensor }) |win| {
+        const window = self.window.?;
+        const sensor = self.sensor.?;
+        window.setDefaultSize(if (vertical) width else -1, -1);
+        for ([_]*gtk.Window{ window, sensor }) |win| {
             inline for (std.meta.tags(placement.Edge)) |edge| {
                 const native_edge: layer.Edge = switch (edge) {
                     .top => .top,
@@ -344,16 +396,16 @@ pub const Dock = struct {
                     .left => .left,
                 };
                 layer.setAnchor(win, native_edge, @intFromBool(edge == self.config.edge));
-                layer.setMargin(win, native_edge, if (win == self.window and edge == self.config.edge) self.config.margin else 0);
+                layer.setMargin(win, native_edge, if (win == window and edge == self.config.edge) self.config.margin else 0);
             }
         }
-        const actual_width = if (self.window.as(gtk.Widget).getWidth() > 0) self.window.as(gtk.Widget).getWidth() else width;
-        const actual_height = if (self.window.as(gtk.Widget).getHeight() > 0) self.window.as(gtk.Widget).getHeight() else height;
+        const actual_width = if (window.as(gtk.Widget).getWidth() > 0) window.as(gtk.Widget).getWidth() else width;
+        const actual_height = if (window.as(gtk.Widget).getHeight() > 0) window.as(gtk.Widget).getHeight() else height;
         self.thickness = (if (vertical) actual_width else actual_height) + @as(i32, self.config.margin);
         // Fill the margin gap between the screen edge and the dock so the
         // pointer never crosses dead space where both surfaces lose hover.
         const strip = @max(2, @as(i32, self.config.margin));
-        self.sensor.setDefaultSize(if (vertical) strip else actual_width, if (vertical) actual_height else strip);
+        sensor.setDefaultSize(if (vertical) strip else actual_width, if (vertical) actual_height else strip);
         self.rect = .{ .x = self.bounds.x + @divTrunc(self.bounds.width - actual_width, 2), .y = self.bounds.y + @divTrunc(self.bounds.height - actual_height, 2), .width = actual_width, .height = actual_height };
         switch (self.config.edge) {
             .top => self.rect.y = self.bounds.y + self.config.margin,
@@ -362,28 +414,35 @@ pub const Dock = struct {
             .right => self.rect.x = self.bounds.x + self.bounds.width - actual_width - self.config.margin,
         }
     }
+    /// Error tooltips live on the dock window; embedded strips use the panel.
+    fn tooltipHost(self: *Dock) *gtk.Widget {
+        return if (self.window) |win| win.as(gtk.Widget) else self.panel.as(gtk.Widget);
+    }
     fn showState(self: *Dock) void {
+        // Embedded strips share the bar's visibility; no layer state to manage.
+        if (self.embedded) return;
+        const window = self.window.?;
         var interaction = self.hover or self.dragging;
         for (self.menus.items) |menu| if (menu.as(gtk.Widget).getVisible() != 0) {
             interaction = true;
         };
         self.reason = p.visibility(self.config, self.locked, self.count == 0, interaction, self.keyboard, self.fullscreen, self.obstructed);
         const shown = p.shown(self.reason);
-        layer.setLayer(self.window, if (shown and self.fullscreen) .overlay else .top);
-        layer.setKeyboardMode(self.window, if (shown and self.keyboard) .exclusive else .none);
+        layer.setLayer(window, if (shown and self.fullscreen) .overlay else .top);
+        layer.setKeyboardMode(window, if (shown and self.keyboard) .exclusive else .none);
         // Mirror the bar: `always` reserves space so applications avoid the dock;
         // other modes float above them.
-        layer.setExclusiveZone(self.window, if (shown and self.config.mode == .always and !self.fullscreen) self.thickness else -1);
+        layer.setExclusiveZone(window, if (shown and self.config.mode == .always and !self.fullscreen) self.thickness else -1);
         if (self.shown != shown) {
             self.shown = shown;
             self.animate(shown);
         }
-        self.sensor.as(gtk.Widget).setVisible(@intFromBool(self.config.enabled and !self.locked and self.count != 0));
+        self.sensor.?.as(gtk.Widget).setVisible(@intFromBool(self.config.enabled and !self.locked and self.count != 0));
     }
     /// Fades the dock instead of popping it; autohide and intelligent animate,
     /// and reduced motion keeps the instant switch.
     fn animate(self: *Dock, show: bool) void {
-        const widget = self.window.as(gtk.Widget);
+        const widget = self.window.?.as(gtk.Widget);
         if (self.config.mode == .always or widget.hasCssClass("pearl-reduced-motion") != 0) {
             self.stopFade();
             widget.setOpacity(1);
@@ -408,7 +467,7 @@ pub const Dock = struct {
         const self: *Dock = @ptrCast(@alignCast(data.?));
         self.fade = 0;
         if (self.destroying) return 0;
-        const widget = self.window.as(gtk.Widget);
+        const widget = self.window.?.as(gtk.Widget);
         const elapsed = @divTrunc(glib.getMonotonicTime(), 1000) - self.fade_start;
         const t = @min(1.0, @max(0.0, @as(f64, @floatFromInt(elapsed)) / fade_ms));
         const eased = 1 - std.math.pow(f64, 1 - t, 3);
@@ -530,7 +589,7 @@ pub const Dock = struct {
             // Keep the icon reachable so unavailable pins can still be unpinned.
             if (focused) primary.as(gtk.Widget).addCssClass("focused");
             const content = gtk.Box.new(.vertical, 0);
-            const icon = if (entry != null and entry.?.info.getIcon() != null and gtk.IconTheme.getForDisplay(self.window.as(gtk.Widget).getDisplay()).hasGicon(entry.?.info.getIcon().?) != 0) gtk.Image.newFromGicon(entry.?.info.getIcon().?) else gtk.Image.newFromIconName("pearl-application-x-executable-symbolic");
+            const icon = if (entry != null and entry.?.info.getIcon() != null and gtk.IconTheme.getForDisplay(self.panel.as(gtk.Widget).getDisplay()).hasGicon(entry.?.info.getIcon().?) != 0) gtk.Image.newFromGicon(entry.?.info.getIcon().?) else gtk.Image.newFromIconName("pearl-application-x-executable-symbolic");
             icon.setPixelSize(self.config.icon_size);
             content.append(icon.as(gtk.Widget));
             const indicator = if (group.windows.items.len > 1) try std.fmt.allocPrintSentinel(alloc, "{s} {d}", .{ if (focused) "●" else "•", group.windows.items.len }, 0) else if (focused) "●" else if (minimized) "◦" else if (group.windows.items.len > 0) "•" else "";
@@ -710,7 +769,7 @@ pub const Dock = struct {
         {
             var node: ?*gtk.Widget = self.panel.as(gtk.Widget);
             while (node) |n| {
-                if (n == self.window.as(gtk.Widget)) break;
+                if (n == self.overlay.as(gtk.Widget)) break;
                 var r: gtk.Allocation = undefined;
                 n.getAllocation(&r);
                 binding.win_x += @floatFromInt(r.f_x);
@@ -839,7 +898,7 @@ pub const Dock = struct {
                 }
             } else |err| {
                 log.err("event=dock-reorder error={s}", .{@errorName(err)});
-                self.window.as(gtk.Widget).setTooltipText(@import("i18n").dtr("pearl", "Action unavailable; the application or window may have changed."));
+                self.tooltipHost().setTooltipText(@import("i18n").dtr("pearl", "Action unavailable; the application or window may have changed."));
             }
         }
         // Rebuilds are deferred while dragging; reconcile any model change now.
@@ -860,7 +919,7 @@ pub const Dock = struct {
         const self = cb.dock;
         self.act(cb.*) catch |err| {
             log.err("event=dock-action error={s}", .{@errorName(err)});
-            self.window.as(gtk.Widget).setTooltipText(@import("i18n").dtr("pearl", "Action unavailable; the application or window may have changed."));
+            self.tooltipHost().setTooltipText(@import("i18n").dtr("pearl", "Action unavailable; the application or window may have changed."));
         };
         self.reveal(false);
     }
@@ -913,7 +972,7 @@ pub const Dock = struct {
         const desktop = unix.DesktopAppInfo.new(id) orelse return error.StaleApplication;
         defer desktop.unref();
         if (desktop.as(gio.AppInfo).shouldShow() == 0) return error.StaleApplication;
-        const context = self.window.as(gtk.Widget).getDisplay().getAppLaunchContext();
+        const context = self.panel.as(gtk.Widget).getDisplay().getAppLaunchContext();
         defer context.unref();
         context.setTimestamp(0);
         if (action) |name| {

@@ -13,16 +13,29 @@ const tr = @import("text.zig").tr;
 const chargeState = @import("text.zig").chargeState;
 const presentation = @import("../services/power_presentation.zig");
 const a = std.heap.c_allocator;
+/// Matches the theme CSS; preferences at this value leave the theme in control.
+const default_radius: u8 = 14;
 const clocks = @import("clock_policy.zig");
 const Clock = @import("clock_view.zig").View;
 const Running = @import("running_apps.zig");
 pub const Pane = enum { launcher_picker, running_apps, clipboard_capture, aqueous_settings, settings, launcher, calendar, control, notifications, media, tray, wallpapers, resources, scheduling, weather };
 pub const Event = union(enum) { running_apps: Running.Event, pane: Pane, settings: @import("settings_navigation.zig").Route, workspace: []const u8, keyboard, overview, window_switcher };
 const Button = struct { owner: *Bar, event: Event, id: ?[]u8 = null };
+/// Manager wiring the optional `dock` widget needs to behave like the
+/// standalone dock: preferences, task matching, and the launcher picker.
+pub const DockDeps = struct {
+    preferences: *@import("../config/service.zig").Service,
+    tasks: *@import("task_apps.zig").Store,
+    context: *anyopaque,
+    changed: *const fn (*anyopaque) void,
+    choose_launcher: *const fn (*anyopaque, []const u8, @import("launcher_picker.zig").Request) anyerror!void,
+};
 pub const Bar = struct {
     background_opacity: @import("bar_opacity.zig").Config = .{},
     background_css: ?*gtk.CssProvider = null,
     background_color: ?gdk.RGBA = null,
+    radius: u8 = default_radius,
+    radius_css: ?*gtk.CssProvider = null,
     launcher_icon: @import("../ui/components/launcher_icon.zig").Renderer = .{},
     host: *gtk.Box,
     tasks: *const @import("task_model.zig").Snapshot,
@@ -36,6 +49,8 @@ pub const Bar = struct {
     plugins: ?*@import("../plugins/manager.zig").Manager = null,
     plugin_views: std.ArrayList(*@import("../plugins/view.zig").View) = .empty,
     tray: ?*@import("tray.zig").Bar = null,
+    dock_widget: ?*@import("dock.zig").Dock = null,
+    dock_deps: ?DockDeps = null,
     resources: ?*@import("resource_view.zig").View = null,
     /// Geometry of the widget that last opened a pane, in bar-window coordinates.
     pane_anchor: ?struct { x: i32, y: i32, width: i32, height: i32 } = null,
@@ -92,6 +107,10 @@ pub const Bar = struct {
             self.host.as(gtk.Widget).getStyleContext().removeProvider(provider.as(gtk.StyleProvider));
             provider.unref();
         }
+        if (self.radius_css) |provider| {
+            self.host.as(gtk.Widget).getStyleContext().removeProvider(provider.as(gtk.StyleProvider));
+            provider.unref();
+        }
         self.launcher_icon.deinit();
         self.clock_arena.deinit();
         for (self.groups) |g| a.free(g);
@@ -119,6 +138,9 @@ pub const Bar = struct {
         self.sections = @splat(null);
         if (self.tray) |tray| tray.destroy();
         self.tray = null;
+        // Before the host children go: destroy() unparents the dock overlay.
+        if (self.dock_widget) |dock| dock.destroy();
+        self.dock_widget = null;
         if (self.resources) |view| view.destroy();
         self.resources = null;
         self.notification_label = null;
@@ -182,6 +204,10 @@ pub const Bar = struct {
     pub fn setResourceMode(self: *Bar, mode: @import("resource_model.zig").Mode) void {
         self.resource_mode = mode;
     }
+    /// Must be set before configure() when a group contains the `dock` widget.
+    pub fn setDockDeps(self: *Bar, deps: DockDeps) void {
+        self.dock_deps = deps;
+    }
     pub fn setBackgroundOpacity(self: *Bar, config: @import("bar_opacity.zig").Config, color: gdk.RGBA) !void {
         const alpha = config.alpha();
         var resolved = color;
@@ -199,6 +225,24 @@ pub const Bar = struct {
         } else if (self.background_css) |provider| provider.loadFromString("");
         self.background_color = if (alpha != null) resolved else null;
         self.background_opacity = config;
+    }
+    /// Overrides the theme's 14px corner radius. The default injects nothing so
+    /// community themes keep control; a custom value wins via provider priority.
+    pub fn setBorderRadius(self: *Bar, radius: u8) !void {
+        if (self.radius == radius) return;
+        self.radius = radius;
+        if (radius == default_radius) {
+            if (self.radius_css) |provider| provider.loadFromString("");
+            return;
+        }
+        const css = try std.fmt.allocPrintSentinel(a, ".pearl-bar-panel {{ border-radius: {0d}px; }} .pearl-island {{ border-radius: {0d}px; }} .pearl-bar-attached.pearl-bar-top, .pearl-bar-attached.pearl-bar-top .pearl-island {{ border-radius: 0 0 {0d}px {0d}px; }} .pearl-bar-attached.pearl-bar-bottom, .pearl-bar-attached.pearl-bar-bottom .pearl-island {{ border-radius: {0d}px {0d}px 0 0; }} .pearl-bar-attached.pearl-bar-left, .pearl-bar-attached.pearl-bar-left .pearl-island {{ border-radius: 0 {0d}px {0d}px 0; }} .pearl-bar-attached.pearl-bar-right, .pearl-bar-attached.pearl-bar-right .pearl-island {{ border-radius: {0d}px 0 0 {0d}px; }}", .{radius}, 0);
+        defer a.free(css);
+        if (self.radius_css == null) {
+            self.radius_css = gtk.CssProvider.new();
+            self.host.as(gtk.Widget).getStyleContext().addProvider(self.radius_css.?.as(gtk.StyleProvider), 602);
+            for (self.sections) |section| if (section) |widget| widget.getStyleContext().addProvider(self.radius_css.?.as(gtk.StyleProvider), 602);
+        }
+        self.radius_css.?.loadFromString(css);
     }
     pub fn setIslands(self: *Bar, enabled: bool) void {
         if (self.islands != enabled) {
@@ -252,6 +296,7 @@ pub const Bar = struct {
             const box = gtk.Box.new(if (self.vertical) .vertical else .horizontal, 4);
             self.sections[section] = if (group.len != 0) box.as(gtk.Widget) else null;
             if (self.background_css) |provider| box.as(gtk.Widget).getStyleContext().addProvider(provider.as(gtk.StyleProvider), 602);
+            if (self.radius_css) |provider| box.as(gtk.Widget).getStyleContext().addProvider(provider.as(gtk.StyleProvider), 602);
             if (self.vertical) box.as(gtk.Widget).setVexpand(@intFromBool(!self.islands and section != 1)) else box.as(gtk.Widget).setHexpand(@intFromBool(!self.islands and section != 1));
             box.as(gtk.Widget).setHalign(if (self.vertical) .fill else if (section == 2) .end else .fill);
             box.as(gtk.Widget).setValign(if (self.vertical and section == 2) .end else .fill);
@@ -293,6 +338,15 @@ pub const Bar = struct {
                     .running_apps => blk: {
                         const host = gtk.Box.new(if (self.vertical) .vertical else .horizontal, 2);
                         self.running_apps = try Running.Strip.create(host, self.tasks, self.app_index, self.client, self.vertical, self, runningAction);
+                        break :blk host.as(gtk.Widget);
+                    },
+                    .dock => blk: {
+                        const host = gtk.Box.new(if (self.vertical) .vertical else .horizontal, 2);
+                        if (self.dock_deps) |deps| {
+                            const dock = try @import("dock.zig").Dock.createEmbedded(host, self.client, self.app_index, deps.tasks, deps.preferences, self.output, deps.context, deps.changed);
+                            dock.choose_launcher = deps.choose_launcher;
+                            self.dock_widget = dock;
+                        }
                         break :blk host.as(gtk.Widget);
                     },
                     .tray => blk: {

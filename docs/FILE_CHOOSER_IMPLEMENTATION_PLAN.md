@@ -410,10 +410,11 @@ idempotent cancel; completion fires once on the owning main context. Returned
 objects have explicit reference ownership. The C wrapper supplies one result-free
 function and documents ownership in the header.
 
-Use bounded inputs: initially 64 filters, 64 rules per filter, 16 application
-choices with 64 values each, 1024 selected files or batch names, and 1 MiB total
-request metadata. Reject over-limit requests with a typed error; do not silently
-truncate. Display strings are escaped as text. Preserve filesystem byte names
+Use bounded inputs: initially 64 filters, 2048 rules per filter, 2 star runs per
+glob, 16 application choices with 64 values each, 1024 selected files or batch
+names, and 1 MiB total request metadata. Reject over-limit requests and globs
+ending in an unescaped backslash with a typed error; do not silently truncate.
+Display strings are escaped as text. Preserve filesystem byte names
 and derive safe display names through GIO. The chooser must not impose the
 wallpaper preference's 1024-byte UTF-8 limit on all documents; that validation
 remains in the wallpaper caller.

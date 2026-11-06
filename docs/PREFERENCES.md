@@ -165,6 +165,17 @@ if that object omits `mode`, that display uses `always`, even if `bar.mode` is
 `autohide`. Edit display overrides in Advanced. Visibility changes apply live
 and survive restart. See [the implementation plan](BAR_AUTOHIDE_IMPLEMENTATION_PLAN.md).
 
+**Bar & dock → Bar displays** switches the bar off per connected display, for
+setups where the bar should stay always visible on one screen only. The JSON
+field is the top-level `bar_hidden_outputs`, a list of connector names (for
+example `["DP-2"]`); connectors not in the list keep the bar in the configured
+`bar.mode`. A hidden bar releases its exclusive zone, so applications use the
+full screen, and an embedded dock hides with it. The form keeps the switch of
+the last display showing a bar insensitive, and the shell additionally refuses
+to hide every bar: if a hand-edited document lists all connected outputs, the
+first output keeps its bar. The list is independent of `outputs[].bar`
+overrides, so a display override never re-enables a hidden bar.
+
 The Zig `pearl-settings --page appearance` application edits the same session-owned
 Pearl draft as the shell preference popup. Advanced exposes the full JSON,
 including output overrides, pinned applications and export templates. Use **Apply & save** to save all

@@ -368,7 +368,7 @@ pub const View = struct {
         self.themes.preview_callback = previewPalette;
         self.profiles = try @import("profiles_view.zig").View.create(self.profiles_section.body, editor);
         self.login_section = Section.create(host, @import("i18n").dtr("pearl", "Login screen"), @import("i18n").dtr("pearl", "Copy appearance with administrator authentication"));
-        self.greeter_sync = try @import("greeter_sync.zig").View.create(self.login_section.body, self, syncPreferences);
+        self.greeter_sync = try @import("greeter_sync.zig").View.create(self.login_section.body, self, syncPreferences, null);
         host.reorderChildAfter(message.as(gtk.Widget), null);
         self.sync_borders = sync_borders;
         _ = object.Object.signals.notify.connect(sync_borders.as(object.Object), *View, selected, self, .{ .detail = "active" });

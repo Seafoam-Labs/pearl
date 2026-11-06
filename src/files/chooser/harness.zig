@@ -99,6 +99,7 @@ pub fn run(args: []const [:0]const u8) u8 {
         }
     }
     if (action == .save) chooser.setName(dialog, if (args.len > 3) args[3] else "Untitled.txt");
+    if (std.mem.eql(u8, mode, "mnemonic")) chooser.setAcceptLabel(dialog, "_Pick");
     if (std.mem.eql(u8, mode, "batch")) {
         const names = glib.Variant.parse(null, "[b'batch one.txt', b'batch two.txt']", null, null, null).?;
         defer names.unref();

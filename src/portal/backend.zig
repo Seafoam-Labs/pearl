@@ -1,3 +1,4 @@
+const std = @import("std");
 const chooser = @import("file_chooser");
 const identity = @import("identity.zig");
 const ffi = @import("ffi.zig");
@@ -356,6 +357,12 @@ pub fn portal_app_name(id: [*c]const u8) callconv(.c) [*c]u8 {
     return ffi.g_strdup(if (app != null) ffi.g_app_info_get_display_name(ffi.cast(?*ffi.GAppInfo, app)) else ffi.cast([*c]const u8, "Application"));
 }
 
+pub fn portal_caller_name(id: [*c]const u8) [*c]u8 {
+    const name: [*c]u8 = portal_app_name(id);
+    defer if (name != null) ffi.g_free(@ptrCast(name));
+    return ffi.g_utf8_truncate_middle(name, 128);
+}
+
 pub fn portal_label(text: [*c]const u8) callconv(.c) [*c]ffi.GtkWidget {
     const label: [*c]ffi.GtkWidget = ffi.gtk_label_new(text);
     ffi.gtk_label_set_wrap(ffi.cast(?*ffi.GtkLabel, label), 1);
@@ -511,11 +518,10 @@ pub fn portal_dialog(r: [*c]Request, title: [*c]const u8, negative: [*c]const u8
     ffi.gtk_widget_set_margin_end(body, 24);
     ffi.gtk_widget_set_margin_top(body, 24);
     ffi.gtk_widget_set_margin_bottom(body, 24);
-    const name: [*c]u8 = portal_app_name(r.*.app_id);
+    const name: [*c]u8 = portal_caller_name(r.*.app_id);
     defer if (name != null) ffi.g_free(@ptrCast(name));
-    const caller: [*c]u8 = ffi.g_strdup_printf("Requested by %s", name);
-    defer if (caller != null) ffi.g_free(@ptrCast(caller));
-    const caller_identity: [*c]ffi.GtkWidget = portal_label(caller);
+    var caller: [1024]u8 = undefined;
+    const caller_identity: [*c]ffi.GtkWidget = portal_label(@import("i18n").dfmt("pearl", &caller, "Requested by {s}", .{std.mem.span(name)}));
     ffi.gtk_widget_add_css_class(caller_identity, "dim-label");
     ffi.gtk_box_append(ffi.cast([*c]ffi.GtkBox, body), caller_identity);
     const cancel: [*c]ffi.GtkWidget = ffi.gtk_dialog_add_button(r.*.dialog, negative, ffi.GTK_RESPONSE_CANCEL);

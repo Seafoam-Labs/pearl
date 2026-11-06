@@ -36,6 +36,7 @@ pub const View = struct {
     wallpaper_picker: ?*gtk.Dialog = null,
     font_size: *gtk.SpinButton,
     bar_size: *gtk.SpinButton,
+    bar_radius: *gtk.SpinButton = undefined,
     islands: *gtk.CheckButton = undefined,
     attached: *gtk.CheckButton = undefined,
     running_apps_per_window: *gtk.CheckButton = undefined,
@@ -97,13 +98,14 @@ pub const View = struct {
         const qt_settings = gtk.Button.newWithLabel(@import("i18n").dtr("pearl", "Open Qt appearance settings…"));
         appearance.append(qt_settings.as(gtk.Widget));
         _ = gtk.Button.signals.clicked.connect(qt_settings, *View, openQtSettings, self, .{});
-        self.greeter_sync = try @import("../settings/greeter_sync.zig").View.create(appearance, self, syncPreferences);
+        self.greeter_sync = try @import("../settings/greeter_sync.zig").View.create(appearance, self, syncPreferences, .{ .prepare = prepareSyncPicker, .restore = restoreSyncPicker });
         bar.append(w.label(@import("i18n").dtr("pearl", "Default layout for every output. Connector overrides are available in Advanced."), "pearl-secondary").as(gtk.Widget));
         const bar_editor = gtk.Button.newWithLabel(@import("i18n").dtr("pearl", "Bar opacity and widgets…"));
         bar.append(bar_editor.as(gtk.Widget));
         _ = gtk.Button.signals.clicked.connect(bar_editor, *View, openBarSettings, self, .{});
         self.edge = dropdown(bar, @import("i18n").dtr("pearl", "Bar edge"), &.{ "Top", "Right", "Bottom", "Left" });
         self.bar_size = spin(bar, @import("i18n").dtr("pearl", "Bar minimum size"), 32, 160);
+        self.bar_radius = spin(bar, @import("i18n").dtr("pearl", "Bar corner radius"), 0, 48);
         self.islands = gtk.CheckButton.newWithLabel(@import("i18n").dtr("pearl", "Separate rounded bar islands"));
         bar.append(self.islands.as(gtk.Widget));
         self.attached = gtk.CheckButton.newWithLabel(@import("i18n").dtr("pearl", "Attach bar to screen edge"));
@@ -145,7 +147,7 @@ pub const View = struct {
         _ = gtk.Button.signals.clicked.connect(self.apply_button, *View, applied, self, .{});
         for (self.entries) |e| _ = gtk.Editable.signals.changed.connect(e.as(gtk.Editable), *View, edited, self, .{});
         for ([_]*gtk.DropDown{ self.mode, self.variant, self.source, self.scheme, self.fit, self.density, self.edge, self.placement, self.dock_edge, self.dock_mode }) |d| _ = object.Object.signals.notify.connect(d.as(object.Object), *View, selected, self, .{ .detail = "selected" });
-        for ([_]*gtk.SpinButton{ self.font_size, self.bar_size, self.dock_size, self.dock_margin }) |s| _ = gtk.SpinButton.signals.value_changed.connect(s, *View, spun, self, .{});
+        for ([_]*gtk.SpinButton{ self.font_size, self.bar_size, self.bar_radius, self.dock_size, self.dock_margin }) |s| _ = gtk.SpinButton.signals.value_changed.connect(s, *View, spun, self, .{});
         for ([_]*gtk.CheckButton{ self.motion, self.outside, self.islands, self.attached, self.running_apps_per_window, self.dock_enabled }) |c| _ = gtk.CheckButton.signals.toggled.connect(c, *View, toggled, self, .{});
         _ = gtk.TextBuffer.signals.insert_text.connect(self.raw, *View, inserting, self, .{});
         _ = gtk.TextBuffer.signals.changed.connect(self.raw, *View, rawEdited, self, .{});
@@ -179,6 +181,19 @@ pub const View = struct {
         if (self.local_error != null or self.service.job != null) return error.Unavailable;
         const bytes = self.service.draft.text orelse try std.json.Stringify.valueAlloc(alloc, self.service.prefs(), .{});
         return model.parse(alloc, bytes);
+    }
+    /// The sync chooser belongs to `greeter_sync.zig`, which the standalone
+    /// settings application also builds without layer-shell; the flyout owns it.
+    fn prepareSyncPicker(_: *anyopaque, picker: *gtk.Window, parent: *gtk.Window) void {
+        layer.initForWindow(picker);
+        layer.setNamespace(picker, "pearl:greeter-sync-picker");
+        layer.setMonitor(picker, layer.getMonitor(parent));
+        layer.setLayer(picker, .overlay);
+        layer.setKeyboardMode(parent, .none);
+        layer.setKeyboardMode(picker, .exclusive);
+    }
+    fn restoreSyncPicker(_: *anyopaque, parent: *gtk.Window) void {
+        layer.setKeyboardMode(parent, .on_demand);
     }
     fn closeWallpaperPicker(self: *View, restore_parent: bool) void {
         const picker = self.wallpaper_picker orelse return;
@@ -298,6 +313,7 @@ pub const View = struct {
         for (self.idle_spins, [_]u32{ p.idle.ac.lock_seconds, p.idle.ac.suspend_seconds, p.idle.battery.lock_seconds, p.idle.battery.suspend_seconds }) |control, value| control.setValue(@floatFromInt(value));
         self.font_size.setValue(@floatFromInt(p.font_size));
         self.bar_size.setValue(@floatFromInt(p.bar.size));
+        self.bar_radius.setValue(@floatFromInt(p.bar.radius));
         self.motion.setActive(@intFromBool(p.reduced_motion));
         self.outside.setActive(@intFromBool(p.popup.dismiss_outside));
         self.raw.setText(alloc.dupeSentinel(u8, json, 0) catch "{}", @intCast(json.len));
@@ -333,6 +349,7 @@ pub const View = struct {
         p.idle.battery.suspend_seconds = @intCast(self.idle_spins[3].getValueAsInt());
         p.font_size = @intCast(self.font_size.getValueAsInt());
         p.bar.size = @intCast(self.bar_size.getValueAsInt());
+        p.bar.radius = @intCast(self.bar_radius.getValueAsInt());
         p.reduced_motion = self.motion.getActive() != 0;
         p.popup.dismiss_outside = self.outside.getActive() != 0;
         const json = std.json.Stringify.valueAlloc(a, p, .{ .whitespace = .indent_2 }) catch return;

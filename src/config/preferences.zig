@@ -107,7 +107,7 @@ pub const Dock = @import("../desktop/dock_policy.zig").Config;
 pub const WorkspaceMode = @import("../desktop/workspace_policy.zig").Mode;
 pub const ResourceMode = @import("../desktop/resource_model.zig").Mode;
 pub const ResourceSelection = @import("../desktop/resource_model.zig").Selection;
-pub const Bar = struct { clocks: []const @import("../desktop/clock_policy.zig").Definition = &.{}, mode: @import("../desktop/bar_visibility.zig").Mode = .always, background_opacity: @import("../desktop/bar_opacity.zig").Config = .{}, launcher_icon: @import("../desktop/launcher_icon_policy.zig").Config = .{}, workspace_mode: WorkspaceMode = .large, running_apps_per_window: bool = false, resource_mode: ResourceMode = .icon, resource_series: ResourceSelection = .{}, islands: bool = true, attached: bool = false, edge: Edge = .top, size: u16 = 48, groups: Groups = .{} };
+pub const Bar = struct { clocks: []const @import("../desktop/clock_policy.zig").Definition = &.{}, mode: @import("../desktop/bar_visibility.zig").Mode = .always, background_opacity: @import("../desktop/bar_opacity.zig").Config = .{}, launcher_icon: @import("../desktop/launcher_icon_policy.zig").Config = .{}, workspace_mode: WorkspaceMode = .large, running_apps_per_window: bool = false, resource_mode: ResourceMode = .icon, resource_series: ResourceSelection = .{}, islands: bool = true, attached: bool = false, edge: Edge = .top, size: u16 = 48, radius: u8 = 14, groups: Groups = .{} };
 pub const Output = struct { connector: []const u8, bar: Bar = .{}, dock: ?Dock = null };
 pub const Export = struct { name: []const u8, template: []const u8 };
 pub const Preferences = struct {
@@ -134,6 +134,10 @@ pub const Preferences = struct {
     pinned_apps: []const []const u8 = &.{},
     application_launchers: []const @import("../desktop/app_identity.zig").Association = &.{},
     outputs: []const Output = &.{},
+    /// Connectors whose bar surface stays hidden. Kept outside the per-output
+    /// bar overrides so a display override never re-enables a hidden bar, and
+    /// the shell always keeps the bar on one output even if all are listed.
+    bar_hidden_outputs: []const []const u8 = &.{},
     popup: struct { dismiss_outside: bool = true, placement: enum { anchored, centered } = .anchored, max_width: u16 = 720, max_height: u16 = 800 } = .{},
     // Only explicitly listed files in Pearl's export directory are managed.
     exports: []const Export = &.{},
@@ -144,6 +148,10 @@ pub const Preferences = struct {
     pub fn dockForOutput(self: Preferences, connector: []const u8) Dock {
         for (self.outputs) |o| if (std.mem.eql(u8, o.connector, connector)) return o.dock orelse self.dock;
         return self.dock;
+    }
+    pub fn barHidden(self: Preferences, connector: []const u8) bool {
+        for (self.bar_hidden_outputs) |hidden| if (std.mem.eql(u8, hidden, connector)) return true;
+        return false;
     }
     pub fn validate(self: Preferences) !void {
         if (self.language.len > 0 and !@import("i18n").locale.valid(self.language)) return error.InvalidLanguage;
@@ -192,6 +200,12 @@ pub const Preferences = struct {
             for (self.outputs[0..i]) |previous| if (std.mem.eql(u8, previous.connector, o.connector)) return error.DuplicateOutput;
             try barValid(o.bar);
             if (o.dock) |dock| try @import("../desktop/dock_policy.zig").validate(dock);
+        }
+        if (self.bar_hidden_outputs.len > 16) return error.TooManyOutputs;
+        for (self.bar_hidden_outputs, 0..) |connector, i| {
+            try safeText(connector, 128);
+            if (connector.len == 0) return error.InvalidConnector;
+            for (self.bar_hidden_outputs[0..i]) |previous| if (std.mem.eql(u8, previous, connector)) return error.DuplicateOutput;
         }
         if (self.popup.max_width < 320 or self.popup.max_width > 1280 or self.popup.max_height < 320 or self.popup.max_height > 1600) return error.InvalidPopupSize;
         if (self.exports.len > 8) return error.TooManyExports;
@@ -380,6 +394,20 @@ test "workspace mode defaults, strict values and complete output overrides" {
         try std.testing.expectEqual(.large, parsed.forOutput("DP-1").workspace_mode);
         try std.testing.expectEqual(.medium, parsed.forOutput("DP-2").workspace_mode);
     }
+}
+
+test "hidden bar outputs default empty, roundtrip and reject unsafe lists" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    try std.testing.expectEqual(@as(usize, 0), (try parse(a, "{}")).bar_hidden_outputs.len);
+    const saved = try parse(a, "{\"bar_hidden_outputs\":[\"DP-2\",\"HDMI-A-1\"]}");
+    try std.testing.expect(saved.barHidden("DP-2") and saved.barHidden("HDMI-A-1") and !saved.barHidden("DP-1"));
+    const roundtrip = try parse(a, try std.json.Stringify.valueAlloc(a, saved, .{}));
+    try std.testing.expectEqualDeep(saved.bar_hidden_outputs, roundtrip.bar_hidden_outputs);
+    try std.testing.expectError(error.DuplicateOutput, parse(a, "{\"bar_hidden_outputs\":[\"DP-1\",\"DP-1\"]}"));
+    try std.testing.expectError(error.InvalidConnector, parse(a, "{\"bar_hidden_outputs\":[\"\"]}"));
+    try std.testing.expectError(error.InvalidText, parse(a, "{\"bar_hidden_outputs\":[\"DP\\u00001\"]}"));
 }
 
 test "application launcher preferences default empty and roundtrip distinct IDs" {

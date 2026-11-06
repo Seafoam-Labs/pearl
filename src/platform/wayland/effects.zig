@@ -121,6 +121,8 @@ pub const Surface = struct {
     last: ?Rect = null,
     last_available: bool = false,
     islands: ?*const [3]?*gtk.Widget = null,
+    radius: i32 = 14,
+    last_radius: i32 = 14,
     last_shapes: [3]?Rect = @splat(null),
     geometry_context: ?*anyopaque = null,
     geometry_changed: ?*const fn (*anyopaque) void = null,
@@ -208,14 +210,15 @@ pub const Surface = struct {
                     shapes[i] = .{ .x = @intFromFloat(x), .y = @intFromFloat(y), .width = widget.getWidth(), .height = widget.getHeight() };
             };
         } else if (rect.width > 0 and rect.height > 0) shapes[0] = rect;
-        if (self.last) |last| if (std.meta.eql(last, rect) and std.meta.eql(shapes, self.last_shapes) and blurred == self.last_available) return;
+        if (self.last) |last| if (std.meta.eql(last, rect) and std.meta.eql(shapes, self.last_shapes) and blurred == self.last_available and self.radius == self.last_radius) return;
         self.last_shapes = shapes;
         self.last = rect;
         self.last_available = blurred;
+        self.last_radius = self.radius;
         const region = cairo.Region.create();
         defer region.destroy();
         if (self.input == .panel) for (shapes) |maybe| {
-            if (maybe) |r| rounded(region, r, 14);
+            if (maybe) |r| rounded(region, r, self.radius);
         };
         if (self.input == .full) native.setInputRegion(null) else native.setInputRegion(region);
         if (self.effect_owner == .native) self.updateNativeBlur(native, shapes, blurred);
@@ -241,7 +244,7 @@ pub const Surface = struct {
         defer blur_region.destroy();
         const shape = cairo.Region.create();
         defer shape.destroy();
-        for (shapes) |maybe| if (maybe) |r| rounded(shape, r, 14);
+        for (shapes) |maybe| if (maybe) |r| rounded(shape, r, self.radius);
         for (0..@intCast(shape.numRectangles())) |i| {
             var r: cairo.RectangleInt = undefined;
             shape.getRectangle(@intCast(i), &r);

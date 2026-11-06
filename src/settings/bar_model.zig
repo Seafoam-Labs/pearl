@@ -9,6 +9,7 @@ pub fn metadata(item: policy.Item) Metadata {
     return switch (item) {
         .window_switcher => .{ .name = "Cycle windows", .description = "Step through windows across workspaces and displays (requires updated Aqueous)", .icon = "pearl-window-switcher-symbolic" },
         .running_apps => .{ .name = "Running applications", .description = "Open windows across all workspaces and displays", .icon = "pearl-application-x-executable-symbolic" },
+        .dock => .{ .name = "Applications dock", .description = "Pinned and running applications for this display, with drag-to-reorder", .icon = "pearl-application-x-executable-symbolic" },
         .launcher => .{ .name = "Launcher", .description = "Open your applications", .icon = @import("../desktop/launcher_icon_policy.zig").default_icon },
         .workspaces => .{ .name = "Workspaces", .description = "Switch between workspaces", .icon = "pearl-view-grid-symbolic" },
         .title => .{ .name = "Window title", .description = "Name of the active window", .icon = "pearl-window-symbolic" },
