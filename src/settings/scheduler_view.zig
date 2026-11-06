@@ -1,13 +1,13 @@
-//! Scheduler profiles in Settings. It drives the same scheduler service and
-//! helper as the bar flyout, laid out like the Power page's power modes, and
-//! edits the profiles for every user, behind an administrator password.
+//! Scheduler profiles in Settings. It drives the same scheduler service as
+//! the bar flyout, laid out like the Power page's power modes, and edits the
+//! scx catalog's profiles for every user, behind an administrator password.
 const std = @import("std");
 const gtk = @import("gtk4");
 const object = @import("gobject2");
 const w = @import("../ui/components/widgets.zig");
 const builder = @import("rule_builder.zig");
 const p = @import("../services/sched_profiles.zig");
-const store = @import("../services/sched_profiles_store.zig");
+const editor = @import("../services/sched_editor.zig");
 const Service = @import("../services/scheduling.zig").Service;
 const log = std.log.scoped(.settings);
 const a = std.heap.c_allocator;
@@ -19,6 +19,11 @@ pub const View = struct {
     arena: std.heap.ArenaAllocator = .init(a),
     ids: []const []const u8 = &.{},
     buttons: []*gtk.CheckButton = &.{},
+    /// Whether each profile's scheduler is installed.
+    available: []bool = &.{},
+    /// "Selected, stopped" under each profile, shown for a selection kept
+    /// while the unit is stopped.
+    stopped: []*gtk.Label = &.{},
     bindings: []Binding = &.{},
     root: *gtk.Box,
     status: *gtk.Label,
@@ -38,15 +43,16 @@ pub const View = struct {
     const Binding = struct { view: *View, index: usize };
     const Dialog = struct {
         window: *gtk.Dialog,
-        /// The profile being edited; null when adding one.
-        index: ?usize,
+        /// What the editor was opened on, copied out of the listing: the
+        /// service frees a listing whenever scxcli lists again. Null for the
+        /// restore dialog.
+        draft: ?editor.Draft = null,
         /// Restoring the defaults asks first, in a dialog without fields.
         restore: bool = false,
         name: ?*gtk.Entry = null,
         description: ?*gtk.Entry = null,
         scheduler: ?*gtk.DropDown = null,
         options: ?*gtk.Entry = null,
-        schedulers: []const []const u8 = &.{},
         err: ?*gtk.Label = null,
         arena: std.heap.ArenaAllocator,
     };
@@ -97,53 +103,64 @@ pub const View = struct {
         a.destroy(self);
     }
 
-
     fn disconnect(self: *View) void {
         for (self.connections.items) |c| object.signalHandlerDisconnect(c.obj, c.id);
         self.connections.clearRetainingCapacity();
     }
 
-    /// Identifies the profile list, so the widgets are rebuilt only when it
-    /// changes.
+    /// Identifies the profile list and the mode, so the widgets are rebuilt
+    /// only when either changes.
     fn listSignature(self: *const View) u64 {
-        const config = self.service.config orelse return 0;
-        var scratch = std.heap.ArenaAllocator.init(a);
-        defer scratch.deinit();
-        const bytes = p.serialize(scratch.allocator(), config) catch return 1;
         var hash = std.hash.Wyhash.init(@intFromBool(self.editing));
-        hash.update(bytes);
-        hash.update(if (self.service.custom) "custom" else "system");
+        hash.update(std.mem.asBytes(&self.service.signature()));
+        hash.update(if (self.service.shipped != null) "shipped" else "");
         return hash.final();
     }
 
-    fn rebuild(self: *View) !void {
+    /// No rows, and nothing that refers to them.
+    fn clear(self: *View) void {
         self.disconnect();
         while (self.profiles.as(gtk.Widget).getFirstChild()) |child| self.profiles.remove(child);
         self.ids = &.{};
         self.buttons = &.{};
+        self.available = &.{};
+        self.stopped = &.{};
         self.bindings = &.{};
         _ = self.arena.reset(.retain_capacity);
-        const config = self.service.config orelse return;
+    }
+
+    fn rebuild(self: *View) !void {
+        self.clear();
+        const listing = self.service.listing orelse return;
         const alloc = self.arena.allocator();
-        const ids = try alloc.alloc([]const u8, config.profiles.len);
-        for (config.profiles, ids) |profile, *id| id.* = try alloc.dupe(u8, profile.id);
+        const ids = try alloc.alloc([]const u8, listing.profiles.len);
+        for (listing.profiles, ids) |profile, *id| id.* = try alloc.dupe(u8, profile.id);
         self.ids = ids;
-        self.bindings = try alloc.alloc(Binding, config.profiles.len);
+        self.bindings = try alloc.alloc(Binding, listing.profiles.len);
         for (self.bindings, 0..) |*binding, i| binding.* = .{ .view = self, .index = i };
-        if (self.editing) return self.buildEditor(config);
-        self.buttons = try alloc.alloc(*gtk.CheckButton, config.profiles.len);
+        if (self.editing) return self.buildEditor(listing.profiles);
+        self.buttons = try alloc.alloc(*gtk.CheckButton, listing.profiles.len);
+        self.available = try alloc.alloc(bool, listing.profiles.len);
+        self.stopped = try alloc.alloc(*gtk.Label, listing.profiles.len);
         const flow = w.flow(3);
         flow.setHomogeneous(1);
-        for (config.profiles, self.buttons, self.bindings, 0..) |profile, *button, *binding, i| {
+        for (listing.profiles, self.buttons, self.available, self.stopped, self.bindings, 0..) |profile, *button, *available, *stopped, *binding, i| {
             button.* = gtk.CheckButton.new();
+            available.* = profile.available;
             if (i > 0) button.*.setGroup(self.buttons[0]);
             const labels = w.column(5);
             labels.append(w.label(try alloc.dupeSentinel(u8, profile.label, 0), "settings-row-title").as(gtk.Widget));
-            if (profile.description.len > 0) {
-                const detail = w.label(try alloc.dupeSentinel(u8, profile.description, 0), "pearl-secondary");
+            // A recommended scheduler that is not installed is listed, but
+            // cannot be started.
+            const text: ?[:0]const u8 = if (!profile.available) @import("i18n").dtr("pearl", "Not installed") else if (profile.description.len > 0) try alloc.dupeSentinel(u8, profile.description, 0) else null;
+            if (text) |value| {
+                const detail = w.label(value, "pearl-secondary");
                 detail.setWrap(1);
                 labels.append(detail.as(gtk.Widget));
             }
+            stopped.* = w.label(@import("i18n").dtr("pearl", "Selected, stopped"), "pearl-secondary");
+            stopped.*.as(gtk.Widget).setVisible(0);
+            labels.append(stopped.*.as(gtk.Widget));
             button.*.setChild(labels.as(gtk.Widget));
             button.*.as(gtk.Widget).addCssClass("power-mode");
             w.name(button.*.as(gtk.Widget), try alloc.dupeSentinel(u8, profile.label, 0));
@@ -155,15 +172,15 @@ pub const View = struct {
 
     /// One row per profile, with what it runs, whether it differs from the
     /// shipped profiles, and buttons to reorder and edit it.
-    fn buildEditor(self: *View, config: p.Config) !void {
+    fn buildEditor(self: *View, profiles: []const p.Profile) !void {
         const alloc = self.arena.allocator();
-        const system = if (self.service.custom) self.service.shipped else null;
-        for (config.profiles, self.bindings, 0..) |profile, *binding, i| {
+        const system = if (self.service.customized()) self.service.shipped else null;
+        for (profiles, self.bindings, 0..) |profile, *binding, i| {
             const card = builder.card();
             const top = w.row(8);
             const text = w.column(4);
             text.as(gtk.Widget).setHexpand(1);
-            const kind: ?[:0]const u8 = if (system) |s| if (s.find(profile.id)) |j| (if (p.sameCommand(s.profiles[j], profile) and std.mem.eql(u8, s.profiles[j].label, profile.label) and std.mem.eql(u8, s.profiles[j].description, profile.description)) null else @import("i18n").dtr("pearl", "Modified")) else @import("i18n").dtr("pearl", "Custom") else null;
+            const kind: ?[:0]const u8 = if (system) |s| if (p.findIn(s, profile.id)) |j| (if (p.sameCommand(s[j], profile) and std.mem.eql(u8, s[j].label, profile.label) and std.mem.eql(u8, s[j].description, profile.description)) null else @import("i18n").dtr("pearl", "Modified")) else @import("i18n").dtr("pearl", "Custom") else null;
             const title = w.label(if (kind) |tag| try std.fmt.allocPrintSentinel(alloc, "{s}  ·  {s}", .{ profile.label, tag }, 0) else try alloc.dupeSentinel(u8, profile.label, 0), "settings-row-title");
             title.setWrap(1);
             text.append(title.as(gtk.Widget));
@@ -172,22 +189,26 @@ pub const View = struct {
             summary.setSelectable(1);
             text.append(summary.as(gtk.Widget));
             top.append(text.as(gtk.Widget));
-            const up = w.iconButton("go-up-symbolic", @import("i18n").dtr("pearl", "Move up"));
-            const down = w.iconButton("go-down-symbolic", @import("i18n").dtr("pearl", "Move down"));
-            up.as(gtk.Widget).setSensitive(@intFromBool(i > 0));
-            down.as(gtk.Widget).setSensitive(@intFromBool(i + 1 < config.profiles.len));
-            for ([_]*gtk.Button{ up, down }) |button| {
-                button.as(gtk.Widget).setValign(.center);
-                top.append(button.as(gtk.Widget));
+            // Default is always first, so it does not move and nothing moves
+            // above it.
+            if (!profile.isDefault()) {
+                const up = w.iconButton("go-up-symbolic", @import("i18n").dtr("pearl", "Move up"));
+                const down = w.iconButton("go-down-symbolic", @import("i18n").dtr("pearl", "Move down"));
+                up.as(gtk.Widget).setSensitive(@intFromBool(i > 1));
+                down.as(gtk.Widget).setSensitive(@intFromBool(i + 1 < profiles.len));
+                for ([_]*gtk.Button{ up, down }) |button| {
+                    button.as(gtk.Widget).setValign(.center);
+                    top.append(button.as(gtk.Widget));
+                }
+                try self.connections.appendSlice(a, &.{
+                    .{ .obj = up.as(object.Object), .id = gtk.Button.signals.clicked.connect(up, *Binding, moveUp, binding, .{}) },
+                    .{ .obj = down.as(object.Object), .id = gtk.Button.signals.clicked.connect(down, *Binding, moveDown, binding, .{}) },
+                });
             }
-            try self.connections.appendSlice(a, &.{
-                .{ .obj = up.as(object.Object), .id = gtk.Button.signals.clicked.connect(up, *Binding, moveUp, binding, .{}) },
-                .{ .obj = down.as(object.Object), .id = gtk.Button.signals.clicked.connect(down, *Binding, moveDown, binding, .{}) },
-            });
             const edit = w.wrappingButton(@import("i18n").dtr("pearl", "Edit"));
             edit.as(gtk.Widget).setValign(.center);
             top.append(edit.as(gtk.Widget));
-            if (profile.stop) {
+            if (profile.isDefault()) {
                 // Default is the fallback when a scheduler fails, so it stays
                 // as the system defines it.
                 edit.as(gtk.Widget).setSensitive(0);
@@ -199,16 +220,19 @@ pub const View = struct {
             card.append(top.as(gtk.Widget));
             self.profiles.append(card.as(gtk.Widget));
         }
-        const help = w.label(@import("i18n").dtr("pearl", "Changes apply to every user of this computer and ask for an administrator password. Choosing a profile does not. Restore defaults returns to the profiles that came with the system."), "pearl-secondary");
+        const help = w.label(@import("i18n").dtr("pearl", "Profiles are the scx scheduler catalog's, shared with scxcli and scxtui. Changes apply to every user of this computer and ask for an administrator password. Choosing a profile does not. Restore defaults returns to the profiles that came with scx."), "pearl-secondary");
         help.setWrap(1);
         self.profiles.append(help.as(gtk.Widget));
     }
 
     /// The command line a profile runs, as shown in the list.
     fn command(alloc: std.mem.Allocator, profile: p.Profile) ![:0]const u8 {
-        if (profile.stop) return @import("i18n").dtr("pearl", "Turns sched_ext schedulers off: the kernel's built-in scheduler runs.");
+        if (profile.isDefault()) return @import("i18n").dtr("pearl", "Turns sched_ext schedulers off: the kernel's built-in scheduler runs.");
+        const sched = profile.scheduler().?;
+        // Translators: A scheduler started without options, such as scx_cosmos.
+        if (!profile.custom()) return try @import("i18n").fmtAlloc(alloc, "{s} with its own defaults", .{sched});
         var out: std.Io.Writer.Allocating = .init(alloc);
-        try out.writer.writeAll(profile.sched.?);
+        try out.writer.writeAll(sched);
         for (profile.args) |arg| try out.writer.print(" {s}", .{arg});
         return out.toOwnedSliceSentinel(0);
     }
@@ -219,27 +243,36 @@ pub const View = struct {
         const service = self.service;
         const signature = self.listSignature();
         if (signature != self.signature) {
-            self.signature = signature;
-            self.rebuild() catch |err| log.warn("event=sched-profile-editor result={s}", .{@errorName(err)});
+            // Taken as built only once complete; a rebuild that failed part
+            // way leaves no rows and is tried again at the next update.
+            if (self.rebuild()) |_| {
+                self.signature = signature;
+            } else |err| {
+                log.warn("event=sched-profile-editor result={s}", .{@errorName(err)});
+                self.clear();
+                self.signature = 0;
+            }
         }
         var buffer: [512]u8 = undefined;
-        const profile: ?p.Profile = if (service.config) |c| if (service.status.profile) |i| c.profiles[i] else null else null;
         self.status.setText(service.describe(&buffer));
         const usable = service.enabled and service.applying == null and !service.saving and service.status.kind != .unavailable;
         // The editor has no profile choices, only the ids its rows refer to.
-        for (self.buttons, self.ids[0..self.buttons.len]) |button, id| {
-            // Default stays selected while a scheduler outside the profiles runs.
-            const current = if (profile) |value| std.mem.eql(u8, value.id, id) and (service.status.kind == .running or service.status.kind == .off or service.status.kind == .custom) else false;
+        for (self.buttons, self.available, self.stopped, 0..) |button, available, stopped, i| {
+            // What runs is the chosen mode; a selection kept while the unit
+            // is stopped is not, but says so, and choosing it starts it.
+            const mark = service.mark(i);
+            const current = mark == .current;
+            stopped.as(gtk.Widget).setVisible(@intFromBool(mark == .stopped));
             button.setActive(@intFromBool(current));
             if (current) button.as(gtk.Widget).addCssClass("power-selected") else button.as(gtk.Widget).removeCssClass("power-selected");
-            button.as(gtk.Widget).setSensitive(@intFromBool(usable));
+            button.as(gtk.Widget).setSensitive(@intFromBool(usable and available));
         }
-        const editable = service.config != null and service.enabled and service.applying == null and !service.saving;
+        const editable = service.editable() and service.enabled and service.applying == null and !service.saving;
         self.edit_button.setLabel(if (self.editing) @import("i18n").dtr("pearl", "Done") else @import("i18n").dtr("pearl", "Edit profiles"));
-        self.edit_button.as(gtk.Widget).setVisible(@intFromBool(service.config != null));
+        self.edit_button.as(gtk.Widget).setVisible(@intFromBool(service.listing != null));
         self.add_button.as(gtk.Widget).setVisible(@intFromBool(self.editing));
-        self.add_button.as(gtk.Widget).setSensitive(@intFromBool(editable and if (service.config) |c| c.profiles.len < p.max_profiles else false));
-        self.restore_button.as(gtk.Widget).setVisible(@intFromBool(self.editing and service.custom));
+        self.add_button.as(gtk.Widget).setSensitive(@intFromBool(editable));
+        self.restore_button.as(gtk.Widget).setVisible(@intFromBool(self.editing and service.customized() and service.shipped != null));
         self.restore_button.as(gtk.Widget).setSensitive(@intFromBool(editable));
         self.profiles.as(gtk.Widget).setSensitive(@intFromBool(!self.editing or editable));
         var message: [600]u8 = undefined;
@@ -260,7 +293,11 @@ pub const View = struct {
         self.service.apply(id) catch |err| {
             log.warn("event=sched-profile-select profile={s} result={s}", .{ id, @errorName(err) });
             self.update();
-            self.showError(if (err == error.Busy) @import("i18n").dtr("pearl", "Another profile is being applied.") else @import("i18n").dtr("pearl", "This profile cannot be applied right now."));
+            self.showError(switch (err) {
+                error.Busy => @import("i18n").dtr("pearl", "Another profile is being applied."),
+                error.NotInstalled => @import("i18n").dtr("pearl", "This profile's scheduler is not installed."),
+                else => @import("i18n").dtr("pearl", "This profile cannot be applied right now."),
+            });
             return;
         };
         self.update();
@@ -271,13 +308,18 @@ pub const View = struct {
         self.update();
     }
 
-    /// Save a changed list. The helper asks for a password, and reports a
-    /// failure on the page.
-    fn save(self: *View, config: p.Config) bool {
-        self.service.saveProfiles(config) catch |err| {
+    /// Save a changed list. scxcli asks for a password, and a failure is
+    /// reported on the page.
+    fn save(self: *View, profiles: []const p.Profile, renamed: ?p.Rename) bool {
+        self.service.saveProfiles(profiles, renamed) catch |err| {
             log.warn("event=sched-profile-save result={s}", .{@errorName(err)});
             self.update();
-            self.showError(if (err == error.Busy) @import("i18n").dtr("pearl", "Wait until the profile being applied or saved is done.") else @import("i18n").dtr("pearl", "The profiles could not be saved."));
+            self.showError(switch (err) {
+                error.Busy => @import("i18n").dtr("pearl", "Wait until the profile being applied or saved is done."),
+                // Translators: scxcli catalog save reads at most 64 KiB.
+                error.CatalogTooLarge => @import("i18n").dtr("pearl", "The profiles do not fit in the scheduler catalog's 64 KiB; remove some or shorten their descriptions."),
+                else => @import("i18n").dtr("pearl", "The profiles could not be saved."),
+            });
             return false;
         };
         self.update();
@@ -286,14 +328,15 @@ pub const View = struct {
 
     fn move(binding: *Binding, offset: isize) void {
         const self = binding.view;
-        const config = self.service.config orelse return;
+        const listing = self.service.listing orelse return;
         const target = @as(isize, @intCast(binding.index)) + offset;
-        if (target < 0 or target >= config.profiles.len) return;
+        // Default stays first.
+        if (binding.index == 0 or target < 1 or target >= listing.profiles.len) return;
         var scratch = std.heap.ArenaAllocator.init(a);
         defer scratch.deinit();
-        const profiles = scratch.allocator().dupe(p.Profile, config.profiles) catch return;
+        const profiles = scratch.allocator().dupe(p.Profile, listing.profiles) catch return;
         std.mem.swap(p.Profile, &profiles[binding.index], &profiles[@intCast(target)]);
-        _ = self.save(.{ .profiles = profiles });
+        _ = self.save(profiles, null);
     }
 
     fn moveUp(_: *gtk.Button, binding: *Binding) callconv(.c) void {
@@ -325,6 +368,7 @@ pub const View = struct {
         if (self.dialog) |*dialog| {
             dialog.window.as(gtk.Window).destroy();
             dialog.window.unref();
+            if (dialog.draft) |*draft| draft.deinit();
             dialog.arena.deinit();
         }
         self.dialog = null;
@@ -334,8 +378,8 @@ pub const View = struct {
         if (self.dialog != null) return;
         const parent = self.parentWindow() orelse return error.NoWindow;
         const shell = builder.open(parent, @import("i18n").dtr("pearl", "Restore default profiles"));
-        self.dialog = .{ .window = shell.dialog, .index = null, .restore = true, .arena = .init(a) };
-        const text = w.label(@import("i18n").dtr("pearl", "Added and changed profiles are removed for every user, and the profiles that came with the system are used again. If the running profile changes, it is applied again. This asks for an administrator password."), null);
+        self.dialog = .{ .window = shell.dialog, .restore = true, .arena = .init(a) };
+        const text = w.label(@import("i18n").dtr("pearl", "The administrator's scheduler catalog is removed for every user, and the profiles that came with scx are used again. If the running profile changes, it is applied again. This asks for an administrator password."), null);
         text.setWrap(1);
         shell.body.append(text.as(gtk.Widget));
         _ = shell.dialog.addButton(@import("i18n").dtr("pearl", "Cancel"), @intFromEnum(gtk.ResponseType.cancel));
@@ -347,50 +391,40 @@ pub const View = struct {
 
     fn openEditor(self: *View, index: ?usize) !void {
         if (self.dialog != null) return;
-        const config = self.service.config orelse return error.Unavailable;
+        const listing = self.service.listing orelse return error.Unavailable;
         const parent = self.parentWindow() orelse return error.NoWindow;
-        const profile: ?p.Profile = if (index) |i| config.profiles[i] else null;
-        if (profile) |value| if (value.stop) return error.Locked;
-        const shell = builder.open(parent, if (profile != null) @import("i18n").dtr("pearl", "Edit scheduler profile") else @import("i18n").dtr("pearl", "Add scheduler profile"));
-        self.dialog = .{ .window = shell.dialog, .index = index, .arena = .init(a) };
-        const dialog = &self.dialog.?;
+        // The draft has one owner at a time: this scope until the dialog
+        // takes it, with nothing that can fail in between, then the dialog,
+        // which closeDialog frees.
+        const draft = try editor.Draft.open(a, listing, index);
+        const shell = builder.open(parent, if (draft.id != null) @import("i18n").dtr("pearl", "Edit scheduler profile") else @import("i18n").dtr("pearl", "Add scheduler profile"));
+        self.dialog = .{ .window = shell.dialog, .draft = draft, .arena = .init(a) };
         errdefer self.closeDialog();
+        const dialog = &self.dialog.?;
         const alloc = dialog.arena.allocator();
-        dialog.name = builder.entryRow(shell.body, @import("i18n").dtr("pearl", "Name"), 64);
-        dialog.description = builder.entryRow(shell.body, @import("i18n").dtr("pearl", "Description"), 256);
-        if (profile) |value| {
-            dialog.name.?.as(gtk.Editable).setText(try alloc.dupeSentinel(u8, value.label, 0));
-            dialog.description.?.as(gtk.Editable).setText(try alloc.dupeSentinel(u8, value.description, 0));
-        }
-        // Every installed scheduler, plus the profile's own if it is not. The
-        // profile stores the path, so the service cannot pick up another
-        // binary of the same name; the list shows names.
-        var names: std.ArrayList([]const u8) = .empty;
-        for (try store.installedSchedulers(alloc)) |name| try names.append(alloc, try std.fmt.allocPrint(alloc, "/usr/bin/{s}", .{name}));
-        if (profile) |value| for (names.items) |path| {
-            if (p.sameSched(path, value.sched.?)) break;
-        } else try names.append(alloc, value.sched.?);
-        dialog.schedulers = names.items;
-        const strings = try alloc.alloc(?[*:0]const u8, names.items.len + 1);
-        for (names.items, 0..) |path, i| strings[i] = try alloc.dupeSentinel(u8, if (std.mem.startsWith(u8, path, "/usr/bin/")) p.schedName(path) else path, 0);
-        strings[names.items.len] = null;
-        dialog.scheduler = builder.choiceRow(shell.body, @import("i18n").dtr("pearl", "Scheduler"), strings);
-        if (profile) |value| for (names.items, 0..) |path, i| {
-            if (p.sameSched(path, value.sched.?)) {
-                dialog.scheduler.?.setSelected(@intCast(i));
-                break;
-            }
-        };
-        dialog.options = builder.entryRow(shell.body, @import("i18n").dtr("pearl", "Options"), p.max_args * 129);
-        if (profile) |value| {
-            var out: std.Io.Writer.Allocating = .init(alloc);
-            for (value.args, 0..) |arg, i| try out.writer.print("{s}{s}", .{ if (i == 0) "" else " ", arg });
-            dialog.options.?.as(gtk.Editable).setText(try out.toOwnedSliceSentinel(0));
-        }
-        const help = w.label(@import("i18n").dtr("pearl", "Options are passed to the scheduler as typed, separated by spaces, for example --slice-us 1600. Run the scheduler with --help in a terminal to list them. Saving asks for an administrator password."), "pearl-secondary");
+        const data = &dialog.draft.?;
+        dialog.name = builder.entryRow(shell.body, @import("i18n").dtr("pearl", "Name"), p.max_label);
+        dialog.description = builder.entryRow(shell.body, @import("i18n").dtr("pearl", "Description"), p.max_description);
+        dialog.name.?.as(gtk.Editable).setText(try alloc.dupeSentinel(u8, data.label, 0));
+        dialog.description.?.as(gtk.Editable).setText(try alloc.dupeSentinel(u8, data.description, 0));
+        // The schedulers marked by tier, in the order scx lists them.
+        const shown = try alloc.alloc(?[*:0]const u8, data.choices.len + 1);
+        for (data.choices, shown[0..data.choices.len]) |choice, *text| text.* = if (choice.tier) |tier| switch (tier) {
+            .stable => try alloc.dupeSentinel(u8, choice.name, 0),
+            // Translators: A scheduler the scx maintainers do not call stable.
+            .experimental => try @import("i18n").fmtAlloc(alloc, "{s} (experimental)", .{choice.name}),
+            // Translators: An installed scheduler the scx catalog says nothing about.
+            .unknown => try @import("i18n").fmtAlloc(alloc, "{s} (not in the catalog)", .{choice.name}),
+        } else try alloc.dupeSentinel(u8, choice.name, 0);
+        shown[data.choices.len] = null;
+        dialog.scheduler = builder.choiceRow(shell.body, @import("i18n").dtr("pearl", "Scheduler"), shown);
+        if (data.selected) |i| dialog.scheduler.?.setSelected(@intCast(i));
+        dialog.options = builder.entryRow(shell.body, @import("i18n").dtr("pearl", "Options"), p.max_args * 257);
+        dialog.options.?.as(gtk.Editable).setText(try alloc.dupeSentinel(u8, data.options, 0));
+        const help = w.label(@import("i18n").dtr("pearl", "Options are passed to the scheduler as typed, separated by spaces, for example --slice-us 1600. Run the scheduler with --help in a terminal to list them. Without options it starts with its own defaults. Saving asks for an administrator password."), "pearl-secondary");
         help.setWrap(1);
         shell.body.append(help.as(gtk.Widget));
-        if (names.items.len == 0) {
+        if (data.choices.len == 0) {
             const none = w.label(@import("i18n").dtr("pearl", "No sched_ext schedulers are installed."), "pearl-error");
             none.setWrap(1);
             shell.body.append(none.as(gtk.Widget));
@@ -400,7 +434,7 @@ pub const View = struct {
         // Shown with the first problem; empty, it would still draw its color.
         dialog.err.?.as(gtk.Widget).setVisible(0);
         shell.body.append(dialog.err.?.as(gtk.Widget));
-        if (profile != null) _ = shell.dialog.addButton(@import("i18n").dtr("pearl", "Delete profile"), respond_delete);
+        if (data.id != null) _ = shell.dialog.addButton(@import("i18n").dtr("pearl", "Delete profile"), respond_delete);
         _ = shell.dialog.addButton(@import("i18n").dtr("pearl", "Cancel"), @intFromEnum(gtk.ResponseType.cancel));
         _ = shell.dialog.addButton(@import("i18n").dtr("pearl", "Save"), @intFromEnum(gtk.ResponseType.accept));
         _ = gtk.Dialog.signals.response.connect(shell.dialog, *View, response, self, .{});
@@ -421,10 +455,12 @@ pub const View = struct {
         }
         if (code == @intFromEnum(gtk.ResponseType.accept) or code == respond_delete) {
             const problem = self.commit(dialog, code == respond_delete) catch |err| switch (err) {
-                error.InvalidArgument => @import("i18n").dtr("pearl", "Options may contain only letters, digits and - _ . = , : + / % @, separated by spaces."),
+                error.InvalidArgument => @import("i18n").dtr("pearl", "Options may contain only letters, digits and - _ = . , : / +, separated by spaces, at most 256 characters each."),
                 error.TooManyArguments => @import("i18n").dtr("pearl", "A profile takes at most 32 options."),
                 error.InvalidName => @import("i18n").dtr("pearl", "Enter a name of at most 64 characters."),
+                error.InvalidDescription => @import("i18n").dtr("pearl", "Enter a description of at most 256 characters."),
                 error.NoScheduler => @import("i18n").dtr("pearl", "Choose a scheduler."),
+                error.CatalogChanged => @import("i18n").dtr("pearl", "The profiles were changed elsewhere while this dialog was open. Nothing was saved; close it and edit the profile again."),
                 else => @import("i18n").dtr("pearl", "The profiles could not be saved."),
             };
             if (problem) |text| {
@@ -437,36 +473,28 @@ pub const View = struct {
         self.update();
     }
 
-    /// Apply the dialog to the profile list and save it. Returns a message
-    /// for the dialog when saving failed.
+    /// Apply the dialog to the listing current now and save it. Returns a
+    /// message for the dialog when saving failed.
     fn commit(self: *View, dialog: *Dialog, delete: bool) !?[:0]const u8 {
-        const config = self.service.config orelse return error.Unavailable;
-        const alloc = dialog.arena.allocator();
-        var profiles: std.ArrayList(p.Profile) = .empty;
-        try profiles.appendSlice(alloc, config.profiles);
-        if (delete) {
-            _ = profiles.orderedRemove(dialog.index.?);
-        } else {
-            const label = std.mem.trim(u8, std.mem.span(dialog.name.?.as(gtk.Editable).getText()), " \t");
-            if (label.len == 0 or label.len > 64 or !std.unicode.utf8ValidateSlice(label)) return error.InvalidName;
-            for (label) |c| if (c < 32 or c == 127) return error.InvalidName;
-            const description = std.mem.trim(u8, std.mem.span(dialog.description.?.as(gtk.Editable).getText()), " \t");
-            var profile: p.Profile = if (dialog.index) |i| config.profiles[i] else .{ .id = "", .label = "" };
-            profile.label = try alloc.dupe(u8, label);
-            profile.description = try alloc.dupe(u8, description);
-            const selected = dialog.scheduler.?.getSelected();
-            if (selected >= dialog.schedulers.len) return error.NoScheduler;
-            profile.sched = dialog.schedulers[selected];
-            profile.args = try p.splitArgs(alloc, try alloc.dupe(u8, std.mem.span(dialog.options.?.as(gtk.Editable).getText())));
-            if (dialog.index) |i| {
-                profiles.items[i] = profile;
-            } else {
-                var buffer: [32]u8 = undefined;
-                profile.id = try alloc.dupe(u8, p.slug(&buffer, label, config));
-                try profiles.append(alloc, profile);
-            }
-        }
-        if (!self.save(.{ .profiles = profiles.items })) return @import("i18n").dtr("pearl", "The profiles could not be saved.");
+        const listing = self.service.listing orelse return error.Unavailable;
+        const draft = &(dialog.draft orelse return error.Unavailable);
+        var scratch = std.heap.ArenaAllocator.init(a);
+        defer scratch.deinit();
+        const input: ?editor.Input = if (delete) null else .{
+            .label = std.mem.span(dialog.name.?.as(gtk.Editable).getText()),
+            .description = std.mem.span(dialog.description.?.as(gtk.Editable).getText()),
+            .scheduler = dialog.scheduler.?.getSelected(),
+            .options = std.mem.span(dialog.options.?.as(gtk.Editable).getText()),
+        };
+        const edit = draft.commit(scratch.allocator(), listing, input) catch |err| switch (err) {
+            error.InvalidArgument, error.TooManyArguments, error.InvalidName, error.InvalidDescription, error.NoScheduler, error.CatalogChanged => return err,
+            else => {
+                log.warn("event=sched-profile-editor result={s}", .{@errorName(err)});
+                return @import("i18n").dtr("pearl", "The profiles could not be saved.");
+            },
+        };
+        // Saving renders and copies the list before it returns.
+        if (!self.save(edit.profiles, edit.renamed)) return @import("i18n").dtr("pearl", "The profiles could not be saved.");
         return null;
     }
 };

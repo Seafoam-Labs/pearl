@@ -647,26 +647,27 @@ pub const Bar = struct {
         }
         if (self.scheduler_label) |label| {
             const service = self.scheduling_service;
-            const profile: ?sched_profiles.Profile = if (service.config) |config| if (service.status.profile) |i| config.profiles[i] else null else null;
+            const profile: ?sched_profiles.Profile = service.profile(service.status.profile);
             const name = if (profile) |value| value.label else "";
             label.setText(switch (service.status.kind) {
                 .running, .off => std.mem.printSentinel(&service_buffer, "{s}", .{if (profile) |value| value.label else @import("i18n").dtr("pearl", "Default")}, 0) catch "",
                 .starting => @import("i18n").dtr("pearl", "..."),
+                .stopped => @import("i18n").dtr("pearl", "Stopped"),
                 .failed => @import("i18n").dtr("pearl", "Failed"),
                 .custom => @import("i18n").dtr("pearl", "Custom"),
                 .unavailable => @import("i18n").dtr("pearl", "-"),
             });
             const widget = self.widgets[@backingInt(policy.Item.scheduler)].?;
-            // Hidden without profiles, sched_ext support or scx.service.
+            // Hidden without scxcli, sched_ext support or scx.service.
             widget.setVisible(@intFromBool(service.configured() and service.status.kind != .unavailable));
             var detail: [512]u8 = undefined;
             serviceName(widget, @import("i18n").dtr("pearl", "Open CPU scheduler profiles"), if (service.status.kind == .running) std.mem.printSentinel(&detail, "{s} - {s}", .{ name, service.describe(&service_buffer) }, 0) catch "" else service.describe(&detail));
             if (self.scheduler_dot) |dot| {
                 // Red after a fallback to Default, until a profile is chosen;
-                // amber while starting or a scheduler outside the profiles runs.
-                const state: ?[:0]const u8 = if (service.applying != null) "pearl-status-pending" else if (service.notice != .none) "pearl-status-failed" else switch (service.status.kind) {
+                // amber while starting, stopped or a scheduler outside the profiles runs.
+                const state: ?[:0]const u8 = if (service.applying != null or service.status.stale) "pearl-status-pending" else if (service.notice != .none) "pearl-status-failed" else switch (service.status.kind) {
                     .running => "pearl-status-ok",
-                    .starting, .custom => "pearl-status-pending",
+                    .starting, .stopped, .custom => "pearl-status-pending",
                     .failed => "pearl-status-failed",
                     else => null,
                 };

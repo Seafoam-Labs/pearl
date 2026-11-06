@@ -42,7 +42,8 @@ optdepends=('ddcutil: brightness control for compatible external monitors'
             'networkmanager>=1.58.1: network controls'
             'bluez>=5.87: Bluetooth controls'
             'upower>=1.91.4: battery status'
-            'power-profiles-daemon>=0.30: power profiles')
+            'power-profiles-daemon>=0.30: power profiles'
+            'scx-scheds>1.1.4: CPU scheduler profiles (scxcli and the scx scheduler catalog)')
 backup=('etc/pam.d/pearl' 'etc/pearl/portal-policy.conf')
 options=('!strip' '!debug')
 # Keep the runtime and SDK tools in sync with plugins/build-examples.py.

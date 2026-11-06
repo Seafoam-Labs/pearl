@@ -608,7 +608,7 @@ current committed output in the backend, and has a ten-second worker deadline.
 
 The standalone `system` route has no live snapshot or actions. Settings shows
 the [scheduler profiles](SCHEDULING_PROFILES.md) through its own scheduler
-service, which applies them with `pearl-scheduling-helper`.
+service, which lists and starts them with scx's `scxcli`.
 
 ## Power page additions
 

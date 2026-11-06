@@ -438,6 +438,8 @@ pub fn build(b: *std.Build) void {
     const pure_module = createModule(b, .{ .root_source_file = b.path("src/tests.zig"), .target = target, .optimize = optimize });
     pure_module.addAnonymousImport("aqueous_presentation_fixture", .{ .root_source_file = b.path("tests/fixtures/aqueous-master/snapshot.json") });
     pure_module.addImport("aqueous_fixtures", createModule(b, .{ .root_source_file = b.path("tests/fixtures/aqueous/fixtures.zig"), .target = target, .optimize = optimize }));
+    // scx's contract fixtures for scxcli's clients.
+    pure_module.addImport("scx_fixtures", createModule(b, .{ .root_source_file = b.path("tests/fixtures/scx/fixtures.zig"), .target = target, .optimize = optimize }));
     const pure = b.addTest(.{ .root_module = pure_module });
     const filter_module = createModule(b, .{ .root_source_file = b.path("src/notification_filter_tests.zig"), .target = target, .optimize = optimize, .link_libc = true });
     filter_module.linkSystemLibrary("glib-2.0", .{ .use_pkg_config = .yes });
@@ -455,9 +457,16 @@ pub fn build(b: *std.Build) void {
     bar_clock.setEnvironmentVariable("LC_ALL", "C");
     b.step("test-bar-clock", "Verify time-zone clocks, DST, formatting and zone discovery").dependOn(&bar_clock.step);
     b.step("test-night-light-clock", "Verify Night Light schedules across timezone and DST transitions").dependOn(&night_clock.step);
+    // GIO's file monitor on a private temporary directory, no session needed.
+    const catalog_watch_module = createModule(b, .{ .root_source_file = b.path("src/services/catalog_watch.zig"), .target = target, .optimize = optimize, .link_libc = true });
+    for ([_][]const u8{ "gio2", "glib2", "gobject2" }) |name| catalog_watch_module.addImport(name, bindings.module(name));
+    catalog_watch_module.linkSystemLibrary("gio-2.0", .{ .use_pkg_config = .yes });
+    const catalog_watch = b.addRunArtifact(b.addTest(.{ .root_module = catalog_watch_module }));
+    b.step("test-catalog-watch", "Verify the scheduler catalog is noticed when it or its directory appears later").dependOn(&catalog_watch.step);
     const test_step = b.step("test", "Run model and Unicode policy tests without GTK or a compositor");
     test_step.dependOn(&b.addRunArtifact(pure).step);
     test_step.dependOn(&filter_tests.step);
+    test_step.dependOn(&catalog_watch.step);
     const i18n_tests = b.addSystemCommand(&.{ b.graph.zig_exe, "build", "--build-file", "translations/build.zig", "test", "check-templates" });
     i18n_tests.setCwd(b.path("."));
     i18n_tests.has_side_effects = true;
@@ -499,12 +508,6 @@ pub fn build(b: *std.Build) void {
     const ctl = b.addExecutable(.{ .name = "pearlctl", .root_module = ctl_module });
     b.installArtifact(ctl);
     b.step("build-ctl", "Stage the Pearl command-line client").dependOn(&b.addInstallArtifact(ctl, .{}).step);
-
-    // Root helper for scheduling profiles; packaging installs it in lib/pearl.
-    const scheduling_helper_module = createModule(b, .{ .root_source_file = b.path("src/scheduling_helper_main.zig"), .target = target, .optimize = optimize, .link_libc = true });
-    for ([_][]const u8{ "gio2", "glib2", "gobject2" }) |name| scheduling_helper_module.addImport(name, bindings.module(name));
-    scheduling_helper_module.strip = release;
-    b.installArtifact(b.addExecutable(.{ .name = "pearl-scheduling-helper", .root_module = scheduling_helper_module }));
 
     if (wasm_plugins) {
         const check = b.addSystemCommand(&.{ "python3", "tests/integration/test_plugins.py", "--pearl" });
