@@ -170,7 +170,7 @@ msgstr ""
 msgid "Aa     +1"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:852
+#: src/ui/surfaces/manager.zig:863
 msgid "About {0} h {1} min left"
 msgstr ""
 
@@ -695,7 +695,7 @@ msgstr ""
 msgid "Authentication response"
 msgstr ""
 
-#: src/settings/preference_pages.zig:102
+#: src/settings/preference_pages.zig:107
 msgid "Autohide reveals the bar at the screen edge and gives applications more space. Display overrides in Advanced take priority."
 msgstr ""
 
@@ -719,7 +719,7 @@ msgstr ""
 msgid "Automatic discovery is degraded. Use Installed to refresh available themes."
 msgstr ""
 
-#: src/settings/preference_pages.zig:132
+#: src/settings/preference_pages.zig:138
 msgid "Automatic follows the theme and blur availability. Custom changes only the bar background, including when blur is unavailable."
 msgstr ""
 
@@ -765,7 +765,7 @@ msgstr ""
 msgid "Background color"
 msgstr ""
 
-#: src/settings/preference_pages.zig:113
+#: src/settings/preference_pages.zig:119
 msgid "Background opacity slider (%)"
 msgstr ""
 
@@ -799,6 +799,10 @@ msgstr ""
 
 #: src/desktop/settings.zig:108
 msgid "Bar corner radius"
+msgstr ""
+
+#: src/settings/preference_pages.zig:183 src/settings/preference_pages.zig:185
+msgid "Bar displays"
 msgstr ""
 
 #: src/desktop/settings.zig:106
@@ -842,7 +846,7 @@ msgstr ""
 msgid "Battery service unavailable"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:842
+#: src/ui/surfaces/manager.zig:853
 msgid "Battery very low"
 msgstr ""
 
@@ -1167,7 +1171,7 @@ msgctxt "aqueous.input.repeat_rate.description"
 msgid "Characters per second; zero disables repeat."
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:859
+#: src/ui/surfaces/manager.zig:870
 msgid "Charge is running low."
 msgstr ""
 
@@ -1562,7 +1566,7 @@ msgstr ""
 msgid "Connect and manage your wireless devices."
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:855
+#: src/ui/surfaces/manager.zig:866
 msgid "Connect power now to avoid losing unsaved work."
 msgstr ""
 
@@ -1767,7 +1771,7 @@ msgstr ""
 msgid "Critical"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:843
+#: src/ui/surfaces/manager.zig:854
 msgid "Critical battery level"
 msgstr ""
 
@@ -1893,7 +1897,7 @@ msgstr ""
 msgid "Cycle windows requires updated Aqueous"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:1561
+#: src/ui/surfaces/manager.zig:1577
 msgid "Cycle →"
 msgstr ""
 
@@ -2241,7 +2245,7 @@ msgstr ""
 msgid "Dock icon size"
 msgstr ""
 
-#: src/settings/preference_pages.zig:113
+#: src/settings/preference_pages.zig:119
 msgid "Dock opacity slider (%)"
 msgstr ""
 
@@ -3292,7 +3296,7 @@ msgstr ""
 msgid "Layout behavior"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:2658
+#: src/ui/surfaces/manager.zig:2675
 msgid "Layout change unavailable"
 msgstr ""
 
@@ -3504,7 +3508,7 @@ msgstr ""
 msgid "Lock placement"
 msgstr ""
 
-#: src/settings/preference_pages.zig:125
+#: src/settings/preference_pages.zig:131
 msgid "Locked to bar"
 msgstr ""
 
@@ -3524,7 +3528,7 @@ msgstr ""
 msgid "Low"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:841
+#: src/ui/surfaces/manager.zig:852
 msgid "Low battery"
 msgstr ""
 
@@ -4207,7 +4211,7 @@ msgctxt "aqueous.opacity.unfocused.description"
 msgid "Opacity of unfocused windows."
 msgstr ""
 
-#: src/settings/preference_pages.zig:120
+#: src/settings/preference_pages.zig:126
 msgid "Opaque"
 msgstr ""
 
@@ -4474,7 +4478,7 @@ msgstr ""
 msgid "Pause automatic idle"
 msgstr ""
 
-#: src/core/application.zig:179 src/ui/surfaces/manager.zig:1357
+#: src/core/application.zig:179 src/ui/surfaces/manager.zig:1373
 msgid "Pearl"
 msgstr ""
 
@@ -4859,7 +4863,7 @@ msgstr ""
 msgid "Preview only · committed appearance is unchanged. To select a package, choose Use theme, then Apply & save."
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:1560
+#: src/ui/surfaces/manager.zig:1576
 msgid "Previous"
 msgstr ""
 
@@ -6393,6 +6397,10 @@ msgstr ""
 msgid "Show applications dock"
 msgstr ""
 
+#: src/settings/preference_pages.zig:201
+msgid "Show bar on"
+msgstr ""
+
 #: src/settings/bar_view.zig:1060
 msgid "Show date"
 msgstr ""
@@ -6646,6 +6654,10 @@ msgstr ""
 msgid "Switch keyboard layout"
 msgstr ""
 
+#: src/settings/preference_pages.zig:189
+msgid "Switch the bar off on displays you do not want it on. One display always keeps its bar."
+msgstr ""
+
 #: src/config/aqueous_presentation.zig:67
 msgid "Switch workspaces and move windows"
 msgstr ""
@@ -6779,11 +6791,11 @@ msgstr ""
 msgid "The default profiles could not be restored."
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:1331
+#: src/ui/surfaces/manager.zig:1347
 msgid "The desktop action could not be completed."
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:1327
+#: src/ui/surfaces/manager.zig:1343
 msgid "The desktop action could not be confirmed."
 msgstr ""
 
@@ -7050,7 +7062,7 @@ msgstr ""
 msgid "Transition"
 msgstr ""
 
-#: src/settings/preference_pages.zig:116
+#: src/settings/preference_pages.zig:122
 msgid "Transparent"
 msgstr ""
 
@@ -7585,7 +7597,7 @@ msgstr ""
 msgid "Working…"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:1641
+#: src/ui/surfaces/manager.zig:1658
 msgid "Workspace"
 msgstr ""
 
@@ -8979,7 +8991,7 @@ msgstr ""
 msgid "{0} unsaved changes · "
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:858
+#: src/ui/surfaces/manager.zig:869
 msgid "{0} {1}"
 msgstr ""
 
@@ -8991,7 +9003,7 @@ msgstr ""
 msgid "{0} {1}{2}{3}"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:863
+#: src/ui/surfaces/manager.zig:874
 msgid "{0} · {1}%"
 msgstr ""
 
@@ -8999,11 +9011,11 @@ msgstr ""
 msgid "{0} — {1} {2}, all workspaces{3}{4}"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:850
+#: src/ui/surfaces/manager.zig:861
 msgid "{0}% charge remaining"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:850
+#: src/ui/surfaces/manager.zig:861
 msgid "{0}% remaining · about {1} h {2} min left"
 msgstr ""
 
