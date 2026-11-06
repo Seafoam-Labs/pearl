@@ -328,6 +328,9 @@ test "simple display edits coalesce and leave unrelated fields intact" {
     try std.testing.expectEqual(@as(usize, 2), changeCount(draft));
     try std.testing.expect(m.equal(value(base, draft, output, "hdr"), .{ .bool = true }));
     try std.testing.expectEqualStrings("1920x1080@59.940", try modeText(a, value(base, draft, output, "mode")));
+    const hdr600 = try stage(a, base, second, output, "hdr_level", .{ .string = "600" });
+    draft = try m.parse(a, hdr600, m.max_request);
+    try std.testing.expectEqualStrings("600", m.str(value(base, draft, output, "hdr_level")));
     const third = try stage(a, base, second, output, "hdr", .{ .bool = false });
     draft = try m.parse(a, third, m.max_request);
     try std.testing.expectEqual(@as(usize, 1), changeCount(draft));

@@ -79,6 +79,18 @@ test "display field groups keep policy separate from outputs and profiles" {
     try std.testing.expect(fieldAllowed("member", "adaptive_sync"));
 }
 
+test "display fields expose the HDR600 preset" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const specs = try fields(arena.allocator());
+    const levels = m.list(m.get(m.get(specs, "hdr_level"), "enum"));
+    var found = false;
+    for (levels) |level| if (std.mem.eql(u8, m.str(level), "600")) {
+        found = true;
+    };
+    try std.testing.expect(found);
+}
+
 test "display source authorization and raw overlap are checked before dispatch" {
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
