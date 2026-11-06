@@ -5162,6 +5162,10 @@ msgstr ""
 msgid "Request in progress…"
 msgstr ""
 
+#: src/portal/backend.zig:524
+msgid "Requested by {0}"
+msgstr ""
+
 #: src/settings/themes_view.zig:287
 msgid "Requires an unsupported theme API"
 msgstr ""
