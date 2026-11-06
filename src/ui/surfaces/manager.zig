@@ -1080,7 +1080,7 @@ pub const Manager = struct {
     }
     fn sync(self: *Manager) !void {
         if (self.popup) |popup| {
-            const picker_open = if (popup.settings) |view| view.wallpaper_picker != null else false;
+            const picker_open = if (popup.settings) |view| view.wallpaper_picker != null or view.greeter_sync.picker != null else false;
             // The crop editor is a layer-shell window of its own, so while it is
             // open it holds the activation the popup would otherwise keep; that
             // is the editor working, not the popup being dismissed.

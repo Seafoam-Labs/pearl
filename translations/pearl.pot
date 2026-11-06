@@ -331,7 +331,7 @@ msgstr ""
 msgid "Advanced"
 msgstr ""
 
-#: src/desktop/settings.zig:440
+#: src/desktop/settings.zig:453
 msgid "Advanced JSON is invalid. Correct it before using the form."
 msgstr ""
 
@@ -1055,7 +1055,7 @@ msgstr ""
 msgid "Calculation · Enter to copy · = to continue"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:770 src/desktop/clipboard_capture.zig:146 src/desktop/connectivity.zig:117 src/desktop/services.zig:296 src/desktop/wallpaper_crop.zig:226 src/services/polkit.zig:315 src/settings/bar_view.zig:1080 src/settings/greeter_sync.zig:49 src/settings/notification_filters_view.zig:437 src/settings/scheduler_view.zig:341 src/settings/scheduler_view.zig:404
+#: src/desktop/aqueous_settings.zig:770 src/desktop/clipboard_capture.zig:146 src/desktop/connectivity.zig:117 src/desktop/services.zig:296 src/desktop/wallpaper_crop.zig:226 src/services/polkit.zig:315 src/settings/bar_view.zig:1080 src/settings/notification_filters_view.zig:437 src/settings/scheduler_view.zig:341 src/settings/scheduler_view.zig:404
 msgid "Cancel"
 msgstr ""
 
@@ -1095,7 +1095,7 @@ msgstr ""
 msgid "Cannot divide by zero"
 msgstr ""
 
-#: src/desktop/settings.zig:455
+#: src/desktop/settings.zig:468
 msgid "Cannot merge this draft. Correct its JSON and try again."
 msgstr ""
 
@@ -1219,10 +1219,6 @@ msgstr ""
 msgid "Checking the scheduler..."
 msgstr ""
 
-#: src/settings/greeter_sync.zig:49
-msgid "Choose"
-msgstr ""
-
 #: src/settings/bar_view.zig:1176
 msgid "Choose PNG…"
 msgstr ""
@@ -1247,8 +1243,8 @@ msgstr ""
 msgid "Choose a network to connect"
 msgstr ""
 
-#: src/settings/greeter_sync.zig:332
-msgid "Choose a readable PNG/JPEG (up to 16 MiB and 64 megapixels)."
+#: src/settings/greeter_sync.zig:373
+msgid "Choose a readable PNG/JPEG up to 64 megapixels."
 msgstr ""
 
 #: src/ui/components/network.zig:298
@@ -1267,7 +1263,11 @@ msgstr ""
 msgid "Choose an identity, then authenticate."
 msgstr ""
 
-#: src/desktop/settings.zig:248 src/settings/preferences_view.zig:786
+#: src/settings/greeter_sync.zig:371
+msgid "Choose an image smaller than 64 MiB."
+msgstr ""
+
+#: src/desktop/settings.zig:261 src/settings/preferences_view.zig:786
 msgid "Choose an image stored on this computer."
 msgstr ""
 
@@ -1299,11 +1299,11 @@ msgstr ""
 msgid "Choose icon…"
 msgstr ""
 
-#: src/settings/greeter_sync.zig:28
+#: src/settings/greeter_sync.zig:40
 msgid "Choose image and sync"
 msgstr ""
 
-#: src/settings/greeter_sync.zig:26
+#: src/settings/greeter_sync.zig:38
 msgid "Choose image and sync…"
 msgstr ""
 
@@ -1651,7 +1651,7 @@ msgstr ""
 msgid "Control center"
 msgstr ""
 
-#: src/settings/greeter_sync.zig:30
+#: src/settings/greeter_sync.zig:42
 msgid "Copies this background and theme. Administrator authentication is required."
 msgstr ""
 
@@ -1675,7 +1675,7 @@ msgstr ""
 msgid "Corner radius (0: keep existing)"
 msgstr ""
 
-#: src/settings/greeter_sync.zig:85 src/settings/greeter_sync.zig:90
+#: src/settings/greeter_sync.zig:121 src/settings/greeter_sync.zig:126
 msgid "Correct the invalid appearance settings before syncing."
 msgstr ""
 
@@ -1699,11 +1699,11 @@ msgstr ""
 msgid "Could not open Assistant. Your question is preserved; retry or check Settings."
 msgstr ""
 
-#: src/desktop/settings.zig:382
+#: src/desktop/settings.zig:395
 msgid "Could not open Pearl Settings. Bar preferences remain available in Advanced."
 msgstr ""
 
-#: src/desktop/settings.zig:390
+#: src/desktop/settings.zig:403
 msgid "Could not open Pearl Settings. Qt preferences remain available in Advanced."
 msgstr ""
 
@@ -1715,7 +1715,7 @@ msgstr ""
 msgid "Could not preview this image. Apply will validate the file."
 msgstr ""
 
-#: src/desktop/settings.zig:357
+#: src/desktop/settings.zig:370
 msgid "Could not retain this edit. The shared draft has not been overwritten; reopen settings to load it."
 msgstr ""
 
@@ -1739,7 +1739,7 @@ msgstr ""
 msgid "Could not store position."
 msgstr ""
 
-#: src/settings/greeter_sync.zig:334
+#: src/settings/greeter_sync.zig:375
 msgid "Could not sync. Check that Pearl Greeter is installed and authentication completed."
 msgstr ""
 
@@ -2277,7 +2277,7 @@ msgstr ""
 msgid "Draft colors · scoped to this preview."
 msgstr ""
 
-#: src/desktop/settings.zig:425
+#: src/desktop/settings.zig:438
 msgid "Draft exceeds 64 KiB. Reduce its size before applying."
 msgstr ""
 
@@ -2289,7 +2289,7 @@ msgstr ""
 msgid "Draft illustration · Not applied"
 msgstr ""
 
-#: src/desktop/settings.zig:414
+#: src/desktop/settings.zig:427
 msgid "Draft is limited to 64 KiB. The insertion was rejected; existing text is retained."
 msgstr ""
 
@@ -3005,7 +3005,7 @@ msgstr ""
 msgid "Image options & slideshow"
 msgstr ""
 
-#: src/settings/greeter_sync.zig:53
+#: src/settings/greeter_sync.zig:78
 msgid "Images"
 msgstr ""
 
@@ -3048,7 +3048,7 @@ msgstr ""
 msgid "Install Network Connections (nm-connection-editor) to change advanced settings."
 msgstr ""
 
-#: src/settings/greeter_sync.zig:36
+#: src/settings/greeter_sync.zig:48
 msgid "Install Pearl Greeter to sync its appearance."
 msgstr ""
 
@@ -3060,7 +3060,7 @@ msgstr ""
 msgid "Install reviewed Starship configuration and keep backup"
 msgstr ""
 
-#: src/settings/greeter_sync.zig:333
+#: src/settings/greeter_sync.zig:374
 msgid "Install this GTK theme system-wide before syncing."
 msgstr ""
 
@@ -3516,7 +3516,7 @@ msgstr ""
 msgid "Login screen"
 msgstr ""
 
-#: src/settings/greeter_sync.zig:49
+#: src/settings/greeter_sync.zig:65
 msgid "Login screen background"
 msgstr ""
 
@@ -6650,11 +6650,11 @@ msgstr ""
 msgid "Switch workspaces and move windows"
 msgstr ""
 
-#: src/settings/greeter_sync.zig:330
+#: src/settings/greeter_sync.zig:369
 msgid "Sync cancelled or not authorized."
 msgstr ""
 
-#: src/settings/greeter_sync.zig:335
+#: src/settings/greeter_sync.zig:376
 msgid "Synced. The login screen will use this appearance next time it starts."
 msgstr ""
 
@@ -6679,7 +6679,7 @@ msgctxt "aqueous.desktop.cursor.managed.description"
 msgid "Synchronize this cursor theme and size across the Aqueous session."
 msgstr ""
 
-#: src/settings/greeter_sync.zig:114
+#: src/settings/greeter_sync.zig:150
 msgid "Syncing appearance…"
 msgstr ""
 
@@ -6811,7 +6811,7 @@ msgstr ""
 msgid "The image path is too long or is not valid UTF-8."
 msgstr ""
 
-#: src/desktop/settings.zig:253
+#: src/desktop/settings.zig:266
 msgid "The image path must be valid UTF-8 and at most 1024 bytes."
 msgstr ""
 
@@ -6827,11 +6827,15 @@ msgstr ""
 msgid "The profiles could not be saved."
 msgstr ""
 
+#: src/settings/greeter_sync.zig:372
+msgid "The resized login screen copy is still larger than 16 MiB. Choose a simpler image."
+msgstr ""
+
 #: src/desktop/launcher.zig:396
 msgid "The result is too large"
 msgstr ""
 
-#: src/desktop/settings.zig:455
+#: src/desktop/settings.zig:468
 msgid "The same field changed in both versions. Draft retained; review Advanced before discarding or resolving it."
 msgstr ""
 
@@ -6855,7 +6859,7 @@ msgstr ""
 msgid "The service reported more items than it can expose. This list is incomplete."
 msgstr ""
 
-#: src/desktop/settings.zig:465
+#: src/desktop/settings.zig:478
 msgid "The shared draft changed. Reopen settings before discarding it."
 msgstr ""
 
