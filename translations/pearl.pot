@@ -59,7 +59,7 @@ msgstr ""
 msgid ", minimized"
 msgstr ""
 
-#: src/desktop/bar.zig:657
+#: src/desktop/bar.zig:658
 msgid "-"
 msgstr ""
 
@@ -905,11 +905,11 @@ msgstr ""
 msgid "Bluetooth PIN or passkey"
 msgstr ""
 
-#: src/desktop/bar.zig:699
+#: src/desktop/bar.zig:700
 msgid "Bluetooth off"
 msgstr ""
 
-#: src/desktop/bar.zig:699
+#: src/desktop/bar.zig:700
 msgid "Bluetooth on"
 msgstr ""
 
@@ -917,7 +917,7 @@ msgstr ""
 msgid "Bluetooth pairing"
 msgstr ""
 
-#: src/desktop/bar.zig:699
+#: src/desktop/bar.zig:700
 msgid "Bluetooth unavailable"
 msgstr ""
 
@@ -1055,7 +1055,7 @@ msgstr ""
 msgid "Calculation · Enter to copy · = to continue"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:770 src/desktop/clipboard_capture.zig:146 src/desktop/connectivity.zig:117 src/desktop/services.zig:296 src/desktop/wallpaper_crop.zig:226 src/services/polkit.zig:315 src/settings/bar_view.zig:1080 src/settings/notification_filters_view.zig:437 src/settings/scheduler_view.zig:341 src/settings/scheduler_view.zig:404
+#: src/desktop/aqueous_settings.zig:770 src/desktop/clipboard_capture.zig:146 src/desktop/connectivity.zig:117 src/desktop/services.zig:296 src/desktop/wallpaper_crop.zig:226 src/services/polkit.zig:315 src/settings/bar_view.zig:1080 src/settings/notification_filters_view.zig:437 src/settings/scheduler_view.zig:385 src/settings/scheduler_view.zig:438
 msgid "Cancel"
 msgstr ""
 
@@ -1578,7 +1578,7 @@ msgstr ""
 msgid "Connect to"
 msgstr ""
 
-#: src/ui/i18n.zig:18 src/desktop/bar.zig:686 src/ui/components/network.zig:298 src/ui/components/network.zig:488
+#: src/ui/i18n.zig:18 src/desktop/bar.zig:687 src/ui/components/network.zig:298 src/ui/components/network.zig:488
 msgid "Connected"
 msgstr ""
 
@@ -1606,7 +1606,7 @@ msgstr ""
 msgid "Connecting to your Pearl session…"
 msgstr ""
 
-#: src/desktop/bar.zig:686 src/ui/components/network.zig:298 src/ui/components/network.zig:494
+#: src/desktop/bar.zig:687 src/ui/components/network.zig:298 src/ui/components/network.zig:494
 msgid "Connecting…"
 msgstr ""
 
@@ -1825,7 +1825,7 @@ msgctxt "aqueous.desktop.cursor.theme.label"
 msgid "Cursor theme"
 msgstr ""
 
-#: src/desktop/bar.zig:656 src/settings/power_view.zig:214 src/settings/scheduler_view.zig:166
+#: src/desktop/bar.zig:657 src/settings/power_view.zig:214 src/settings/scheduler_view.zig:183
 msgid "Custom"
 msgstr ""
 
@@ -1926,7 +1926,7 @@ msgstr ""
 msgid "December"
 msgstr ""
 
-#: src/desktop/bar.zig:653 src/services/scheduling.zig:217
+#: src/desktop/bar.zig:653 src/services/scheduling.zig:324
 msgid "Default"
 msgstr ""
 
@@ -1991,7 +1991,7 @@ msgstr ""
 msgid "Design review"
 msgstr ""
 
-#: src/desktop/bar.zig:721 src/desktop/bar.zig:722
+#: src/desktop/bar.zig:722 src/desktop/bar.zig:723
 msgid "Desktop"
 msgstr ""
 
@@ -2572,7 +2572,7 @@ msgstr ""
 msgid "Fahrenheit (°F)"
 msgstr ""
 
-#: src/desktop/bar.zig:655
+#: src/desktop/bar.zig:656
 msgid "Failed"
 msgstr ""
 
@@ -2590,7 +2590,7 @@ msgstr ""
 msgid "February"
 msgstr ""
 
-#: src/desktop/bar.zig:714 src/desktop/weather_view.zig:35
+#: src/desktop/bar.zig:715 src/desktop/weather_view.zig:35
 msgid "Fetching weather…"
 msgstr ""
 
@@ -3870,7 +3870,7 @@ msgstr ""
 msgid "Network settings"
 msgstr ""
 
-#: src/desktop/bar.zig:686
+#: src/desktop/bar.zig:687
 msgid "Network unavailable"
 msgstr ""
 
@@ -4136,7 +4136,7 @@ msgstr ""
 msgid "October"
 msgstr ""
 
-#: src/ui/i18n.zig:22 src/desktop/bar.zig:684 src/settings/editor.zig:818 src/settings/power_view.zig:125 src/settings/power_view.zig:196 src/settings/preferences_view.zig:494
+#: src/ui/i18n.zig:22 src/desktop/bar.zig:685 src/settings/editor.zig:818 src/settings/power_view.zig:125 src/settings/power_view.zig:196 src/settings/preferences_view.zig:494
 msgid "Off"
 msgstr ""
 
@@ -4152,7 +4152,7 @@ msgstr ""
 msgid "Offline · showing cached repository metadata"
 msgstr ""
 
-#: src/ui/i18n.zig:23 src/desktop/bar.zig:684 src/settings/preferences_view.zig:494
+#: src/ui/i18n.zig:23 src/desktop/bar.zig:685 src/settings/preferences_view.zig:494
 msgid "On"
 msgstr ""
 
@@ -4219,11 +4219,11 @@ msgstr ""
 msgid "Open Advanced"
 msgstr ""
 
-#: src/desktop/bar.zig:699
+#: src/desktop/bar.zig:700
 msgid "Open Bluetooth controls"
 msgstr ""
 
-#: src/desktop/bar.zig:663
+#: src/desktop/bar.zig:664
 msgid "Open CPU scheduler profiles"
 msgstr ""
 
@@ -4231,7 +4231,7 @@ msgstr ""
 msgid "Open Desktop folder"
 msgstr ""
 
-#: src/desktop/bar.zig:686
+#: src/desktop/bar.zig:687
 msgid "Open Network controls"
 msgstr ""
 
@@ -4280,7 +4280,7 @@ msgstr ""
 msgid "Open terminal"
 msgstr ""
 
-#: src/desktop/bar.zig:703
+#: src/desktop/bar.zig:704
 msgid "Open weather forecast"
 msgstr ""
 
@@ -6611,7 +6611,7 @@ msgstr ""
 msgid "Stop the current answer?"
 msgstr ""
 
-#: src/desktop/bar.zig:601
+#: src/desktop/bar.zig:655
 msgid "Stopped"
 msgstr ""
 
@@ -7534,7 +7534,7 @@ msgstr ""
 msgid "Weather location search"
 msgstr ""
 
-#: src/desktop/bar.zig:714 src/desktop/weather_view.zig:35
+#: src/desktop/bar.zig:715 src/desktop/weather_view.zig:35
 msgid "Weather unavailable"
 msgstr ""
 
@@ -7550,7 +7550,7 @@ msgstr ""
 msgid "When a notification matches"
 msgstr ""
 
-#: src/ui/i18n.zig:17 src/desktop/bar.zig:684 src/desktop/connectivity.zig:75 src/ui/components/network.zig:89 src/ui/components/network.zig:92
+#: src/ui/i18n.zig:17 src/desktop/bar.zig:685 src/desktop/connectivity.zig:75 src/ui/components/network.zig:89 src/ui/components/network.zig:92
 msgid "Wi-Fi"
 msgstr ""
 
@@ -7562,11 +7562,11 @@ msgstr ""
 msgid "Wi-Fi is turned off. Turn it on to find nearby networks."
 msgstr ""
 
-#: src/desktop/bar.zig:686
+#: src/desktop/bar.zig:687
 msgid "Wi-Fi off"
 msgstr ""
 
-#: src/desktop/bar.zig:686
+#: src/desktop/bar.zig:687
 msgid "Wi-Fi on"
 msgstr ""
 
@@ -7824,7 +7824,7 @@ msgctxt "aqueous.desktop.font.width.option"
 msgid "condensed"
 msgstr ""
 
-#: src/desktop/bar.zig:699
+#: src/desktop/bar.zig:700
 msgid "connected"
 msgstr ""
 
@@ -9077,7 +9077,7 @@ msgstr ""
 msgid "{0} with its own defaults"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:858
+#: src/ui/surfaces/manager.zig:869
 msgid "{0} {1}"
 msgstr ""
 
@@ -9114,7 +9114,7 @@ msgstr ""
 msgid "×"
 msgstr ""
 
-#: src/desktop/bar.zig:627 src/desktop/bar.zig:639 src/desktop/bar.zig:684 src/desktop/bar.zig:694 src/desktop/bar.zig:713 src/desktop/clock_view.zig:69 src/desktop/resource_view.zig:275
+#: src/desktop/bar.zig:627 src/desktop/bar.zig:639 src/desktop/bar.zig:685 src/desktop/bar.zig:695 src/desktop/bar.zig:714 src/desktop/clock_view.zig:69 src/desktop/resource_view.zig:275
 msgid "—"
 msgstr ""
 
@@ -9126,7 +9126,7 @@ msgstr ""
 msgid "•••"
 msgstr ""
 
-#: src/desktop/bar.zig:684 src/desktop/bar.zig:713
+#: src/desktop/bar.zig:685 src/desktop/bar.zig:714
 msgid "…"
 msgstr ""
 
