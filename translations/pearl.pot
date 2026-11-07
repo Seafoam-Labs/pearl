@@ -4381,7 +4381,7 @@ msgstr ""
 msgid "Open settings Overview"
 msgstr ""
 
-#: src/config/aqueous_presentation.zig:230 src/config/aqueous_presentation.zig:231 src/config/aqueous_presentation.zig:232
+#: src/config/aqueous_presentation.zig:231 src/config/aqueous_presentation.zig:232 src/config/aqueous_presentation.zig:233
 msgid "Open terminal"
 msgstr ""
 

@@ -118,7 +118,7 @@ pub fn group(field: m.Value) Group {
     if (eq(page, "input")) {
         if (one(id, &.{ "input.xkb_layout", "input.repeat_rate", "input.repeat_delay" })) return .keyboard;
         if (one(id, &.{ "input.mouse.natural_scroll", "input.touchpad.natural_scroll", "input.touchpad.tap" })) return .pointer;
-        if (one(id, &.{ "input.focus_follows_mouse", "input.mouse_follows_focus", "input.focus_new_windows", "input.raise_on_focus", "input.raise_on_focus_delay_ms" })) return .focus;
+        if (one(id, &.{ "input.focus_follows_mouse", "input.mouse_follows_focus", "input.focus_new_windows", "input.focus_crosses_workspaces", "input.raise_on_focus", "input.raise_on_focus_delay_ms" })) return .focus;
         if (prefix(id, &.{ "input.mouse.", "input.touchpad.", "input.xkb_", "input.pointer_acceleration" })) return .input_options;
         return .input_extra;
     }
@@ -127,7 +127,7 @@ pub fn group(field: m.Value) Group {
         if (one(id, &.{ "toggle_start_menu", "spawn_terminal", "screenshot", "close_focused", "toggle_overview", "reload_config", "reload_rules", "lock_screen", "untrap_pointer" })) return .shortcuts;
         if (prefix(id, &.{ "focus_workspace_", "move_to_workspace_", "focus_output_", "move_to_output_", "focus_previous_workspace" })) return .workspaces;
         if (prefix(id, &.{"set_layout_"})) return .layout_keys;
-        if (prefix(id, &.{ "cycle_focus", "focus_", "scroll_", "wheel_scroll_", "consume_window_", "expel_window_", "move_window_", "move_column_" })) return .movement;
+        if (prefix(id, &.{ "cycle_focus", "window_switcher_", "focus_", "scroll_", "wheel_scroll_", "consume_window_", "expel_window_", "move_window_", "move_column_" })) return .movement;
         if (prefix(id, &.{ "toggle_", "raise_", "lower_", "nudge_", "resize_", "shrink_", "snap_", "unsnap", "cycle_snap_", "fit_floating_", "move_floating_", "grow_floating_", "unminimize_" })) return .window_actions;
         return .keybinds_extra;
     }
@@ -212,6 +212,7 @@ test "all pinned scalar fields have exactly one section and future fields remain
     defer seen.deinit();
     for (fields) |f| {
         const id = m.str(m.get(f, "id"));
+        errdefer std.debug.print("Failed presentation coverage for {s}\n", .{id});
         try std.testing.expect(!seen.contains(id));
         try seen.put(id, {});
         try std.testing.expectEqualStrings(m.fieldCategory(f), spec(group(f)).page);
