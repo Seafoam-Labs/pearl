@@ -1210,6 +1210,7 @@ pub const Manager = struct {
                 o.bar.?.bar.?.setWorkspaceMode(pref.workspace_mode);
                 o.bar.?.bar.?.running_apps_per_window = pref.running_apps_per_window;
                 o.bar.?.bar.?.setResourceMode(pref.resource_mode);
+                o.bar.?.bar.?.setMediaArt(pref.media_art);
                 if (o.bar.?.bar.?.islands != pref.islands) if (o.bar.?.autohide) |controller| controller.clearGesture();
                 o.bar.?.bar.?.setIslands(pref.islands);
                 const content_hash = try self.barContentHash(pref);
