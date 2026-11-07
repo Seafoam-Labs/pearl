@@ -482,7 +482,7 @@ msgstr ""
 msgid "Application colors"
 msgstr ""
 
-#: src/desktop/launcher.zig:340
+#: src/desktop/launcher.zig:341
 msgid "Application discovery unavailable"
 msgstr ""
 
@@ -642,7 +642,7 @@ msgstr ""
 msgid "Arrangement"
 msgstr ""
 
-#: src/desktop/launcher.zig:267
+#: src/desktop/launcher.zig:268
 msgid "Ask Pearl"
 msgstr ""
 
@@ -1051,7 +1051,7 @@ msgstr ""
 msgid "CPU threads (0 = runtime automatic)"
 msgstr ""
 
-#: src/desktop/launcher.zig:240
+#: src/desktop/launcher.zig:241
 msgid "Calculation · Enter to copy · = to continue"
 msgstr ""
 
@@ -1091,7 +1091,7 @@ msgstr ""
 msgid "Candidate effects, receipts and display rollback"
 msgstr ""
 
-#: src/desktop/launcher.zig:394
+#: src/desktop/launcher.zig:395
 msgid "Cannot divide by zero"
 msgstr ""
 
@@ -1524,7 +1524,7 @@ msgctxt "aqueous.display.rollback_seconds.description"
 msgid "Compatibility rollback timeout."
 msgstr ""
 
-#: src/desktop/launcher.zig:391 src/desktop/launcher.zig:401
+#: src/desktop/launcher.zig:392 src/desktop/launcher.zig:402
 msgid "Complete the expression"
 msgstr ""
 
@@ -1718,7 +1718,7 @@ msgstr ""
 msgid "Could not apply the wallpaper. Try again."
 msgstr ""
 
-#: src/desktop/launcher.zig:430
+#: src/desktop/launcher.zig:431
 msgid "Could not copy: clipboard unavailable or paused. Try again."
 msgstr ""
 
@@ -1738,7 +1738,7 @@ msgstr ""
 msgid "Could not open Pearl Settings. Qt preferences remain available in Advanced."
 msgstr ""
 
-#: src/desktop/launcher.zig:430
+#: src/desktop/launcher.zig:431
 msgid "Could not open this result. Try again or choose another."
 msgstr ""
 
@@ -2578,7 +2578,7 @@ msgstr ""
 msgid "Enter this network’s Wi-Fi password."
 msgstr ""
 
-#: src/desktop/launcher.zig:392
+#: src/desktop/launcher.zig:393
 msgid "Enter to copy"
 msgstr ""
 
@@ -3507,7 +3507,7 @@ msgstr ""
 msgid "Loading Pearl preferences…"
 msgstr ""
 
-#: src/desktop/launcher.zig:129 src/desktop/launcher.zig:340
+#: src/desktop/launcher.zig:130 src/desktop/launcher.zig:341
 msgid "Loading applications…"
 msgstr ""
 
@@ -3791,7 +3791,7 @@ msgctxt "aqueous.input.raise_on_focus_delay_ms.description"
 msgid "Milliseconds to wait before raising a newly focused freeform window."
 msgstr ""
 
-#: src/desktop/launcher.zig:212
+#: src/desktop/launcher.zig:213
 msgid "Minimized"
 msgstr ""
 
@@ -4098,7 +4098,7 @@ msgstr ""
 msgid "No matches"
 msgstr ""
 
-#: src/desktop/launcher.zig:340
+#: src/desktop/launcher.zig:341
 msgid "No matches. Try another name."
 msgstr ""
 
@@ -4393,7 +4393,7 @@ msgstr ""
 msgid "Open your browser to sign in to this network."
 msgstr ""
 
-#: src/desktop/launcher.zig:445
+#: src/desktop/launcher.zig:446
 msgid "Opening Assistant…"
 msgstr ""
 
@@ -4445,7 +4445,7 @@ msgstr ""
 msgid "Other"
 msgstr ""
 
-#: src/desktop/launcher.zig:212
+#: src/desktop/launcher.zig:213
 msgid "Other workspace"
 msgstr ""
 
@@ -4474,7 +4474,7 @@ msgstr ""
 msgid "Output, input and applications"
 msgstr ""
 
-#: src/desktop/launcher.zig:395
+#: src/desktop/launcher.zig:396
 msgid "Outside the function's real-number domain"
 msgstr ""
 
@@ -4588,7 +4588,7 @@ msgctxt "desktop.agent.name"
 msgid "Pearl Assistant"
 msgstr ""
 
-#: src/desktop/launcher.zig:269
+#: src/desktop/launcher.zig:270
 msgid "Pearl Assistant · This session"
 msgstr ""
 
@@ -5141,7 +5141,7 @@ msgstr ""
 msgid "Reduced motion"
 msgstr ""
 
-#: src/desktop/launcher.zig:341
+#: src/desktop/launcher.zig:342
 msgid "Refine your search for more results"
 msgstr ""
 
@@ -5351,7 +5351,7 @@ msgstr ""
 msgid "Resume automatic idle"
 msgstr ""
 
-#: src/desktop/launcher.zig:269
+#: src/desktop/launcher.zig:270
 msgid "Resume conversation"
 msgstr ""
 
@@ -5751,7 +5751,7 @@ msgstr ""
 msgid "Search for a city…"
 msgstr ""
 
-#: src/desktop/launcher.zig:181
+#: src/desktop/launcher.zig:182
 msgid "Search is unavailable"
 msgstr ""
 
@@ -5783,7 +5783,7 @@ msgstr ""
 msgid "Search widgets…"
 msgstr ""
 
-#: src/desktop/launcher.zig:181 src/desktop/launcher.zig:354 src/settings/bar_view.zig:927
+#: src/desktop/launcher.zig:182 src/desktop/launcher.zig:355 src/settings/bar_view.zig:927
 msgid "Searching…"
 msgstr ""
 
@@ -6982,7 +6982,7 @@ msgstr ""
 msgid "The draft is limited to 64 KiB. The previous text is retained."
 msgstr ""
 
-#: src/desktop/launcher.zig:397
+#: src/desktop/launcher.zig:398
 msgid "The expression is too long or complex"
 msgstr ""
 
@@ -7031,7 +7031,7 @@ msgstr ""
 msgid "The resized login screen copy is still larger than 16 MiB. Choose a simpler image."
 msgstr ""
 
-#: src/desktop/launcher.zig:396
+#: src/desktop/launcher.zig:397
 msgid "The result is too large"
 msgstr ""
 
@@ -7361,7 +7361,7 @@ msgctxt "aqueous.opacity.unfocused.label"
 msgid "Unfocused opacity"
 msgstr ""
 
-#: src/desktop/launcher.zig:398
+#: src/desktop/launcher.zig:399
 msgid "Unknown function or constant"
 msgstr ""
 
@@ -7389,7 +7389,7 @@ msgstr ""
 msgid "Unsaved layout"
 msgstr ""
 
-#: src/desktop/launcher.zig:400
+#: src/desktop/launcher.zig:401
 msgid "Unsupported expression; check operators and parentheses"
 msgstr ""
 
@@ -7463,7 +7463,7 @@ msgstr ""
 msgid "Use current profile versions on Apply"
 msgstr ""
 
-#: src/desktop/launcher.zig:399
+#: src/desktop/launcher.zig:400
 msgid "Use decimal points, without grouping or currency symbols"
 msgstr ""
 
@@ -7589,7 +7589,7 @@ msgstr ""
 msgid "View saved connections"
 msgstr ""
 
-#: src/desktop/launcher.zig:212
+#: src/desktop/launcher.zig:213
 msgid "Visible window"
 msgstr ""
 
@@ -7703,7 +7703,7 @@ msgstr ""
 msgid "Weather unavailable"
 msgstr ""
 
-#: src/desktop/launcher.zig:267
+#: src/desktop/launcher.zig:268
 msgid "Web answer · Enter to ask"
 msgstr ""
 
@@ -8692,7 +8692,7 @@ msgctxt "aqueous.resize_floating_up.label"
 msgid "resize_floating_up"
 msgstr ""
 
-#: src/desktop/launcher.zig:340
+#: src/desktop/launcher.zig:341
 msgid "results · ↑ ↓ to choose · Enter to open"
 msgstr ""
 
@@ -9368,7 +9368,7 @@ msgstr ""
 msgid "›"
 msgstr ""
 
-#: src/desktop/launcher.zig:342
+#: src/desktop/launcher.zig:343
 msgid "↑ ↓ to choose · Enter to copy calculation · = to continue"
 msgstr ""
 
