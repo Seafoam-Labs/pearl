@@ -358,8 +358,11 @@ with one-shot coalescing timers. MPRIS has eight player slots; artwork uses one
 cancellable worker, at most 2 MiB encoded input and a 256 px output. Tray state has
 32 items with 128 menu nodes per item. Notification history holds 64 records and
 up to eight actions each. The Aqueous icon cache holds 32 entries/8 MiB decoded
-pixels and 16 queued fetches. Clipboard history holds 20 entries/16 MiB total,
-with 256 KiB text and 8 MiB image limits; it clears on lock. These bounds are
+pixels and 16 queued fetches. Clipboard history holds at most 100 combined text
+and PNG entries with 16 MiB total retained payload, a 256 KiB limit per text
+entry and an 8 MiB limit per PNG entry. Locking hides retained text history
+without deleting it and discards PNG history from memory. Unlocking never
+automatically republishes previous selections. These bounds are
 implemented in `src/services`, `src/aqueous/icons.zig` and their policy tests.
 
 The existing regression matrix covers missing/replaced service owners, late
