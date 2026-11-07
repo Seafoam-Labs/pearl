@@ -1,5 +1,4 @@
 """Assertions for the paged, private clipboard history control protocol."""
-from pearl_session import wait_for
 
 
 def history(query):
@@ -26,21 +25,8 @@ def history(query):
     return rows
 
 
-def durable_removal(query, response):
-    assert response['queued'] and response['operation'] > 0, response
-    def completed():
-        value = query('--operation', str(response['operation']), '--instance', response['instance'])
-        receipt = value['removal']
-        assert receipt and receipt['token'] == response['operation'], value
-        assert receipt['state'] in ('pending', 'running', 'durable'), value
-        return value if receipt['state'] == 'durable' else False
-    result = wait_for(completed, 12)
-    assert result['removal']['failure'] is None, result
-    return result
-
-
 def hidden(value):
     assert value['locked'] and not value['available'] and value['entries'] == [], value
-    assert not value['pending'] and not value['persistence_pending'] and not value['has_more'], value
-    for field in ('total', 'offset', 'limit', 'returned', 'next_offset', 'revision', 'instance', 'removal'):
+    assert not value['pending'] and not value['dirty'] and not value['has_more'], value
+    for field in ('total', 'offset', 'limit', 'returned', 'next_offset', 'revision', 'instance', 'persistence_error'):
         assert value[field] is None, (field, value)

@@ -35,7 +35,6 @@ pub const Request = struct {
     offset: ?u16 = null,
     limit: ?u8 = null,
     instance: ?[]const u8 = null,
-    operation: ?u64 = null,
     output: ?[]const u8 = null,
     page: ?settings_navigation.Route = null,
     section: ?[]const u8 = null,
@@ -101,7 +100,7 @@ pub fn parse(a: std.mem.Allocator, bytes: []const u8) !Request {
             .assistant_status, .assistant_show, .assistant_stop, .assistant_clear, .assistant_release, .assistant_cancel, .night_light_status => &[_][]const u8{},
             .night_light_action => &[_][]const u8{"text"},
             .lifecycle_status, .aqueous_reload, .aqueous_keep, .aqueous_revert, .aqueous_rebase, .aqueous_refresh, .aqueous_validate, .aqueous_apply, .aqueous_discard, .preferences_status, .preferences_reload, .status, .report, .popup_hide, .launcher_hide, .quit => &[_][]const u8{},
-            .clipboard_status => &[_][]const u8{ "offset", "limit", "revision", "instance", "operation" },
+            .clipboard_status => &[_][]const u8{ "offset", "limit", "revision", "instance" },
             .clipboard_clear => &[_][]const u8{"instance"},
             .capture_status, .capture_cancel => &[_][]const u8{},
             .dock_pin, .dock_unpin => &[_][]const u8{ "output", "text" },
@@ -162,9 +161,8 @@ pub fn parse(a: std.mem.Allocator, bytes: []const u8) !Request {
     if (value.object.contains("instance") and r.instance == null) return error.InvalidRequest;
     switch (r.op) {
         .clipboard_status => {
-            inline for (.{ "offset", "limit", "revision", "operation" }) |field| if (value.object.contains(field) and @field(r, field) == null) return error.InvalidRequest;
-            if ((r.offset orelse 0) > 100 or (r.limit orelse 20) == 0 or (r.limit orelse 20) > 20) return error.InvalidRequest;
-            if (r.operation) |operation| if (operation == 0 or r.instance == null) return error.InvalidRequest;
+            inline for (.{ "offset", "limit", "revision" }) |field| if (value.object.contains(field) and @field(r, field) == null) return error.InvalidRequest;
+            if ((r.offset orelse 0) > @import("../services/clipboard_policy.zig").entries_limit or (r.limit orelse 20) == 0 or (r.limit orelse 20) > 20) return error.InvalidRequest;
         },
         .night_light_action => {
             _ = std.meta.stringToEnum(@import("../services/night_light_policy.zig").Action, r.text orelse return error.InvalidRequest) orelse return error.InvalidRequest;

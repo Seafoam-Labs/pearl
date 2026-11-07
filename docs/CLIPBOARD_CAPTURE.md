@@ -36,8 +36,8 @@ result keeps history intact and says so in place of the list.
 Pearl uses generated **ext-data-control-v1** bindings on GTK's Wayland connection.
 GTK remains the only reader of that connection. There is no wl-copy/wl-paste
 production dependency, synthetic typing, primary-selection history, D-Bus
-clipboard service, or portal ownership change. Text history is saved by Pearl's
-own worker; PNG images remain memory-only.
+clipboard service, or portal ownership change. Text history is saved as JSON;
+PNG images remain memory-only.
 
 The regular selection accepts UTF-8 `text/plain;charset=utf-8` (or `text/plain`)
 and `image/png`. PNG takes precedence when both image and text are offered.
@@ -55,7 +55,7 @@ owned by another application.
 | Retained entries | 100 across text and PNG; an exact duplicate is promoted, not added again |
 | Retained payload total | 16 MiB |
 | Text per entry | 256 KiB |
-| Retention | Seven days from the last successful copy, refreshed by recopy |
+| Retention | Seven days from the latest copy or selection |
 | After restart | Eligible text restored; PNG images are never persisted |
 | PNG input and sanitized clipboard PNG | 8 MiB each |
 | PNG dimensions | Each axis ≤ 8192; product ≤ 8,388,608 pixels |
@@ -90,66 +90,45 @@ as calculator history, and a pending copy is never replayed after unlock.
 
 ## Persistent text history
 
-Pearl saves accepted text automatically. With an absolute `XDG_STATE_HOME`, the
-file is `$XDG_STATE_HOME/pearl/clipboard/history.bin`; otherwise it uses
-`$HOME/.local/state/pearl/clipboard/history.bin`. The `pearl/clipboard`
-directories must be private (`0700`), and the history file and writer lock
-use `0600`. The versioned file stores UTF-8, timestamps and copy order, but
-no PNGs or runtime entry IDs. Its SHA-256 checksum detects corruption;
-**the contents are plaintext, not encrypted**.
+Text is saved to `$XDG_STATE_HOME/pearl/clipboard.json`, normally
+`~/.local/state/pearl/clipboard.json`, as an array of `{text,last_used}` records.
+The Pearl state directory must be private (`0700`); snapshots use `0600` and
+atomic replacement. The contents are **plaintext, not encrypted**. PNGs and
+runtime entry IDs are never serialized. Unsafe files, symlinks and permissions
+are rejected rather than repaired automatically.
 
-Successful copies renew an entry's seven-day lifetime, including copies of
-existing eligible entries. Timestamps and the seven-day comparison use whole
-Unix seconds; an entry expires when its age is at least 604800 seconds.
-Expiration is lazy: copying/capturing, opening or reading history, selecting an
-entry and Delete prune expired rows before they can be returned or reused.
-Multiple expired text rows share one durable removal barrier, combined with
-the copy or Delete where possible. If admission is Busy or preparation fails,
-expired history is withheld until a later activity can retry. Clear removes
-everything directly without an expiration scan. Idle history may retain expired
-rows in memory and on disk; there is no history polling or expiration timer.
+On the first eligible unlock, saved text is loaded with its original timestamps
+and order. Restoring history never publishes a clipboard selection. Missing
+files start empty. Malformed or oversized JSON is rejected without overwriting
+it merely because loading failed. A later successful mutation can save a fresh
+snapshot. Equal-time entries retain their saved order.
 
-On the first eligible unlock Pearl automatically loads saved history
-asynchronously, without requiring the panel to open. It restores only eligible
-saved text, without publishing it to the current
-Wayland selection or importing a pre-existing selection. The model uses
-wall-clock time plus elapsed boot time to avoid reversing expiry in one
-session. If the saved clock floor is more than five minutes ahead of the
-startup wall clock, history is withheld instead of changing saved timestamps.
+An entry expires seven days after its latest copy or selection, at an age of
+604800 whole Unix seconds. Copying a duplicate promotes the same entry and
+refreshes its lifetime. Expiry is checked during history access and mutations,
+including filtering or navigating an already-open panel. This is activity-driven
+cleanup, **not a background deletion deadline**; an idle file can retain expired
+bytes until a subsequent operation. Existing byte limits can evict entries sooner.
 
-`src/services/clipboard.zig` remains the GTK-context Wayland service.
-Supporting Zig modules under `src/services/clipboard/` own history, time,
-the plaintext codec, storage, one background writer, coordination and status
-presentation. Filesystem reads, writes and synchronization run on the worker.
-The worker sleeps on its condition when there are no jobs. Startup, save and
-removal completion, errors and drained shutdown signal a nonblocking Linux
-eventfd. A GLib I/O watch observes the wakeup and reads worker state on the main
-context; the worker never calls GTK or Wayland. Notifications can coalesce, but
-required removal jobs cannot. The main-context watch is detached before its
-callback context or the worker descriptor is released, so queued or late
-wakeups cannot access freed objects. Shutdown uses this same notification,
-without a drain polling timer.
-Pending ordinary saves may be superseded, but removals stay ordered. A Delete
-or Clear is confirmed only when its worker receipt is `durable`, not when
-the request is queued. Removals also delete validated temporary snapshots left
-by interrupted saves before confirming durability, including when text remains
-in the history file. Worker startup also retires validated interrupted temporary
-snapshots under the writer locks and synchronizes their removal before loading
-history or accepting work. Cleanup failures stop startup; no polling is added.
+Saves run synchronously on GTK's main context and are best effort. Storage errors
+are logged without clipboard contents. Capturing, copying and pasting remain
+usable when storage fails. PNG-only history changes avoid writes unless they
+also remove text or retry a previously failed text save. Slow storage can delay
+an event dispatch.
 
-Unsafe, corrupt or unsupported files are not overwritten automatically.
-When a safe history file is corrupt or has an unsupported version, an unlocked
-user can explicitly run `pearlctl clipboard clear` and poll its removal receipt.
-Clear revalidates the rejected file under the exclusive writer locks, removes
-validated temporary snapshots and synchronizes the directory. Clear also rejects
-unexpected replacement of valid history or appearance of a previously missing
-history file. After a `durable` receipt, restart Pearl to resume clipboard
-history. Other storage failures and
-untrusted clock state remain fail-closed; a privacy lock still denies Clear.
-Storage or clock failures currently disable Pearl's history collection and
-selection rather than falling back to memory-only history. Verify that the
-state directory works on Devario. Saved plaintext may remain in backups or
-filesystem snapshots; Delete and Clear do not promise forensic erasure.
+Delete and Clear remove entries from memory immediately, then attempt to save.
+A `SaveFailed` response means persistence was not confirmed; the panel explains
+that removed entries may return after restarting. An error can occur after the
+new file was renamed into place, so failure does not establish that disk stayed
+unchanged. Clear can retry even when history is already empty. A successful
+retry clears the dirty/error state. Shutdown frees runtime resources without
+saving an accidental empty history. Delete/Clear do not promise forensic erasure
+from backups, filesystem snapshots or interrupted private temporary files.
+
+The previous `$XDG_STATE_HOME/pearl/clipboard/history.bin` format is incompatible.
+It is left untouched and is **not automatically migrated or used as a fallback**.
+Legacy saved text will not appear in JSON history until a migration policy is
+approved. Clearing JSON history does not remove that legacy file.
 
 ## Privacy and lock integration
 
@@ -163,7 +142,9 @@ unavailable session state, mismatched native/IPC session identities, and Pearl
 polkit prompts suspend clipboard and capture access. Pearl cancels transfers,
 hides retained clipboard history in the panel and CLI, clears screenshot
 previews, releases its own selection, and disconnects data-control collection.
-**Locking does not delete saved or in-memory clipboard history.** The status
+**Suspension retains hidden text history and discards PNG history from memory.**
+This also applies to device/manager/seat loss and ambiguous-seat suspension.
+Lock/unlock does not refresh text timestamps. The status
 response exposes no retained entries, IDs, counts, timestamps or paging tokens
 while suspended. Reconnecting skips the initial selection, so text copied while
 locked is not collected on unlock. Unlock never automatically republishes an
@@ -251,7 +232,6 @@ commands; the reused `--generation` flag carries either identity.
 pearlctl clipboard status
 pearlctl clipboard status --offset 20 --limit 20
 pearlctl clipboard status --offset 20 --limit 20 --revision REV --instance INSTANCE
-pearlctl clipboard status --operation TOKEN --instance INSTANCE
 pearlctl clipboard show --output OUTPUT_ID
 pearlctl clipboard toggle --output OUTPUT_ID
 pearlctl clipboard select --generation ENTRY_ID --instance INSTANCE
@@ -273,19 +253,18 @@ pearlctl capture cancel
 
 Clipboard status defaults to at most 20 previews per page. `total`, `returned`,
 `has_more` and `next_offset` expose all 100 entries; `revision` and `instance`
-reject stale traversals. A full response, including framing and newline, fits
-8192 bytes, so pages can contain fewer than 20 previews. Delete and Clear
-return admission separately from durable completion. Check the returned token
-with `clipboard status --operation ... --instance ...`: `pending`, `busy`,
-`failed` and `uncertain` do not mean `durable`. Select and Delete require the
-`instance` returned alongside the entry ID by `clipboard status`. Missing or
-malformed instances fail request validation; a different instance returns
-`StaleInstance` before selection, removal or history maintenance. Numeric IDs
-can be reused after restart, so callers must retain the matching instance.
-Clear keeps its optional `--instance` guard. Explicit operation queries remain
-available after storage failure while the privacy gate is open; history stays hidden. Locking,
-suspension and shutdown still deny receipt access. An accepted removal returns
-its token even if the worker fails before the initial response is produced.
+reject stale traversals. The complete response, including framing and newline,
+fits 8192 bytes. Select and Delete require the `instance` returned alongside the
+entry ID. Missing/malformed instances fail request validation; a different
+instance returns `StaleInstance` before the action. IDs can be reused after a
+restart, so callers must retain the matching instance. Clear accepts an optional
+instance guard.
+
+Delete/Clear complete synchronously. Their `SaveFailed` error can accompany an
+already-applied in-memory removal, as described above. Status exposes `dirty`
+and `persistence_error` while access is open; storage errors do not make native
+clipboard access unavailable. Suspended status hides retained content and paging
+metadata. There are no persistence operation tokens or completion queries.
 
 Capture requests acknowledge queueing, not completion. Wait for `pending: false`
 and an increased `generation`; inspect the message if it did not increase.
@@ -295,129 +274,30 @@ control requests and no bulk payload in status responses.
 ## Validation and boundaries
 
 ```sh
+zig build -Doptimize=safe -j2
 zig build test -Doptimize=safe -j2
-zig build test-clipboard-completion -Doptimize=safe -j2
 zig build test-clipboard-history -Doptimize=safe -j2
-PEARL_TEST_AQUEOUS_PREFIX="$PWD/.cache/aqueous-master" ZIG_GLOBAL_CACHE_DIR="$PWD/.cache/zig" zig build test-clipboard-capture test-capture-master -Drelease=true -Doptimize=ReleaseSafe
-python3 scripts/check-wayland-bindings.py
+zig build --build-file translations/build.zig check-templates -j2
 ```
 
-Compositor-free tests use injected seconds for lazy expiry, recopy, batched
-removals and Busy/allocation failures. The GLib completion suite checks startup,
-saves, removal receipts, failures, shutdown, idle dispatch and detaching a watch
-before queued or late notifications. These tests demonstrate the absence of
-recurring clipboard maintenance; they do not measure a CPU or latency reduction.
-The history service regressions also verify synchronous invalidation and
-nonrecursive notification on successful expiry, Busy and allocation failures.
-Widget regressions cover filtering/navigation across expiry, unchanged-cache
-reuse, failed-maintenance redaction and preservation of lock privacy. They use
-injected timestamps and a synthetic worker, never the desktop clipboard; the
-two widget tests are skipped when GTK cannot open a display.
+The focused suite checks deterministic history/expiry, JSON bounds, real saves
+and service restarts under disposable `/tmp` state roots, private permissions,
+unsafe objects, failures before and after replacement, paging and suspension
+callbacks. It never uses the user's clipboard storage. GTK widget tests require
+`PEARL_TEST_CLIPBOARD_GTK=1` and an explicitly isolated display, such as a private
+Broadway server with `GDK_BACKEND=broadway` and a private `XDG_RUNTIME_DIR`.
+They otherwise report skips and never use an inherited desktop display.
 
-The suite uses private Aqueous outputs, D-Bus services, generated-Zig clipboard
-producers and a private PAM fixture. `wl-paste` verifies interoperability and
-`grim` supplies independent screenshot references only in tests. All eight
-output transforms and fractional-scale crops are compared against actual PNGs.
-The mathematical transform conventions were cross-checked against upstream
-[grim rendering](https://github.com/emersion/grim/blob/master/render.c) and
-[output transforms](https://github.com/emersion/grim/blob/master/output-layout.c).
+The established `test-clipboard-capture`, `test-launcher-calculator`,
+`test-security` and `test-capture-master` targets use the pinned private Aqueous
+fixture from `scripts/aqueous-target.json`, isolated XDG directories and D-Bus/PAM
+fixtures. `wl-paste` checks actual text/PNG paste; screenshot tests compare
+output transforms and fractional crops. These targets must not run against the
+installed desktop. If the fixture is absent, the compositor tests remain
+unexecuted; headless or build passes are not equivalent evidence.
 
-Current evidence lives in `artifacts/aqueous-master/functional/test-capture-master`
-and `test-clipboard-capture`; earlier `artifacts/t14` remains historical. The
-master suite compares eight transformed outputs against independently captured
-color-corrected references and proves that an undescribed isolated source cannot
-leave a PNG ready. Hardware HDR, isolated scene pixel/color correctness after an
-upstream metadata fix, very large displays and real screen-reader interaction
-remain unaccepted. No host clipboard, output, PAM or portal service is mutated.
-
-Historical snapshot coverage: no authentic older `history.bin` fixture was
-found in the repository (including ignored retained artifacts) or reachable
-local Git history during finalization. Existing codec/store/session tests cover
-v1 round trips, corruption and restoration, but do not prove restoration of a
-snapshot produced by an older release. No historical fixture was manufactured;
-the v1 snapshot format is unchanged. An authentic older snapshot is still
-needed to close this coverage gap.
-
-### Devario finalization acceptance for `14e5f582`
-
-These are **user-supplied manual acceptance observations** from installed
-Devario at commit `14e5f5820968ccdd96c5001348a213a9048b16e9`, not
-independently reproduced automated results. They predate the CLI instance
-requirement added during finalization.
-
-| User-observed check | Result |
-| --- | --- |
-| Automatic text capture, paste and duplicate promotion | Passed |
-| GTK panel | Passed |
-| Text persistence and PNG memory-only behavior across restart | Passed |
-| Delete/Clear durability | Passed |
-| Lock privacy and exclusion of clipboard copies made while locked | Passed |
-| 100-entry, 256 KiB text and 16 MiB aggregate limits | Passed |
-| Pagination and restoration of large text entries | Passed |
-| Whole-Pearl idle CPU over 30 seconds | 0.533% of one core |
-| Maximum text capture | 56–102 ms |
-| Durable save | 108–155 ms |
-| 6.75 MiB PNG capture | 199 ms; no noticeable GTK responsiveness issue |
-| Normal `/usr/bin/pearl` service restored after testing | Passed |
-
-**Post-finalization verification (2026-11-04):** The session-instance safety
-change was manually tested on installed Devario with isolated state and the
-development Pearl binary. CLI Select and Delete rejected missing or incorrect
-instances without changing history. Correctly qualified Select and durable
-Delete succeeded, with unrelated entries preserved; GTK selection and deletion
-also passed. After testing, the temporary service override was removed and the
-normal `/usr/bin/pearl` service was verified active. These are user-observed
-manual desktop results, not private-compositor integration test results.
-
-### Devario persistence acceptance (2026-11-02)
-
-**Passed for the cases below on an installed Devario/Aqueous desktop**, using
-the private `feat/clipboard-persistence` branch at
-`ce340952ffa5f3fe23326e67b1cd8274d1206eaa`. The production Zig
-0.17.0 build and `zig build test -Doptimize=safe -j2` succeeded with
-GTK 4.24.1 and gtk4-layer-shell 1.3.0.
-
-The development `zig-out/bin/pearl` ran as the real
-`aqueous-pearl.service` through a temporary runtime-only systemd drop-in,
-preserving Devario's `/usr/bin/aqueous-activity-launch` wrapper.
-`XDG_STATE_HOME=$HOME/.local/state/pearl-persistence-test` isolated the
-test data from the ordinary desktop state. The effective development
-executable, state environment, `0600` history file and `0700` clipboard
-directory were verified before testing.
-
-| Installed-session check | Observed result |
-| --- | --- |
-| Text capture and durability | Text saved with healthy `durable` state; marker present after a Pearl restart |
-| Single-entry Delete | Receipt reached `durable`; deleted marker absent after restart |
-| Clear | Receipt reached `durable`; zero entries immediately and after restart |
-| PNG volatility | One PNG recorded in memory; zero PNGs restored after restart |
-| Lock privacy | Real Aqueous lock acquired; CLI hid history entries, counts and identifiers; saved text remained available after unlock |
-| Copy during lock | Compositor accepted synthetic text while locked; the marker was absent when all 16 visible history records were checked after unlock |
-| Unlock clipboard ownership | A Pearl-owned synthetic selection was verified before locking and was not republished on unlock |
-| Capacity and duplicate recopy | 105 unique copies retained the newest 100 and evicted the oldest five; duplicate recopy promoted its original ID without increasing the count |
-| Per-entry text bound | 262,144-byte text accepted; 262,145-byte selection rejected without changing history; subsequent collection and durability remained healthy |
-| Aggregate payload bound | 64 distinct 262,144-byte entries exactly filled 16,777,216 bytes; the 65th evicted the oldest; all 64 retained entries and bytes survived restart |
-
-A first aggregate stress-test attempt timed out in the Python harness because
-it captured `wl-copy` stderr across the clipboard owner's background lifetime.
-Redirecting stderr to `DEVNULL` resolved the harness issue; the corrected
-aggregate test passed. A separate unlock-detection script exceeded its
-60-second observation window, but subsequent checks confirmed the compositor
-unlocked, clipboard access resumed, and the lock-time copy was absent; an
-independent no-republish lock/unlock run also passed.
-
-**Expiry scope:** The successful Zig test suite includes deterministic
-seven-day expiry, recopy lifetime refresh, restoration/pruning and
-clock-untrusted cases with injected timestamps. A real seven-day elapsed-time
-run on the Devario desktop was **not** performed, and the host clock was not
-modified. This acceptance records the listed manual integration cases, not a
-claim of exhaustive hardware, failure-injection or long-duration qualification.
-
-**Cleanup and rollback verified:** After testing, the isolated history was
-explicitly Cleared with a `durable` receipt and zero entries. The temporary
-systemd drop-in was removed, the user daemon reloaded and
-`aqueous-pearl.service` restarted successfully. The final process executable
-was `/usr/bin/pearl`, the effective launch command was
-`/usr/bin/aqueous-activity-launch /usr/bin/pearl`, and `DropInPaths` was
-empty. The installed Pearl package was not replaced. The development checkout
-remains available separately for further work.
+Historical installed-desktop acceptance for the old binary persistence
+implementation does not validate this JSON implementation. A migration decision
+and real compositor device-loss/reconnection testing remain separate acceptance
+items. Hardware HDR and real screen-reader interaction also require dedicated
+validation.

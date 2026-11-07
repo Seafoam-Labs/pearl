@@ -2031,7 +2031,6 @@ pub const Manager = struct {
             .limit = request.limit orelse 20,
             .revision = request.revision,
             .instance = request.instance,
-            .operation = request.operation,
             .request_id = request.id,
         });
         if (request.op == .clipboard_clear or request.op == .clipboard_delete or request.op == .clipboard_select) try self.clipboard.checkInstance(request.instance);
@@ -2190,15 +2189,9 @@ pub const Manager = struct {
                 try self.showPane(try self.selected(request.output), .clipboard_capture);
                 if (request.op == .capture_show) self.popup.?.clipboard_capture.?.showCapture();
             },
-            .clipboard_clear => {
-                try self.clipboard.clear();
-                return self.clipboard.removalStatus(alloc);
-            },
+            .clipboard_clear => try self.clipboard.clear(),
             .clipboard_select => try self.clipboard.select(request.generation.?),
-            .clipboard_delete => {
-                try self.clipboard.delete(request.generation.?);
-                return self.clipboard.removalStatus(alloc);
-            },
+            .clipboard_delete => try self.clipboard.delete(request.generation.?),
             .wm_action => {
                 const action = try std.json.parseFromSliceLeaky(@import("../../aqueous/commands.zig").Action, alloc, request.text.?, .{ .allocate = .alloc_always });
                 if (action == .session_exit) return error.UseLifecycleLogout;

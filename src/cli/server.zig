@@ -197,8 +197,8 @@ const Slot = struct {
             break :blk self.owner.handle(self.owner.context, request, alloc);
         } catch |err| {
             try self.failure(alloc, request.id, switch (err) {
-                error.StaleInstance, error.StaleOperation, error.InstanceRequired, error.ResponseTooLarge, error.InvalidRequest => err,
-                error.ClockUntrusted, error.Fenced, error.CounterExhausted, error.NeedsLoad, error.Uncertain, error.Corrupt, error.Unsafe, error.UnsafeTemporary, error.ReadFailed, error.WriteFailed, error.PublishFailed, error.RemoveFailed, error.SyncFailed, error.Closed, error.NotReady, error.StaleRevision, error.InvalidTime, error.OutputColorEligibilityUnavailable, error.SessionInactive, error.ClockUnavailable, error.Stale, error.InvalidRegion, error.InvalidPayload, error.InvalidPath, error.SaveFailed, error.Unavailable, error.OutputUnavailable, error.Locked, error.AmbiguousSeat, error.EdgeOccupied, error.InvalidSize, error.InvalidGroups, error.InvalidValue, error.Conflict, error.Busy, error.Unsupported, error.StaleConfirmation, error.NoConfirmation, error.InhibitorUnavailable, error.LockFailed, error.LockerMissing, error.SettingsNotInstalled, error.SettingsLaunchFailed => err,
+                error.StaleInstance, error.ResponseTooLarge, error.InvalidRequest, error.StaleRevision, error.CounterExhausted => err,
+                error.OutputColorEligibilityUnavailable, error.SessionInactive, error.ClockUnavailable, error.Stale, error.InvalidRegion, error.InvalidPayload, error.InvalidPath, error.SaveFailed, error.Unavailable, error.OutputUnavailable, error.Locked, error.AmbiguousSeat, error.EdgeOccupied, error.InvalidSize, error.InvalidGroups, error.InvalidValue, error.Conflict, error.Busy, error.Unsupported, error.StaleConfirmation, error.NoConfirmation, error.InhibitorUnavailable, error.LockFailed, error.LockerMissing, error.SettingsNotInstalled, error.SettingsLaunchFailed => err,
                 else => if (request.op == .preferences_apply and err != error.OutOfMemory) err else error.Internal,
             });
             return;

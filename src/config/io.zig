@@ -28,9 +28,9 @@ pub fn read(alloc: std.mem.Allocator, path: [:0]const u8, limit: ?usize, cancel:
     if (std.os.linux.statx(fd, "", std.os.linux.AT.EMPTY_PATH, .{ .TYPE = true, .SIZE = true }, &stat) != 0 or !stat.mask.TYPE or !stat.mask.SIZE or stat.mode & std.c.S.IFMT != std.c.S.IFREG) return error.InvalidFile;
     if (limit) |max| if (stat.size > max) return error.InvalidFile;
     const tag = try etag(alloc, path);
-    // Unrestricted reads allocate for the observed file size. The extra byte
+    // Allocate for the observed size even with a limit. The extra byte
     // detects growth during the read instead of returning a partial snapshot.
-    const capacity = limit orelse (std.math.cast(usize, stat.size) orelse return error.OutOfMemory);
+    const capacity = std.math.cast(usize, stat.size) orelse return error.OutOfMemory;
     const bytes = try alloc.alloc(u8, std.math.add(usize, capacity, 1) catch return error.OutOfMemory);
     var used: usize = 0;
     while (used < bytes.len) {
@@ -40,7 +40,7 @@ pub fn read(alloc: std.mem.Allocator, path: [:0]const u8, limit: ?usize, cancel:
         if (n == 0) break;
         used += @intCast(n);
     }
-    if (used > capacity) return if (limit != null) error.FileTooLarge else error.Conflict;
+    if (used > capacity) return if (limit != null and used > limit.?) error.FileTooLarge else error.Conflict;
     const after = try etag(alloc, path);
     if (!std.mem.eql(u8, tag, after)) return error.Conflict;
     return .{ .bytes = bytes[0..used], .etag = tag, .hash = digest(bytes[0..used]) };
@@ -86,8 +86,7 @@ pub fn atomic(path: [:0]const u8, bytes: []const u8, exclusive: bool) !void {
     const parent = try a.dupeSentinel(u8, std.fs.path.dirname(path) orelse "/", 0);
     defer a.free(parent);
     const dir = std.c.open(parent, .{ .ACCMODE = .RDONLY, .DIRECTORY = true, .CLOEXEC = true }, @as(c_uint, 0));
-    if (dir >= 0) {
-        defer _ = std.c.close(dir);
-        if (std.c.fsync(dir) != 0) return error.SaveFailed;
-    }
+    if (dir < 0) return error.SaveFailed;
+    defer _ = std.c.close(dir);
+    if (std.c.fsync(dir) != 0) return error.SaveFailed;
 }

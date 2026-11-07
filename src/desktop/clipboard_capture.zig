@@ -12,8 +12,7 @@ const apps = @import("apps.zig");
 const Clipboard = @import("../services/clipboard.zig").Clipboard;
 const Capture = @import("../services/capture.zig").Capture;
 const history = @import("../services/clipboard_policy.zig");
-const presentation = @import("../services/clipboard/presentation.zig");
-const history_limit = presentation.capacity;
+const history_limit = history.entries_limit;
 const test_hooks = @import("build_options").test_hooks;
 const a = std.heap.c_allocator;
 const Action = enum { take, region, window, cancel, save, copy, clear };
@@ -242,7 +241,9 @@ pub const View = struct {
         a.destroy(self);
     }
     fn clicked(_: *gtk.Button, b: *Button) callconv(.c) void {
-        b.view.act(b.action) catch |err| report(if (b.action == .clear) b.view.clipboard_info else b.view.info, err);
+        b.view.act(b.action) catch |err| {
+            if (b.action == .clear) b.view.reportRemoval(err) else report(b.view.info, err);
+        };
     }
     fn copyClicked(_: *gtk.Button, row: *Row) callconv(.c) void {
         const self = row.view;
@@ -256,11 +257,13 @@ pub const View = struct {
     fn removeClicked(_: *gtk.Button, row: *Row) callconv(.c) void {
         const self = row.view;
         const id = self.entryAt(row.item.getPosition()) orelse return;
-        self.clipboard.delete(id) catch |err| report(self.clipboard_info, err);
+        self.clipboard.delete(id) catch |err| self.reportRemoval(err);
+    }
+    fn reportRemoval(self: *View, err: anyerror) void {
+        if (err == error.SaveFailed) self.clipboard_info.setText(self.clipboard.message) else report(self.clipboard_info, err);
     }
     fn report(label: *gtk.Label, err: anyerror) void {
         label.setText(switch (err) {
-            error.Busy => @import("i18n").dtr("pearl", "Clipboard storage is busy. Try again."),
             error.InvalidRegion => @import("i18n").dtr("pearl", "Enter a region inside this output: x,y,width,height"),
             error.Conflict => @import("i18n").dtr("pearl", "File already exists; choose another path using pearlctl"),
             else => @import("i18n").dtr("pearl", "Action unavailable or failed. Try again."),
@@ -282,7 +285,7 @@ pub const View = struct {
         }
     }
     fn entryAt(self: *const View, position: c_uint) ?u64 {
-        return presentation.entryId(self.records[0..self.record_count], self.visible[0..self.visible_count], position);
+        return if (self.recordAt(position)) |record| record.id else null;
     }
     fn recordAt(self: *const View, position: c_uint) ?*const Record {
         if (position >= self.visible_count or self.visible[position] >= self.record_count) return null;
@@ -319,14 +322,16 @@ pub const View = struct {
         switch (value) {
             0xff52, 0xff54 => {
                 _ = self.refreshHistory(self.cursor(), false);
-                const position = presentation.navigate(self.selection.getSelected(), self.visible_count, value == 0xff54) orelse return 1;
+                if (self.visible_count == 0) return 1;
+                const current = @min(self.selection.getSelected(), self.visible_count - 1);
+                const position = if (value == 0xff54) @min(current + 1, self.visible_count - 1) else current -| 1;
                 self.selection.setSelected(@intCast(position));
                 self.list.scrollTo(@intCast(position), .{}, null);
                 return 1;
             },
             // Delete removes the entry instead of deleting a character of the filter.
             0xffff => {
-                if (self.entryAt(self.selection.getSelected())) |id| self.clipboard.delete(id) catch |err| report(self.clipboard_info, err);
+                if (self.entryAt(self.selection.getSelected())) |id| self.clipboard.delete(id) catch |err| self.reportRemoval(err);
                 return 1;
             },
             else => return 0,
@@ -407,7 +412,7 @@ pub const View = struct {
         }
         self.record_count = 0;
     }
-    fn rebuild(self: *View, keep: Cursor, entries: []const @import("../services/clipboard/history.zig").Entry) void {
+    fn rebuild(self: *View, keep: Cursor, entries: []const @import("../services/clipboard.zig").Entry) void {
         self.freeRecords();
         for (entries) |entry| {
             if (self.record_count == self.records.len) break;
@@ -426,15 +431,23 @@ pub const View = struct {
             self.redact();
             return;
         }
-        self.visible_count = presentation.filter(self.records[0..self.record_count], self.query orelse "", &self.visible).len;
+        self.visible_count = 0;
+        for (self.records[0..self.record_count], 0..) |record, index| {
+            if (self.query) |query| if (std.mem.indexOf(u8, record.folded, query) == null) continue;
+            self.visible[self.visible_count] = index;
+            self.visible_count += 1;
+        }
         var values: [history_limit + 1:null]?[*:0]const u8 = @splat(null);
         for (self.visible[0..self.visible_count], 0..) |index, position| {
             values[position] = self.records[index].label;
         }
         self.strings.splice(0, self.strings.as(gio.ListModel).getNItems(), @ptrCast(&values));
-        const selected = presentation.selection(self.records[0..self.record_count], self.visible[0..self.visible_count], keep.id, keep.position);
-        self.selection.setSelected(if (selected) |position| @intCast(position) else std.math.maxInt(c_uint));
-        self.hint.setText(if (self.record_count == 0) @import("i18n").dtr("pearl", "Copy text or a PNG image to start. Text can be restored for seven days. Locking hides history; PNG images stay in memory.") else @import("i18n").dtr("pearl", "No matching entries"));
+        var selected: c_uint = if (self.visible_count == 0) std.math.maxInt(c_uint) else @intCast(@min(keep.position, self.visible_count - 1));
+        if (keep.id) |wanted| for (self.visible[0..self.visible_count], 0..) |index, position| {
+            if (self.records[index].id == wanted) selected = @intCast(position);
+        };
+        self.selection.setSelected(selected);
+        self.hint.setText(if (self.record_count == 0) @import("i18n").dtr("pearl", "Copy text or a PNG image to start. Text can be restored for seven days. Locking hides text and discards images.") else @import("i18n").dtr("pearl", "No matching entries"));
         self.hint.as(gtk.Widget).setVisible(@intFromBool(self.visible_count == 0));
     }
     fn refreshHistory(self: *View, keep: Cursor, filter_changed: bool) usize {
@@ -443,7 +456,7 @@ pub const View = struct {
         const entries = self.clipboard.entries();
         const accessible = self.clipboard.accessible();
         self.clipboard_info.setText(self.clipboard.message);
-        const stamp = presentation.stamp(entries, accessible);
+        const stamp = if (accessible) self.clipboard.revision +% 1 else 0;
         if (stamp != self.stamp) {
             if (!accessible) {
                 self.redact();
@@ -494,7 +507,7 @@ pub const View = struct {
             .take, .region => !self.capture.locked and !busy and self.capture.manager != null,
             .save, .copy => !self.capture.locked and self.capture.image != null and !busy,
             .cancel => busy,
-            .clear => self.clipboard.accessible() and entry_count > 0,
+            .clear => self.clipboard.accessible() and (entry_count > 0 or self.clipboard.dirty or self.clipboard.persistence_error != null),
         }));
         if (self.capture.image == null) {
             self.picture.setPaintable(null);
@@ -517,26 +530,23 @@ pub const View = struct {
         self.redacting = true;
         defer self.redacting = false;
         self.composing = false;
-        // Transient maintenance failure hides previews, but is not a privacy
-        // gate closing. Keep the user's filter for a subsequent retry.
-        const keep_query = !self.clipboard.locked and !self.clipboard.stopping and !self.clipboard.ambiguous and self.clipboard.device != null and
-            (if (self.clipboard.session) |*session| session.maintenance_busy and session.available() else false);
-        if (!keep_query) {
-            if (self.query) |query| {
-                std.crypto.secureZero(u8, query);
-                a.free(query);
-                self.query = null;
-            }
-            self.search.as(gtk.Editable).setText("");
+        if (self.query) |query| {
+            std.crypto.secureZero(u8, query);
+            a.free(query);
+            self.query = null;
         }
-        self.strings.splice(0, self.strings.as(gio.ListModel).getNItems(), null);
+        self.search.as(gtk.Editable).setText("");
+        // Wipe GTK's copies before removing model items: splice may tear down
+        // rows, and a retained ListItem can otherwise keep its accessible label.
         for (self.rows.items) |row| {
             row.label.setText("");
             row.image.setPaintable(null);
+            row.item.setAccessibleLabel("");
         }
+        self.strings.splice(0, self.strings.as(gio.ListModel).getNItems(), null);
         self.freeRecords();
         self.visible_count = 0;
-        self.stamp = presentation.stamp(&.{}, false);
+        self.stamp = 0;
         self.clipboard_info.setText("");
         self.hint.setText(@import("i18n").dtr("pearl", "History is hidden while clipboard access is paused"));
         self.hint.as(gtk.Widget).setVisible(1);
@@ -567,108 +577,204 @@ pub const View = struct {
     }
 };
 
+// GTK tests opt in only on an explicitly supplied private display. Merely
+// inheriting DISPLAY/WAYLAND_DISPLAY must never connect tests to the desktop.
 var panel_test_display: ?bool = null;
 const PanelTest = struct {
-    fixture: @import("../testing/clipboard.zig").Fixture,
-    capture: Capture,
-    host: *gtk.Box,
-    view: *View,
-
+    fixture: @import("../testing/clipboard.zig").Fixture = undefined,
+    capture: Capture = undefined,
+    window: *gtk.Window = undefined,
+    view: *View = undefined,
+    dismissed: bool = false,
     fn init(self: *PanelTest) !void {
-        // These widget tests never start clipboard capture or touch the desktop
-        // selection. Without a display the service regressions still run.
-        // Cache failure too: GTK cannot safely be initialized again after a
-        // failed initCheck in the same test process.
-        if (panel_test_display == null) panel_test_display = gtk.initCheck() != 0 and gdk.Display.getDefault() != null;
+        if (glib.getenv("PEARL_TEST_CLIPBOARD_GTK") == null) return error.SkipZigTest;
+        if (panel_test_display == null) panel_test_display = gtk.initCheck() != 0;
         if (!panel_test_display.?) return error.SkipZigTest;
-        try self.fixture.init();
-        errdefer self.fixture.deinit();
-        _ = try self.fixture.copy("old preview", 100);
-        _ = try self.fixture.copy("live preview", 200);
-        self.fixture.clipboard.test_time = @import("../testing/clipboard.zig").at(100 + 604799);
+        self.* = .{};
+        self.fixture.init();
+        self.fixture.clipboard.device = @ptrFromInt(1); // availability only
         self.capture = .{ .app = undefined, .display = undefined, .context = self, .changed = noop };
-        self.host = gtk.Box.new(.vertical, 0);
-        _ = self.host.as(object.Object).refSink();
-        errdefer self.host.unref();
-        self.view = try View.create(self.host, &self.fixture.clipboard, &self.capture, self, take, noop);
+        self.window = gtk.Window.new();
+        _ = self.window.as(object.Object).refSink();
+        const host = gtk.Box.new(.vertical, 0);
+        self.window.setChild(host.as(gtk.Widget));
+        self.window.setDefaultSize(600, 560);
+        self.view = try View.create(host, &self.fixture.clipboard, &self.capture, self, take, dismiss);
         self.fixture.context = self.view;
         self.fixture.on_change = changed;
-        self.view.search.as(gtk.Editable).setText("preview");
-        View.changed(self.view.search, self.view);
+        self.window.present();
+        self.drain();
     }
     fn deinit(self: *PanelTest) void {
         self.fixture.on_change = null;
         self.view.destroy();
-        self.host.unref();
+        self.window.destroy();
+        self.window.unref();
         self.fixture.deinit();
+    }
+    fn drain(_: *PanelTest) void {
+        for (0..100) |_| {
+            if (glib.MainContext.default().pending() == 0) break;
+            _ = glib.MainContext.default().iteration(0);
+        }
     }
     fn changed(context: *anyopaque) void {
         const view: *View = @ptrCast(@alignCast(context));
         if (!view.clipboard.accessible()) view.redact();
     }
     fn noop(_: *anyopaque) void {}
+    fn dismiss(context: *anyopaque) void {
+        const self: *PanelTest = @ptrCast(@alignCast(context));
+        self.dismissed = true;
+    }
     fn take(_: *anyopaque, _: ?[]const u8) anyerror!void {
         return error.Unavailable;
     }
 };
 
-test "open clipboard panel expires cached rows on filtering and navigation without rebuilding unchanged history" {
+test "GTK history filters navigates preserves selection and removes with truthful retry feedback" {
     const t = std.testing;
-    for ([_]bool{ false, true }) |navigate| {
+    var panel: PanelTest = undefined;
+    try panel.init();
+    defer panel.deinit();
+    const view = panel.view;
+    const first = try panel.fixture.copy("alpha one", 100);
+    _ = try panel.fixture.copy("beta", 110);
+    _ = try panel.fixture.copy("alpha two", 120);
+    view.update();
+    view.search.as(gtk.Editable).setText("alpha");
+    View.changed(view.search, view);
+    try t.expectEqual(@as(usize, 2), view.visible_count);
+    _ = View.key(undefined, 0xff54, 0, .{}, view);
+    try t.expectEqual(first, view.entryAt(view.selection.getSelected()).?);
+    _ = try panel.fixture.copy("alpha three", 130);
+    view.update();
+    try t.expectEqual(first, view.entryAt(view.selection.getSelected()).?);
+    _ = View.key(undefined, 0xffff, 0, .{}, view);
+    view.update();
+    for (panel.fixture.clipboard.rows[0..panel.fixture.clipboard.len]) |entry| try t.expect(entry.id != first);
+    panel.fixture.fail = true;
+    _ = View.key(undefined, 0xffff, 0, .{}, view);
+    try t.expect(panel.fixture.clipboard.removal_failed);
+    try t.expect(std.mem.indexOf(u8, std.mem.span(view.clipboard_info.getText()), "may return") != null);
+    try t.expectError(error.SaveFailed, view.act(.clear));
+    view.reportRemoval(error.SaveFailed);
+    view.update();
+    try t.expectEqual(@as(usize, 0), view.visible_count);
+    try t.expect(std.mem.indexOf(u8, std.mem.span(view.clipboard_info.getText()), "may return") != null);
+    for (view.buttons.items) |button| if (button.action == .clear) try t.expect(button.widget.as(gtk.Widget).getSensitive() != 0);
+    const writes = panel.fixture.writes;
+    panel.fixture.fail = false;
+    try view.act(.clear);
+    view.update();
+    try t.expectEqual(writes + 1, panel.fixture.writes);
+    for (view.buttons.items) |button| if (button.action == .clear) try t.expect(button.widget.as(gtk.Widget).getSensitive() == 0);
+}
+
+test "GTK open panel expires on filtering navigation and row activation without recursive updates" {
+    const t = std.testing;
+    for (0..3) |mode| {
         var panel: PanelTest = undefined;
         try panel.init();
         defer panel.deinit();
         const view = panel.view;
-        try t.expectEqual(@as(usize, 2), view.visible_count);
+        _ = try panel.fixture.copy("old preview", 100);
+        _ = try panel.fixture.copy("live preview", 200);
+        view.update();
         const label = view.records[0].label.ptr;
-        const revision = panel.fixture.clipboard.session.?.model.generation;
-        View.changed(view.search, view);
+        const revision = panel.fixture.clipboard.revision;
+        view.update();
         try t.expectEqual(label, view.records[0].label.ptr);
-        try t.expectEqual(revision, panel.fixture.clipboard.session.?.model.generation);
-        _ = View.key(undefined, 0xff54, 0, .{}, view);
-        try t.expectEqual(@as(c_uint, 1), view.selection.getSelected());
-        try t.expectEqual(label, view.records[0].label.ptr);
-        panel.fixture.clipboard.test_time = @import("../testing/clipboard.zig").at(100 + 604800);
-        if (navigate) {
-            _ = View.key(undefined, 0xff52, 0, .{}, view);
-        } else View.changed(view.search, view);
+        try t.expectEqual(revision, panel.fixture.clipboard.revision);
+        const notifications = panel.fixture.notifications;
+        panel.fixture.clipboard.test_time = 100 + history.retention_seconds;
+        switch (mode) {
+            0 => View.changed(view.search, view),
+            1 => _ = View.key(undefined, 0xff54, 0, .{}, view),
+            2 => View.activated(undefined, 1, view), // cached expired row ID
+            else => unreachable,
+        }
+        view.update();
         try t.expectEqual(@as(usize, 1), view.record_count);
-        try t.expectEqual(@as(usize, 1), view.visible_count);
         try t.expectEqualStrings("live preview", view.records[0].label);
-        try t.expectEqualStrings("preview", std.mem.span(view.search.as(gtk.Editable).getText()));
-        try t.expectEqual(@as(c_uint, 0), view.selection.getSelected());
-        try t.expectEqual(@as(usize, 1), panel.fixture.notifications);
+        try t.expectEqual(notifications + 1, panel.fixture.notifications);
+        try t.expect(!panel.dismissed);
     }
 }
 
-test "open clipboard panel synchronously redacts Busy and allocation failures from reads and selection" {
+test "GTK row activation publishes selected text and refreshes its timestamp" {
     const t = std.testing;
-    for (0..4) |mode| {
-        var panel: PanelTest = undefined;
-        try panel.init();
-        defer panel.deinit();
-        const view = panel.view;
-        const id = view.records[1].id;
-        var failing = std.testing.FailingAllocator.init(t.allocator, .{ .fail_index = 0 });
-        if (mode < 2) {
-            try panel.fixture.blockRemoval();
-        } else panel.fixture.clipboard.session.?.allocator = failing.allocator();
-        defer panel.fixture.clipboard.session.?.allocator = t.allocator;
-        panel.fixture.clipboard.test_time = @import("../testing/clipboard.zig").at(100 + 604800);
-        if (mode % 2 == 0) {
-            _ = panel.fixture.clipboard.entries();
-        } else try t.expectError(if (mode < 2) error.Busy else error.OutOfMemory, panel.fixture.clipboard.select(id));
-        // No main-loop iteration, worker completion or subsequent update occurs.
-        try t.expectEqual(@as(usize, 1), panel.fixture.notifications);
-        try t.expectEqual(@as(usize, 0), view.record_count);
-        try t.expectEqual(@as(usize, 0), view.visible_count);
-        try t.expectEqual(@as(c_uint, 0), view.strings.as(gio.ListModel).getNItems());
-        try t.expectEqualStrings("preview", std.mem.span(view.search.as(gtk.Editable).getText()));
-        // A real privacy gate still wipes the filter as well as the previews.
-        panel.fixture.clipboard.locked = true;
-        panel.fixture.clipboard.session.?.setLocked(true);
-        view.redact();
-        try t.expectEqualStrings("", std.mem.span(view.search.as(gtk.Editable).getText()));
-        try t.expect(view.query == null);
+    const wl = @import("wayland").client.wl;
+    const ext = @import("wayland").client.ext;
+    var pair: [2]c_int = undefined;
+    if (std.c.socketpair(std.c.AF.UNIX, std.c.SOCK.STREAM | std.c.SOCK.CLOEXEC, 0, &pair) != 0) return error.TestSocket;
+    defer _ = std.c.close(pair[1]);
+    const connection = try wl.Display.connectToFd(pair[0]);
+    defer connection.disconnect();
+    const registry = try connection.getRegistry();
+    defer @as(*wl.Proxy, @ptrCast(registry)).destroy();
+    var panel: PanelTest = undefined;
+    try panel.init();
+    defer panel.deinit();
+    // Protocol requests go only to the disposable socket; GDK flushes only
+    // the explicitly supplied private GTK display.
+    const manager = try registry.bind(8, ext.DataControlManagerV1, 1);
+    panel.fixture.clipboard.manager = manager;
+    defer {
+        panel.fixture.clipboard.manager = null;
+        manager.destroy();
     }
+    const seat = try registry.bind(9, wl.Seat, 5);
+    defer seat.release();
+    const device = try manager.getDataDevice(seat);
+    panel.fixture.clipboard.device = device;
+    defer {
+        panel.fixture.clipboard.device = null;
+        device.destroy();
+    }
+    panel.fixture.clipboard.display = gdk.Display.getDefault().?;
+    const selected = try panel.fixture.copy("selected text", 100);
+    _ = try panel.fixture.copy("newer text", 200);
+    panel.view.update();
+    const writes = panel.fixture.writes;
+    panel.fixture.clipboard.test_time = 300;
+    View.activated(undefined, 1, panel.view);
+    try t.expect(panel.dismissed and panel.fixture.clipboard.source != null);
+    try t.expectEqual(selected, panel.fixture.clipboard.rows[0].id);
+    try t.expectEqual(@as(i64, 300), panel.fixture.clipboard.rows[0].last_used);
+    try t.expectEqualStrings("selected text", panel.fixture.clipboard.owned.?.bytes);
+    try t.expectEqual(writes + 1, panel.fixture.writes);
+}
+
+test "GTK lock synchronously redacts cached text images query and accessible labels after save allocation failure" {
+    const t = std.testing;
+    var panel: PanelTest = undefined;
+    try panel.init();
+    defer panel.deinit();
+    const view = panel.view;
+    panel.fixture.save_error = error.OutOfMemory;
+    _ = try panel.fixture.copy("secret preview", 100);
+    const png = try @import("../testing/clipboard.zig").image(0x123456ff);
+    defer a.free(png);
+    try panel.fixture.clipboard.add(.png, png);
+    view.update();
+    try t.expectEqual(@as(usize, 2), view.record_count);
+    try t.expect(view.records[0].image != null);
+    view.search.as(gtk.Editable).setText("secret");
+    View.changed(view.search, view);
+    panel.drain();
+    try t.expect(view.rows.items.len != 0);
+    const item = view.rows.items[0].item;
+    _ = item.as(object.Object).ref();
+    defer item.unref();
+    const writes = panel.fixture.writes;
+    panel.fixture.clipboard.device = null;
+    panel.fixture.clipboard.setLocked(true);
+    try t.expect(view.query == null and view.record_count == 0 and view.visible_count == 0);
+    try t.expectEqualStrings("", std.mem.span(view.search.as(gtk.Editable).getText()));
+    try t.expectEqual(@as(c_uint, 0), view.strings.as(gio.ListModel).getNItems());
+    try t.expectEqualStrings("", std.mem.span(item.getAccessibleLabel()));
+    try t.expectEqual(@as(usize, 1), panel.fixture.clipboard.len);
+    try t.expectEqualStrings("secret preview", panel.fixture.clipboard.rows[0].bytes);
+    try t.expectEqual(writes, panel.fixture.writes);
 }
