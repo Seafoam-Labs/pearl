@@ -207,7 +207,7 @@ test "all pinned scalar fields have exactly one section and future fields remain
     const parsed = try std.json.parseFromSlice(m.Value, a, @embedFile("aqueous_presentation_fixture"), .{});
     defer parsed.deinit();
     const fields = m.list(m.get(parsed.value, "fields"));
-    try std.testing.expectEqual(@as(usize, 221), fields.len);
+    try std.testing.expectEqual(@as(usize, 241), fields.len);
     var seen = std.StringHashMap(void).init(a);
     defer seen.deinit();
     for (fields) |f| {
