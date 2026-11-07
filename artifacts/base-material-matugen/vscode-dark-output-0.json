@@ -129,7 +129,7 @@
     "terminal.ansiMagenta": "#ff569e",
     "terminal.ansiCyan": "#d17d99",
     "terminal.ansiWhite": "#878391",
-    "terminal.ansiBrightBlack": "#595663",
+    "terminal.ansiBrightBlack": "#8b8992",
     "terminal.ansiBrightRed": "#ff5b85",
     "terminal.ansiBrightGreen": "#c38c00",
     "terminal.ansiBrightYellow": "#9e8bd2",
@@ -143,7 +143,7 @@
     {
       "scope": ["comment"],
       "settings": {
-        "foreground": "#595663"
+        "foreground": "#8b8992"
       }
     },
     {
@@ -267,7 +267,7 @@
       "foreground": "#d17d99"
     },
     "comment": {
-      "foreground": "#595663"
+      "foreground": "#8b8992"
     }
   }
 }
