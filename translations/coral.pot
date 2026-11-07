@@ -19,15 +19,15 @@ msgstr ""
 msgid "About Coral"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:731
+#: subprojects/coral/src/app.zig:749
 msgid "Add to dictionary"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:1083
+#: subprojects/coral/src/app.zig:1101
 msgid "Added to the personal dictionary shared by Enchant applications."
 msgstr ""
 
-#: subprojects/coral/src/app.zig:431 subprojects/coral/src/app.zig:512 subprojects/coral/src/app.zig:668 subprojects/coral/src/app.zig:854 subprojects/coral/src/app.zig:937 subprojects/coral/src/app.zig:1014 subprojects/coral/src/app.zig:1123
+#: subprojects/coral/src/app.zig:449 subprojects/coral/src/app.zig:530 subprojects/coral/src/app.zig:686 subprojects/coral/src/app.zig:872 subprojects/coral/src/app.zig:955 subprojects/coral/src/app.zig:1032 subprojects/coral/src/app.zig:1141
 msgid "Cancel"
 msgstr ""
 
@@ -35,11 +35,11 @@ msgstr ""
 msgid "Checking dictionaries…"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:431
+#: subprojects/coral/src/app.zig:449
 msgid "Choose a line ending"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:459
+#: subprojects/coral/src/app.zig:477
 msgid "Choose a line ending before saving."
 msgstr ""
 
@@ -55,7 +55,7 @@ msgstr ""
 msgid "Close tab"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:738
+#: subprojects/coral/src/app.zig:756
 msgid "Copy"
 msgstr ""
 
@@ -63,15 +63,19 @@ msgstr ""
 msgid "Coral"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:598
+#: subprojects/coral/src/app.zig:616
 msgid "Coral preferences"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:1036
+#: subprojects/coral/src/app.zig:408
+msgid "Could not create the file."
+msgstr ""
+
+#: subprojects/coral/src/app.zig:1054
 msgid "Could not save preferences. Check the configuration directory permissions."
 msgstr ""
 
-#: subprojects/coral/src/app.zig:738
+#: subprojects/coral/src/app.zig:756
 msgid "Cut"
 msgstr ""
 
@@ -79,15 +83,15 @@ msgstr ""
 msgid "Dictionary unavailable"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:512
+#: subprojects/coral/src/app.zig:530
 msgid "Discard"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:1014
+#: subprojects/coral/src/app.zig:1032
 msgid "Discard and reload"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:1014
+#: subprojects/coral/src/app.zig:1032
 msgid "Discard unsaved edits?"
 msgstr ""
 
@@ -95,11 +99,11 @@ msgstr ""
 msgid "Editor menu"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:668
+#: subprojects/coral/src/app.zig:686
 msgid "Enter a line number."
 msgstr ""
 
-#: subprojects/coral/src/app.zig:936
+#: subprojects/coral/src/app.zig:954
 msgid "File changed on disk. Save again to review the conflict; your edits are preserved."
 msgstr ""
 
@@ -111,11 +115,11 @@ msgstr ""
 msgid "Find and replace · Ctrl+F"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:608
+#: subprojects/coral/src/app.zig:626
 msgid "Follow Pearl"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:668
+#: subprojects/coral/src/app.zig:686
 msgid "Go"
 msgstr ""
 
@@ -123,15 +127,15 @@ msgstr ""
 msgid "Go to Line…"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:668
+#: subprojects/coral/src/app.zig:686
 msgid "Go to line"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:731
+#: subprojects/coral/src/app.zig:749
 msgid "Ignore for this document"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:731
+#: subprojects/coral/src/app.zig:749
 msgid "Language…"
 msgstr ""
 
@@ -139,15 +143,15 @@ msgstr ""
 msgid "Ln {0}, Col {1}   ·   UTF-8{2} · {3}{4}"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:604
+#: subprojects/coral/src/app.zig:622
 msgid "Make yourself at home"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:868
+#: subprojects/coral/src/app.zig:886
 msgid "Mixed line endings detected. Choose LF or CRLF when you save."
 msgstr ""
 
-#: subprojects/coral/src/app.zig:608
+#: subprojects/coral/src/app.zig:626
 msgid "Native GTK"
 msgstr ""
 
@@ -163,19 +167,19 @@ msgstr ""
 msgid "Next match · F3"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:639
+#: subprojects/coral/src/app.zig:657
 msgid "No dictionaries found. Install an Enchant provider and a language dictionary, then restart Coral."
 msgstr ""
 
-#: subprojects/coral/src/app.zig:730
+#: subprojects/coral/src/app.zig:748
 msgid "No replacements found"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:685
+#: subprojects/coral/src/app.zig:703
 msgid "No spelling suggestions in this document."
 msgstr ""
 
-#: subprojects/coral/src/app.zig:377 subprojects/coral/src/app.zig:959 subprojects/coral/src/app.zig:980
+#: subprojects/coral/src/app.zig:377 subprojects/coral/src/app.zig:977 subprojects/coral/src/app.zig:998
 msgid "Only local files are supported."
 msgstr ""
 
@@ -183,11 +187,11 @@ msgstr ""
 msgid "Open files · Ctrl+O"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:854 subprojects/coral/src/app.zig:1123
+#: subprojects/coral/src/app.zig:872 subprojects/coral/src/app.zig:1141
 msgid "Open in large-file mode?"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:854 subprojects/coral/src/app.zig:1123
+#: subprojects/coral/src/app.zig:872 subprojects/coral/src/app.zig:1141
 msgid "Open large file"
 msgstr ""
 
@@ -195,23 +199,23 @@ msgstr ""
 msgid "Open…"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:937
+#: subprojects/coral/src/app.zig:955
 msgid "Overwrite"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:738
+#: subprojects/coral/src/app.zig:756
 msgid "Paste"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:608
+#: subprojects/coral/src/app.zig:626
 msgid "Pearl dark"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:608
+#: subprojects/coral/src/app.zig:626
 msgid "Pearl light"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:639
+#: subprojects/coral/src/app.zig:657
 msgid "Personal dictionary words may be shared with other Enchant applications."
 msgstr ""
 
@@ -227,11 +231,11 @@ msgstr ""
 msgid "Quit"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:937
+#: subprojects/coral/src/app.zig:955
 msgid "Reload"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:1014
+#: subprojects/coral/src/app.zig:1032
 msgid "Reloading replaces your current edits with the version on disk."
 msgstr ""
 
@@ -247,19 +251,19 @@ msgstr ""
 msgid "Replace with"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:84 subprojects/coral/src/app.zig:512
+#: subprojects/coral/src/app.zig:84 subprojects/coral/src/app.zig:530
 msgid "Save"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:84 subprojects/coral/src/app.zig:937
+#: subprojects/coral/src/app.zig:84 subprojects/coral/src/app.zig:955
 msgid "Save As…"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:512
+#: subprojects/coral/src/app.zig:530
 msgid "Save this document before closing it? Discarding loses the unsaved edits."
 msgstr ""
 
-#: subprojects/coral/src/app.zig:512
+#: subprojects/coral/src/app.zig:530
 msgid "Save your changes?"
 msgstr ""
 
@@ -267,15 +271,15 @@ msgstr ""
 msgid "Save · Ctrl+S"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:927
+#: subprojects/coral/src/app.zig:945
 msgid "Saved the earlier revision. Newer edits are still unsaved."
 msgstr ""
 
-#: subprojects/coral/src/app.zig:920
+#: subprojects/coral/src/app.zig:938
 msgid "Saved."
 msgstr ""
 
-#: subprojects/coral/src/app.zig:505
+#: subprojects/coral/src/app.zig:523
 msgid "Saving is still in progress. Close this document after it finishes."
 msgstr ""
 
@@ -291,47 +295,47 @@ msgstr ""
 msgid "Spelling suggestions"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:841
+#: subprojects/coral/src/app.zig:859
 msgid "Standalone CR line endings are not supported. Convert this file to LF or CRLF."
 msgstr ""
 
-#: subprojects/coral/src/app.zig:448
+#: subprojects/coral/src/app.zig:466
 msgid "That file is already open in another tab. Save to a different name."
 msgstr ""
 
-#: subprojects/coral/src/app.zig:1082
+#: subprojects/coral/src/app.zig:1100
 msgid "The personal dictionary could not be updated."
 msgstr ""
 
-#: subprojects/coral/src/app.zig:1116
+#: subprojects/coral/src/app.zig:1134
 msgid "The spelling provider reported an error. Editing remains available."
 msgstr ""
 
-#: subprojects/coral/src/app.zig:937
+#: subprojects/coral/src/app.zig:955
 msgid "This file changed elsewhere"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:842
+#: subprojects/coral/src/app.zig:860
 msgid "This file contains binary data and cannot be edited as text."
 msgstr ""
 
-#: subprojects/coral/src/app.zig:1123
+#: subprojects/coral/src/app.zig:1141
 msgid "This file exceeds 10 MiB. Automatic spelling and syntax highlighting will be disabled."
 msgstr ""
 
-#: subprojects/coral/src/app.zig:831
+#: subprojects/coral/src/app.zig:849
 msgid "This file exceeds Coral's 128 MiB safety limit."
 msgstr ""
 
-#: subprojects/coral/src/app.zig:854
+#: subprojects/coral/src/app.zig:872
 msgid "This file is larger than 10 MiB. Automatic spelling and syntax highlighting will be disabled."
 msgstr ""
 
-#: subprojects/coral/src/app.zig:840
+#: subprojects/coral/src/app.zig:858
 msgid "This file is not valid UTF-8. Convert its encoding before opening it in Coral."
 msgstr ""
 
-#: subprojects/coral/src/app.zig:431
+#: subprojects/coral/src/app.zig:449
 msgid "This file mixes LF and CRLF line endings. Choose a format before saving; Coral will normalize line endings explicitly."
 msgstr ""
 
@@ -339,15 +343,15 @@ msgstr ""
 msgid "Untitled"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:431
+#: subprojects/coral/src/app.zig:449
 msgid "Use CRLF"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:431
+#: subprojects/coral/src/app.zig:449
 msgid "Use LF"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:426
+#: subprojects/coral/src/app.zig:444
 msgid "Wait for the current file operation to finish."
 msgstr ""
 
@@ -356,7 +360,7 @@ msgctxt "desktop.description"
 msgid "Write and edit text with local spelling suggestions"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:937
+#: subprojects/coral/src/app.zig:955
 msgid "Your edits are preserved. Save a copy, reload the file, or explicitly overwrite the version on disk."
 msgstr ""
 
