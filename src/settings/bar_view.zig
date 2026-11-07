@@ -22,7 +22,7 @@ const w = @import("../ui/components/widgets.zig");
 const a = std.heap.c_allocator;
 const Group = model.Group;
 const Icon = @import("../ui/components/launcher_icon.zig");
-const Intent = union(enum) { clock_new, clock_open, clock_save, clock_cancel, clock_delete, clock_zone, picker: Group, actions, change: model.Action, workspace_mode: prefs.WorkspaceMode, resource_mode: prefs.ResourceMode, resource_series: resource_model.Series, weather_units: weather_policy.Units, weather_search, weather_place: struct { location: []const u8, latitude: f64, longitude: f64 }, focus: Group, advanced, plugins, icon_open, icon_theme, icon_file, icon_reset, icon_retry, icon_preset };
+const Intent = union(enum) { clock_new, clock_open, clock_save, clock_cancel, clock_delete, clock_zone, picker: Group, actions, change: model.Action, workspace_mode: prefs.WorkspaceMode, resource_mode: prefs.ResourceMode, resource_series: resource_model.Series, media_art: bool, weather_units: weather_policy.Units, weather_search, weather_place: struct { location: []const u8, latitude: f64, longitude: f64 }, focus: Group, advanced, plugins, icon_open, icon_theme, icon_file, icon_reset, icon_retry, icon_preset };
 const Binding = struct { view: *View, id: []const u8, intent: Intent };
 /// G_TYPE_STRING: fundamental type index 16 (2 is G_TYPE_INTERFACE) shifted into GType space.
 const g_type_string: usize = 16 << 2;
@@ -401,6 +401,7 @@ pub const View = struct {
                 }
                 if (builtin == .workspaces) labels.append(w.label(document.bar.workspace_mode.label(), "pearl-secondary").as(gtk.Widget));
                 if (builtin == .resources) labels.append(w.label(document.bar.resource_mode.label(), "pearl-secondary").as(gtk.Widget));
+                if (builtin == .media and document.bar.media_art) labels.append(w.label(@import("i18n").dtr("pearl", "Album art"), "pearl-secondary").as(gtk.Widget));
                 if (builtin == .weather) {
                     const detail = w.label(try alloc.dupeSentinel(u8, document.weather.location, 0), "pearl-secondary");
                     detail.setMaxWidthChars(18);
@@ -412,7 +413,7 @@ pub const View = struct {
                     labels.append(detail.as(gtk.Widget));
                 }
                 row.append(labels.as(gtk.Widget));
-                if (clock_policy.reference(id) != null or std.mem.eql(u8, id, "launcher") or std.mem.eql(u8, id, "workspaces") or std.mem.eql(u8, id, "resources") or std.mem.eql(u8, id, "weather")) {
+                if (clock_policy.reference(id) != null or std.mem.eql(u8, id, "launcher") or std.mem.eql(u8, id, "workspaces") or std.mem.eql(u8, id, "resources") or std.mem.eql(u8, id, "media") or std.mem.eql(u8, id, "weather")) {
                     const b = try self.button(row, @import("i18n").dtr("pearl", "⋯"), try std.fmt.allocPrint(alloc, "bar.widget.{s}", .{id}), id, .actions, false);
                     w.name(b.as(gtk.Widget), try std.fmt.allocPrintSentinel(alloc, "Actions for {s}, {s}, position {d} of {d}", .{ title, model.groupLabel(group, document.bar.edge), i + 1, layout.items[g].items.len }, 0));
                     b.as(gtk.Widget).setTooltipText(try std.fmt.allocPrintSentinel(alloc, "Actions for {s}", .{title}, 0));
@@ -589,6 +590,22 @@ pub const View = struct {
                     _ = gtk.CheckButton.signals.toggled.connect(choice_, *Binding, seriesToggled, binding, .{});
                     try self.menu_controls.append(a, .{ .id = try std.fmt.allocPrint(alloc, "bar.resource.series.{s}", .{@tagName(kind)}), .widget = choice_.as(gtk.Widget) });
                 }
+            }
+            if (std.mem.eql(u8, id, "media")) {
+                box.append(w.label(@import("i18n").dtr("pearl", "Widget icon"), "settings-row-title").as(gtk.Widget));
+                const choice_ = gtk.CheckButton.new();
+                const label = w.label(@import("i18n").dtr("pearl", "Show the playing track's album art"), null);
+                label.setMaxWidthChars(28);
+                label.as(gtk.Widget).setCanTarget(0);
+                choice_.as(gtk.Widget).setSizeRequest(-1, 32);
+                choice_.setChild(label.as(gtk.Widget));
+                choice_.setActive(@intFromBool(document.bar.media_art));
+                box.append(choice_.as(gtk.Widget));
+                w.name(choice_.as(gtk.Widget), @import("i18n").dtr("pearl", "Show album art instead of the media icon"));
+                const binding = try alloc.create(Binding);
+                binding.* = .{ .view = self, .id = "media", .intent = .{ .media_art = true } };
+                _ = gtk.CheckButton.signals.toggled.connect(choice_, *Binding, mediaArtToggled, binding, .{});
+                try self.menu_controls.append(a, .{ .id = "bar.media.art", .widget = choice_.as(gtk.Widget) });
             }
             if (std.mem.eql(u8, id, "weather")) {
                 box.append(w.label(@import("i18n").dtr("pearl", "Temperature units"), "settings-row-title").as(gtk.Widget));
@@ -827,6 +844,22 @@ pub const View = struct {
         try self.editor.edit(next);
         self.host.as(gtk.Accessible).announce(try std.fmt.allocPrintSentinel(alloc, "Resource monitor: {s}. Unsaved changes.", .{mode.label()}, 0), .medium);
         self.rememberFocus("bar.widget.resources");
+        self.popup.?.popdown();
+        self.queue();
+    }
+    fn mutateMediaArt(self: *View, enabled: bool) !void {
+        if (!self.editor.editable() or self.editor.target.page != .bar) return error.Unavailable;
+        var temp = std.heap.ArenaAllocator.init(a);
+        defer temp.deinit();
+        const alloc = temp.allocator();
+        const document = try prefs.parse(alloc, self.editor.text());
+        if (!std.mem.eql(u8, &self.popup_hash, &try barHash(alloc, document.bar))) return error.StaleBar;
+        const next = try model.patchMediaArt(alloc, self.editor.text(), enabled);
+        self.editing = true;
+        defer self.editing = false;
+        try self.editor.edit(next);
+        self.host.as(gtk.Accessible).announce(try std.fmt.allocPrintSentinel(alloc, "Media widget icon: {s}. Unsaved changes.", .{if (enabled) "album art" else "media icon"}, 0), .medium);
+        self.rememberFocus("bar.widget.media");
         self.popup.?.popdown();
         self.queue();
     }
@@ -1315,6 +1348,12 @@ pub const View = struct {
         if (self.editing) return;
         self.mutateResourceSeries(binding.intent.resource_series, choice_.getActive() != 0) catch |err| self.report(err);
     }
+    fn mediaArtToggled(choice_: *gtk.CheckButton, binding: *Binding) callconv(.c) void {
+        const self = binding.view;
+        // A checkbox fires on both edges, so the new state decides the patch.
+        if (self.editing) return;
+        self.mutateMediaArt(choice_.getActive() != 0) catch |err| self.report(err);
+    }
     fn weatherUnitsToggled(choice_: *gtk.CheckButton, binding: *Binding) callconv(.c) void {
         const self = binding.view;
         if (choice_.getActive() == 0 or self.editing) return;
@@ -1362,6 +1401,7 @@ pub const View = struct {
             .resource_mode => |mode| self.mutateResourceMode(mode) catch |err| self.report(err),
             // Checkboxes drive the graph picker through `toggled`, never a click.
             .resource_series => {},
+            .media_art => {},
             .weather_units => {},
             .weather_search => self.startWeatherSearch(),
             .weather_place => |place| self.mutateWeatherPlace(place.location, place.latitude, place.longitude) catch |err| self.report(err),

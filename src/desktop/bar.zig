@@ -56,6 +56,12 @@ pub const Bar = struct {
     pane_anchor: ?struct { x: i32, y: i32, width: i32, height: i32 } = null,
     notification_label: ?*gtk.Label = null,
     media_label: ?*gtk.Label = null,
+    /// Media widget glyph; swapped between the icon and the loaded album art.
+    media_icon: ?*gtk.Image = null,
+    media_art: bool = false,
+    /// Viewer registration on the media service, held only while art is shown.
+    media_art_viewing: bool = false,
+    media_art_image: ?*@import("gdkpixbuf2").Pixbuf = null,
     network_label: ?*gtk.Label = null,
     bluetooth_label: ?*gtk.Label = null,
     audio_label: ?*gtk.Label = null,
@@ -145,6 +151,12 @@ pub const Bar = struct {
         self.resources = null;
         self.notification_label = null;
         self.media_label = null;
+        if (self.media_art_viewing) {
+            self.session_services.media.view(false);
+            self.media_art_viewing = false;
+        }
+        self.media_icon = null;
+        self.media_art_image = null;
         while (self.host.as(gtk.Widget).getFirstChild()) |child| self.host.remove(child);
         freeHandlers(&self.handlers);
         freeHandlers(&self.workspace_handlers);
@@ -203,6 +215,21 @@ pub const Bar = struct {
     /// The bar content hash carries this, so the manager rebuilds around it.
     pub fn setResourceMode(self: *Bar, mode: @import("resource_model.zig").Mode) void {
         self.resource_mode = mode;
+    }
+    /// Opt-in album art on the media widget. The bar only registers as an
+    /// artwork viewer on the media service while the art is actually shown,
+    /// so the icon-only default never triggers artwork loading.
+    pub fn setMediaArt(self: *Bar, enabled: bool) void {
+        if (self.media_art == enabled) return;
+        self.media_art = enabled;
+        self.syncMediaArt();
+        self.update();
+    }
+    fn syncMediaArt(self: *Bar) void {
+        const want = self.media_art and self.media_icon != null;
+        if (want == self.media_art_viewing) return;
+        self.session_services.media.view(want);
+        self.media_art_viewing = want;
     }
     /// Must be set before configure() when a group contains the `dock` widget.
     pub fn setDockDeps(self: *Bar, deps: DockDeps) void {
@@ -366,7 +393,9 @@ pub const Bar = struct {
                     .notifications, .media => blk: {
                         const button = try self.makeButton(.{ .pane = if (item == .media) .media else .notifications }, null, "", false);
                         const content = gtk.Box.new(if (self.vertical) .vertical else .horizontal, if (self.vertical) 0 else 4);
-                        content.append(w.icon(if (item == .media) "pearl-media-symbolic" else "pearl-notifications-symbolic").as(gtk.Widget));
+                        const glyph = w.icon(if (item == .media) "pearl-media-symbolic" else "pearl-notifications-symbolic");
+                        if (item == .media) self.media_icon = glyph;
+                        content.append(glyph.as(gtk.Widget));
                         const label = gtk.Label.new("");
                         label.setEllipsize(.end);
                         label.setMaxWidthChars(if (self.vertical) 2 else if (item == .media) 16 else 4);
@@ -498,6 +527,7 @@ pub const Bar = struct {
                 box.append(widget);
             }
         }
+        self.syncMediaArt();
         self.update();
         self.tick();
         self.styleIslands();
@@ -621,6 +651,15 @@ pub const Bar = struct {
             label.setText(std.mem.printSentinel(&buf, "{s}{d}", .{ if (self.session_services.notifications.model.dnd) "− " else "", count }, 0) catch "");
         }
         if (self.media_label) |label| label.setText(if (self.session_services.media.current()) |p| p.title.z() else "");
+        if (self.media_icon) |glyph| {
+            // Opt-in album art; until it loads (or with the toggle off) the
+            // widget keeps its symbolic icon.
+            const image = if (self.media_art) self.session_services.media.art.image else null;
+            if (image != self.media_art_image) {
+                self.media_art_image = image;
+                if (image) |art| glyph.setFromPixbuf(art) else glyph.setFromIconName("pearl-media-symbolic");
+            }
+        }
         var service_buffer: [256]u8 = undefined;
         if (self.audio_label) |label| {
             const device = self.audio_service.default(.sink);
