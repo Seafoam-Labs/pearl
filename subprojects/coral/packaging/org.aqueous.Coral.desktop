@@ -6,5 +6,5 @@ Exec=coral %F
 Icon=org.aqueous.Coral
 Terminal=false
 Categories=GTK;Utility;TextEditor;
-MimeType=text/plain;text/markdown;text/x-zig;
+MimeType=application/json;application/json5;application/schema+json;application/sql;application/toml;application/typescript;application/x-fishscript;application/x-php;application/x-ruby;application/xml;application/yaml;text/css;text/javascript;text/markdown;text/plain;text/rust;text/x-c++hdr;text/x-c++src;text/x-chdr;text/x-cmake;text/x-csrc;text/x-dockerfile;text/x-go;text/x-java;text/x-lua;text/x-makefile;text/x-meson;text/x-nix;text/x-python;text/x-rst;text/x-scss;text/x-shellscript;text/x-systemd-unit;text/x-zig;
 StartupNotify=true

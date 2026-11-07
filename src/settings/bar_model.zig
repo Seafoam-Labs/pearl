@@ -148,6 +148,16 @@ pub fn patchResourceSeries(a: std.mem.Allocator, text: []const u8, selection: pr
     if (result.len > prefs.max_bytes) return error.DocumentTooLarge;
     return result;
 }
+pub fn patchMediaArt(a: std.mem.Allocator, text: []const u8, enabled: bool) ![]const u8 {
+    var document = try prefs.parse(a, text);
+    const layout = try Layout.parse(a, document.bar.groups);
+    if (layout.find("media") == null) return error.WidgetNotFound;
+    document.bar.media_art = enabled;
+    try document.validate();
+    const result = try std.json.Stringify.valueAlloc(a, document, .{ .whitespace = .indent_2 });
+    if (result.len > prefs.max_bytes) return error.DocumentTooLarge;
+    return result;
+}
 /// The weather location is a global preference; per-output bars share it.
 pub fn patchWeather(a: std.mem.Allocator, text: []const u8, config: @import("../desktop/weather_policy.zig").Config) ![]const u8 {
     var document = try prefs.parse(a, text);
@@ -320,6 +330,25 @@ test "resource patches need the widget placed and preserve every unrelated prefe
     // An unrelated per-output bar policy is untouched by both patches.
     try std.testing.expectEqual(prefs.WorkspaceMode.small, restored.outputs[0].bar.workspace_mode);
     try std.testing.expectEqual(prefs.ResourceMode.icon, restored.outputs[0].bar.resource_mode);
+}
+
+test "media art patch needs the widget placed and survives removal" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    const expected: prefs.Preferences = .{ .font_size = 19, .bar = .{ .media_art = true }, .outputs = &.{.{ .connector = "DP-1", .bar = .{ .workspace_mode = .small } }} };
+    const text = try std.json.Stringify.valueAlloc(a, expected, .{});
+    // Media ships in the default right group, so the toggle patches directly.
+    try std.testing.expectEqualDeep(expected, try prefs.parse(a, try patchMediaArt(a, text, true)));
+    const off = try prefs.parse(a, try patchMediaArt(a, text, false));
+    try std.testing.expect(!off.bar.media_art);
+    try std.testing.expectEqual(@as(u16, 19), off.font_size);
+    try std.testing.expectEqual(prefs.WorkspaceMode.small, off.outputs[0].bar.workspace_mode);
+    const removed = try patch(a, text, "media", .remove);
+    try std.testing.expectError(error.WidgetNotFound, patchMediaArt(a, removed, false));
+    // The choice outlives removal, exactly as the resource mode does.
+    const restored = try prefs.parse(a, try patch(a, removed, "media", .{ .add = .center }));
+    try std.testing.expect(restored.bar.media_art);
 }
 
 test "weather patches preserve unrelated preferences and reject invalid locations" {
