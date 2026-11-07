@@ -38,6 +38,9 @@
 .pearl-root.$scope listview row { padding: 0; border-radius: 12px; margin: 2px 3px; }
 .pearl-root.$scope listview row:hover { background: $high$; }
 .pearl-root.$scope listview row:selected { background: $primary_container$; color: $on_container$; }
+/* The scroller clips at its own edge, so reserve the room a row focus ring
+   needs beyond its margin or the first and last rings lose a side. */
+.pearl-root.$scope .pearl-launcher-list { padding: 2px 1px; }
 .pearl-root.$scope .pearl-launcher-choices { background: transparent; color: $text$; }
 .pearl-root.$scope .pearl-launcher-choices row { padding: 8px 10px; border-radius: 12px; margin: 2px 3px; }
 .pearl-root.$scope .pearl-launcher-choices row:hover { background: $high$; }
