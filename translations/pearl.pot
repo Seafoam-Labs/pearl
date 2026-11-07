@@ -242,7 +242,7 @@ msgstr ""
 msgid "Add application shortcut…"
 msgstr ""
 
-#: src/settings/window_rules_view.zig:425
+#: src/settings/window_rules_view.zig:426
 msgid "Add at least one condition and one setting for a new rule. Scope alone is not a condition."
 msgstr ""
 
@@ -250,7 +250,7 @@ msgstr ""
 msgid "Add clock"
 msgstr ""
 
-#: src/settings/notification_filters_view.zig:422 src/settings/window_rules_view.zig:294
+#: src/settings/notification_filters_view.zig:422 src/settings/window_rules_view.zig:295
 msgid "Add condition"
 msgstr ""
 
@@ -291,7 +291,7 @@ msgstr ""
 msgid "Add search engine"
 msgstr ""
 
-#: src/settings/window_rules_view.zig:294
+#: src/settings/window_rules_view.zig:295
 msgid "Add setting"
 msgstr ""
 
@@ -387,7 +387,7 @@ msgstr ""
 msgid "All workspaces · All displays"
 msgstr ""
 
-#: src/settings/window_rules_view.zig:272
+#: src/settings/window_rules_view.zig:273
 msgid "Allow an explicit empty pattern (advanced)"
 msgstr ""
 
@@ -2516,7 +2516,7 @@ msgstr ""
 msgid "Enter a name of at most 64 characters."
 msgstr ""
 
-#: src/settings/window_rules_view.zig:427
+#: src/settings/window_rules_view.zig:428
 msgid "Enter a pattern, or explicitly allow an empty pattern in the advanced option."
 msgstr ""
 
@@ -5088,7 +5088,7 @@ msgstr ""
 msgid "Remainder layout, fallback and spacing"
 msgstr ""
 
-#: src/settings/notification_filters_view.zig:380 src/settings/window_rules_view.zig:282
+#: src/settings/notification_filters_view.zig:380 src/settings/window_rules_view.zig:283
 msgid "Remove"
 msgstr ""
 
@@ -6916,7 +6916,7 @@ msgstr ""
 msgid "The shared draft changed. Reopen settings before discarding it."
 msgstr ""
 
-#: src/settings/window_rules_view.zig:424
+#: src/settings/window_rules_view.zig:425
 msgid "The shared draft or snapshot changed. Your input is retained. Cancel and reopen the rule to review the latest version."
 msgstr ""
 
@@ -6964,7 +6964,7 @@ msgstr ""
 msgid "This display mirrors another screen."
 msgstr ""
 
-#: src/settings/window_rules_view.zig:426
+#: src/settings/window_rules_view.zig:427
 msgid "This helper treats a new empty value as removal. Enter a value or remove the row. Existing empty values are preserved; Launch tag supports explicit empty patterns."
 msgstr ""
 
