@@ -2,7 +2,7 @@
   "name": "pearl-material",
   "displayName": "Pearl Material",
   "publisher": "pearl",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "engines": {
     "vscode": "^1.60.0"
   },

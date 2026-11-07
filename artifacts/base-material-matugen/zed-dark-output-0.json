@@ -80,7 +80,7 @@
                 "terminal.bright_foreground": "#b4b0be",
                 "terminal.dim_foreground": "#cac4d0",
                 "terminal.ansi.black": "#16131e",
-                "terminal.ansi.bright_black": "#595663",
+                "terminal.ansi.bright_black": "#8b8992",
                 "terminal.ansi.dim_black": "#16131e",
                 "terminal.ansi.red": "#ff5b85",
                 "terminal.ansi.bright_red": "#ff5b85",
@@ -205,12 +205,12 @@
                         "font_weight": null
                     },
                     "comment": {
-                        "color": "#595663",
+                        "color": "#8b8992",
                         "font_style": "italic",
                         "font_weight": null
                     },
                     "comment.doc": {
-                        "color": "#595663",
+                        "color": "#8b8992",
                         "font_style": "italic",
                         "font_weight": null
                     },
@@ -838,7 +838,7 @@
                 "terminal.bright_foreground": "#b4b0be",
                 "terminal.dim_foreground": "#cac4d0",
                 "terminal.ansi.black": "#16131e",
-                "terminal.ansi.bright_black": "#595663",
+                "terminal.ansi.bright_black": "#8b8992",
                 "terminal.ansi.dim_black": "#16131e",
                 "terminal.ansi.red": "#ff5b85",
                 "terminal.ansi.bright_red": "#ff5b85",
@@ -963,12 +963,12 @@
                         "font_weight": null
                     },
                     "comment": {
-                        "color": "#595663",
+                        "color": "#8b8992",
                         "font_style": "italic",
                         "font_weight": null
                     },
                     "comment.doc": {
-                        "color": "#595663",
+                        "color": "#8b8992",
                         "font_style": "italic",
                         "font_weight": null
                     },

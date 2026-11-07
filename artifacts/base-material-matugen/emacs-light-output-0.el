@@ -22,7 +22,7 @@
 
 ;; Define all the color variables (replaced by template processor)
 (let* ((bg "#fdf7ff")
-      (err "#ff5b85")  ; Red from dank16
+      (err "#b3405d")  ; Red from dank16
       (err-container "#f9dedc")
       (on-background "#1d1b20")
       (on-err "#ffffff")
@@ -53,24 +53,24 @@
       (tertiary-container "#ffd9e3")
 
       ;; Enhanced dank16 colors for better syntax highlighting
-      (dank-red "#ff5b85")          ; Bright red
-      (dank-red-alt "#ff5b85")      ; Alternative red
-      (dank-green "#c38c00")        ; Vibrant green
-      (dank-green-bright "#c38c00") ; Bright green
-      (dank-yellow "#9e8bd2")       ; Warm yellow
-      (dank-yellow-bright "#9e8bd2") ; Bright yellow
-      (dank-blue "#a380ff")         ; Blue-green
-      (dank-magenta "#ff569e")      ; Teal-magenta
-      (dank-cyan "#d17d99")         ; Bright cyan
-      (dank-cyan-bright "#a380ff") ; Brightest cyan
-      (dank-cyan-dark "#ff569e")   ; Dark cyan
-      (dank-teal "#d17d99")        ; Dark teal
+      (dank-red "#b3405d")          ; Bright red
+      (dank-red-alt "#b3405d")      ; Alternative red
+      (dank-green "#896200")        ; Vibrant green
+      (dank-green-bright "#896200") ; Bright green
+      (dank-yellow "#6f6193")       ; Warm yellow
+      (dank-yellow-bright "#6f6193") ; Bright yellow
+      (dank-blue "#725ab3")         ; Blue-green
+      (dank-magenta "#b33c6f")      ; Teal-magenta
+      (dank-cyan "#92586b")         ; Bright cyan
+      (dank-cyan-bright "#725ab3") ; Brightest cyan
+      (dank-cyan-dark "#b33c6f")   ; Dark cyan
+      (dank-teal "#92586b")        ; Dark teal
       (dank-fg "#433f4c")           ; Light foreground
       (dank-gray "#706c7a")         ; Gray
       (dank-white "#16131e")       ; White
 
       ;; Map success colors to green
-      (success "#c38c00")
+      (success "#896200")
       (on-success "#ffffff")
       (success-container "#ffd9e3")
       (on-success-container "#31101d")
@@ -96,20 +96,20 @@
 
       ;; Terminal colors from dank16
       (term0 "#b4b0be")
-      (term1 "#ff5b85")
-      (term2 "#c38c00")
-      (term3 "#9e8bd2")
-      (term4 "#a380ff")
-      (term5 "#ff569e")
-      (term6 "#d17d99")
+      (term1 "#b3405d")
+      (term2 "#896200")
+      (term3 "#6f6193")
+      (term4 "#725ab3")
+      (term5 "#b33c6f")
+      (term6 "#92586b")
       (term7 "#433f4c")
       (term8 "#706c7a")
-      (term9 "#ff5b85")
-      (term10 "#c38c00")
-      (term11 "#9e8bd2")
-      (term12 "#a380ff")
-      (term13 "#ff569e")
-      (term14 "#d17d99")
+      (term9 "#b3405d")
+      (term10 "#896200")
+      (term11 "#6f6193")
+      (term12 "#725ab3")
+      (term13 "#b33c6f")
+      (term14 "#92586b")
       (term15 "#16131e"))
 
   (custom-theme-set-faces
