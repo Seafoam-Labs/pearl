@@ -3106,10 +3106,10 @@ msgid "Input"
 msgstr "Eingabe"
 
 #: tests/fixtures/aqueous-master/snapshot.json
-msgctxt "aqueous.layout.options.scrolling.open_new_windows_to_right.description"
+msgctxt "aqueous.layout.options.scrolling.new_window_position.description"
 msgid ""
-"Insert new columns immediately after the focused column; overrides portrait "
-"stacking."
+"Where new windows are placed relative to the focused window; any explicit "
+"position overrides portrait stacking."
 msgstr ""
 
 #: tests/fixtures/aqueous-master/snapshot.json
@@ -4310,8 +4310,8 @@ msgid "Open network · Good signal"
 msgstr ""
 
 #: tests/fixtures/aqueous-master/snapshot.json
-msgctxt "aqueous.layout.options.scrolling.open_new_windows_to_right.label"
-msgid "Open new windows to the right"
+msgctxt "aqueous.layout.options.scrolling.new_window_position.label"
+msgid "New window position"
 msgstr ""
 
 #: src/desktop/bar.zig:327

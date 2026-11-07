@@ -129,6 +129,7 @@
             "auto",
             "l100",
             "l400",
+            "l600",
             "l1000"
           ]
         },
@@ -151,6 +152,12 @@
           ]
         },
         "primary": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "fullscreen_only_adaptive_sync": {
           "type": [
             "boolean",
             "null"
@@ -764,6 +771,10 @@
         "result_version": {
           "const": 1
         },
+        "admission": {
+          "const": "busy",
+          "description": "This Apply invocation could not acquire the writer lock and performed no transaction work. It does not establish the outcome of an earlier invocation using this operation ID."
+        },
         "save": {
           "enum": [
             "unchanged",
@@ -1258,6 +1269,16 @@
         },
         "preview_acceptance_only": {
           "type": "boolean"
+        },
+        "effective_adaptive_sync": {
+          "type": "boolean"
+        },
+        "adaptive_sync_error": {
+          "enum": [
+            null,
+            "unsupported",
+            "commit_failed"
+          ]
         }
       },
       "required": [
@@ -1346,6 +1367,7 @@
           "enum": [
             100,
             400,
+            600,
             1000
           ]
         },
@@ -1357,6 +1379,9 @@
         },
         "auto_hdr_boost": {
           "type": "number"
+        },
+        "fullscreen_only_adaptive_sync": {
+          "type": "boolean"
         }
       },
       "required": [
@@ -1781,6 +1806,7 @@
             "auto",
             "100",
             "400",
+            "600",
             "1000"
           ]
         },
@@ -1798,6 +1824,9 @@
           "type": "integer",
           "minimum": 0,
           "maximum": 65535
+        },
+        "fullscreen_only_adaptive_sync": {
+          "type": "boolean"
         }
       },
       "required": [],
@@ -1903,6 +1932,7 @@
                           "auto",
                           "100",
                           "400",
+                          "600",
                           "1000"
                         ]
                       },
@@ -1915,6 +1945,9 @@
                         "type": "number",
                         "minimum": 0,
                         "maximum": 1
+                      },
+                      "fullscreen_only_adaptive_sync": {
+                        "type": "boolean"
                       }
                     },
                     "required": [],
@@ -2087,7 +2120,8 @@
                         "hdr_level",
                         "sdr_white_level",
                         "auto_hdr_boost",
-                        "rollback_seconds"
+                        "rollback_seconds",
+                        "fullscreen_only_adaptive_sync"
                       ]
                     },
                     "uniqueItems": true
@@ -2635,6 +2669,9 @@
                         "type": "boolean"
                       },
                       "presentation_rejected": {
+                        "type": "boolean"
+                      },
+                      "effective_adaptive_sync": {
                         "type": "boolean"
                       }
                     },

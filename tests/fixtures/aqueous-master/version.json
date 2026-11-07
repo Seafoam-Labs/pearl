@@ -1,7 +1,7 @@
 {
   "ok": true,
   "protocol": 1,
-  "version": "0.8.3",
+  "version": "1.0.18",
   "capabilities": [
     "schema_fields",
     "validate",

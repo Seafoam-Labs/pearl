@@ -1129,8 +1129,43 @@ msgid "Center"
 msgstr ""
 
 #: tests/fixtures/aqueous-master/snapshot.json
+msgctxt "aqueous.layout.center_single_window.description"
+msgid "Center a lone tile in tile, grid, rows and both dwindle layouts. Floating windows and dialogs do not count."
+msgstr ""
+
+#: tests/fixtures/aqueous-master/snapshot.json
+msgctxt "aqueous.layout.options.dwindle.center_single_window.description"
+msgid "Center a lone tile in tile, grid, rows and both dwindle layouts. Floating windows and dialogs do not count."
+msgstr ""
+
+#: tests/fixtures/aqueous-master/snapshot.json
+msgctxt "aqueous.layout.options.grid.center_single_window.description"
+msgid "Center a lone tile in tile, grid, rows and both dwindle layouts. Floating windows and dialogs do not count."
+msgstr ""
+
+#: tests/fixtures/aqueous-master/snapshot.json
+msgctxt "aqueous.layout.options.reverse-dwindle.center_single_window.description"
+msgid "Center a lone tile in tile, grid, rows and both dwindle layouts. Floating windows and dialogs do not count."
+msgstr ""
+
+#: tests/fixtures/aqueous-master/snapshot.json
+msgctxt "aqueous.layout.options.rows.center_single_window.description"
+msgid "Center a lone tile in tile, grid, rows and both dwindle layouts. Floating windows and dialogs do not count."
+msgstr ""
+
+#: tests/fixtures/aqueous-master/snapshot.json
+msgctxt "aqueous.layout.options.tile.center_single_window.description"
+msgid "Center a lone tile in tile, grid, rows and both dwindle layouts. Floating windows and dialogs do not count."
+msgstr ""
+
+#: tests/fixtures/aqueous-master/snapshot.json
 msgctxt "aqueous.layout.options.scrolling.center_focused.label"
 msgid "Center focused column"
+msgstr ""
+
+#: tests/fixtures/aqueous-master/snapshot.json
+msgctxt "aqueous.layout.center_single_window.label"
+msgid "Center single window"
 msgstr ""
 
 #: tests/fixtures/aqueous-master/snapshot.json
@@ -2336,6 +2371,21 @@ msgctxt "aqueous.layout.options.dwindle.start_axis.label"
 msgid "Dwindle start axis"
 msgstr ""
 
+#: tests/fixtures/aqueous-master/snapshot.json
+msgctxt "aqueous.layout.options.dwindle.center_single_window.label"
+msgid "Dwindle: Center single window"
+msgstr ""
+
+#: tests/fixtures/aqueous-master/snapshot.json
+msgctxt "aqueous.layout.options.dwindle.single_window_aspect_ratio.label"
+msgid "Dwindle: Single window aspect ratio"
+msgstr ""
+
+#: tests/fixtures/aqueous-master/snapshot.json
+msgctxt "aqueous.layout.options.dwindle.split_focused.label"
+msgid "Dwindle: Split focused window"
+msgstr ""
+
 #: src/settings/preferences_view.zig:49
 msgid "Dynamic"
 msgstr ""
@@ -2663,6 +2713,11 @@ msgctxt "aqueous.input.focus_follows_mouse.description"
 msgid "Focus a window when the pointer enters it."
 msgstr ""
 
+#: tests/fixtures/aqueous-master/snapshot.json
+msgctxt "aqueous.input.focus_crosses_workspaces.label"
+msgid "Focus across workspaces"
+msgstr ""
+
 #: src/config/aqueous_presentation.zig:66
 msgid "Focus and movement"
 msgstr ""
@@ -2899,6 +2954,16 @@ msgstr ""
 msgid "Graphs shown when opened"
 msgstr ""
 
+#: tests/fixtures/aqueous-master/snapshot.json
+msgctxt "aqueous.layout.options.grid.center_single_window.label"
+msgid "Grid: Center single window"
+msgstr ""
+
+#: tests/fixtures/aqueous-master/snapshot.json
+msgctxt "aqueous.layout.options.grid.single_window_aspect_ratio.label"
+msgid "Grid: Single window aspect ratio"
+msgstr ""
+
 #: src/desktop/aqueous_display_setup.zig:484
 msgid "HDR adjustments"
 msgstr ""
@@ -3032,11 +3097,6 @@ msgstr ""
 
 #: src/config/aqueous_presentation.zig:148 src/desktop/services.zig:115 src/desktop/services.zig:120 src/settings/sound_view.zig:240 src/settings/window.zig:425
 msgid "Input"
-msgstr ""
-
-#: tests/fixtures/aqueous-master/snapshot.json
-msgctxt "aqueous.layout.options.scrolling.open_new_windows_to_right.description"
-msgid "Insert new columns immediately after the focused column; overrides portrait stacking."
 msgstr ""
 
 #: tests/fixtures/aqueous-master/snapshot.json
@@ -3653,6 +3713,36 @@ msgctxt "aqueous.state.maximize_full_output.description"
 msgid "Maximized windows ignore reserved struts."
 msgstr ""
 
+#: tests/fixtures/aqueous-master/snapshot.json
+msgctxt "aqueous.layout.options.dwindle.single_window_aspect_ratio.description"
+msgid "Maximum width divided by height for a centered single tile; 1.778 is approximately 16:9. Must be greater than zero."
+msgstr ""
+
+#: tests/fixtures/aqueous-master/snapshot.json
+msgctxt "aqueous.layout.options.grid.single_window_aspect_ratio.description"
+msgid "Maximum width divided by height for a centered single tile; 1.778 is approximately 16:9. Must be greater than zero."
+msgstr ""
+
+#: tests/fixtures/aqueous-master/snapshot.json
+msgctxt "aqueous.layout.options.reverse-dwindle.single_window_aspect_ratio.description"
+msgid "Maximum width divided by height for a centered single tile; 1.778 is approximately 16:9. Must be greater than zero."
+msgstr ""
+
+#: tests/fixtures/aqueous-master/snapshot.json
+msgctxt "aqueous.layout.options.rows.single_window_aspect_ratio.description"
+msgid "Maximum width divided by height for a centered single tile; 1.778 is approximately 16:9. Must be greater than zero."
+msgstr ""
+
+#: tests/fixtures/aqueous-master/snapshot.json
+msgctxt "aqueous.layout.options.tile.single_window_aspect_ratio.description"
+msgid "Maximum width divided by height for a centered single tile; 1.778 is approximately 16:9. Must be greater than zero."
+msgstr ""
+
+#: tests/fixtures/aqueous-master/snapshot.json
+msgctxt "aqueous.layout.single_window_aspect_ratio.description"
+msgid "Maximum width divided by height for a centered single tile; 1.778 is approximately 16:9. Must be greater than zero."
+msgstr ""
+
 #: src/desktop/calendar.zig:21
 msgid "May"
 msgstr ""
@@ -3793,7 +3883,7 @@ msgstr ""
 
 #: tests/fixtures/aqueous-master/snapshot.json
 msgctxt "aqueous.input.mouse_follows_focus.description"
-msgid "Move the pointer into newly focused windows, except for pointer interactions. Output navigation still moves the pointer when disabled."
+msgid "Move the pointer into newly focused windows, including keyboard and wheel bindings. Hover and click focus do not move it. Output navigation still moves the pointer when disabled."
 msgstr ""
 
 #: src/desktop/icons/view.zig:452
@@ -3806,6 +3896,11 @@ msgstr ""
 
 #: src/settings/scheduler_view.zig:195
 msgid "Move up"
+msgstr ""
+
+#: tests/fixtures/aqueous-master/snapshot.json
+msgctxt "aqueous.input.focus_crosses_workspaces.description"
+msgid "Moving focus left or right past the last window continues into the previous or next workspace, wrapping between the last workspace and workspace 1."
 msgstr ""
 
 #: src/desktop/services.zig:84 src/desktop/services.zig:129 src/settings/sound_view.zig:150
@@ -3884,6 +3979,11 @@ msgstr ""
 
 #: src/ui/i18n.zig:35
 msgid "New notifications will appear here."
+msgstr ""
+
+#: tests/fixtures/aqueous-master/snapshot.json
+msgctxt "aqueous.layout.options.scrolling.new_window_position.label"
+msgid "New window position"
 msgstr ""
 
 #: src/desktop/aqueous_snap_layouts.zig:169
@@ -4268,8 +4368,13 @@ msgid "Open network · Good signal"
 msgstr ""
 
 #: tests/fixtures/aqueous-master/snapshot.json
-msgctxt "aqueous.layout.options.scrolling.open_new_windows_to_right.label"
-msgid "Open new windows to the right"
+msgctxt "aqueous.layout.options.dwindle.split_focused.description"
+msgid "Open new windows by splitting the focused window along its longer side instead of the last window."
+msgstr ""
+
+#: tests/fixtures/aqueous-master/snapshot.json
+msgctxt "aqueous.layout.options.reverse-dwindle.split_focused.description"
+msgid "Open new windows by splitting the focused window along its longer side instead of the last window."
 msgstr ""
 
 #: src/desktop/bar.zig:407
@@ -5281,8 +5386,23 @@ msgid "Reverse dwindle start axis"
 msgstr ""
 
 #: tests/fixtures/aqueous-master/snapshot.json
+msgctxt "aqueous.layout.options.reverse-dwindle.split_focused.label"
+msgid "Reverse dwindle: Split focused window"
+msgstr ""
+
+#: tests/fixtures/aqueous-master/snapshot.json
 msgctxt "aqueous.input.mouse.natural_scroll.description"
 msgid "Reverse mouse wheel scrolling."
+msgstr ""
+
+#: tests/fixtures/aqueous-master/snapshot.json
+msgctxt "aqueous.layout.options.reverse-dwindle.center_single_window.label"
+msgid "Reverse-Dwindle: Center single window"
+msgstr ""
+
+#: tests/fixtures/aqueous-master/snapshot.json
+msgctxt "aqueous.layout.options.reverse-dwindle.single_window_aspect_ratio.label"
+msgid "Reverse-Dwindle: Single window aspect ratio"
 msgstr ""
 
 #: src/desktop/aqueous_settings.zig:596 src/desktop/aqueous_settings.zig:645
@@ -5365,6 +5485,16 @@ msgstr ""
 
 #: src/settings/preferences_view.zig:228
 msgid "Rotates through the images in one folder. Only PNG and JPEG are used. Each change re-runs wallpaper colors when the theme follows the image."
+msgstr ""
+
+#: tests/fixtures/aqueous-master/snapshot.json
+msgctxt "aqueous.layout.options.rows.center_single_window.label"
+msgid "Rows: Center single window"
+msgstr ""
+
+#: tests/fixtures/aqueous-master/snapshot.json
+msgctxt "aqueous.layout.options.rows.single_window_aspect_ratio.label"
+msgid "Rows: Single window aspect ratio"
 msgstr ""
 
 #: src/desktop/aqueous_settings.zig:570
@@ -5832,6 +5962,11 @@ msgstr ""
 
 #: tests/fixtures/aqueous-master/snapshot.json
 msgctxt "aqueous.cycle_focus.description"
+msgid "Shortcut for this built-in action."
+msgstr ""
+
+#: tests/fixtures/aqueous-master/snapshot.json
+msgctxt "aqueous.cycle_focus_reverse.description"
 msgid "Shortcut for this built-in action."
 msgstr ""
 
@@ -6385,6 +6520,21 @@ msgctxt "aqueous.wheel_scroll_up.description"
 msgid "Shortcut for this built-in action."
 msgstr ""
 
+#: tests/fixtures/aqueous-master/snapshot.json
+msgctxt "aqueous.window_switcher_dismiss.description"
+msgid "Shortcut for this built-in action."
+msgstr ""
+
+#: tests/fixtures/aqueous-master/snapshot.json
+msgctxt "aqueous.window_switcher_next.description"
+msgid "Shortcut for this built-in action."
+msgstr ""
+
+#: tests/fixtures/aqueous-master/snapshot.json
+msgctxt "aqueous.window_switcher_previous.description"
+msgid "Shortcut for this built-in action."
+msgstr ""
+
 #: src/desktop/aqueous_settings.zig:986
 msgid "Shortcut inhibition was revoked."
 msgstr ""
@@ -6443,6 +6593,11 @@ msgstr ""
 
 #: src/desktop/panels.zig:99
 msgid "Signed-in user"
+msgstr ""
+
+#: tests/fixtures/aqueous-master/snapshot.json
+msgctxt "aqueous.layout.single_window_aspect_ratio.label"
+msgid "Single window aspect ratio"
 msgstr ""
 
 #: src/config/aqueous_presentation.zig:81
@@ -7036,6 +7191,16 @@ msgstr ""
 msgid "Thunderstorm with hail"
 msgstr ""
 
+#: tests/fixtures/aqueous-master/snapshot.json
+msgctxt "aqueous.layout.options.tile.center_single_window.label"
+msgid "Tile: Center single window"
+msgstr ""
+
+#: tests/fixtures/aqueous-master/snapshot.json
+msgctxt "aqueous.layout.options.tile.single_window_aspect_ratio.label"
+msgid "Tile: Single window aspect ratio"
+msgstr ""
+
 #: src/settings/bar_view.zig:1055
 msgid "Time format"
 msgstr ""
@@ -7550,6 +7715,11 @@ msgstr ""
 msgid "When a notification matches"
 msgstr ""
 
+#: tests/fixtures/aqueous-master/snapshot.json
+msgctxt "aqueous.layout.options.scrolling.new_window_position.description"
+msgid "Where new windows are placed relative to the focused window; any explicit position overrides portrait stacking."
+msgstr ""
+
 #: src/ui/i18n.zig:17 src/desktop/bar.zig:685 src/desktop/connectivity.zig:75 src/ui/components/network.zig:89 src/ui/components/network.zig:92
 msgid "Wi-Fi"
 msgstr ""
@@ -7607,6 +7777,11 @@ msgstr ""
 msgid "Window borders, effects and desktop details."
 msgstr ""
 
+#: tests/fixtures/aqueous-master/snapshot.json
+msgctxt "aqueous.decoration.corner_radius.label"
+msgid "Window corner radius"
+msgstr ""
+
 #: src/config/aqueous_presentation.zig:48
 msgid "Window effects"
 msgstr ""
@@ -7623,6 +7798,11 @@ msgstr ""
 
 #: src/desktop/panels.zig:282
 msgid "Window overview"
+msgstr ""
+
+#: tests/fixtures/aqueous-master/snapshot.json
+msgctxt "aqueous.decoration.corner_radius.description"
+msgid "Window rounding in logical pixels; zero disables compositor rounding. Requires Vulkan effects. Application-drawn transparent corners remain."
 msgstr ""
 
 #: src/desktop/aqueous_collections.zig:125
@@ -7731,6 +7911,12 @@ msgstr ""
 
 #: tests/fixtures/aqueous-master/snapshot.json
 #. Display label only; the underlying Aqueous option value is unchanged.
+msgctxt "aqueous.layout.options.scrolling.new_window_position.option"
+msgid "above"
+msgstr ""
+
+#: tests/fixtures/aqueous-master/snapshot.json
+#. Display label only; the underlying Aqueous option value is unchanged.
 msgctxt "aqueous.input.mouse.accel_profile.option"
 msgid "adaptive"
 msgstr ""
@@ -7745,12 +7931,24 @@ msgstr ""
 msgid "appearance"
 msgstr ""
 
+#: tests/fixtures/aqueous-master/snapshot.json
+#. Display label only; the underlying Aqueous option value is unchanged.
+msgctxt "aqueous.layout.options.scrolling.new_window_position.option"
+msgid "append"
+msgstr ""
+
 #: src/desktop/running_apps.zig:339
 msgid "application"
 msgstr ""
 
 #: src/desktop/running_apps.zig:339
 msgid "applications"
+msgstr ""
+
+#: tests/fixtures/aqueous-master/snapshot.json
+#. Display label only; the underlying Aqueous option value is unchanged.
+msgctxt "aqueous.layout.options.scrolling.new_window_position.option"
+msgid "below"
 msgstr ""
 
 #: tests/fixtures/aqueous-master/snapshot.json
@@ -7840,6 +8038,11 @@ msgstr ""
 #: tests/fixtures/aqueous-master/snapshot.json
 msgctxt "aqueous.cycle_focus.label"
 msgid "cycle_focus"
+msgstr ""
+
+#: tests/fixtures/aqueous-master/snapshot.json
+msgctxt "aqueous.cycle_focus_reverse.label"
+msgid "cycle_focus_reverse"
 msgstr ""
 
 #: tests/fixtures/aqueous-master/snapshot.json
@@ -8188,6 +8391,12 @@ msgid "layout"
 msgstr ""
 
 #: tests/fixtures/aqueous-master/snapshot.json
+#. Display label only; the underlying Aqueous option value is unchanged.
+msgctxt "aqueous.layout.options.scrolling.new_window_position.option"
+msgid "left"
+msgstr ""
+
+#: tests/fixtures/aqueous-master/snapshot.json
 msgctxt "aqueous.lock_screen.label"
 msgid "lock_screen"
 msgstr ""
@@ -8527,6 +8736,12 @@ msgstr ""
 #. Display label only; the underlying Aqueous option value is unchanged.
 msgctxt "aqueous.layout.slots.tertiary.option"
 msgid "reverse-dwindle"
+msgstr ""
+
+#: tests/fixtures/aqueous-master/snapshot.json
+#. Display label only; the underlying Aqueous option value is unchanged.
+msgctxt "aqueous.layout.options.scrolling.new_window_position.option"
+msgid "right"
 msgstr ""
 
 #: tests/fixtures/aqueous-master/snapshot.json
@@ -8998,6 +9213,21 @@ msgstr ""
 
 #: src/desktop/running_apps.zig:12
 msgid "window"
+msgstr ""
+
+#: tests/fixtures/aqueous-master/snapshot.json
+msgctxt "aqueous.window_switcher_dismiss.label"
+msgid "window_switcher_dismiss"
+msgstr ""
+
+#: tests/fixtures/aqueous-master/snapshot.json
+msgctxt "aqueous.window_switcher_next.label"
+msgid "window_switcher_next"
+msgstr ""
+
+#: tests/fixtures/aqueous-master/snapshot.json
+msgctxt "aqueous.window_switcher_previous.label"
+msgid "window_switcher_previous"
 msgstr ""
 
 #: src/desktop/running_apps.zig:12
