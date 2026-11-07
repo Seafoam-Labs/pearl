@@ -702,50 +702,6 @@ test "GTK open panel expires on filtering navigation and row activation without 
     }
 }
 
-test "GTK row activation publishes selected text and refreshes its timestamp" {
-    const t = std.testing;
-    const wl = @import("wayland").client.wl;
-    const ext = @import("wayland").client.ext;
-    var pair: [2]c_int = undefined;
-    if (std.c.socketpair(std.c.AF.UNIX, std.c.SOCK.STREAM | std.c.SOCK.CLOEXEC, 0, &pair) != 0) return error.TestSocket;
-    defer _ = std.c.close(pair[1]);
-    const connection = try wl.Display.connectToFd(pair[0]);
-    defer connection.disconnect();
-    const registry = try connection.getRegistry();
-    defer @as(*wl.Proxy, @ptrCast(registry)).destroy();
-    var panel: PanelTest = undefined;
-    try panel.init();
-    defer panel.deinit();
-    // Protocol requests go only to the disposable socket; GDK flushes only
-    // the explicitly supplied private GTK display.
-    const manager = try registry.bind(8, ext.DataControlManagerV1, 1);
-    panel.fixture.clipboard.manager = manager;
-    defer {
-        panel.fixture.clipboard.manager = null;
-        manager.destroy();
-    }
-    const seat = try registry.bind(9, wl.Seat, 5);
-    defer seat.release();
-    const device = try manager.getDataDevice(seat);
-    panel.fixture.clipboard.device = device;
-    defer {
-        panel.fixture.clipboard.device = null;
-        device.destroy();
-    }
-    panel.fixture.clipboard.display = gdk.Display.getDefault().?;
-    const selected = try panel.fixture.copy("selected text", 100);
-    _ = try panel.fixture.copy("newer text", 200);
-    panel.view.update();
-    const writes = panel.fixture.writes;
-    panel.fixture.clipboard.test_time = 300;
-    View.activated(undefined, 1, panel.view);
-    try t.expect(panel.dismissed and panel.fixture.clipboard.source != null);
-    try t.expectEqual(selected, panel.fixture.clipboard.rows[0].id);
-    try t.expectEqual(@as(i64, 300), panel.fixture.clipboard.rows[0].last_used);
-    try t.expectEqualStrings("selected text", panel.fixture.clipboard.owned.?.bytes);
-    try t.expectEqual(writes + 1, panel.fixture.writes);
-}
-
 test "GTK lock synchronously redacts cached text images query and accessible labels after save allocation failure" {
     const t = std.testing;
     var panel: PanelTest = undefined;

@@ -116,17 +116,23 @@ test "JSON excludes images and identities and preserves equal-time order" {
     try std.testing.expect((try decode(alloc, json, 100 + policy.retention_seconds)).entries.len == 0);
 }
 
-test "JSON validates timestamps deduplicates and bounds parser input" {
+test "JSON validates schema timestamps deduplication and parser bounds" {
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
     const alloc = arena.allocator();
     const loaded = try decode(alloc,
-        \\[{"text":"a","last_used":100},{"text":"b","last_used":200},{"text":"a","last_used":999},{"text":"invalid","last_used":"200"},{"text":"negative","last_used":-1},{"text":"bad\u0000","last_used":200}]
+        \\[{"text":"a","last_used":100},{"text":"b","last_used":200},{"text":"a","last_used":999},
+        \\ {"text":"invalid","last_used":"200"},{"text":"negative","last_used":-1},
+        \\ {"text":"float","last_used":1.5},{"text":"bad\u0000","last_used":200},
+        \\ {"text":"","last_used":100},{"extra":"ignored","last_used":100},null,42,"invalid record"]
     , 300);
     try std.testing.expect(loaded.changed);
     try std.testing.expectEqual(@as(usize, 2), loaded.entries.len);
     try std.testing.expectEqualStrings("a", loaded.entries[0].text);
+    try std.testing.expectEqualStrings("b", loaded.entries[1].text);
     try std.testing.expectEqual(@as(i64, 300), loaded.entries[0].last_used);
+    try std.testing.expectError(error.InvalidHistory, decode(alloc, "[{\"text\":\"x\",\"last_used\":100,\"id\":42}]", 300));
+    try std.testing.expectError(error.InvalidHistory, decode(alloc, "{}", 300));
     try std.testing.expectError(error.InvalidHistory, decode(alloc, "[[[]]]", 300));
     try std.testing.expectError(error.InvalidHistory, decode(alloc, "[{\"text\":\"\xff\",\"last_used\":1}]", 300));
     if (decode(alloc, "{broken", 300)) |_| return error.AcceptedCorruptJSON else |_| {}
@@ -151,18 +157,4 @@ test "JSON restoration enforces text and aggregate byte limits" {
     try std.testing.expect(loaded.changed);
     try std.testing.expectEqual(@as(usize, 64), loaded.entries.len);
     for (loaded.entries) |entry| try std.testing.expectEqual(policy.text_limit, entry.text.len);
-}
-
-test "JSON rejects unexpected schema and drops empty text and noninteger timestamps" {
-    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
-    defer arena.deinit();
-    const alloc = arena.allocator();
-    const loaded = try decode(alloc,
-        \\[{"text":"","last_used":100},{"text":"float","last_used":1.5},{"text":"ok","last_used":100},{"extra":"ignored","last_used":100}]
-    , 100);
-    try std.testing.expectEqual(@as(usize, 1), loaded.entries.len);
-    try std.testing.expectEqualStrings("ok", loaded.entries[0].text);
-    try std.testing.expect(loaded.changed);
-    try std.testing.expectError(error.InvalidHistory, decode(alloc, "[{\"text\":\"x\",\"last_used\":100,\"id\":42}]", 100));
-    try std.testing.expectError(error.InvalidHistory, decode(alloc, "{}", 100));
 }

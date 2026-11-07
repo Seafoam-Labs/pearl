@@ -162,9 +162,9 @@ pub const Clipboard = struct {
         if (self.locked == closed) return;
         self.locked = closed;
         if (closed) {
-            self.revoke();
-            self.dropDevice();
-            self.discardImages();
+            // Transfer completion can notify observers during suspension.
+            // The final notification follows the message update below.
+            self.suspendCollection();
         } else {
             if (!self.history_loaded) {
                 self.history_loaded = true;
@@ -472,6 +472,12 @@ pub const Clipboard = struct {
         self.device.?.setListener(*Clipboard, deviceEvent, self);
         self.display.flush();
     }
+    // Privacy suspension discards images as well as ordinary device resources.
+    fn suspendCollection(self: *Clipboard) void {
+        self.revoke();
+        self.dropDevice();
+        self.discardImages();
+    }
     fn dropDevice(self: *Clipboard) void {
         if (self.read) |r| r.finish(false);
         if (self.device) |d| d.destroy();
@@ -493,9 +499,7 @@ pub const Clipboard = struct {
                 if (std.mem.eql(u8, name, "wl_seat") and g.version >= 5) {
                     if (self.seat != null) {
                         self.ambiguous = true;
-                        self.revoke();
-                        self.dropDevice();
-                        self.discardImages();
+                        self.suspendCollection();
                     } else {
                         self.seat = self.registry.?.bind(g.name, wl.Seat, 5) catch return;
                         self.seat_id = g.name;
@@ -505,9 +509,7 @@ pub const Clipboard = struct {
                 self.connect();
             },
             .global_remove => |g| if (g.name == self.manager_id or g.name == self.seat_id) {
-                self.revoke();
-                self.dropDevice();
-                self.discardImages();
+                self.suspendCollection();
                 if (g.name == self.manager_id) {
                     self.manager.?.destroy();
                     self.manager = null;
@@ -572,9 +574,7 @@ pub const Clipboard = struct {
                 };
             },
             .finished => {
-                self.revoke();
-                self.dropDevice();
-                self.discardImages();
+                self.suspendCollection();
                 self.message = "Clipboard device unavailable";
                 self.changed(self.context);
             },
@@ -722,58 +722,6 @@ fn sanitize(bytes: []const u8) ![]u8 {
     return encode(clean);
 }
 
-test "device finish discards PNG history without saving or renewing retained text" {
-    const Observer = struct {
-        clipboard: *Clipboard = undefined,
-        notifications: usize = 0,
-        saves: usize = 0,
-        hidden: bool = false,
-        fn changed(context: *anyopaque) void {
-            const self: *@This() = @ptrCast(@alignCast(context));
-            self.notifications += 1;
-            self.hidden = self.clipboard.entries().len == 0;
-        }
-        fn save(clipboard: *Clipboard) !void {
-            const self: *@This() = @ptrCast(@alignCast(clipboard.context));
-            self.saves += 1;
-        }
-    };
-    var observer: Observer = .{};
-    var clipboard: Clipboard = .{ .display = undefined, .context = &observer, .changed = Observer.changed, .locked = false, .history_loaded = true, .test_time = 100, .test_save = Observer.save };
-    observer.clipboard = &clipboard;
-    defer clipboard.stop();
-    try clipboard.add(.text, "older text");
-    clipboard.test_time = 200;
-    try clipboard.add(.text, "newer text");
-    const older = clipboard.rows[1];
-    // Synthetic image allocations exercise lifecycle cleanup, not PNG decoding.
-    const png = try a.dupe(u8, "memory-only image");
-    clipboard.rows[1] = .{ .id = 3, .kind = .png, .bytes = png, .last_used = 200 };
-    clipboard.rows[2] = older;
-    clipboard.len += 1;
-    clipboard.total_bytes += png.len;
-    clipboard.owned = .{ .id = 3, .kind = .png, .bytes = try a.dupe(u8, png), .last_used = 200 };
-    const saves = observer.saves;
-    const notifications = observer.notifications;
-    const revision = clipboard.revision;
-    clipboard.test_time = 300;
-    // No Wayland object is needed: finished must also handle an absent device.
-    Clipboard.deviceEvent(undefined, .finished, &clipboard);
-    try std.testing.expect(!clipboard.locked and !clipboard.accessible() and observer.hidden);
-    try std.testing.expect(clipboard.device == null and clipboard.owned == null);
-    try std.testing.expectEqual(@as(usize, 2), clipboard.len);
-    try std.testing.expectEqualStrings("newer text", clipboard.rows[0].bytes);
-    try std.testing.expectEqualStrings("older text", clipboard.rows[1].bytes);
-    try std.testing.expectEqual(older.id, clipboard.rows[1].id);
-    try std.testing.expectEqual(@as(i64, 200), clipboard.rows[0].last_used);
-    try std.testing.expectEqual(@as(i64, 100), clipboard.rows[1].last_used);
-    try std.testing.expectEqual("newer text".len + "older text".len, clipboard.total_bytes);
-    try std.testing.expectEqual(revision + 1, clipboard.revision);
-    try std.testing.expectEqual(saves, observer.saves);
-    try std.testing.expectEqual(notifications + 1, observer.notifications);
-    try std.testing.expect(!clipboard.dirty and clipboard.persistence_error == null);
-}
-
 test "own selection echo does not save or refresh but external recopy does" {
     const Fixture = @import("../testing/clipboard.zig").Fixture;
     const Capture = struct {
@@ -813,6 +761,14 @@ test "own selection echo does not save or refresh but external recopy does" {
 
 test "PNG selection metadata and lifecycle callbacks preserve text without saves" {
     const fixture = @import("../testing/clipboard.zig");
+    const Observer = struct {
+        clipboard: *Clipboard,
+        hidden: bool = false,
+        fn changed(context: *anyopaque) void {
+            const self: *@This() = @ptrCast(@alignCast(context));
+            self.hidden = self.clipboard.entries().len == 0;
+        }
+    };
     for (0..4) |mode| {
         var pair: [2]c_int = undefined;
         if (std.c.socketpair(std.c.AF.UNIX, std.c.SOCK.STREAM | std.c.SOCK.CLOEXEC, 0, &pair) != 0) return error.TestSocket;
@@ -834,14 +790,23 @@ test "PNG selection metadata and lifecycle callbacks preserve text without saves
         f.clipboard.device = try f.clipboard.manager.?.getDataDevice(f.clipboard.seat.?);
         f.clipboard.device.?.setListener(*Clipboard, Clipboard.deviceEvent, &f.clipboard);
         try std.testing.expect(f.clipboard.accessible());
-        _ = try f.copy("retained text", 100);
+        _ = try f.copy("older text", 100);
+        _ = try f.copy("newer text", 200);
+        const retained = f.clipboard.rows[0..2].*;
         const png = try fixture.image(0x765432ff);
         defer a.free(png);
         try f.clipboard.add(.png, png);
+        const image = f.clipboard.rows[0];
+        f.clipboard.owned = .{ .id = image.id, .kind = .png, .bytes = try a.dupe(u8, image.bytes), .last_used = image.last_used };
         const writes = f.writes;
-        f.clipboard.promote(0, 200); // selection's timestamp/promotion operation
+        f.clipboard.promote(0, 250); // selection's timestamp/promotion operation
         f.clipboard.finishCopy(null);
         try std.testing.expectEqual(writes, f.writes);
+        const revision = f.clipboard.revision;
+        const notifications = f.notifications;
+        var observer: Observer = .{ .clipboard = &f.clipboard };
+        f.context = &observer;
+        f.on_change = Observer.changed;
         f.clipboard.test_time = 300;
         if (mode == 0) {
             var event = [_]u32{ registry.getId(), 28 << 16, 10, 8, 0, 0, 5 };
@@ -859,10 +824,15 @@ test "PNG selection metadata and lifecycle callbacks preserve text without saves
             try std.testing.expectEqual(@as(isize, 12), std.c.write(pair[1], std.mem.asBytes(&event), 12));
             try std.testing.expectEqual(std.posix.E.SUCCESS, connection.dispatch());
         }
-        try std.testing.expect(!f.clipboard.accessible() and f.clipboard.device == null);
-        try std.testing.expectEqual(@as(usize, 1), f.clipboard.len);
-        try std.testing.expectEqualStrings("retained text", f.clipboard.rows[0].bytes);
-        try std.testing.expectEqual(@as(i64, 100), f.clipboard.rows[0].last_used);
+        try std.testing.expect(!f.clipboard.locked and !f.clipboard.accessible() and observer.hidden);
+        try std.testing.expect(f.clipboard.device == null and f.clipboard.owned == null);
+        try std.testing.expectEqual(@as(usize, 2), f.clipboard.len);
+        // Compare text order, IDs, kinds and timestamps together.
+        try std.testing.expectEqualDeep(retained, f.clipboard.rows[0..2].*);
+        try std.testing.expectEqual(retained[0].bytes.len + retained[1].bytes.len, f.clipboard.total_bytes);
+        try std.testing.expectEqual(revision + 1, f.clipboard.revision);
+        try std.testing.expectEqual(notifications + 1, f.notifications);
         try std.testing.expectEqual(writes, f.writes);
+        try std.testing.expect(!f.clipboard.dirty and f.clipboard.persistence_error == null);
     }
 }
