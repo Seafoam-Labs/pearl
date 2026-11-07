@@ -121,6 +121,7 @@ pub const Launcher = struct {
         const list = gtk.ListView.new(selection.as(gtk.SelectionModel), factory.as(gtk.ListItemFactory));
         list.setSingleClickActivate(1);
         list.setTabBehavior(.item);
+        list.as(gtk.Widget).addCssClass("pearl-launcher-list");
         const scroll = gtk.ScrolledWindow.new();
         scroll.setPolicy(.never, .automatic);
         scroll.as(gtk.Widget).setVexpand(1);
