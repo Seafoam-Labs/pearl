@@ -51,14 +51,26 @@ land wherever stderr goes; see [logging](../../docs/LOGGING.md).
 - Editable, reorderable document tabs; new/open/save/Save As; file arguments;
   canonical-path duplicate detection; dirty indicators and save/discard/cancel
   prompts for individual tabs and quitting.
-- Asynchronous GIO loads and replacement saves. Etag conflicts and deleted files
-  require a decision. Failed/cancelled saves retain edits. Edits made during a
-  save stay dirty after the older revision finishes saving.
+- Asynchronous descriptor-checked local loads and GIO replacement saves. Etag
+  conflicts and deleted files require a decision. Failed/cancelled saves retain
+  edits. Edits made during a save stay dirty after the older revision finishes
+  saving. Loading requires Linux `/proc/self/fd` for GIO-compatible metadata.
+- Existing-file opens never create missing files or parent directories. Use
+  **New document → Save As** to create a file, including when a CLI path is missing.
+  Directories, FIFOs and devices are rejected; reloads use the same checked loader.
+- External-file monitoring shows **Changed on disk** without replacing your edits.
+  **Reload from Disk** in the menu/palette explicitly reloads; dirty documents
+  require discard confirmation.
+- Native **Command Palette** (`Ctrl+Shift+P`) with filtered, keyboard-accessible
+  commands and focus restoration on cancellation.
 - UTF-8 validation, BOM preservation, LF/CRLF and final-newline preservation,
   explicit mixed-line normalization, and rejection of binary/unsupported input.
 - GtkSourceView syntax highlighting; Unicode editing; undo/redo; clipboard;
   literal case-insensitive find, match navigation, replace and replace-all;
   go to line; wrapping, line numbers, text size, indentation and spaces/tabs.
+  Replace/replace-all and spelling corrections use revision-checked, undoable
+  transactions; automated edit transactions are capped at 16 MiB per buffer and
+  65,536 replacements, separately from the larger file-load limit.
 - Offline spelling on a dedicated worker: Unicode/Pango word boundaries,
   underlines, up to five suggestions, undoable correction, document-local ignore,
   personal dictionary additions, and installed-language selection. Source code
@@ -78,7 +90,8 @@ and may be shared with other Enchant applications.
 
 | Shortcut | Action |
 | --- | --- |
-| Ctrl+N / Ctrl+O | New document / open |
+| Ctrl+N / Ctrl+O | New document / open existing file |
+| Ctrl+Shift+P | Command palette |
 | Ctrl+S / Ctrl+Shift+S | Save / Save As |
 | Ctrl+W / Ctrl+Q | Close tab / quit |
 | Ctrl+Tab / Ctrl+Shift+Tab | Next / previous tab |
@@ -96,6 +109,15 @@ Right-click elsewhere for GtkSourceView's normal editing menu.
 
 ## Verification and design
 
+The [workbench expansion plan](docs/WORKBENCH_IMPLEMENTATION_PLAN.md) targets a
+VS Code-style workspace/editor with Zed-style agents and Git workflows.
+The [native foundation status](docs/WORKBENCH_STATUS.md) records implemented
+commands, document/view ownership, safe edits, file monitoring and validation;
+**workspaces, LSP, Git, terminal and agent UI are not implemented yet**.
+Explore the separate [interactive workbench prototype](docs/mockups/workbench/index.html)
+and its [interaction guide](docs/mockups/workbench/README.md). All prototype
+operations stay in memory; they are not native feature evidence.
+
 Read the [implementation report](docs/IMPLEMENTATION_STATUS.md) and
 [native screenshot gallery](artifacts/native/README.md). Native integration
 uses Pearl's existing private Wayland harness, temporary XDG directories and
@@ -110,6 +132,17 @@ Python, D-Bus, `wtype`, `wlr-randr`, and `grim`. Pass
 `-- --aqueous-prefix PATH` for an alternate prefix. These are test dependencies,
 not application dependencies. Integration builds a separate instrumented binary;
 normal builds omit its test controls.
+
+The foundation also adds display-backed widget lifetime/focus tests, separate
+from the headless unit suite:
+
+```sh
+zig build widgets -Doptimize=safe -- --aqueous-prefix /usr
+```
+
+`/usr` is the installed-tool prefix used for this host's foundation validation;
+use the prepared fixture prefix on other setups. See the [status report](docs/WORKBENCH_STATUS.md#validation-completed)
+for all commands and current acceptance limits.
 
 The [original plan](docs/IMPLEMENTATION_PLAN.md), [interactive mockup](docs/mockups/index.html),
 and [mockup gallery](docs/mockups/README.md) remain design references. They do

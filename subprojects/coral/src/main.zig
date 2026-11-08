@@ -29,8 +29,8 @@ fn activate(application: ?*c.GApplication, _: ?*anyopaque) callconv(.c) void {
     app = App.create(u.cast(c.GtkApplication, application.?), settings, width, height);
     if (paths.items.len == 0) {
         _ = app.?.newDocument();
-    } else for (paths.items) |path| app.?.openPath(path);
-    if (app.?.docs.items.len == 0) _ = app.?.newDocument();
+    } else for (paths.items) |path| app.?.openExisting(path);
+    if (app.?.documents.entries.items.len == 0) _ = app.?.newDocument();
 }
 pub fn main(init: std.process.Init) void {
     @import("i18n").init(false);
@@ -52,7 +52,7 @@ pub fn main(init: std.process.Init) void {
             },
         }
         if (std.mem.eql(u8, arg, "--help")) {
-            c.g_print("Coral 0.1.1 — Zig / GTK4 text editor\nUsage: " ++ command ++ " [--follow-pearl|--light|--dark|--native-theme] [--width=N] [--height=N] [--log-level LEVEL] [--log-scopes LIST] [FILE…]\nCtrl+N new, Ctrl+O open, Ctrl+S save, Ctrl+Shift+S Save As, Ctrl+F find,\nCtrl+H replace, Ctrl+G go to line, Ctrl+, preferences, Shift+F10 spelling.\nFollow Pearl is the first-run default; without Pearl it uses Coral's own dark palette.\n--log-level: error, warning, info or debug. Release builds default to info.\n--log-scopes: comma-separated scopes, all for every scope, ~scope to exclude.\n");
+            c.g_print("Coral 0.1.1 — Zig / GTK4 text editor\nUsage: " ++ command ++ " [--follow-pearl|--light|--dark|--native-theme] [--width=N] [--height=N] [--log-level LEVEL] [--log-scopes LIST] [FILE…]\nCtrl+N new, Ctrl+O open, Ctrl+S save, Ctrl+Shift+S Save As, Ctrl+F find,\nCtrl+H replace, Ctrl+G go to line, Ctrl+, preferences, Shift+F10 spelling.\nCtrl+Shift+P command palette, including Reload from Disk.\nFILE arguments must exist; use New document and Save As to create a file.\nFollow Pearl is the first-run default; without Pearl it uses Coral's own dark palette.\n--log-level: error, warning, info or debug. Release builds default to info.\n--log-scopes: comma-separated scopes, all for every scope, ~scope to exclude.\n");
             return;
         }
         if (std.mem.eql(u8, arg, "--version")) {

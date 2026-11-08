@@ -5,6 +5,13 @@ const c = u.c;
 const a = u.a;
 const W = u.W;
 const Document = @import("document.zig").Document;
+const DocumentRegistry = @import("editor/registry.zig").DocumentRegistry;
+const EditorView = @import("editor/view.zig").EditorView;
+const transactions = @import("editor/transactions.zig");
+const open_target = @import("platform/open_target.zig");
+const load_file = @import("platform/load_file.zig");
+const commands = @import("workbench/commands.zig");
+const Palette = @import("workbench/palette.zig").Palette;
 const codec = @import("platform/codec.zig");
 const spell = @import("spelling/checker.zig");
 const Settings = @import("platform/settings.zig").Settings;
@@ -13,7 +20,7 @@ const file_error = @import("platform/file_error.zig");
 const test_hooks = @import("build_options").test_hooks;
 const log = std.log.scoped(.platform);
 const config_log = std.log.scoped(.config);
-pub var instance: *App = undefined;
+
 pub const App = struct {
     application: *c.GtkApplication,
     window: W,
@@ -27,8 +34,10 @@ pub const App = struct {
     status: W,
     spell_button: W,
     notice: W,
-    docs: std.ArrayList(*Document) = .empty,
-    next_id: u64 = 1,
+    documents: DocumentRegistry = DocumentRegistry.init(a),
+    views: std.ArrayList(*EditorView) = .empty,
+    palette: ?*Palette = null,
+    palette_focus: c.GWeakRef = undefined,
     settings: Settings,
     worker: *spell.Worker,
     timer: c_uint = 0,
@@ -53,7 +62,7 @@ pub const App = struct {
     goto_input: ?W = null,
     pub fn create(application: *c.GtkApplication, settings: Settings, width: c_int, height: c_int) *App {
         const self = a.create(App) catch unreachable;
-        instance = self;
+
         const window = c.gtk_application_window_new(application).?;
         c.gtk_window_set_title(u.cast(c.GtkWindow, window), @import("i18n").dtr("coral", "Coral"));
         c.gtk_window_set_default_size(u.cast(c.GtkWindow, window), width, height);
@@ -81,7 +90,7 @@ pub const App = struct {
         u.connect(save_button, "clicked", &onSave, self);
         const model = c.g_menu_new().?;
         defer c.g_object_unref(model);
-        for ([_][2][*:0]const u8{ .{ @import("i18n").dtr("coral", "New document"), "app.new" }, .{ @import("i18n").dtr("coral", "Open…"), "app.open" }, .{ @import("i18n").dtr("coral", "Save"), "app.save" }, .{ @import("i18n").dtr("coral", "Save As…"), "app.save-as" }, .{ @import("i18n").dtr("coral", "Find / Replace"), "app.find" }, .{ @import("i18n").dtr("coral", "Go to Line…"), "app.goto" }, .{ @import("i18n").dtr("coral", "Spelling suggestions"), "app.spelling" }, .{ @import("i18n").dtr("coral", "Preferences…"), "app.preferences" }, .{ @import("i18n").dtr("coral", "About Coral"), "app.about" }, .{ @import("i18n").dtr("coral", "Close tab"), "app.close" }, .{ @import("i18n").dtr("coral", "Quit"), "app.quit" } }) |item| c.g_menu_append(model, item[0], item[1]);
+        for (commands.entries) |entry| c.g_menu_append(model, entry.command.label(), entry.detailed_action);
         c.gtk_menu_button_set_menu_model(u.cast(c.GtkMenuButton, menu), u.cast(c.GMenuModel, model));
         const notebook = c.gtk_notebook_new().?;
         c.gtk_notebook_set_scrollable(u.cast(c.GtkNotebook, notebook), 1);
@@ -137,6 +146,7 @@ pub const App = struct {
         u.connect(spell_button, "clicked", &onSpelling, self);
         u.append(root, footer);
         self.* = .{ .application = application, .window = window, .notebook = notebook, .new_button = new, .search_button = search, .searchbox = searchbox, .query = query, .replacement = replacement, .matches = matches, .status = status, .spell_button = spell_button, .notice = notice, .settings = settings, .worker = spell.Worker.start(), .css = c.gtk_css_provider_new().?, .font_css = c.gtk_css_provider_new().? };
+        c.g_weak_ref_init(&self.palette_focus, null);
         c.gtk_css_provider_load_from_string(self.css, @embedFile("style"));
         c.gtk_style_context_add_provider_for_display(c.gdk_display_get_default(), u.cast(c.GtkStyleProvider, self.css), c.GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
         c.gtk_style_context_add_provider_for_display(c.gdk_display_get_default(), u.cast(c.GtkStyleProvider, self.font_css), c.GTK_STYLE_PROVIDER_PRIORITY_APPLICATION + 1);
@@ -151,9 +161,8 @@ pub const App = struct {
         c.gtk_event_controller_set_propagation_phase(keys, c.GTK_PHASE_CAPTURE);
         u.connect(keys, "key-pressed", &onKey, self);
         c.gtk_widget_add_controller(window, keys);
-        const names = [_][*:0]const u8{ "new", "open", "save", "save-as", "find", "goto", "spelling", "preferences", "about", "close", "quit" };
-        for (names) |name| {
-            const action = c.g_simple_action_new(name, null).?;
+        for (commands.entries) |entry| {
+            const action = c.g_simple_action_new(entry.action, null).?;
             u.connect(action, "activate", &onAction, self);
             c.g_action_map_add_action(u.cast(c.GActionMap, application), u.cast(c.GAction, action));
             c.g_object_unref(action);
@@ -168,9 +177,14 @@ pub const App = struct {
         if (self.timer != 0) _ = c.g_source_remove(self.timer);
         self.appearance.deinit();
         self.worker.stop();
-        // File operations keep the application alive and prevent window closure.
-        for (self.docs.items) |d| d.destroy();
-        self.docs.deinit(a);
+        if (self.palette) |palette| palette.close();
+        // Async operations hold the application until their callbacks are reaped;
+        // watcher queries allow tabs/windows to close while that hold is active.
+        // Views release their buffer references and callbacks before documents.
+        for (self.views.items) |view| view.destroy();
+        self.views.deinit(a);
+        self.documents.deinit();
+        c.g_weak_ref_clear(&self.palette_focus);
         for (self.languages.items) |lang| a.free(lang);
         self.languages.deinit(a);
         if (self.menu_word) |word| a.free(word);
@@ -185,49 +199,29 @@ pub const App = struct {
         const index = c.gtk_notebook_get_current_page(u.cast(c.GtkNotebook, self.notebook));
         if (index < 0) return null;
         const page = c.gtk_notebook_get_nth_page(u.cast(c.GtkNotebook, self.notebook), index);
-        for (self.docs.items) |d| if (d.page == page) return d;
+        for (self.views.items) |view| if (view.page == page) return view.document;
         return null;
     }
     fn find(self: *App, id: u64) ?*Document {
-        for (self.docs.items) |d| if (d.id == id) return d;
-        return null;
+        return self.documents.get(id);
+    }
+    fn viewFor(self: *App, document: *Document) *EditorView {
+        for (self.views.items) |view| if (view.document == document) return view;
+        unreachable;
     }
     fn focus(self: *App, d: *Document) void {
-        c.gtk_notebook_set_current_page(u.cast(c.GtkNotebook, self.notebook), c.gtk_notebook_page_num(u.cast(c.GtkNotebook, self.notebook), d.page));
-        _ = c.gtk_widget_grab_focus(d.view);
+        c.gtk_notebook_set_current_page(u.cast(c.GtkNotebook, self.notebook), c.gtk_notebook_page_num(u.cast(c.GtkNotebook, self.notebook), self.viewFor(d).page));
+        _ = c.gtk_widget_grab_focus(self.viewFor(d).widget);
     }
     pub fn newDocument(self: *App) *Document {
-        const d = a.create(Document) catch unreachable;
-        const source = c.gtk_source_buffer_new(null).?;
-        const buffer = u.cast(c.GtkTextBuffer, source);
-        c.gtk_text_buffer_set_enable_undo(buffer, 1);
-        const view = c.gtk_source_view_new_with_buffer(source).?;
-        c.gtk_text_view_set_monospace(u.cast(c.GtkTextView, view), 1);
-        c.gtk_text_view_set_left_margin(u.cast(c.GtkTextView, view), 18);
-        c.gtk_text_view_set_right_margin(u.cast(c.GtkTextView, view), 18);
-        c.gtk_text_view_set_top_margin(u.cast(c.GtkTextView, view), 22);
-        c.gtk_text_view_set_bottom_margin(u.cast(c.GtkTextView, view), 22);
-        const page = c.gtk_scrolled_window_new().?;
-        c.gtk_scrolled_window_set_child(u.cast(c.GtkScrolledWindow, page), view);
-        c.gtk_widget_set_hexpand(page, 1);
-        c.gtk_widget_set_vexpand(page, 1);
-        const tab = u.box(true, 6);
-        const tab_label = u.label(@import("i18n").dtr("coral", "Untitled"));
-        c.gtk_label_set_ellipsize(u.cast(c.GtkLabel, tab_label), c.PANGO_ELLIPSIZE_MIDDLE);
-        c.gtk_label_set_max_width_chars(u.cast(c.GtkLabel, tab_label), 28);
-        c.gtk_label_set_width_chars(u.cast(c.GtkLabel, tab_label), 18);
-        u.append(tab, tab_label);
-        const close = u.icon("window-close-symbolic", @import("i18n").dtr("coral", "Close document"));
-        c.gtk_widget_add_css_class(close, "flat");
-        u.append(tab, close);
-        u.connect(close, "clicked", &onCloseTab, d);
-        const settings = c.gtk_source_search_settings_new().?;
-        c.gtk_source_search_settings_set_wrap_around(settings, 1);
-        const search = c.gtk_source_search_context_new(source, settings).?;
-        const tag = c.gtk_text_buffer_create_tag(buffer, "coral-spelling", "underline", @as(c_int, c.PANGO_UNDERLINE_ERROR), @as(?*anyopaque, null)).?;
-        d.* = .{ .id = self.next_id, .buffer = buffer, .view = view, .page = page, .tab = tab, .tab_label = tab_label, .search = search, .search_settings = settings, .tag = tag };
-        self.next_id += 1;
-        self.docs.append(a, d) catch unreachable;
+        const d = self.documents.create(self) catch @panic("Could not create document");
+        const presentation = EditorView.create(d) catch @panic("Could not create editor view");
+        self.views.append(a, presentation) catch @panic("Could not register editor view");
+        const buffer = d.buffer;
+        const view = presentation.widget;
+        const page = presentation.page;
+        const tab = presentation.tab;
+        u.connect(presentation.close_button, "clicked", &onCloseTab, d);
         u.connect(buffer, "changed", &onChanged, d);
         u.connect(buffer, "modified-changed", &onModified, d);
         u.connect(buffer, "mark-set", &onMark, d);
@@ -237,7 +231,8 @@ pub const App = struct {
         c.gtk_gesture_single_set_button(u.cast(c.GtkGestureSingle, click), 3);
         c.gtk_event_controller_set_propagation_phase(u.cast(c.GtkEventController, click), c.GTK_PHASE_CAPTURE);
         u.connect(click, "pressed", &onContext, d);
-        c.gtk_widget_add_controller(view, u.cast(c.GtkEventController, click));
+        presentation.context_menu_controller = u.cast(c.GtkEventController, click);
+        c.gtk_widget_add_controller(view, presentation.context_menu_controller);
         const index = c.gtk_notebook_append_page(u.cast(c.GtkNotebook, self.notebook), page, tab);
         c.gtk_notebook_set_tab_reorderable(u.cast(c.GtkNotebook, self.notebook), page, 1);
         c.gtk_notebook_set_current_page(u.cast(c.GtkNotebook, self.notebook), index);
@@ -247,13 +242,13 @@ pub const App = struct {
         return d;
     }
     fn configure(self: *App, d: *Document) void {
-        const view = u.cast(c.GtkSourceView, d.view);
+        const view = u.cast(c.GtkSourceView, self.viewFor(d).widget);
         c.gtk_source_view_set_show_line_numbers(view, @intFromBool(self.settings.lines));
         c.gtk_source_view_set_tab_width(view, @intCast(self.settings.indent));
         c.gtk_source_view_set_insert_spaces_instead_of_tabs(view, @intFromBool(self.settings.spaces));
         c.gtk_source_view_set_auto_indent(view, 1);
         c.gtk_source_view_set_highlight_current_line(view, 1);
-        c.gtk_text_view_set_wrap_mode(u.cast(c.GtkTextView, d.view), if (self.settings.wrap) c.GTK_WRAP_WORD_CHAR else c.GTK_WRAP_NONE);
+        c.gtk_text_view_set_wrap_mode(u.cast(c.GtkTextView, self.viewFor(d).widget), if (self.settings.wrap) c.GTK_WRAP_WORD_CHAR else c.GTK_WRAP_NONE);
         const manager = c.gtk_source_style_scheme_manager_get_default();
         var prefer_dark: c_int = 0;
         c.g_object_get(c.gtk_settings_get_default(), "gtk-application-prefer-dark-theme", &prefer_dark, @as(?*anyopaque, null));
@@ -284,11 +279,12 @@ pub const App = struct {
     }
     fn applySettings(self: *App) void {
         if (self.dialog) |dialog| self.styleWindow(dialog);
+        if (self.palette) |palette| self.styleWindow(palette.window);
         self.themeClasses(self.window);
         const css = u.fmt("textview {{ font-family: monospace; font-size: {d:.3}em; }}", .{@as(f64, @floatFromInt(self.settings.font)) / 14.667});
         defer a.free(css);
         c.gtk_css_provider_load_from_string(self.font_css, css);
-        for (self.docs.items) |d| self.configure(d);
+        for (self.documents.entries.items) |d| self.configure(d);
     }
     fn appearanceChanged(context: *anyopaque) void {
         const self: *App = @ptrCast(@alignCast(context));
@@ -304,10 +300,11 @@ pub const App = struct {
         const wide = c.gtk_widget_get_width(self.window) >= 620;
         c.gtk_widget_set_visible(self.new_button, @intFromBool(wide));
         c.gtk_widget_set_visible(self.search_button, @intFromBool(wide));
-        for (self.docs.items) |d| {
+        for (self.views.items) |presentation| {
+            const d = presentation.document;
             var name: []const u8 = if (d.path) |p| std.fs.path.basename(p) else @import("i18n").dtr("coral", "Untitled");
             if (d.path) |p| {
-                for (self.docs.items) |other| {
+                for (self.documents.entries.items) |other| {
                     if (other == d) continue;
                     if (other.path) |q| {
                         if (std.mem.eql(u8, std.fs.path.basename(q), name)) {
@@ -318,15 +315,15 @@ pub const App = struct {
                 }
             }
             const title = u.fmt("{s}{s}", .{ name, if (d.dirty()) " •" else "" });
-            u.setLabel(d.tab_label, title);
+            u.setLabel(self.viewFor(d).tab_label, title);
             a.free(title);
-            if (d.path) |p| c.gtk_widget_set_tooltip_text(d.tab, p);
+            if (d.path) |p| c.gtk_widget_set_tooltip_text(self.viewFor(d).tab, p);
         }
         const d = self.active() orelse return;
         var iter: c.GtkTextIter = undefined;
         c.gtk_text_buffer_get_iter_at_mark(d.buffer, &iter, c.gtk_text_buffer_get_insert(d.buffer));
         var status_buffer: [2048]u8 = undefined;
-        const status = @import("i18n").dfmt("coral", &status_buffer, "Ln {d}, Col {d}   ·   UTF-8{s} · {s}{s}", .{ c.gtk_text_iter_get_line(&iter) + 1, c.gtk_text_iter_get_line_offset(&iter) + 1, if (d.bom) " BOM" else "", @tagName(d.newline), if (d.busy) @import("i18n").dtr("coral", " · Working…") else if (d.large) @import("i18n").dtr("coral", " · Large file") else "" });
+        const status = @import("i18n").dfmt("coral", &status_buffer, "Ln {d}, Col {d}   ·   UTF-8{s} · {s}{s}{s}", .{ c.gtk_text_iter_get_line(&iter) + 1, c.gtk_text_iter_get_line_offset(&iter) + 1, if (d.bom) " BOM" else "", @tagName(d.newline), if (d.busy) @import("i18n").dtr("coral", " · Working…") else if (d.large) @import("i18n").dtr("coral", " · Large file") else "", if (d.external_changed) @import("i18n").dtr("coral", " · Changed on disk") else "" });
         u.setLabel(self.status, status);
         const spelling_text: [*:0]const u8 = if (!self.enumerated) @import("i18n").dtr("coral", "Checking dictionaries…") else if (!self.dictionary) @import("i18n").dtr("coral", "Dictionary unavailable") else if (!self.spellingEnabled(d)) @import("i18n").dtr("coral", "Spelling off") else @import("i18n").dtr("coral", "Spelling");
         c.gtk_button_set_label(u.cast(c.GtkButton, self.spell_button), spelling_text);
@@ -368,64 +365,77 @@ pub const App = struct {
             self.popover = null;
         }
     }
-    pub fn openPath(self: *App, path: []const u8) void {
-        const p = u.z(path);
-        defer a.free(p);
-        const file = c.g_file_new_for_commandline_arg(p).?;
-        defer c.g_object_unref(file);
-        if (c.g_file_is_native(file) == 0) {
-            self.message(@import("i18n").dtr("coral", "Only local files are supported."));
+    pub fn openExisting(self: *App, path: []const u8) void {
+        const canonical = open_target.resolveExisting(a, path) catch |err| {
+            self.message(switch (err) {
+                error.NotFound => @import("i18n").dtr("coral", "File not found. Use New document and Save As to create a file."),
+                error.NonLocalUri => @import("i18n").dtr("coral", "Only local files are supported."),
+                error.IsDirectory, error.NotRegularFile => @import("i18n").dtr("coral", "Choose an existing regular file, not a folder or device."),
+                error.PermissionDenied => @import("i18n").dtr("coral", "Permission denied while opening the file."),
+                else => @import("i18n").dtr("coral", "Could not resolve this file. Check the path and permissions."),
+            });
             return;
-        }
-        const raw = c.g_file_get_path(file);
-        defer c.g_free(raw);
-        if (raw == null) return;
-        const real = c.realpath(raw, null);
-        defer if (real != null) c.free(real);
-        const canonical = if (real != null) std.mem.span(real) else std.mem.span(raw);
-        for (self.docs.items) |d| {
-            if (d.path) |existing| {
-                if (std.mem.eql(u8, existing, canonical)) {
-                    self.focus(d);
-                    return;
-                }
-            }
-        }
-        const canonical_z = u.z(canonical);
-        defer a.free(canonical_z);
-        if (c.g_file_test(canonical_z, c.G_FILE_TEST_EXISTS) == 0) {
-            if (std.fs.path.dirname(canonical)) |dir| {
-                const dir_z = u.z(dir);
-                defer a.free(dir_z);
-                _ = c.g_mkdir_with_parents(dir_z, 0o755);
-            }
-            const new_file = c.g_file_new_for_path(canonical_z).?;
-            defer c.g_object_unref(new_file);
-            var create_err: ?*c.GError = null;
-            const created = c.g_file_create(new_file, c.G_FILE_CREATE_NONE, null, &create_err);
-            if (create_err) |e| c.g_error_free(e);
-            if (created == null) {
-                self.message(@import("i18n").dtr("coral", "Could not create the file."));
-                return;
-            }
+        };
+        defer a.free(canonical);
+        if (self.documents.findPath(canonical)) |d| {
+            self.focus(d);
+            return;
         }
         const d = self.newDocument();
         d.path = u.z(canonical);
         self.load(d, false);
     }
-    fn load(self: *App, d: *Document, reload: bool) void {
-        if (d.busy) return;
+    fn watch(self: *App, d: *Document) void {
+        d.stopWatching();
         const path = d.path orelse return;
         const file = c.g_file_new_for_path(path).?;
         defer c.g_object_unref(file);
+        var err: ?*c.GError = null;
+        d.monitor = c.g_file_monitor_file(file, c.G_FILE_MONITOR_WATCH_MOVES, null, &err);
+        if (d.monitor) |monitor| {
+            u.connect(monitor, "changed", &diskChanged, self);
+        } else {
+            logFileFailure("event=document-monitor-failed domain={f} code={d}", err);
+            self.message(@import("i18n").dtr("coral", "Could not monitor this file for external changes."));
+        }
+        if (err) |e| c.g_error_free(e);
+        // Close the load/save-to-monitor gap against the committed etag, not a
+        // new baseline sampled from disk (which could already be another writer).
+        self.queryDisk(d);
+    }
+    fn queryDisk(self: *App, d: *Document) void {
+        if (d.watch_query != null) {
+            d.watch_pending = true;
+            return;
+        }
+        const path = d.path orelse return;
+        const op = a.create(WatchOp) catch unreachable;
+        op.* = .{ .app = self, .id = d.id, .generation = d.watch_generation, .cancel = c.g_cancellable_new().? };
+        d.watch_query = op.cancel;
+        d.watch_pending = false;
+        const file = c.g_file_new_for_path(path).?;
+        defer c.g_object_unref(file);
+        c.g_application_hold(u.cast(c.GApplication, self.application));
+        c.g_file_query_info_async(file, "standard::type,etag::value", c.G_FILE_QUERY_INFO_NONE, c.G_PRIORITY_DEFAULT, op.cancel, &diskQueried, op);
+    }
+    fn requestReload(self: *App, d: *Document) void {
+        if (d.busy or d.pending != null or d.path == null) return;
+        if (d.dirty()) {
+            self.ask(.reload, d, @import("i18n").dtr("coral", "Discard unsaved edits?"), @import("i18n").dtr("coral", "Reloading replaces your current edits with the version on disk."), &.{ .{ .text = @import("i18n").dtr("coral", "Cancel"), .id = 0 }, .{ .text = @import("i18n").dtr("coral", "Discard and reload"), .id = 1 } });
+        } else self.load(d, true);
+    }
+    fn load(self: *App, d: *Document, reload: bool) void {
+        if (d.busy) return;
+        const path = d.path orelse return;
         const op = a.create(LoadOp) catch unreachable;
-        op.* = .{ .doc = d, .reload = reload };
+        op.* = .{ .doc = d, .reload = reload, .revision = d.revision };
+        d.stopWatching();
         d.busy = true;
         d.loading = true;
         d.cancellable = c.g_cancellable_new();
-        c.gtk_text_view_set_editable(u.cast(c.GtkTextView, d.view), 0);
+        c.gtk_text_view_set_editable(u.cast(c.GtkTextView, self.viewFor(d).widget), 0);
         c.g_application_hold(u.cast(c.GApplication, self.application));
-        c.g_file_load_partial_contents_async(file, d.cancellable, &readMore, &loaded, op);
+        load_file.load(path, d.cancellable.?, &loaded, op);
         self.update();
     }
     fn commitLoad(self: *App, d: *Document, text: []const u8) void {
@@ -459,7 +469,7 @@ pub const App = struct {
         if (d.busy) return;
         const path = u.canonicalPath(requested_path);
         defer a.free(path);
-        for (self.docs.items) |other| {
+        for (self.documents.entries.items) |other| {
             if (other != d) {
                 if (other.path) |p| {
                     if (std.mem.eql(u8, p, path)) {
@@ -481,6 +491,7 @@ pub const App = struct {
         op.* = .{ .doc = d, .path = u.z(path), .data = bytes, .revision = d.revision, .etag = if (!force and !as) if (d.etag) |e| u.z(e) else null else null };
         const file = c.g_file_new_for_path(op.path).?;
         defer c.g_object_unref(file);
+        d.stopWatching();
         d.busy = true;
         d.cancellable = c.g_cancellable_new();
         c.g_application_hold(u.cast(c.GApplication, self.application));
@@ -535,42 +546,52 @@ pub const App = struct {
     fn remove(self: *App, d: *Document) void {
         self.hidePopover();
         var index: usize = 0;
-        while (index < self.docs.items.len) : (index += 1) {
-            if (self.docs.items[index] == d) {
-                _ = self.docs.orderedRemove(index);
-                break;
+        while (index < self.views.items.len) {
+            const view = self.views.items[index];
+            if (view.document != d) {
+                index += 1;
+                continue;
             }
+            view.disconnectDocumentCallbacks();
+            _ = self.views.orderedRemove(index);
+            const page = c.gtk_notebook_page_num(u.cast(c.GtkNotebook, self.notebook), view.page);
+            c.gtk_notebook_remove_page(u.cast(c.GtkNotebook, self.notebook), page);
+            view.destroy();
         }
-        const page = c.gtk_notebook_page_num(u.cast(c.GtkNotebook, self.notebook), d.page);
-        c.gtk_notebook_remove_page(u.cast(c.GtkNotebook, self.notebook), page);
-        d.destroy();
-        if (self.docs.items.len == 0) {
+        _ = self.documents.remove(d.id);
+        if (self.documents.entries.items.len == 0) {
             self.shutdownWindow();
             return;
         }
         self.update();
-        if (self.quitting) self.closeDocument(self.docs.items[self.docs.items.len - 1]);
+        if (self.quitting) {
+            self.closeDocument(self.documents.entries.items[self.documents.entries.items.len - 1]);
+        } else if (self.active()) |active_document| {
+            _ = c.gtk_widget_grab_focus(self.viewFor(active_document).widget);
+        }
     }
     fn shutdownWindow(self: *App) void {
         self.closing = true;
+        if (self.palette) |palette| palette.close();
         if (self.timer != 0) {
             _ = c.g_source_remove(self.timer);
             self.timer = 0;
         }
+        for (self.views.items) |view| view.disconnectDocumentCallbacks();
         c.gtk_window_destroy(u.cast(c.GtkWindow, self.window));
     }
     fn quit(self: *App) void {
         if (self.dialog != null) return;
         self.quitting = true;
-        if (self.docs.items.len > 0) self.closeDocument(self.docs.items[self.docs.items.len - 1]) else self.shutdownWindow();
+        if (self.documents.entries.items.len > 0) self.closeDocument(self.documents.entries.items[self.documents.entries.items.len - 1]) else self.shutdownWindow();
     }
     fn showSearch(self: *App, show: bool) void {
         c.gtk_widget_set_visible(self.searchbox, @intFromBool(show));
         if (show) {
             _ = c.gtk_widget_grab_focus(self.query);
         } else {
-            for (self.docs.items) |d| c.gtk_source_search_settings_set_search_text(d.search_settings, null);
-            if (self.active()) |d| _ = c.gtk_widget_grab_focus(d.view);
+            for (self.documents.entries.items) |d| c.gtk_source_search_settings_set_search_text(d.search_settings, null);
+            if (self.active()) |d| _ = c.gtk_widget_grab_focus(self.viewFor(d).widget);
         }
     }
     fn findMatch(self: *App, back: bool) void {
@@ -582,32 +603,123 @@ pub const App = struct {
         const found = if (back) c.gtk_source_search_context_backward(d.search, &at, &start, &end, null) else c.gtk_source_search_context_forward(d.search, &at, &start, &end, null);
         if (found != 0) {
             c.gtk_text_buffer_select_range(d.buffer, &start, &end);
-            _ = c.gtk_text_view_scroll_to_iter(u.cast(c.GtkTextView, d.view), &start, 0.1, 0, 0, 0);
+            _ = c.gtk_text_view_scroll_to_iter(u.cast(c.GtkTextView, self.viewFor(d).widget), &start, 0.1, 0, 0, 0);
         }
         self.update();
     }
     fn replace(self: *App, all: bool) void {
         const d = self.active() orelse return;
-        if (d.loading) return;
+        if (d.loading or d.pending != null) return;
+        if (c.gtk_text_buffer_get_char_count(d.buffer) > 16 * 1024 * 1024) {
+            self.message(@import("i18n").dtr("coral", "This buffer is too large for a safe edit transaction."));
+            return;
+        }
         const replacement = u.z(u.entryText(self.replacement));
         defer a.free(replacement);
+        const text = u.bufferText(d.buffer);
+        defer a.free(text);
+        const revision = d.revision;
+        var edits: std.ArrayList(transactions.Replacement) = .empty;
+        defer edits.deinit(a);
+        var start: c.GtkTextIter = undefined;
+        var end: c.GtkTextIter = undefined;
+        var byte_cursor: usize = 0;
+        var char_cursor: c_int = 0;
         if (all) {
-            c.gtk_text_buffer_begin_user_action(d.buffer);
-            _ = c.gtk_source_search_context_replace_all(d.search, replacement, @intCast(replacement.len), null);
-            c.gtk_text_buffer_end_user_action(d.buffer);
+            var at: c.GtkTextIter = undefined;
+            c.gtk_text_buffer_get_start_iter(d.buffer, &at);
+            var wrapped: c_int = 0;
+            while (c.gtk_source_search_context_forward(d.search, &at, &start, &end, &wrapped) != 0 and wrapped == 0) {
+                if (c.gtk_text_iter_compare(&start, &end) >= 0) break;
+                if (edits.items.len >= 65_536) {
+                    self.message(@import("i18n").dtr("coral", "Too many replacements. Narrow the search before replacing."));
+                    return;
+                }
+                const from = byteOffset(text, &byte_cursor, &char_cursor, c.gtk_text_iter_get_offset(&start));
+                const to = byteOffset(text, &byte_cursor, &char_cursor, c.gtk_text_iter_get_offset(&end));
+                edits.append(a, .{ .start = from, .end = to, .text = replacement }) catch {
+                    self.message(@import("i18n").dtr("coral", "Not enough memory to prepare the edit. Nothing was changed."));
+                    return;
+                };
+                at = end;
+            }
         } else {
-            var start: c.GtkTextIter = undefined;
-            var end: c.GtkTextIter = undefined;
             if (c.gtk_text_buffer_get_selection_bounds(d.buffer, &start, &end) == 0) {
                 self.findMatch(false);
                 _ = c.gtk_text_buffer_get_selection_bounds(d.buffer, &start, &end);
             }
             if (c.gtk_source_search_context_get_occurrence_position(d.search, &start, &end) > 0) {
-                _ = c.gtk_source_search_context_replace(d.search, &start, &end, replacement, @intCast(replacement.len), null);
+                const from = byteOffset(text, &byte_cursor, &char_cursor, c.gtk_text_iter_get_offset(&start));
+                const to = byteOffset(text, &byte_cursor, &char_cursor, c.gtk_text_iter_get_offset(&end));
+                edits.append(a, .{ .start = from, .end = to, .text = replacement }) catch return;
             }
-            self.findMatch(false);
         }
+        if (edits.items.len > 0) self.applyEdits(d, revision, edits.items);
+        if (!all) self.findMatch(false);
         self.update();
+    }
+    fn applyEdits(self: *App, d: *Document, revision: u64, edits: []const transactions.Replacement) void {
+        const target = editTarget(d, revision);
+        var prepared = transactions.prepare(a, &.{.{ .target = target, .replacements = edits }}, .{}) catch |err| {
+            self.editFailure(err);
+            return;
+        };
+        defer prepared.deinit();
+        // Resolve identity again, even for this synchronous producer. Future
+        // preview/approval callers must use the same boundary after yielding.
+        const current = self.documents.get(prepared.targetId(0)) orelse return;
+        prepared.commit(&.{editTarget(current, prepared.expectedRevision(0))}) catch |err| self.editFailure(err);
+    }
+    fn editFailure(self: *App, err: anyerror) void {
+        log.warn("event=edit-rejected reason={s}", .{@errorName(err)});
+        self.message(switch (err) {
+            error.StaleRevision, error.SnapshotMismatch, error.TargetMismatch => @import("i18n").dtr("coral", "The document changed. Retry the edit against the current text."),
+            error.LimitExceeded => @import("i18n").dtr("coral", "The edit exceeds the transaction safety limit. Nothing was changed."),
+            else => @import("i18n").dtr("coral", "Could not safely apply this edit. Nothing was changed."),
+        });
+    }
+    fn showPalette(self: *App) void {
+        if (self.dialog != null or self.closing) return;
+        self.hidePopover();
+        if (self.palette) |palette| {
+            palette.show();
+            return;
+        }
+        c.g_weak_ref_set(&self.palette_focus, @ptrCast(c.gtk_window_get_focus(u.cast(c.GtkWindow, self.window))));
+        self.palette = Palette.create(self.window, self, &paletteCommand, &paletteClosed) catch {
+            c.g_weak_ref_set(&self.palette_focus, null);
+            self.message(@import("i18n").dtr("coral", "Could not open the command palette."));
+            return;
+        };
+        self.styleWindow(self.palette.?.window);
+        self.palette.?.show();
+    }
+    fn execute(self: *App, command: commands.Command) void {
+        if (self.closing or self.dialog != null) return;
+        switch (command) {
+            .new => {
+                _ = self.newDocument();
+            },
+            .open => self.chooseOpen(),
+            .save, .save_as => if (self.active()) |d| {
+                self.save(d, command == .save_as, false);
+            },
+            .reload => if (self.active()) |d| {
+                self.requestReload(d);
+            },
+            .find => self.showSearch(true),
+            .goto_line => self.gotoLine(),
+            .spelling => if (self.active()) |d| {
+                self.requestSuggestions(d);
+            },
+            .preferences => self.preferences(),
+            .close => if (self.active()) |d| {
+                self.closeDocument(d);
+            },
+            .quit => self.quit(),
+            .command_palette => self.showPalette(),
+            .about => c.gtk_show_about_dialog(u.cast(c.GtkWindow, self.window), "program-name", @as([*:0]const u8, "Coral"), "version", @as([*:0]const u8, "0.1.1"), "comments", @as([*:0]const u8, "A focused Zig and GTK4 text editor with offline spelling."), @as(?*anyopaque, null)),
+        }
     }
     fn preferences(self: *App) void {
         if (self.dialog != null) return;
@@ -730,7 +842,7 @@ pub const App = struct {
         u.connect(pop, "closed", &popoverClosed, self);
         self.dialog_doc = d;
         testKeys(self, pop);
-        c.gtk_widget_set_parent(pop, d.view);
+        c.gtk_widget_set_parent(pop, self.viewFor(d).widget);
         const box = u.box(false, 3);
         u.margin(box, 8);
         c.gtk_popover_set_child(u.cast(c.GtkPopover, pop), box);
@@ -761,17 +873,17 @@ pub const App = struct {
         }
         var iter: c.GtkTextIter = undefined;
         c.gtk_text_buffer_get_iter_at_offset(d.buffer, &iter, job.offset);
-        _ = c.gtk_text_view_scroll_to_iter(u.cast(c.GtkTextView, d.view), &iter, 0.1, 0, 0, 0);
+        _ = c.gtk_text_view_scroll_to_iter(u.cast(c.GtkTextView, self.viewFor(d).widget), &iter, 0.1, 0, 0, 0);
         var rect: c.GdkRectangle = undefined;
-        c.gtk_text_view_get_iter_location(u.cast(c.GtkTextView, d.view), &iter, &rect);
-        c.gtk_text_view_buffer_to_window_coords(u.cast(c.GtkTextView, d.view), c.GTK_TEXT_WINDOW_WIDGET, rect.x, rect.y, &rect.x, &rect.y);
+        c.gtk_text_view_get_iter_location(u.cast(c.GtkTextView, self.viewFor(d).widget), &iter, &rect);
+        c.gtk_text_view_buffer_to_window_coords(u.cast(c.GtkTextView, self.viewFor(d).widget), c.GTK_TEXT_WINDOW_WIDGET, rect.x, rect.y, &rect.x, &rect.y);
         c.gtk_popover_set_pointing_to(u.cast(c.GtkPopover, pop), &rect);
         c.gtk_popover_popup(u.cast(c.GtkPopover, pop));
     }
     fn resetSpelling(self: *App) void {
         self.generation += 1;
         self.hidePopover();
-        for (self.docs.items) |d| self.invalidate(d);
+        for (self.documents.entries.items) |d| self.invalidate(d);
         self.update();
     }
     fn probe(self: *App) void {
@@ -786,13 +898,59 @@ pub const App = struct {
         }
         c.gtk_text_buffer_get_start_iter(d.buffer, &start);
         if (c.gtk_text_iter_has_tag(&start, d.tag) != 0) count += 1;
-        c.g_print("CORAL_PROBE {\"tabs\":%zu,\"id\":%llu,\"dirty\":%s,\"busy\":%s,\"revision\":%llu,\"chars\":%d,\"spelling\":%zu,\"dictionary\":%s,\"enumerated\":%s,\"search\":%d,\"dialog\":%d,\"popover\":%s,\"theme\":%d,\"font\":%d,\"lines\":%s,\"bom\":%s,\"newline\":%d,\"check_from\":%d,\"inflight\":%s,\"checking_enabled\":%s,\"large\":%s,\"max_spell_tick_us\":%lld}\n", self.docs.items.len, @as(c_ulonglong, d.id), boolZ(d.dirty()), boolZ(d.busy), @as(c_ulonglong, d.revision), c.gtk_text_buffer_get_char_count(d.buffer), count, boolZ(self.dictionary), boolZ(self.enumerated), c.gtk_source_search_context_get_occurrences_count(d.search), @as(c_int, if (self.dialog != null) @intCast(@backingInt(self.dialog_kind)) else -1), boolZ(self.popover != null), self.settings.theme, self.settings.font, boolZ(self.settings.lines), boolZ(d.bom), @as(c_int, @intCast(@backingInt(d.newline))), d.check_from, boolZ(d.inflight), boolZ(self.spellingEnabled(d)), boolZ(d.large), @as(c_longlong, self.max_spell_tick_us));
+        c.g_print("CORAL_PROBE {\"tabs\":%zu,\"id\":%llu,\"dirty\":%s,\"external_changed\":%s,\"busy\":%s,\"revision\":%llu,\"chars\":%d,\"spelling\":%zu,\"dictionary\":%s,\"enumerated\":%s,\"search\":%d,\"dialog\":%d,\"popover\":%s,\"theme\":%d,\"font\":%d,\"lines\":%s,\"bom\":%s,\"newline\":%d,\"check_from\":%d,\"inflight\":%s,\"checking_enabled\":%s,\"large\":%s,\"max_spell_tick_us\":%lld}\n", self.documents.entries.items.len, @as(c_ulonglong, d.id), boolZ(d.dirty()), boolZ(d.external_changed), boolZ(d.busy), @as(c_ulonglong, d.revision), c.gtk_text_buffer_get_char_count(d.buffer), count, boolZ(self.dictionary), boolZ(self.enumerated), c.gtk_source_search_context_get_occurrences_count(d.search), @as(c_int, if (self.dialog != null) @intCast(@backingInt(self.dialog_kind)) else -1), boolZ(self.popover != null), self.settings.theme, self.settings.font, boolZ(self.settings.lines), boolZ(d.bom), @as(c_int, @intCast(@backingInt(d.newline))), d.check_from, boolZ(d.inflight), boolZ(self.spellingEnabled(d)), boolZ(d.large), @as(c_longlong, self.max_spell_tick_us));
     }
 };
 const DialogKind = enum { close, mixed, conflict, large, reload, preferences, goto };
 const Button = struct { text: [*:0]const u8, id: c_int };
-const LoadOp = struct { doc: *Document, reload: bool };
+const WatchOp = struct { app: *App, id: u64, generation: u64, cancel: *c.GCancellable };
+fn diskChanged(monitor: ?*c.GFileMonitor, _: ?*c.GFile, _: ?*c.GFile, _: c.GFileMonitorEvent, data: ?*anyopaque) callconv(.c) void {
+    const self = u.cast(App, data.?);
+    for (self.documents.entries.items) |d| {
+        if (d.monitor == monitor) {
+            self.queryDisk(d);
+            return;
+        }
+    }
+}
+fn diskQueried(source: ?*c.GObject, result: ?*c.GAsyncResult, data: ?*anyopaque) callconv(.c) void {
+    const op = u.cast(WatchOp, data.?);
+    const self = op.app;
+    defer c.g_application_release(u.cast(c.GApplication, self.application));
+    defer {
+        c.g_object_unref(op.cancel);
+        a.destroy(op);
+    }
+    var err: ?*c.GError = null;
+    const info = c.g_file_query_info_finish(u.cast(c.GFile, source.?), result, &err);
+    defer if (info) |p| c.g_object_unref(p);
+    defer if (err) |e| c.g_error_free(e);
+    const d = self.find(op.id) orelse return;
+    std.debug.assert(d.watch_query == op.cancel);
+    d.watch_query = null;
+    if (d.watch_generation == op.generation and !d.watch_pending) {
+        const etag = if (info) |p| c.g_file_info_get_etag(p) else null;
+        d.external_changed = if (info) |p| c.g_file_info_get_file_type(p) != c.G_FILE_TYPE_REGULAR or etag == null or d.etag == null or !std.mem.eql(u8, std.mem.span(etag), d.etag.?) else true;
+        self.update();
+    }
+    // Even across generations the old query must finish before starting a new
+    // one. A closed document is never dereferenced and each op owns its hold.
+    if (d.watch_pending) self.queryDisk(d);
+}
+const LoadOp = struct { doc: *Document, reload: bool, revision: u64 };
 const SaveOp = struct { doc: *Document, path: [:0]u8, data: []u8, revision: u64, etag: ?[:0]u8 = null };
+fn editTarget(d: *Document, expected_revision: u64) transactions.Target {
+    return .{ .id = d.id, .buffer = d.buffer, .revision = &d.revision, .expected_revision = expected_revision, .busy = d.loading or d.pending != null };
+}
+// Search walks forward through a stable UTF-8 snapshot, so each byte is scanned
+// at most once even when replace-all has many matches.
+fn byteOffset(text: []const u8, byte_cursor: *usize, char_cursor: *c_int, target: c_int) usize {
+    std.debug.assert(target >= char_cursor.*);
+    while (char_cursor.* < target) : (char_cursor.* += 1) {
+        byte_cursor.* += std.unicode.utf8ByteSequenceLength(text[byte_cursor.*]) catch unreachable;
+    }
+    return byte_cursor.*;
+}
 fn boolZ(v: bool) [*:0]const u8 {
     return if (v) "true" else "false";
 }
@@ -805,27 +963,28 @@ fn logFileFailure(comptime format: []const u8, err: ?*c.GError) void {
     const cat = file_error.classify(err) orelse return;
     log.err(format, .{ diagnostics.safe(cat.domain), cat.code });
 }
-fn readMore(_: [*c]const u8, size: i64, _: ?*anyopaque) callconv(.c) c_int {
-    return @intFromBool(size <= 128 * 1024 * 1024);
-}
-fn loaded(source: ?*c.GObject, result: ?*c.GAsyncResult, data: ?*anyopaque) callconv(.c) void {
-    const self = instance;
+fn loaded(_: ?*c.GObject, result: ?*c.GAsyncResult, data: ?*anyopaque) callconv(.c) void {
     const op = u.cast(LoadOp, data.?);
     const d = op.doc;
+    const self = owner(d);
     defer a.destroy(op);
     defer c.g_application_release(u.cast(c.GApplication, self.application));
+    const id = d.id;
+    defer if (self.find(id)) |remaining| {
+        if (remaining.monitor == null and remaining.pending == null) self.watch(remaining);
+    };
     var contents: [*c]u8 = null;
     var size: usize = 0;
     var etag: [*c]u8 = null;
     var err: ?*c.GError = null;
-    const ok = c.g_file_load_partial_contents_finish(u.cast(c.GFile, source.?), result, &contents, &size, &etag, &err) != 0;
+    const ok = load_file.finish(result.?, &contents, &size, &etag, &err) != 0;
     defer c.g_free(contents);
     defer c.g_free(etag);
     d.busy = false;
     d.loading = false;
     if (d.cancellable) |p| c.g_object_unref(p);
     d.cancellable = null;
-    c.gtk_text_view_set_editable(u.cast(c.GtkTextView, d.view), 1);
+    c.gtk_text_view_set_editable(u.cast(c.GtkTextView, self.viewFor(d).widget), 1);
     if (d.cancelled_close) {
         if (err) |e| c.g_error_free(e);
         self.remove(d);
@@ -853,6 +1012,11 @@ fn loaded(source: ?*c.GObject, result: ?*c.GAsyncResult, data: ?*anyopaque) call
         }
         return;
     }
+    if (d.revision != op.revision) {
+        self.message(@import("i18n").dtr("coral", "The document changed during loading. Your edits were kept; reload again to review the disk version."));
+        self.update();
+        return;
+    }
     const decoded = codec.decode(a, contents[0..size]) catch |e| {
         self.message(switch (e) {
             error.InvalidUtf8 => @import("i18n").dtr("coral", "This file is not valid UTF-8. Convert its encoding before opening it in Coral."),
@@ -867,6 +1031,8 @@ fn loaded(source: ?*c.GObject, result: ?*c.GAsyncResult, data: ?*anyopaque) call
         return;
     };
     d.pending = decoded;
+    d.pending_revision = op.revision;
+    d.pending_reload = op.reload;
     if (etag != null) d.pending_etag = u.z(std.mem.span(etag));
     if (size > 10 * 1024 * 1024) {
         self.ask(.large, d, @import("i18n").dtr("coral", "Open in large-file mode?"), @import("i18n").dtr("coral", "This file is larger than 10 MiB. Automatic spelling and syntax highlighting will be disabled."), &.{ .{ .text = @import("i18n").dtr("coral", "Cancel"), .id = 0 }, .{ .text = @import("i18n").dtr("coral", "Open large file"), .id = 1 } });
@@ -876,6 +1042,14 @@ fn acceptLoaded(self: *App, d: *Document, large: bool) void {
     const decoded = d.pending orelse return;
     d.pending = null;
     defer a.free(decoded.text);
+    if (d.revision != d.pending_revision) {
+        if (d.pending_etag) |etag| a.free(etag);
+        d.pending_etag = null;
+        self.watch(d);
+        self.message(@import("i18n").dtr("coral", "The document changed while awaiting the load decision. Your edits were kept."));
+        self.update();
+        return;
+    }
     d.bom = decoded.bom;
     d.newline = decoded.newline;
     d.large = large;
@@ -883,6 +1057,7 @@ fn acceptLoaded(self: *App, d: *Document, large: bool) void {
     d.etag = d.pending_etag;
     d.pending_etag = null;
     self.commitLoad(d, decoded.text);
+    self.watch(d);
     self.message(if (d.newline == .mixed) @import("i18n").dtr("coral", "Mixed line endings detected. Choose LF or CRLF when you save.") else "");
 }
 fn startReplace(file: *c.GFile, op: *SaveOp) void {
@@ -914,8 +1089,8 @@ fn saved(source: ?*c.GObject, result: ?*c.GAsyncResult, data: ?*anyopaque) callc
     finishSave(op, ok, etag, err);
 }
 fn finishSave(op: *SaveOp, ok: bool, etag: [*c]u8, err: ?*c.GError) void {
-    const self = instance;
     const d = op.doc;
+    const self = owner(d);
     defer {
         a.free(op.path);
         a.free(op.data);
@@ -932,6 +1107,7 @@ fn finishSave(op: *SaveOp, ok: bool, etag: [*c]u8, err: ?*c.GError) void {
         if (d.etag) |p| a.free(p);
         d.etag = if (etag != null) u.z(std.mem.span(etag)) else null;
         d.saved_revision = op.revision;
+        self.watch(d);
         if (!codec.saveKeepsDirty(op.revision, d.revision)) c.gtk_text_buffer_set_modified(d.buffer, 0);
         self.configure(d);
         self.update();
@@ -946,6 +1122,7 @@ fn finishSave(op: *SaveOp, ok: bool, etag: [*c]u8, err: ?*c.GError) void {
             }
         }
     } else {
+        self.watch(d);
         self.quitting = false;
         d.close_after_save = false;
         logFileFailure("event=document-save-failed domain={f} code={d}", err);
@@ -972,7 +1149,7 @@ fn chosenOpen(_: ?*c.GObject, result: ?*c.GAsyncResult, data: ?*anyopaque) callc
             defer c.g_object_unref(file);
             const path = c.g_file_get_path(u.cast(c.GFile, file));
             if (path != null) {
-                self.openPath(std.mem.span(path));
+                self.openExisting(std.mem.span(path));
                 c.g_free(path);
             } else self.message(@import("i18n").dtr("coral", "Only local files are supported."));
         }
@@ -981,8 +1158,8 @@ fn chosenOpen(_: ?*c.GObject, result: ?*c.GAsyncResult, data: ?*anyopaque) callc
     if (err) |e| c.g_error_free(e);
 }
 fn chosenSave(_: ?*c.GObject, result: ?*c.GAsyncResult, data: ?*anyopaque) callconv(.c) void {
-    const self = instance;
     const d = u.cast(Document, data.?);
+    const self = owner(d);
     d.busy = false;
     defer c.g_application_release(u.cast(c.GApplication, self.application));
     var err: ?*c.GError = null;
@@ -1029,7 +1206,7 @@ fn dialogResponse(dialog: ?*c.GtkDialog, response: c_int, data: ?*anyopaque) cal
             }
         },
         .conflict => {
-            if (response == 1) self.ask(.reload, doc, @import("i18n").dtr("coral", "Discard unsaved edits?"), @import("i18n").dtr("coral", "Reloading replaces your current edits with the version on disk."), &.{ .{ .text = @import("i18n").dtr("coral", "Cancel"), .id = 0 }, .{ .text = @import("i18n").dtr("coral", "Discard and reload"), .id = 1 } }) else if (response == 2) self.save(doc.?, true, false) else if (response == 3) self.save(doc.?, false, true);
+            if (response == 1) self.requestReload(doc.?) else if (response == 2) self.save(doc.?, true, false) else if (response == 3) self.save(doc.?, false, true);
         },
         .reload => {
             if (response == 1) self.load(doc.?, true);
@@ -1041,10 +1218,11 @@ fn dialogResponse(dialog: ?*c.GtkDialog, response: c_int, data: ?*anyopaque) cal
                 d.pending = null;
                 if (d.pending_etag) |p| a.free(p);
                 d.pending_etag = null;
-                if (c.gtk_text_buffer_get_char_count(d.buffer) == 0) {
+                if (!d.pending_reload and c.gtk_text_buffer_get_char_count(d.buffer) == 0) {
                     if (d.path) |p| a.free(p);
                     d.path = null;
                 }
+                self.watch(d);
                 self.update();
             }
         },
@@ -1059,8 +1237,8 @@ fn dialogResponse(dialog: ?*c.GtkDialog, response: c_int, data: ?*anyopaque) cal
                 var iter: c.GtkTextIter = undefined;
                 _ = c.gtk_text_buffer_get_iter_at_line(doc.?.buffer, &iter, line - 1);
                 c.gtk_text_buffer_place_cursor(doc.?.buffer, &iter);
-                _ = c.gtk_text_view_scroll_to_iter(u.cast(c.GtkTextView, doc.?.view), &iter, 0.1, 0, 0, 0);
-                _ = c.gtk_widget_grab_focus(doc.?.view);
+                _ = c.gtk_text_view_scroll_to_iter(u.cast(c.GtkTextView, self.viewFor(doc.?).widget), &iter, 0.1, 0, 0, 0);
+                _ = c.gtk_widget_grab_focus(self.viewFor(doc.?).widget);
             }
         },
     }
@@ -1135,7 +1313,7 @@ fn tick(data: ?*anyopaque) callconv(.c) c_int {
         }
     }
     const now = c.g_get_monotonic_time();
-    for (self.docs.items) |d| {
+    for (self.documents.entries.items) |d| {
         if (d.pending != null and self.dialog == null) {
             self.focus(d);
             self.ask(.large, d, @import("i18n").dtr("coral", "Open in large-file mode?"), @import("i18n").dtr("coral", "This file exceeds 10 MiB. Automatic spelling and syntax highlighting will be disabled."), &.{ .{ .text = @import("i18n").dtr("coral", "Cancel"), .id = 0 }, .{ .text = @import("i18n").dtr("coral", "Open large file"), .id = 1 } });
@@ -1148,11 +1326,11 @@ fn tick(data: ?*anyopaque) callconv(.c) c_int {
         var priority = false;
         if (self.active() == d) {
             var visible: c.GdkRectangle = undefined;
-            c.gtk_text_view_get_visible_rect(u.cast(c.GtkTextView, d.view), &visible);
+            c.gtk_text_view_get_visible_rect(u.cast(c.GtkTextView, self.viewFor(d).widget), &visible);
             var first: c.GtkTextIter = undefined;
             var last: c.GtkTextIter = undefined;
-            _ = c.gtk_text_view_get_iter_at_location(u.cast(c.GtkTextView, d.view), &first, visible.x, visible.y);
-            _ = c.gtk_text_view_get_iter_at_location(u.cast(c.GtkTextView, d.view), &last, visible.x + visible.width, visible.y + visible.height);
+            _ = c.gtk_text_view_get_iter_at_location(u.cast(c.GtkTextView, self.viewFor(d).widget), &first, visible.x, visible.y);
+            _ = c.gtk_text_view_get_iter_at_location(u.cast(c.GtkTextView, self.viewFor(d).widget), &last, visible.x + visible.width, visible.y + visible.height);
             const first_offset = c.gtk_text_iter_get_offset(&first);
             const last_offset = c.gtk_text_iter_get_offset(&last);
             if (first_offset > d.check_from and (d.priority_revision != d.revision or first_offset < d.priority_start or last_offset > d.priority_end)) {
@@ -1198,42 +1376,45 @@ fn onInsert(_: ?*c.GtkTextBuffer, at: ?*c.GtkTextIter, _: [*c]const u8, _: c_int
 fn onDelete(_: ?*c.GtkTextBuffer, start: ?*c.GtkTextIter, _: ?*c.GtkTextIter, data: ?*anyopaque) callconv(.c) void {
     dirtyRange(u.cast(Document, data.?), start.?);
 }
+fn owner(document: *Document) *App {
+    return u.cast(App, document.context.?);
+}
 fn onChanged(_: ?*c.GtkTextBuffer, data: ?*anyopaque) callconv(.c) void {
     const d = u.cast(Document, data.?);
-    d.revision += 1;
     d.due = c.g_get_monotonic_time() + 250000;
-    instance.hidePopover();
-    instance.update();
+    owner(d).hidePopover();
+    owner(d).update();
 }
-fn onModified(_: ?*c.GtkTextBuffer, _: ?*anyopaque) callconv(.c) void {
-    instance.update();
+fn onModified(_: ?*c.GtkTextBuffer, data: ?*anyopaque) callconv(.c) void {
+    owner(u.cast(Document, data.?)).update();
 }
-fn onMark(_: ?*c.GtkTextBuffer, _: ?*c.GtkTextIter, _: ?*c.GtkTextMark, _: ?*anyopaque) callconv(.c) void {
-    instance.update();
+fn onMark(_: ?*c.GtkTextBuffer, _: ?*c.GtkTextIter, _: ?*c.GtkTextMark, data: ?*anyopaque) callconv(.c) void {
+    owner(u.cast(Document, data.?)).update();
 }
-fn onSwitch(_: ?*c.GtkNotebook, _: ?*c.GtkWidget, _: c_uint, _: ?*anyopaque) callconv(.c) void {
-    instance.hidePopover();
-    instance.update();
+fn onSwitch(_: ?*c.GtkNotebook, _: ?*c.GtkWidget, _: c_uint, data: ?*anyopaque) callconv(.c) void {
+    const self = u.cast(App, data.?);
+    self.hidePopover();
+    self.update();
 }
 fn onCloseWindow(_: ?*c.GtkWindow, data: ?*anyopaque) callconv(.c) c_int {
     u.cast(App, data.?).quit();
     return 1;
 }
 fn onCloseTab(_: ?*c.GtkButton, data: ?*anyopaque) callconv(.c) void {
-    instance.closeDocument(u.cast(Document, data.?));
+    const d = u.cast(Document, data.?);
+    owner(d).closeDocument(d);
 }
 fn onNew(_: ?*c.GtkButton, data: ?*anyopaque) callconv(.c) void {
-    _ = u.cast(App, data.?).newDocument();
+    u.cast(App, data.?).execute(.new);
 }
 fn onOpen(_: ?*c.GtkButton, data: ?*anyopaque) callconv(.c) void {
-    u.cast(App, data.?).chooseOpen();
+    u.cast(App, data.?).execute(.open);
 }
 fn onSave(_: ?*c.GtkButton, data: ?*anyopaque) callconv(.c) void {
-    const self = u.cast(App, data.?);
-    if (self.active()) |d| self.save(d, false, false);
+    u.cast(App, data.?).execute(.save);
 }
 fn onSearch(_: ?*c.GtkButton, data: ?*anyopaque) callconv(.c) void {
-    u.cast(App, data.?).showSearch(true);
+    u.cast(App, data.?).execute(.find);
 }
 fn onHideSearch(_: ?*c.GtkButton, data: ?*anyopaque) callconv(.c) void {
     u.cast(App, data.?).showSearch(false);
@@ -1251,29 +1432,29 @@ fn onReplaceAll(_: ?*c.GtkButton, data: ?*anyopaque) callconv(.c) void {
     u.cast(App, data.?).replace(true);
 }
 fn onSpelling(_: ?*c.GtkButton, data: ?*anyopaque) callconv(.c) void {
-    const self = u.cast(App, data.?);
-    if (self.active()) |d| self.requestSuggestions(d);
+    u.cast(App, data.?).execute(.spelling);
 }
 fn onPreferences(_: ?*c.GtkButton, data: ?*anyopaque) callconv(.c) void {
-    u.cast(App, data.?).preferences();
+    u.cast(App, data.?).execute(.preferences);
 }
 fn onQuery(_: ?*c.GtkSearchEntry, data: ?*anyopaque) callconv(.c) void {
     const self = u.cast(App, data.?);
     const text = u.z(u.entryText(self.query));
     defer a.free(text);
-    for (self.docs.items) |d| c.gtk_source_search_settings_set_search_text(d.search_settings, text);
+    for (self.documents.entries.items) |d| c.gtk_source_search_settings_set_search_text(d.search_settings, text);
     self.update();
 }
 fn onContext(gesture: ?*c.GtkGestureClick, _: c_int, x: f64, y: f64, data: ?*anyopaque) callconv(.c) void {
     const d = u.cast(Document, data.?);
+    const self = owner(d);
     var bx: c_int = 0;
     var by: c_int = 0;
-    c.gtk_text_view_window_to_buffer_coords(u.cast(c.GtkTextView, d.view), c.GTK_TEXT_WINDOW_WIDGET, @intFromFloat(x), @intFromFloat(y), &bx, &by);
+    c.gtk_text_view_window_to_buffer_coords(u.cast(c.GtkTextView, self.viewFor(d).widget), c.GTK_TEXT_WINDOW_WIDGET, @intFromFloat(x), @intFromFloat(y), &bx, &by);
     var iter: c.GtkTextIter = undefined;
-    if (c.gtk_text_view_get_iter_at_location(u.cast(c.GtkTextView, d.view), &iter, bx, by) != 0 and c.gtk_text_iter_has_tag(&iter, d.tag) != 0) {
+    if (c.gtk_text_view_get_iter_at_location(u.cast(c.GtkTextView, self.viewFor(d).widget), &iter, bx, by) != 0 and c.gtk_text_iter_has_tag(&iter, d.tag) != 0) {
         c.gtk_text_buffer_place_cursor(d.buffer, &iter);
         _ = c.gtk_gesture_set_state(u.cast(c.GtkGesture, gesture.?), c.GTK_EVENT_SEQUENCE_CLAIMED);
-        instance.requestSuggestions(d);
+        self.requestSuggestions(d);
     }
 }
 fn prefTheme(widget: ?*c.GtkComboBox, data: ?*anyopaque) callconv(.c) void {
@@ -1314,7 +1495,7 @@ fn prefLanguage(widget: ?*c.GtkComboBox, data: ?*anyopaque) callconv(.c) void {
 fn prefDocument(widget: ?*c.GtkCheckButton, data: ?*anyopaque) callconv(.c) void {
     const d = u.cast(Document, data.?);
     d.spell_override = c.gtk_check_button_get_active(widget) != 0;
-    instance.resetSpelling();
+    owner(d).resetSpelling();
 }
 fn freeString(data: ?*anyopaque) callconv(.c) void {
     const p: [*:0]u8 = @ptrCast(data.?);
@@ -1338,11 +1519,15 @@ fn correctWord(button: ?*c.GtkButton, data: ?*anyopaque) callconv(.c) void {
     var end: c.GtkTextIter = undefined;
     c.gtk_text_buffer_get_iter_at_offset(d.buffer, &start, self.menu_start);
     c.gtk_text_buffer_get_iter_at_offset(d.buffer, &end, self.menu_end);
+    const text = u.bufferText(d.buffer);
+    defer a.free(text);
+    var byte_cursor: usize = 0;
+    var char_cursor: c_int = 0;
+    const from = byteOffset(text, &byte_cursor, &char_cursor, c.gtk_text_iter_get_offset(&start));
+    const to = byteOffset(text, &byte_cursor, &char_cursor, c.gtk_text_iter_get_offset(&end));
+    const revision = self.menu_revision;
     self.hidePopover();
-    c.gtk_text_buffer_begin_user_action(d.buffer);
-    c.gtk_text_buffer_delete(d.buffer, &start, &end);
-    c.gtk_text_buffer_insert(d.buffer, &start, word, @intCast(word.len));
-    c.gtk_text_buffer_end_user_action(d.buffer);
+    self.applyEdits(d, revision, &.{.{ .start = from, .end = to, .text = word }});
 }
 fn ignoreWord(_: ?*c.GtkButton, data: ?*anyopaque) callconv(.c) void {
     const self = u.cast(App, data.?);
@@ -1362,23 +1547,31 @@ fn editAction(button: ?*c.GtkButton, data: ?*anyopaque) callconv(.c) void {
     const self = u.cast(App, data.?);
     const d = self.active() orelse return;
     const action: [*:0]const u8 = @ptrCast(c.g_object_get_data(u.cast(c.GObject, button.?), "edit-action").?);
-    _ = c.gtk_widget_activate_action_variant(d.view, action, null);
+    _ = c.gtk_widget_activate_action_variant(self.viewFor(d).widget, action, null);
     self.hidePopover();
 }
 fn onAction(action: ?*c.GSimpleAction, _: ?*c.GVariant, data: ?*anyopaque) callconv(.c) void {
     const self = u.cast(App, data.?);
     const name = std.mem.span(c.g_action_get_name(u.cast(c.GAction, action.?)));
-    if (std.mem.eql(u8, name, "new")) {
-        _ = self.newDocument();
-    } else if (std.mem.eql(u8, name, "open")) self.chooseOpen() else if (std.mem.eql(u8, name, "save")) {
-        if (self.active()) |d| self.save(d, false, false);
-    } else if (std.mem.eql(u8, name, "save-as")) {
-        if (self.active()) |d| self.save(d, true, false);
-    } else if (std.mem.eql(u8, name, "find")) self.showSearch(true) else if (std.mem.eql(u8, name, "goto")) self.gotoLine() else if (std.mem.eql(u8, name, "spelling")) {
-        if (self.active()) |d| self.requestSuggestions(d);
-    } else if (std.mem.eql(u8, name, "preferences")) self.preferences() else if (std.mem.eql(u8, name, "close")) {
-        if (self.active()) |d| self.closeDocument(d);
-    } else if (std.mem.eql(u8, name, "quit")) self.quit() else if (std.mem.eql(u8, name, "about")) c.gtk_show_about_dialog(u.cast(c.GtkWindow, self.window), "program-name", @as([*:0]const u8, "Coral"), "version", @as([*:0]const u8, "0.1.1"), "comments", @as([*:0]const u8, "A focused Zig and GTK4 text editor with offline spelling."), @as(?*anyopaque, null));
+    if (commands.fromAction(name)) |command| self.execute(command);
+}
+fn paletteCommand(context: *anyopaque, command: commands.Command) void {
+    u.cast(App, context).execute(command);
+}
+fn paletteClosed(context: *anyopaque) void {
+    const self = u.cast(App, context);
+    self.palette = null;
+    const previous = c.g_weak_ref_get(&self.palette_focus);
+    defer if (previous) |object| c.g_object_unref(object);
+    c.g_weak_ref_set(&self.palette_focus, null);
+    if (self.closing) return;
+    if (previous) |object| {
+        const widget = u.cast(c.GtkWidget, object);
+        if (c.gtk_widget_get_root(widget) == u.cast(c.GtkRoot, self.window) and c.gtk_widget_is_visible(widget) != 0 and c.gtk_widget_is_sensitive(widget) != 0) {
+            if (c.gtk_widget_grab_focus(widget) != 0) return;
+        }
+    }
+    if (self.active()) |d| _ = c.gtk_widget_grab_focus(self.viewFor(d).widget);
 }
 fn onKey(_: ?*c.GtkEventControllerKey, key: c_uint, _: c_uint, state: c.GdkModifierType, data: ?*anyopaque) callconv(.c) c_int {
     const self = u.cast(App, data.?);
@@ -1404,7 +1597,11 @@ fn onKey(_: ?*c.GtkEventControllerKey, key: c_uint, _: c_uint, state: c.GdkModif
         if (self.active()) |d| self.requestSuggestions(d);
         return 1;
     }
-    if (self.dialog != null) return 0;
+    if (self.dialog != null or self.palette != null) return 0;
+    if (commands.fromKey(key, state)) |command| {
+        self.execute(command);
+        return 1;
+    }
     if (key == c.GDK_KEY_Escape) {
         if (self.popover != null) {
             self.hidePopover();
@@ -1416,24 +1613,11 @@ fn onKey(_: ?*c.GtkEventControllerKey, key: c_uint, _: c_uint, state: c.GdkModif
     }
     if (ctrl) {
         switch (key) {
-            c.GDK_KEY_n => {
-                _ = self.newDocument();
-            },
-            c.GDK_KEY_o => self.chooseOpen(),
-            c.GDK_KEY_s, c.GDK_KEY_S => {
-                if (self.active()) |d| self.save(d, shift, false);
-            },
-            c.GDK_KEY_w => {
-                if (self.active()) |d| self.closeDocument(d);
-            },
-            c.GDK_KEY_q => self.quit(),
-            c.GDK_KEY_f, c.GDK_KEY_h => self.showSearch(true),
-            c.GDK_KEY_g => self.gotoLine(),
             c.GDK_KEY_Tab, c.GDK_KEY_ISO_Left_Tab => {
                 const current = c.gtk_notebook_get_current_page(u.cast(c.GtkNotebook, self.notebook));
                 const count = c.gtk_notebook_get_n_pages(u.cast(c.GtkNotebook, self.notebook));
                 if (count > 0) c.gtk_notebook_set_current_page(u.cast(c.GtkNotebook, self.notebook), @mod(current + if (shift) @as(c_int, -1) else 1, count));
-                if (self.active()) |d| _ = c.gtk_widget_grab_focus(d.view);
+                if (self.active()) |d| _ = c.gtk_widget_grab_focus(self.viewFor(d).widget);
             },
             c.GDK_KEY_plus, c.GDK_KEY_equal, c.GDK_KEY_minus, c.GDK_KEY_0 => {
                 self.settings.font = if (key == c.GDK_KEY_0) 14 else std.math.clamp(self.settings.font + if (key == c.GDK_KEY_minus) @as(c_int, -1) else 1, 8, 32);
@@ -1442,13 +1626,14 @@ fn onKey(_: ?*c.GtkEventControllerKey, key: c_uint, _: c_uint, state: c.GdkModif
             },
             c.GDK_KEY_z, c.GDK_KEY_Z, c.GDK_KEY_y => {
                 if (self.active()) |d| {
-                    if (c.gtk_window_get_focus(u.cast(c.GtkWindow, self.window)) != d.view) return 0;
+                    if (d.loading or d.pending != null) return 1;
+                    if (c.gtk_window_get_focus(u.cast(c.GtkWindow, self.window)) != self.viewFor(d).widget) return 0;
                     if (shift or key == c.GDK_KEY_y) {
                         if (c.gtk_text_buffer_get_can_redo(d.buffer) != 0) c.gtk_text_buffer_redo(d.buffer);
                     } else if (c.gtk_text_buffer_get_can_undo(d.buffer) != 0) c.gtk_text_buffer_undo(d.buffer);
                 }
             },
-            c.GDK_KEY_comma => self.preferences(),
+
             else => return 0,
         }
         return 1;
@@ -1457,10 +1642,7 @@ fn onKey(_: ?*c.GtkEventControllerKey, key: c_uint, _: c_uint, state: c.GdkModif
         self.findMatch(shift);
         return 1;
     }
-    if (key == c.GDK_KEY_F10 and shift) {
-        if (self.active()) |d| self.requestSuggestions(d);
-        return 1;
-    }
+
     return 0;
 }
 fn testKeys(self: *App, widget: W) void {
@@ -1501,7 +1683,34 @@ fn testCommand(self: *App) void {
             if (doc.cancellable) |cancel| c.g_cancellable_cancel(cancel);
         }
     } else if (std.mem.eql(u8, action, "open")) {
-        if (value != null) self.openPath(std.mem.span(value));
+        if (value != null) self.openExisting(std.mem.span(value));
+    } else if (std.mem.eql(u8, action, "reload")) {
+        self.execute(.reload);
+    } else if (std.mem.eql(u8, action, "reload-race")) {
+        if (d) |doc| {
+            self.load(doc, true);
+            c.gtk_text_buffer_insert_at_cursor(doc.buffer, " plus", 5);
+        }
+    } else if (std.mem.eql(u8, action, "edit-pending-load")) {
+        if (d) |doc| {
+            if (doc.pending != null) c.gtk_text_buffer_insert_at_cursor(doc.buffer, " plus", 5);
+        }
+    } else if (std.mem.eql(u8, action, "watch-close")) {
+        if (d) |doc| {
+            self.queryDisk(doc);
+            self.queryDisk(doc);
+            self.queryDisk(doc);
+            std.debug.assert(doc.watch_query != null and doc.watch_pending);
+            self.closeDocument(doc);
+        }
+    } else if (std.mem.eql(u8, action, "watch-save-as")) {
+        if (d) |doc| {
+            if (value != null) {
+                self.queryDisk(doc);
+                std.debug.assert(doc.watch_query != null);
+                self.saveTo(doc, std.mem.span(value), false, true);
+            }
+        }
     } else if (std.mem.eql(u8, action, "correct")) {
         if (self.popover) |pop| {
             const box = c.gtk_popover_get_child(u.cast(c.GtkPopover, pop));

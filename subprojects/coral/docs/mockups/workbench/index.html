@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark light">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; font-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>Coral — Workbench prototype</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="mockup.js" defer></script>
+</head>
+<body>
+  <div class="workbench" id="workbench">
+    <header class="titlebar">
+      <span class="brand" aria-label="Coral">c<span class="brand-dot">.</span></span>
+      <button id="workspace-button" class="workspace-button" title="Switch workspace"><span id="workspace-name">Coral</span><span class="muted">⌄</span></button>
+      <span class="title-divider"></span>
+      <button id="command-button" class="command-button" title="Command palette (Ctrl/⌘+Shift+P)"><span aria-hidden="true">⌕</span><span>Search files and commands…</span><kbd>Ctrl K</kbd></button>
+      <span class="simulation-badge">SIMULATED</span>
+      <div class="title-actions">
+        <button id="sidebar-toggle" class="icon-button" aria-label="Toggle sidebar" aria-pressed="true" title="Sidebar (Ctrl/⌘+B)">▥</button>
+        <button id="panel-toggle" class="icon-button" aria-label="Toggle bottom panel" aria-pressed="true" title="Bottom panel (Ctrl/⌘+J)">▤</button>
+        <button id="agent-toggle" class="icon-button" aria-label="Toggle agent dock" aria-pressed="true" title="Agent dock">✧</button>
+        <button id="theme-toggle" class="icon-button" aria-label="Switch to light theme" title="Toggle theme">◐</button>
+      </div>
+    </header>
+
+    <nav class="activity-rail" aria-label="Workbench views">
+      <button class="activity active" data-view="explorer" aria-label="Explorer" aria-pressed="true" title="Explorer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3h9l3 3v14H8zM4 6v15M14 3v5h6"/></svg></button>
+      <button class="activity" data-view="search" aria-label="Search workspace" aria-pressed="false" title="Search (Ctrl/⌘+Shift+F)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="10" r="6"/><path d="m15 15 6 6"/></svg></button>
+      <button class="activity" data-view="git" aria-label="Source control" aria-pressed="false" title="Source control"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="7" cy="5" r="2"/><circle cx="7" cy="19" r="2"/><circle cx="17" cy="6" r="2"/><path d="M7 7v10m10-9c0 6-10 3-10 8"/></svg><span id="git-badge" class="rail-badge">2</span></button>
+      <button class="activity" id="run-button" aria-label="Run fixture checks" title="Run fixture checks"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 4 14 8-14 8z"/></svg></button>
+      <div class="rail-spacer"></div>
+      <button class="activity" id="help-button" aria-label="Prototype help" title="Prototype help">?</button>
+    </nav>
+
+    <aside class="sidebar" id="sidebar" aria-label="Workspace sidebar">
+      <header class="pane-header"><h2 id="sidebar-title">Explorer</h2><span class="header-actions"><button id="add-root" class="icon-button" aria-label="Add sample workspace root" title="Add sample root">＋</button><button id="sidebar-close" class="icon-button drawer-close" aria-label="Close sidebar">×</button></span></header>
+      <section id="explorer-view">
+        <div class="sidebar-caption"><span>WORKSPACE</span><span id="root-count">2 roots</span></div>
+        <div id="file-tree" class="file-tree"></div>
+        <div class="sidebar-note"><span class="tiny-dot"></span> All roots are memory fixtures.<br><span>No disk access. Reload to reset.</span></div>
+      </section>
+      <section id="search-view" hidden>
+        <div class="sidebar-padding"><label class="sr-only" for="search-input">Search workspace text</label><input id="search-input" type="search" placeholder="Search across roots…" autocomplete="off"><p class="hint">Literal, case-insensitive · live buffers</p><div id="search-summary" class="muted"></div></div>
+        <div id="search-results"></div>
+      </section>
+      <section id="git-view" hidden>
+        <div class="sidebar-padding git-compose"><div class="git-context"><span id="git-branch-label">feature/workbench</span><span class="mini-badge">fixture</span></div><label class="sr-only" for="commit-message">Simulated commit message</label><input id="commit-message" placeholder="Commit message" maxlength="180" autocomplete="off"><button id="commit-button" class="primary">Commit staged only</button><p class="hint" id="staged-summary">Only the index is committed. Buffers stay intact.</p></div>
+        <div id="git-files"></div>
+        <div id="commit-history" class="commit-history"></div>
+      </section>
+    </aside>
+
+    <main class="main-area" id="main-area">
+      <div class="tabs-row"><div id="editor-tabs" class="editor-tabs" aria-label="Open files"></div><button id="quick-open" class="icon-button" aria-label="Quick open file" title="Quick open (Ctrl/⌘+P)">＋</button></div>
+      <div class="breadcrumbs"><span id="breadcrumb"></span><span class="editor-mode"><span class="tiny-dot"></span><span id="language-label">Zig</span><span class="mini-badge">LSP fixture</span></span></div>
+      <section id="code-view" class="code-view" aria-label="Code editor">
+        <div id="line-numbers" class="line-numbers" aria-hidden="true"></div>
+        <div class="code-stack"><pre id="highlight" aria-hidden="true"></pre><textarea id="editor" aria-label="File contents" wrap="off" spellcheck="false" autocapitalize="off" autocomplete="off" maxlength="30000"></textarea></div>
+      </section>
+      <section id="diff-view" class="diff-view" aria-label="Git diff" hidden>
+        <header class="diff-header"><div><strong id="diff-title"></strong><p id="diff-subtitle" class="hint"></p></div><button id="return-editor" class="quiet-button">Back to editor</button></header>
+        <div id="diff-content"></div>
+      </section>
+      <footer class="editor-footer"><span id="buffer-status">Saved in preview</span><div><button id="code-action" class="text-button">⌁ Code action</button><button id="save-button" class="text-button" title="Save in memory (Ctrl/⌘+S)">Save preview</button></div></footer>
+      <section id="bottom-panel" class="bottom-panel" aria-label="Bottom panel">
+        <header class="panel-header"><div class="panel-tabs" role="tablist" aria-label="Bottom panel views"><button id="problems-tab" role="tab" aria-selected="true" aria-controls="problems-content" tabindex="0">Problems <span id="problem-count" class="count">1</span></button><button id="terminal-tab" role="tab" aria-selected="false" aria-controls="terminal-content" tabindex="-1">Terminal <span class="mini-badge">simulated</span></button></div><button id="panel-close" class="icon-button" aria-label="Close bottom panel">×</button></header>
+        <div id="problems-content" role="tabpanel" aria-labelledby="problems-tab"><div id="problems-list"></div><div class="panel-footnote">Deterministic diagnostics · not a running language server</div></div>
+        <div id="terminal-content" role="tabpanel" aria-labelledby="terminal-tab" hidden><div id="terminal-output" class="terminal-output" role="log" aria-label="Simulated terminal output"></div><form id="terminal-form"><label for="terminal-input" class="terminal-prompt">coral ›</label><input id="terminal-input" placeholder="help, clear, zig build, git status" autocomplete="off" spellcheck="false"><button class="text-button" type="submit">Run fixture</button></form></div>
+      </section>
+    </main>
+
+    <aside class="agent-dock" id="agent-dock" aria-label="Agent dock">
+      <header class="pane-header"><h2><span class="coral">✧</span> Agent</h2><span class="header-actions"><button id="thread-history" class="icon-button" aria-label="Thread history" title="Thread history">◷</button><button id="new-thread" class="icon-button" aria-label="New agent thread" title="New thread">＋</button><button id="agent-close" class="icon-button" aria-label="Close agent dock">×</button></span></header>
+      <div class="agent-thread-heading"><span id="thread-title">A careful first pass</span><span class="mini-badge">offline fixture</span></div>
+      <div id="agent-messages" class="agent-messages" aria-live="polite" aria-relevant="additions text"></div>
+      <div class="agent-composer">
+        <div class="context-chip"><span class="tiny-dot"></span><span id="agent-context">main.zig</span><span>approval required</span></div>
+        <form id="agent-form"><label class="sr-only" for="agent-prompt">Agent prompt</label><textarea id="agent-prompt" rows="3" maxlength="2000" placeholder="Fix the diagnostic, or propose a small change…"></textarea><div class="agent-options"><label class="sr-only" for="agent-model">Simulated model</label><select id="agent-model"><option>Coral Local · fixture</option><option>Reasoning · fixture</option></select><label class="sr-only" for="agent-profile">Agent profile</label><select id="agent-profile"><option value="edit">Edit</option><option value="ask">Ask</option></select><button id="agent-send" class="send-button" type="submit" aria-label="Send agent prompt">↑</button></div></form>
+        <p class="privacy-note">No provider. No network. Nothing leaves this page.</p>
+      </div>
+    </aside>
+
+    <footer class="statusbar"><div><button id="branch-button" title="Switch simulated branch">⑂ <span id="branch-name">feature/workbench</span></button><button id="status-problems" aria-label="Show problems"><span id="status-diagnostics">⊗ 1　△ 0</span></button><span class="status-preview">Memory workspace</span></div><div><span id="cursor-position">Ln 1, Col 1</span><span class="status-encoding">UTF-8 · LF</span><button id="lsp-status" title="Language server simulation info"><span class="tiny-dot"></span> LSP fixture</button><button id="status-agent" aria-label="Open agent dock">✧ Agent</button></div></footer>
+  </div>
+
+  <dialog id="picker-dialog" class="picker-dialog" aria-labelledby="picker-title"><header><h2 id="picker-title">Quick open</h2><button class="icon-button" data-close="picker-dialog" aria-label="Close picker">×</button></header><label class="sr-only" for="picker-input">Filter options</label><input id="picker-input" autocomplete="off" placeholder="Type to filter…" role="combobox" aria-expanded="true" aria-autocomplete="list" aria-controls="picker-results"><div id="picker-results" role="listbox" aria-label="Options"></div><footer>↑ ↓ navigate · ↵ choose · esc close</footer></dialog>
+  <dialog id="notice-dialog" class="notice-dialog" aria-labelledby="notice-title"><header><h2 id="notice-title">Prototype notes</h2><button class="icon-button" data-close="notice-dialog" aria-label="Close notice">×</button></header><div id="notice-body"></div><button class="primary" data-close="notice-dialog">Got it</button></dialog>
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+</body>
+</html>

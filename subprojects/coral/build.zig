@@ -89,6 +89,13 @@ pub fn build(b: *std.Build) void {
     integration.addArtifactArg(ie);
     integration.addPassthruArgs();
     b.step("integration", "Run native Coral workflows in an isolated Wayland session").dependOn(&integration.step);
+    const wm = createModule(b, .{ .root_source_file = b.path("src/widget_tests.zig"), .target = target, .optimize = optimize, .link_libc = true });
+    for ([_][]const u8{ "gtk4", "gtksourceview-5", "enchant-2" }) |lib| wm.linkSystemLibrary(lib, .{ .use_pkg_config = .yes });
+    const widget_tests = b.addTest(.{ .root_module = wm });
+    const widgets = b.addSystemCommand(&.{ "python3", "tests/widgets.py", "--binary" });
+    widgets.addArtifactArg(widget_tests);
+    widgets.addPassthruArgs();
+    b.step("widgets", "Test editor views and palette lifetimes in a private Wayland session").dependOn(&widgets.step);
 }
 
 fn previewModule(b: *std.Build, bindings: *std.Build.Dependency, target: std.Build.ResolvedTarget, optimize: std.builtin.OptimizeMode, root: std.Build.LazyPath, options: *std.Build.Module, diagnostics: *std.Build.Module) *std.Build.Module {
