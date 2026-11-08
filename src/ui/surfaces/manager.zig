@@ -239,6 +239,7 @@ pub const Manager = struct {
         self.layout = try Layout.init(self.display, self, layoutChanged);
         self.layout.?.start();
         self.index.start();
+        @import("../../desktop/steam_library.zig").startAsync(self.app.as(gio.Application));
         self.desktop_directory = try DesktopDirectory.Store.create(self.app.as(gio.Application));
         self.desktop_directory.?.context = self;
         self.desktop_directory.?.changed = desktopChanged;

@@ -153,6 +153,7 @@ pub const events: []const Event = &.{
     .{ .name = "settings-window-created", .scopes = &.{.settings} },
     .{ .name = "shortcut-record-ended", .scopes = &.{.desktop} },
     .{ .name = "startup-failed", .scopes = &.{.pearl} },
+    .{ .name = "steam-library-sync", .scopes = &.{.desktop} },
     .{ .name = "stopped", .scopes = &.{.pearl} },
     .{ .name = "stopping", .scopes = &.{.pearl} },
     .{ .name = "surface-error", .scopes = &.{.ui} },

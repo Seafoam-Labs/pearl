@@ -170,7 +170,7 @@ msgstr ""
 msgid "Aa     +1"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:863
+#: src/ui/surfaces/manager.zig:864
 msgid "About {0} h {1} min left"
 msgstr ""
 
@@ -846,7 +846,7 @@ msgstr ""
 msgid "Battery service unavailable"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:853
+#: src/ui/surfaces/manager.zig:854
 msgid "Battery very low"
 msgstr ""
 
@@ -1202,7 +1202,7 @@ msgctxt "aqueous.input.repeat_rate.description"
 msgid "Characters per second; zero disables repeat."
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:870
+#: src/ui/surfaces/manager.zig:871
 msgid "Charge is running low."
 msgstr ""
 
@@ -1597,7 +1597,7 @@ msgstr ""
 msgid "Connect and manage your wireless devices."
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:866
+#: src/ui/surfaces/manager.zig:867
 msgid "Connect power now to avoid losing unsaved work."
 msgstr ""
 
@@ -1802,7 +1802,7 @@ msgstr ""
 msgid "Critical"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:854
+#: src/ui/surfaces/manager.zig:855
 msgid "Critical battery level"
 msgstr ""
 
@@ -1928,7 +1928,7 @@ msgstr ""
 msgid "Cycle windows requires updated Aqueous"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:1580
+#: src/ui/surfaces/manager.zig:1581
 msgid "Cycle →"
 msgstr ""
 
@@ -3356,7 +3356,7 @@ msgstr ""
 msgid "Layout behavior"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:2692
+#: src/ui/surfaces/manager.zig:2693
 msgid "Layout change unavailable"
 msgstr ""
 
@@ -3588,7 +3588,7 @@ msgstr ""
 msgid "Low"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:852
+#: src/ui/surfaces/manager.zig:853
 msgid "Low battery"
 msgstr ""
 
@@ -4583,7 +4583,7 @@ msgstr ""
 msgid "Pause automatic idle"
 msgstr ""
 
-#: src/core/application.zig:179 src/ui/surfaces/manager.zig:1375
+#: src/core/application.zig:179 src/ui/surfaces/manager.zig:1376
 msgid "Pearl"
 msgstr ""
 
@@ -4968,7 +4968,7 @@ msgstr ""
 msgid "Preview only · committed appearance is unchanged. To select a package, choose Use theme, then Apply & save."
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:1579
+#: src/ui/surfaces/manager.zig:1580
 msgid "Previous"
 msgstr ""
 
@@ -6982,11 +6982,11 @@ msgstr ""
 msgid "The default profiles could not be restored."
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:1349
+#: src/ui/surfaces/manager.zig:1350
 msgid "The desktop action could not be completed."
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:1345
+#: src/ui/surfaces/manager.zig:1346
 msgid "The desktop action could not be confirmed."
 msgstr ""
 
@@ -7854,7 +7854,7 @@ msgstr ""
 msgid "Working…"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:1661
+#: src/ui/surfaces/manager.zig:1662
 msgid "Workspace"
 msgstr ""
 
@@ -9331,7 +9331,7 @@ msgstr ""
 msgid "{0} with its own defaults"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:869
+#: src/ui/surfaces/manager.zig:870
 msgid "{0} {1}"
 msgstr ""
 
@@ -9343,7 +9343,7 @@ msgstr ""
 msgid "{0} {1}{2}{3}"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:874
+#: src/ui/surfaces/manager.zig:875
 msgid "{0} · {1}%"
 msgstr ""
 
@@ -9351,11 +9351,11 @@ msgstr ""
 msgid "{0} — {1} {2}, all workspaces{3}{4}"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:861
+#: src/ui/surfaces/manager.zig:862
 msgid "{0}% charge remaining"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:861
+#: src/ui/surfaces/manager.zig:862
 msgid "{0}% remaining · about {1} h {2} min left"
 msgstr ""
 
