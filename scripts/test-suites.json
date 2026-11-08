@@ -647,6 +647,27 @@
     "options": []
   },
   {
+    "id": "test-steam-library",
+    "description": "Verify Steam library scanning, shortcut generation and stale-entry pruning",
+    "groups": [
+      "fast"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-steam-library"
+    ],
+    "capabilities": [
+      "zig",
+      "glib"
+    ],
+    "fixture": null,
+    "output": "none",
+    "timeout": 900,
+    "sources": [],
+    "args": [],
+    "options": []
+  },
+  {
     "id": "test",
     "description": "Run model and Unicode policy tests without GTK or a compositor",
     "groups": [
