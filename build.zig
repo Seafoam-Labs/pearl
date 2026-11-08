@@ -463,10 +463,17 @@ pub fn build(b: *std.Build) void {
     catalog_watch_module.linkSystemLibrary("gio-2.0", .{ .use_pkg_config = .yes });
     const catalog_watch = b.addRunArtifact(b.addTest(.{ .root_module = catalog_watch_module }));
     b.step("test-catalog-watch", "Verify the scheduler catalog is noticed when it or its directory appears later").dependOn(&catalog_watch.step);
+    // Steam library scanning against private temporary directories, no session needed.
+    const steam_library_module = createModule(b, .{ .root_source_file = b.path("src/desktop/steam_library.zig"), .target = target, .optimize = optimize, .link_libc = true });
+    for ([_][]const u8{ "gio2", "glib2", "gobject2" }) |name| steam_library_module.addImport(name, bindings.module(name));
+    steam_library_module.linkSystemLibrary("gio-2.0", .{ .use_pkg_config = .yes });
+    const steam_library_tests = b.addRunArtifact(b.addTest(.{ .root_module = steam_library_module }));
+    b.step("test-steam-library", "Verify Steam library scanning, shortcut generation and stale-entry pruning").dependOn(&steam_library_tests.step);
     const test_step = b.step("test", "Run model and Unicode policy tests without GTK or a compositor");
     test_step.dependOn(&b.addRunArtifact(pure).step);
     test_step.dependOn(&filter_tests.step);
     test_step.dependOn(&catalog_watch.step);
+    test_step.dependOn(&steam_library_tests.step);
     const i18n_tests = b.addSystemCommand(&.{ b.graph.zig_exe, "build", "--build-file", "translations/build.zig", "test", "check-templates" });
     i18n_tests.setCwd(b.path("."));
     i18n_tests.has_side_effects = true;
