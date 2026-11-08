@@ -1239,6 +1239,7 @@ pub const Manager = struct {
                 const vertical = s.edge == .left or s.edge == .right;
                 bar.geometry(vertical, if (vertical) bounds.height else bounds.width);
                 try bar.setBackgroundOpacity(self.preferences.prefs().forOutput(o.connector).background_opacity, self.preferences.barBackgroundColor(s.panel));
+                bar.setThemeVariant(self.preferences.prefs().theme.variant == .dark);
                 bar.update();
             };
             const gate = self.lifecycle.gate;
@@ -1463,6 +1464,7 @@ pub const Manager = struct {
                 inline for ([_]fn (*gtk.Widget, c_int) callconv(.c) void{ gtk.Widget.setMarginStart, gtk.Widget.setMarginEnd, gtk.Widget.setMarginTop, gtk.Widget.setMarginBottom }) |set| set(panel_widget, if (bar_pref.attached) 0 else 4);
                 s.bar = try Bar.Bar.create(panel, self.client, output.id, s, barAction, &self.audio, &self.power, &self.network, &self.bluetooth, &self.session_services, self.plugins, &self.tasks.snapshot, &self.index, &self.scheduling, &self.weather);
                 s.bar.?.setDockDeps(.{ .preferences = &self.preferences, .tasks = &self.tasks, .context = self, .changed = appsChanged, .choose_launcher = chooseLauncher });
+                s.bar.?.setThemeVariant(self.preferences.prefs().theme.variant == .dark);
                 window.setChild(panel_widget);
                 s.edge = output.reservations.bar_edge;
                 sizeEdge(s, s.edge, output.reservations.bar_size);
@@ -2631,6 +2633,20 @@ fn barAction(context: *anyopaque, event: Bar.Event) void {
         .overview => {
             self.enqueueAction(.{ .overview_toggle = .{ .output = s.output.id } });
             self.hidePopup();
+        },
+        .toggle_theme => {
+            // Same lever the Settings "Color variant" dropdown edits: flip the
+            // theme variant and apply it live through the preferences service.
+            var arena = std.heap.ArenaAllocator.init(a);
+            defer arena.deinit();
+            const alloc = arena.allocator();
+            var p = self.preferences.prefs();
+            p.theme.variant = if (p.theme.variant == .dark) .light else .dark;
+            const json = std.json.Stringify.valueAlloc(alloc, p, .{}) catch |err| {
+                log.warn("event=toggle-theme result={s}", .{@errorName(err)});
+                return;
+            };
+            self.preferences.apply(json, self.preferences.revision) catch |err| log.warn("event=toggle-theme result={s}", .{@errorName(err)});
         },
     }
 }

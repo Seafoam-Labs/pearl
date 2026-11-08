@@ -29,6 +29,7 @@ pub fn metadata(item: policy.Item) Metadata {
         .wallpaper => .{ .name = "Wallpaper", .description = "Browse a folder and set the wallpaper", .icon = "pearl-image-symbolic" },
         .scheduler => .{ .name = "CPU Scheduler", .description = "CPU scheduler profile (sched_ext)", .icon = "pearl-scheduler-symbolic" },
         .weather => .{ .name = "Weather", .description = "Current temperature and conditions for your location", .icon = "pearl-weather-clear-symbolic" },
+        .theme => .{ .name = "Theme", .description = "Switch between the light and dark appearance", .icon = "pearl-weather-clear-night-symbolic" },
     };
 }
 pub fn groupLabel(group: Group, edge: prefs.Edge) [:0]const u8 {
