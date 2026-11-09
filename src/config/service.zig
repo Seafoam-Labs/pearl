@@ -579,7 +579,7 @@ pub const Service = struct {
         }
         j.native_name = "";
         const good = io.read(alloc, j.service.good_path, model.max_bytes, j.cancel) catch null;
-        j.prefs = if (good) |file| model.parse(alloc, if (file.missing) "{}" else file.bytes) catch .{} else .{};
+        j.prefs = if (good) |file| model.parseRecovering(alloc, if (file.missing) "{}" else file.bytes) catch .{} else .{};
         j.recovered = true;
         j.warning = failure;
         prepareAppearance(j) catch {
@@ -614,12 +614,14 @@ pub const Service = struct {
             if (j.disk == null or !std.mem.eql(u8, &j.disk.?.hash, &j.expected)) return error.Conflict;
             j.prefs = try model.parse(alloc, j.requested.?);
         } else {
-            j.prefs = (if (j.disk) |disk| model.parse(alloc, if (disk.missing) "{}" else disk.bytes) else error.InvalidFile) catch |err| blk: {
+            // Recovering parse: a valid-JSON document never resets the whole
+            // installation, only unreadable fields fall back to defaults.
+            j.prefs = (if (j.disk) |disk| model.parseRecovering(alloc, if (disk.missing) "{}" else disk.bytes) else error.InvalidFile) catch |err| blk: {
                 j.warning = err;
                 if (self.appearance != 0) return err;
                 const good = try io.read(alloc, self.good_path, model.max_bytes, j.cancel);
                 j.recovered = true;
-                break :blk try model.parse(alloc, if (good.missing) "{}" else good.bytes);
+                break :blk try model.parseRecovering(alloc, if (good.missing) "{}" else good.bytes);
             };
         }
         if (j.requested == null and !j.recovered and self.shell_appearance and self.appearance == 0) {
@@ -631,7 +633,7 @@ pub const Service = struct {
                 } else {
                     // A missing main file in an established installation is
                     // recovery, not a new installation or a reset to defaults.
-                    j.prefs = try model.parse(alloc, good.bytes);
+                    j.prefs = try model.parseRecovering(alloc, good.bytes);
                     j.recovered = true;
                 }
             };

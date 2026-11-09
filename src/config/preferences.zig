@@ -306,6 +306,94 @@ test "assistant runtime migration preserves existing CPU installations" {
     try std.testing.expect(old.assistant.enabled);
     try std.testing.expectEqual(.system, (try parse(a, "{\"assistant\":{\"runtime\":{\"source\":\"system\"}}}")).assistant.runtime.source);
 }
+
+fn tolerantParse(a: std.mem.Allocator, dom: std.json.Value) !Preferences {
+    const encoded = try std.json.Stringify.valueAlloc(a, dom, .{});
+    var p = try std.json.parseFromSliceLeaky(Preferences, a, encoded, .{ .allocate = .alloc_always, .ignore_unknown_fields = true });
+    if (dom.object.get("assistant")) |assistant| {
+        if (assistant == .object and !assistant.object.contains("runtime")) p.assistant.runtime.source = .packaged;
+    }
+    try p.validate();
+    return p;
+}
+
+/// Best-effort load of a stored user document. Everything that parses is
+/// kept: fields added by other versions are ignored, fields missing from the
+/// document take defaults, and only the smallest set of top-level fields that
+/// cannot be read or validated falls back to defaults. Structurally broken
+/// JSON still returns an error so callers keep their last-good behavior.
+pub fn parseRecovering(a: std.mem.Allocator, bytes: []const u8) !Preferences {
+    try boundedJson(bytes, max_bytes, 8);
+    var dom = try std.json.parseFromSliceLeaky(std.json.Value, a, bytes, .{});
+    if (dom != .object) return error.InvalidConfig;
+    const version: std.json.Value = dom.object.get("version") orelse .{ .integer = 1 };
+    if (version != .integer or version.integer < 0) return error.UnsupportedVersion;
+    if (version.integer == 0) {
+        const Legacy = struct { version: u32, dark: bool = true, wallpaper: []const u8 = "" };
+        const old = std.json.parseFromSliceLeaky(Legacy, a, bytes, .{ .allocate = .alloc_always, .ignore_unknown_fields = true }) catch return .{};
+        const p: Preferences = .{ .theme = .{ .variant = if (old.dark) .dark else .light }, .wallpaper = .{ .path = old.wallpaper, .mode = if (old.wallpaper.len == 0) .gradient else .cover } };
+        p.validate() catch return .{};
+        return p;
+    }
+    // Documents written by other versions load against the current schema.
+    if (version.integer != 1) try dom.object.put(a, "version", .{ .integer = 1 });
+    if (tolerantParse(a, dom)) |p| return p else |_| {}
+    var keys = std.array_list.Managed([]const u8).init(a);
+    defer keys.deinit();
+    var it = dom.object.iterator();
+    while (it.next()) |entry| try keys.append(entry.key_ptr.*);
+    // Prefer dropping a single offending field and keeping every other.
+    for (keys.items) |key| {
+        const value = dom.object.get(key) orelse continue;
+        _ = dom.object.orderedRemove(key);
+        if (tolerantParse(a, dom)) |p| {
+            return p;
+        } else |_| {
+            try dom.object.put(a, key, value);
+        }
+    }
+    // Otherwise drop fields until the remainder parses and validates; the
+    // empty document always does, so this cannot fail.
+    for (keys.items) |key| {
+        _ = dom.object.orderedRemove(key);
+        if (tolerantParse(a, dom)) |p| return p else |_| {}
+    }
+    return .{};
+}
+test "recovering parse keeps readable fields and defaults only what is broken" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    // Unknown fields anywhere are ignored; the rest is kept and missing keys default.
+    const tolerant = try parseRecovering(a, "{\"oops\":true,\"version\":9,\"font_size\":18,\"theme\":{\"seed\":\"#123456\",\"future_field\":1},\"weather\":{\"provider\":\"openweathermap\",\"location\":\"Berlin\"}}");
+    try std.testing.expectEqual(@as(u8, 18), tolerant.font_size);
+    try std.testing.expectEqual(@as(u32, 1), tolerant.version);
+    try std.testing.expectEqualStrings("#123456", tolerant.theme.seed);
+    try std.testing.expectEqual(.dark, tolerant.theme.variant);
+    try std.testing.expectEqualStrings("Berlin", tolerant.weather.location);
+    try tolerant.validate();
+    // A field that cannot parse defaults on its own without touching the others.
+    const broken = try parseRecovering(a, "{\"font_size\":18,\"weather\":{\"latitude\":95},\"theme\":{\"variant\":\"light\"}}");
+    try std.testing.expectEqual(@as(u8, 18), broken.font_size);
+    try std.testing.expectEqual(.light, broken.theme.variant);
+    try std.testing.expectEqualStrings("New York", broken.weather.location);
+    // A validation conflict resets the smallest set of fields, not the document.
+    const conflict = try parseRecovering(a, "{\"font_size\":18,\"wallpaper\":{\"mode\":\"gradient\",\"path\":\"\",\"slideshow\":{\"enabled\":true,\"folder\":\"/p\",\"interval_seconds\":60}}}");
+    try std.testing.expectEqual(@as(u8, 18), conflict.font_size);
+    try std.testing.expectEqual(.gradient, conflict.wallpaper.mode);
+    try conflict.validate();
+    // Legacy documents still migrate, tolerating unknown keys.
+    const legacy = try parseRecovering(a, "{\"version\":0,\"dark\":false,\"extra\":\"x\"}");
+    try std.testing.expectEqual(.light, legacy.theme.variant);
+    // Structurally broken JSON is still an error for last-good handling.
+    if (parseRecovering(a, "[1,2")) |_| return error.BrokenJsonAccepted else |_| {}
+    try std.testing.expectError(error.InvalidConfig, parseRecovering(a, "\"text\""));
+    // Documents that satisfy the strict parser roundtrip identically.
+    const strict = try parse(a, "{\"font_size\":20,\"density\":\"compact\",\"night_light\":{\"enabled\":true,\"schedule\":\"custom\",\"start_minute\":1200,\"end_minute\":420}}");
+    const encoded = try std.json.Stringify.valueAlloc(a, strict, .{});
+    try std.testing.expectEqualDeep(strict, try parseRecovering(a, encoded));
+    try std.testing.expectEqual(.packaged, (try parseRecovering(a, "{\"assistant\":{\"enabled\":true}}")).assistant.runtime.source);
+}
 pub fn boundedJson(bytes: []const u8, max: usize, max_depth: usize) !void {
     if (bytes.len > max or !std.unicode.utf8ValidateSlice(bytes)) return error.InvalidConfig;
     // Bound nesting before allocating a DOM (including unknown fields).
