@@ -898,7 +898,7 @@ fn loadPreferences() model.Preferences {
     defer a.free(pz);
     const disk = io.read(a, pz, 1024 * 1024, null) catch return .{};
     defer a.free(disk.bytes);
-    return model.parse(a, disk.bytes) catch .{};
+    return model.parseRecovering(a, disk.bytes) catch .{};
 }
 pub fn run(ready_fd: bool) !void {
     gtk.init();

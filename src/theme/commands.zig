@@ -100,7 +100,7 @@ fn runGuarded(a: std.mem.Allocator, request: Request, cancel: *gio.Cancellable, 
                 const preferences = @import("../config/preferences.zig");
                 const file = try io.read(a, try std.fmt.allocPrintSentinel(a, "{s}/preferences.json", .{root}, 0), preferences.max_bytes, cancel);
                 if (!file.missing) {
-                    const p = try preferences.parse(a, file.bytes);
+                    const p = try preferences.parseRecovering(a, file.bytes);
                     if (p.matugen.enabled and std.mem.eql(u8, snapshot.selection_key, try @import("theme_provider.zig").selectionKey(a, p))) {
                         try guard.begin(cancel);
                         defer guard.end();
