@@ -3,7 +3,7 @@
 A standalone Linux text editor written in **Zig 0.17.0 and GTK4**, with
 GtkSourceView editing and offline Enchant spell checking. Its native foundation
 includes independent editor groups, editable source excerpts and crash recovery,
-with Pearl appearance. An initial multi-root workspace browser is now available;
+with Pearl appearance. A bounded, virtualized multi-root workspace explorer is available;
 workspace search, LSP, Git and agent services remain later work.
 
 ![Native Coral editor](artifacts/native/editor-dark.png)
@@ -49,7 +49,7 @@ Options: `--workspace PATH`, `--folder PATH`, `--follow-pearl`, `--light`, `--da
 local filenames or local file URIs. Diagnostics share Pearl's log handler and
 land wherever stderr goes; see [logging](../../docs/LOGGING.md).
 
-## Workspaces — first M2 slice
+## Workspaces — M2 explorer preview
 
 Choose **Open Folder…** or **Open Workspace…** from the menu or command palette,
 or launch `coral --folder PATH` / `coral --workspace PATH`. A workspace file is
@@ -61,21 +61,30 @@ versioned JSON, for example:
   "roots": [
     {"name": "Frontend", "path": "./frontend"},
     {"name": "Backend", "path": "./backend"}
-  ]
+  ],
+  "exclude": ["build/", "**/*.tmp"]
 }
 ```
 
 Relative roots resolve beside the manifest. Root-qualified tabs distinguish
-identical filenames. The native browser reads direct children lazily and offers
-**Roots / Back / Rescan / Close workspace**. Switching roots preserves open edits.
-Unavailable roots are shown, never created.
+identical filenames. The virtualized expandable explorer reads children lazily,
+applies nested `.gitignore` and explicit excludes, and batches live updates for
+accessed directories. **Roots / Back / Rescan / Close workspace / Reset tree**
+provide navigation and recovery from capacity limits. Switching roots preserves
+open edits. Unavailable roots are shown, never created.
 
-This is a **restricted-only, bounded first slice**, not a completed explorer:
-500 entries per listing with visible truncation, no recursive indexing/search or
-ignore rules, and settings must be omitted or empty. Workspace content cannot
-launch tasks or grant trust. Recovery restores documents/layout but not workspace
-roots; reopen the manifest explicitly. See [workspace usage and remaining M2
-gates](docs/WORKBENCH_M2_WORKSPACES.md) for limits and security boundaries.
+**Load more** replaces the current 256-entry page window; pages are sorted
+individually, not globally. Storage is bounded to 64 directory states, eight
+resident pages and 1 MiB of page arenas. Native acceptance reached all 100,000
+files across 391 pages with bounded widgets/memory. Watch failures show a manual
+Rescan fallback; ignore-policy errors fail closed.
+
+This remains a **restricted-only M2 preview**, without quick-open, recursive
+indexing/search or complete project sessions. Settings must be omitted or empty;
+workspace content cannot launch tasks or grant trust. Recovery restores
+documents/layout but not workspace roots; reopen the manifest explicitly. See
+[workspace usage, measurements and remaining M2 gates](docs/WORKBENCH_M2_WORKSPACES.md)
+for exact bounds and security boundaries.
 
 ## Implemented
 
@@ -189,7 +198,9 @@ Run the complete M1 correctness suite (unit, widgets, native workflows, groups
 and crash recovery), or individual display-backed checks:
 
 ```sh
-zig build test-m2-slice test-m1 -Doptimize=safe -j1
+zig build test-m1 -Doptimize=safe -j1
+zig build test-m2-slice -Doptimize=safe -j1
+zig build test-m2-explorer -Doptimize=safe -j1
 zig build widgets -Doptimize=safe -- --aqueous-prefix /usr
 ```
 
@@ -202,7 +213,7 @@ and [mockup gallery](docs/mockups/README.md) remain design references. They do
 not replace the native test evidence.
 
 Multi-root workspace sessions, remote files, legacy encodings, grammar checking,
-project tooling and plugins are outside this first slice. The user accepted M0's
+project tooling and plugins are outside this preview. The user accepted M0's
 bounded-editor tradeoffs to proceed to M2. Full giant-line rendering remains
 unsupported and original input-to-paint targets remain unverified; acceptance
 does not change the recorded measurements.

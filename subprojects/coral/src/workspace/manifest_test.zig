@@ -154,9 +154,55 @@ test "manifest caps bytes and root count before unbounded collection allocation"
 
 fn allocationCase(allocator: std.mem.Allocator) !void {
     var parsed = try m.parse(allocator,
-        \\{"version":1,"roots":[{"name":"caf\u00e9","path":"../src"},{"path":"/tmp/other"}],"settings":{}}
+        \\{"version":1,"roots":[{"name":"caf\u00e9","path":"../src"},{"path":"/tmp/other"}],"settings":{},"exclude":["**/out/","*.tmp"]}
     );
     defer parsed.deinit();
+}
+
+test "manifest optional excludes are bounded owned and strictly typed" {
+    const input = try a.dupe(u8,
+        \\{"version":1,"roots":[],"exclude":["out/**","**/二/","literal\\\\ space"]}
+    );
+    defer a.free(input);
+    var parsed = try m.parse(a, input);
+    defer parsed.deinit();
+    @memset(input, 'x');
+    try std.testing.expectEqual(@as(usize, 3), parsed.exclude.len);
+    try std.testing.expectEqualStrings("out/**", parsed.exclude[0]);
+    try std.testing.expectEqualStrings("**/二/", parsed.exclude[1]);
+    for ([_][]const u8{
+        \\{"version":1,"roots":[],"exclude":null}
+        ,
+        \\{"version":1,"roots":[],"exclude":"out"}
+        ,
+        \\{"version":1,"roots":[],"exclude":[1]}
+        ,
+        \\{"version":1,"roots":[],"exclude":["!keep"]}
+        ,
+        \\{"version":1,"roots":[],"exclude":["../escape"]}
+        ,
+    }) |bytes| try std.testing.expectError(error.InvalidSchema, m.parse(a, bytes));
+    try std.testing.expectError(error.EmptyString, m.parse(a, "{\"version\":1,\"roots\":[],\"exclude\":[\"\"]}"));
+    try std.testing.expectError(error.DuplicateField, m.parse(a, "{\"version\":1,\"roots\":[],\"exclude\":[],\"excl\\u0075de\":[]}"));
+    const long: [m.limits.exclude_bytes + 1]u8 = @splat('x');
+    const oversized = try std.fmt.allocPrint(a, "{{\"version\":1,\"roots\":[],\"exclude\":[\"{s}\"]}}", .{long});
+    defer a.free(oversized);
+    try std.testing.expectError(error.TooLarge, m.parse(a, oversized));
+    var json: std.ArrayList(u8) = .empty;
+    defer json.deinit(a);
+    try json.appendSlice(a, "{\"version\":1,\"roots\":[],\"exclude\":[");
+    for (0..m.limits.excludes) |i| {
+        if (i != 0) try json.append(a, ',');
+        try json.appendSlice(a, "\"x\"");
+    }
+    const end = json.items.len;
+    try json.appendSlice(a, "]}");
+    var full = try m.parse(a, json.items);
+    defer full.deinit();
+    try std.testing.expectEqual(m.limits.excludes, full.exclude.len);
+    json.shrinkRetainingCapacity(end);
+    try json.appendSlice(a, ",\"overflow\"]}");
+    try std.testing.expectError(error.TooLarge, m.parse(a, json.items));
 }
 
 test "manifest cleans up every caller allocation failure" {

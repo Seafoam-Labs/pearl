@@ -55,13 +55,17 @@ test "folder and manifest data are owned and workspace/root identities never col
     const token = folder.scope.capture().?;
     const path = try f.path("project.coral-workspace");
     defer a.free(path);
-    const json = try a.dupe(u8, "{\"version\":1,\"roots\":[{\"name\":\"owned\",\"path\":\".\"}]}");
+    const json = try a.dupe(u8, "{\"version\":1,\"roots\":[{\"name\":\"owned\",\"path\":\".\"}],\"exclude\":[\"**/out/\",\"二/*.tmp\"]}");
     defer a.free(json);
     var other = try model.Model.fromManifestBytes(a, path, json);
     defer other.deinit();
     @memset(path, 'x');
     @memset(json, 'x');
     try std.testing.expectEqualStrings("owned", other.roots[0].display_name);
+    try std.testing.expectEqual(@as(usize, 0), folder.exclude.len);
+    try std.testing.expectEqual(@as(usize, 2), other.exclude.len);
+    try std.testing.expectEqualStrings("**/out/", other.exclude[0]);
+    try std.testing.expectEqualStrings("二/*.tmp", other.exclude[1]);
     try std.testing.expect(std.mem.endsWith(u8, other.manifest_path.?, "/project.coral-workspace"));
     try std.testing.expect(other.scope.id != folder.scope.id);
     try std.testing.expect(!other.scope.accepts(token));
@@ -302,7 +306,7 @@ test "model descriptor parser dedup and ownership allocation failures clean up" 
     try f.mkdir("root");
     try f.symlink("root", "alias");
     try f.write("workspace",
-        \\{"version":1,"roots":[{"name":"one","path":"root"},{"path":"alias"},{"path":"missing"}]}
+        \\{"version":1,"roots":[{"name":"one","path":"root"},{"path":"alias"},{"path":"missing"}],"exclude":["**/out/","二/*.tmp"]}
     );
     const p = try f.path("workspace");
     defer a.free(p);

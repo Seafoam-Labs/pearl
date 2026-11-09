@@ -98,6 +98,13 @@ pub fn build(b: *std.Build) void {
     const m2_slice = b.step("test-m2-slice", "Run model/browser unit tests and first M2 native workspace acceptance");
     m2_slice.dependOn(test_step);
     m2_slice.dependOn(&workspaces.step);
+    const explorer = b.addSystemCommand(&.{ "python3", "tests/explorer.py", "--binary" });
+    explorer.addArtifactArg(ie);
+    explorer.addPassthruArgs();
+    b.step("explorer", "Run 100k native virtualized explorer acceptance").dependOn(&explorer.step);
+    const m2_explorer = b.step("test-m2-explorer", "Run explorer unit and 100k native acceptance");
+    m2_explorer.dependOn(test_step);
+    m2_explorer.dependOn(&explorer.step);
     const m1 = b.step("test-m1", "Run unit, widget, native, group and recovery acceptance tests");
     m1.dependOn(test_step);
     m1.dependOn(&integration.step);
@@ -116,6 +123,7 @@ pub fn build(b: *std.Build) void {
     widgets.addPassthruArgs();
     b.step("widgets", "Test editor views and palette lifetimes in a private Wayland session").dependOn(&widgets.step);
     m1.dependOn(&widgets.step);
+    m2_explorer.dependOn(&widgets.step);
 
     const bm = createModule(b, .{ .root_source_file = b.path("src/benchmark_m0.zig"), .target = target, .optimize = optimize, .link_libc = true });
     for ([_][]const u8{ "gtk4", "gtksourceview-5", "enchant-2" }) |lib| bm.linkSystemLibrary(lib, .{ .use_pkg_config = .yes });

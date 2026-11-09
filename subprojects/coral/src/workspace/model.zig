@@ -43,12 +43,14 @@ pub const Model = struct {
     trust: Trust = .restricted,
     roots: []const Root,
     manifest_path: ?[]const u8,
+    /// Owned immutable final-hide patterns, applied independently to every root.
+    exclude: []const []const u8 = &.{},
 
     /// Native absolute folder path; missing/offline/non-directory targets are
     /// retained unavailable, not created. Input storage is never borrowed.
     pub fn fromFolder(allocator: std.mem.Allocator, path: []const u8) Error!Model {
         try fs.absolutePath(path);
-        return build(allocator, null, &.{.{ .path = path }});
+        return build(allocator, null, &.{.{ .path = path }}, &.{});
     }
 
     /// Read an existing regular manifest through a checked, nonblocking descriptor.
@@ -65,13 +67,15 @@ pub const Model = struct {
         if (path[path.len - 1] == '/') return error.InvalidSchema;
         var parsed = try manifest.parse(allocator, bytes);
         defer parsed.deinit();
-        return build(allocator, path, parsed.roots);
+        return build(allocator, path, parsed.roots, parsed.exclude);
     }
 
     pub fn deinit(self: *Model) void {
         self.scope.close();
         for (self.roots) |root| freeRoot(self.allocator, root);
         self.allocator.free(self.roots);
+        for (self.exclude) |pattern| self.allocator.free(pattern);
+        self.allocator.free(self.exclude);
         if (self.manifest_path) |path| self.allocator.free(path);
         self.* = undefined;
     }
@@ -113,7 +117,14 @@ pub const Model = struct {
     }
 };
 
-fn build(allocator: std.mem.Allocator, manifest_path: ?[]const u8, specs: []const manifest.Root) Error!Model {
+fn build(allocator: std.mem.Allocator, manifest_path: ?[]const u8, specs: []const manifest.Root, excludes: []const []const u8) Error!Model {
+    var owned_excludes: std.ArrayList([]const u8) = .empty;
+    errdefer {
+        for (owned_excludes.items) |pattern| allocator.free(pattern);
+        owned_excludes.deinit(allocator);
+    }
+    try owned_excludes.ensureTotalCapacity(allocator, excludes.len);
+    for (excludes) |pattern| owned_excludes.appendAssumeCapacity(try allocator.dupe(u8, pattern));
     var roots: std.ArrayList(Root) = .empty;
     errdefer {
         for (roots.items) |root| freeRoot(allocator, root);
@@ -143,8 +154,14 @@ fn build(allocator: std.mem.Allocator, manifest_path: ?[]const u8, specs: []cons
     }
     const owned_manifest = if (manifest_path) |path| try allocator.dupe(u8, path) else null;
     errdefer if (owned_manifest) |path| allocator.free(path);
+    const exclude = try owned_excludes.toOwnedSlice(allocator);
+    errdefer {
+        for (exclude) |pattern| allocator.free(pattern);
+        allocator.free(exclude);
+    }
     return .{
         .allocator = allocator,
+        .exclude = exclude,
         .scope = identity.Scope.init(),
         .roots = try roots.toOwnedSlice(allocator),
         .manifest_path = owned_manifest,

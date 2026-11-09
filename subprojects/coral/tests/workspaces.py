@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""First M2 native acceptance: restricted, bounded directory browser, not a full explorer.
+"""M2 native acceptance: restricted, paged virtualized workspace explorer.
 Uses a private Wayland session, the real chooser/palette, GTK row activation,
 real typing and the production GTask paths. No checked-in evidence is overwritten.
 """
@@ -257,18 +257,26 @@ def main():
         (left / 'stale.txt').unlink()
         (left / 'stale-real.txt').rename(left / 'stale.txt')
         (left / 'new-child.txt').write_text('rescan only')
-        assert not any(e['name'] == 'new-child.txt' for e in settled()['entries'])
+        wait_for(lambda: any(e['name'] == 'new-child.txt' for e in settled()['entries']))
         command('workspace-rescan')
         assert any(e['name'] == 'new-child.txt' for e in settled()['entries'])
         (left / 'new-child.txt').unlink()
-        passed('Replaced symlink entries are rejected at worker traversal; new children appear only after explicit Rescan')
+        passed('Replaced symlink entries remain blocked; live create and explicit Rescan both update children')
 
         command('open-folder', many)
         settled()
         state = activate(0)
-        assert state['truncated'] and len(state['entries']) == 500 and 'TRUNCATED at 500' in state['status'], state
-        session.run(['grim', output / 'bounded-truncation.png'])
-        passed('510-entry fixture visibly truncates at 500 direct entries; no recursive or 100k explorer claim')
+        assert not state['complete'] and len(state['entries']) == 256, state
+        names = [e['name'] for e in state['entries']]
+        while not state['complete']:
+            command('browser-more')
+            state = settled()
+            assert len(state['entries']) <= 256
+            names.extend(e['name'] for e in state['entries'])
+        assert len(names) == len(set(names)) == 510
+        assert set(names) == {f'entry-{i:04}.txt' for i in range(510)}
+        session.run(['grim', output / 'paged-explorer.png'])
+        passed('All 510 stable entries are reachable exactly once through bounded native page windows')
 
         command('workspace-race', manifest)
         state = settled()
@@ -360,7 +368,7 @@ def main():
         state = settled()
         assert state['relative'] == 'nested' and [e['name'] for e in state['entries']] == ['child.txt'], state
         assert state['request_bytes'] == 0
-        passed('64 delayed scans retain only 8 workers; over-budget navigation leaves the last accepted scan valid')
+        passed('64 distinct delayed scans retain only 8 workers; over-budget navigation leaves the last accepted scan valid')
 
         state, _ = burst('budget-files', many)
         assert state['pending'] == state['in_flight'] == 8 and state['error_name'] == 'RequestBudgetExceeded', state
@@ -427,15 +435,15 @@ def main():
         wait_for(lambda: not windows())
         passed('Window shutdown cancels pending model work and drains its application hold before App destruction')
         assert filesystem() == baseline
-    (output / 'results.json').write_text(json.dumps({'slice': 'first M2 bounded browser', 'checks': checks, 'limitations': [
-        '500 direct entries, no full tree, recursive scan, paging or 100k performance gate',
-        'Shared limit: 8 controller operations including one possible chooser, 128 KiB retained request paths including terminators; no secondary queue; last accepted request wins',
+    (output / 'results.json').write_text(json.dumps({'slice': 'M2 workspace compatibility with paged explorer', 'checks': checks, 'limitations': [
+        '256-entry windows; 64 directory states, 8 resident pages/1 MiB page arenas; explicit Load more reaches later windows',
+        'Shared limit: 8 controller operations including one possible chooser, 128 KiB retained request paths including terminators; no unbounded request queue; one coalesced reload flag per directory; last accepted model request wins',
         'Cancellation cannot interrupt blocked kernel I/O: cancelled workers keep their slots, bytes and holds until callbacks finish',
-        'Root availability is a model snapshot: reopen folder/workspace to refresh unavailable roots',
+        'Root availability field is the original model snapshot; live root row errors/entries reflect current availability',
         'Browser rejects symlinks; existing path-based document loader is not a race-proof sandbox',
         'No workspace-root recovery persistence, trusted mode, task execution or destructive filesystem actions'
     ]}, indent=2) + '\n')
-    print(f'Passed {len(checks)} first-M2 native check groups.', flush=True)
+    print(f'Passed {len(checks)} M2 workspace compatibility check groups.', flush=True)
 
 
 if __name__ == '__main__':

@@ -1,6 +1,6 @@
 # Coral workbench implementation status
 
-**M0 is accepted with the documented bounded-editor tradeoffs. M1 implementation and native correctness acceptance are complete. M2 is in progress: the first native multi-root workspace/browser slice is implemented and tested.**
+**M0 is accepted with the documented bounded-editor tradeoffs. M1 implementation and native correctness acceptance are complete. M2 is in progress: native multi-root workspaces and the paged/virtualized explorer increment are implemented and tested.**
 
 The user explicitly accepted the M0 tradeoffs and requested work on M2. This acceptance does not turn failed or unmeasured performance targets into passing measurements. This is not a full IDE or Zed parity release. M2 is partial; M3–M8 remain future milestones; M9 remains removed. The [interactive prototype](mockups/workbench/index.html) is a design fixture, not connected to native Git, LSP or agents.
 
@@ -21,20 +21,25 @@ The user explicitly accepted the M0 tradeoffs and requested work on M2. This acc
 
 **Recorded M0 acceptance:** the user stated, “i accept the trade off and begin work on m2.” Retain GtkSourceView with the visible syntax/long-line policy and bounded-excerpt fallback, accept the documented timing misses for this foundation, and defer real injected-input-to-paint qualification. Full giant-line rendering and paint targets have not passed; their evidence and limitations remain in the benchmark report. M0 is no longer blocked on these tradeoff decisions.
 
-## M2 first slice: implemented and integrated
+## M2 workspaces and explorer: implemented increments
 
 See [workspace usage and remaining gates](WORKBENCH_M2_WORKSPACES.md) for the schema and exact scope.
 
 - Native **Open Folder…** and **Open Workspace…** menu/palette actions, plus explicit `--folder PATH` / `--workspace PATH` CLI options. Existing bare-directory file arguments remain rejected.
 - Strict version-1 `.coral-workspace` manifests, up to 32 roots and 1 MiB of JSON. Relative roots resolve against the supplied manifest path's parent. Available canonical aliases deduplicate; colliding root names remain distinct through typed `RootId`s. Missing roots remain visible and are never created.
-- Root-qualified file tabs and a lazy, nonrecursive directory browser with **Roots / Back / Rescan / Close workspace**. Lists visibly truncate at 500 direct entries. This is not the finished virtualized explorer or the 100k-file performance gate.
+- Root-qualified tabs and a lazy expandable **GtkListView** explorer with recycled rows. **Load more** replaces a 256-entry window; sorting is per page, not global. **Roots / Back / Rescan / Close workspace / Reset tree** expose navigation and capacity recovery. Limits: 64 directory states, eight resident pages, 1 MiB page arenas; scans process at most 4,096 directory records per call.
+- Nested `.gitignore`, final root-relative manifest `exclude` patterns and unconditional `.git` hiding. Policy read/parse/budget errors fail closed. Shared page/ancestor matching budgets bound adversarial work; empty incomplete pages remain resumable.
+- Batched inotify updates for accessed directories and relevant ancestors/policy paths, not recursive monitoring of every descendant. One additional watch worker handles registration, symlink resolution, reads and retirement off GTK, with one replaceable queued plan, 128 subscriptions/snapshot and bounded path storage. Debounce is 100 ms / at most 500 ms until eligible. Monitor failure shows a manual Rescan fallback.
+- Initial manifest publication waits for watch installation, revalidation and a notification-drain barrier; only EAGAIN confirms drain. Symlink target/link/intermediate-link changes, overflow and stale watch generations have regressions. Continuous traffic can delay publication; blocking filesystem calls can delay shutdown.
 - Filesystem work runs on GTask workers. Request/model generations reject late results; switching/closing a workspace preserves open dirty documents. Failed manifests leave the previous workspace intact.
 - Bounded admission: eight total outstanding operations including at most one workspace chooser; 128 KiB retained request-path budget; identical pending file opens deduplicate. Rejected requests do not invalidate accepted work. Canceled workers retain their slots and application holds until completion. Blocking mount I/O is still not forcibly interruptible.
 - Restricted-only state; manifest settings must be omitted or empty. Executable settings and manifest-supplied trust are rejected, never executed. No trust promotion or persistent grant store is implemented yet.
 - Descriptor-relative browser traversal rejects symlink components, special files and escapes. Search-only ancestor directories are supported. This is not a sandbox for the subsequent path-based document loader against concurrent rename races.
 - Recovery still restores documents/layout, **not workspace roots/manifests**; the UI says so. Ordinary project-session restoration remains an M2 gate.
 
-**Fresh validation:** `zig build test-m2-slice test-m1 -Doptimize=safe -j1 --summary all` passed on the final code, including the bounded-admission and traversal-permission fixes. The final workspace harness has **18 native groups**, including real two-root typing, same-basename identity, malformed/FIFO manifests, restricted no-execution, missing roots, symlink replacement, delayed-result races, request bursts/dedup/budgets, chooser lifecycle and execute-only ancestors. M1's 99 widget, 40 native, 14 group and 13 recovery checks remain passing. Workspace evidence: `pearl/.cache/coral-workspaces/`.
+**Final validation (2026-11-09):** separate `test-m1`, `test-m2-slice` and `test-m2-explorer` runs passed with `-Doptimize=safe -j1 --summary all`: **158 widget tests, 40 native workflows, 14 group/history checks, 13 recovery groups, 18 workspace groups and 19 explorer groups**. Headless steps were cached successes on this final rerun. The initial aggregate invocation hit a 240-second timeout; separate runs totaled about 244 seconds with no reproduced deadlock. Attributable orphan private-session processes were cleaned up.
+
+The native explorer fixture reached **100,000 files exactly once across 391 pages in 10.12 s**, with **205 peak row widgets** and RSS rising from **66,555,904 to 68,534,272 bytes**. Maximum input acknowledgement was **66.26 ms**, main-loop probe gap **26.06 ms**, and close/cancel acknowledgement **65.51 ms**. These are local input/loop measurements, **not paint latency**. This validates bounded explorer browsing, not recursive indexing/search or all of M2. Evidence and detailed limits: [workspace report](WORKBENCH_M2_WORKSPACES.md), `pearl/.cache/coral-explorer/` and `pearl/.cache/coral-workspaces/`.
 
 ## M1 foundation: implemented and integrated
 
@@ -102,16 +107,19 @@ The policy is visible rather than silently presenting stalled full-feature editi
 
 ## Validation completed
 
-Final aggregate command from `subprojects/coral`:
+Final validation commands, run separately from `subprojects/coral`:
 
 ```sh
 zig build test-m1 -Doptimize=safe -j1 --summary all
+zig build test-m2-slice -Doptimize=safe -j1 --summary all
+zig build test-m2-explorer -Doptimize=safe -j1 --summary all
+zig build -Doptimize=safe -Dtest-hooks=false -j1 --summary all
 ```
 
 **Passed** on the final code, including:
 
-- Headless unit and appearance suites.
-- **99 display-backed widget-root tests** (includes transitive model tests; do not add this count to headless tests as unique cases).
+- Headless unit and appearance suites (cached successes on the final rerun).
+- **158 display-backed widget-root tests** (includes transitive model tests; do not add this count to headless tests as unique cases).
 - **40 existing/native workflow groups**, including the new undo-during-save regression and repeated native spelling-popover focus checks.
 - **14 application/group acceptance checks**, including grouped/native undo boundaries and cross-epoch saved-checkpoint safety.
 - **13 recovery acceptance groups**, including SIGKILL/restart, interrupted publication/save, conflict-safe copies, locks/concurrent instances, corruption, cap errors, layout and excerpt recovery.
@@ -126,6 +134,6 @@ All native tests use private Wayland/XDG sessions and disposable files, not the 
 
 - **M0:** accepted bounded-foundation tradeoffs; unsupported full giant-line rendering and deferred paint qualification remain documented, not passed.
 - **M1:** implemented/tested bounded foundation; retain the documented undo, recovery, file-size and process-ownership limits.
-- **M2:** first manifest/root/browser slice delivered. Remaining: virtualized/paged explorer, ignore/exclude rules, directory watching, quick-open/workspace search, settings precedence, persistent trust approval/revocation, workspace-root session recovery, docking and multi-window UI. The 100k-file gate is still open.
+- **M2:** manifest/root and virtualized/paged explorer increments delivered, including ignore/exclude rules and batched directory monitoring. Remaining: quick-open/workspace search with unsaved overlays, settings precedence, persistent trust approval/revocation, workspace-root session recovery, docking and multi-window UI. The 100k explorer-browsing gate is validated; indexing/search qualification remains open.
 - **M3–M8:** LSP, real Git workbench, production terminal/tasks, native/ACP agents, MCP, DAP/test UI, extensions and advanced editing/accessibility qualification.
 - **M9:** removed, not silently reintroduced.

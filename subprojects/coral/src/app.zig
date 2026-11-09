@@ -184,6 +184,7 @@ pub const App = struct {
         u.append(root, footer);
         self.* = .{ .application = application, .workspace = .init(), .window = window, .notebook = notebook, .groups = groups, .new_button = new, .search_button = search, .searchbox = searchbox, .query = query, .replacement = replacement, .matches = matches, .status = status, .spell_button = spell_button, .notice = notice, .settings = settings, .worker = spell.Worker.start(), .css = c.gtk_css_provider_new().?, .font_css = c.gtk_css_provider_new().? };
         self.browser = WorkspaceController.init(self, workspace_slot);
+        self.browser.attach();
         c.g_weak_ref_init(&self.palette_focus, null);
         c.gtk_css_provider_load_from_string(self.css, @embedFile("style"));
         c.gtk_style_context_add_provider_for_display(c.gdk_display_get_default(), u.cast(c.GtkStyleProvider, self.css), c.GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
@@ -2557,7 +2558,9 @@ fn testCommand(self: *App) void {
             if (std.mem.eql(u8, action, "budget-load")) {
                 if (i < @import("workspace/controller.zig").limits.in_flight) self.browser.load(.manifest, burst_path) else self.browser.load(.folder, "/");
             } else if (std.mem.eql(u8, action, "budget-scan")) {
-                self.browser.browse(id, if (i < 7) "" else if (i == 7) "nested" else "not-accepted");
+                const target = u.fmt("budget-missing-{d}", .{i});
+                defer a.free(target);
+                self.browser.browse(id, if (i < 7) target else if (i == 7) "nested" else "not-accepted");
             } else if (std.mem.eql(u8, action, "budget-files")) {
                 const target = u.fmt("{s}/entry-{d:0>4}.txt", .{ burst_path, i });
                 defer a.free(target);
@@ -2589,9 +2592,33 @@ fn testCommand(self: *App) void {
         self.probeWorkspace();
     } else if (std.mem.eql(u8, action, "browser-activate")) {
         const index = c.g_key_file_get_integer(file, "Test", "index", null);
-        if (index >= 0) if (c.gtk_list_box_get_row_at_index(u.cast(c.GtkListBox, self.browser.rows), index)) |row| {
-            c.g_signal_emit_by_name(self.browser.rows, "row-activated", row);
-        };
+        if (index >= 0) self.browser.activate(@intCast(index));
+    } else if (std.mem.eql(u8, action, "explorer-activate")) {
+        const index = c.g_key_file_get_integer(file, "Test", "index", null);
+        if (index >= 0) c.g_signal_emit_by_name(self.browser.rows, "activate", @as(c_uint, @intCast(index)));
+    } else if (std.mem.eql(u8, action, "browser-more")) {
+        self.browser.more();
+    } else if (std.mem.eql(u8, action, "explorer-drain")) {
+        self.browser.test_drain = true;
+    } else if (std.mem.eql(u8, action, "explorer-overflow")) {
+        const Watch = @import("workspace/explorer_watch.zig");
+        const event: Watch.Event = .{ .wd = -1, .mask = std.os.linux.IN.Q_OVERFLOW, .cookie = 0, .len = 0 };
+        self.browser.watches.dispatch(std.mem.asBytes(&event));
+    } else if (std.mem.eql(u8, action, "explorer-reset")) {
+        self.browser.resetTree();
+    } else if (std.mem.eql(u8, action, "explorer-watch-fail")) {
+        self.browser.watches.disabled = true;
+        self.browser.rescan();
+    } else if (std.mem.eql(u8, action, "explorer-watch-restore")) {
+        self.browser.watches.disabled = false;
+        self.browser.rescan();
+    } else if (std.mem.eql(u8, action, "explorer-watch-delay")) {
+        const milliseconds = if (value != null) std.fmt.parseInt(c_ulong, std.mem.span(value), 10) catch 750 else 750;
+        self.browser.watches.test_delay_us = @as(c_ulong, @min(milliseconds, 2000)) * 1000;
+    } else if (std.mem.eql(u8, action, "explorer-watch-storm")) {
+        self.browser.testWatchStorm();
+    } else if (std.mem.eql(u8, action, "explorer-delay")) {
+        self.browser.test_next_delay_us = 500000;
     } else if (std.mem.eql(u8, action, "browser-close-race")) {
         self.browser.test_next_delay_us = 500000;
         if (self.browser.model) |*snapshot| if (snapshot.roots.len > 0) self.browser.browse(snapshot.roots[0].id, "");

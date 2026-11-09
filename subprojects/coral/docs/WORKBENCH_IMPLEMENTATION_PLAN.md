@@ -258,15 +258,17 @@ The integrated bounded M1 foundation passes unit/widget/native/group/recovery ac
 3. **Delivered:** canonical registry, independent presentation buffers, native editor groups and lifetime/focus routing.
 4. **Delivered:** checked transactions, grouped history, guarded native typing intervals and source-mapped editable excerpts. Conflicts refuse rather than reset newer edits; pre-first-group typing history has a documented conservative boundary.
 5. **Delivered:** native independent-view/excerpt demonstrations, [actual GTK4 VTE feasibility](WORKBENCH_M0_TERMINAL.md), advanced-editor mechanism probes and [reproducible B01–B05 baselines](WORKBENCH_M0_BENCHMARKS.md).
-6. **Delivered:** process-local workspace identities, generation-based late-result isolation and owned process-group lifecycle. No M2 explorer or M5 production terminal is implied.
+6. **Delivered:** process-local workspace identities, generation-based late-result isolation and owned process-group lifecycle. These M1 mechanisms alone do not provide an explorer or production terminal; see the M2 increment below.
 7. **Delivered:** versioned durable recovery, explicit restore/keep/discard, conflict-safe unsaved copies and native crash/interrupted-publication tests.
 8. **M0 tradeoffs accepted by the user:** retain the measured syntax/long-line policy and bounded-excerpt fallback, accept documented timing misses for the foundation, and defer injected-input-to-paint qualification. Full giant-paragraph rendering remains unsupported/guarded; bounded 1 MiB excerpt editing passes its workload. Original targets remain recorded, not relabelled as passing measurements.
 
-### M2 first implementation slice
+### M2 workspace and explorer increments
 
 Version-1 workspace manifests, canonical typed roots, native folder/workspace opening, root-qualified tabs and an asynchronous bounded directory browser are integrated. Restricted mode cannot be promoted by workspace content; settings are currently omitted/empty only. Native two-root, malformed-input, stale-result, no-execution and request-budget tests are in `tests/workspaces.py` (`zig build test-m2-slice`). See [workspace usage and remaining gates](WORKBENCH_M2_WORKSPACES.md).
 
-This is **not completed M2**: directory paging/virtualization and watching, ignore rules, 100k-file responsiveness, quick-open/search, settings precedence, persistent trust, workspace-root session restore, docking and multi-window workflows remain.
+The next increment delivers a virtualized expandable explorer with 256-entry page windows, bounded directory/page caches, nested `.gitignore` and explicit manifest excludes, and batched worker-owned inotify monitoring. Generation checks reject stale pages/policy; Reset tree and manual Rescan provide explicit capacity/monitor fallback. `zig build test-m2-explorer` covers 100,000 files reached exactly once across 391 pages, bounded RSS/widgets, native input, watch races and cancellation. See the workspace report for measured results and limits; input acknowledgement is not paint latency.
+
+This is **not completed M2**: quick-open/streaming search and its 100k indexing gate, settings precedence, persistent trust, workspace-root session restore, docking and multi-window workflows remain. The 100k explorer-browsing gate is validated, not the complete workspace/search milestone.
 
 ## 11. Validation and release acceptance
 
