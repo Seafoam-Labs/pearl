@@ -114,14 +114,25 @@ pub const Gpu = struct {
     name: Name = .{},
     driver: Name = .{},
     vendor: u32 = 0,
+    integrated: bool = false,
     usage: ?f64 = null,
+    mem_usage: ?f64 = null,
     used: ?f64 = null,
     total: ?f64 = null,
+    gtt_used: ?f64 = null,
+    gtt_total: ?f64 = null,
     temp: ?f64 = null,
     power: ?f64 = null,
+    power_cap: ?f64 = null,
+    power_label: Name = .{},
+    fan: ?f64 = null,
     encode: ?f64 = null,
     decode: ?f64 = null,
     frequency: ?f64 = null,
+    mem_frequency: ?f64 = null,
+    max_frequency: ?f64 = null,
+    pcie_gen: ?u32 = null,
+    pcie_width: ?u32 = null,
 };
 pub const Snapshot = struct {
     arena: std.heap.ArenaAllocator,
@@ -185,6 +196,94 @@ pub fn fieldInt(text: []const u8, key: []const u8) ?u64 {
     const v = field(text, key) orelse return null;
     var tokens = std.mem.tokenizeAny(u8, v, " \t");
     return uint(tokens.next() orelse return null);
+}
+pub fn ueventValue(text: []const u8, key: []const u8) ?[]const u8 {
+    var lines = std.mem.splitScalar(u8, text, '\n');
+    while (lines.next()) |line| {
+        const equals = std.mem.indexOfScalar(u8, line, '=') orelse continue;
+        if (!std.mem.eql(u8, std.mem.trim(u8, line[0..equals], " \t"), key)) continue;
+        return std.mem.trim(u8, line[equals + 1 ..], " \t\r");
+    }
+    return null;
+}
+pub fn parseSclkList(text: []const u8) ?f64 {
+    var maximum: ?f64 = null;
+    var lines = std.mem.splitScalar(u8, text, '\n');
+    while (lines.next()) |line| {
+        var words = std.mem.tokenizeAny(u8, line, " \t\r");
+        var previous: ?[]const u8 = null;
+        while (words.next()) |word| {
+            var value: ?f64 = null;
+            if (std.ascii.eqlIgnoreCase(word, "mhz")) {
+                if (previous) |number_word| value = number(number_word);
+            } else if (word.len > 3 and std.ascii.eqlIgnoreCase(word[word.len - 3 ..], "mhz")) {
+                value = number(word[0 .. word.len - 3]);
+            }
+            if (value) |v| {
+                if (v > 0 and (maximum == null or v > maximum.?)) maximum = v;
+            }
+            previous = word;
+        }
+    }
+    return maximum;
+}
+pub fn pcieGen(text: []const u8) ?u32 {
+    var words = std.mem.tokenizeAny(u8, text, " \t\r\n");
+    const speed = number(words.next() orelse return null) orelse return null;
+    if (speed == 2.5) return 1;
+    if (speed == 5) return 2;
+    if (speed == 8) return 3;
+    if (speed == 16) return 4;
+    if (speed == 32) return 5;
+    if (speed == 64) return 6;
+    return null;
+}
+pub fn pciEntryName(entry: []const u8) []const u8 {
+    const open = std.mem.indexOfScalar(u8, entry, '[') orelse return entry;
+    const close = std.mem.lastIndexOfScalar(u8, entry, ']') orelse return entry;
+    if (close <= open + 1) return entry;
+    return std.mem.trim(u8, entry[open + 1 .. close], " \t");
+}
+pub const PciIdsScanner = struct {
+    target_vendor: u32,
+    target_device: u32,
+    vendor: ?u32 = null,
+    found: bool = false,
+    /// Feed one pci.ids line; returns the preferred device name on a match.
+    pub fn feed(self: *PciIdsScanner, line: []const u8) ?[]const u8 {
+        if (self.found) return null;
+        const trimmed = std.mem.trim(u8, line, " \t\r");
+        if (trimmed.len == 0 or trimmed[0] == '#') return null;
+        const indented = line.len > 0 and (line[0] == '\t' or line[0] == ' ');
+        if (!indented) {
+            var words = std.mem.tokenizeAny(u8, trimmed, " \t");
+            const first = words.next() orelse {
+                self.vendor = null;
+                return null;
+            };
+            self.vendor = std.fmt.parseInt(u32, first, 16) catch null;
+            return null;
+        }
+        if (line[0] == '\t' and line.len > 1 and line[1] == '\t') return null;
+        if (self.vendor != self.target_vendor) return null;
+        var words = std.mem.tokenizeAny(u8, trimmed, " \t");
+        const first = words.next() orelse return null;
+        const device = std.fmt.parseInt(u32, first, 16) catch return null;
+        if (device != self.target_device) return null;
+        const name = std.mem.trim(u8, words.rest(), " \t");
+        if (name.len == 0) return null;
+        self.found = true;
+        return pciEntryName(name);
+    }
+};
+pub const LabeledFile = struct { file: []const u8, label: []const u8 };
+pub fn chooseTemp(entries: []const LabeledFile) []const u8 {
+    for (entries) |entry| if (std.mem.eql(u8, entry.label, "edge")) return entry.file;
+    return "temp1";
+}
+pub fn chooseClock(entries: []const LabeledFile, label: []const u8) ?[]const u8 {
+    for (entries) |entry| if (std.mem.eql(u8, entry.label, label)) return entry.file;
+    return null;
 }
 pub fn delta(now: u64, before: u64) ?u64 {
     return if (now >= before) now - before else null;
@@ -341,4 +440,41 @@ test "bounded arbitrary parser input and UTF-8 truncation" {
     }
     const text = Text(3).init("abé");
     try std.testing.expectEqualStrings("ab", text.slice());
+}
+test "GPU sysfs parsers: sclk list, PCIe generation, uevent and labels" {
+    try std.testing.expectEqual(@as(?f64, 2500), parseSclkList("0: 500Mhz *\n1: 2200Mhz\n2: 2500 Mhz\n"));
+    try std.testing.expectEqual(@as(?f64, null), parseSclkList(""));
+    try std.testing.expectEqual(@as(?f64, null), parseSclkList("garbage\n0: fast\n"));
+    try std.testing.expectEqual(@as(?u32, 3), pcieGen("8.0 GT/s PCIe"));
+    try std.testing.expectEqual(@as(?u32, 1), pcieGen("2.5 GT/s"));
+    try std.testing.expectEqual(@as(?u32, 4), pcieGen("16.0 GT/s PCIe"));
+    try std.testing.expectEqual(@as(?u32, 5), pcieGen("32.0 GT/s PCIe"));
+    try std.testing.expectEqual(@as(?u32, 6), pcieGen("64.0 GT/s PCIe"));
+    try std.testing.expectEqual(@as(?u32, null), pcieGen("unknown"));
+    try std.testing.expectEqualStrings("0000:03:00.0", ueventValue("DRIVER=amdgpu\nPCI_SLOT_NAME=0000:03:00.0\n", "PCI_SLOT_NAME").?);
+    try std.testing.expect(ueventValue("DRIVER=amdgpu\n", "PCI_SLOT_NAME") == null);
+    const labels = [_]LabeledFile{ .{ .file = "temp1", .label = "junction" }, .{ .file = "temp2", .label = "edge" } };
+    try std.testing.expectEqualStrings("temp2", chooseTemp(&labels));
+    try std.testing.expectEqualStrings("temp1", chooseTemp(&.{}));
+    const clocks = [_]LabeledFile{ .{ .file = "freq1", .label = "mclk" }, .{ .file = "freq2", .label = "sclk" } };
+    try std.testing.expectEqualStrings("freq2", chooseClock(&clocks, "sclk").?);
+    try std.testing.expectEqualStrings("freq1", chooseClock(&clocks, "mclk").?);
+    try std.testing.expect(chooseClock(&clocks, "vclk") == null);
+}
+test "pci.ids scanner tokenizes indentation, skips junk and prefers brackets" {
+    var scanner: PciIdsScanner = .{ .target_vendor = 0x1002, .target_device = 0x744c };
+    try std.testing.expect(scanner.feed("# comment") == null);
+    try std.testing.expect(scanner.feed("1002  Advanced Micro Devices, Inc. [AMD/ATI]") == null);
+    try std.testing.expect(scanner.feed("\t--  Subclass separator") == null);
+    try std.testing.expect(scanner.feed("\tzzzz  Not a device") == null);
+    try std.testing.expectEqualStrings("Radeon RX 7900 XT/7900 XTX", scanner.feed("\t744c  Navi 31 [Radeon RX 7900 XT/7900 XTX]").?);
+    try std.testing.expect(scanner.feed("\t744c  Duplicate entry") == null);
+    var plain: PciIdsScanner = .{ .target_vendor = 0x1002, .target_device = 0x1234 };
+    try std.testing.expect(plain.feed("1002  Vendor") == null);
+    try std.testing.expectEqualStrings("Plain Device", plain.feed("\t1234  Plain Device").?);
+    var wrong_vendor: PciIdsScanner = .{ .target_vendor = 0x8086, .target_device = 0x1234 };
+    try std.testing.expect(wrong_vendor.feed("1002  Vendor") == null);
+    try std.testing.expect(wrong_vendor.feed("\t1234  Device") == null);
+    try std.testing.expect(wrong_vendor.feed("8086  Intel") == null);
+    try std.testing.expectEqualStrings("Device", wrong_vendor.feed("\t1234  Device").?);
 }

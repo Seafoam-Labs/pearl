@@ -142,7 +142,7 @@ pub fn collect(previous: ?*const m.Snapshot, sequence: u64) *m.Snapshot {
     collectDisks(s, previous, seconds);
     collectNetwork(s, previous, seconds);
     collectSensors(s);
-    collectGpu(s);
+    collectGpu(s, "/sys/class/drm", &default_ids_paths);
     collectMounts(s);
     if (previous) |p| if (s.uptime - p.uptime > seconds + 3) {
         s.reset = true;
@@ -326,44 +326,210 @@ fn collectSensors(s: *m.Snapshot) void {
     }
     s.sensors = items.items;
 }
-fn collectGpu(s: *m.Snapshot) void {
-    var items: std.ArrayList(m.Gpu) = .empty;
-    const a = s.arena.allocator();
-    const dir = io.Dir.open("/sys/class/drm") orelse return;
+const default_ids_paths = [_][]const u8{ "/usr/share/hwdata/pci.ids", "/usr/share/misc/pci.ids" };
+const ids_memo_size = 16;
+const IdsMemoEntry = struct { path: m.Path = .{}, vendor: u32 = 0, device: u32 = 0, name: m.Name = .{} };
+var ids_memo: [ids_memo_size]IdsMemoEntry = @splat(.{});
+var ids_memo_count: usize = 0;
+fn sortedEntries(a: std.mem.Allocator, directory: []const u8) []const []const u8 {
+    var names: std.ArrayList([]const u8) = .empty;
+    const dir = io.Dir.open(directory) orelse return &.{};
     defer dir.close();
     while (dir.next()) |name| {
-        if (!std.mem.startsWith(u8, name, "card") or std.mem.indexOfScalar(u8, name, '-') != null) continue;
+        const copy = a.dupe(u8, name) catch break;
+        names.append(a, copy) catch break;
+    }
+    std.mem.sort([]const u8, names.items, {}, struct {
+        fn less(_: void, left: []const u8, right: []const u8) bool {
+            return std.mem.lessThan(u8, left, right);
+        }
+    }.less);
+    return names.items;
+}
+fn scanPciIds(ids_path: []const u8, vendor: u32, device: u32) ?m.Name {
+    const path = m.Text(2048).init(ids_path);
+    const fd = c.open(path.z(), c.O_RDONLY | c.O_CLOEXEC);
+    if (fd < 0) return null;
+    defer _ = c.close(fd);
+    var scanner: m.PciIdsScanner = .{ .target_vendor = vendor, .target_device = device };
+    var chunk: [65536]u8 = undefined;
+    var line: [4096]u8 = undefined;
+    var line_len: usize = 0;
+    var discarding = false;
+    while (true) {
+        const got = c.read(fd, &chunk, chunk.len);
+        if (got < 0) {
+            if (c.__errno_location().* == c.EINTR) continue;
+            return null;
+        }
+        if (got == 0) break;
+        for (chunk[0..@intCast(got)]) |byte| {
+            if (byte == '\n') {
+                if (!discarding) if (scanner.feed(line[0..line_len])) |name| return m.Name.init(name);
+                line_len = 0;
+                discarding = false;
+            } else if (!discarding) {
+                if (line_len == line.len) {
+                    discarding = true;
+                } else {
+                    line[line_len] = byte;
+                    line_len += 1;
+                }
+            }
+        }
+    }
+    if (!discarding and line_len > 0) if (scanner.feed(line[0..line_len])) |name| return m.Name.init(name);
+    return null;
+}
+fn pciIdsName(ids_paths: []const []const u8, vendor: u32, device: u32) ?m.Name {
+    for (ids_paths) |ids_path| {
+        if (ids_path.len == 0) continue;
+        var cached = false;
+        for (ids_memo[0..ids_memo_count]) |entry| {
+            if (entry.vendor != vendor or entry.device != device) continue;
+            if (!std.mem.eql(u8, entry.path.slice(), ids_path)) continue;
+            if (entry.name.len > 0) return entry.name;
+            cached = true;
+            break;
+        }
+        if (cached) continue;
+        const name = scanPciIds(ids_path, vendor, device);
+        if (ids_memo_count < ids_memo.len) {
+            ids_memo[ids_memo_count] = .{ .path = m.Path.init(ids_path), .vendor = vendor, .device = device, .name = name orelse .{} };
+            ids_memo_count += 1;
+        }
+        if (name) |value| return value;
+    }
+    return null;
+}
+fn collectGpu(s: *m.Snapshot, root: []const u8, ids_paths: []const []const u8) void {
+    const a = s.arena.allocator();
+    var items: std.ArrayList(m.Gpu) = .empty;
+    var slots: std.ArrayList(m.Name) = .empty;
+    for (sortedEntries(a, root)) |card_name| {
+        if (!std.mem.startsWith(u8, card_name, "card") or std.mem.indexOfScalar(u8, card_name, '-') != null) continue;
         if (items.items.len >= 16) break;
-        const base = io.path("/sys/class/drm/{s}/device", .{name});
+        const base = io.path("{s}/{s}/device", .{ root, card_name });
         var gpu: m.Gpu = .{ .key = io.real(base.slice()) };
+        var uevent_buffer: [4096]u8 = undefined;
+        var slot: m.Name = .{};
+        const uevent_path = io.path("{s}/uevent", .{base.slice()});
+        if (io.read(uevent_path.slice(), &uevent_buffer)) |text| if (m.ueventValue(text, "PCI_SLOT_NAME")) |value| slot.set(value);
+        if (slot.len == 0) {
+            const real = io.real(base.slice());
+            slot.set(std.fs.path.basename(real.slice()));
+        }
+        if (slot.len == 0) slot.set(card_name);
+        var duplicate = false;
+        for (slots.items) |seen| {
+            if (!std.mem.eql(u8, seen.slice(), slot.slice())) continue;
+            duplicate = true;
+            break;
+        }
+        if (duplicate) continue;
+        slots.append(a, slot) catch unreachable;
         const vendor_path = io.path("{s}/vendor", .{base.slice()});
         const vendor = io.text(vendor_path.slice());
         gpu.vendor = std.fmt.parseInt(u32, vendor.slice(), 0) catch 0;
         const driver_path = io.path("{s}/driver", .{base.slice()});
         const driver = io.link(driver_path.slice());
         gpu.driver.set(std.fs.path.basename(driver.slice()));
-        const label = io.path("{s} · {s}", .{ if (gpu.vendor == 0x1002) "AMD GPU" else if (gpu.vendor == 0x8086) "Intel GPU" else if (gpu.vendor == 0x10de) "NVIDIA GPU" else "Display adapter", name });
+        const label = io.path("{s} · {s}", .{ if (gpu.vendor == 0x1002) "AMD GPU" else if (gpu.vendor == 0x8086) "Intel GPU" else if (gpu.vendor == 0x10de) "NVIDIA GPU" else "Display adapter", card_name });
         gpu.name.set(label.slice());
-        inline for (.{ .{ "gpu_busy_percent", "usage", @as(f64, 1) }, .{ "mem_info_vram_used", "used", @as(f64, 1) }, .{ "mem_info_vram_total", "total", @as(f64, 1) } }) |field| {
+        const device_path = io.path("{s}/device", .{base.slice()});
+        const device_text = io.text(device_path.slice());
+        const device = std.fmt.parseInt(u32, device_text.slice(), 0) catch 0;
+        const product_path = io.path("{s}/product_name", .{base.slice()});
+        const product = io.text(product_path.slice());
+        if (product.len > 0) {
+            gpu.name = product;
+        } else if (gpu.vendor == 0x1002) {
+            if (pciIdsName(ids_paths, gpu.vendor, device)) |pci_name| {
+                const name = io.path("AMD {s}", .{pci_name.slice()});
+                gpu.name.set(name.slice());
+            } else if (device != 0) {
+                const name = io.path("AMD GPU {x:0>4}", .{device});
+                gpu.name.set(name.slice());
+            }
+        }
+        if (gpu.vendor == 0x1002) {
+            const vram_vendor_path = io.path("{s}/mem_info_vram_vendor", .{base.slice()});
+            gpu.integrated = !io.exists(vram_vendor_path.slice());
+        }
+        inline for (.{ .{ "gpu_busy_percent", "usage" }, .{ "mem_busy_percent", "mem_usage" }, .{ "mem_info_vram_used", "used" }, .{ "mem_info_vram_total", "total" }, .{ "mem_info_gtt_used", "gtt_used" }, .{ "mem_info_gtt_total", "gtt_total" } }) |field| {
             const p = io.path("{s}/{s}", .{ base.slice(), field[0] });
-            if (io.number(p.slice())) |value| @field(gpu, field[1]) = value / field[2];
+            if (io.number(p.slice())) |value| @field(gpu, field[1]) = value;
         }
         if (gpu.vendor == 0x8086) {
-            const frequency_path = io.path("/sys/class/drm/{s}/gt_cur_freq_mhz", .{name});
+            const frequency_path = io.path("{s}/{s}/gt_cur_freq_mhz", .{ root, card_name });
             gpu.frequency = io.number(frequency_path.slice());
         }
+        if (gpu.vendor == 0x1002) {
+            var clock_buffer: [65536]u8 = undefined;
+            const sclk_path = io.path("{s}/pp_dpm_sclk", .{base.slice()});
+            if (io.read(sclk_path.slice(), &clock_buffer)) |text| gpu.max_frequency = m.parseSclkList(text);
+        }
+        const speed_path = io.path("{s}/current_link_speed", .{base.slice()});
+        const speed = io.text(speed_path.slice());
+        gpu.pcie_gen = m.pcieGen(speed.slice());
+        const width_path = io.path("{s}/current_link_width", .{base.slice()});
+        if (io.integer(width_path.slice())) |width| gpu.pcie_width = @intCast(@min(width, std.math.maxInt(u32)));
         const hw_path = io.path("{s}/hwmon", .{base.slice()});
-        if (io.Dir.open(hw_path.slice())) |hw| {
-            defer hw.close();
-            if (hw.next()) |dev| {
-                inline for (.{ .{ "temp1_input", "temp", @as(f64, 1000) }, .{ "power1_average", "power", @as(f64, 1000000) }, .{ "freq1_input", "frequency", @as(f64, 1000000) } }) |field| {
-                    const p = io.path("{s}/{s}/{s}", .{ hw_path.slice(), dev, field[0] });
-                    if (io.number(p.slice())) |value| @field(gpu, field[1]) = value / field[2];
+        const hw_names = sortedEntries(a, hw_path.slice());
+        if (hw_names.len > 0) {
+            const hw_dev_path = io.path("{s}/{s}", .{ hw_path.slice(), hw_names[0] });
+            var labels: std.ArrayList(m.LabeledFile) = .empty;
+            for (sortedEntries(a, hw_dev_path.slice())) |file_name| {
+                if (!std.mem.endsWith(u8, file_name, "_label")) continue;
+                const label_path = io.path("{s}/{s}", .{ hw_dev_path.slice(), file_name });
+                const hw_label = io.text(label_path.slice());
+                if (hw_label.len == 0) continue;
+                const label_copy = a.dupe(u8, hw_label.slice()) catch continue;
+                labels.append(a, .{ .file = file_name[0 .. file_name.len - 6], .label = label_copy }) catch continue;
+            }
+            const temp_path = io.path("{s}/{s}_input", .{ hw_dev_path.slice(), m.chooseTemp(labels.items) });
+            if (io.number(temp_path.slice())) |value| gpu.temp = value / 1000;
+            if (gpu.vendor == 0x1002) {
+                if (m.chooseClock(labels.items, "sclk")) |file| {
+                    const p = io.path("{s}/{s}_input", .{ hw_dev_path.slice(), file });
+                    if (io.number(p.slice())) |value| gpu.frequency = value / 1000000;
+                }
+                if (m.chooseClock(labels.items, "mclk")) |file| {
+                    const p = io.path("{s}/{s}_input", .{ hw_dev_path.slice(), file });
+                    if (io.number(p.slice())) |value| gpu.mem_frequency = value / 1000000;
                 }
             }
+            const average_path = io.path("{s}/power1_average", .{hw_dev_path.slice()});
+            const input_path = io.path("{s}/power1_input", .{hw_dev_path.slice()});
+            if (io.number(average_path.slice())) |average| {
+                gpu.power = if (average == 0)
+                    if (io.number(input_path.slice())) |input| input / 1000000 else average / 1000000
+                else
+                    average / 1000000;
+            } else if (io.number(input_path.slice())) |input| gpu.power = input / 1000000;
+            if (gpu.power != null) {
+                const power_label_path = io.path("{s}/power1_label", .{hw_dev_path.slice()});
+                gpu.power_label = io.text(power_label_path.slice());
+            }
+            const cap_path = io.path("{s}/power1_cap", .{hw_dev_path.slice()});
+            if (io.number(cap_path.slice())) |cap| gpu.power_cap = cap / 1000000;
+            const fan_input_path = io.path("{s}/fan1_input", .{hw_dev_path.slice()});
+            const fan_max_path = io.path("{s}/fan1_max", .{hw_dev_path.slice()});
+            if (io.number(fan_input_path.slice())) |fan_input| if (io.number(fan_max_path.slice())) |fan_max| {
+                if (fan_max > 0) gpu.fan = fan_input * 100 / fan_max;
+            };
         }
         items.append(a, gpu) catch unreachable;
     }
+    std.mem.sort(m.Gpu, items.items, {}, struct {
+        fn less(_: void, left: m.Gpu, right: m.Gpu) bool {
+            if (left.integrated != right.integrated) return !left.integrated;
+            const left_total = left.total orelse 0;
+            const right_total = right.total orelse 0;
+            if (left_total != right_total) return left_total > right_total;
+            return std.mem.lessThan(u8, left.key.slice(), right.key.slice());
+        }
+    }.less);
     s.gpus = items.items;
 }
 fn collectMounts(s: *m.Snapshot) void {
@@ -523,4 +689,88 @@ test "live snapshots use actual counters and release ownership" {
     defer next.unref();
     try std.testing.expect(next.time >= s.time);
     for (next.processes) |p| if (p.cpu) |v| try std.testing.expect(v >= 0 and v <= 100);
+}
+fn writeFixture(dir: std.Io.Dir, path: []const u8, data: []const u8) !void {
+    if (std.fs.path.dirname(path)) |parent| try dir.createDirPath(std.testing.io, parent);
+    try dir.writeFile(std.testing.io, .{ .sub_path = path, .data = data });
+}
+test "GPU fixture reads AMD sysfs fields, dedups and orders cards" {
+    var tmp = std.testing.tmpDir(.{});
+    defer tmp.cleanup();
+    var path_buffer: [std.fs.max_path_bytes]u8 = undefined;
+    const path_length = try tmp.dir.realPath(std.testing.io, &path_buffer);
+    const tmp_path = path_buffer[0..path_length];
+    const root = try std.fs.path.join(std.testing.allocator, &.{ tmp_path, "drm" });
+    defer std.testing.allocator.free(root);
+    const ids_path = try std.fs.path.join(std.testing.allocator, &.{ tmp_path, "pci.ids" });
+    defer std.testing.allocator.free(ids_path);
+    try writeFixture(tmp.dir, "drm/card1/device/vendor", "0x1002\n");
+    try writeFixture(tmp.dir, "drm/card1/device/device", "0xabcd\n");
+    try writeFixture(tmp.dir, "drm/card1/device/product_name", "Fixture Discrete 7900\n");
+    try writeFixture(tmp.dir, "drm/card1/device/mem_info_vram_vendor", "Samsung\n");
+    try writeFixture(tmp.dir, "drm/card1/device/mem_info_vram_total", "17179869184\n");
+    try writeFixture(tmp.dir, "drm/card1/device/mem_info_vram_used", "2147483648\n");
+    try writeFixture(tmp.dir, "drm/card1/device/mem_info_gtt_total", "8589934592\n");
+    try writeFixture(tmp.dir, "drm/card1/device/mem_info_gtt_used", "1073741824\n");
+    try writeFixture(tmp.dir, "drm/card1/device/gpu_busy_percent", "37\n");
+    try writeFixture(tmp.dir, "drm/card1/device/mem_busy_percent", "23\n");
+    try writeFixture(tmp.dir, "drm/card1/device/pp_dpm_sclk", "0: 500Mhz *\n1: 2200Mhz\n2: 2500Mhz\n");
+    try writeFixture(tmp.dir, "drm/card1/device/current_link_speed", "16.0 GT/s PCIe\n");
+    try writeFixture(tmp.dir, "drm/card1/device/current_link_width", "16\n");
+    try writeFixture(tmp.dir, "drm/card1/device/uevent", "DRIVER=amdgpu\nPCI_SLOT_NAME=0000:03:00.0\n");
+    try writeFixture(tmp.dir, "drm/card1/device/hwmon/hwmon0/name", "amdgpu\n");
+    try writeFixture(tmp.dir, "drm/card1/device/hwmon/hwmon0/temp1_label", "junction\n");
+    try writeFixture(tmp.dir, "drm/card1/device/hwmon/hwmon0/temp1_input", "85000\n");
+    try writeFixture(tmp.dir, "drm/card1/device/hwmon/hwmon0/temp2_label", "edge\n");
+    try writeFixture(tmp.dir, "drm/card1/device/hwmon/hwmon0/temp2_input", "65000\n");
+    try writeFixture(tmp.dir, "drm/card1/device/hwmon/hwmon0/freq1_label", "mclk\n");
+    try writeFixture(tmp.dir, "drm/card1/device/hwmon/hwmon0/freq1_input", "1000000000\n");
+    try writeFixture(tmp.dir, "drm/card1/device/hwmon/hwmon0/freq2_label", "sclk\n");
+    try writeFixture(tmp.dir, "drm/card1/device/hwmon/hwmon0/freq2_input", "2500000000\n");
+    try writeFixture(tmp.dir, "drm/card1/device/hwmon/hwmon0/power1_average", "0\n");
+    try writeFixture(tmp.dir, "drm/card1/device/hwmon/hwmon0/power1_input", "45000000\n");
+    try writeFixture(tmp.dir, "drm/card1/device/hwmon/hwmon0/power1_cap", "120000000\n");
+    try writeFixture(tmp.dir, "drm/card1/device/hwmon/hwmon0/power1_label", "PPT\n");
+    try writeFixture(tmp.dir, "drm/card1/device/hwmon/hwmon0/fan1_input", "1200\n");
+    try writeFixture(tmp.dir, "drm/card1/device/hwmon/hwmon0/fan1_max", "3000\n");
+    try writeFixture(tmp.dir, "drm/card1/device/hwmon/hwmon1/temp1_label", "edge\n");
+    try writeFixture(tmp.dir, "drm/card1/device/hwmon/hwmon1/temp1_input", "99000\n");
+    try writeFixture(tmp.dir, "drm/card2/device/vendor", "0x1002\n");
+    try writeFixture(tmp.dir, "drm/card2/device/device", "0x1234\n");
+    try writeFixture(tmp.dir, "drm/card2/device/mem_info_vram_total", "536870912\n");
+    try writeFixture(tmp.dir, "drm/card2/device/mem_info_vram_used", "134217728\n");
+    try writeFixture(tmp.dir, "drm/card2/device/gpu_busy_percent", "5\n");
+    try writeFixture(tmp.dir, "drm/card2/device/uevent", "DRIVER=amdgpu\nPCI_SLOT_NAME=0000:04:00.0\n");
+    try writeFixture(tmp.dir, "drm/card3/device/product_name", "Duplicate card\n");
+    try writeFixture(tmp.dir, "drm/card3/device/uevent", "DRIVER=amdgpu\nPCI_SLOT_NAME=0000:03:00.0\n");
+    try writeFixture(tmp.dir, "pci.ids", "# fixture ids\n1002  Advanced Micro Devices, Inc. [AMD/ATI]\n\t--  Subclass separator\n\tzzzz  Not a device\n\t1234  Fixture Graphics [Fixture Marketing]\n\t\t17aa  Subsystem line\n");
+    var s: m.Snapshot = .{ .arena = .init(std.testing.allocator) };
+    defer s.arena.deinit();
+    const ids_paths = [_][]const u8{ids_path};
+    collectGpu(&s, root, &ids_paths);
+    try std.testing.expectEqual(@as(usize, 2), s.gpus.len);
+    const gpu = s.gpus[0];
+    try std.testing.expectEqualStrings("Fixture Discrete 7900", gpu.name.slice());
+    try std.testing.expect(!gpu.integrated);
+    try std.testing.expectEqual(@as(?f64, 37), gpu.usage);
+    try std.testing.expectEqual(@as(?f64, 23), gpu.mem_usage);
+    try std.testing.expectEqual(@as(?f64, 2147483648), gpu.used);
+    try std.testing.expectEqual(@as(?f64, 17179869184), gpu.total);
+    try std.testing.expectEqual(@as(?f64, 1073741824), gpu.gtt_used);
+    try std.testing.expectEqual(@as(?f64, 8589934592), gpu.gtt_total);
+    try std.testing.expectEqual(@as(?f64, 65), gpu.temp);
+    try std.testing.expectEqual(@as(?f64, 45), gpu.power);
+    try std.testing.expectEqual(@as(?f64, 120), gpu.power_cap);
+    try std.testing.expectEqualStrings("PPT", gpu.power_label.slice());
+    try std.testing.expectEqual(@as(?f64, 40), gpu.fan);
+    try std.testing.expectEqual(@as(?f64, 2500), gpu.frequency);
+    try std.testing.expectEqual(@as(?f64, 1000), gpu.mem_frequency);
+    try std.testing.expectEqual(@as(?f64, 2500), gpu.max_frequency);
+    try std.testing.expectEqual(@as(?u32, 4), gpu.pcie_gen);
+    try std.testing.expectEqual(@as(?u32, 16), gpu.pcie_width);
+    const apu = s.gpus[1];
+    try std.testing.expectEqualStrings("AMD Fixture Marketing", apu.name.slice());
+    try std.testing.expect(apu.integrated);
+    try std.testing.expectEqual(@as(?f64, 5), apu.usage);
+    try std.testing.expectEqual(@as(?f64, 536870912), apu.total);
 }
