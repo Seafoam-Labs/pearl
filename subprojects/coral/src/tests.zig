@@ -9,6 +9,13 @@ test {
     _ = @import("editor/registry.zig");
     _ = @import("editor/transactions.zig");
     _ = @import("editor/view_test.zig");
+    _ = @import("editor/history.zig");
+    _ = @import("editor/excerpt.zig");
+    _ = @import("workspace/recovery.zig");
+    _ = @import("workspace/identity.zig");
+    _ = @import("workspace/model.zig");
+    _ = @import("workspace/browser_fs.zig");
+    _ = @import("terminal/pty.zig");
     _ = @import("tasks/process.zig");
     _ = @import("workbench/commands.zig");
     _ = @import("workbench/palette.zig");

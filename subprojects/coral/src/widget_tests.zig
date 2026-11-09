@@ -9,6 +9,11 @@ const EditorView = editor.EditorView;
 const Palette = @import("workbench/palette.zig").Palette;
 const Command = @import("workbench/palette.zig").Command;
 
+test {
+    _ = @import("editor/projection_test.zig");
+    _ = @import("editor/excerpt_editor_tests.zig");
+}
+
 var gtk_state: enum { cold, ready, unavailable } = .cold;
 fn initGtk() !void {
     // GTK is process-global; retrying after failed initialization is unsafe too.
@@ -99,6 +104,7 @@ test "retained page and close button survive view destruction without document c
         const page = view.page;
         const button = view.close_button;
         const widget = view.widget;
+        const buffer = view.buffer;
         _ = c.g_object_ref(page);
         defer c.g_object_unref(page);
         _ = c.g_object_ref(button);
@@ -127,7 +133,7 @@ test "retained page and close button survive view destruction without document c
         view_alive = false;
 
         try testing.expectEqual(widget, c.gtk_scrolled_window_get_child(u.cast(c.GtkScrolledWindow, page)).?);
-        try testing.expectEqual(document.buffer, c.gtk_text_view_get_buffer(u.cast(c.GtkTextView, widget)).?);
+        try testing.expectEqual(buffer, c.gtk_text_view_get_buffer(u.cast(c.GtkTextView, widget)).?);
         try testing.expect(c.gtk_text_mark_get_deleted(mark) != 0);
         try testing.expect(c.gtk_event_controller_get_widget(focus_controller) == null);
         if (controller) |p| {
@@ -139,7 +145,9 @@ test "retained page and close button survive view destruction without document c
         try testing.expectEqual(@as(usize, 1), counts.close);
         try testing.expectEqual(@as(usize, 2), counts.unrelated);
         // The retained page keeps its buffer, not its Document or EditorView owners.
-        const buffer = document.buffer;
+        // Canonical callbacks must also be gone while the document is still live.
+        c.gtk_text_buffer_set_text(document.buffer, "canonical only", -1);
+        try testing.expectEqual(@as(c_int, 0), c.gtk_text_buffer_get_char_count(buffer));
         document.destroy();
         document_alive = false;
         c.g_signal_emit_by_name(button, "clicked");
@@ -193,6 +201,20 @@ test "window teardown precedes view teardown and callback detachment is idempote
     view.restoreSelection();
 }
 
+const FocusOwner = struct {
+    active: ?*EditorView = null,
+    fn enter(view: *EditorView) void {
+        const self = u.cast(FocusOwner, view.focus_context.?);
+        self.active = view;
+        // Bridges are in place before owner routing/status observers run.
+        var local: c.GtkTextIter = undefined;
+        var canonical: c.GtkTextIter = undefined;
+        c.gtk_text_buffer_get_iter_at_mark(view.buffer, &local, c.gtk_text_buffer_get_insert(view.buffer));
+        c.gtk_text_buffer_get_iter_at_mark(view.document.buffer, &canonical, c.gtk_text_buffer_get_insert(view.document.buffer));
+        std.debug.assert(c.gtk_text_iter_get_offset(&local) == c.gtk_text_iter_get_offset(&canonical));
+    }
+};
+
 fn focus(win: *c.GtkWindow, widget: u.W) !void {
     try testing.expect(c.gtk_widget_grab_focus(widget) != 0);
     try testing.expectEqual(widget, c.gtk_window_get_focus(win).?);
@@ -207,7 +229,7 @@ fn waitScrollable(adjustment: *c.GtkAdjustment, minimum: f64) !void {
     }
 }
 
-test "shared document views preserve directed selections, opt-in focus and independent scroll" {
+test "independent rendered buffers preserve directed selections, focus routing and scroll" {
     try initGtk();
     const document = try Document.create(3, null);
     defer document.destroy();
@@ -229,13 +251,17 @@ test "shared document views preserve directed selections, opt-in focus and indep
     const second = try EditorView.create(document);
     defer second.destroy();
     try testing.expect(first.id != second.id);
-    try testing.expect(first.focus_controller == null and second.focus_controller == null);
-    try testing.expectEqual(document.buffer, c.gtk_text_view_get_buffer(u.cast(c.GtkTextView, first.widget)).?);
-    try testing.expectEqual(document.buffer, c.gtk_text_view_get_buffer(u.cast(c.GtkTextView, second.widget)).?);
-    first.restoreSelection();
-    try expectSelection(document.buffer, 1, 4);
-    second.restoreSelection();
-    try expectSelection(document.buffer, 12, 8);
+    try testing.expect(first.focus_controller != null and second.focus_controller != null);
+    try testing.expect(first.buffer != second.buffer and first.buffer != document.buffer);
+    try testing.expectEqual(first.buffer, c.gtk_text_view_get_buffer(u.cast(c.GtkTextView, first.widget)).?);
+    try testing.expectEqual(second.buffer, c.gtk_text_view_get_buffer(u.cast(c.GtkTextView, second.widget)).?);
+    try expectSelection(first.buffer, 1, 4);
+    try expectSelection(second.buffer, 12, 8);
+    var owner: FocusOwner = .{};
+    first.focus_context = &owner;
+    first.on_focus = &FocusOwner.enter;
+    second.focus_context = &owner;
+    second.on_focus = &FocusOwner.enter;
 
     const window = c.gtk_window_new().?;
     const win = u.cast(c.GtkWindow, window);
@@ -261,10 +287,12 @@ test "shared document views preserve directed selections, opt-in focus and indep
     try waitMapped(second.widget);
     try focus(win, first.widget);
     try expectSelection(document.buffer, 1, 4);
-    select(document.buffer, 6, 2); // Leave must save this, not the original range.
+    try testing.expectEqual(first, owner.active.?);
+    select(first.buffer, 6, 2);
     try focus(win, second.widget);
     try expectSelection(document.buffer, 12, 8);
-    select(document.buffer, 20, 20);
+    try testing.expectEqual(second, owner.active.?);
+    select(second.buffer, 20, 20);
     try focus(win, first.widget);
     try expectSelection(document.buffer, 6, 2);
     try focus(win, second.widget);
@@ -272,7 +300,7 @@ test "shared document views preserve directed selections, opt-in focus and indep
     // Navigation from another control must explicitly adopt the destination.
     try testing.expect(c.gtk_widget_grab_focus(outside) != 0);
     select(document.buffer, 30, 25);
-    first.saveSelection();
+    first.syncSelectionFromDocument();
     try focus(win, first.widget);
     try expectSelection(document.buffer, 30, 25);
     try focus(win, second.widget);
@@ -292,9 +320,12 @@ test "shared document views preserve directed selections, opt-in focus and indep
         c.gtk_adjustment_set_value(b, 160);
     }
     first.restoreSelection();
-    try expectSelection(document.buffer, 30, 25);
+    try expectSelection(first.buffer, 30, 25);
     second.restoreSelection();
-    try expectSelection(document.buffer, 20, 20);
+    try expectSelection(second.buffer, 20, 20);
+    // Actual GtkTextView buffers simultaneously retain different visible marks.
+    try expectSelection(c.gtk_text_view_get_buffer(u.cast(c.GtkTextView, first.widget)).?, 30, 25);
+    try expectSelection(c.gtk_text_view_get_buffer(u.cast(c.GtkTextView, second.widget)).?, 20, 20);
     drain();
     for (first_axes, second_axes) |a, b| {
         try testing.expectApproxEqAbs(@as(f64, 40), c.gtk_adjustment_get_value(a), 0.01);
@@ -303,6 +334,173 @@ test "shared document views preserve directed selections, opt-in focus and indep
     try testing.expectEqual(revision, document.revision);
     try testing.expect(!document.dirty());
     try testing.expectEqual(can_undo, c.gtk_text_buffer_get_can_undo(document.buffer));
+}
+
+fn expectViewText(view: *EditorView, expected: []const u8) !void {
+    const text = u.bufferText(view.buffer);
+    defer u.a.free(text);
+    try testing.expectEqualStrings(expected, text);
+}
+
+test "native text view typing backspace and clipboard paste use canonical history" {
+    try initGtk();
+    const document = try Document.create(5, null);
+    defer document.destroy();
+    const first = try EditorView.create(document);
+    defer first.destroy();
+    const second = try EditorView.create(document);
+    defer second.destroy();
+    const window = c.gtk_window_new().?;
+    const win = u.cast(c.GtkWindow, window);
+    defer c.gtk_window_destroy(win);
+    const panes = u.box(true, 0);
+    c.gtk_window_set_child(win, panes);
+    u.append(panes, first.page);
+    u.append(panes, second.page);
+    c.gtk_window_present(win);
+    try waitMapped(first.widget);
+    try waitMapped(second.widget);
+    try focus(win, first.widget);
+    c.g_signal_emit_by_name(first.widget, "insert-at-cursor", @as([*:0]const u8, "aé"));
+    try expectViewText(first, "aé");
+    try expectViewText(second, "aé");
+    try testing.expect(!first.projection.user_action);
+    try testing.expect(c.gtk_text_buffer_get_can_undo(document.buffer) != 0);
+    c.gtk_text_buffer_undo(document.buffer);
+    try expectViewText(first, "");
+    try expectViewText(second, "");
+    c.gtk_text_buffer_redo(document.buffer);
+    try expectViewText(first, "aé");
+    try focus(win, second.widget);
+    c.g_signal_emit_by_name(second.widget, "backspace");
+    try expectViewText(first, "a");
+    try expectViewText(second, "a");
+    c.gtk_text_buffer_set_enable_undo(document.buffer, 0);
+    c.gtk_text_buffer_set_enable_undo(document.buffer, 1);
+    const clipboard = c.gtk_widget_get_clipboard(second.widget).?;
+    c.gdk_clipboard_set_text(clipboard, "🌱\npaste");
+    c.g_signal_emit_by_name(second.widget, "paste-clipboard");
+    const deadline = c.g_get_monotonic_time() + 5_000_000;
+    while (c.gtk_text_buffer_get_char_count(document.buffer) != 8) {
+        if (c.g_get_monotonic_time() >= deadline) return error.ClipboardPasteTimedOut;
+        drain();
+        c.g_usleep(1_000);
+    }
+    try expectViewText(first, "a🌱\npaste");
+    try expectViewText(second, "a🌱\npaste");
+    try testing.expect(!second.projection.user_action);
+    c.gtk_text_buffer_undo(document.buffer);
+    try expectViewText(first, "a");
+    try expectViewText(second, "a");
+    try testing.expectEqual(@as(c_int, 0), c.gtk_text_buffer_get_can_undo(document.buffer));
+    document.loading = true;
+    first.setEditable(false);
+    second.setEditable(false);
+    for ([_]*EditorView{ first, second }) |view| {
+        try testing.expectEqual(@as(c_int, 0), c.gtk_text_view_get_editable(u.cast(c.GtkTextView, view.widget)));
+        c.g_signal_emit_by_name(view.widget, "insert-at-cursor", @as([*:0]const u8, "blocked"));
+        try expectViewText(view, "a");
+    }
+    document.loading = false;
+    first.setEditable(true);
+    second.setEditable(true);
+    c.g_signal_emit_by_name(second.widget, "insert-at-cursor", @as([*:0]const u8, "!"));
+    try expectViewText(first, "a!");
+    try expectViewText(second, "a!");
+}
+
+fn hasStyledTag(buffer: *c.GtkTextBuffer, offset: c_int, property: [*:0]const u8) bool {
+    var at: c.GtkTextIter = undefined;
+    c.gtk_text_buffer_get_iter_at_offset(buffer, &at, offset);
+    const tags = c.gtk_text_iter_get_tags(&at);
+    defer c.g_slist_free(tags);
+    var next = tags;
+    while (next != null) : (next = next.*.next) {
+        var set: c_int = 0;
+        c.g_object_get(next.*.data, property, &set, @as(?*anyopaque, null));
+        if (set != 0) return true;
+    }
+    return false;
+}
+
+fn ensureHighlight(buffer: *c.GtkTextBuffer) void {
+    var start: c.GtkTextIter = undefined;
+    var end: c.GtkTextIter = undefined;
+    c.gtk_text_buffer_get_bounds(buffer, &start, &end);
+    c.gtk_source_buffer_ensure_highlight(u.cast(c.GtkSourceBuffer, buffer), &start, &end);
+}
+
+test "mirror source views render syntax search and spelling and follow theme changes" {
+    try initGtk();
+    const document = try Document.create(4, null);
+    defer document.destroy();
+    c.gtk_text_buffer_set_text(document.buffer, "int main(void) { return 1; }\n// spelling\n", -1);
+    const source = u.cast(c.GtkSourceBuffer, document.buffer);
+    const language = c.gtk_source_language_manager_get_language(c.gtk_source_language_manager_get_default(), "c").?;
+    const manager = c.gtk_source_style_scheme_manager_get_default();
+    const scheme = c.gtk_source_style_scheme_manager_get_scheme(manager, "Adwaita").?;
+    c.gtk_source_buffer_set_language(source, language);
+    c.gtk_source_buffer_set_style_scheme(source, scheme);
+    c.gtk_source_search_settings_set_search_text(document.search_settings, "main");
+    const first = try EditorView.create(document);
+    defer first.destroy();
+    const second = try EditorView.create(document);
+    defer second.destroy();
+    const window = c.gtk_window_new().?;
+    const win = u.cast(c.GtkWindow, window);
+    defer c.gtk_window_destroy(win);
+    const panes = u.box(true, 0);
+    c.gtk_window_set_child(win, panes);
+    u.append(panes, first.page);
+    u.append(panes, second.page);
+    c.gtk_window_present(win);
+    try waitMapped(first.widget);
+    try waitMapped(second.widget);
+
+    for ([_]*EditorView{ first, second }) |view| {
+        const mirror_source = u.cast(c.GtkSourceBuffer, view.buffer);
+        try testing.expectEqual(language, c.gtk_source_buffer_get_language(mirror_source).?);
+        try testing.expectEqual(scheme, c.gtk_source_buffer_get_style_scheme(mirror_source).?);
+        ensureHighlight(view.buffer);
+        try testing.expect(hasStyledTag(view.buffer, 0, "foreground-set"));
+        // Search is evaluated on EACH rendered buffer, using shared settings.
+        var at: c.GtkTextIter = undefined;
+        var start: c.GtkTextIter = undefined;
+        var end: c.GtkTextIter = undefined;
+        c.gtk_text_buffer_get_start_iter(view.buffer, &at);
+        try testing.expect(c.gtk_source_search_context_forward(view.projection.search, &at, &start, &end, null) != 0);
+        try testing.expectEqual(@as(c_int, 4), c.gtk_text_iter_get_offset(&start));
+        try testing.expect(hasStyledTag(view.buffer, 4, "background-set"));
+    }
+    var start: c.GtkTextIter = undefined;
+    var end: c.GtkTextIter = undefined;
+    c.gtk_text_buffer_get_iter_at_offset(document.buffer, &start, 30);
+    c.gtk_text_buffer_get_iter_at_offset(document.buffer, &end, 38);
+    c.gtk_text_buffer_apply_tag(document.buffer, document.tag, &start, &end);
+    for ([_]*EditorView{ first, second }) |view| try testing.expect(hasStyledTag(view.buffer, 30, "underline-set"));
+
+    const dark = c.gtk_source_style_scheme_manager_get_scheme(manager, "Adwaita-dark").?;
+    c.gtk_source_buffer_set_style_scheme(source, dark);
+    c.gtk_source_buffer_set_highlight_syntax(source, 0);
+    c.gtk_source_search_context_set_highlight(document.search, 0);
+    for ([_]*EditorView{ first, second }) |view| {
+        try testing.expectEqual(dark, c.gtk_source_buffer_get_style_scheme(u.cast(c.GtkSourceBuffer, view.buffer)).?);
+        try testing.expectEqual(@as(c_int, 0), c.gtk_source_buffer_get_highlight_syntax(u.cast(c.GtkSourceBuffer, view.buffer)));
+        try testing.expectEqual(@as(c_int, 0), c.gtk_source_search_context_get_highlight(view.projection.search));
+    }
+    c.gtk_source_buffer_set_highlight_syntax(source, 1);
+    c.gtk_source_search_context_set_highlight(document.search, 1);
+    c.gtk_source_search_settings_set_search_text(document.search_settings, "return");
+    select(second.buffer, 0, 0);
+    c.gtk_text_buffer_insert_at_cursor(second.buffer, "// prefix\n", -1);
+    for ([_]*EditorView{ first, second }) |view| {
+        ensureHighlight(view.buffer);
+        var at: c.GtkTextIter = undefined;
+        c.gtk_text_buffer_get_start_iter(view.buffer, &at);
+        try testing.expect(c.gtk_source_search_context_forward(view.projection.search, &at, &start, &end, null) != 0);
+        try testing.expectEqual(@as(c_int, 27), c.gtk_text_iter_get_offset(&start));
+        try testing.expect(hasStyledTag(view.buffer, 27, "background-set"));
+    }
 }
 
 const PaletteOwner = struct {

@@ -1,16 +1,18 @@
 # Coral
 
 A standalone Linux text editor written in **Zig 0.17.0 and GTK4**, with
-GtkSourceView editing and offline Enchant spell checking. Its compact tabbed
-interface follows Pearl's design and the everyday workflow of COSMIC Text Editor.
+GtkSourceView editing and offline Enchant spell checking. Its native foundation
+includes independent editor groups, editable source excerpts and crash recovery,
+with Pearl appearance. An initial multi-root workspace browser is now available;
+workspace search, LSP, Git and agent services remain later work.
 
 ![Native Coral editor](artifacts/native/editor-dark.png)
 
 ## Build and run
 
 Use Zig 0.17.0, `pkg-config`, a C toolchain, GTK **4.12+**, GtkSourceView **5**,
-Enchant **2**, and their development headers. GTK 4.22.5, GtkSourceView 5.20.0,
-and Enchant 2.8.21 are the tested versions. Older supported API baselines have
+Enchant **2**, and their development headers. GTK 4.24.1, GtkSourceView 5.22.0,
+and Enchant 2.8.21 are the current tested versions. Older supported API baselines have
 not been tested in a separate distribution image.
 
 ```sh
@@ -35,16 +37,45 @@ launcher, metadata, icon, and installed styles (`share/coral/styles` or
 Preferences and personal dictionaries are shared between the variants.
 
 Spell checking requires an installed Enchant provider and language dictionary.
-On this CachyOS/Arch environment the English package is `hunspell-en_us` (with
-`hunspell` as the provider). `enchant-lsmod-2 -list-dicts` lists available
-languages. No dictionaries were installed on the development host; verification
+`enchant-lsmod-2 -list-dicts` lists available languages. This development host
+uses Shelly; repository PKGBUILDs do not identify the host distribution.
+No dictionaries were installed for this work; verification
 uses an isolated test dictionary. Missing dictionaries leave editing usable and
 show **Dictionary unavailable**. Choose an available language in Preferences.
 
-Options: `--follow-pearl`, `--light`, `--dark`, `--native-theme`, `--width=N`, `--height=N`,
+Options: `--workspace PATH`, `--folder PATH`, `--follow-pearl`, `--light`, `--dark`,
+`--native-theme`, `--width=N`, `--height=N`,
 `--log-level LEVEL`, `--log-scopes LIST`, `--help`, `--version`, followed by
 local filenames or local file URIs. Diagnostics share Pearl's log handler and
 land wherever stderr goes; see [logging](../../docs/LOGGING.md).
+
+## Workspaces — first M2 slice
+
+Choose **Open Folder…** or **Open Workspace…** from the menu or command palette,
+or launch `coral --folder PATH` / `coral --workspace PATH`. A workspace file is
+versioned JSON, for example:
+
+```json
+{
+  "version": 1,
+  "roots": [
+    {"name": "Frontend", "path": "./frontend"},
+    {"name": "Backend", "path": "./backend"}
+  ]
+}
+```
+
+Relative roots resolve beside the manifest. Root-qualified tabs distinguish
+identical filenames. The native browser reads direct children lazily and offers
+**Roots / Back / Rescan / Close workspace**. Switching roots preserves open edits.
+Unavailable roots are shown, never created.
+
+This is a **restricted-only, bounded first slice**, not a completed explorer:
+500 entries per listing with visible truncation, no recursive indexing/search or
+ignore rules, and settings must be omitted or empty. Workspace content cannot
+launch tasks or grant trust. Recovery restores documents/layout but not workspace
+roots; reopen the manifest explicitly. See [workspace usage and remaining M2
+gates](docs/WORKBENCH_M2_WORKSPACES.md) for limits and security boundaries.
 
 ## Implemented
 
@@ -63,6 +94,16 @@ land wherever stderr goes; see [logging](../../docs/LOGGING.md).
   require discard confirmation.
 - Native **Command Palette** (`Ctrl+Shift+P`) with filtered, keyboard-accessible
   commands and focus restoration on cancellation.
+- Independent equal-width editor groups: **Ctrl+\\** splits the current document;
+  each view retains its own selection and scroll. Focus/close-group commands are
+  available through the palette. Closing a duplicate view preserves its document.
+- **Edit selection as excerpt** opens a source-mapped editable tab. Checked grouped
+  buffer edits, grouped undo/redo and protected typing intervals prevent undoing
+  only one participant in a multi-document change. Conflicting newer edits are
+  refused. See the status report for conservative history-boundary limitations.
+- Durable versioned recovery with explicit **Restore / Keep for later / Discard**,
+  including groups, tabs, excerpts and selections. Restored text becomes unsaved
+  copies, never automatic overwrites of source files.
 - UTF-8 validation, BOM preservation, LF/CRLF and final-newline preservation,
   explicit mixed-line normalization, and rejection of binary/unsupported input.
 - GtkSourceView syntax highlighting; Unicode editing; undo/redo; clipboard;
@@ -81,17 +122,28 @@ land wherever stderr goes; see [logging](../../docs/LOGGING.md).
   scheme under `$XDG_CACHE_HOME/coral/styles`. Pearl dark/light and native GTK
   remain as manual choices, narrow-window adaptation, keyboard
   operation, accessible control labels, and persisted preferences.
-- Explicit large-file mode above 10 MiB disables automatic spelling and syntax
-  highlighting. Reads stop at a 128 MiB safety limit.
+- Explicit presentation limits: syntax/automatic spelling are reduced at 524,288
+  GTK characters or logical lines over 16 KiB. Giant lines offer a visible bounded
+  excerpt editor rather than hanging on full-paragraph layout. That action is
+  unavailable beyond the 16 MiB checked-edit cap. The separate >10 MiB load warning
+  and 128 MiB read limit remain. See the measured tradeoffs in the status report.
 
 Settings are stored in `$XDG_CONFIG_HOME/coral/preferences.ini` (default
 `~/.config/coral/preferences.ini`). Personal words use Enchant's configuration
 and may be shared with other Enchant applications.
 
+Recovery journals live under `$XDG_STATE_HOME/coral/recovery` (normally
+`~/.local/state/coral/recovery`). Recovery reaches the last durable checkpoint,
+not necessarily the latest keystroke. Caps are **4 MiB per document / 8 MiB total
+text / 12 MiB manifest**. An oversized open document rejects the whole new
+checkpoint visibly; the previous checkpoint is retained. Save important work
+explicitly—recovery is not a backup service.
+
 | Shortcut | Action |
 | --- | --- |
 | Ctrl+N / Ctrl+O | New document / open existing file |
 | Ctrl+Shift+P | Command palette |
+| Ctrl+\\ | Split editor group |
 | Ctrl+S / Ctrl+Shift+S | Save / Save As |
 | Ctrl+W / Ctrl+Q | Close tab / quit |
 | Ctrl+Tab / Ctrl+Shift+Tab | Next / previous tab |
@@ -112,8 +164,8 @@ Right-click elsewhere for GtkSourceView's normal editing menu.
 The [workbench expansion plan](docs/WORKBENCH_IMPLEMENTATION_PLAN.md) targets a
 VS Code-style workspace/editor with Zed-style agents and Git workflows.
 The [native foundation status](docs/WORKBENCH_STATUS.md) records implemented
-commands, document/view ownership, safe edits, file monitoring and validation;
-**workspaces, LSP, Git, terminal and agent UI are not implemented yet**.
+groups, excerpts, guarded undo, recovery, file monitoring and validation;
+**M2 is in progress; LSP, Git, production terminal and agent UI are not implemented yet**.
 Explore the separate [interactive workbench prototype](docs/mockups/workbench/index.html)
 and its [interaction guide](docs/mockups/workbench/README.md). All prototype
 operations stay in memory; they are not native feature evidence.
@@ -133,10 +185,11 @@ Python, D-Bus, `wtype`, `wlr-randr`, and `grim`. Pass
 not application dependencies. Integration builds a separate instrumented binary;
 normal builds omit its test controls.
 
-The foundation also adds display-backed widget lifetime/focus tests, separate
-from the headless unit suite:
+Run the complete M1 correctness suite (unit, widgets, native workflows, groups
+and crash recovery), or individual display-backed checks:
 
 ```sh
+zig build test-m2-slice test-m1 -Doptimize=safe -j1
 zig build widgets -Doptimize=safe -- --aqueous-prefix /usr
 ```
 
@@ -148,7 +201,11 @@ The [original plan](docs/IMPLEMENTATION_PLAN.md), [interactive mockup](docs/mock
 and [mockup gallery](docs/mockups/README.md) remain design references. They do
 not replace the native test evidence.
 
-Session/crash recovery, remote files, legacy encodings, grammar checking,
-project tooling and plugins are outside this release. Markdown code fragments
+Multi-root workspace sessions, remote files, legacy encodings, grammar checking,
+project tooling and plugins are outside this first slice. The user accepted M0's
+bounded-editor tradeoffs to proceed to M2. Full giant-line rendering remains
+unsupported and original input-to-paint targets remain unverified; acceptance
+does not change the recorded measurements.
+Markdown code fragments
 are checked as text. Physical IME and screen-reader qualification remain manual
 follow-up work; see the implementation report for precise limits.

@@ -1,15 +1,13 @@
-//! GTK-thread-only editor presentation. The registry owns the document; destroy
-//! every view before destroying its document. No application callbacks live here.
-//!
-//! Saved caret/selection positions are independent, but GTK's visible insertion
-//! and selection_bound marks belong to the BUFFER. Inactive panes can therefore
-//! show the active pane's selection/caret; this is not independent pane rendering.
-//! Each page has its own scroll adjustments. Restoring selection does not request
-//! scrolling; callers may explicitly scroll the active view for navigation.
+//! GTK-thread-only editor presentation. The registry owns the document; detach
+//! every view before destroying its document. Each widget has its own text buffer,
+//! visible selection, syntax/search rendering and scroll adjustments. All edits
+//! and undo history belong to the canonical Document.buffer (see projection.zig).
+//! Parent controllers route undo/redo to the document, never the mirror buffer.
 const std = @import("std");
 const u = @import("../c.zig");
 const c = u.c;
 const Document = @import("../document.zig").Document;
+const projection = @import("projection.zig");
 
 // Process-wide, never recycled, and only accessed on the GTK thread.
 var next_id: u64 = 1;
@@ -65,7 +63,17 @@ pub const Selection = struct {
 pub const EditorView = struct {
     id: u64,
     document: *Document,
-    /// Borrowed from page; never replace its buffer or reparent its child.
+    /// Presentation only: use for widget iterators, navigation and selections.
+    buffer: *c.GtkTextBuffer,
+    projection: *projection.Projection,
+    layout_guard: *@import("layout_guard.zig").Guard,
+    /// Optional owner notification, called AFTER focus selection is bridged.
+    /// The constructor never invokes this; clear/detach before freeing the owner.
+    on_focus: ?*const fn (*EditorView) void = null,
+    focus_context: ?*anyopaque = null,
+    /// Borrowed from page/guard; callers must not rebind/reparent it. While
+    /// layout_guard.blocked, the guard parks this hidden widget on an empty
+    /// buffer. `buffer` remains the authoritative presentation/selection.
     widget: u.W,
     /// Owned sunk references, independent of notebook/window lifetime.
     page: u.W,
@@ -80,7 +88,10 @@ pub const EditorView = struct {
     pub fn create(document: *Document) !*EditorView {
         if (next_id == std.math.maxInt(u64)) return error.IdentityExhausted;
         const self = try u.a.create(EditorView);
-        const widget = c.gtk_source_view_new_with_buffer(u.cast(c.GtkSourceBuffer, document.buffer)).?;
+        errdefer u.a.destroy(self);
+        const mirror = try projection.Projection.create(document);
+        errdefer mirror.destroy();
+        const widget = c.gtk_source_view_new_with_buffer(u.cast(c.GtkSourceBuffer, mirror.buffer)).?;
         const text_view = u.cast(c.GtkTextView, widget);
         c.gtk_text_view_set_monospace(text_view, 1);
         c.gtk_text_view_set_left_margin(text_view, 18);
@@ -89,7 +100,9 @@ pub const EditorView = struct {
         c.gtk_text_view_set_bottom_margin(text_view, 22);
         const page = c.gtk_scrolled_window_new().?;
         _ = c.g_object_ref_sink(page);
+        errdefer c.g_object_unref(page);
         c.gtk_scrolled_window_set_child(u.cast(c.GtkScrolledWindow, page), widget);
+        const layout_guard = try @import("layout_guard.zig").Guard.attach(u.cast(c.GtkScrolledWindow, page), widget, mirror.buffer);
         c.gtk_widget_set_hexpand(page, 1);
         c.gtk_widget_set_vexpand(page, 1);
         const tab = u.box(true, 6);
@@ -105,14 +118,19 @@ pub const EditorView = struct {
         self.* = .{
             .id = next_id,
             .document = document,
+            .buffer = mirror.buffer,
+            .projection = mirror,
+            .layout_guard = layout_guard,
             .widget = widget,
             .page = page,
             .tab = tab,
             .tab_label = tab_label,
             .close_button = close_button,
-            .selection = Selection.init(document.buffer),
+            .selection = Selection.init(mirror.buffer),
         };
         next_id += 1;
+        c.gtk_text_view_set_editable(text_view, @intFromBool(!document.loading and document.pending == null));
+        self.enableFocusSelection();
         return self;
     }
 
@@ -124,13 +142,8 @@ pub const EditorView = struct {
         self.disconnectDocumentCallbacks();
         std.debug.assert(c.gtk_widget_get_parent(self.page) == null);
         std.debug.assert(c.gtk_widget_get_parent(self.tab) == null);
-        if (self.focus_controller) |controller| {
-            // Removing/unrefing widgets may emit leave: disconnect before marks
-            // are deleted so teardown cannot capture into a dead Selection.
-            _ = c.g_signal_handlers_disconnect_matched(controller, c.G_SIGNAL_MATCH_DATA, 0, 0, null, null, self);
-            c.gtk_widget_remove_controller(self.widget, controller);
-        }
         self.selection.deinit();
+        self.projection.destroy();
         c.g_object_unref(self.tab);
         c.g_object_unref(self.page);
         u.a.destroy(self);
@@ -139,6 +152,16 @@ pub const EditorView = struct {
     /// GTK or accessibility consumers may retain widgets after tab removal.
     /// Detach document-bound callbacks before unparenting, not only at finalization.
     pub fn disconnectDocumentCallbacks(self: *EditorView) void {
+        self.layout_guard.setHandler(null, null);
+        self.projection.detach();
+        self.on_focus = null;
+        self.focus_context = null;
+        c.gtk_text_view_set_editable(u.cast(c.GtkTextView, self.widget), 0);
+        if (self.focus_controller) |controller| {
+            _ = c.g_signal_handlers_disconnect_matched(controller, c.G_SIGNAL_MATCH_DATA, 0, 0, null, null, self);
+            c.gtk_widget_remove_controller(self.widget, controller);
+            self.focus_controller = null;
+        }
         _ = c.g_signal_handlers_disconnect_matched(self.close_button, c.G_SIGNAL_MATCH_DATA, 0, 0, null, null, self.document);
         if (self.context_menu_controller) |controller| {
             _ = c.g_signal_handlers_disconnect_matched(controller, c.G_SIGNAL_MATCH_DATA, 0, 0, null, null, self.document);
@@ -147,31 +170,43 @@ pub const EditorView = struct {
         }
     }
 
-    /// Capture global marks only when they represent THIS view. Also call this
-    /// after programmatic navigation (goto/search/menu), BEFORE giving focus back
-    /// to the view when focus selection is enabled, or enter would restore stale
-    /// positions. This is the explicit adoption API for caller-moved cursors.
+    /// Compatibility snapshot API, local to this pane. Focus does not restore
+    /// snapshots: visible mirror marks are always this pane's authoritative cursor.
     pub fn saveSelection(self: *EditorView) void {
         self.selection.save();
     }
 
-    /// For explicit pane switches: save outgoing, restore incoming. Never restore
-    /// an inactive pane just to inspect it: GTK's visible marks are buffer-wide.
+    /// Restore this pane's saved snapshot without affecting any other pane.
     pub fn restoreSelection(self: *EditorView) void {
         self.selection.restore();
     }
 
-    /// Optional split-demo behavior; NOT installed by create(). Single-tab callers
-    /// need no automatic restoration, which could undo menu/code navigation.
-    /// Enables GtkEventControllerFocus leave/save and enter/restore, idempotently.
-    /// Install before first focus, or saveSelection() first if already focused.
-    /// Do not combine with a second controller-driven save/restore mechanism.
-    /// Navigation while outside the editor must adopt the new cursor with
-    /// saveSelection() before focus returns. Marks track edits, not global cursor
-    /// moves; there is no reliable automatic distinction between other panes and
-    /// application navigation. This controller connects no application callbacks.
+    /// Bridge BEFORE canonical selection-dependent commands (search, replace,
+    /// spelling). Canonical cursor movement is never broadcast to other panes.
+    pub fn syncSelectionToDocument(self: *EditorView) void {
+        if (self.projection.attached) projection.copySelection(self.buffer, self.projection.canonical);
+    }
+
+    /// Bridge AFTER a canonical command intentionally navigates the active pane.
+    pub fn syncSelectionFromDocument(self: *EditorView) void {
+        if (!self.projection.attached) return;
+        projection.copySelection(self.projection.canonical, self.buffer);
+        self.saveSelection();
+    }
+
+    /// Parent must apply loading/read-only transitions to EVERY view of a document.
+    /// The projection additionally rejects edits while Document.loading/pending.
+    pub fn setEditable(self: *EditorView, editable: bool) void {
+        self.projection.editable = editable;
+        const document = self.projection.document;
+        const allowed = if (document) |d| editable and !d.loading and d.pending == null else false;
+        c.gtk_text_view_set_editable(u.cast(c.GtkTextView, self.widget), @intFromBool(allowed));
+    }
+
+    /// Installed by create(), retained for API compatibility and idempotent.
+    /// Focus enter bridges the actual visible cursor, not a stale saved snapshot.
     pub fn enableFocusSelection(self: *EditorView) void {
-        if (self.focus_controller != null) return;
+        if (self.focus_controller != null or !self.projection.attached) return;
         const controller = c.gtk_event_controller_focus_new().?;
         u.connect(controller, "enter", &focusEnter, self);
         u.connect(controller, "leave", &focusLeave, self);
@@ -180,7 +215,9 @@ pub const EditorView = struct {
     }
 
     fn focusEnter(_: ?*c.GtkEventControllerFocus, data: ?*anyopaque) callconv(.c) void {
-        u.cast(EditorView, data.?).restoreSelection();
+        const self = u.cast(EditorView, data.?);
+        self.syncSelectionToDocument();
+        if (self.on_focus) |callback| callback(self);
     }
 
     fn focusLeave(_: ?*c.GtkEventControllerFocus, data: ?*anyopaque) callconv(.c) void {

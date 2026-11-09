@@ -81,7 +81,14 @@ def main():
                         key('F12')
                         last_sent = time.monotonic()
                     return line
-                line = wait_for(response)
+                try:
+                    line = wait_for(response)
+                except TimeoutError as exc:
+                    state = ipc.state()
+                    (output / 'probe-timeout-state.json').write_text(json.dumps(state, indent=2) + '\n')
+                    session.run(['grim', output / 'probe-timeout.png'], check=False)
+                    tasks = {p.name: (p / 'wchan').read_text() for p in Path(f'/proc/{app.proc.pid}/task').iterdir()} if app.proc.poll() is None else {}
+                    raise TimeoutError(f'Native probe did not complete; exit={app.proc.poll()}, tasks={tasks}, windows={windows()}, log={app.lines[-10:]}') from exc
                 return json.loads(line.removeprefix('CORAL_PROBE '))
             def command(action, value=None, **fields):
                 content = '[Test]\naction=' + action + '\n'
@@ -153,11 +160,17 @@ def main():
             initial = launch(sample, flags=['--dark'])
             assert initial['tabs'] == 1 and initial['dictionary'], initial
             capture('editor-dark')
-            key('F7')
-            wait_for(lambda: probe()['popover'])
-            capture('spelling')
-            key('Escape')
-            passed('Native startup, local file argument, dictionary discovery and suggestions')
+            # Each wtype invocation removes/recreates the virtual keyboard. Seat
+            # reentry during popup focus must not close/unparent the same pane's
+            # popover and leave keyboard focus in a detached widget subtree.
+            for attempt in range(32):
+                key('F7')
+                wait_for(lambda: probe()['popover'])
+                if attempt == 0:
+                    capture('spelling')
+                key('Escape')
+                wait_for(lambda: not probe()['popover'])
+            passed('Native startup, local file argument, dictionary discovery and repeated suggestion popover focus')
 
             palette('no-such-coral-command', dispatch=False)
             key('Return')
@@ -498,6 +511,19 @@ def main():
             assert probe()['dirty'] and sample.read_text() == before + ' plus'
             key('s', 'ctrl'); wait_for(lambda: not probe()['busy'] and not probe()['dirty'])
             passed('Edits during save remain dirty; cancelled and failed saves preserve original content')
+            before_undo_race = sample.read_text()
+            command('save-undo-race')
+            wait_for(lambda: not probe()['busy'])
+            assert probe()['dirty'], 'Undo to the old clean checkpoint hid the newer disk write'
+            assert sample.read_text() == before_undo_race + ' pending'
+            assert probe()['chars'] == len(before_undo_race)
+            key('w', 'ctrl')
+            wait_for(lambda: probe()['dialog'] == 0)
+            command('respond', response=0)
+            key('s', 'ctrl')
+            wait_for(lambda: not probe()['busy'] and not probe()['dirty'])
+            assert sample.read_text() == before_undo_race
+            passed('Undo during save remains dirty and requires close confirmation until a current revision is saved')
             sample.unlink()
             key('s', 'ctrl'); wait_for(lambda: probe()['dialog'] == 2)
             assert not sample.exists()

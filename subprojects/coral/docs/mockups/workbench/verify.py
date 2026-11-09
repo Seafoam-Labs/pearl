@@ -635,7 +635,7 @@ def resize(page):
     assert snapshot(page) == before
 
 
-def main():
+def main(report_name="verification.json", extra_report=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--only", default="", help="Run cases whose name contains this text")
     args = parser.parse_args()
@@ -657,6 +657,8 @@ def main():
                    "UI actions are real events; internal snapshots are inspected read-only.",
                    "No real Git, compiler, filesystem operations or provider integration is tested."],
     }
+    if extra_report:
+        report.update(extra_report)
     started = time.monotonic()
     try:
         with sync_playwright() as playwright:
@@ -712,8 +714,8 @@ def main():
     finally:
         report["seconds"] = round(time.monotonic() - started, 3)
         report["success"] = not report.get("fatal_error") and report["failed"] == 0 and report["passed"] == len(selected)
-        (HERE / "verification.json").write_text(json.dumps(report, indent=2) + "\n")
-    print(f"{report['passed']}/{len(selected)} passed; {report['failed']} failed. Report: {HERE / 'verification.json'}")
+        (HERE / report_name).write_text(json.dumps(report, indent=2) + "\n")
+    print(f"{report['passed']}/{len(selected)} passed; {report['failed']} failed. Report: {HERE / report_name}")
     return 0 if report["success"] else 1
 
 

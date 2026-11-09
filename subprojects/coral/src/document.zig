@@ -20,6 +20,10 @@ pub const Document = struct {
     watch_pending: bool = false,
     revision: u64 = 0,
     saved_revision: u64 = 0,
+    /// A stale save moved disk away from GTK's clean undo checkpoint. Until a
+    /// current-revision save/load establishes a new checkpoint, GTK's modified
+    /// flag alone cannot safely authorize closing the document.
+    saved_checkpoint_stale: bool = false,
     bom: bool = false,
     newline: codec.Newline = .lf,
     normalize_save_as: bool = false,
@@ -65,7 +69,13 @@ pub const Document = struct {
         d.revision = std.math.add(u64, d.revision, 1) catch @panic("Document revision exhausted");
     }
     pub fn dirty(d: *Document) bool {
-        return c.gtk_text_buffer_get_modified(d.buffer) != 0;
+        return d.saved_checkpoint_stale or c.gtk_text_buffer_get_modified(d.buffer) != 0;
+    }
+    pub fn recordSavedRevision(d: *Document, revision: u64) void {
+        d.saved_revision = revision;
+        d.saved_checkpoint_stale = revision != d.revision;
+        c.gtk_text_buffer_set_modified(d.buffer, @intFromBool(d.saved_checkpoint_stale));
+        @import("editor/native_history.zig").recordSavedCheckpoint(d.buffer, !d.saved_checkpoint_stale);
     }
     pub fn stopWatching(d: *Document) void {
         d.watch_generation = std.math.add(u64, d.watch_generation, 1) catch @panic("Watcher generation exhausted");

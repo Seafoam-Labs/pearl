@@ -249,17 +249,24 @@ Parallel work after M2: LSP (M3), Git (M4) and terminal/tasks (M5) can proceed i
 
 Release labels must stay honest: M2 = workspace preview; M3–M5 = developer preview; M6–M7 = agent preview; M8 = local workbench release candidate. Do not call M2 a full IDE or claim Zed parity from a chat panel.
 
-### Initial implementation batch and remaining gates
+### M0/M1 delivery and accepted tradeoffs
 
-The registry/view, edit-transaction and command-capture portions are implemented; see [status](WORKBENCH_STATUS.md) for tests and limitations. The list remains a gate checklist, not a completion claim.
+The integrated bounded M1 foundation passes unit/widget/native/group/recovery acceptance. The user explicitly accepted the M0 tradeoffs and authorized proceeding to M2; see [current status](WORKBENCH_STATUS.md) for evidence and limits. Acceptance of a tradeoff is not a passing measurement for the original performance target.
 
-1. Pin Zed/reference-server/ACP versions and write executable user-story fixtures.
-2. Add regression tests for current save-race and path-opening behavior.
-3. Extract `DocumentRegistry` and `EditorView` without changing normal single-file UI.
-4. Introduce `EditTransaction` with revision/range checks and focused Zig tests.
-5. Spike two independent editor views and one editable diff excerpt with undo.
-6. Add workspace IDs and a supervised process abstraction with no UI feature expansion yet.
-7. Review M0/M1 evidence before layering explorer/LSP/agent features onto it.
+1. **Delivered:** [frozen Zed/ZLS/ACP references](WORKBENCH_M0_REFERENCES.md), executable prototype fixtures and [technical UX review](WORKBENCH_M0_UX_REVIEW.md). The user's subsequent M0 tradeoff acceptance is recorded in the status report.
+2. **Delivered:** path/save-race regressions, including undo during a save and stale clean markers across grouped typing intervals.
+3. **Delivered:** canonical registry, independent presentation buffers, native editor groups and lifetime/focus routing.
+4. **Delivered:** checked transactions, grouped history, guarded native typing intervals and source-mapped editable excerpts. Conflicts refuse rather than reset newer edits; pre-first-group typing history has a documented conservative boundary.
+5. **Delivered:** native independent-view/excerpt demonstrations, [actual GTK4 VTE feasibility](WORKBENCH_M0_TERMINAL.md), advanced-editor mechanism probes and [reproducible B01–B05 baselines](WORKBENCH_M0_BENCHMARKS.md).
+6. **Delivered:** process-local workspace identities, generation-based late-result isolation and owned process-group lifecycle. No M2 explorer or M5 production terminal is implied.
+7. **Delivered:** versioned durable recovery, explicit restore/keep/discard, conflict-safe unsaved copies and native crash/interrupted-publication tests.
+8. **M0 tradeoffs accepted by the user:** retain the measured syntax/long-line policy and bounded-excerpt fallback, accept documented timing misses for the foundation, and defer injected-input-to-paint qualification. Full giant-paragraph rendering remains unsupported/guarded; bounded 1 MiB excerpt editing passes its workload. Original targets remain recorded, not relabelled as passing measurements.
+
+### M2 first implementation slice
+
+Version-1 workspace manifests, canonical typed roots, native folder/workspace opening, root-qualified tabs and an asynchronous bounded directory browser are integrated. Restricted mode cannot be promoted by workspace content; settings are currently omitted/empty only. Native two-root, malformed-input, stale-result, no-execution and request-budget tests are in `tests/workspaces.py` (`zig build test-m2-slice`). See [workspace usage and remaining gates](WORKBENCH_M2_WORKSPACES.md).
+
+This is **not completed M2**: directory paging/virtualization and watching, ignore rules, 100k-file responsiveness, quick-open/search, settings precedence, persistent trust, workspace-root session restore, docking and multi-window workflows remain.
 
 ## 11. Validation and release acceptance
 

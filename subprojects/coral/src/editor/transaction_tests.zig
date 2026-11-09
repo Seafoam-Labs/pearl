@@ -4,6 +4,267 @@ const c = u.c;
 const tx = @import("transactions.zig");
 const testing = std.testing;
 
+test "ordered native trace validates UTF8 character positions exact states and transient limits" {
+    const F = @import("history_test_support.zig").Fixture;
+    var f: F = .{};
+    f.init("aé🌱z");
+    defer f.deinit();
+    const edits = [_]tx.CharacterEdit{
+        .{ .start = 1, .end = 2, .text = "終" },
+        .{ .start = 3, .end = 4, .text = "" },
+        .{ .start = 0, .end = 0, .text = "!" },
+    };
+    try testing.expectError(error.SnapshotMismatch, tx.prepareSequence(testing.allocator, f.target(1), "wrong", "!a終🌱", &edits, .{}));
+    try testing.expectError(error.SnapshotMismatch, tx.prepareSequence(testing.allocator, f.target(1), "aé🌱z", "wrong", &edits, .{}));
+    try testing.expectError(error.OutOfBounds, tx.prepareSequence(testing.allocator, f.target(1), "aé🌱z", "", &.{.{ .start = 3, .end = 5, .text = "" }}, .{}));
+    try testing.expectError(error.InvalidUtf8, tx.prepareSequence(testing.allocator, f.target(1), "aé🌱z", "", &.{.{ .start = 0, .end = 0, .text = "\xff" }}, .{}));
+    try testing.expectError(error.LimitExceeded, tx.prepareSequence(testing.allocator, f.target(1), "aé🌱z", "!a終🌱", &edits, .{ .max_buffer_bytes = 8 }));
+    try testing.expectError(error.LimitExceeded, tx.prepareSequence(testing.allocator, f.target(1), "aé🌱z", "!a終🌱", &edits, .{ .max_replacements = 2 }));
+    try f.expect("aé🌱z");
+    try testing.expectEqual(@as(u64, 0), f.revision);
+    var plan = try tx.prepareSequence(testing.allocator, f.target(1), "aé🌱z", "!a終🌱", &edits, .{});
+    defer plan.deinit();
+    try plan.commit(&.{f.target(1)});
+    try f.expect("!a終🌱");
+}
+
+test "bounded transaction source-cost probe (opt in)" {
+    if (c.g_getenv("CORAL_TRANSACTION_PROBE") == null) return;
+    const Excerpt = @import("excerpt.zig").Excerpt;
+    const History = @import("history.zig").History;
+    const text = try testing.allocator.alloc(u8, 65536);
+    defer testing.allocator.free(text);
+    var line: [64]u8 = @splat(' ');
+    _ = try std.fmt.bufPrint(line[0..63], "// {d:0>3} const café = \"λ🌱\"; // deterministic", .{0});
+    line[63] = '\n';
+    for (text, 0..) |*byte, i| byte.* = line[i % line.len];
+    var fixtures: [3]Fixture = .{ .{}, .{}, .{} };
+    for (&fixtures) |*f| f.initKind(text, true);
+    defer for (&fixtures) |*f| f.deinit();
+    const language = c.gtk_source_language_manager_get_language(c.gtk_source_language_manager_get_default(), "c");
+    for (&fixtures) |*f| c.gtk_source_buffer_set_language(u.cast(c.GtkSourceBuffer, f.buffer), language);
+    while (c.g_main_context_iteration(null, 0) != 0) {}
+    var excerpts: [3]Excerpt = undefined;
+    for (&fixtures, &excerpts, 0..) |*f, *e, i| e.* = try Excerpt.init(testing.allocator, f.target(i + 1), .{ .start = i * 1920, .end = i * 1920 + 1280 }, false, .{});
+    defer for (&excerpts) |*e| e.deinit();
+    var history = History.init(testing.allocator, .{});
+    defer history.deinit();
+    var totals: [6]i64 = @splat(0);
+    for (0..12) |_| {
+        var mapped: [3]@import("excerpt.zig").Mapped = undefined;
+        var changes: [3]tx.Change = undefined;
+        var targets: [3]tx.Target = undefined;
+        var start = c.g_get_monotonic_time();
+        for (&fixtures, &excerpts, &mapped, &changes, &targets, 0..) |*f, *e, *m, *change, *target, i| {
+            target.* = f.target(i + 1);
+            m.* = try e.map(testing.allocator, target.*, &.{replace(20, 20, "Ω")});
+            change.* = m.change;
+        }
+        defer for (&mapped) |*m| m.deinit();
+        totals[0] += c.g_get_monotonic_time() - start;
+        start = c.g_get_monotonic_time();
+        var pending = try history.prepare("probe", &changes);
+        defer pending.deinit();
+        totals[1] += c.g_get_monotonic_time() - start;
+        start = c.g_get_monotonic_time();
+        try history.commit(&pending, &targets);
+        totals[2] += c.g_get_monotonic_time() - start;
+        start = c.g_get_monotonic_time();
+        while (c.g_main_context_iteration(null, 0) != 0) {}
+        totals[4] += c.g_get_monotonic_time() - start;
+        for (&fixtures, &targets, 0..) |*f, *target, i| target.* = f.target(i + 1);
+        start = c.g_get_monotonic_time();
+        try history.undo(&targets);
+        totals[3] += c.g_get_monotonic_time() - start;
+        start = c.g_get_monotonic_time();
+        while (c.g_main_context_iteration(null, 0) != 0) {}
+        totals[5] += c.g_get_monotonic_time() - start;
+    }
+    std.debug.print("\nTRANSACTION_PROBE three_64KiB_C mean_us map={d} history_prepare={d} commit={d} undo={d} edit_drain={d} undo_drain={d}\n", .{ @divTrunc(totals[0], 12), @divTrunc(totals[1], 12), @divTrunc(totals[2], 12), @divTrunc(totals[3], 12), @divTrunc(totals[4], 12), @divTrunc(totals[5], 12) });
+}
+
+test "bounded giant UTF8 snapshot source-cost probe (opt in)" {
+    if (c.g_getenv("CORAL_GIANT_PROBE") == null) return;
+    const Excerpt = @import("excerpt.zig").Excerpt;
+    const History = @import("history.zig").History;
+    for ([_]usize{ 65536, 262144, 1048576 }) |size| {
+        const text = try testing.allocator.alloc(u8, size);
+        defer testing.allocator.free(text);
+        var line: [64]u8 = @splat(' ');
+        _ = try std.fmt.bufPrint(&line, "// 000 const café = \"λ🌱\"; // deterministic", .{});
+        for (text, 0..) |*byte, i| byte.* = line[i % line.len];
+        var f: Fixture = .{};
+        f.initKind(text, true);
+        defer f.deinit();
+        var excerpt = try Excerpt.init(testing.allocator, f.target(1), .{ .start = size / 2, .end = size / 2 + 2048 }, false, .{});
+        defer excerpt.deinit();
+        var history = History.init(testing.allocator, .{});
+        defer history.deinit();
+        var times: [4]i64 = @splat(0);
+        for (0..3) |_| {
+            var start = c.g_get_monotonic_time();
+            var mapped = try excerpt.map(testing.allocator, f.target(1), &.{replace(20, 20, "Ω")});
+            defer mapped.deinit();
+            times[0] += c.g_get_monotonic_time() - start;
+            start = c.g_get_monotonic_time();
+            var pending = try history.prepare("giant probe", &.{mapped.change});
+            defer pending.deinit();
+            times[1] += c.g_get_monotonic_time() - start;
+            start = c.g_get_monotonic_time();
+            try history.commit(&pending, &.{f.target(1)});
+            times[2] += c.g_get_monotonic_time() - start;
+            start = c.g_get_monotonic_time();
+            try history.undo(&.{f.target(1)});
+            times[3] += c.g_get_monotonic_time() - start;
+        }
+        try f.expect(text);
+        std.debug.print("\nGIANT_PROBE bytes={d} mean_us map={d} prepare={d} commit={d} undo={d}\n", .{ size, @divTrunc(times[0], 3), @divTrunc(times[1], 3), @divTrunc(times[2], 3), @divTrunc(times[3], 3) });
+    }
+}
+
+test "transaction: bulk slices preserve Unicode hidden text limits and late full-target defenses" {
+    var storage: [32782]u8 = undefined;
+    @memset(storage[0..16383], 'a');
+    @memcpy(storage[16383..16392], "🌱\u{fffc}é");
+    @memset(storage[16392..32776], 'b');
+    @memcpy(storage[32776..], "\u{fffc}終");
+    const text: []const u8 = &storage;
+    var first: Fixture = .{};
+    first.init("untouched");
+    defer first.deinit();
+    var f: Fixture = .{};
+    f.init(text);
+    defer f.deinit();
+    var start: c.GtkTextIter = undefined;
+    var end: c.GtkTextIter = undefined;
+    c.gtk_text_buffer_get_bounds(f.buffer, &start, &end);
+    const tag = c.gtk_text_buffer_create_tag(f.buffer, null, "invisible", @as(c_int, 1), @as(?*anyopaque, null));
+    c.gtk_text_buffer_apply_tag(f.buffer, tag, &start, &end);
+    try testing.expectError(error.LimitExceeded, tx.readRange(testing.allocator, f.buffer, start, end, text.len - 1));
+    const read = try tx.readRange(testing.allocator, f.buffer, start, end, text.len);
+    defer testing.allocator.free(read);
+    try testing.expectEqualStrings(text, read);
+    try testing.expectError(error.OutOfBounds, tx.readRange(testing.allocator, f.buffer, end, start, text.len));
+    try testing.expectError(error.TargetMismatch, tx.readRange(testing.allocator, first.buffer, start, end, text.len));
+    var plan = try tx.prepare(testing.allocator, &.{
+        .{ .target = first.target(1), .replacements = &.{replace(0, 1, "X")} },
+        .{ .target = f.target(2), .replacements = &.{replace(0, 1, "Y")} },
+    }, .{});
+    defer plan.deinit();
+    // Same-length mutation after the second chunk; no revision notification.
+    c.gtk_text_buffer_get_iter_at_offset(f.buffer, &start, 32771);
+    end = start;
+    _ = c.gtk_text_iter_forward_char(&end);
+    c.gtk_text_buffer_delete(f.buffer, &start, &end);
+    c.gtk_text_buffer_insert(f.buffer, &start, "Z", 1);
+    f.revision = 0;
+    try testing.expectError(error.SnapshotMismatch, plan.commit(&.{ first.target(1), f.target(2) }));
+    try first.expectUntouched("untouched");
+    c.gtk_text_buffer_set_text(f.buffer, text.ptr, @intCast(text.len));
+    f.revision = 0;
+    // An object must not compare equal to literal U+FFFC in the saved snapshot.
+    c.gtk_text_buffer_get_iter_at_offset(f.buffer, &start, 16384);
+    end = start;
+    _ = c.gtk_text_iter_forward_char(&end);
+    c.gtk_text_buffer_delete(f.buffer, &start, &end);
+    _ = c.gtk_text_buffer_create_child_anchor(f.buffer, &start);
+    f.revision = 0;
+    try testing.expectError(error.SnapshotMismatch, plan.commit(&.{ first.target(1), f.target(2) }));
+    try first.expectUntouched("untouched");
+    try testing.expectError(error.UnsupportedBufferContent, tx.prepare(testing.allocator, &.{.{ .target = f.target(2), .replacements = &.{} }}, .{}));
+}
+
+test "transaction: bounded byte sizing agrees with all multiline Unicode subranges" {
+    const text = "é\r\n🌱\u{2029}x\u{fffc}\n終";
+    var f: Fixture = .{};
+    f.init(text);
+    defer f.deinit();
+    var start_byte: usize = 0;
+    var start_char: c_int = 0;
+    while (true) : (start_char += 1) {
+        var end_byte = start_byte;
+        var end_char = start_char;
+        while (true) : (end_char += 1) {
+            var start: c.GtkTextIter = undefined;
+            var end: c.GtkTextIter = undefined;
+            c.gtk_text_buffer_get_iter_at_offset(f.buffer, &start, start_char);
+            c.gtk_text_buffer_get_iter_at_offset(f.buffer, &end, end_char);
+            const expected = text[start_byte..end_byte];
+            const actual = try tx.readRange(testing.allocator, f.buffer, start, end, expected.len);
+            defer testing.allocator.free(actual);
+            try testing.expectEqualStrings(expected, actual);
+            if (expected.len != 0) try testing.expectError(error.LimitExceeded, tx.readRange(testing.allocator, f.buffer, start, end, expected.len - 1));
+            if (end_byte == text.len) break;
+            end_byte += try std.unicode.utf8ByteSequenceLength(text[end_byte]);
+        }
+        if (start_byte == text.len) break;
+        start_byte += try std.unicode.utf8ByteSequenceLength(text[start_byte]);
+    }
+}
+
+test "transaction: reverse giant UTF8 reads preserve hidden text and reject head middle tail and object substitutions" {
+    const pattern = "aé🌱b\u{fffc}12345";
+    const text = try testing.allocator.alloc(u8, 1024 * 1024);
+    defer testing.allocator.free(text);
+    for (text, 0..) |*byte, i| byte.* = pattern[i % pattern.len];
+    var first: Fixture = .{};
+    first.init("untouched");
+    defer first.deinit();
+    var f: Fixture = .{};
+    f.init(text);
+    defer f.deinit();
+    var start: c.GtkTextIter = undefined;
+    var end: c.GtkTextIter = undefined;
+    c.gtk_text_buffer_get_bounds(f.buffer, &start, &end);
+    const hidden = c.gtk_text_buffer_create_tag(f.buffer, null, "invisible", @as(c_int, 1), @as(?*anyopaque, null));
+    c.gtk_text_buffer_apply_tag(f.buffer, hidden, &start, &end);
+    // Marks split the underlying UTF-8 segments without changing any bytes.
+    c.gtk_text_buffer_get_iter_at_offset(f.buffer, &start, 12345);
+    const mark = c.gtk_text_buffer_create_mark(f.buffer, null, &start, 0).?;
+    defer c.gtk_text_buffer_delete_mark(f.buffer, mark);
+    var plan = try tx.prepare(testing.allocator, &.{
+        .{ .target = first.target(1), .replacements = &.{replace(0, 1, "X")} },
+        .{ .target = f.target(2), .replacements = &.{replace(0, 1, "B")} },
+    }, .{});
+    defer plan.deinit();
+    try testing.expectEqualStrings(text, plan.before(1));
+    for ([_]c_int{ 0, 327680, 655350 }) |position| {
+        c.gtk_text_buffer_get_iter_at_offset(f.buffer, &start, position);
+        end = start;
+        _ = c.gtk_text_iter_forward_char(&end);
+        c.gtk_text_buffer_delete(f.buffer, &start, &end);
+        c.gtk_text_buffer_insert(f.buffer, &start, "A", 1);
+        f.revision = 0;
+        try testing.expectError(error.SnapshotMismatch, plan.commit(&.{ first.target(1), f.target(2) }));
+        try first.expectUntouched("untouched");
+        c.gtk_text_buffer_set_text(f.buffer, text.ptr, @intCast(text.len));
+        f.revision = 0;
+    }
+    for ([_]bool{ false, true }) |paintable| {
+        c.gtk_text_buffer_get_iter_at_offset(f.buffer, &start, 327684);
+        end = start;
+        _ = c.gtk_text_iter_forward_char(&end);
+        c.gtk_text_buffer_delete(f.buffer, &start, &end);
+        if (paintable) {
+            const pixel = [_]u8{ 0, 0, 0, 255 };
+            const bytes = c.g_bytes_new(&pixel, pixel.len).?;
+            defer c.g_bytes_unref(bytes);
+            const texture = c.gdk_memory_texture_new(1, 1, c.GDK_MEMORY_R8G8B8A8, bytes, 4).?;
+            defer c.g_object_unref(texture);
+            c.gtk_text_buffer_insert_paintable(f.buffer, &start, u.cast(c.GdkPaintable, texture));
+        } else _ = c.gtk_text_buffer_create_child_anchor(f.buffer, &start);
+        f.revision = 0;
+        try testing.expectError(error.SnapshotMismatch, plan.commit(&.{ first.target(1), f.target(2) }));
+        try testing.expectError(error.UnsupportedBufferContent, tx.prepare(testing.allocator, &.{.{ .target = f.target(2), .replacements = &.{} }}, .{}));
+        try first.expectUntouched("untouched");
+        c.gtk_text_buffer_set_text(f.buffer, text.ptr, @intCast(text.len));
+        f.revision = 0;
+    }
+    try plan.commit(&.{ first.target(1), f.target(2) });
+    c.gtk_text_buffer_undo(f.buffer);
+    try f.expect(text);
+}
+
 const Fixture = struct {
     buffer: *c.GtkTextBuffer = undefined,
     revision: u64 = 0,

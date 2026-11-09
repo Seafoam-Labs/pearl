@@ -73,7 +73,7 @@ Model names are illustrative selections, not provider integrations; both use the
 - Supported terminal input: `help`, `clear`, `zig build`, and `git status`.
 - `zig build` reports only the known fixture-typo count. It explicitly does **not** establish compilation success. The rail's Run control invokes the same fixture.
 - `git status` describes the current in-memory index and buffer differences. Unknown commands produce a clear unsupported-command message; nothing executes.
-- Toggle sidebar, agent dock, bottom panel, and dark/light theme from the title bar or command palette. Problems/Terminal tabs support left/right arrows and Home/End.
+- Toggle sidebar, agent dock, bottom panel, and dark/light theme from the title bar or command palette. Problems/Terminal tabs support left/right arrows and Home/End. Pickers omit already-added sample roots and code actions when the active file has no fixture diagnostic.
 - At widths up to 1100 px the agent becomes an overlay drawer, initially closed. At widths up to 700 px both side panes are drawers, initially closed; opening one closes the other. The rail/title buttons reopen them, close buttons dismiss them, and Escape closes an open drawer. Resizing downward closes drawers at their breakpoints; growing the window preserves explicit open/closed choices.
 
 ## Keyboard and accessibility
@@ -95,7 +95,7 @@ Visible buttons provide alternatives to browser-reserved shortcuts. Native texta
 
 ## Safety and limitations
 
-- The prototype, Python validation harness, JSON report, and screenshots all live in this directory. Nothing in the production Zig sources, existing parent mockup, parent README, or implementation plan is modified by this work.
+- The prototype, base Python validation harness, JSON reports, and screenshots live in this directory. The additive M0 review runner is `tests/prototype_m0.py`; its review is `docs/WORKBENCH_M0_UX_REVIEW.md`. Nothing in the production Zig sources, existing parent mockup, parent README, or implementation plan is modified by this work.
 - The prototype makes no external requests and uses no application persistence, cookies, filesystem APIs, provider APIs, execution APIs, secret handling, or remote dependencies. Content Security Policy blocks connections and limits scripts/styles to local files. Only the validation harness writes the documented report and screenshot artifacts.
 - User text is rendered through `textContent`, text nodes, or textarea/input values. No user-controlled HTML is parsed. Code coloring creates individual safe spans; it is not a general syntax engine.
 - Buffer input is capped at 30,000 characters, prompts at 2,000, commit messages at 180; oversized agent patches are blocked. Terminal output retains its last 200 entries. Large line diffs have a bounded fallback.
@@ -104,6 +104,24 @@ Visible buttons provide alternatives to browser-reserved shortcuts. Native texta
 - Fixture code need not compile against the installed Zig version. Native rendering, GTK accessibility, IME, performance, security hardening, and production provider permissions are outside this mockup.
 
 ## Browser validation
+
+### M0 executable fixtures and technical UX review
+
+[The M0 review](../../WORKBENCH_M0_UX_REVIEW.md) maps **W01–W12 and D1–D4** from the frozen references to existing/new executable fixtures, with partial browser coverage and unexecuted native gates explicitly separated. **Technical review is complete; user/product approval is not recorded. Native M2+ services are not implemented by this prototype.**
+
+The additive [tests/prototype_m0.py](../../../tests/prototype_m0.py) imports this directory's existing harness and adds eight cases: editor/search palette focus and dispatch, unavailable-command filtering, duplicate-root Unicode search, empty-index commits, inert proposals with whole-workspace snapshot receipts, stale proposals after real browser undo, explicit reload/non-recovery behavior, and light narrow permission/drawer review.
+
+Run from `pearl`:
+
+```sh
+PLAYWRIGHT_BROWSERS_PATH=/home/zoey/Projects/pearl/.cache/coral-workbench-validation/browsers .cache/coral-workbench-validation/venv/bin/python -B subprojects/coral/tests/prototype_m0.py
+```
+
+**2026-11-08 final expanded run: 40/40 passed, 0 failed, 55 geometry checkpoints, 23 screenshots, 14 exact fixture receipts; 0 external requests/console errors/page errors; 29.887 seconds.** [m0-review-verification.json](m0-review-verification.json) records source hashes, exact case mappings, fixture bytes/hashes, explicit coverage boundaries and the absence of user approval. This is not 40 independent new tests: it is the original 32 plus eight. `--only` creates a clearly marked partial report; use a complete run for acceptance evidence.
+
+The review found one picker availability mismatch: already-added roots and inapplicable code actions remained offered even though the corresponding toolbar actions were disabled. The pickers now filter these entries. The [pre-fix 7/8 targeted run](m0-pre-fix-verification.json) and [failure screenshot](failure-m0-w01-unavailable-fixture-commands-are-not-offered-as-working.png) are historical regression evidence, not the current result. Both the 40-case suite and the original 32-case suite passed after the fix. Refer to the review for visual observations, screenshots and remaining usability risks.
+
+### Original regression suite
 
 [verify.py](verify.py) is the reproducible Playwright suite. [verification.json](verification.json) records the latest run, individual cases, source SHA-256 hashes, browser version, observed requests/errors, screenshot names, and measured pane/dialog bounds.
 

@@ -7,6 +7,10 @@ const c = u.c;
 const Selection = @import("view.zig").Selection;
 const testing = std.testing;
 
+test {
+    _ = @import("projection_test.zig");
+}
+
 fn bufferWithText(text: [:0]const u8) *c.GtkTextBuffer {
     const buffer = c.gtk_text_buffer_new(null).?;
     c.gtk_text_buffer_set_text(buffer, text, -1);

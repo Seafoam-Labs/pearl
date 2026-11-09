@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-08T05:05:15.021122+00:00",
+  "generated_at": "2026-11-08T22:15:48.991012+00:00",
   "entrypoint": "file:///home/zoey/Projects/pearl/subprojects/coral/docs/mockups/workbench/index.html",
   "platform": "Linux-7.3.3-1.1-devario-llm-x86_64-with-glibc2.44",
   "browser": "Chromium",
@@ -22,7 +22,7 @@
       ],
       "console_errors": [],
       "page_errors": [],
-      "seconds": 0.099
+      "seconds": 0.076
     },
     {
       "name": "typed edits survive tab switching, closing and preview save",
@@ -34,7 +34,7 @@
       ],
       "console_errors": [],
       "page_errors": [],
-      "seconds": 0.349
+      "seconds": 0.282
     },
     {
       "name": "quick open keyboard navigation, empty results and focus restoration",
@@ -46,7 +46,7 @@
       ],
       "console_errors": [],
       "page_errors": [],
-      "seconds": 0.073
+      "seconds": 0.051
     },
     {
       "name": "command palette nested picker, modal focus and Escape",
@@ -58,7 +58,7 @@
       ],
       "console_errors": [],
       "page_errors": [],
-      "seconds": 0.101
+      "seconds": 0.068
     },
     {
       "name": "live workspace search and selected result",
@@ -70,7 +70,7 @@
       ],
       "console_errors": [],
       "page_errors": [],
-      "seconds": 0.255
+      "seconds": 0.21
     },
     {
       "name": "workspace isolation, root addition, search and index retention",
@@ -82,7 +82,7 @@
       ],
       "console_errors": [],
       "page_errors": [],
-      "seconds": 0.731
+      "seconds": 0.631
     },
     {
       "name": "diagnostic navigation and quickfix update buffer only",
@@ -94,7 +94,7 @@
       ],
       "console_errors": [],
       "page_errors": [],
-      "seconds": 0.198
+      "seconds": 0.192
     },
     {
       "name": "Git whole-file stage and unstage preserve buffer",
@@ -106,7 +106,7 @@
       ],
       "console_errors": [],
       "page_errors": [],
-      "seconds": 0.161
+      "seconds": 0.165
     },
     {
       "name": "Git hunk stage, unstage and partial-stage commit",
@@ -118,7 +118,7 @@
       ],
       "console_errors": [],
       "page_errors": [],
-      "seconds": 0.388
+      "seconds": 0.389
     },
     {
       "name": "branch picker is explicitly label-only",
@@ -130,7 +130,7 @@
       ],
       "console_errors": [],
       "page_errors": [],
-      "seconds": 0.081
+      "seconds": 0.063
     },
     {
       "name": "agent denial captures no buffer and changes nothing",
@@ -142,7 +142,7 @@
       ],
       "console_errors": [],
       "page_errors": [],
-      "seconds": 0.096
+      "seconds": 0.099
     },
     {
       "name": "agent cancellation before approval",
@@ -154,7 +154,7 @@
       ],
       "console_errors": [],
       "page_errors": [],
-      "seconds": 0.101
+      "seconds": 0.089
     },
     {
       "name": "agent cancellation during approved read survives timer",
@@ -166,7 +166,7 @@
       ],
       "console_errors": [],
       "page_errors": [],
-      "seconds": 0.139
+      "seconds": 0.123
     },
     {
       "name": "agent patch acceptance updates buffer but not HEAD, index or save",
@@ -178,7 +178,7 @@
       ],
       "console_errors": [],
       "page_errors": [],
-      "seconds": 1.472
+      "seconds": 1.458
     },
     {
       "name": "agent patch rejection changes no snapshots",
@@ -190,7 +190,7 @@
       ],
       "console_errors": [],
       "page_errors": [],
-      "seconds": 1.402
+      "seconds": 1.386
     },
     {
       "name": "agent stale patch blocks acceptance and preserves real typing",
@@ -202,7 +202,7 @@
       ],
       "console_errors": [],
       "page_errors": [],
-      "seconds": 3.037
+      "seconds": 2.972
     },
     {
       "name": "typing during approved read produces stale result without focus loss",
@@ -214,7 +214,7 @@
       ],
       "console_errors": [],
       "page_errors": [],
-      "seconds": 0.235
+      "seconds": 0.255
     },
     {
       "name": "thread history, drafts, model/profile selection and Ask report",
@@ -226,7 +226,7 @@
       ],
       "console_errors": [],
       "page_errors": [],
-      "seconds": 2.394
+      "seconds": 2.358
     },
     {
       "name": "background thread patch invalidates after buffer typing",
@@ -238,7 +238,7 @@
       ],
       "console_errors": [],
       "page_errors": [],
-      "seconds": 1.653
+      "seconds": 1.624
     },
     {
       "name": "agent approval snapshot follows original workspace and file",
@@ -250,7 +250,7 @@
       ],
       "console_errors": [],
       "page_errors": [],
-      "seconds": 0.231
+      "seconds": 0.215
     },
     {
       "name": "HTML-like user input renders as text, never elements",
@@ -262,7 +262,7 @@
       ],
       "console_errors": [],
       "page_errors": [],
-      "seconds": 0.221
+      "seconds": 0.222
     },
     {
       "name": "terminal fixtures, unsupported command notice and panel keyboard",
@@ -274,7 +274,7 @@
       ],
       "console_errors": [],
       "page_errors": [],
-      "seconds": 0.058
+      "seconds": 0.05
     },
     {
       "name": "theme and desktop panel toggles retain buffer",
@@ -286,7 +286,7 @@
       ],
       "console_errors": [],
       "page_errors": [],
-      "seconds": 0.481
+      "seconds": 0.459
     },
     {
       "name": "responsive 1440x900 dark dialogs and drawers",
@@ -301,7 +301,7 @@
       ],
       "console_errors": [],
       "page_errors": [],
-      "seconds": 0.155
+      "seconds": 0.16
     },
     {
       "name": "responsive 1440x900 light dialogs and drawers",
@@ -316,7 +316,7 @@
       ],
       "console_errors": [],
       "page_errors": [],
-      "seconds": 0.208
+      "seconds": 0.187
     },
     {
       "name": "responsive 1024x768 dark dialogs and drawers",
@@ -331,7 +331,7 @@
       ],
       "console_errors": [],
       "page_errors": [],
-      "seconds": 1.6
+      "seconds": 1.538
     },
     {
       "name": "responsive 1024x768 light dialogs and drawers",
@@ -346,7 +346,7 @@
       ],
       "console_errors": [],
       "page_errors": [],
-      "seconds": 1.635
+      "seconds": 1.605
     },
     {
       "name": "responsive 700x800 dark dialogs and drawers",
@@ -361,7 +361,7 @@
       ],
       "console_errors": [],
       "page_errors": [],
-      "seconds": 1.965
+      "seconds": 1.935
     },
     {
       "name": "responsive 700x800 light dialogs and drawers",
@@ -376,7 +376,7 @@
       ],
       "console_errors": [],
       "page_errors": [],
-      "seconds": 1.987
+      "seconds": 1.972
     },
     {
       "name": "responsive 390x844 dark dialogs and drawers",
@@ -406,7 +406,7 @@
       ],
       "console_errors": [],
       "page_errors": [],
-      "seconds": 2.021
+      "seconds": 1.971
     },
     {
       "name": "resize breakpoints close drawers without losing edits",
@@ -418,7 +418,7 @@
       ],
       "console_errors": [],
       "page_errors": [],
-      "seconds": 0.195
+      "seconds": 0.168
     }
   ],
   "screenshots": [
@@ -4196,14 +4196,14 @@
   "source_sha256": {
     "index.html": "d2ecaa44aac4438d5ff416b43e0401aac47d6090e2833ce6a2b3d1519df5fa4a",
     "style.css": "d8be3c0702b8f42c767746eb319baacf045ac1c7d0bd32a356402508baafd7a2",
-    "mockup.js": "fc9c35d20f385311f3435b56eec710bf558d986b50371c94ecf233fbc1b52a90",
-    "verify.py": "5e7f7f6748d36b163a943c233bac2a6df1aae2e463ae846c9f639ea03b43d105"
+    "mockup.js": "a0e78c083db7ea8105696faa17c38cebaec0042f94574b75989d910a4f273094",
+    "verify.py": "83361fb2795e4549b90ae6c0d09953d22263f18bc98928d7445cf2679216f1e6"
   },
   "limits": [
     "Chromium only; no screen-reader, IME, native GTK or real-touch validation.",
     "UI actions are real events; internal snapshots are inspected read-only.",
     "No real Git, compiler, filesystem operations or provider integration is tested."
   ],
-  "seconds": 26.351,
+  "seconds": 25.513,
   "success": true
 }

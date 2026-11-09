@@ -161,6 +161,7 @@ function notice(title, body) {
 // Native modal dialog provides focus containment and Escape dismissal.
 let picker = { items: [], filtered: [], selected: 0 };
 function openPicker(title, items, placeholder = "Type to filter…") {
+  items = items.filter((item) => item.enabled !== false);
   picker = { items, filtered: items, selected: 0 };
   $("picker-title").textContent = title;
   $("picker-input").value = "";
@@ -481,7 +482,7 @@ function switchWorkspace(next) {
 function workspacePicker() {
   openPicker("Workspaces", [
     ...workspaces.map((ws) => ({ label: `${ws === workspace ? "✓ " : ""}${ws.name}`, detail: `${ws.roots.length} roots · memory`, action: () => switchWorkspace(ws) })),
-    { label: "Add sample root to current workspace", detail: "notes-kit", action: addRoot },
+    { label: "Add sample root to current workspace", detail: "notes-kit", enabled: !workspace.roots.includes("notes-kit"), action: addRoot },
   ]);
 }
 function quickOpen() {
@@ -835,13 +836,13 @@ function commands() {
   openPicker("Command palette", [
     { label: "Go to file…", detail: "Ctrl/⌘ P", action: quickOpen },
     { label: "Workspace: switch…", detail: "Memory fixtures", action: workspacePicker },
-    { label: "Workspace: add sample root", detail: "notes-kit", action: addRoot },
+    { label: "Workspace: add sample root", detail: "notes-kit", enabled: !workspace.roots.includes("notes-kit"), action: addRoot },
     { label: "View: Explorer", detail: "Sidebar", action: () => setView("explorer") },
     { label: "Search: find in workspace", detail: "Ctrl/⌘ Shift F", action: () => setView("search") },
     { label: "Git: source control", detail: "Review and stage", action: () => setView("git") },
     { label: "Git: switch simulated branch…", detail: "Label only", action: branchPicker },
     { label: "File: save preview", detail: "Memory only", action: savePreview },
-    { label: "LSP: code actions…", detail: "Fixture fix", action: codeAction },
+    { label: "LSP: code actions…", detail: "Fixture fix", enabled: diagnostics().some((item) => item.file.id === workspace.active), action: codeAction },
     { label: "Agent: new thread", detail: "Offline fixture", action: newThread },
     { label: "Agent: thread history…", detail: "Current workspace", action: threadPicker },
     { label: "View: toggle agent dock", action: () => toggleAgent() },

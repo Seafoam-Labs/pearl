@@ -18,6 +18,19 @@ pub const Command = enum {
     close,
     quit,
     command_palette,
+    split_group,
+    focus_next_group,
+    focus_previous_group,
+    close_group,
+    excerpt,
+    grouped_undo,
+    grouped_redo,
+    open_folder,
+    open_workspace,
+    workspace_roots,
+    workspace_back,
+    workspace_rescan,
+    close_workspace,
 
     pub fn metadata(self: Command) Metadata {
         return entries[@backingInt(self)];
@@ -40,6 +53,19 @@ pub const Command = enum {
             .close => i18n.dtr("coral", "Close tab"),
             .quit => i18n.dtr("coral", "Quit"),
             .command_palette => i18n.dtr("coral", "Command Palette…"),
+            .split_group => i18n.dtr("coral", "Split editor group"),
+            .focus_next_group => i18n.dtr("coral", "Focus next editor group"),
+            .focus_previous_group => i18n.dtr("coral", "Focus previous editor group"),
+            .close_group => i18n.dtr("coral", "Close editor group"),
+            .excerpt => i18n.dtr("coral", "Edit selection as excerpt"),
+            .grouped_undo => i18n.dtr("coral", "Undo grouped edit"),
+            .grouped_redo => i18n.dtr("coral", "Redo grouped edit"),
+            .open_folder => i18n.dtr("coral", "Open Folder…"),
+            .open_workspace => i18n.dtr("coral", "Open Workspace…"),
+            .workspace_roots => i18n.dtr("coral", "Workspace: Roots"),
+            .workspace_back => i18n.dtr("coral", "Workspace: Back"),
+            .workspace_rescan => i18n.dtr("coral", "Workspace: Rescan directory"),
+            .close_workspace => i18n.dtr("coral", "Close workspace (keep documents)"),
         };
     }
 };
@@ -68,6 +94,19 @@ pub const entries = [_]Metadata{
     .{ .command = .close, .action = "close", .detailed_action = "app.close", .label = "Close tab", .shortcut = "Ctrl+W" },
     .{ .command = .quit, .action = "quit", .detailed_action = "app.quit", .label = "Quit", .shortcut = "Ctrl+Q" },
     .{ .command = .command_palette, .action = "command-palette", .detailed_action = "app.command-palette", .label = "Command Palette…", .shortcut = "Ctrl+Shift+P" },
+    .{ .command = .split_group, .action = "split-group", .detailed_action = "app.split-group", .label = "Split editor group", .shortcut = "Ctrl+\\" },
+    .{ .command = .focus_next_group, .action = "focus-next-group", .detailed_action = "app.focus-next-group", .label = "Focus next editor group", .shortcut = null },
+    .{ .command = .focus_previous_group, .action = "focus-previous-group", .detailed_action = "app.focus-previous-group", .label = "Focus previous editor group", .shortcut = null },
+    .{ .command = .close_group, .action = "close-group", .detailed_action = "app.close-group", .label = "Close editor group", .shortcut = null },
+    .{ .command = .excerpt, .action = "excerpt", .detailed_action = "app.excerpt", .label = "Edit selection as excerpt", .shortcut = null },
+    .{ .command = .grouped_undo, .action = "grouped-undo", .detailed_action = "app.grouped-undo", .label = "Undo grouped edit", .shortcut = null },
+    .{ .command = .grouped_redo, .action = "grouped-redo", .detailed_action = "app.grouped-redo", .label = "Redo grouped edit", .shortcut = null },
+    .{ .command = .open_folder, .action = "open-folder", .detailed_action = "app.open-folder", .label = "Open Folder…", .shortcut = null },
+    .{ .command = .open_workspace, .action = "open-workspace", .detailed_action = "app.open-workspace", .label = "Open Workspace…", .shortcut = null },
+    .{ .command = .workspace_roots, .action = "workspace-roots", .detailed_action = "app.workspace-roots", .label = "Workspace: Roots", .shortcut = null },
+    .{ .command = .workspace_back, .action = "workspace-back", .detailed_action = "app.workspace-back", .label = "Workspace: Back", .shortcut = null },
+    .{ .command = .workspace_rescan, .action = "workspace-rescan", .detailed_action = "app.workspace-rescan", .label = "Workspace: Rescan directory", .shortcut = null },
+    .{ .command = .close_workspace, .action = "close-workspace", .detailed_action = "app.close-workspace", .label = "Close workspace (keep documents)", .shortcut = null },
 };
 
 pub fn fromAction(action: []const u8) ?Command {
@@ -103,13 +142,14 @@ pub fn fromKey(key: u32, state: u32) ?Command {
         ',' => .preferences,
         'w' => .close,
         'q' => .quit,
+        '\\' => .split_group,
         else => null,
     };
 }
 
 test "registry is exhaustive, ordered and has unique stable actions" {
     try std.testing.expectEqual(@typeInfo(Command).@"enum".field_names.len, entries.len);
-    const actions = [_][]const u8{ "new", "open", "save", "save-as", "reload", "find", "goto", "spelling", "preferences", "about", "close", "quit", "command-palette" };
+    const actions = [_][]const u8{ "new", "open", "save", "save-as", "reload", "find", "goto", "spelling", "preferences", "about", "close", "quit", "command-palette", "split-group", "focus-next-group", "focus-previous-group", "close-group", "excerpt", "grouped-undo", "grouped-redo", "open-folder", "open-workspace", "workspace-roots", "workspace-back", "workspace-rescan", "close-workspace" };
     for (entries, actions, 0..) |entry, action, index| {
         try std.testing.expectEqual(index, @backingInt(entry.command));
         try std.testing.expectEqualStrings(action, entry.action);
@@ -136,6 +176,7 @@ test "command shortcuts include shifted keyvals and existing find alias" {
     const Case = struct { key: u32, state: u32, command: Command };
     for ([_]Case{
         .{ .key = 'n', .state = 4, .command = .new },
+        .{ .key = '\\', .state = 4, .command = .split_group },
         .{ .key = 'O', .state = 6, .command = .open },
         .{ .key = 's', .state = 4, .command = .save },
         .{ .key = 'S', .state = 4, .command = .save },

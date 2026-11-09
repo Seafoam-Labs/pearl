@@ -103,12 +103,14 @@ const Operation = struct {
     range: Replacement,
     start_char: c_int = 0,
     end_char: c_int = 0,
+    noop: bool = false,
 };
 
 const Entry = struct {
     target: Target,
     text: []u8,
     operations: []Operation,
+    sequential: bool = false,
 
     fn deinit(self: *Entry, allocator: std.mem.Allocator) void {
         for (self.operations) |op| allocator.free(op.range.text);
@@ -162,6 +164,16 @@ pub const Prepared = struct {
     /// Precommit validation errors leave every buffer untouched and permit retry.
     /// Success consumes the transaction logically; a second commit is rejected.
     pub fn commit(self: *Prepared, current_targets: []const Target) ValidationError!void {
+        return self.commitObserved(current_targets, null);
+    }
+    /// Preallocated bookkeeping only: observers must not mutate text, policy or
+    /// lifetimes, allocate fallibly, or reenter. Neither runs on validation failure.
+    pub const Observer = struct {
+        context: *anyopaque,
+        begin: *const fn (*anyopaque) void,
+        end: *const fn (*anyopaque) void,
+    };
+    pub fn commitObserved(self: *Prepared, current_targets: []const Target, observer: ?Observer) ValidationError!void {
         if (active) return error.Busy;
         if (self.committed) return error.AlreadyCommitted;
         if (current_targets.len != self.entries.len) return error.TargetMismatch;
@@ -180,10 +192,12 @@ pub const Prepared = struct {
         defer active = false;
         self.committed = true;
         // No fallible work beyond this point, including between buffers.
+        if (observer) |o| o.begin(o.context);
+        defer if (observer) |o| o.end(o.context);
         for (self.entries) |entry| {
             var has_edits = false;
             for (entry.operations) |op| {
-                if (!std.mem.eql(u8, entry.text[op.range.start..op.range.end], op.range.text)) {
+                if (!op.noop and (entry.sequential or !std.mem.eql(u8, entry.text[op.range.start..op.range.end], op.range.text))) {
                     has_edits = true;
                     break;
                 }
@@ -191,11 +205,9 @@ pub const Prepared = struct {
             if (!has_edits) continue;
             const buffer = entry.target.buffer;
             c.gtk_text_buffer_begin_user_action(buffer);
-            var i = entry.operations.len;
-            while (i > 0) {
-                i -= 1;
-                const op = entry.operations[i];
-                if (std.mem.eql(u8, entry.text[op.range.start..op.range.end], op.range.text)) continue;
+            for (0..entry.operations.len) |i| {
+                const op = entry.operations[if (entry.sequential) i else entry.operations.len - 1 - i];
+                if (op.noop or (!entry.sequential and std.mem.eql(u8, entry.text[op.range.start..op.range.end], op.range.text))) continue;
                 var start: c.GtkTextIter = undefined;
                 var end: c.GtkTextIter = undefined;
                 c.gtk_text_buffer_get_iter_at_offset(buffer, &start, op.start_char);
@@ -243,6 +255,58 @@ pub fn prepare(allocator: std.mem.Allocator, changes: []const Change, limits: Li
         initialized += 1;
     }
     return .{ .allocator = allocator, .entries = entries };
+}
+
+/// Ordered GTK undo trace: positions are characters in the state immediately
+/// before each step. Pre-simulate EVERY step and compare exact initial/final text
+/// before allowing commit; this preserves real edit locations in repeated text
+/// and disjoint actions instead of guessing them from a common-prefix text diff.
+pub const CharacterEdit = struct { start: c_int, end: c_int, text: []const u8 };
+pub fn prepareSequence(allocator: std.mem.Allocator, target: Target, before: []const u8, after: []const u8, edits: []const CharacterEdit, limits: Limits) PrepareError!Prepared {
+    if (edits.len > limits.max_replacements) return error.LimitExceeded;
+    var plan = try prepare(allocator, &.{.{ .target = target, .replacements = &.{} }}, limits);
+    errdefer plan.deinit();
+    if (!std.mem.eql(u8, plan.before(0), before)) return error.SnapshotMismatch;
+    var working = try allocator.dupe(u8, before);
+    defer allocator.free(working);
+    const operations = try allocator.alloc(Operation, edits.len);
+    var initialized: usize = 0;
+    errdefer {
+        for (operations[0..initialized]) |op| allocator.free(op.range.text);
+        allocator.free(operations);
+    }
+    var owned = before.len;
+    for (edits, operations) |edit, *op| {
+        if (edit.start < 0 or edit.end < edit.start) return error.OutOfBounds;
+        try validateText(edit.text);
+        try addWithin(&owned, edit.text.len, limits.max_total_bytes);
+        const start = try byteAtCharacter(working, edit.start);
+        const end = try byteAtCharacter(working, edit.end);
+        var size = working.len - (end - start);
+        try addWithin(&size, edit.text.len, bufferLimit(limits));
+        op.* = .{ .range = .{ .start = start, .end = end, .text = try allocator.dupe(u8, edit.text) }, .start_char = edit.start, .end_char = edit.end, .noop = std.mem.eql(u8, working[start..end], edit.text) };
+        initialized += 1;
+        const next = try allocator.alloc(u8, size);
+        @memcpy(next[0..start], working[0..start]);
+        @memcpy(next[start..][0..edit.text.len], edit.text);
+        @memcpy(next[start + edit.text.len ..], working[end..]);
+        allocator.free(working);
+        working = next;
+    }
+    if (!std.mem.eql(u8, working, after)) return error.SnapshotMismatch;
+    allocator.free(plan.entries[0].operations);
+    plan.entries[0].operations = operations;
+    plan.entries[0].sequential = true;
+    return plan;
+}
+fn byteAtCharacter(text: []const u8, character: c_int) ValidationError!usize {
+    var byte: usize = 0;
+    var n: c_int = 0;
+    while (n < character) : (n += 1) {
+        if (byte == text.len) return error.OutOfBounds;
+        byte += std.unicode.utf8ByteSequenceLength(text[byte]) catch return error.InvalidUtf8;
+    }
+    return byte;
 }
 
 fn prepareEntry(allocator: std.mem.Allocator, change: Change, limits: Limits, bytes: *usize) PrepareError!Entry {
@@ -344,52 +408,105 @@ fn advance(text: []const u8, byte: *usize, char: *c_int, end: usize) void {
     }
 }
 
-fn iterBytes(iter: *const c.GtkTextIter, out: *[4]u8) ValidationError!usize {
-    if (c.gtk_text_iter_get_child_anchor(iter) != null or c.gtk_text_iter_get_paintable(iter) != null)
-        return error.UnsupportedBufferContent;
-    const char = c.gtk_text_iter_get_char(iter);
-    if (char == 0) return error.EmbeddedNul;
-    if (char > 0x10ffff) return error.InvalidUtf8;
-    return std.unicode.utf8Encode(@intCast(char), out) catch return error.InvalidUtf8;
+// Read backwards with both GTK byte/character caches populated. Large forward
+// character jumps discard the byte cache: each following slice then rescans the
+// giant UTF-8 segment prefix, making a whole-buffer read quadratic. GTK's public
+// backward_chars preserves byte offsets within segments and walks back from the
+// cached byte position. Crossing a segment may rescan that segment once.
+// At most 64 KiB + NUL of GLib scratch exists at a time. get_slice includes hidden
+// text AND object placeholders, unlike get_text which silently omits objects.
+const Chunk = struct {
+    text: [:0]u8,
+    fn read(buffer: *c.GtkTextBuffer, iter: *c.GtkTextIter, limit: *const c.GtkTextIter) ValidationError!Chunk {
+        const remaining = c.gtk_text_iter_get_offset(iter) - c.gtk_text_iter_get_offset(limit);
+        const step = @min(16 * 1024, remaining);
+        _ = c.gtk_text_iter_get_line_index(iter);
+        const end = iter.*;
+        _ = c.gtk_text_iter_backward_chars(iter, step);
+        _ = c.gtk_text_iter_get_line_index(iter);
+        const text = std.mem.span(c.gtk_text_buffer_get_slice(buffer, iter, &end, 1));
+        errdefer c.g_free(text.ptr);
+        try validateText(text);
+        const count = std.unicode.utf8CountCodepoints(text) catch return error.InvalidUtf8;
+        if (count != @as(usize, @intCast(step))) return error.UnsupportedBufferContent;
+        // A literal U+FFFC is valid source. Only these candidate positions need
+        // GTK object queries; rejecting the codepoint itself would corrupt that
+        // distinction, including during commit's missed-revision defense.
+        var at = end;
+        var scanned = text.len;
+        while (std.mem.lastIndexOf(u8, text[0..scanned], "\xef\xbf\xbc")) |index| {
+            _ = c.gtk_text_iter_get_line_index(&at);
+            _ = c.gtk_text_iter_backward_chars(&at, @intCast(std.unicode.utf8CountCodepoints(text[index..scanned]) catch unreachable));
+            if (c.gtk_text_iter_get_child_anchor(&at) != null or c.gtk_text_iter_get_paintable(&at) != null) return error.UnsupportedBufferContent;
+            scanned = index;
+        }
+        return .{ .text = text };
+    }
+    fn deinit(self: Chunk) void {
+        c.g_free(self.text.ptr);
+    }
+};
+
+fn snapshot(allocator: std.mem.Allocator, buffer: *c.GtkTextBuffer, cap: usize) PrepareError![]u8 {
+    var start: c.GtkTextIter = undefined;
+    var end: c.GtkTextIter = undefined;
+    c.gtk_text_buffer_get_bounds(buffer, &start, &end);
+    return readRange(allocator, buffer, start, end, cap);
 }
 
-// Two bounded iterator walks avoid GTK's unbounded get_text allocation and do
-// not omit invisible text or silently omit embedded objects from byte offsets.
-fn snapshot(allocator: std.mem.Allocator, buffer: *c.GtkTextBuffer, cap: usize) PrepareError![]u8 {
-    if (@as(usize, @intCast(c.gtk_text_buffer_get_char_count(buffer))) > cap) return error.LimitExceeded;
-    var iter: c.GtkTextIter = undefined;
-    c.gtk_text_buffer_get_start_iter(buffer, &iter);
+/// Checked, owned bytes for a bounded presentation range. Does not validate text
+/// outside that range; transaction prepare/commit always read the FULL target.
+/// All GTK content must remain serialized for the duration of this call.
+pub fn readRange(allocator: std.mem.Allocator, buffer: *c.GtkTextBuffer, start: c.GtkTextIter, end: c.GtkTextIter, cap: usize) PrepareError![]u8 {
+    if (c.gtk_text_iter_get_buffer(&start) != buffer or c.gtk_text_iter_get_buffer(&end) != buffer) return error.TargetMismatch;
+    const count = c.gtk_text_iter_get_offset(&end) - c.gtk_text_iter_get_offset(&start);
+    if (count < 0) return error.OutOfBounds;
+    if (@as(usize, @intCast(count)) > cap) return error.LimitExceeded;
+    var iter = start;
     var size: usize = 0;
-    var encoded: [4]u8 = undefined;
-    while (c.gtk_text_iter_is_end(&iter) == 0) {
-        try addWithin(&size, try iterBytes(&iter, &encoded), cap);
-        _ = c.gtk_text_iter_forward_char(&iter);
+    // GTK's line byte metadata sizes the allocation without reading/validating
+    // every byte twice. Include invisible text and object placeholders here;
+    // the bounded slice pass below still validates ALL content before mutation.
+    // This also avoids speculative 4x-character allocations or grow/copy buffers.
+    const last_line = c.gtk_text_iter_get_line(&end);
+    while (c.gtk_text_iter_get_line(&iter) < last_line) {
+        const bytes = @as(i64, c.gtk_text_iter_get_bytes_in_line(&iter)) - c.gtk_text_iter_get_line_index(&iter);
+        if (bytes < 0) return error.LimitExceeded;
+        try addWithin(&size, @intCast(bytes), cap);
+        _ = c.gtk_text_iter_forward_line(&iter);
     }
+    const remainder = @as(i64, c.gtk_text_iter_get_line_index(&end)) - c.gtk_text_iter_get_line_index(&iter);
+    if (remainder < 0) return error.LimitExceeded;
+    try addWithin(&size, @intCast(remainder), cap);
     const text = try allocator.alloc(u8, size);
     errdefer allocator.free(text);
-    c.gtk_text_buffer_get_start_iter(buffer, &iter);
-    var offset: usize = 0;
-    while (c.gtk_text_iter_is_end(&iter) == 0) {
-        const len = try iterBytes(&iter, &encoded);
-        @memcpy(text[offset..][0..len], encoded[0..len]);
-        offset += len;
-        _ = c.gtk_text_iter_forward_char(&iter);
+    iter = end;
+    var offset = text.len;
+    while (c.gtk_text_iter_compare(&iter, &start) > 0) {
+        const chunk = try Chunk.read(buffer, &iter, &start);
+        defer chunk.deinit();
+        if (chunk.text.len > offset) return error.SnapshotMismatch;
+        offset -= chunk.text.len;
+        @memcpy(text[offset..][0..chunk.text.len], chunk.text);
     }
+    if (offset != 0) return error.SnapshotMismatch;
     return text;
 }
 
 fn matchesSnapshot(buffer: *c.GtkTextBuffer, text: []const u8) bool {
+    if (@as(usize, @intCast(c.gtk_text_buffer_get_char_count(buffer))) > text.len) return false;
+    var start: c.GtkTextIter = undefined;
     var iter: c.GtkTextIter = undefined;
-    c.gtk_text_buffer_get_start_iter(buffer, &iter);
-    var offset: usize = 0;
-    var encoded: [4]u8 = undefined;
-    while (c.gtk_text_iter_is_end(&iter) == 0) {
-        const len = iterBytes(&iter, &encoded) catch return false;
-        if (len > text.len - offset or !std.mem.eql(u8, text[offset..][0..len], encoded[0..len])) return false;
-        offset += len;
-        _ = c.gtk_text_iter_forward_char(&iter);
+    c.gtk_text_buffer_get_bounds(buffer, &start, &iter);
+    var offset = text.len;
+    while (c.gtk_text_iter_compare(&iter, &start) > 0) {
+        const chunk = Chunk.read(buffer, &iter, &start) catch return false;
+        defer chunk.deinit();
+        if (chunk.text.len > offset) return false;
+        offset -= chunk.text.len;
+        if (!std.mem.eql(u8, text[offset..][0..chunk.text.len], chunk.text)) return false;
     }
-    return offset == text.len;
+    return offset == 0;
 }
 
 test {

@@ -79,6 +79,54 @@ const Seen = struct {
     }
 };
 
+test "workspace tokens reject real late process callbacks while preserving reaping" {
+    const identity = @import("../workspace/identity.zig");
+    const Routed = struct {
+        seen: Seen,
+        scope: *const identity.Scope,
+        expected: identity.Token,
+        accepted: bool = false,
+        reaped: bool = false,
+        echoed: bool = false,
+
+        fn complete(job: *process.Job, result: process.Result, data: ?*anyopaque) void {
+            const self = u.cast(@This(), data.?);
+            defer job.destroy(); // Rejected payloads still release all job storage.
+            Seen.complete(job, result, &self.seen);
+            self.reaped = result.reaped;
+            const token = result.identity.workspace orelse return;
+            self.echoed = std.meta.eql(self.expected, token);
+            self.accepted = self.scope.accepts(token);
+        }
+    };
+    const h = try Harness.init("printf 'late payload'\n");
+    defer h.deinit();
+    for (0..4) |scenario| {
+        var source = identity.Scope.init();
+        var other = identity.Scope.init();
+        var supervisor: process.Supervisor = .{};
+        const token = source.capture().?;
+        var routed = Routed{ .seen = .{ .context = h.context }, .scope = if (scenario == 3) &other else &source, .expected = token };
+        var cfg = h.config(&.{ "/bin/sh", h.script });
+        cfg.owner = &supervisor;
+        cfg.identity.workspace = token;
+        _ = try process.start(a, cfg, Routed.complete, &routed);
+        // Completion cannot run until we iterate the submitting context. No
+        // sleeps or timing assumptions are needed to make the result late.
+        switch (scenario) {
+            1 => source.invalidate(),
+            2 => source.close(),
+            else => {},
+        }
+        cfg.identity.workspace = other.capture(); // The job owns a value copy.
+        try h.wait(&routed.seen);
+        try std.testing.expect(routed.echoed);
+        try std.testing.expect(routed.reaped);
+        try std.testing.expect(supervisor.isIdle());
+        try std.testing.expectEqual(scenario == 0, routed.accepted);
+    }
+}
+
 test "capture owns request, preserves literal argv, cwd and explicit environment" {
     const h = try Harness.init(
         \\printf '%s\n' "$1" "$PWD" "$ALLOWED" "${CORAL_PROCESS_TEST_SECRET-unset}" "${HOME-unset}"
@@ -310,19 +358,17 @@ test "capture preserves binary bytes and reports signal termination" {
     try std.testing.expectEqualStrings("c\x00d", job.result().stderr);
 }
 
-test "capture timeout closes pipes retained by a finite descendant" {
+test "capture normal leader exit cleans background child without waiting for pipe EOF" {
     const h = try Harness.init("/bin/sleep 0.3 &\nprintf done\nexit 0\n");
     defer h.deinit();
-    // This intentionally is not process-tree supervision. Let the finite
-    // fixture helper exit before the test ends, even if an assertion fails.
-    defer c.g_usleep(350000);
+
     var seen = Seen{ .context = h.context };
     var cfg = h.config(&.{ "/bin/sh", h.script });
-    cfg.timeout_ms = 60;
+    cfg.timeout_ms = 2000;
     const job = try process.start(a, cfg, Seen.complete, &seen);
     defer job.destroy();
     try h.wait(&seen);
-    try std.testing.expectEqual(process.Outcome.timed_out, job.result().outcome);
+    try std.testing.expectEqual(process.Outcome.success, job.result().outcome);
     try std.testing.expectEqual(@as(?c_int, 0), job.result().exit_code);
     try std.testing.expectEqualStrings("done", job.result().stdout);
     try std.testing.expect(job.result().reaped);
@@ -347,4 +393,154 @@ test "capture concurrent jobs retain their submitting context" {
     try h.wait(&second_seen);
     try std.testing.expectEqualStrings("first", first.result().stdout);
     try std.testing.expectEqualStrings("second", second.result().stdout);
+}
+
+const os = @import("../terminal/ownership.zig").os;
+
+fn waitForReady(h: Harness, job: *process.Job) !void {
+    const deadline = c.g_get_monotonic_time() + 2_000_000;
+    while (std.mem.indexOf(u8, job.storage[0..job.stdout_len], "READY\n") == null) {
+        _ = c.g_main_context_iteration(h.context, 0);
+        if (job.isComplete() or c.g_get_monotonic_time() > deadline) return error.FixtureNotReady;
+        c.g_usleep(1000);
+    }
+}
+
+// Each fixture descendant ignores TERM and would write a delayed sentinel if
+// direct-child-only cancellation, missed leader exit, or missing KILL regressed.
+// The readiness file ensures the descendant installed its traps before the
+// leader exits; the output barrier makes cancellation independent of spawn time.
+const tree_fixture =
+    \\trap '' TERM
+    \\( trap '' TERM; printf ready > child-ready; /bin/sleep 0.8; printf survived > sentinel ) &
+    \\printf '%s\n' "$!"
+    \\while [ ! -f child-ready ]; do /bin/sleep 0.005; done
+    \\printf 'READY\n'
+    \\case "$1" in
+    \\  normal) exit 0 ;;
+    \\  flood) while :; do printf 'overflow bytes\n'; done ;;
+    \\  *) wait ;;
+    \\esac
+;
+
+fn treeCase(mode: []const u8, outcome: process.Outcome) !void {
+    const h = try Harness.init(tree_fixture);
+    defer h.deinit();
+    const sentinel = try std.fmt.allocPrintSentinel(a, "{s}/sentinel", .{h.directory}, 0);
+    defer a.free(sentinel);
+    defer _ = c.g_unlink(sentinel);
+    const ready = try std.fmt.allocPrintSentinel(a, "{s}/child-ready", .{h.directory}, 0);
+    defer a.free(ready);
+    defer _ = c.g_unlink(ready);
+    var seen = Seen{ .context = h.context };
+    var owner = process.Supervisor{};
+    var cfg = h.config(&.{ "/bin/sh", h.script, mode });
+    cfg.owner = &owner;
+    if (outcome == .timed_out) cfg.timeout_ms = 250;
+    if (outcome == .output_limit) cfg.output_limit = 64;
+    const job = try process.start(a, cfg, Seen.complete, &seen);
+    defer job.destroy();
+    if (outcome == .cancelled) {
+        try waitForReady(h, job);
+        if (std.mem.eql(u8, mode, "shutdown")) {
+            owner.shutdown();
+            owner.shutdown();
+        } else {
+            job.cancel();
+            job.cancel();
+        }
+    }
+    try h.wait(&seen);
+    try std.testing.expect(owner.isIdle());
+    const result = job.result();
+    try std.testing.expectEqual(outcome, result.outcome);
+    try std.testing.expect(result.reaped);
+    try std.testing.expect(job.out.done and job.err.done);
+    if (outcome == .cancelled or outcome == .timed_out)
+        try std.testing.expectEqual(@as(?c_int, os.KILL), result.term_signal);
+    // Reaped descendants are not lingering zombies under the host/init.
+    const newline = std.mem.indexOfScalar(u8, result.stdout, '\n') orelse return error.MissingChildPid;
+    const descendant = try std.fmt.parseInt(c_int, result.stdout[0..newline], 10);
+    try std.testing.expect(os.kill(descendant, 0) < 0);
+    try std.testing.expectEqual(@as(c_int, 3), os.errno()); // ESRCH
+    c.g_usleep(900000);
+    try std.testing.expect(c.g_file_test(sentinel, c.G_FILE_TEST_EXISTS) == 0);
+    job.cancel(); // never signal a stale/reused process group after completion
+    try std.testing.expectEqual(@as(usize, 1), seen.count);
+}
+
+test "capture cancellation kills and reaps actual shell descendants before delayed sentinel" {
+    try treeCase("cancel", .cancelled);
+}
+
+test "capture shutdown kills and reaps actual shell descendants before delayed sentinel" {
+    try treeCase("shutdown", .cancelled);
+}
+
+test "capture timeout kills and reaps actual shell descendants before delayed sentinel" {
+    try treeCase("timeout", .timed_out);
+}
+
+test "capture normal leader exit kills and reaps background descendants before delayed sentinel" {
+    try treeCase("normal", .success);
+}
+
+test "capture output limit kills and reaps shell descendants before delayed sentinel" {
+    try treeCase("flood", .output_limit);
+}
+
+test "capture supervisor shutdown cancels owned jobs only, including spawn race" {
+    const h = try Harness.init("printf 'READY\\n'; /bin/sleep 0.4; printf alive\n");
+    defer h.deinit();
+    for ([_]bool{ false, true }) |running| {
+        var owner = process.Supervisor{};
+        var first_seen = Seen{ .context = h.context };
+        var second_seen = Seen{ .context = h.context, .destroy_in_callback = true };
+        var unrelated_seen = Seen{ .context = h.context };
+        var cfg = h.config(&.{ "/bin/sh", h.script });
+        const unrelated = try process.start(a, cfg, Seen.complete, &unrelated_seen);
+        defer unrelated.destroy();
+        cfg.owner = &owner;
+        const first = try process.start(a, cfg, Seen.complete, &first_seen);
+        defer first.destroy();
+        const second = try process.start(a, cfg, Seen.complete, &second_seen);
+        try std.testing.expect(!owner.isIdle());
+        if (running) {
+            try waitForReady(h, first);
+            try waitForReady(h, second);
+        }
+        owner.shutdown();
+        owner.shutdown();
+        try std.testing.expectError(error.ShuttingDown, process.start(a, cfg, Seen.complete, &first_seen));
+        try h.wait(&first_seen);
+        try h.wait(&second_seen);
+        try std.testing.expect(owner.isIdle());
+        try std.testing.expectEqual(process.Outcome.cancelled, first.result().outcome);
+        try h.wait(&unrelated_seen);
+        try std.testing.expectEqual(process.Outcome.success, unrelated.result().outcome);
+        try std.testing.expectEqualStrings("READY\nalive", unrelated.result().stdout);
+    }
+}
+
+test "capture TERM grace allows cleanup before bounded KILL escalation" {
+    const h = try Harness.init(
+        \\trap 'printf graceful > term-marker; exit 0' TERM
+        \\printf 'READY\n'
+        \\while :; do :; done
+    );
+    defer h.deinit();
+    const marker = try std.fmt.allocPrintSentinel(a, "{s}/term-marker", .{h.directory}, 0);
+    defer a.free(marker);
+    defer _ = c.g_unlink(marker);
+    var seen = Seen{ .context = h.context };
+    const job = try process.start(a, h.config(&.{ "/bin/sh", h.script }), Seen.complete, &seen);
+    defer job.destroy();
+    try waitForReady(h, job);
+    const began = c.g_get_monotonic_time();
+    job.cancel();
+    try h.wait(&seen);
+    try std.testing.expect(c.g_get_monotonic_time() - began < 2_000_000);
+    try std.testing.expectEqual(process.Outcome.cancelled, job.result().outcome);
+    try std.testing.expectEqual(@as(?c_int, 0), job.result().exit_code);
+    try std.testing.expect(c.g_file_test(marker, c.G_FILE_TEST_EXISTS) != 0);
 }

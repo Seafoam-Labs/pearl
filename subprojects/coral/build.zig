@@ -87,8 +87,27 @@ pub fn build(b: *std.Build) void {
     const ie = b.addExecutable(.{ .name = "coral-test", .root_module = im });
     const integration = b.addSystemCommand(&.{ "python3", "tests/native.py", "--binary" });
     integration.addArtifactArg(ie);
+    // Never overwrite the checked-in native evidence when running local gates.
+    integration.addArgs(&.{ "--output", "../../.cache/coral-native" });
     integration.addPassthruArgs();
     b.step("integration", "Run native Coral workflows in an isolated Wayland session").dependOn(&integration.step);
+    const workspaces = b.addSystemCommand(&.{ "python3", "tests/workspaces.py", "--binary" });
+    workspaces.addArtifactArg(ie);
+    workspaces.addPassthruArgs();
+    b.step("workspaces", "Test first M2 restricted bounded native workspace browser").dependOn(&workspaces.step);
+    const m2_slice = b.step("test-m2-slice", "Run model/browser unit tests and first M2 native workspace acceptance");
+    m2_slice.dependOn(test_step);
+    m2_slice.dependOn(&workspaces.step);
+    const m1 = b.step("test-m1", "Run unit, widget, native, group and recovery acceptance tests");
+    m1.dependOn(test_step);
+    m1.dependOn(&integration.step);
+    inline for (.{ .{ "app-groups", "tests/app_groups.py" }, .{ "app-recovery", "tests/app_recovery.py" } }) |entry| {
+        const check = b.addSystemCommand(&.{ "python3", entry[1], "--binary" });
+        check.addArtifactArg(ie);
+        check.addPassthruArgs();
+        b.step(entry[0], "Run isolated native acceptance harness").dependOn(&check.step);
+        m1.dependOn(&check.step);
+    }
     const wm = createModule(b, .{ .root_source_file = b.path("src/widget_tests.zig"), .target = target, .optimize = optimize, .link_libc = true });
     for ([_][]const u8{ "gtk4", "gtksourceview-5", "enchant-2" }) |lib| wm.linkSystemLibrary(lib, .{ .use_pkg_config = .yes });
     const widget_tests = b.addTest(.{ .root_module = wm });
@@ -96,6 +115,34 @@ pub fn build(b: *std.Build) void {
     widgets.addArtifactArg(widget_tests);
     widgets.addPassthruArgs();
     b.step("widgets", "Test editor views and palette lifetimes in a private Wayland session").dependOn(&widgets.step);
+    m1.dependOn(&widgets.step);
+
+    const bm = createModule(b, .{ .root_source_file = b.path("src/benchmark_m0.zig"), .target = target, .optimize = optimize, .link_libc = true });
+    for ([_][]const u8{ "gtk4", "gtksourceview-5", "enchant-2" }) |lib| bm.linkSystemLibrary(lib, .{ .use_pkg_config = .yes });
+    const benchmark = b.addExecutable(.{ .name = "coral-benchmark-m0", .root_module = bm });
+    const source_snapshot = b.addSystemCommand(&.{ "python3", "tests/benchmarks.py", "--capture-sources" });
+    source_snapshot.has_side_effects = true;
+    const source_manifest = source_snapshot.addOutputFileArg("benchmark-sources.json");
+    benchmark.step.dependOn(&source_snapshot.step);
+    b.step("build-benchmarks", "Build bounded M0 engine benchmarks (use -Doptimize=safe)").dependOn(&b.addInstallArtifact(benchmark, .{}).step);
+    const benchmarks = b.addSystemCommand(&.{ "python3", "tests/benchmarks.py", "--binary" });
+    benchmarks.addArtifactArg(benchmark);
+    benchmarks.addArgs(&.{ "--optimize", @tagName(optimize), "--expected-sources" });
+    benchmarks.addFileArg(source_manifest);
+    benchmarks.addPassthruArgs();
+    b.step("benchmarks", "Run B01-B05 and separately labelled production-policy fallback baselines").dependOn(&benchmarks.step);
+
+    // Optional fixtures only: no VTE dependency or install edge in production.
+    const terminal_spike = b.addSystemCommand(&.{ "python3", "tests/terminal_spike.py" });
+    terminal_spike.addPassthruArgs();
+    b.step("terminal-spike", "Run optional prebuilt GTK4 VTE fixtures; pass --binary and --child after --").dependOn(&terminal_spike.step);
+    if (b.option([]const u8, "prototype-python", "Explicit Playwright venv Python for optional prototype-m0 target")) |python| {
+        if (b.graph.environ_map.get("PLAYWRIGHT_BROWSERS_PATH") == null)
+            @panic("prototype-python requires an explicit offline PLAYWRIGHT_BROWSERS_PATH; see docs/WORKBENCH_M0_BENCHMARKS.md");
+        const prototype = b.addSystemCommand(&.{ python, "-B", "tests/prototype_m0.py" });
+        prototype.addPassthruArgs();
+        b.step("prototype-m0", "Optional offline browser review; writes prototype evidence, never part of test-m1/install").dependOn(&prototype.step);
+    }
 }
 
 fn previewModule(b: *std.Build, bindings: *std.Build.Dependency, target: std.Build.ResolvedTarget, optimize: std.builtin.OptimizeMode, root: std.Build.LazyPath, options: *std.Build.Module, diagnostics: *std.Build.Module) *std.Build.Module {

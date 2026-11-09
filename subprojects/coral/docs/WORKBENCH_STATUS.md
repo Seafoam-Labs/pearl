@@ -1,120 +1,131 @@
 # Coral workbench implementation status
 
-**In progress: native foundation batch. Not a completed M1 or M8 workbench.**
+**M0 is accepted with the documented bounded-editor tradeoffs. M1 implementation and native correctness acceptance are complete. M2 is in progress: the first native multi-root workspace/browser slice is implemented and tested.**
 
-This report supplements the [M0–M8 roadmap](WORKBENCH_IMPLEMENTATION_PLAN.md). The [browser prototype](mockups/workbench/index.html) remains a design fixture; its workspace, Git, LSP and agent panels are not connected to the native application.
+The user explicitly accepted the M0 tradeoffs and requested work on M2. This acceptance does not turn failed or unmeasured performance targets into passing measurements. This is not a full IDE or Zed parity release. M2 is partial; M3–M8 remain future milestones; M9 remains removed. The [interactive prototype](mockups/workbench/index.html) is a design fixture, not connected to native Git, LSP or agents.
 
-## Implemented and integrated
+## Milestone acceptance
 
-### Documents and views
+| Gate | Current evidence / disposition |
+| --- | --- |
+| M0 reference and interaction matrix | [Frozen references](WORKBENCH_M0_REFERENCES.md): Zed v1.27.0, ZLS 0.17.0, ACP schema-v1.29.1 / wire v1; intentional differences recorded. No live provider required or used. |
+| M0 prototype review | [Technical UX review](WORKBENCH_M0_UX_REVIEW.md): 40 passing browser checks, 55 geometry checkpoints, inspected screenshots, no external requests. The user's subsequent tradeoff acceptance authorizes proceeding to M2; the report retains its historical technical-review evidence. |
+| M0 independent views / editable excerpts | Native application groups and source-mapped editable excerpt tabs, independent presentation buffers, canonical undo and negative mapping tests. |
+| M0 terminal feasibility | [GTK4 VTE spike](WORKBENCH_M0_TERMINAL.md): embedded real renderer, PTY Unicode input/output, resize, exit/cancel/close and reaping. VTE built privately, not installed on the host. M5 production terminal remains unimplemented. |
+| M0 engine risks | Widget proofs for multiple marked edit positions, pane-local folding, mark-anchored overlays and checked suggestion acceptance. True inline reflow, full multicursor input/IME and production advanced editing remain unproven, not promised by these proofs. |
+| M0 benchmarks | [Measured baselines and engine decision](WORKBENCH_M0_BENCHMARKS.md). Retain GtkSourceView for the bounded foundation. Full giant-paragraph rendering fails; the 1 MiB bounded-excerpt fallback completes all samples. Some proposed timing targets are missed; real injected-key-to-paint targets remain unverified. |
+| M1 registry, views/groups and commands | Integrated and covered by native tests. |
+| M1 stale/multi-document edit and undo safety | Checked transactions, attributable grouped history, protected typing intervals and save-generation guards; deliberate conflict refusal rather than partial rollback. |
+| M1 file integrity, watchers and lifecycle | Existing regressions pass, plus undo-during-save and grouped-history clean-checkpoint regressions. Workspace identity rejects stale/cross-workspace callbacks. |
+| M1 interrupted saves/recovery | Versioned durable journal, explicit restore/keep/discard, crash/publication fault tests, source conflict protection and current-layout recovery. |
 
-- `src/editor/registry.zig` owns canonical documents and allocates process-wide, nonrecycled document IDs. Path lookup follows the document's current canonical path, including Save As.
-- `src/document.zig` owns the GtkSourceView buffer, file metadata, search/spelling state and revision counter, not tab/view widgets. Revisions advance synchronously before controller observers, including undo/redo.
-- `src/editor/view.zig` owns editor widgets, tab widgets, view IDs and saved caret/selection marks. The application keeps view and document collections separately.
-- `src/app.zig` callbacks resolve their owning controller instead of using a global `App.instance`. Asynchronous file operations retain their existing application-lifetime protection.
-- Tab teardown disconnects document-bound close/context callbacks before unparenting. Buffer teardown disconnects document callbacks even if a prepared transaction retains the buffer. Closing a tab restores typing focus to the remaining editor.
+**Recorded M0 acceptance:** the user stated, “i accept the trade off and begin work on m2.” Retain GtkSourceView with the visible syntax/long-line policy and bounded-excerpt fallback, accept the documented timing misses for this foundation, and defer real injected-input-to-paint qualification. Full giant-line rendering and paint targets have not passed; their evidence and limitations remain in the benchmark report. M0 is no longer blocked on these tradeoff decisions.
 
-This is still a single-window, single-editor-group UI. The widget spike verifies shared-buffer views with independent saved selection positions and scroll adjustments. **GTK's visible insertion/selection marks are still buffer-wide.** Independent simultaneous selection rendering, editor-group UI and editable multibuffer excerpts remain open feasibility work; the spike is not claimed as finished split-editor support.
+## M2 first slice: implemented and integrated
 
-### Revision-checked editing
+See [workspace usage and remaining gates](WORKBENCH_M2_WORKSPACES.md) for the schema and exact scope.
 
-`src/editor/transactions.zig` provides prepare → preview accessors → commit for one or more buffers. It:
+- Native **Open Folder…** and **Open Workspace…** menu/palette actions, plus explicit `--folder PATH` / `--workspace PATH` CLI options. Existing bare-directory file arguments remain rejected.
+- Strict version-1 `.coral-workspace` manifests, up to 32 roots and 1 MiB of JSON. Relative roots resolve against the supplied manifest path's parent. Available canonical aliases deduplicate; colliding root names remain distinct through typed `RootId`s. Missing roots remain visible and are never created.
+- Root-qualified file tabs and a lazy, nonrecursive directory browser with **Roots / Back / Rescan / Close workspace**. Lists visibly truncate at 500 direct entries. This is not the finished virtualized explorer or the 100k-file performance gate.
+- Filesystem work runs on GTask workers. Request/model generations reject late results; switching/closing a workspace preserves open dirty documents. Failed manifests leave the previous workspace intact.
+- Bounded admission: eight total outstanding operations including at most one workspace chooser; 128 KiB retained request-path budget; identical pending file opens deduplicate. Rejected requests do not invalidate accepted work. Canceled workers retain their slots and application holds until completion. Blocking mount I/O is still not forcibly interruptible.
+- Restricted-only state; manifest settings must be omitted or empty. Executable settings and manifest-supplied trust are rejected, never executed. No trust promotion or persistent grant store is implemented yet.
+- Descriptor-relative browser traversal rejects symlink components, special files and escapes. Search-only ancestor directories are supported. This is not a sandbox for the subsequent path-based document loader against concurrent rename races.
+- Recovery still restores documents/layout, **not workspace roots/manifests**; the UI says so. Ordinary project-session restoration remains an M2 gate.
 
-- Owns snapshots and replacement text; retains buffers without retaining a closed document.
-- Checks document/buffer/revision identity, writable/busy policy, UTF-8 boundaries, NUL, ranges, duplicates, overlaps and ambiguous insertions before changing anything.
-- Resolves current targets again at commit and rejects stale changes, even if an edit/undo returned to identical text.
-- Applies descending range edits without resetting the entire buffer, preserving unaffected marks/tags and per-buffer undo history.
-- Makes all fallible Zig allocations before mutation; successful commit cannot be replayed.
+**Fresh validation:** `zig build test-m2-slice test-m1 -Doptimize=safe -j1 --summary all` passed on the final code, including the bounded-admission and traversal-permission fixes. The final workspace harness has **18 native groups**, including real two-root typing, same-basename identity, malformed/FIFO manifests, restricted no-execution, missing roots, symlink replacement, delayed-result races, request bursts/dedup/budgets, chooser lifecycle and execute-only ancestors. M1's 99 widget, 40 native, 14 group and 13 recovery checks remain passing. Workspace evidence: `pearl/.cache/coral-workspaces/`.
 
-Native find/replace, replace-all and spelling corrections now use this boundary. Identical replacements do not create a dirty revision or undo entry. Edits during an asynchronous save remain permitted; the saved older revision does not clear newer dirty state.
+## M1 foundation: implemented and integrated
 
-Default limits are 128 targets, 65,536 replacements, 16 MiB per edited buffer (including intermediate growth), and 64 MiB combined snapshots/replacement bytes. The UI reports rejected oversized edits. The existing 128 MiB **file-load** limit is separate. Transactions do not save, stage, commit or execute commands.
+### Canonical documents, independent views and groups
 
-Guarantees are validation atomicity, not isolation from synchronous GTK signal observers or atomic disk writes. Controller callbacks must not reenter arbitrary edits during application. Undo remains per buffer, not a workspace-wide journal; GLib allocation failures retain GLib's fatal-OOM behavior.
+- `src/editor/registry.zig` owns canonical documents with process-wide nonrecycled IDs. Canonical paths deduplicate opens and follow Save As.
+- `src/editor/view.zig` and `projection.zig` give each view its own GtkSourceBuffer, selection, caret and scroll. Edits synchronize incrementally with one authoritative document; mirrors never own file saves or divergent undo histories.
+- `src/editor_groups.zig` and `src/app.zig` provide equal-width horizontal groups, split/focus/close actions and duplicate views. Closing a duplicate view does not prompt or destroy the document. Quit resolves each canonical dirty document once.
+- Search, status, go-to, spelling, context menus, styles and editability route through the appropriate presentation. GTK iterators are not exchanged between buffers.
+- Callback detachment protects retained tab/page/buffer widgets. The spelling-popover focus fix prevents opening a popover from detaching its own focus subtree.
+- `src/workspace/identity.zig` provides typed process-local workspace IDs and generation tokens. Actual watcher/load callbacks validate them, resolve document IDs, and release resources even when rejecting late results. This is identity/lifecycle infrastructure, not M2 multi-root workspace support.
 
-### Safe existing-file opens and loads
+Use **Ctrl+\\** to split. The menu and **Ctrl+Shift+P** palette expose **Focus next/previous editor group**, **Close editor group**, **Edit selection as excerpt**, **Undo grouped edit**, and **Redo grouped edit**.
 
-- `src/platform/open_target.zig` resolves existing regular local files and file URIs, with canonical symlink identity. Missing paths, directories, FIFOs/devices, malformed paths and nonlocal URIs are rejected without creating files or parents.
-- `App.openExisting` replaces the old open-and-create behavior. **To create a file, use New document then Save As.** This is an intentional CLI behavior change too.
-- `src/platform/load_file.zig` opens read-only/nonblocking in a GTask worker, verifies the opened descriptor is regular, then reads that same descriptor in bounded chunks. A file replaced by a FIFO cannot trap the loader in a blocking FIFO open; reload uses this same boundary.
-- Loads preserve raw BOM/newline bytes for the existing codec. GIO-compatible etags are obtained through descriptor metadata at `/proc/self/fd/N`; no etag is guessed or sampled from a replacement at the original pathname.
-- Descriptors close before completion; cancelled/oversized/failed loads do not return partial contents. Observable concurrent metadata changes across a read fail rather than accepting inconsistent data.
+### Transactions, excerpts and guarded undo
 
-Linux procfs is required for the metadata bridge. This is not a filesystem sandbox or a universal coherent snapshot: in-place writes, timestamp resolution, FUSE/NFS stalls and GIO etag limitations still apply. Nonblocking open prevents the FIFO rendezvous, not all possible kernel stalls.
+`src/editor/transactions.zig` validates identity, revision, writable/busy state, complete source contents, UTF-8 boundaries, NUL, object content, ranges and overlaps before any mutation. Full-target validation remains in place after optimization. Preparation owns snapshots; retained buffers never retain a closed document. Successful plans cannot be replayed.
 
-A native-only startup failure exposed a dangling local-VFS singleton in the installed GVfs backend after default-backend probing. The loader now uses GIO's selected native backend for the proc-fd metadata bridge; a regression test covers default-VFS initialization before loading. The original descriptor/type checks and etag validation remain intact.
+- Default transaction limits: 128 targets, 65,536 replacements, 16 MiB per buffer and 64 MiB combined bytes. These are separate from file-load and recovery limits.
+- Replace, replace-all, spelling and excerpt edits use canonical checked transactions. Unchanged replacements create no edit.
+- `excerpt.zig` uses source marks with explicit gravity; `excerpt_editor.zig` mounts an actual editable native view with a noneditable header. Historical snapshots are read-only. Source changes refresh bounded regions, not guessed concatenated offsets.
+- `history.zig` validates all participating buffers before grouped undo/redo. Defaults: 100 records / 64 MiB accounted history budget. No atomic filesystem undo or automatic save is implied.
+- `native_history.zig` isolates typing intervals from grouped operations because GTK user-action boundaries alone can merge adjacent edits. Native undo cannot undo half a grouped operation. Save generations prevent an older typing interval's clean marker from clearing a document that differs from the newest disk save.
+- **Conservative history limits:** edits, including edit then native undo, can make older grouped records stale. The UI refuses rather than overwrites newer work. Typing history predating the first grouped-history boundary stays physically retained by GTK but is inaccessible through application undo; later protected intervals are retained across safe grouped replay. Arbitrary interleaving is not promised.
 
-### External-file changes and explicit reload
+Guarantees are validation atomicity, not isolation from arbitrary synchronous GTK reentrancy or atomic multi-file writes. GLib allocation failures retain GLib's fatal-OOM behavior.
 
-- Loaded/saved documents monitor their local file with GIO. Async type/etag queries update **Changed on disk** in the status bar; monitoring never modifies a buffer or marks it busy.
-- Each document has at most one outstanding metadata query with coalesced pending events. Requests carry the controller, document ID and watcher generation, so closing a document or changing its Save As target cannot apply an old response to the wrong document.
-- Monitors detach before document destruction; pending queries are cancelled/reaped. Application holds keep the controller alive through completion.
-- Own-save notifications are compared against the committed etag, not treated as unrelated edits. Watcher reinstallation checks the load/save-to-watch gap.
-- **Reload from Disk** is available through the editor menu and palette. Dirty documents require explicit discard confirmation. Failed reload, including a FIFO replacement, keeps the current buffer intact.
-- Loads check the starting document revision before applying results and again after a large-file confirmation. Late edits cannot be overwritten by an older load; undo/redo is blocked while loading or awaiting acceptance. Cancelling a large reload preserves the original file identity even when the existing buffer is empty.
+### File integrity, monitoring and saves
 
-Detection is metadata/etag-based, not content hashing. Missing/inaccessible metadata is conservatively marked changed. Monitoring setup failures are surfaced; there is no full-tree polling fallback in this batch.
+- Existing-file opens resolve regular local files and local file URIs without creating missing files or parents. Use **New → Save As** for creation. Directories, devices and FIFOs are rejected.
+- Descriptor-checked asynchronous loads read the verified open file under a 128 MiB cap. Linux `/proc/self/fd` provides GIO-compatible descriptor metadata. This is not a filesystem sandbox or a universal coherent snapshot on hostile/network filesystems.
+- File monitors flag external changes without replacing buffers. Async metadata queries coalesce and carry document/workspace identity and generations. Save As and close reject old callbacks safely.
+- **Reload from Disk** requires explicit discard confirmation for dirty buffers. Completion and large-file acceptance both check starting revisions.
+- Successful stale saves cannot mark the newer buffer clean, including when undo reaches the previous GTK clean checkpoint while the save is in flight. `Document.recordSavedRevision` tracks whether that checkpoint still represents disk; stale checkpoints stay conservatively dirty until a current save/load.
+- Save cancellation/failure preserves buffers and existing file-integrity behavior. Multi-file buffer operations do not silently save, stage, commit or run commands.
 
-### Commands and native palette
+### Durable recovery and session layout
 
-`src/workbench/commands.zig` centralizes currently executable commands and metadata. Menu entries, GActions, common keyboard shortcuts and the palette use the same command dispatch.
+`src/workspace/recovery*.zig`, `main.zig`, and App snapshot/restore APIs are connected, not standalone persistence modules.
 
-**Ctrl+Shift+P** opens the native palette. It filters labels/action names/shortcut hints, supports keyboard selection and dispatch, reports no matches and dismisses with Escape. Cancelling restores the prior live focus widget—including Find/Replace fields—rather than redirecting typing into the document. The palette follows Coral's appearance. Navigation bubbles after entry/IME event handling; physical IME qualification remains pending.
+- Private per-session journals under `$XDG_STATE_HOME/coral/recovery` (normally `~/.local/state/coral/recovery`), with lock ownership and descriptor-relative filesystem operations.
+- Schema v2, v1 read compatibility, bounded JSON/base64 and SHA-256. Unknown/corrupt records are retained and refused, not silently migrated or deleted.
+- Worker publication: temporary file → write → fsync → rename → directory fsync. One running and one coalesced pending write; uncertain durability prevents resolved deletion.
+- Checkpoints debounce for 350 ms, with a two-second scheduling cap during continuous changes, plus actual write latency. A crash recovers the **last durable checkpoint**, not necessarily the latest keystroke.
+- Explicit **Restore / Keep for later / Discard** chooser. Restoration creates unsaved copies, never overwrites newer source files. Original journals remain protected until a durable replacement checkpoint and explicit disposition.
+- Preserves canonical sharing, groups/tabs, active views, directed Unicode selections, excerpt bounds, horizontal and logical vertical scrolling, BOM/newline metadata. Current groups are equal-width horizontal groups, not arbitrary split trees.
+- Clean resolution flushes/closes asynchronously using application holds. Failures retain journals. Empty never-published sessions are handled separately from corrupt journals without deleting unknown contents.
+- **Caps: 4 MiB/document, 8 MiB total text, 12 MiB manifest.** Exceeding a cap visibly rejects the entire checkpoint and retains any previous durable checkpoint; do not assume smaller documents have been newly protected while any open document exceeds the cap. Save important work explicitly. Recovery is not a backup service.
 
-Only implemented actions are listed; no fake Git/LSP/agent commands were added.
+### Process and terminal foundations
 
-### Bounded subprocess foundation
+`src/tasks/process.zig` copies argv/cwd/explicit environment, requires authorization, bounds combined output/time, and completes exactly once on the originating context. A private supervisor/subreaper owns the process group; TERM → 150 ms grace → KILL, then reaping, applies on cancellation, timeout, output limit, owner shutdown and leader exit. Typed workspace tokens let consumers discard stale results without skipping cleanup.
 
-`src/tasks/process.zig` is a tested async capture API for future short-lived backend commands. It owns argv/cwd/environment and request identity, requires explicit caller authorization, clears inherited environment unless allowed explicitly, drains stdout/stderr under a combined cap, and handles nonzero exit, signal, timeout, cancellation and exactly-once completion on the originating main context.
+`src/terminal/pty.zig` provides PTY read/write/resize/cancel/wait. The optional VTE spike validates an actual renderer and foreign-PTY integration. Neither is a production task runner or terminal dock. Linux x86_64, glibc >=2.34 and kernel >=5.9 are the current transport implementation target. Process-group ownership is **not containment** of processes escaping into other groups/sessions; interactive job-control containment remains M5 work.
 
-**It is not yet a user-facing terminal/task runner, OS sandbox, persistent protocol transport, or process-tree supervisor.** Cancellation kills/reaps only the direct child and closes capture pipes; descendant termination and PTY integration remain open. Completion may be delayed by an uninterruptible spawn/kernel operation. No provider/network service is enabled by adding this module.
+### Measured presentation policy
+
+The policy is visible rather than silently presenting stalled full-feature editing:
+
+- Language processing and automatic spelling are reduced at **524,288 GTK characters**, or for a logical line over **16 KiB**. The character threshold is not a byte threshold. The older >10 MiB load warning remains separate.
+- Giant-line views show a notice and character-offset control to open an initially **2,048-character** editable excerpt. The hidden full view is parked on an empty widget buffer so it cannot continue expensive paragraph layout; the real presentation/canonical buffers remain intact.
+- Whole sources beyond the **16 MiB checked-edit limit** disable that excerpt action with a specific explanation rather than offering a fallback that always fails. Saving unchanged content remains available.
+- Final 1 MiB retained-source fallback completed five cycles / 1,000 samples in each wrap mode. Latest operation-plus-drain edit p95: **21.474 / 22.319 ms**; no recorded dispatch over 50 ms. These are not keystroke-to-paint numbers.
+- B05 grouped excerpt edit p95 **18.186 ms** misses the proposed 16 ms screen. Full 1 MiB paragraph rendering remains unsupported/guarded. See the benchmark report for complete results, failures, clocks and hashes.
 
 ## Validation completed
 
-Toolchain/library versions used for this batch:
-
-| Component | Version |
-| --- | --- |
-| Zig | 0.17.0 |
-| Installed ZLS | 0.17.0 (availability recorded only; no Coral LSP integration yet) |
-| GTK | 4.24.1 |
-| GtkSourceView | 5.22.0 |
-| Enchant | 2.8.21 |
-
-Commands run from `subprojects/coral/`:
+Final aggregate command from `subprojects/coral`:
 
 ```sh
-zig build test -Doptimize=safe
-zig build -Doptimize=safe
-zig build widgets -Doptimize=safe -- --aqueous-prefix /usr
-zig build integration -Doptimize=safe -- --aqueous-prefix /usr --output /home/zoey/Projects/pearl/.cache/coral-workbench-native
+zig build test-m1 -Doptimize=safe -j1 --summary all
 ```
 
-- **Headless unit suite passed:** path resolution, document identity/lifetime, revision transitions, transaction Unicode/overlap/staleness/undo/allocation failure, loader FIFO/path-swap/limits/cancellation/etag behavior, selections, subprocess lifecycle and command/palette models.
-- **12 display-backed widget tests passed** in a private Wayland session: retained-widget callback detachment, teardown ordering, saved selection/focus/scroll behavior and palette lifecycle, including transitively imported model tests.
-- **39 native check groups passed** in a private Wayland session: palette dispatch/focus, external changes/deletion/atomic replacement, dirty reload decisions, own-save/Save As monitoring, FIFO reload, async reload edits, stale large-load acceptance, empty-file reload cancellation, canonical opens, Unicode transaction undo, save races/cancellation, spelling, format preservation, theme/narrow/scaled UI and existing large-file checks.
-- Formatting and Git whitespace checks passed.
-- Native evidence is under `pearl/.cache/coral-workbench-native/`; widget evidence is under `pearl/.cache/coral-widgets/`. These are local generated results, not replacements for the tracked historical `artifacts/native/` gallery.
+**Passed** on the final code, including:
 
-`--aqueous-prefix /usr` uses this host's installed test compositor/tooling. It is an explicit alternative to the repository's prepared private prefix; do not infer portability or the historical fixture's provenance from these results. All application/config/file mutations in these suites use private test fixtures, not the live desktop or developer checkout.
+- Headless unit and appearance suites.
+- **99 display-backed widget-root tests** (includes transitive model tests; do not add this count to headless tests as unique cases).
+- **40 existing/native workflow groups**, including the new undo-during-save regression and repeated native spelling-popover focus checks.
+- **14 application/group acceptance checks**, including grouped/native undo boundaries and cross-epoch saved-checkpoint safety.
+- **13 recovery acceptance groups**, including SIGKILL/restart, interrupted publication/save, conflict-safe copies, locks/concurrent instances, corruption, cap errors, layout and excerpt recovery.
 
-## Milestone gates still open
+Additional executed validation: production safe build, formatting/whitespace checks; **40 prototype browser checks / 55 geometry checkpoints**; optional GTK4 VTE fixture **four native scenarios**; final B05 and 1 MiB fallback benchmark run **three trials / zero trial failures**. Timing budget misses are reported separately from trial completion.
 
-| Milestone | Current state |
-| --- | --- |
-| M0 | Interactive design exists; native view/lifetime feasibility exercised. Frozen Zed behavior reference, full independent-pane rendering, editable excerpt and terminal spikes, benchmark baselines remain open. |
-| M1 | Registry/view separation, command palette, checked edit transactions, external-file monitoring and bounded command capture implemented. Recovery/session journal, independent editor groups, workspace-wide undo/recovery semantics and complete process-tree lifecycle remain open. |
-| M2 | Workspace/root identities, multi-root model, explorer/search, trust, settings/session restoration and multiple windows not implemented. |
-| M3–M8 | LSP, Git workbench, terminal/tasks, native/ACP agents, MCP, DAP/test UI and extensions not implemented. |
+Observed toolchain: Zig 0.17.0, GTK 4.24.1, GtkSourceView 5.22.0, Enchant 2.8.21. Evidence lives under `pearl/.cache/coral-native`, `coral-app-groups`, `coral-app-recovery`, `coral-widgets`, `coral-terminal-spike`, and `coral-benchmarks/run-ldrbm59w`. Prototype review artifacts live beside the interactive mockup. Older failing benchmark and native reports remain historical evidence, not current successes.
 
+All native tests use private Wayland/XDG sessions and disposable files, not the live desktop. `--aqueous-prefix /usr` selects this host's installed test tooling; other setups can use the prepared private prefix. No service credentials, paid API calls, language servers, extension downloads or host VTE installation were configured. No commits were created.
 
-No service subscriptions, model credentials, installed language servers, paid API calls or extension downloads are configured by this batch. No commits were created.
+## Remaining roadmap
 
-## Next implementation sequence
-
-1. Complete M0's independent-view/excerpt decision and pin the target Zed behavior/version before claiming parity.
-2. Implement versioned recovery snapshots and a session restore chooser with crash/disk-conflict fault-injection tests; preserve unrelated user edits.
-3. Add workspace/root identities and trusted configuration boundaries, then native workspace navigation against the established document/transaction APIs.
-4. Extend the process boundary for protocol transports and process-tree ownership before using it for LSP, tasks or agents.
-
-Keep these gates visible. Passing the text-editor regression suite does not establish full workbench feature or security acceptance.
+- **M0:** accepted bounded-foundation tradeoffs; unsupported full giant-line rendering and deferred paint qualification remain documented, not passed.
+- **M1:** implemented/tested bounded foundation; retain the documented undo, recovery, file-size and process-ownership limits.
+- **M2:** first manifest/root/browser slice delivered. Remaining: virtualized/paged explorer, ignore/exclude rules, directory watching, quick-open/workspace search, settings precedence, persistent trust approval/revocation, workspace-root session recovery, docking and multi-window UI. The 100k-file gate is still open.
+- **M3–M8:** LSP, real Git workbench, production terminal/tasks, native/ACP agents, MCP, DAP/test UI, extensions and advanced editing/accessibility qualification.
+- **M9:** removed, not silently reintroduced.

@@ -8,7 +8,25 @@ const Document = @import("document.zig").Document;
 const DocumentRegistry = @import("editor/registry.zig").DocumentRegistry;
 const EditorView = @import("editor/view.zig").EditorView;
 const transactions = @import("editor/transactions.zig");
-const open_target = @import("platform/open_target.zig");
+const History = @import("editor/history.zig").History;
+const group_model = @import("editor_groups.zig");
+const workspace_identity = @import("workspace/identity.zig");
+const excerpt_model = @import("editor/excerpt.zig");
+const ExcerptEditor = @import("editor/excerpt_editor.zig").Editor;
+const ExcerptPane = struct {
+    id: u64,
+    app: *App,
+    document: *Document,
+    editor: *ExcerptEditor,
+    tab: W,
+    label: W,
+    close: W,
+    search: *c.GtkSourceSearchContext,
+    spelling_tag: *c.GtkTextTag,
+    spelling_dirty: bool = true,
+    context_controller: ?*c.GtkEventController = null,
+};
+const WorkspaceController = @import("workspace/controller.zig").Controller;
 const load_file = @import("platform/load_file.zig");
 const commands = @import("workbench/commands.zig");
 const Palette = @import("workbench/palette.zig").Palette;
@@ -23,8 +41,25 @@ const config_log = std.log.scoped(.config);
 
 pub const App = struct {
     application: *c.GtkApplication,
+    workspace: workspace_identity.Scope,
+    // Document lifecycle scope above is independent of the browser model's scope.
+    browser: WorkspaceController = undefined,
     window: W,
+    /// Alias of the active group's notebook, retained for tab cycling.
     notebook: W,
+    groups: group_model.Groups,
+    active_page: ?W = null,
+    excerpts: std.ArrayList(*ExcerptPane) = .empty,
+    next_excerpt_id: u64 = 1 << 63,
+    history: History = History.init(a, .{}),
+    closing_group: ?u64 = null,
+    /// GTK-thread callback; snapshots are coherent here. Must not mutate/reenter App.
+    recovery_context: ?*anyopaque = null,
+    recovery_checkpoint: ?*const fn (?*anyopaque, *App) void = null,
+    recovery_suspended: bool = false,
+    checkpoint_idle: c_uint = 0,
+    checkpoint_running: bool = false,
+    test_checkpoint_count: u64 = 0,
     new_button: W,
     search_button: W,
     searchbox: W,
@@ -57,6 +92,7 @@ pub const App = struct {
     menu_start: c_int = 0,
     menu_end: c_int = 0,
     menu_revision: u64 = 0,
+    suggestion_view: u64 = 0,
     menu_word: ?[:0]u8 = null,
     dialog_kind: DialogKind = .close,
     goto_input: ?W = null,
@@ -92,9 +128,8 @@ pub const App = struct {
         defer c.g_object_unref(model);
         for (commands.entries) |entry| c.g_menu_append(model, entry.command.label(), entry.detailed_action);
         c.gtk_menu_button_set_menu_model(u.cast(c.GtkMenuButton, menu), u.cast(c.GMenuModel, model));
-        const notebook = c.gtk_notebook_new().?;
-        c.gtk_notebook_set_scrollable(u.cast(c.GtkNotebook, notebook), 1);
-        c.gtk_widget_set_vexpand(notebook, 1);
+        var groups = group_model.Groups.init();
+        const notebook = (groups.add() catch @panic("Could not create editor group")).notebook;
         const searchbox = u.box(false, 4);
         c.gtk_widget_add_css_class(searchbox, "search");
         const row = u.box(true, 6);
@@ -134,7 +169,9 @@ pub const App = struct {
         c.gtk_label_set_wrap(u.cast(c.GtkLabel, notice), 1);
         u.append(root, notice);
         c.gtk_widget_set_visible(notice, 0);
-        u.append(root, notebook);
+        const workspace_slot = u.box(false, 0);
+        u.append(root, workspace_slot);
+        u.append(root, groups.root);
         const footer = u.box(true, 8);
         c.gtk_widget_add_css_class(footer, "status");
         const status = u.label("");
@@ -145,7 +182,8 @@ pub const App = struct {
         u.append(footer, spell_button);
         u.connect(spell_button, "clicked", &onSpelling, self);
         u.append(root, footer);
-        self.* = .{ .application = application, .window = window, .notebook = notebook, .new_button = new, .search_button = search, .searchbox = searchbox, .query = query, .replacement = replacement, .matches = matches, .status = status, .spell_button = spell_button, .notice = notice, .settings = settings, .worker = spell.Worker.start(), .css = c.gtk_css_provider_new().?, .font_css = c.gtk_css_provider_new().? };
+        self.* = .{ .application = application, .workspace = .init(), .window = window, .notebook = notebook, .groups = groups, .new_button = new, .search_button = search, .searchbox = searchbox, .query = query, .replacement = replacement, .matches = matches, .status = status, .spell_button = spell_button, .notice = notice, .settings = settings, .worker = spell.Worker.start(), .css = c.gtk_css_provider_new().?, .font_css = c.gtk_css_provider_new().? };
+        self.browser = WorkspaceController.init(self, workspace_slot);
         c.g_weak_ref_init(&self.palette_focus, null);
         c.gtk_css_provider_load_from_string(self.css, @embedFile("style"));
         c.gtk_style_context_add_provider_for_display(c.gdk_display_get_default(), u.cast(c.GtkStyleProvider, self.css), c.GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
@@ -155,6 +193,7 @@ pub const App = struct {
         c.gtk_widget_add_css_class(window, "coral");
         u.connect(window, "close-request", &onCloseWindow, self);
         u.connect(notebook, "switch-page", &onSwitch, self);
+        u.connect(notebook, "page-reordered", &onPageReordered, self);
         u.connect(query, "search-changed", &onQuery, self);
         u.connect(query, "activate", &onNext, self);
         const keys = c.gtk_event_controller_key_new().?;
@@ -174,15 +213,23 @@ pub const App = struct {
         return self;
     }
     pub fn deinit(self: *App) void {
+        self.browser.deinit();
+        self.workspace.close();
         if (self.timer != 0) _ = c.g_source_remove(self.timer);
+        if (self.checkpoint_idle != 0) _ = c.g_source_remove(self.checkpoint_idle);
         self.appearance.deinit();
         self.worker.stop();
         if (self.palette) |palette| palette.close();
         // Async operations hold the application until their callbacks are reaped;
         // watcher queries allow tabs/windows to close while that hold is active.
         // Views release their buffer references and callbacks before documents.
-        for (self.views.items) |view| view.destroy();
+        while (self.views.items.len > 0) self.detachView(self.views.items[self.views.items.len - 1]);
+        while (self.excerpts.items.len > 0) self.detachExcerpt(self.excerpts.items[self.excerpts.items.len - 1]);
         self.views.deinit(a);
+        self.excerpts.deinit(a);
+        for (self.groups.items.items) |group| _ = c.g_signal_handlers_disconnect_matched(group.notebook, c.G_SIGNAL_MATCH_DATA, 0, 0, null, null, self);
+        self.groups.deinit();
+        self.history.deinit();
         self.documents.deinit();
         c.g_weak_ref_clear(&self.palette_focus);
         for (self.languages.items) |lang| a.free(lang);
@@ -195,60 +242,557 @@ pub const App = struct {
         a.destroy(self);
     }
     pub fn active(self: *App) ?*Document {
+        if (self.activeView()) |view| return view.document;
+        if (self.activeExcerpt()) |pane| return pane.document;
+        return null;
+    }
+    pub fn activeView(self: *App) ?*EditorView {
         if (self.closing) return null;
-        const index = c.gtk_notebook_get_current_page(u.cast(c.GtkNotebook, self.notebook));
-        if (index < 0) return null;
-        const page = c.gtk_notebook_get_nth_page(u.cast(c.GtkNotebook, self.notebook), index);
-        for (self.views.items) |view| if (view.page == page) return view.document;
+        for (self.views.items) |view| if (view.page == self.active_page) return view;
+        return null;
+    }
+    fn activeExcerpt(self: *App) ?*ExcerptPane {
+        if (self.closing) return null;
+        for (self.excerpts.items) |pane| if (pane.editor.root == self.active_page) return pane;
+        return null;
+    }
+    pub fn activeBuffer(self: *App) ?*c.GtkTextBuffer {
+        if (self.activeView()) |view| return view.buffer;
+        if (self.activeExcerpt()) |pane| return pane.editor.display;
+        return null;
+    }
+    pub fn activeWidget(self: *App) ?W {
+        if (self.activeView()) |view| return view.widget;
+        if (self.activeExcerpt()) |pane| return pane.editor.widget;
+        return null;
+    }
+    fn activeSearch(self: *App) ?*c.GtkSourceSearchContext {
+        if (self.activeView()) |view| return view.projection.search;
+        if (self.activeExcerpt()) |pane| return pane.search;
         return null;
     }
     fn find(self: *App, id: u64) ?*Document {
         return self.documents.get(id);
     }
-    fn viewFor(self: *App, document: *Document) *EditorView {
-        for (self.views.items) |view| if (view.document == document) return view;
-        unreachable;
+    pub fn activeViewId(self: *App) ?u64 {
+        if (self.activeView()) |view| return view.id;
+        if (self.activeExcerpt()) |pane| return pane.id;
+        return null;
+    }
+    fn activeFocusWidget(self: *App) ?W {
+        if (self.activeView()) |view| if (view.layout_guard.blocked) return view.layout_guard.button;
+        if (self.activeExcerpt()) |pane| if (pane.editor.layout_guard.blocked) return pane.editor.layout_guard.button;
+        return self.activeWidget();
+    }
+    fn scrollActiveTo(self: *App, iter: *c.GtkTextIter) void {
+        const guard = if (self.activeView()) |view| view.layout_guard else if (self.activeExcerpt()) |pane| pane.editor.layout_guard else return;
+        if (guard.blocked) {
+            // Search/go-to can still select canonical text, but must not force
+            // the giant detached paragraph through Pango. Offer its location to
+            // the bounded-excerpt action instead.
+            c.gtk_spin_button_set_value(guard.offset, @floatFromInt(c.gtk_text_iter_get_offset(iter)));
+        } else if (self.activeWidget()) |widget| {
+            _ = c.gtk_text_view_scroll_to_iter(u.cast(c.GtkTextView, widget), iter, 0.1, 0, 0, 0);
+        }
     }
     fn focus(self: *App, d: *Document) void {
-        c.gtk_notebook_set_current_page(u.cast(c.GtkNotebook, self.notebook), c.gtk_notebook_page_num(u.cast(c.GtkNotebook, self.notebook), self.viewFor(d).page));
-        _ = c.gtk_widget_grab_focus(self.viewFor(d).widget);
+        if (self.active() == d) {
+            if (self.activeFocusWidget()) |widget| _ = c.gtk_widget_grab_focus(widget);
+            return;
+        }
+        for (self.views.items) |view| if (view.document == d) {
+            self.focusView(view);
+            return;
+        };
+        for (self.excerpts.items) |pane| if (pane.document == d) {
+            self.focusPage(pane.editor.root, pane.editor.widget);
+            return;
+        };
+    }
+    pub fn focusView(self: *App, view: *EditorView) void {
+        self.focusPage(view.page, view.widget);
+    }
+    fn focusPage(self: *App, page: W, widget: W) void {
+        const group = self.groups.forPage(page) orelse return;
+        self.hidePopover();
+        self.notebook = group.notebook;
+        self.active_page = page;
+        c.gtk_notebook_set_current_page(u.cast(c.GtkNotebook, self.notebook), c.gtk_notebook_page_num(u.cast(c.GtkNotebook, self.notebook), page));
+        _ = c.gtk_widget_grab_focus(self.activeFocusWidget() orelse widget);
+        self.update();
+        self.scheduleCheckpoint();
     }
     pub fn newDocument(self: *App) *Document {
         const d = self.documents.create(self) catch @panic("Could not create document");
-        const presentation = EditorView.create(d) catch @panic("Could not create editor view");
-        self.views.append(a, presentation) catch @panic("Could not register editor view");
+        self.observeDocument(d);
+        _ = self.addView(d, self.activeGroupId()) catch @panic("Could not create editor view");
+        return d;
+    }
+    fn observeDocument(self: *App, d: *Document) void {
+        _ = self;
         const buffer = d.buffer;
+        u.connect(buffer, "changed", &onChanged, d);
+        u.connect(buffer, "modified-changed", &onModified, d);
+        u.connect(buffer, "apply-tag", &onSpellingTag, d);
+        u.connect(buffer, "remove-tag", &onSpellingTag, d);
+
+        u.connect(buffer, "insert-text", &onInsert, d);
+        u.connect(buffer, "delete-range", &onDelete, d);
+    }
+    pub fn addView(self: *App, d: *Document, group_id: u64) !*EditorView {
+        const group = self.groups.get(group_id) orelse return error.UnknownGroup;
+        const presentation = try EditorView.create(d);
+        errdefer presentation.destroy();
+        try @import("editor_primary.zig").attach(presentation.widget, presentation.buffer);
+        try self.views.append(a, presentation);
+        self.observeScroll(presentation.widget, true);
+        presentation.focus_context = self;
+        presentation.on_focus = &viewFocused;
+        presentation.layout_guard.setHandler(presentation, &openGuardedView);
         const view = presentation.widget;
         const page = presentation.page;
         const tab = presentation.tab;
-        u.connect(presentation.close_button, "clicked", &onCloseTab, d);
-        u.connect(buffer, "changed", &onChanged, d);
-        u.connect(buffer, "modified-changed", &onModified, d);
-        u.connect(buffer, "mark-set", &onMark, d);
-        u.connect(buffer, "insert-text", &onInsert, d);
-        u.connect(buffer, "delete-range", &onDelete, d);
+        u.connect(presentation.close_button, "clicked", &onCloseTab, presentation);
+        u.connect(presentation.buffer, "mark-set", &onViewMark, presentation);
         const click = c.gtk_gesture_click_new().?;
         c.gtk_gesture_single_set_button(u.cast(c.GtkGestureSingle, click), 3);
         c.gtk_event_controller_set_propagation_phase(u.cast(c.GtkEventController, click), c.GTK_PHASE_CAPTURE);
-        u.connect(click, "pressed", &onContext, d);
+        u.connect(click, "pressed", &onContext, presentation);
         presentation.context_menu_controller = u.cast(c.GtkEventController, click);
         c.gtk_widget_add_controller(view, presentation.context_menu_controller);
-        const index = c.gtk_notebook_append_page(u.cast(c.GtkNotebook, self.notebook), page, tab);
-        c.gtk_notebook_set_tab_reorderable(u.cast(c.GtkNotebook, self.notebook), page, 1);
-        c.gtk_notebook_set_current_page(u.cast(c.GtkNotebook, self.notebook), index);
+        _ = c.gtk_notebook_append_page(u.cast(c.GtkNotebook, group.notebook), page, tab);
+        c.gtk_notebook_set_tab_reorderable(u.cast(c.GtkNotebook, group.notebook), page, 1);
         self.configure(d);
+        self.focusView(presentation);
+        return presentation;
+    }
+    pub fn activeGroupId(self: *App) u64 {
+        for (self.groups.items.items) |group| if (group.notebook == self.notebook) return group.id;
+        return self.groups.items.items[0].id;
+    }
+    pub fn createGroup(self: *App) !u64 {
+        const group = try self.groups.add();
+        u.connect(group.notebook, "switch-page", &onSwitch, self);
+        u.connect(group.notebook, "page-reordered", &onPageReordered, self);
+        self.scheduleCheckpoint();
+        return group.id;
+    }
+    pub fn splitGroup(self: *App) !void {
+        const d = self.active() orelse return;
+        const id = try self.createGroup();
+        errdefer self.groups.remove(id);
+        _ = try self.addView(d, id);
+    }
+    pub fn focusGroup(self: *App, id: u64) void {
+        const group = self.groups.get(id) orelse return;
+        self.notebook = group.notebook;
+        self.active_page = c.gtk_notebook_get_nth_page(u.cast(c.GtkNotebook, group.notebook), c.gtk_notebook_get_current_page(u.cast(c.GtkNotebook, group.notebook)));
+        if (self.activeFocusWidget()) |widget| _ = c.gtk_widget_grab_focus(widget);
+        self.hidePopover();
         self.update();
-        _ = c.gtk_widget_grab_focus(view);
+        self.scheduleCheckpoint();
+    }
+    fn cycleGroup(self: *App, back: bool) void {
+        for (self.groups.items.items, 0..) |group, index| if (group.notebook == self.notebook) {
+            const n = self.groups.items.items.len;
+            self.focusGroup(self.groups.items.items[(index + if (back) n - 1 else 1) % n].id);
+            return;
+        };
+    }
+    pub fn closeGroup(self: *App) void {
+        if (self.dialog != null or self.closing) return;
+        self.closing_group = self.activeGroupId();
+        self.continueCloseGroup();
+    }
+    fn continueCloseGroup(self: *App) void {
+        const id = self.closing_group orelse return;
+        const group = self.groups.get(id) orelse {
+            self.closing_group = null;
+            return;
+        };
+        while (c.gtk_notebook_get_n_pages(u.cast(c.GtkNotebook, group.notebook)) > 0) {
+            self.focusGroup(id);
+            const d = self.active() orelse return;
+            if (self.viewCount(d) == 1) {
+                self.closeDocument(d);
+                return; // remove() resumes after synchronous close or async approval.
+            }
+            self.detachActive();
+        }
+        self.closing_group = null;
+        self.repairActive();
+        self.update();
+        self.scheduleCheckpoint();
+    }
+    fn viewCount(self: *App, d: *Document) usize {
+        var count: usize = 0;
+        for (self.views.items) |view| {
+            if (view.document == d) count += 1;
+        }
+        for (self.excerpts.items) |pane| {
+            if (pane.document == d) count += 1;
+        }
+        return count;
+    }
+    pub fn closeActiveView(self: *App) void {
+        if (self.dialog != null or self.closing) return;
+        const d = self.active() orelse return;
+        if (self.viewCount(d) == 1) self.closeDocument(d) else {
+            self.detachActive();
+            self.repairActive();
+            self.update();
+            self.scheduleCheckpoint();
+        }
+    }
+    fn detachActive(self: *App) void {
+        self.hidePopover();
+        if (self.activeView()) |view| self.detachView(view) else if (self.activeExcerpt()) |pane| self.detachExcerpt(pane);
+    }
+    fn unparentPage(self: *App, page: W) void {
+        if (self.active_page == page) self.active_page = null;
+        if (self.groups.forPage(page)) |group| {
+            const notebook = u.cast(c.GtkNotebook, group.notebook);
+            c.gtk_notebook_remove_page(notebook, c.gtk_notebook_page_num(notebook, page));
+        }
+    }
+    fn observeScroll(self: *App, widget: W, connect: bool) void {
+        const scrollable = u.cast(c.GtkScrollable, widget);
+        for ([_]?*c.GtkAdjustment{ c.gtk_scrollable_get_hadjustment(scrollable), c.gtk_scrollable_get_vadjustment(scrollable) }) |optional| if (optional) |adjustment| {
+            if (connect) u.connect(adjustment, "value-changed", &scrollChanged, self) else _ = c.g_signal_handlers_disconnect_matched(adjustment, c.G_SIGNAL_MATCH_DATA, 0, 0, null, null, self);
+        };
+    }
+    fn detachView(self: *App, view: *EditorView) void {
+        self.observeScroll(view.widget, false);
+        _ = c.g_signal_handlers_disconnect_matched(view.close_button, c.G_SIGNAL_MATCH_DATA, 0, 0, null, null, view);
+        _ = c.g_signal_handlers_disconnect_matched(view.buffer, c.G_SIGNAL_MATCH_DATA, 0, 0, null, null, view);
+        if (view.context_menu_controller) |controller| _ = c.g_signal_handlers_disconnect_matched(controller, c.G_SIGNAL_MATCH_DATA, 0, 0, null, null, view);
+        view.disconnectDocumentCallbacks();
+        for (self.views.items, 0..) |item, index| if (item == view) {
+            _ = self.views.orderedRemove(index);
+            break;
+        };
+        self.unparentPage(view.page);
+        view.destroy();
+    }
+    fn detachExcerpt(self: *App, pane: *ExcerptPane) void {
+        self.observeScroll(pane.editor.widget, false);
+        _ = c.g_signal_handlers_disconnect_matched(pane.close, c.G_SIGNAL_MATCH_DATA, 0, 0, null, null, pane);
+        _ = c.g_signal_handlers_disconnect_matched(pane.editor.display, c.G_SIGNAL_MATCH_DATA, 0, 0, null, null, pane);
+        if (pane.context_controller) |controller| {
+            _ = c.g_signal_handlers_disconnect_matched(controller, c.G_SIGNAL_MATCH_DATA, 0, 0, null, null, pane);
+            c.gtk_widget_remove_controller(pane.editor.widget, controller);
+        }
+        // The focus controller is removed before a retained widget can outlive pane.
+        const controller = c.g_object_get_data(u.cast(c.GObject, pane.editor.widget), "coral-excerpt-focus");
+        if (controller) |p| {
+            _ = c.g_signal_handlers_disconnect_matched(p, c.G_SIGNAL_MATCH_DATA, 0, 0, null, null, pane);
+            c.gtk_widget_remove_controller(pane.editor.widget, u.cast(c.GtkEventController, p));
+            c.g_object_set_data(u.cast(c.GObject, pane.editor.widget), "coral-excerpt-focus", null);
+        }
+        for (self.excerpts.items, 0..) |item, index| if (item == pane) {
+            _ = self.excerpts.orderedRemove(index);
+            break;
+        };
+        self.unparentPage(pane.editor.root);
+        c.g_object_unref(pane.search);
+        pane.editor.destroy();
+        c.g_object_unref(pane.tab);
+        a.destroy(pane);
+    }
+    fn repairActive(self: *App) void {
+        if (self.closing) return;
+        var index: usize = 0;
+        while (index < self.groups.items.items.len and self.groups.items.items.len > 1) {
+            const group = self.groups.items.items[index];
+            if (c.gtk_notebook_get_n_pages(u.cast(c.GtkNotebook, group.notebook)) == 0 and self.closing_group != group.id) {
+                if (self.notebook == group.notebook) self.notebook = self.groups.items.items[if (index == 0) 1 else 0].notebook;
+                _ = c.g_signal_handlers_disconnect_matched(group.notebook, c.G_SIGNAL_MATCH_DATA, 0, 0, null, null, self);
+                self.groups.remove(group.id);
+            } else index += 1;
+        }
+        self.active_page = c.gtk_notebook_get_nth_page(u.cast(c.GtkNotebook, self.notebook), c.gtk_notebook_get_current_page(u.cast(c.GtkNotebook, self.notebook)));
+        if (self.activeFocusWidget()) |widget| _ = c.gtk_widget_grab_focus(widget);
+    }
+    pub fn openExcerpt(self: *App, d: *Document, group_id: u64, range: excerpt_model.Range) !u64 {
+        const group = self.groups.get(group_id) orelse return error.UnknownGroup;
+        try self.excerpts.ensureUnusedCapacity(a, 1);
+        const pane = try a.create(ExcerptPane);
+        errdefer a.destroy(pane);
+        var excerpt = try excerpt_model.Excerpt.init(a, editTarget(d, d.revision), range, false, .{});
+        const header = u.fmt("Excerpt · {s}", .{if (d.path) |path| path else "Untitled"});
+        defer a.free(header);
+        const editor = ExcerptEditor.create(a, excerpt, header, .{ .context = self, .resolve = &resolveExcerpt, .history = &self.history, .committed = &excerptCommitted, .failed = &excerptFailed }) catch |err| {
+            excerpt.deinit();
+            return err;
+        };
+        @import("editor_primary.zig").attach(editor.widget, editor.display) catch |err| {
+            editor.destroy();
+            return err;
+        };
+        const tab = u.box(true, 6);
+        _ = c.g_object_ref_sink(tab);
+        const label = u.label("Excerpt");
+        const close = u.icon("window-close-symbolic", "Close excerpt");
+        u.append(tab, label);
+        u.append(tab, close);
+        pane.* = .{ .id = self.next_excerpt_id, .app = self, .document = d, .editor = editor, .tab = tab, .label = label, .close = close, .search = c.gtk_source_search_context_new(u.cast(c.GtkSourceBuffer, editor.display), d.search_settings).?, .spelling_tag = c.gtk_text_buffer_create_tag(editor.display, "coral-excerpt-spelling", "underline", @as(c_int, c.PANGO_UNDERLINE_ERROR), @as(?*anyopaque, null)).? };
+        self.next_excerpt_id += 1;
+        self.excerpts.appendAssumeCapacity(pane);
+        editor.layout_guard.setHandler(pane, &openGuardedExcerpt);
+        self.observeScroll(editor.widget, true);
+        u.connect(close, "clicked", &closeExcerpt, pane);
+        u.connect(editor.display, "mark-set", &excerptMark, pane);
+        const click = c.gtk_gesture_click_new().?;
+        c.gtk_gesture_single_set_button(u.cast(c.GtkGestureSingle, click), 3);
+        pane.context_controller = u.cast(c.GtkEventController, click);
+        c.gtk_event_controller_set_propagation_phase(pane.context_controller, c.GTK_PHASE_CAPTURE);
+        u.connect(click, "pressed", &excerptContext, pane);
+        c.gtk_widget_add_controller(editor.widget, pane.context_controller);
+        const controller = c.gtk_event_controller_focus_new().?;
+        u.connect(controller, "enter", &excerptFocused, pane);
+        c.g_object_set_data(u.cast(c.GObject, editor.widget), "coral-excerpt-focus", controller);
+        c.gtk_widget_add_controller(editor.widget, controller);
+        _ = c.gtk_notebook_append_page(u.cast(c.GtkNotebook, group.notebook), editor.root, tab);
+        c.gtk_notebook_set_tab_reorderable(u.cast(c.GtkNotebook, group.notebook), editor.root, 1);
+        self.configure(d);
+        self.focusPage(editor.root, editor.widget);
+        return pane.id;
+    }
+    /// Open a usable long-line window without laying out the complete paragraph.
+    /// Offsets are canonical GTK characters; history still edits the full source.
+    pub fn openBoundedExcerpt(self: *App, d: *Document, group_id: u64, offset: c_int) !u64 {
+        if (offset < 0 or offset > c.gtk_text_buffer_get_char_count(d.buffer)) return error.OutOfBounds;
+        const text = u.bufferText(d.buffer);
+        defer a.free(text);
+        const start = excerpt_model.byteAtChar(text, @intCast(offset));
+        const end = start + excerpt_model.byteAtChar(text[start..], @import("editor/presentation_policy.zig").excerpt_char_limit);
+        return self.openExcerpt(d, group_id, .{ .start = start, .end = end });
+    }
+    fn openGuardedView(context: ?*anyopaque, offset: c_int) void {
+        const view = u.cast(EditorView, context.?);
+        const self = u.cast(App, view.focus_context.?);
+        self.focusView(view);
+        _ = self.openBoundedExcerpt(view.document, self.activeGroupId(), offset) catch |err| self.editFailure(err);
+    }
+    fn openGuardedExcerpt(context: ?*anyopaque, offset: c_int) void {
+        const pane = u.cast(ExcerptPane, context.?);
+        const self = pane.app;
+        self.focusPage(pane.editor.root, pane.editor.widget);
+        _ = self.openBoundedExcerpt(pane.document, self.activeGroupId(), excerptBase(pane) + offset) catch |err| self.editFailure(err);
+    }
+    fn excerptSelection(self: *App) !void {
+        const d = self.active() orelse return;
+        const buffer = self.activeBuffer() orelse return;
+        var start: c.GtkTextIter = undefined;
+        var end: c.GtkTextIter = undefined;
+        if (c.gtk_text_buffer_get_selection_bounds(buffer, &start, &end) == 0) {
+            c.gtk_text_buffer_get_iter_at_mark(buffer, &start, c.gtk_text_buffer_get_insert(buffer));
+            if (c.gtk_text_iter_get_bytes_in_line(&start) > @import("editor/presentation_policy.zig").paragraph_byte_limit) {
+                const base = if (self.activeExcerpt()) |pane| excerptBase(pane) else 0;
+                _ = try self.openBoundedExcerpt(d, self.activeGroupId(), base + c.gtk_text_iter_get_offset(&start));
+                return;
+            }
+            c.gtk_text_iter_set_line_offset(&start, 0);
+            end = start;
+            _ = c.gtk_text_iter_forward_to_line_end(&end);
+        }
+        const text = u.bufferText(d.buffer);
+        defer a.free(text);
+        const base = if (self.activeExcerpt()) |pane| excerptBase(pane) else 0;
+        const range = excerpt_model.Range{ .start = excerpt_model.byteAtChar(text, @intCast(base + c.gtk_text_iter_get_offset(&start))), .end = excerpt_model.byteAtChar(text, @intCast(base + c.gtk_text_iter_get_offset(&end))) };
+        _ = try self.openExcerpt(d, self.activeGroupId(), range);
+    }
+    pub fn performGrouped(self: *App, label: []const u8, changes: []const transactions.Change) !void {
+        // External producers cannot introduce a second authority for a registry ID.
+        const targets = try a.alloc(transactions.Target, changes.len);
+        defer a.free(targets);
+        for (changes, targets) |change, *target| {
+            const d = self.find(change.target.id) orelse return error.TargetMismatch;
+            if (change.target.buffer != d.buffer or change.target.revision != &d.revision) return error.TargetMismatch;
+            target.* = editTarget(d, change.target.expected_revision);
+        }
+        var pending = try self.history.prepare(label, changes);
+        defer pending.deinit();
+        try self.history.commit(&pending, targets);
+        self.scheduleCheckpoint();
+        self.update();
+    }
+    pub fn replayGrouped(self: *App, redo: bool) !void {
+        const targets = try a.alloc(transactions.Target, self.documents.entries.items.len);
+        defer a.free(targets);
+        for (self.documents.entries.items, targets) |d, *target| target.* = editTarget(d, d.revision);
+        if (redo) try self.history.redo(targets) else try self.history.undo(targets);
+        for (self.excerpts.items) |pane| pane.editor.refresh() catch |err| self.editFailure(err);
+        self.scheduleCheckpoint();
+        self.update();
+    }
+    fn undo(self: *App, redo: bool) void {
+        const d = self.active() orelse return;
+        if (d.loading or d.pending != null) return;
+        const record = if (redo) self.history.redoRecord() else self.history.undoRecord();
+        if (record) |r| {
+            var current = false;
+            var valid = true;
+            for (r.entries) |entry| {
+                if (entry.id == d.id) current = true;
+                const target = self.find(entry.id) orelse {
+                    valid = false;
+                    break;
+                };
+                if (target.revision != entry.guard_revision) valid = false;
+            }
+            if (current and valid) {
+                self.replayGrouped(redo) catch |err| self.editFailure(err);
+                return;
+            }
+        }
+        if (self.activeExcerpt() != null) {
+            self.message("Grouped history is no longer current. Undo newer edits in the source view first.");
+            return;
+        }
+        const view = self.activeView() orelse return;
+        view.syncSelectionToDocument();
+        const guarded = self.history.replayNative(editTarget(d, d.revision), redo) catch |err| {
+            if (err == error.GroupedBoundary) {
+                self.message("Reached a protected grouped-history boundary. Earlier canonical typing history is retained, but cannot be replayed independently across this boundary.");
+            } else self.editFailure(err);
+            return;
+        };
+        // Only documents never protected by grouped history may use their raw
+        // canonical GTK stack: adjacent actions on that stack can merge.
+        if (!guarded) {
+            if (redo) {
+                if (c.gtk_text_buffer_get_can_redo(d.buffer) != 0) c.gtk_text_buffer_redo(d.buffer);
+            } else if (c.gtk_text_buffer_get_can_undo(d.buffer) != 0) c.gtk_text_buffer_undo(d.buffer);
+        }
+        view.syncSelectionFromDocument();
+        self.scheduleCheckpoint();
+    }
+    /// Borrowed canonical documents; valid only until the next App mutation.
+    pub fn snapshotDocuments(self: *App) []const *Document {
+        return self.documents.entries.items;
+    }
+    pub fn snapshotGroups(self: *App, allocator: std.mem.Allocator) ![]group_model.GroupState {
+        const result = try allocator.alloc(group_model.GroupState, self.groups.items.items.len);
+        for (self.groups.items.items, result) |group, *state| state.* = .{ .id = group.id, .active = group.notebook == self.notebook };
+        return result;
+    }
+    pub fn snapshotViews(self: *App, allocator: std.mem.Allocator) ![]group_model.ViewState {
+        const result = try allocator.alloc(group_model.ViewState, self.views.items.len + self.excerpts.items.len);
+        for (self.views.items, result[0..self.views.items.len]) |view, *state| state.* = self.viewState(view.id, view.document, view.page, view.widget, view.buffer);
+        for (self.excerpts.items, result[self.views.items.len..]) |pane, *state| {
+            state.* = self.viewState(pane.id, pane.document, pane.editor.root, pane.editor.widget, pane.editor.display);
+            const text = u.bufferText(pane.document.buffer);
+            defer a.free(text);
+            const source = pane.editor.excerpt.source.?;
+            var end: c.GtkTextIter = undefined;
+            c.gtk_text_buffer_get_iter_at_mark(pane.document.buffer, &end, source.end);
+            state.excerpt_start = excerpt_model.byteAtChar(text, @intCast(excerptBase(pane)));
+            state.excerpt_end = excerpt_model.byteAtChar(text, @intCast(c.gtk_text_iter_get_offset(&end)));
+        }
+        return result;
+    }
+    fn viewState(self: *App, id: u64, d: *Document, page: W, widget: W, buffer: *c.GtkTextBuffer) group_model.ViewState {
+        const group = self.groups.forPage(page).?;
+        var insertion: c.GtkTextIter = undefined;
+        var bound: c.GtkTextIter = undefined;
+        c.gtk_text_buffer_get_iter_at_mark(buffer, &insertion, c.gtk_text_buffer_get_insert(buffer));
+        c.gtk_text_buffer_get_iter_at_mark(buffer, &bound, c.gtk_text_buffer_get_selection_bound(buffer));
+        const scroll = @import("editor_scroll.zig").capture(widget);
+        const index = c.gtk_notebook_page_num(u.cast(c.GtkNotebook, group.notebook), page);
+        return .{ .id = id, .document_id = d.id, .group_id = group.id, .page = index, .active = self.active_page == page, .selected = c.gtk_notebook_get_current_page(u.cast(c.GtkNotebook, group.notebook)) == index, .insertion = c.gtk_text_iter_get_offset(&insertion), .bound = c.gtk_text_iter_get_offset(&bound), .scroll_x = scroll.x, .scroll_y = scroll.y };
+    }
+    pub const RestoreDocument = struct {
+        text: []const u8,
+        path: ?[]const u8 = null,
+        etag: ?[]const u8 = null,
+        dirty: bool = true,
+        bom: bool = false,
+        newline: codec.Newline = .lf,
+        external_changed: bool = false,
+    };
+    /// Creates a canonical document without a view. Call restoreView before yielding.
+    /// Caller owns disk identity verification and maps old IDs to the returned ID.
+    pub fn restoreDocument(self: *App, state: RestoreDocument) !*Document {
+        if (!std.unicode.utf8ValidateSlice(state.text) or std.mem.indexOfScalar(u8, state.text, 0) != null) return error.InvalidUtf8;
+        if (state.text.len > 128 * 1024 * 1024) return error.LimitExceeded;
+        if (state.path) |path| if (self.documents.findPath(path) != null) return error.DuplicateTarget;
+        const d = try self.documents.create(self);
+        self.observeDocument(d);
+        d.path = if (state.path) |path| u.z(path) else null;
+        d.etag = if (state.etag) |etag| u.z(etag) else null;
+        d.bom = state.bom;
+        d.newline = state.newline;
+        d.external_changed = state.external_changed;
+        d.large = state.text.len > 10 * 1024 * 1024;
+        self.commitLoad(d, state.text);
+        c.gtk_text_buffer_set_modified(d.buffer, @intFromBool(state.dirty));
+        self.watch(d);
+        self.scheduleCheckpoint();
         return d;
     }
-    fn configure(self: *App, d: *Document) void {
-        const view = u.cast(c.GtkSourceView, self.viewFor(d).widget);
+    /// group_id/document are fresh identities. Restore pages in saved page order,
+    /// then restore focus with focusGroup/focusView (or restoreFocus for excerpts).
+    pub fn restoreView(self: *App, d: *Document, group_id: u64, state: group_model.ViewState) !u64 {
+        if (!std.math.isFinite(state.scroll_x) or !std.math.isFinite(state.scroll_y) or state.scroll_x < 0 or state.scroll_y < 0) return error.InvalidScroll;
+        if ((state.excerpt_start == null) != (state.excerpt_end == null)) return error.InvalidAnchor;
+        const id = if (state.excerpt_start) |start| try self.openExcerpt(d, group_id, .{ .start = start, .end = state.excerpt_end orelse return error.InvalidAnchor }) else (try self.addView(d, group_id)).id;
+        const buffer = self.activeBuffer().?;
+        var insertion: c.GtkTextIter = undefined;
+        var bound: c.GtkTextIter = undefined;
+        const count = c.gtk_text_buffer_get_char_count(buffer);
+        c.gtk_text_buffer_get_iter_at_offset(buffer, &insertion, std.math.clamp(state.insertion, 0, count));
+        c.gtk_text_buffer_get_iter_at_offset(buffer, &bound, std.math.clamp(state.bound, 0, count));
+        c.gtk_text_buffer_select_range(buffer, &insertion, &bound);
+        const widget = self.activeWidget().?;
+        try @import("editor_scroll.zig").restore(widget, .{ .x = state.scroll_x, .y = state.scroll_y });
+        return id;
+    }
+    pub fn restoreFocus(self: *App, view_id: u64) void {
+        for (self.views.items) |view| if (view.id == view_id) {
+            self.focusView(view);
+            return;
+        };
+        for (self.excerpts.items) |pane| if (pane.id == view_id) {
+            self.focusPage(pane.editor.root, pane.editor.widget);
+            return;
+        };
+    }
+    pub fn checkpoint(self: *App) void {
+        if (self.checkpoint_idle != 0) {
+            _ = c.g_source_remove(self.checkpoint_idle);
+            self.checkpoint_idle = 0;
+        }
+        if (self.recovery_suspended or self.checkpoint_running or transactions.isApplying() or self.history.active) return;
+        // An initial asynchronous path resolution is not an empty, closed session.
+        if (!self.quitting and self.documents.entries.items.len == 0 and self.browser.hasPendingFiles()) return;
+        self.checkpoint_running = true;
+        defer self.checkpoint_running = false;
+        // Excerpt source notifications use an idle refresh, which may have been
+        // enqueued after this checkpoint. Capture current presentation state too.
+        for (self.excerpts.items) |pane| if (!pane.document.loading and pane.document.pending == null) {
+            pane.editor.refresh() catch |err| self.editFailure(err);
+        };
+        if (self.recovery_checkpoint) |callback| callback(self.recovery_context, self);
+    }
+    pub fn scheduleCheckpoint(self: *App) void {
+        if (self.closing or self.recovery_suspended or self.checkpoint_running or self.recovery_checkpoint == null or self.checkpoint_idle != 0) return;
+        self.checkpoint_idle = c.g_idle_add(&checkpointIdle, self);
+    }
+    fn configureWidget(self: *App, widget: W) void {
+        const view = u.cast(c.GtkSourceView, widget);
         c.gtk_source_view_set_show_line_numbers(view, @intFromBool(self.settings.lines));
         c.gtk_source_view_set_tab_width(view, @intCast(self.settings.indent));
         c.gtk_source_view_set_insert_spaces_instead_of_tabs(view, @intFromBool(self.settings.spaces));
         c.gtk_source_view_set_auto_indent(view, 1);
         c.gtk_source_view_set_highlight_current_line(view, 1);
-        c.gtk_text_view_set_wrap_mode(u.cast(c.GtkTextView, self.viewFor(d).widget), if (self.settings.wrap) c.GTK_WRAP_WORD_CHAR else c.GTK_WRAP_NONE);
+        c.gtk_text_view_set_wrap_mode(u.cast(c.GtkTextView, widget), if (self.settings.wrap) c.GTK_WRAP_WORD_CHAR else c.GTK_WRAP_NONE);
+    }
+    fn configure(self: *App, d: *Document) void {
+        for (self.views.items) |view| if (view.document == d) {
+            self.configureWidget(view.widget);
+            view.setEditable(true);
+        };
         const manager = c.gtk_source_style_scheme_manager_get_default();
         var prefer_dark: c_int = 0;
         c.g_object_get(c.gtk_settings_get_default(), "gtk-application-prefer-dark-theme", &prefer_dark, @as(?*anyopaque, null));
@@ -264,8 +808,31 @@ pub const App = struct {
         c.g_object_set(d.tag, "underline-rgba", &underline, @as(?*anyopaque, null));
         const language_manager = c.gtk_source_language_manager_get_default();
         const language = if (d.path) |p| c.gtk_source_language_manager_guess_language(language_manager, p, null) else null;
-        c.gtk_source_buffer_set_language(u.cast(c.GtkSourceBuffer, d.buffer), language);
+        _ = @import("editor/presentation_policy.zig").attach(d.buffer) catch |err| {
+            self.editFailure(err);
+            return;
+        };
+        // highlight-syntax=false still runs GtkSource's context engine. Remove
+        // the language as well when the explicit large-file policy is selected.
+        c.gtk_source_buffer_set_language(u.cast(c.GtkSourceBuffer, d.buffer), if (d.large) null else language);
         c.gtk_source_buffer_set_highlight_syntax(u.cast(c.GtkSourceBuffer, d.buffer), @intFromBool(!d.large));
+        for (self.excerpts.items) |pane| if (pane.document == d) {
+            self.configureWidget(pane.editor.widget);
+            const source = u.cast(c.GtkSourceBuffer, pane.editor.display);
+            c.gtk_source_buffer_set_style_scheme(source, scheme);
+            const limited = d.large or @import("editor/presentation_policy.zig").limited(d.buffer);
+            c.gtk_source_buffer_set_language(source, if (limited) null else language);
+            c.gtk_source_buffer_set_highlight_syntax(source, @intFromBool(!limited));
+            c.g_object_set(pane.spelling_tag, "underline-rgba", &underline, @as(?*anyopaque, null));
+            pane.spelling_dirty = true;
+            pane.editor.refresh() catch {};
+        };
+    }
+    fn setEditable(self: *App, d: *Document, editable: bool) void {
+        for (self.views.items) |view| if (view.document == d) view.setEditable(editable);
+        for (self.excerpts.items) |pane| if (pane.document == d) {
+            c.gtk_text_view_set_editable(u.cast(c.GtkTextView, pane.editor.widget), @intFromBool(editable and !d.loading and d.pending == null));
+        };
     }
     fn styleWindow(self: *App, widget: W) void {
         self.themeClasses(widget);
@@ -291,9 +858,12 @@ pub const App = struct {
         if (self.closing) return;
         self.applySettings();
     }
-    fn message(self: *App, text: []const u8) void {
+    pub fn message(self: *App, text: []const u8) void {
         u.setLabel(self.notice, text);
         c.gtk_widget_set_visible(self.notice, @intFromBool(text.len > 0));
+    }
+    pub fn refreshWorkspaceLabels(self: *App) void {
+        self.update();
     }
     fn update(self: *App) void {
         if (self.closing) return;
@@ -314,20 +884,40 @@ pub const App = struct {
                     }
                 }
             }
+            var qualified: ?[:0]u8 = null;
+            defer if (qualified) |text| a.free(text);
+            if (d.path) |path| if (self.browser.model) |*snapshot| {
+                if (snapshot.ownerOfCanonicalPath(path) catch null) |id| {
+                    const root = snapshot.rootById(id).?;
+                    const base = root.canonical_path.?;
+                    // Keep the distinguishing identity at the visible start, even
+                    // when both root names collide and GTK ellipsizes a long tab.
+                    qualified = u.fmt("#{d} {s} · {s}", .{ @backingInt(root.id), root.display_name, path[@min(path.len, base.len + @as(usize, if (base.len == 1) 0 else 1))..] });
+                    name = qualified.?;
+                }
+            };
             const title = u.fmt("{s}{s}", .{ name, if (d.dirty()) " •" else "" });
-            u.setLabel(self.viewFor(d).tab_label, title);
+            u.setLabel(presentation.tab_label, title);
             a.free(title);
-            if (d.path) |p| c.gtk_widget_set_tooltip_text(self.viewFor(d).tab, p);
+            if (d.path) |p| c.gtk_widget_set_tooltip_text(presentation.tab, p);
+            presentation.setEditable(true);
+        }
+        for (self.excerpts.items) |pane| {
+            const title = u.fmt("Excerpt · {s}{s}", .{ if (pane.document.path) |path| std.fs.path.basename(path) else "Untitled", if (pane.document.dirty()) " •" else "" });
+            defer a.free(title);
+            u.setLabel(pane.label, title);
+            c.gtk_text_view_set_editable(u.cast(c.GtkTextView, pane.editor.widget), @intFromBool(!pane.document.loading and pane.document.pending == null));
         }
         const d = self.active() orelse return;
         var iter: c.GtkTextIter = undefined;
-        c.gtk_text_buffer_get_iter_at_mark(d.buffer, &iter, c.gtk_text_buffer_get_insert(d.buffer));
+        const buffer = self.activeBuffer() orelse return;
+        c.gtk_text_buffer_get_iter_at_mark(buffer, &iter, c.gtk_text_buffer_get_insert(buffer));
         var status_buffer: [2048]u8 = undefined;
-        const status = @import("i18n").dfmt("coral", &status_buffer, "Ln {d}, Col {d}   ·   UTF-8{s} · {s}{s}{s}", .{ c.gtk_text_iter_get_line(&iter) + 1, c.gtk_text_iter_get_line_offset(&iter) + 1, if (d.bom) " BOM" else "", @tagName(d.newline), if (d.busy) @import("i18n").dtr("coral", " · Working…") else if (d.large) @import("i18n").dtr("coral", " · Large file") else "", if (d.external_changed) @import("i18n").dtr("coral", " · Changed on disk") else "" });
+        const status = @import("i18n").dfmt("coral", &status_buffer, "Ln {d}, Col {d}   ·   UTF-8{s} · {s}{s}{s}", .{ c.gtk_text_iter_get_line(&iter) + 1, c.gtk_text_iter_get_line_offset(&iter) + 1, if (d.bom) " BOM" else "", @tagName(d.newline), if (d.busy) @import("i18n").dtr("coral", " · Working…") else if (d.large or @import("editor/presentation_policy.zig").limited(d.buffer)) @import("i18n").dtr("coral", " · Syntax/spelling off (presentation budget)") else "", if (d.external_changed) @import("i18n").dtr("coral", " · Changed on disk") else "" });
         u.setLabel(self.status, status);
         const spelling_text: [*:0]const u8 = if (!self.enumerated) @import("i18n").dtr("coral", "Checking dictionaries…") else if (!self.dictionary) @import("i18n").dtr("coral", "Dictionary unavailable") else if (!self.spellingEnabled(d)) @import("i18n").dtr("coral", "Spelling off") else @import("i18n").dtr("coral", "Spelling");
         c.gtk_button_set_label(u.cast(c.GtkButton, self.spell_button), spelling_text);
-        const count = c.gtk_source_search_context_get_occurrences_count(d.search);
+        const count = c.gtk_source_search_context_get_occurrences_count(self.activeSearch());
         var count_buffer: [32]u8 = undefined;
         var matches_buffer: [256]u8 = undefined;
         const number = std.fmt.bufPrint(&count_buffer, "{d}", .{@max(count, 0)}) catch unreachable;
@@ -338,7 +928,7 @@ pub const App = struct {
         a.free(title);
     }
     fn spellingEnabled(self: *App, d: *Document) bool {
-        if (d.large) return false;
+        if (d.large or @import("editor/presentation_policy.zig").limited(d.buffer)) return false;
         if (d.spell_override) |enabled| return enabled;
         if (!self.settings.spelling) return false;
         if (d.path) |path| {
@@ -365,18 +955,25 @@ pub const App = struct {
             self.popover = null;
         }
     }
-    pub fn openExisting(self: *App, path: []const u8) void {
-        const canonical = open_target.resolveExisting(a, path) catch |err| {
-            self.message(switch (err) {
-                error.NotFound => @import("i18n").dtr("coral", "File not found. Use New document and Save As to create a file."),
-                error.NonLocalUri => @import("i18n").dtr("coral", "Only local files are supported."),
-                error.IsDirectory, error.NotRegularFile => @import("i18n").dtr("coral", "Choose an existing regular file, not a folder or device."),
-                error.PermissionDenied => @import("i18n").dtr("coral", "Permission denied while opening the file."),
-                else => @import("i18n").dtr("coral", "Could not resolve this file. Check the path and permissions."),
-            });
-            return;
-        };
-        defer a.free(canonical);
+    /// Browser opens include a typed root boundary. Both CLI and browser metadata
+    /// checks run on workers; the existing descriptor-safe loader owns file reads.
+    pub fn openExisting(self: *App, path: []const u8, root: ?@import("workspace/model.zig").RootId) void {
+        self.browser.openFile(path, root);
+    }
+    pub fn existingFailed(self: *App, err: anyerror) void {
+        if (self.closing) return;
+        self.message(switch (err) {
+            error.NotFound => @import("i18n").dtr("coral", "File not found. Use New document and Save As to create a file."),
+            error.NonLocalUri => @import("i18n").dtr("coral", "Only local files are supported."),
+            error.IsDirectory, error.NotRegularFile => @import("i18n").dtr("coral", "Choose an existing regular file, not a folder or device."),
+            error.PermissionDenied => @import("i18n").dtr("coral", "Permission denied while opening the file."),
+            error.OutsideRoot, error.UnavailableOrSymlink => "Browser open rejected: symlink, unavailable path, or path outside the selected root.",
+            else => @import("i18n").dtr("coral", "Could not resolve this file. Check the path and permissions."),
+        });
+        if (self.documents.entries.items.len == 0 and !self.browser.hasPendingFiles()) _ = self.newDocument();
+    }
+    pub fn acceptExisting(self: *App, canonical: []const u8) void {
+        if (self.closing) return;
         if (self.documents.findPath(canonical)) |d| {
             self.focus(d);
             return;
@@ -385,7 +982,28 @@ pub const App = struct {
         d.path = u.z(canonical);
         self.load(d, false);
     }
+    /// Retire requests before a future workspace transition. Cancellation is
+    /// advisory: callbacks retain their holds/resources and still finish.
+    /// The caller must reestablish watches/loads for any retained documents.
+    pub fn invalidateWorkspaceAsync(self: *App) void {
+        self.workspace.invalidate();
+        for (self.documents.entries.items) |d| {
+            d.stopWatching();
+            d.watch_query = null;
+            if (d.loading) {
+                if (d.cancellable) |cancel| {
+                    c.g_cancellable_cancel(cancel);
+                    c.g_object_unref(cancel);
+                }
+                d.cancellable = null;
+                d.busy = false;
+                d.loading = false;
+                if (!self.closing) self.setEditable(d, true);
+            }
+        }
+    }
     fn watch(self: *App, d: *Document) void {
+        if (self.workspace.capture() == null) return;
         d.stopWatching();
         const path = d.path orelse return;
         const file = c.g_file_new_for_path(path).?;
@@ -404,13 +1022,14 @@ pub const App = struct {
         self.queryDisk(d);
     }
     fn queryDisk(self: *App, d: *Document) void {
+        const workspace = self.workspace.capture() orelse return;
         if (d.watch_query != null) {
             d.watch_pending = true;
             return;
         }
         const path = d.path orelse return;
         const op = a.create(WatchOp) catch unreachable;
-        op.* = .{ .app = self, .id = d.id, .generation = d.watch_generation, .cancel = c.g_cancellable_new().? };
+        op.* = .{ .app = self, .workspace = workspace, .id = d.id, .generation = d.watch_generation, .cancel = c.g_cancellable_new().? };
         d.watch_query = op.cancel;
         d.watch_pending = false;
         const file = c.g_file_new_for_path(path).?;
@@ -425,15 +1044,18 @@ pub const App = struct {
         } else self.load(d, true);
     }
     fn load(self: *App, d: *Document, reload: bool) void {
+        const workspace = self.workspace.capture() orelse return;
         if (d.busy) return;
         const path = d.path orelse return;
         const op = a.create(LoadOp) catch unreachable;
-        op.* = .{ .doc = d, .reload = reload, .revision = d.revision };
+        op.* = .{ .app = self, .workspace = workspace, .id = d.id, .cancel = c.g_cancellable_new().?, .reload = reload, .revision = d.revision };
         d.stopWatching();
         d.busy = true;
         d.loading = true;
-        d.cancellable = c.g_cancellable_new();
-        c.gtk_text_view_set_editable(u.cast(c.GtkTextView, self.viewFor(d).widget), 0);
+        // The operation owns its cancellation handle even if the document is
+        // removed or a new generation replaces the document's request.
+        d.cancellable = u.cast(c.GCancellable, c.g_object_ref(op.cancel).?);
+        self.setEditable(d, false);
         c.g_application_hold(u.cast(c.GApplication, self.application));
         load_file.load(path, d.cancellable.?, &loaded, op);
         self.update();
@@ -442,10 +1064,15 @@ pub const App = struct {
         c.gtk_text_buffer_begin_irreversible_action(d.buffer);
         c.gtk_text_buffer_set_text(d.buffer, text.ptr, @intCast(text.len));
         c.gtk_text_buffer_end_irreversible_action(d.buffer);
-        c.gtk_text_buffer_set_modified(d.buffer, 0);
-        d.saved_revision = d.revision;
+        d.recordSavedRevision(d.revision);
         d.loading = false;
         self.configure(d);
+        // A late load can replace a focused editor with the long-line notice.
+        // Reestablish a rooted focus target after all load/layout callbacks.
+        if (self.activeView()) |view| if (view.document == d and view.layout_guard.blocked) {
+            const focused = c.gtk_widget_grab_focus(view.layout_guard.button);
+            if (test_hooks) c.g_print("CORAL_GUARD document=%llu long_line=1 focused=%d\n", @as(c_ulonglong, d.id), focused);
+        };
         self.invalidate(d);
         self.update();
     }
@@ -475,7 +1102,7 @@ pub const App = struct {
                     if (std.mem.eql(u8, p, path)) {
                         self.message(@import("i18n").dtr("coral", "That file is already open in another tab. Save to a different name."));
                         d.close_after_save = false;
-                        self.quitting = false;
+                        self.cancelClosing();
                         return;
                     }
                 }
@@ -532,7 +1159,7 @@ pub const App = struct {
                 if (d.cancellable) |p| c.g_cancellable_cancel(p);
             } else {
                 self.message(@import("i18n").dtr("coral", "Saving is still in progress. Close this document after it finishes."));
-                self.quitting = false;
+                self.cancelClosing();
             }
             return;
         }
@@ -545,6 +1172,11 @@ pub const App = struct {
     }
     fn remove(self: *App, d: *Document) void {
         self.hidePopover();
+        var excerpt_index: usize = 0;
+        while (excerpt_index < self.excerpts.items.len) {
+            const pane = self.excerpts.items[excerpt_index];
+            if (pane.document == d) self.detachExcerpt(pane) else excerpt_index += 1;
+        }
         var index: usize = 0;
         while (index < self.views.items.len) {
             const view = self.views.items[index];
@@ -552,13 +1184,11 @@ pub const App = struct {
                 index += 1;
                 continue;
             }
-            view.disconnectDocumentCallbacks();
-            _ = self.views.orderedRemove(index);
-            const page = c.gtk_notebook_page_num(u.cast(c.GtkNotebook, self.notebook), view.page);
-            c.gtk_notebook_remove_page(u.cast(c.GtkNotebook, self.notebook), page);
-            view.destroy();
+            self.detachView(view);
         }
         _ = self.documents.remove(d.id);
+        self.repairActive();
+        self.scheduleCheckpoint();
         if (self.documents.entries.items.len == 0) {
             self.shutdownWindow();
             return;
@@ -566,19 +1196,29 @@ pub const App = struct {
         self.update();
         if (self.quitting) {
             self.closeDocument(self.documents.entries.items[self.documents.entries.items.len - 1]);
-        } else if (self.active()) |active_document| {
-            _ = c.gtk_widget_grab_focus(self.viewFor(active_document).widget);
+        } else if (self.closing_group != null) {
+            self.continueCloseGroup();
+        } else if (self.activeWidget()) |widget| {
+            _ = c.gtk_widget_grab_focus(widget);
         }
     }
     fn shutdownWindow(self: *App) void {
+        self.checkpoint();
         self.closing = true;
+        self.browser.shutdown();
+        self.workspace.close();
         if (self.palette) |palette| palette.close();
         if (self.timer != 0) {
             _ = c.g_source_remove(self.timer);
             self.timer = 0;
         }
-        for (self.views.items) |view| view.disconnectDocumentCallbacks();
+        while (self.views.items.len > 0) self.detachView(self.views.items[self.views.items.len - 1]);
+        while (self.excerpts.items.len > 0) self.detachExcerpt(self.excerpts.items[self.excerpts.items.len - 1]);
         c.gtk_window_destroy(u.cast(c.GtkWindow, self.window));
+    }
+    fn cancelClosing(self: *App) void {
+        self.quitting = false;
+        self.closing_group = null;
     }
     fn quit(self: *App) void {
         if (self.dialog != null) return;
@@ -591,24 +1231,27 @@ pub const App = struct {
             _ = c.gtk_widget_grab_focus(self.query);
         } else {
             for (self.documents.entries.items) |d| c.gtk_source_search_settings_set_search_text(d.search_settings, null);
-            if (self.active()) |d| _ = c.gtk_widget_grab_focus(self.viewFor(d).widget);
+            if (self.activeFocusWidget()) |widget| _ = c.gtk_widget_grab_focus(widget);
         }
     }
     fn findMatch(self: *App, back: bool) void {
-        const d = self.active() orelse return;
+        const buffer = self.activeBuffer() orelse return;
+        const search = self.activeSearch() orelse return;
         var start: c.GtkTextIter = undefined;
         var end: c.GtkTextIter = undefined;
-        _ = c.gtk_text_buffer_get_selection_bounds(d.buffer, &start, &end);
+        _ = c.gtk_text_buffer_get_selection_bounds(buffer, &start, &end);
         var at = if (back) start else end;
-        const found = if (back) c.gtk_source_search_context_backward(d.search, &at, &start, &end, null) else c.gtk_source_search_context_forward(d.search, &at, &start, &end, null);
+        const found = if (back) c.gtk_source_search_context_backward(search, &at, &start, &end, null) else c.gtk_source_search_context_forward(search, &at, &start, &end, null);
         if (found != 0) {
-            c.gtk_text_buffer_select_range(d.buffer, &start, &end);
-            _ = c.gtk_text_view_scroll_to_iter(u.cast(c.GtkTextView, self.viewFor(d).widget), &start, 0.1, 0, 0, 0);
+            c.gtk_text_buffer_select_range(buffer, &start, &end);
+            self.scrollActiveTo(&start);
         }
         self.update();
     }
     fn replace(self: *App, all: bool) void {
         const d = self.active() orelse return;
+        const buffer = self.activeBuffer() orelse return;
+        const search = self.activeSearch() orelse return;
         if (d.loading or d.pending != null) return;
         if (c.gtk_text_buffer_get_char_count(d.buffer) > 16 * 1024 * 1024) {
             self.message(@import("i18n").dtr("coral", "This buffer is too large for a safe edit transaction."));
@@ -616,7 +1259,7 @@ pub const App = struct {
         }
         const replacement = u.z(u.entryText(self.replacement));
         defer a.free(replacement);
-        const text = u.bufferText(d.buffer);
+        const text = u.bufferText(buffer);
         defer a.free(text);
         const revision = d.revision;
         var edits: std.ArrayList(transactions.Replacement) = .empty;
@@ -627,9 +1270,9 @@ pub const App = struct {
         var char_cursor: c_int = 0;
         if (all) {
             var at: c.GtkTextIter = undefined;
-            c.gtk_text_buffer_get_start_iter(d.buffer, &at);
+            c.gtk_text_buffer_get_start_iter(buffer, &at);
             var wrapped: c_int = 0;
-            while (c.gtk_source_search_context_forward(d.search, &at, &start, &end, &wrapped) != 0 and wrapped == 0) {
+            while (c.gtk_source_search_context_forward(search, &at, &start, &end, &wrapped) != 0 and wrapped == 0) {
                 if (c.gtk_text_iter_compare(&start, &end) >= 0) break;
                 if (edits.items.len >= 65_536) {
                     self.message(@import("i18n").dtr("coral", "Too many replacements. Narrow the search before replacing."));
@@ -644,31 +1287,32 @@ pub const App = struct {
                 at = end;
             }
         } else {
-            if (c.gtk_text_buffer_get_selection_bounds(d.buffer, &start, &end) == 0) {
+            if (c.gtk_text_buffer_get_selection_bounds(buffer, &start, &end) == 0) {
                 self.findMatch(false);
-                _ = c.gtk_text_buffer_get_selection_bounds(d.buffer, &start, &end);
+                _ = c.gtk_text_buffer_get_selection_bounds(buffer, &start, &end);
             }
-            if (c.gtk_source_search_context_get_occurrence_position(d.search, &start, &end) > 0) {
+            if (c.gtk_source_search_context_get_occurrence_position(search, &start, &end) > 0) {
                 const from = byteOffset(text, &byte_cursor, &char_cursor, c.gtk_text_iter_get_offset(&start));
                 const to = byteOffset(text, &byte_cursor, &char_cursor, c.gtk_text_iter_get_offset(&end));
                 edits.append(a, .{ .start = from, .end = to, .text = replacement }) catch return;
             }
         }
-        if (edits.items.len > 0) self.applyEdits(d, revision, edits.items);
+        if (edits.items.len > 0) {
+            if (self.activeExcerpt()) |pane| {
+                var mapped = pane.editor.excerpt.map(a, editTarget(d, revision), edits.items) catch |err| {
+                    self.editFailure(err);
+                    return;
+                };
+                defer mapped.deinit();
+                self.performGrouped("Replace in excerpt", &.{mapped.change}) catch |err| self.editFailure(err);
+                pane.editor.refresh() catch |err| self.editFailure(err);
+            } else self.applyEdits(d, revision, edits.items);
+        }
         if (!all) self.findMatch(false);
         self.update();
     }
     fn applyEdits(self: *App, d: *Document, revision: u64, edits: []const transactions.Replacement) void {
-        const target = editTarget(d, revision);
-        var prepared = transactions.prepare(a, &.{.{ .target = target, .replacements = edits }}, .{}) catch |err| {
-            self.editFailure(err);
-            return;
-        };
-        defer prepared.deinit();
-        // Resolve identity again, even for this synchronous producer. Future
-        // preview/approval callers must use the same boundary after yielding.
-        const current = self.documents.get(prepared.targetId(0)) orelse return;
-        prepared.commit(&.{editTarget(current, prepared.expectedRevision(0))}) catch |err| self.editFailure(err);
+        self.performGrouped("Edit document", &.{.{ .target = editTarget(d, revision), .replacements = edits }}) catch |err| self.editFailure(err);
     }
     fn editFailure(self: *App, err: anyerror) void {
         log.warn("event=edit-rejected reason={s}", .{@errorName(err)});
@@ -701,6 +1345,12 @@ pub const App = struct {
                 _ = self.newDocument();
             },
             .open => self.chooseOpen(),
+            .open_folder => self.browser.choose(.folder),
+            .open_workspace => self.browser.choose(.manifest),
+            .workspace_roots => self.browser.roots(),
+            .workspace_back => self.browser.back(),
+            .workspace_rescan => self.browser.rescan(),
+            .close_workspace => self.browser.closeWorkspace(),
             .save, .save_as => if (self.active()) |d| {
                 self.save(d, command == .save_as, false);
             },
@@ -713,9 +1363,14 @@ pub const App = struct {
                 self.requestSuggestions(d);
             },
             .preferences => self.preferences(),
-            .close => if (self.active()) |d| {
-                self.closeDocument(d);
-            },
+            .close => self.closeActiveView(),
+            .split_group => self.splitGroup() catch |err| self.editFailure(err),
+            .focus_next_group => self.cycleGroup(false),
+            .focus_previous_group => self.cycleGroup(true),
+            .close_group => self.closeGroup(),
+            .excerpt => self.excerptSelection() catch |err| self.editFailure(err),
+            .grouped_undo => self.replayGrouped(false) catch |err| self.editFailure(err),
+            .grouped_redo => self.replayGrouped(true) catch |err| self.editFailure(err),
             .quit => self.quit(),
             .command_palette => self.showPalette(),
             .about => c.gtk_show_about_dialog(u.cast(c.GtkWindow, self.window), "program-name", @as([*:0]const u8, "Coral"), "version", @as([*:0]const u8, "0.1.1"), "comments", @as([*:0]const u8, "A focused Zig and GTK4 text editor with offline spelling."), @as(?*anyopaque, null)),
@@ -796,7 +1451,7 @@ pub const App = struct {
         if (self.dialog != null) return;
         const d = self.active() orelse return;
         self.ask(.goto, d, @import("i18n").dtr("coral", "Go to line"), @import("i18n").dtr("coral", "Enter a line number."), &.{ .{ .text = @import("i18n").dtr("coral", "Cancel"), .id = 0 }, .{ .text = @import("i18n").dtr("coral", "Go"), .id = 1 } });
-        const input = c.gtk_spin_button_new_with_range(1, @floatFromInt(@max(c.gtk_text_buffer_get_line_count(d.buffer), 1)), 1).?;
+        const input = c.gtk_spin_button_new_with_range(1, @floatFromInt(@max(c.gtk_text_buffer_get_line_count(self.activeBuffer()), 1)), 1).?;
         self.goto_input = input;
         u.append(u.cast(c.GtkWidget, c.gtk_dialog_get_content_area(u.cast(c.GtkDialog, self.dialog.?))), input);
         _ = c.gtk_widget_grab_focus(input);
@@ -807,10 +1462,15 @@ pub const App = struct {
             return;
         }
         self.hidePopover();
+        self.suggestion_view = self.activeViewId() orelse return;
+        const buffer = self.activeBuffer() orelse return;
         var start: c.GtkTextIter = undefined;
-        c.gtk_text_buffer_get_iter_at_mark(d.buffer, &start, c.gtk_text_buffer_get_insert(d.buffer));
+        c.gtk_text_buffer_get_iter_at_mark(buffer, &start, c.gtk_text_buffer_get_insert(buffer));
+        const base = if (self.activeExcerpt()) |pane| excerptBase(pane) else 0;
+        const limit = base + c.gtk_text_buffer_get_char_count(buffer);
+        c.gtk_text_buffer_get_iter_at_offset(d.buffer, &start, base + c.gtk_text_iter_get_offset(&start));
         if (c.gtk_text_iter_has_tag(&start, d.tag) == 0) {
-            c.gtk_text_buffer_get_start_iter(d.buffer, &start);
+            c.gtk_text_buffer_get_iter_at_offset(d.buffer, &start, base);
             if (c.gtk_text_iter_has_tag(&start, d.tag) == 0 and c.gtk_text_iter_forward_to_tag_toggle(&start, d.tag) == 0) {
                 self.message(@import("i18n").dtr("coral", "No spelling suggestions in this document."));
                 return;
@@ -819,6 +1479,10 @@ pub const App = struct {
         var end = start;
         if (c.gtk_text_iter_starts_tag(&start, d.tag) == 0) _ = c.gtk_text_iter_backward_to_tag_toggle(&start, d.tag);
         _ = c.gtk_text_iter_forward_to_tag_toggle(&end, d.tag);
+        if (c.gtk_text_iter_get_offset(&start) < base or c.gtk_text_iter_get_offset(&end) > limit) {
+            self.message("No complete spelling suggestions in this excerpt.");
+            return;
+        }
         const text = c.gtk_text_buffer_get_text(d.buffer, &start, &end, 1);
         defer c.g_free(text);
         const job = spell.Job.create(.suggest, std.mem.span(text), std.mem.sliceTo(&self.settings.language, 0));
@@ -830,7 +1494,12 @@ pub const App = struct {
         self.worker.submit(job);
     }
     fn showSuggestions(self: *App, d: *Document, job: *spell.Job) void {
-        if (self.active() != d or self.dialog != null) return;
+        if (self.active() != d or self.dialog != null or self.activeViewId() != self.suggestion_view) return;
+        const widget = self.activeWidget() orelse return;
+        if (c.gtk_widget_get_mapped(widget) == 0) return;
+        const buffer = self.activeBuffer() orelse return;
+        const base = if (self.activeExcerpt()) |pane| excerptBase(pane) else 0;
+        if (job.offset < base or job.end > base + c.gtk_text_buffer_get_char_count(buffer)) return;
         self.hidePopover();
         if (self.menu_word) |word| a.free(word);
         self.menu_word = u.z(job.text);
@@ -842,7 +1511,7 @@ pub const App = struct {
         u.connect(pop, "closed", &popoverClosed, self);
         self.dialog_doc = d;
         testKeys(self, pop);
-        c.gtk_widget_set_parent(pop, self.viewFor(d).widget);
+        c.gtk_widget_set_parent(pop, widget);
         const box = u.box(false, 3);
         u.margin(box, 8);
         c.gtk_popover_set_child(u.cast(c.GtkPopover, pop), box);
@@ -872,11 +1541,11 @@ pub const App = struct {
             u.append(box, button);
         }
         var iter: c.GtkTextIter = undefined;
-        c.gtk_text_buffer_get_iter_at_offset(d.buffer, &iter, job.offset);
-        _ = c.gtk_text_view_scroll_to_iter(u.cast(c.GtkTextView, self.viewFor(d).widget), &iter, 0.1, 0, 0, 0);
+        c.gtk_text_buffer_get_iter_at_offset(buffer, &iter, job.offset - base);
+        _ = c.gtk_text_view_scroll_to_iter(u.cast(c.GtkTextView, widget), &iter, 0.1, 0, 0, 0);
         var rect: c.GdkRectangle = undefined;
-        c.gtk_text_view_get_iter_location(u.cast(c.GtkTextView, self.viewFor(d).widget), &iter, &rect);
-        c.gtk_text_view_buffer_to_window_coords(u.cast(c.GtkTextView, self.viewFor(d).widget), c.GTK_TEXT_WINDOW_WIDGET, rect.x, rect.y, &rect.x, &rect.y);
+        c.gtk_text_view_get_iter_location(u.cast(c.GtkTextView, widget), &iter, &rect);
+        c.gtk_text_view_buffer_to_window_coords(u.cast(c.GtkTextView, widget), c.GTK_TEXT_WINDOW_WIDGET, rect.x, rect.y, &rect.x, &rect.y);
         c.gtk_popover_set_pointing_to(u.cast(c.GtkPopover, pop), &rect);
         c.gtk_popover_popup(u.cast(c.GtkPopover, pop));
     }
@@ -885,6 +1554,26 @@ pub const App = struct {
         self.hidePopover();
         for (self.documents.entries.items) |d| self.invalidate(d);
         self.update();
+    }
+    fn probeWorkspace(self: *App) void {
+        const Doc = struct { id: u64, revision: u64, dirty: bool, text: []u8, path: ?[]const u8 };
+        const docs = a.alloc(Doc, self.documents.entries.items.len) catch return;
+        defer a.free(docs);
+        for (self.documents.entries.items, docs) |d, *item| item.* = .{ .id = d.id, .revision = d.revision, .dirty = d.dirty(), .text = u.bufferText(d.buffer), .path = d.path };
+        defer for (docs) |doc| a.free(doc.text);
+        const views = self.snapshotViews(a) catch return;
+        defer a.free(views);
+        const groups = self.snapshotGroups(a) catch return;
+        defer a.free(groups);
+        const blocked = if (self.activeView()) |view| view.layout_guard.blocked else if (self.activeExcerpt()) |pane| pane.editor.layout_guard.blocked else false;
+        const labels = a.alloc([]const u8, self.views.items.len) catch return;
+        defer a.free(labels);
+        for (self.views.items, labels) |view, *label| label.* = std.mem.span(c.gtk_label_get_text(u.cast(c.GtkLabel, view.tab_label)));
+        const json = std.json.Stringify.valueAlloc(a, .{ .tab_labels = labels, .notice = std.mem.span(c.gtk_label_get_text(u.cast(c.GtkLabel, self.notice))), .layout_blocked = blocked, .syntax_limited = if (self.active()) |d| @import("editor/presentation_policy.zig").limited(d.buffer) else false, .documents = docs, .views = views, .groups = groups, .history_cursor = self.history.cursor, .history_records = self.history.records.items.len, .active_view = self.activeViewId(), .dialog = self.dialog != null, .checkpoints = self.test_checkpoint_count, .editor_focused = self.activeWidget() == c.gtk_window_get_focus(u.cast(c.GtkWindow, self.window)), .editable = if (self.activeWidget()) |widget| c.gtk_text_view_get_editable(u.cast(c.GtkTextView, widget)) != 0 else false }, .{}) catch return;
+        defer a.free(json);
+        const line = u.z(json);
+        defer a.free(line);
+        c.g_print("CORAL_WORKSPACE %s\n", line.ptr);
     }
     fn probe(self: *App) void {
         const d = self.active() orelse return;
@@ -901,9 +1590,129 @@ pub const App = struct {
         c.g_print("CORAL_PROBE {\"tabs\":%zu,\"id\":%llu,\"dirty\":%s,\"external_changed\":%s,\"busy\":%s,\"revision\":%llu,\"chars\":%d,\"spelling\":%zu,\"dictionary\":%s,\"enumerated\":%s,\"search\":%d,\"dialog\":%d,\"popover\":%s,\"theme\":%d,\"font\":%d,\"lines\":%s,\"bom\":%s,\"newline\":%d,\"check_from\":%d,\"inflight\":%s,\"checking_enabled\":%s,\"large\":%s,\"max_spell_tick_us\":%lld}\n", self.documents.entries.items.len, @as(c_ulonglong, d.id), boolZ(d.dirty()), boolZ(d.external_changed), boolZ(d.busy), @as(c_ulonglong, d.revision), c.gtk_text_buffer_get_char_count(d.buffer), count, boolZ(self.dictionary), boolZ(self.enumerated), c.gtk_source_search_context_get_occurrences_count(d.search), @as(c_int, if (self.dialog != null) @intCast(@backingInt(self.dialog_kind)) else -1), boolZ(self.popover != null), self.settings.theme, self.settings.font, boolZ(self.settings.lines), boolZ(d.bom), @as(c_int, @intCast(@backingInt(d.newline))), d.check_from, boolZ(d.inflight), boolZ(self.spellingEnabled(d)), boolZ(d.large), @as(c_longlong, self.max_spell_tick_us));
     }
 };
+fn scrollChanged(_: ?*c.GtkAdjustment, context: ?*anyopaque) callconv(.c) void {
+    u.cast(App, context.?).scheduleCheckpoint();
+}
+fn viewFocused(view: *EditorView) void {
+    const self = owner(view.document);
+    const group = self.groups.forPage(view.page) orelse return;
+    const switched = self.active_page != view.page;
+    self.notebook = group.notebook;
+    self.active_page = view.page;
+    // Focus-enter includes descendants and seat reentry. During popup(), that
+    // can be the spelling popover itself; unparenting it here strands GTK focus.
+    if (switched) self.hidePopover();
+    self.update();
+    self.scheduleCheckpoint();
+}
+fn resolveExcerpt(context: ?*anyopaque, id: u64) ?transactions.Target {
+    const self = u.cast(App, context.?);
+    const d = self.find(id) orelse return null;
+    return editTarget(d, d.revision);
+}
+fn excerptCommitted(context: ?*anyopaque) void {
+    const self = u.cast(App, context.?);
+    self.scheduleCheckpoint();
+    self.update();
+}
+fn excerptFailed(context: ?*anyopaque, err: anyerror) void {
+    u.cast(App, context.?).editFailure(err);
+}
+fn excerptFocused(_: ?*c.GtkEventControllerFocus, context: ?*anyopaque) callconv(.c) void {
+    const pane = u.cast(ExcerptPane, context.?);
+    const self = pane.app;
+    const group = self.groups.forPage(pane.editor.root) orelse return;
+    const switched = self.active_page != pane.editor.root;
+    self.notebook = group.notebook;
+    self.active_page = pane.editor.root;
+    if (switched) self.hidePopover();
+    self.update();
+    self.scheduleCheckpoint();
+}
+fn excerptMark(_: ?*c.GtkTextBuffer, _: ?*c.GtkTextIter, _: ?*c.GtkTextMark, context: ?*anyopaque) callconv(.c) void {
+    const pane = u.cast(ExcerptPane, context.?);
+    pane.app.update();
+    pane.app.scheduleCheckpoint();
+}
+fn closeExcerpt(_: ?*c.GtkButton, context: ?*anyopaque) callconv(.c) void {
+    const pane = u.cast(ExcerptPane, context.?);
+    const self = pane.app;
+    self.focusPage(pane.editor.root, pane.editor.widget);
+    self.closeActiveView();
+}
+fn excerptContext(gesture: ?*c.GtkGestureClick, _: c_int, x: f64, y: f64, context: ?*anyopaque) callconv(.c) void {
+    const pane = u.cast(ExcerptPane, context.?);
+    pane.app.focusPage(pane.editor.root, pane.editor.widget);
+    var bx: c_int = 0;
+    var by: c_int = 0;
+    const widget = u.cast(c.GtkTextView, pane.editor.widget);
+    c.gtk_text_view_window_to_buffer_coords(widget, c.GTK_TEXT_WINDOW_WIDGET, @intFromFloat(x), @intFromFloat(y), &bx, &by);
+    var local: c.GtkTextIter = undefined;
+    if (c.gtk_text_view_get_iter_at_location(widget, &local, bx, by) == 0) return;
+    var canonical: c.GtkTextIter = undefined;
+    c.gtk_text_buffer_get_iter_at_offset(pane.document.buffer, &canonical, excerptBase(pane) + c.gtk_text_iter_get_offset(&local));
+    if (c.gtk_text_iter_has_tag(&canonical, pane.document.tag) == 0) return;
+    c.gtk_text_buffer_place_cursor(pane.editor.display, &local);
+    _ = c.gtk_gesture_set_state(u.cast(c.GtkGesture, gesture.?), c.GTK_EVENT_SEQUENCE_CLAIMED);
+    pane.app.requestSuggestions(pane.document);
+}
+fn onSpellingTag(_: ?*c.GtkTextBuffer, tag: ?*c.GtkTextTag, _: ?*c.GtkTextIter, _: ?*c.GtkTextIter, context: ?*anyopaque) callconv(.c) void {
+    const d = u.cast(Document, context.?);
+    if (tag != d.tag) return;
+    for (owner(d).excerpts.items) |pane| if (pane.document == d) {
+        pane.spelling_dirty = true;
+    };
+}
+fn refreshExcerptSpelling(pane: *ExcerptPane) void {
+    pane.spelling_dirty = false;
+    const display = pane.editor.display;
+    const canonical = pane.document.buffer;
+    const base = excerptBase(pane);
+    const limit = base + c.gtk_text_buffer_get_char_count(display);
+    var start: c.GtkTextIter = undefined;
+    var end: c.GtkTextIter = undefined;
+    c.gtk_text_buffer_get_bounds(display, &start, &end);
+    c.gtk_text_buffer_remove_tag(display, pane.spelling_tag, &start, &end);
+    var at: c.GtkTextIter = undefined;
+    c.gtk_text_buffer_get_iter_at_offset(canonical, &at, base);
+    while (c.gtk_text_iter_get_offset(&at) < limit) {
+        if (c.gtk_text_iter_has_tag(&at, pane.document.tag) != 0) {
+            const from = c.gtk_text_iter_get_offset(&at);
+            _ = c.gtk_text_iter_forward_to_tag_toggle(&at, pane.document.tag);
+            const to = @min(limit, c.gtk_text_iter_get_offset(&at));
+            if (to <= from) break;
+            c.gtk_text_buffer_get_iter_at_offset(display, &start, from - base);
+            c.gtk_text_buffer_get_iter_at_offset(display, &end, to - base);
+            c.gtk_text_buffer_apply_tag(display, pane.spelling_tag, &start, &end);
+        } else if (c.gtk_text_iter_forward_to_tag_toggle(&at, pane.document.tag) == 0) break;
+    }
+}
+fn excerptBase(pane: *ExcerptPane) c_int {
+    var iter: c.GtkTextIter = undefined;
+    c.gtk_text_buffer_get_iter_at_mark(pane.document.buffer, &iter, pane.editor.excerpt.source.?.start);
+    return c.gtk_text_iter_get_offset(&iter);
+}
+fn testCheckpoint(_: ?*anyopaque, self: *App) void {
+    if (!test_hooks) return;
+    std.debug.assert(!transactions.isApplying() and !self.history.active);
+    for (self.views.items) |view| {
+        const canonical = u.bufferText(view.document.buffer);
+        defer a.free(canonical);
+        const presented = u.bufferText(view.buffer);
+        defer a.free(presented);
+        std.debug.assert(std.mem.eql(u8, canonical, presented));
+    }
+    self.test_checkpoint_count += 1;
+}
+fn checkpointIdle(context: ?*anyopaque) callconv(.c) c_int {
+    const self = u.cast(App, context.?);
+    self.checkpoint_idle = 0;
+    self.checkpoint();
+    return 0;
+}
 const DialogKind = enum { close, mixed, conflict, large, reload, preferences, goto };
 const Button = struct { text: [*:0]const u8, id: c_int };
-const WatchOp = struct { app: *App, id: u64, generation: u64, cancel: *c.GCancellable };
+const WatchOp = struct { app: *App, workspace: workspace_identity.Token, id: u64, generation: u64, cancel: *c.GCancellable };
 fn diskChanged(monitor: ?*c.GFileMonitor, _: ?*c.GFile, _: ?*c.GFile, _: c.GFileMonitorEvent, data: ?*anyopaque) callconv(.c) void {
     const self = u.cast(App, data.?);
     for (self.documents.entries.items) |d| {
@@ -926,8 +1735,9 @@ fn diskQueried(source: ?*c.GObject, result: ?*c.GAsyncResult, data: ?*anyopaque)
     defer if (info) |p| c.g_object_unref(p);
     defer if (err) |e| c.g_error_free(e);
     const d = self.find(op.id) orelse return;
-    std.debug.assert(d.watch_query == op.cancel);
+    if (d.watch_query != op.cancel) return;
     d.watch_query = null;
+    if (!self.workspace.accepts(op.workspace)) return;
     if (d.watch_generation == op.generation and !d.watch_pending) {
         const etag = if (info) |p| c.g_file_info_get_etag(p) else null;
         d.external_changed = if (info) |p| c.g_file_info_get_file_type(p) != c.G_FILE_TYPE_REGULAR or etag == null or d.etag == null or !std.mem.eql(u8, std.mem.span(etag), d.etag.?) else true;
@@ -937,7 +1747,7 @@ fn diskQueried(source: ?*c.GObject, result: ?*c.GAsyncResult, data: ?*anyopaque)
     // one. A closed document is never dereferenced and each op owns its hold.
     if (d.watch_pending) self.queryDisk(d);
 }
-const LoadOp = struct { doc: *Document, reload: bool, revision: u64 };
+const LoadOp = struct { app: *App, workspace: workspace_identity.Token, id: u64, cancel: *c.GCancellable, reload: bool, revision: u64 };
 const SaveOp = struct { doc: *Document, path: [:0]u8, data: []u8, revision: u64, etag: ?[:0]u8 = null };
 fn editTarget(d: *Document, expected_revision: u64) transactions.Target {
     return .{ .id = d.id, .buffer = d.buffer, .revision = &d.revision, .expected_revision = expected_revision, .busy = d.loading or d.pending != null };
@@ -965,14 +1775,10 @@ fn logFileFailure(comptime format: []const u8, err: ?*c.GError) void {
 }
 fn loaded(_: ?*c.GObject, result: ?*c.GAsyncResult, data: ?*anyopaque) callconv(.c) void {
     const op = u.cast(LoadOp, data.?);
-    const d = op.doc;
-    const self = owner(d);
+    const self = op.app;
     defer a.destroy(op);
+    defer c.g_object_unref(op.cancel);
     defer c.g_application_release(u.cast(c.GApplication, self.application));
-    const id = d.id;
-    defer if (self.find(id)) |remaining| {
-        if (remaining.monitor == null and remaining.pending == null) self.watch(remaining);
-    };
     var contents: [*c]u8 = null;
     var size: usize = 0;
     var etag: [*c]u8 = null;
@@ -980,13 +1786,21 @@ fn loaded(_: ?*c.GObject, result: ?*c.GAsyncResult, data: ?*anyopaque) callconv(
     const ok = load_file.finish(result.?, &contents, &size, &etag, &err) != 0;
     defer c.g_free(contents);
     defer c.g_free(etag);
+    defer if (err) |e| c.g_error_free(e);
+    const d = self.find(op.id) orelse return;
+    if (d.cancellable != op.cancel) return;
     d.busy = false;
     d.loading = false;
     if (d.cancellable) |p| c.g_object_unref(p);
     d.cancellable = null;
-    c.gtk_text_view_set_editable(u.cast(c.GtkTextView, self.viewFor(d).widget), 1);
+    if (!self.workspace.accepts(op.workspace)) return;
+    defer if (self.workspace.accepts(op.workspace)) {
+        if (self.find(op.id)) |remaining| {
+            if (remaining.monitor == null and remaining.pending == null) self.watch(remaining);
+        }
+    };
+    self.setEditable(d, true);
     if (d.cancelled_close) {
-        if (err) |e| c.g_error_free(e);
         self.remove(d);
         return;
     }
@@ -994,13 +1808,12 @@ fn loaded(_: ?*c.GObject, result: ?*c.GAsyncResult, data: ?*anyopaque) callconv(
         logFileFailure("event=document-load-failed domain={f} code={d}", err);
         if (err) |e| {
             self.message(std.mem.span(e.message));
-            c.g_error_free(e);
         }
         if (!op.reload) {
             if (d.path) |p| a.free(p);
             d.path = null;
         }
-        self.quitting = false;
+        self.cancelClosing();
         self.update();
         return;
     }
@@ -1106,24 +1919,24 @@ fn finishSave(op: *SaveOp, ok: bool, etag: [*c]u8, err: ?*c.GError) void {
         d.path = u.z(op.path);
         if (d.etag) |p| a.free(p);
         d.etag = if (etag != null) u.z(std.mem.span(etag)) else null;
-        d.saved_revision = op.revision;
+        d.recordSavedRevision(op.revision);
         self.watch(d);
-        if (!codec.saveKeepsDirty(op.revision, d.revision)) c.gtk_text_buffer_set_modified(d.buffer, 0);
         self.configure(d);
         self.update();
         self.message(@import("i18n").dtr("coral", "Saved."));
+        self.scheduleCheckpoint();
         if (d.close_after_save) {
             d.close_after_save = false;
             if (!d.dirty()) {
                 self.remove(d);
             } else {
-                self.quitting = false;
+                self.cancelClosing();
                 self.message(@import("i18n").dtr("coral", "Saved the earlier revision. Newer edits are still unsaved."));
             }
         }
     } else {
         self.watch(d);
-        self.quitting = false;
+        self.cancelClosing();
         d.close_after_save = false;
         logFileFailure("event=document-save-failed domain={f} code={d}", err);
         if (err) |e| {
@@ -1143,13 +1956,14 @@ fn chosenOpen(_: ?*c.GObject, result: ?*c.GAsyncResult, data: ?*anyopaque) callc
     const files: ?*c.GListModel = @ptrCast(chooser.openFinish(@ptrCast(result.?), @ptrCast(&err)));
     if (files) |list| {
         defer c.g_object_unref(list);
+        if (self.closing) return;
         const n = c.g_list_model_get_n_items(list);
         for (0..n) |i| {
             const file = c.g_list_model_get_item(list, @intCast(i)).?;
             defer c.g_object_unref(file);
             const path = c.g_file_get_path(u.cast(c.GFile, file));
             if (path != null) {
-                self.openExisting(std.mem.span(path));
+                self.openExisting(std.mem.span(path), null);
                 c.g_free(path);
             } else self.message(@import("i18n").dtr("coral", "Only local files are supported."));
         }
@@ -1177,7 +1991,7 @@ fn chosenSave(_: ?*c.GObject, result: ?*c.GAsyncResult, data: ?*anyopaque) callc
     logFileFailure("event=file-chooser-failed domain={f} code={d}", err);
     if (err) |e| c.g_error_free(e);
     d.close_after_save = false;
-    self.quitting = false;
+    self.cancelClosing();
     self.update();
 }
 fn dialogResponse(dialog: ?*c.GtkDialog, response: c_int, data: ?*anyopaque) callconv(.c) void {
@@ -1194,7 +2008,9 @@ fn dialogResponse(dialog: ?*c.GtkDialog, response: c_int, data: ?*anyopaque) cal
             if (response == 1) self.remove(d) else if (response == 2) {
                 d.close_after_save = true;
                 self.save(d, false, false);
-            } else self.quitting = false;
+            } else {
+                self.cancelClosing();
+            }
         },
         .mixed => {
             if (response == 1 or response == 2) {
@@ -1202,7 +2018,7 @@ fn dialogResponse(dialog: ?*c.GtkDialog, response: c_int, data: ?*anyopaque) cal
                 self.save(doc.?, doc.?.normalize_save_as, false);
             } else {
                 doc.?.close_after_save = false;
-                self.quitting = false;
+                self.cancelClosing();
             }
         },
         .conflict => {
@@ -1235,10 +2051,12 @@ fn dialogResponse(dialog: ?*c.GtkDialog, response: c_int, data: ?*anyopaque) cal
         .goto => {
             if (response == 1) {
                 var iter: c.GtkTextIter = undefined;
-                _ = c.gtk_text_buffer_get_iter_at_line(doc.?.buffer, &iter, line - 1);
-                c.gtk_text_buffer_place_cursor(doc.?.buffer, &iter);
-                _ = c.gtk_text_view_scroll_to_iter(u.cast(c.GtkTextView, self.viewFor(doc.?).widget), &iter, 0.1, 0, 0, 0);
-                _ = c.gtk_widget_grab_focus(self.viewFor(doc.?).widget);
+                const buffer = self.activeBuffer() orelse return;
+                const widget = self.activeWidget() orelse return;
+                _ = c.gtk_text_buffer_get_iter_at_line(buffer, &iter, line - 1);
+                c.gtk_text_buffer_place_cursor(buffer, &iter);
+                self.scrollActiveTo(&iter);
+                _ = c.gtk_widget_grab_focus(self.activeFocusWidget() orelse widget);
             }
         },
     }
@@ -1326,16 +2144,18 @@ fn tick(data: ?*anyopaque) callconv(.c) c_int {
         var priority = false;
         if (self.active() == d) {
             var visible: c.GdkRectangle = undefined;
-            c.gtk_text_view_get_visible_rect(u.cast(c.GtkTextView, self.viewFor(d).widget), &visible);
+            const widget = self.activeWidget().?;
+            const base = if (self.activeExcerpt()) |pane| excerptBase(pane) else 0;
+            c.gtk_text_view_get_visible_rect(u.cast(c.GtkTextView, widget), &visible);
             var first: c.GtkTextIter = undefined;
             var last: c.GtkTextIter = undefined;
-            _ = c.gtk_text_view_get_iter_at_location(u.cast(c.GtkTextView, self.viewFor(d).widget), &first, visible.x, visible.y);
-            _ = c.gtk_text_view_get_iter_at_location(u.cast(c.GtkTextView, self.viewFor(d).widget), &last, visible.x + visible.width, visible.y + visible.height);
-            const first_offset = c.gtk_text_iter_get_offset(&first);
-            const last_offset = c.gtk_text_iter_get_offset(&last);
+            _ = c.gtk_text_view_get_iter_at_location(u.cast(c.GtkTextView, widget), &first, visible.x, visible.y);
+            _ = c.gtk_text_view_get_iter_at_location(u.cast(c.GtkTextView, widget), &last, visible.x + visible.width, visible.y + visible.height);
+            const first_offset = base + c.gtk_text_iter_get_offset(&first);
+            const last_offset = base + c.gtk_text_iter_get_offset(&last);
             if (first_offset > d.check_from and (d.priority_revision != d.revision or first_offset < d.priority_start or last_offset > d.priority_end)) {
                 if (c.gtk_text_iter_inside_word(&first) != 0) _ = c.gtk_text_iter_backward_word_start(&first);
-                offset = c.gtk_text_iter_get_offset(&first);
+                offset = base + c.gtk_text_iter_get_offset(&first);
                 priority = true;
             }
         }
@@ -1356,6 +2176,7 @@ fn tick(data: ?*anyopaque) callconv(.c) c_int {
         d.inflight = true;
         self.worker.submit(job);
     }
+    for (self.excerpts.items) |pane| if (pane.spelling_dirty and pane.editor.revision == pane.document.revision) refreshExcerptSpelling(pane);
     self.update();
     self.max_spell_tick_us = @max(self.max_spell_tick_us, c.g_get_monotonic_time() - tick_start);
     return 1;
@@ -1383,26 +2204,44 @@ fn onChanged(_: ?*c.GtkTextBuffer, data: ?*anyopaque) callconv(.c) void {
     const d = u.cast(Document, data.?);
     d.due = c.g_get_monotonic_time() + 250000;
     owner(d).hidePopover();
+    for (owner(d).excerpts.items) |pane| if (pane.document == d) {
+        pane.spelling_dirty = true;
+    };
     owner(d).update();
+    owner(d).scheduleCheckpoint();
 }
 fn onModified(_: ?*c.GtkTextBuffer, data: ?*anyopaque) callconv(.c) void {
-    owner(u.cast(Document, data.?)).update();
+    const self = owner(u.cast(Document, data.?));
+    self.update();
+    self.scheduleCheckpoint();
 }
-fn onMark(_: ?*c.GtkTextBuffer, _: ?*c.GtkTextIter, _: ?*c.GtkTextMark, data: ?*anyopaque) callconv(.c) void {
-    owner(u.cast(Document, data.?)).update();
+fn onViewMark(_: ?*c.GtkTextBuffer, _: ?*c.GtkTextIter, _: ?*c.GtkTextMark, data: ?*anyopaque) callconv(.c) void {
+    const view = u.cast(EditorView, data.?);
+    const self = owner(view.document);
+    self.update();
+    self.scheduleCheckpoint();
 }
-fn onSwitch(_: ?*c.GtkNotebook, _: ?*c.GtkWidget, _: c_uint, data: ?*anyopaque) callconv(.c) void {
+fn onSwitch(notebook: ?*c.GtkNotebook, page: ?*c.GtkWidget, _: c_uint, data: ?*anyopaque) callconv(.c) void {
     const self = u.cast(App, data.?);
+    if (self.closing) return;
+    self.notebook = u.cast(c.GtkWidget, notebook.?);
+    self.active_page = page;
     self.hidePopover();
     self.update();
+    self.scheduleCheckpoint();
+}
+fn onPageReordered(_: ?*c.GtkNotebook, _: ?*c.GtkWidget, _: c_uint, data: ?*anyopaque) callconv(.c) void {
+    u.cast(App, data.?).scheduleCheckpoint();
 }
 fn onCloseWindow(_: ?*c.GtkWindow, data: ?*anyopaque) callconv(.c) c_int {
     u.cast(App, data.?).quit();
     return 1;
 }
 fn onCloseTab(_: ?*c.GtkButton, data: ?*anyopaque) callconv(.c) void {
-    const d = u.cast(Document, data.?);
-    owner(d).closeDocument(d);
+    const view = u.cast(EditorView, data.?);
+    const self = owner(view.document);
+    self.focusView(view);
+    self.closeActiveView();
 }
 fn onNew(_: ?*c.GtkButton, data: ?*anyopaque) callconv(.c) void {
     u.cast(App, data.?).execute(.new);
@@ -1445,14 +2284,17 @@ fn onQuery(_: ?*c.GtkSearchEntry, data: ?*anyopaque) callconv(.c) void {
     self.update();
 }
 fn onContext(gesture: ?*c.GtkGestureClick, _: c_int, x: f64, y: f64, data: ?*anyopaque) callconv(.c) void {
-    const d = u.cast(Document, data.?);
+    const view = u.cast(EditorView, data.?);
+    const d = view.document;
     const self = owner(d);
+    self.focusView(view);
     var bx: c_int = 0;
     var by: c_int = 0;
-    c.gtk_text_view_window_to_buffer_coords(u.cast(c.GtkTextView, self.viewFor(d).widget), c.GTK_TEXT_WINDOW_WIDGET, @intFromFloat(x), @intFromFloat(y), &bx, &by);
+    c.gtk_text_view_window_to_buffer_coords(u.cast(c.GtkTextView, view.widget), c.GTK_TEXT_WINDOW_WIDGET, @intFromFloat(x), @intFromFloat(y), &bx, &by);
     var iter: c.GtkTextIter = undefined;
-    if (c.gtk_text_view_get_iter_at_location(u.cast(c.GtkTextView, self.viewFor(d).widget), &iter, bx, by) != 0 and c.gtk_text_iter_has_tag(&iter, d.tag) != 0) {
-        c.gtk_text_buffer_place_cursor(d.buffer, &iter);
+    if (c.gtk_text_view_get_iter_at_location(u.cast(c.GtkTextView, view.widget), &iter, bx, by) != 0 and c.gtk_text_iter_has_tag(&iter, d.tag) != 0) {
+        c.gtk_text_buffer_place_cursor(view.buffer, &iter);
+        view.syncSelectionToDocument();
         _ = c.gtk_gesture_set_state(u.cast(c.GtkGesture, gesture.?), c.GTK_EVENT_SEQUENCE_CLAIMED);
         self.requestSuggestions(d);
     }
@@ -1545,9 +2387,9 @@ fn addWord(_: ?*c.GtkButton, data: ?*anyopaque) callconv(.c) void {
 }
 fn editAction(button: ?*c.GtkButton, data: ?*anyopaque) callconv(.c) void {
     const self = u.cast(App, data.?);
-    const d = self.active() orelse return;
+    const widget = self.activeWidget() orelse return;
     const action: [*:0]const u8 = @ptrCast(c.g_object_get_data(u.cast(c.GObject, button.?), "edit-action").?);
-    _ = c.gtk_widget_activate_action_variant(self.viewFor(d).widget, action, null);
+    _ = c.gtk_widget_activate_action_variant(widget, action, null);
     self.hidePopover();
 }
 fn onAction(action: ?*c.GSimpleAction, _: ?*c.GVariant, data: ?*anyopaque) callconv(.c) void {
@@ -1571,12 +2413,13 @@ fn paletteClosed(context: *anyopaque) void {
             if (c.gtk_widget_grab_focus(widget) != 0) return;
         }
     }
-    if (self.active()) |d| _ = c.gtk_widget_grab_focus(self.viewFor(d).widget);
+    if (self.activeFocusWidget()) |widget| _ = c.gtk_widget_grab_focus(widget);
 }
 fn onKey(_: ?*c.GtkEventControllerKey, key: c_uint, _: c_uint, state: c.GdkModifierType, data: ?*anyopaque) callconv(.c) c_int {
     const self = u.cast(App, data.?);
     const ctrl = state & c.GDK_CONTROL_MASK != 0;
     const shift = state & c.GDK_SHIFT_MASK != 0;
+
     if (test_hooks and key == c.GDK_KEY_F11) {
         testCommand(self);
         return 1;
@@ -1617,7 +2460,7 @@ fn onKey(_: ?*c.GtkEventControllerKey, key: c_uint, _: c_uint, state: c.GdkModif
                 const current = c.gtk_notebook_get_current_page(u.cast(c.GtkNotebook, self.notebook));
                 const count = c.gtk_notebook_get_n_pages(u.cast(c.GtkNotebook, self.notebook));
                 if (count > 0) c.gtk_notebook_set_current_page(u.cast(c.GtkNotebook, self.notebook), @mod(current + if (shift) @as(c_int, -1) else 1, count));
-                if (self.active()) |d| _ = c.gtk_widget_grab_focus(self.viewFor(d).widget);
+                if (self.activeFocusWidget()) |widget| _ = c.gtk_widget_grab_focus(widget);
             },
             c.GDK_KEY_plus, c.GDK_KEY_equal, c.GDK_KEY_minus, c.GDK_KEY_0 => {
                 self.settings.font = if (key == c.GDK_KEY_0) 14 else std.math.clamp(self.settings.font + if (key == c.GDK_KEY_minus) @as(c_int, -1) else 1, 8, 32);
@@ -1627,10 +2470,8 @@ fn onKey(_: ?*c.GtkEventControllerKey, key: c_uint, _: c_uint, state: c.GdkModif
             c.GDK_KEY_z, c.GDK_KEY_Z, c.GDK_KEY_y => {
                 if (self.active()) |d| {
                     if (d.loading or d.pending != null) return 1;
-                    if (c.gtk_window_get_focus(u.cast(c.GtkWindow, self.window)) != self.viewFor(d).widget) return 0;
-                    if (shift or key == c.GDK_KEY_y) {
-                        if (c.gtk_text_buffer_get_can_redo(d.buffer) != 0) c.gtk_text_buffer_redo(d.buffer);
-                    } else if (c.gtk_text_buffer_get_can_undo(d.buffer) != 0) c.gtk_text_buffer_undo(d.buffer);
+                    if (c.gtk_window_get_focus(u.cast(c.GtkWindow, self.window)) != self.activeWidget()) return 0;
+                    self.undo(shift or key == c.GDK_KEY_y);
                 }
             },
 
@@ -1677,13 +2518,104 @@ fn testCommand(self: *App) void {
             self.save(doc, false, false);
             c.gtk_text_buffer_insert_at_cursor(doc.buffer, " plus", 5);
         }
+    } else if (std.mem.eql(u8, action, "save-undo-race")) {
+        if (d) |doc| {
+            var end: c.GtkTextIter = undefined;
+            c.gtk_text_buffer_get_end_iter(doc.buffer, &end);
+            c.gtk_text_buffer_begin_user_action(doc.buffer);
+            c.gtk_text_buffer_insert(doc.buffer, &end, " pending", 8);
+            c.gtk_text_buffer_end_user_action(doc.buffer);
+            self.save(doc, false, false);
+            self.undo(false);
+        }
     } else if (std.mem.eql(u8, action, "save-cancel")) {
         if (d) |doc| {
             self.save(doc, false, false);
             if (doc.cancellable) |cancel| c.g_cancellable_cancel(cancel);
         }
     } else if (std.mem.eql(u8, action, "open")) {
-        if (value != null) self.openExisting(std.mem.span(value));
+        if (value != null) self.openExisting(std.mem.span(value), null);
+    } else if (std.mem.eql(u8, action, "open-folder")) {
+        if (value != null) self.browser.load(.folder, std.mem.span(value)) else self.execute(.open_folder);
+    } else if (std.mem.eql(u8, action, "open-workspace")) {
+        if (value != null) self.browser.load(.manifest, std.mem.span(value)) else self.execute(.open_workspace);
+    } else if (std.mem.eql(u8, action, "browser-probe")) {
+        self.browser.probe();
+    } else if (std.mem.eql(u8, action, "browser-browse-relative")) {
+        if (value != null) if (self.browser.model) |*snapshot| if (snapshot.roots.len > 0) self.browser.browse(snapshot.roots[0].id, std.mem.span(value));
+    } else if (std.mem.startsWith(u8, action, "budget-")) {
+        // All burst submissions happen within one GTK dispatch. Delayed workers
+        // retain their holds even when cancelled; the immediate probe is exact.
+        const snapshot = if (self.browser.model) |*m| m else return;
+        if (snapshot.roots.len == 0 or value == null) return;
+        const id = snapshot.roots[0].id;
+        const burst_path = std.mem.span(value);
+        const base = snapshot.roots[0].canonical_path.?;
+        if (std.mem.eql(u8, action, "budget-chooser") or std.mem.eql(u8, action, "budget-mixed")) self.browser.choose(.folder);
+        for (0..64) |i| {
+            self.browser.test_next_delay_us = 500000;
+            if (std.mem.eql(u8, action, "budget-load")) {
+                if (i < @import("workspace/controller.zig").limits.in_flight) self.browser.load(.manifest, burst_path) else self.browser.load(.folder, "/");
+            } else if (std.mem.eql(u8, action, "budget-scan")) {
+                self.browser.browse(id, if (i < 7) "" else if (i == 7) "nested" else "not-accepted");
+            } else if (std.mem.eql(u8, action, "budget-files")) {
+                const target = u.fmt("{s}/entry-{d:0>4}.txt", .{ burst_path, i });
+                defer a.free(target);
+                self.openExisting(target, null);
+            } else if (std.mem.eql(u8, action, "budget-dedup")) {
+                self.openExisting(burst_path, if (i % 2 == 0) id else null);
+            } else if (std.mem.eql(u8, action, "budget-bytes")) {
+                var target: [64 * 1024]u8 = @splat('x');
+                target[0] = '/';
+                target[target.len - 1] = @intCast('A' + i % 26);
+                self.openExisting(&target, null);
+            } else if (std.mem.eql(u8, action, "budget-chooser")) {
+                self.browser.choose(.manifest);
+            } else if (std.mem.eql(u8, action, "budget-mixed")) {
+                switch (i % 3) {
+                    0 => self.browser.load(.manifest, burst_path),
+                    1 => self.browser.browse(id, ""),
+                    else => {
+                        const target = u.fmt("{s}/same.txt", .{base});
+                        defer a.free(target);
+                        self.openExisting(target, id);
+                    },
+                }
+            }
+        }
+        self.browser.test_next_delay_us = 0;
+        self.browser.probe();
+        // This proves over-budget failures are visible before any completion.
+        self.probeWorkspace();
+    } else if (std.mem.eql(u8, action, "browser-activate")) {
+        const index = c.g_key_file_get_integer(file, "Test", "index", null);
+        if (index >= 0) if (c.gtk_list_box_get_row_at_index(u.cast(c.GtkListBox, self.browser.rows), index)) |row| {
+            c.g_signal_emit_by_name(self.browser.rows, "row-activated", row);
+        };
+    } else if (std.mem.eql(u8, action, "browser-close-race")) {
+        self.browser.test_next_delay_us = 500000;
+        if (self.browser.model) |*snapshot| if (snapshot.roots.len > 0) self.browser.browse(snapshot.roots[0].id, "");
+        self.browser.closeWorkspace();
+    } else if (std.mem.eql(u8, action, "browser-swap-race")) {
+        self.browser.test_next_delay_us = 500000;
+        if (self.browser.model) |*snapshot| if (snapshot.roots.len > 0) self.browser.browse(snapshot.roots[0].id, "");
+        if (value != null) self.browser.load(.manifest, std.mem.span(value));
+    } else if (std.mem.eql(u8, action, "browser-file-close-race")) {
+        self.browser.test_next_delay_us = 500000;
+        if (value != null) if (self.browser.model) |*snapshot| if (snapshot.roots.len > 0) self.openExisting(std.mem.span(value), snapshot.roots[0].id);
+        self.browser.closeWorkspace();
+    } else if (std.mem.eql(u8, action, "workspace-quit-race")) {
+        self.browser.test_next_delay_us = 500000;
+        if (value != null) self.browser.load(.manifest, std.mem.span(value));
+        self.execute(.quit);
+    } else if (std.mem.eql(u8, action, "browser-open-path")) {
+        if (value != null) if (self.browser.model) |*snapshot| if (snapshot.roots.len > 0) self.openExisting(std.mem.span(value), snapshot.roots[0].id);
+    } else if (std.mem.eql(u8, action, "workspace-race")) {
+        if (value != null) {
+            self.browser.test_next_delay_us = 500000;
+            self.browser.load(.folder, "/");
+            self.browser.load(.manifest, std.mem.span(value));
+        }
     } else if (std.mem.eql(u8, action, "reload")) {
         self.execute(.reload);
     } else if (std.mem.eql(u8, action, "reload-race")) {
@@ -1734,12 +2666,87 @@ fn testCommand(self: *App) void {
         self.replace(true);
     } else if (std.mem.eql(u8, action, "cancel-io")) {
         if (d) |doc| if (doc.cancellable) |cancel| c.g_cancellable_cancel(cancel);
+    } else if (std.mem.eql(u8, action, "guard-offset")) {
+        const guard = if (self.activeView()) |view| view.layout_guard else if (self.activeExcerpt()) |pane| pane.editor.layout_guard else null;
+        if (guard) |g| {
+            c.gtk_spin_button_set_value(g.offset, @floatFromInt(c.g_key_file_get_integer(file, "Test", "offset", null)));
+            _ = c.gtk_widget_grab_focus(g.button);
+        }
+    } else if (std.mem.eql(u8, action, "workspace-probe")) {
+        self.probeWorkspace();
+    } else if (std.mem.eql(u8, action, "observe-checkpoints")) {
+        if (self.recovery_checkpoint == null) self.recovery_checkpoint = &testCheckpoint;
+    } else if (std.mem.eql(u8, action, "checkpoint")) {
+        self.checkpoint();
+    } else if (std.mem.eql(u8, action, "restore-copy")) {
+        if (d) |doc| {
+            const states = self.snapshotViews(a) catch return;
+            defer a.free(states);
+            const text = u.bufferText(doc.buffer);
+            defer a.free(text);
+            const copy = self.restoreDocument(.{ .text = text, .dirty = true, .bom = doc.bom, .newline = doc.newline }) catch |err| {
+                self.editFailure(err);
+                return;
+            };
+            const group = self.createGroup() catch return;
+            for (states) |state| if (state.document_id == doc.id) {
+                _ = self.restoreView(copy, group, state) catch |err| self.editFailure(err);
+            };
+        }
+    } else if (std.mem.eql(u8, action, "focus-group")) {
+        const index = c.g_key_file_get_integer(file, "Test", "index", null);
+        if (index >= 0 and index < self.groups.items.items.len) self.focusGroup(self.groups.items.items[@intCast(index)].id);
+    } else if (std.mem.eql(u8, action, "focus-view")) {
+        const index = c.g_key_file_get_integer(file, "Test", "index", null);
+        const states = self.snapshotViews(a) catch return;
+        defer a.free(states);
+        if (index >= 0 and index < states.len) self.restoreFocus(states[@intCast(index)].id);
+    } else if (std.mem.eql(u8, action, "scroll")) {
+        if (self.activeWidget()) |widget| {
+            c.gtk_adjustment_set_value(c.gtk_scrollable_get_vadjustment(u.cast(c.GtkScrollable, widget)), @floatFromInt(c.g_key_file_get_integer(file, "Test", "y", null)));
+        }
+    } else if (std.mem.eql(u8, action, "select")) {
+        if (self.activeBuffer()) |buffer| {
+            var start: c.GtkTextIter = undefined;
+            var end: c.GtkTextIter = undefined;
+            c.gtk_text_buffer_get_iter_at_offset(buffer, &start, c.g_key_file_get_integer(file, "Test", "start", null));
+            c.gtk_text_buffer_get_iter_at_offset(buffer, &end, c.g_key_file_get_integer(file, "Test", "end", null));
+            c.gtk_text_buffer_select_range(buffer, &start, &end);
+        }
+    } else if (std.mem.eql(u8, action, "insert")) {
+        if (value != null) if (self.activeBuffer()) |buffer| {
+            c.gtk_text_buffer_begin_user_action(buffer);
+            c.gtk_text_buffer_insert_at_cursor(buffer, value, -1);
+            c.gtk_text_buffer_end_user_action(buffer);
+        };
+    } else if (std.mem.eql(u8, action, "undo")) {
+        self.undo(false);
+    } else if (std.mem.eql(u8, action, "redo")) {
+        self.undo(true);
+    } else if (std.mem.eql(u8, action, "grouped-append")) {
+        if (value != null) {
+            const n = self.documents.entries.items.len;
+            const changes = a.alloc(transactions.Change, n) catch return;
+            defer a.free(changes);
+            const edits = a.alloc(transactions.Replacement, n) catch return;
+            defer a.free(edits);
+            for (self.documents.entries.items, changes, edits) |doc, *change, *edit| {
+                const text = u.bufferText(doc.buffer);
+                defer a.free(text);
+                edit.* = .{ .start = text.len, .end = text.len, .text = std.mem.span(value) };
+                change.* = .{ .target = editTarget(doc, doc.revision), .replacements = @as([*]transactions.Replacement, @ptrCast(edit))[0..1] };
+            }
+            self.performGrouped("Native grouped edit", changes) catch |err| self.editFailure(err);
+        }
+    } else if (commands.fromAction(action)) |command| {
+        self.execute(command);
     }
     c.g_print("CORAL_COMMAND_DONE\n");
 }
 
 fn popoverClosed(pop: ?*c.GtkPopover, data: ?*anyopaque) callconv(.c) void {
     const self = u.cast(App, data.?);
+
     if (self.popover == u.cast(c.GtkWidget, pop.?)) {
         self.popover = null;
         c.gtk_widget_unparent(u.cast(c.GtkWidget, pop.?));
