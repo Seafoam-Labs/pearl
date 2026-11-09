@@ -1,6 +1,6 @@
 # M2: native workspaces and bounded explorer
 
-**Status: workspace, explorer, search, safe settings and persistent trust increments implemented and tested; M2 remains in progress.** The user accepted M0's documented bounded-editor tradeoffs. See the [search guide](WORKBENCH_M2_SEARCH.md) and [settings/trust guide](WORKBENCH_M2_POLICY.md). Full project sessions and workbench docking remain future work.
+**Status: workspace, explorer, search, safe settings, persistent trust and explicit saved-session increments implemented and tested; M2 remains in progress.** The user accepted M0's documented bounded-editor tradeoffs. See the [search guide](WORKBENCH_M2_SEARCH.md), [settings/trust guide](WORKBENCH_M2_POLICY.md) and [session guide](WORKBENCH_M2_SESSIONS.md). Automatic/per-project session history, docking and multi-window support remain future work.
 
 ## Open a workspace
 
@@ -121,7 +121,9 @@ Admission checks precede generation changes, cancellation, work allocation and h
 
 M1 recovery protects documents, groups, excerpts and selection/scroll under its existing limits. **It does not persist workspace roots or manifest identity.** Reopen the manifest explicitly after recovery. No trust decision is inferred from recovered text.
 
-Model replacement does not create separate per-workspace tab sets. Project sessions, root restoration and multiple windows remain later M2 work.
+The separate **Save Workspace Session / Restore Workspace Session** palette commands now persist one explicit checkpoint of workspace source/roots, tabs, groups, excerpts and view state. Verified clean files rebind; dirty/conflicting/unavailable files become unsaved copies. Existing documents are preserved. Missing roots remain unavailable; missing manifests abort restore with saved-root diagnostics rather than creating a fallback manifest. Trust is revalidated separately. See [session behavior and validation](WORKBENCH_M2_SESSIONS.md).
+
+Model replacement does not create separate per-workspace tab sets. There is no automatic startup resume or quit-time session save; explicit checkpoints survive later Discard. Multiple windows and automatic/per-project session management remain future work.
 
 ## Source and validation
 
@@ -177,7 +179,8 @@ Quick Open and streaming workspace search with unsaved overlays are now [impleme
 
 Safe settings precedence/provenance and machine-owned trust approval/revocation are now [implemented](WORKBENCH_M2_POLICY.md), without executable features.
 
-1. Versioned workspace/session persistence alongside recovery, including missing roots/conflicts; restore roots, tabs and layout without recreating paths.
-2. Workbench docking/pickers, multi-window lifecycle and separately authorized filesystem operations.
+Versioned **explicit workspace sessions** are now [implemented and validated](WORKBENCH_M2_SESSIONS.md), including missing-root/conflict handling and restoration of tabs/layout without recreating paths. Automatic/per-project management and missing-manifest fallback are not implemented.
+
+Next: workbench docking/pickers, multi-window lifecycle and separately authorized filesystem operations.
 
 M2 remains **in progress**.

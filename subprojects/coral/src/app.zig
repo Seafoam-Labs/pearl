@@ -29,6 +29,7 @@ const ExcerptPane = struct {
 const WorkspaceController = @import("workspace/controller.zig").Controller;
 const WorkspaceSearch = @import("workspace/search_controller.zig").Controller;
 const WorkspacePolicy = @import("workspace/policy_controller.zig").Controller;
+const WorkspaceSession = @import("workspace/session_controller.zig").Controller;
 const safe_settings = @import("workspace/settings.zig");
 // c.h imports the manager but not the language accessor header. Keep this
 // narrow existing-library ABI declaration local to the native integration.
@@ -52,6 +53,7 @@ pub const App = struct {
     browser: WorkspaceController = undefined,
     workspace_search: WorkspaceSearch = undefined,
     workspace_policy: WorkspacePolicy = undefined,
+    session: WorkspaceSession = undefined,
     window: W,
     /// Alias of the active group's notebook, retained for tab cycling.
     notebook: W,
@@ -200,6 +202,7 @@ pub const App = struct {
         self.browser = WorkspaceController.init(self, workspace_slot);
         self.browser.attach();
         self.workspace_policy = WorkspacePolicy.init(self);
+        self.session = .{ .app = self };
         c.g_weak_ref_init(&self.palette_focus, null);
         c.gtk_css_provider_load_from_string(self.css, @embedFile("style"));
         c.gtk_style_context_add_provider_for_display(c.gdk_display_get_default(), u.cast(c.GtkStyleProvider, self.css), c.GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
@@ -230,6 +233,7 @@ pub const App = struct {
     }
     pub fn deinit(self: *App) void {
         std.debug.assert(!self.preferences_running and self.preferences_pending == null);
+        self.session.deinit();
         self.browser.deinit();
         self.workspace_policy.deinit();
         self.workspace_search.deinit();
@@ -767,6 +771,31 @@ pub const App = struct {
         const widget = self.activeWidget().?;
         try @import("editor_scroll.zig").restore(widget, .{ .x = state.scroll_x, .y = state.scroll_y });
         return id;
+    }
+    /// Roll back only the documents/groups appended by an explicit restore.
+    /// Unlike user close, this neither prompts nor shuts down the last window.
+    pub fn rollbackSessionRestore(self: *App, documents: usize, groups: usize, previous_focus: ?u64) void {
+        while (self.documents.entries.items.len > documents) {
+            const d = self.documents.entries.items[self.documents.entries.items.len - 1];
+            var i: usize = 0;
+            while (i < self.excerpts.items.len) {
+                if (self.excerpts.items[i].document == d) self.detachExcerpt(self.excerpts.items[i]) else i += 1;
+            }
+            i = 0;
+            while (i < self.views.items.len) {
+                if (self.views.items[i].document == d) self.detachView(self.views.items[i]) else i += 1;
+            }
+            _ = self.documents.remove(d.id);
+        }
+        self.notebook = self.groups.items.items[0].notebook;
+        while (self.groups.items.items.len > groups) {
+            const group = self.groups.items.items[self.groups.items.items.len - 1];
+            _ = c.g_signal_handlers_disconnect_matched(group.notebook, c.G_SIGNAL_MATCH_DATA, 0, 0, null, null, self);
+            self.groups.remove(group.id);
+        }
+        self.repairActive();
+        if (previous_focus) |id| self.restoreFocus(id);
+        self.scheduleCheckpoint();
     }
     pub fn restoreFocus(self: *App, view_id: u64) void {
         for (self.views.items) |view| if (view.id == view_id) {
@@ -1340,6 +1369,7 @@ pub const App = struct {
     fn shutdownWindow(self: *App) void {
         self.checkpoint();
         self.closing = true;
+        self.session.shutdown();
         self.workspace_policy.shutdown();
         self.workspace_search.shutdown();
         self.browser.shutdown();
@@ -1493,6 +1523,8 @@ pub const App = struct {
             .workspace_policy => self.showPolicy(false),
             .workspace_trust => self.showPolicy(true),
             .workspace_revoke => self.workspace_policy.revoke(),
+            .save_workspace_session => self.session.start(.save),
+            .restore_workspace_session => self.session.start(.restore),
             .save, .save_as => if (self.active()) |d| {
                 self.save(d, command == .save_as, false);
             },
@@ -1750,7 +1782,7 @@ pub const App = struct {
         const labels = a.alloc([]const u8, self.views.items.len) catch return;
         defer a.free(labels);
         for (self.views.items, labels) |view, *label| label.* = std.mem.span(c.gtk_label_get_text(u.cast(c.GtkLabel, view.tab_label)));
-        const json = std.json.Stringify.valueAlloc(a, .{ .tab_labels = labels, .notice = std.mem.span(c.gtk_label_get_text(u.cast(c.GtkLabel, self.notice))), .layout_blocked = blocked, .syntax_limited = if (self.active()) |d| @import("editor/presentation_policy.zig").limited(d.buffer) else false, .documents = docs, .views = views, .groups = groups, .history_cursor = self.history.cursor, .history_records = self.history.records.items.len, .active_view = self.activeViewId(), .dialog = self.dialog != null, .checkpoints = self.test_checkpoint_count, .editor_focused = self.activeWidget() == c.gtk_window_get_focus(u.cast(c.GtkWindow, self.window)), .editable = if (self.activeWidget()) |widget| c.gtk_text_view_get_editable(u.cast(c.GtkTextView, widget)) != 0 else false }, .{}) catch return;
+        const json = std.json.Stringify.valueAlloc(a, .{ .session = self.session.testState(), .tab_labels = labels, .notice = std.mem.span(c.gtk_label_get_text(u.cast(c.GtkLabel, self.notice))), .layout_blocked = blocked, .syntax_limited = if (self.active()) |d| @import("editor/presentation_policy.zig").limited(d.buffer) else false, .documents = docs, .views = views, .groups = groups, .history_cursor = self.history.cursor, .history_records = self.history.records.items.len, .active_view = self.activeViewId(), .dialog = self.dialog != null, .checkpoints = self.test_checkpoint_count, .editor_focused = self.activeWidget() == c.gtk_window_get_focus(u.cast(c.GtkWindow, self.window)), .editable = if (self.activeWidget()) |widget| c.gtk_text_view_get_editable(u.cast(c.GtkTextView, widget)) != 0 else false }, .{}) catch return;
         defer a.free(json);
         const line = u.z(json);
         defer a.free(line);
@@ -2739,7 +2771,12 @@ fn testCommand(self: *App) void {
     const value = c.g_key_file_get_string(file, "Test", "value", null);
     defer c.g_free(value);
     const d = self.active();
-    if (std.mem.eql(u8, action, "policy-probe")) {
+    if (std.mem.eql(u8, action, "session-probe")) {
+        self.session.probe();
+    } else if (std.mem.eql(u8, action, "session-delay")) {
+        const delay = if (value != null) std.fmt.parseInt(u64, std.mem.span(value), 10) catch 0 else 0;
+        self.session.test_next_delay_us = @as(u64, @min(delay, 5000)) * 1000;
+    } else if (std.mem.eql(u8, action, "policy-probe")) {
         self.workspace_policy.probe();
     } else if (std.mem.eql(u8, action, "policy-show")) {
         self.showPolicy(false);

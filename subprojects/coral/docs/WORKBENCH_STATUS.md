@@ -1,6 +1,6 @@
 # Coral workbench implementation status
 
-**M0 is accepted with the documented bounded-editor tradeoffs. M1 implementation and native correctness acceptance are complete. M2 is in progress: native multi-root workspaces, the paged explorer, Quick Open/search, safe settings with provenance and persistent workspace trust are implemented and tested.**
+**M0 is accepted with the documented bounded-editor tradeoffs. M1 implementation and native correctness acceptance are complete. M2 is in progress: native multi-root workspaces, the paged explorer, Quick Open/search, safe settings with provenance, persistent workspace trust and explicit saved sessions are implemented and tested.**
 
 The user explicitly accepted the M0 tradeoffs and requested work on M2. This acceptance does not turn failed or unmeasured performance targets into passing measurements. This is not a full IDE or Zed parity release. M2 is partial; M3–M8 remain future milestones; M9 remains removed. The [interactive prototype](mockups/workbench/index.html) is a design fixture, not connected to native Git, LSP or agents.
 
@@ -35,7 +35,7 @@ See [workspace usage and remaining gates](WORKBENCH_M2_WORKSPACES.md) for the sc
 - Bounded admission: eight total outstanding operations including at most one workspace chooser; 128 KiB retained request-path budget; identical pending file opens deduplicate. Rejected requests do not invalidate accepted work. Canceled workers retain their slots and application holds until completion. Blocking mount I/O is still not forcibly interruptible.
 - Restricted by default; a machine-owned controller now supports explicit persistent trust/revoke. Manifest/folder settings accept only four safe editor keys and language overrides. Executable settings and manifest-supplied trust remain rejected; no executable features are enabled.
 - Descriptor-relative browser traversal rejects symlink components, special files and escapes. Search-only ancestor directories are supported. This is not a sandbox for the subsequent path-based document loader against concurrent rename races.
-- Recovery still restores documents/layout, **not workspace roots/manifests**; the UI says so. Ordinary project-session restoration remains an M2 gate.
+- Crash recovery still restores documents/layout, **not workspace roots/manifests**. Separate explicit saved sessions now restore workspace sources and editor state; automatic/per-project session management remains future work.
 
 **Explorer-increment validation (2026-11-09):** separate `test-m1`, `test-m2-slice` and `test-m2-explorer` runs passed with `-Doptimize=safe -j1 --summary all`: **158 widget tests, 40 native workflows, 14 group/history checks, 13 recovery groups, 18 workspace groups and 19 explorer groups**. Headless steps were cached successes on this final rerun. The initial aggregate invocation hit a 240-second timeout; separate runs totaled about 244 seconds with no reproduced deadlock. Attributable orphan private-session processes were cleaned up.
 
@@ -56,6 +56,15 @@ The native explorer fixture reached **100,000 files exactly once across 391 page
 - Explicit confirmation persists trust outside the project. Exact identities include root/manifest-base paths, device/inode/birth time, repository policy, safe-user values/presence and versioned defaults/precedence. Unsupported birth time remains restricted. Ongoing identity changes need fresh approval, even when an alternate identity has a prior grant.
 - Immediate local revoke invalidates permits, with serialized persistence and stale-approval cleanup. Failed persistence stays visibly restricted locally but may leave a disk approval; cross-process cancellation is not instantaneous. Bounded private store, locks, atomic synced writes and quarantine are covered. No executable consumer or blanket tool permission is implied.
 - **17 native policy groups passed**, 168 fixture hashes and 34 absent execution sentinels. See [settings/trust guide](WORKBENCH_M2_POLICY.md) for schema, storage requirements, failure behavior and full validation.
+
+### Explicit saved-session increment
+
+- **Save Workspace Session / Restore Workspace Session** in the palette persist one checkpoint independently of crash journals. Restore preserves existing documents, tab order, groups, selections/scroll and editable excerpts. It requires closing an active workspace first; that does not close its documents.
+- Clean files rebind only after regular-file/content/etag verification. Dirty, conflicting, duplicate-bound and unavailable files become pathless dirty copies requiring Save As. No source files are written or missing paths created.
+- Fresh manifests/settings and separate trust revalidation apply. Missing roots remain unavailable; a missing/invalid manifest aborts restore with saved-root diagnostics. Supported lexical `.`/`..` root spellings roundtrip unchanged.
+- Private bounded session v1 storage, strict checksum/schema, nonblocking locks and atomic synced publication. Corrupt/future slots are kept and block replacement. One worker owns its snapshot/hold; stale callbacks are rejected, failed post-load restores roll back their own workspace/documents without touching newer selections.
+- **Explicit-only semantics:** one shared slot, last accepted save wins. No automatic startup resume, quit-time save, per-project history or missing-manifest fallback. Later edits/Discard do not erase the explicit checkpoint; restoring it again is a deliberate action.
+- **18 backend tests and 19 native session scenarios passed.** See [session usage, limits and validation](WORKBENCH_M2_SESSIONS.md).
 
 ## M1 foundation: implemented and integrated
 
@@ -131,10 +140,11 @@ zig build test-m2-slice -Doptimize=safe -j1 --summary all
 zig build test-m2-explorer -Doptimize=safe -j1 --summary all
 zig build test-m2-search -Doptimize=safe -j1 --summary all
 zig build test-m2-policy -Doptimize=safe -j1 --summary all
+zig build test-m2-sessions -Doptimize=safe -j1 --summary all
 zig build -Doptimize=safe -Dtest-hooks=false -j1 --summary all
 ```
 
-**Passed** on the final code, including:
+**Policy-increment baseline passed**, including:
 
 - **264 headless-root tests**; separate trust target **24 passed / 1 skipped** (foreign ownership requires root). Trust fork tests run separately from GIO worker tests. Appearance tests also passed, cached on the final headless run.
 - **180 display-backed widget-root tests** (includes transitive model tests; do not add this count to headless tests as unique cases).
@@ -146,9 +156,11 @@ Earlier search-increment validation ran all four aggregate targets separately wi
 
 Final policy-increment validation on **Zig 0.17.1** ran `test-m1`, `test-m2-slice`, `test-m2-explorer`, `test-m2-search` and `test-m2-policy` separately with `-Doptimize=safe -j1 --summary all` using default caches. All have passing results: 18 workspace, 19 explorer, nine search and 17 policy native groups. The workspace suite exposed a new directory-read-permission requirement; settings/trust walks were corrected to use `O_PATH`, unit regressions added, and workspace/policy gates rerun. Production safe build with hooks disabled, formatting, Python compilation and whitespace checks passed. Logs/evidence: `pearl/.cache/coral-policy-validation-logs/` and `pearl/.cache/coral-policy/`.
 
+Final session-increment validation on **Zig 0.17.1** ran all six aggregate gates above separately with `-Doptimize=safe -j1 --summary all`, followed by the production build with hooks disabled. All passed. The session gate executed **265 main headless tests + 18 standalone session tests**, **181 widget-root tests** and **19 native session scenarios**; trust/appearance runners were cached successes. Existing native gates passed **40 workflows, 14 group/history checks, 13 recovery groups, 18 workspace groups, 19 explorer groups, nine search groups and 17 policy groups**. Counts overlap transitively, not unique totals. Formatting, Python compilation and diff whitespace checks passed. Evidence: `pearl/.cache/coral-session-validation-logs/` and `pearl/.cache/coral-sessions/`.
+
 Earlier foundation validation: **40 prototype browser checks / 55 geometry checkpoints**; optional GTK4 VTE fixture **four native scenarios**; final B05 and 1 MiB fallback benchmark run **three trials / zero trial failures**. Timing budget misses are reported separately from trial completion.
 
-Current policy-increment toolchain: Zig 0.17.1 (earlier foundation used 0.17.0), GTK 4.24.1, GtkSourceView 5.22.0, Enchant 2.8.21. Evidence lives under `pearl/.cache/coral-native`, `coral-app-groups`, `coral-app-recovery`, `coral-widgets`, `coral-terminal-spike`, and `coral-benchmarks/run-ldrbm59w`. Prototype review artifacts live beside the interactive mockup. Older failing benchmark and native reports remain historical evidence, not current successes.
+Current session-increment toolchain: Zig 0.17.1 (earlier foundation used 0.17.0), GTK 4.24.1, GtkSourceView 5.22.0, Enchant 2.8.21. Evidence lives under `pearl/.cache/coral-native`, `coral-app-groups`, `coral-app-recovery`, `coral-widgets`, `coral-terminal-spike`, and `coral-benchmarks/run-ldrbm59w`. Prototype review artifacts live beside the interactive mockup. Older failing benchmark and native reports remain historical evidence, not current successes.
 
 All native tests use private Wayland/XDG sessions and disposable files, not the live desktop. `--aqueous-prefix /usr` selects this host's installed test tooling; other setups can use the prepared private prefix. No service credentials, paid API calls, language servers, extension downloads or host VTE installation were configured. No commits were created.
 
@@ -156,6 +168,6 @@ All native tests use private Wayland/XDG sessions and disposable files, not the 
 
 - **M0:** accepted bounded-foundation tradeoffs; unsupported full giant-line rendering and deferred paint qualification remain documented, not passed.
 - **M1:** implemented/tested bounded foundation; retain the documented undo, recovery, file-size and process-ownership limits.
-- **M2:** workspace/root, explorer, search, safe settings/provenance and persistent trust approval/revocation delivered. Next: versioned workspace/session restoration alongside recovery; then docking/pickers and multi-window UI. Both 100k explorer and on-demand search fixtures are validated; no persistent index is implemented.
+- **M2:** workspace/root, explorer, search, safe settings/provenance, persistent trust and explicit saved-session restoration delivered. Next: docking/panel and picker integration, then multi-window UI. Automatic/per-project session management remains outside the explicit-checkpoint increment. Both 100k explorer and on-demand search fixtures are validated; no persistent index is implemented.
 - **M3–M8:** LSP, real Git workbench, production terminal/tasks, native/ACP agents, MCP, DAP/test UI, extensions and advanced editing/accessibility qualification.
 - **M9:** removed, not silently reintroduced.

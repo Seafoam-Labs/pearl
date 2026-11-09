@@ -238,6 +238,23 @@ pub const Controller = struct {
         const token = self.beginRequest() orelse return;
         self.loadRequest(source, path, token);
     }
+    /// Explicit session restore uses the ordinary watched load/policy pipeline.
+    /// Completion is delivered exactly once, including stale/cancelled loads.
+    pub fn loadSession(self: *Controller, source: Source, path: []const u8, context: *anyopaque, completion: *const fn (*anyopaque, ?anyerror) void) !identity.Token {
+        if (self.model != null or self.loading or self.choosing) return error.ActiveWorkspace;
+        if (!self.admit(path, null)) return error.Busy;
+        const token = self.beginRequest() orelse return error.Closing;
+        self.app.workspace_policy.invalidate();
+        self.loading = true;
+        self.error_name = null;
+        const job = self.work(.load, path);
+        job.source = source;
+        job.request = token;
+        job.session_context = context;
+        job.session_completion = completion;
+        self.run(job);
+        return token;
+    }
     fn loadRequest(self: *Controller, source: Source, path: []const u8, token: identity.Token) void {
         if (!self.requests.accepts(token)) return;
         self.app.workspace_policy.invalidate();
@@ -605,6 +622,7 @@ pub const Controller = struct {
             break;
         };
         self.request_bytes -= inputBytes(job.path, job.root);
+        if (job.session_completion) |completion| completion(job.session_context.?, if (job.published) null else job.err orelse error.StaleWorkspace);
         job.destroy();
         c.g_application_release(u.cast(c.GApplication, self.app.application));
     }
@@ -663,6 +681,7 @@ pub const Controller = struct {
         }
     }
     fn publishLoad(self: *Controller, job: *Work) void {
+        job.published = true;
         self.app.workspace_search.invalidate("Stale — workspace model changed. Refresh to search the current roots.");
         self.loading = false;
         self.policy_pending = false;
@@ -780,6 +799,9 @@ const Work = struct {
     test_delay_us: c_ulong = 0,
     test_search_fail: bool = false,
     delivering: bool = false,
+    session_context: ?*anyopaque = null,
+    session_completion: ?*const fn (*anyopaque, ?anyerror) void = null,
+    published: bool = false,
     fn destroy(self: *Work) void {
         if (self.policy) |policy| policy.unref();
         if (self.result) |*m| m.deinit();
@@ -835,6 +857,18 @@ fn worker(task: ?*c.GTask, _: ?*anyopaque, data: ?*anyopaque, _: ?*c.GCancellabl
         job.err = err;
     };
     if (@import("build_options").test_hooks and job.test_delay_us != 0) c.g_usleep(job.test_delay_us);
+    if (@import("build_options").test_hooks and job.session_completion != null and job.stage == .initial) {
+        const gate = c.g_getenv("CORAL_TEST_SESSION_LOAD_PAUSE");
+        if (gate != null and c.g_file_test(gate, c.G_FILE_TEST_EXISTS) != 0) {
+            // Session preflight has passed, but the normal workspace pipeline
+            // has not published. Let native tests mutate documents in this gap.
+            c.g_print("CORAL_SESSION_WORKSPACE_LOAD_PAUSED\n");
+            for (0..1000) |_| {
+                if (c.g_cancellable_is_cancelled(job.cancel) != 0 or c.g_file_test(gate, c.G_FILE_TEST_EXISTS) == 0) break;
+                c.g_usleep(10_000);
+            }
+        }
+    }
     c.g_task_return_boolean(task, 1);
 }
 fn done(_: ?*c.GObject, result: ?*c.GAsyncResult, data: ?*anyopaque) callconv(.c) void {

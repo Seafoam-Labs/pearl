@@ -157,8 +157,8 @@ pub const Controller = struct {
         c.g_object_unref(task);
     }
 
-    fn capture(self: *Controller) !*recovery.OwnedSnapshot {
-        const app = self.app orelse return error.Closing;
+    /// GTK-thread snapshot shared with explicit session checkpoints. No I/O.
+    pub fn captureApp(app: *App) !*recovery.OwnedSnapshot {
         var arena = std.heap.ArenaAllocator.init(a);
         defer arena.deinit();
         const alloc = arena.allocator();
@@ -231,7 +231,7 @@ pub const Controller = struct {
 
     fn save(self: *Controller) void {
         if (self.closing or self.store == null) return;
-        const snapshot = self.capture() catch |err| {
+        const snapshot = captureApp(self.app orelse return) catch |err| {
             if (err == error.Loading) {
                 self.timer = c.g_timeout_add(250, &debounced, self);
                 return;
@@ -287,6 +287,14 @@ pub const Controller = struct {
     fn restore(self: *Controller) !void {
         const app = self.app.?;
         const snapshot = self.claim.?.snapshot.?.value;
+        try restoreApp(app, snapshot, null);
+        app.message("Recovered as unsaved copies. Original files were not changed; use Save As to choose where to save. The original recovery is retained until you explicitly discard it.");
+    }
+
+    /// Optional document states are supplied only by the explicit session verifier.
+    /// Recovery always passes null and continues restoring pathless dirty copies.
+    pub fn restoreApp(app: *App, snapshot: recovery.Snapshot, states: ?[]const App.RestoreDocument) !void {
+        if (states) |items| if (items.len != snapshot.documents.len) return error.InvalidSnapshot;
         // Validate all semantic constraints before changing the live workspace.
         try offsets.validateRestore(snapshot);
         const document_map = try a.alloc(*Document, snapshot.documents.len);
@@ -298,8 +306,8 @@ pub const Controller = struct {
         const suspended = app.recovery_suspended;
         app.recovery_suspended = true;
         defer app.recovery_suspended = suspended;
-        for (snapshot.documents, document_map) |doc, *out| {
-            out.* = try app.restoreDocument(.{ .text = doc.text, .dirty = true, .bom = doc.bom, .newline = switch (doc.newline) {
+        for (snapshot.documents, document_map, 0..) |doc, *out, index| {
+            out.* = try app.restoreDocument(if (states) |items| items[index] else .{ .text = doc.text, .dirty = true, .bom = doc.bom, .newline = switch (doc.newline) {
                 .lf => .lf,
                 .crlf => .crlf,
                 .mixed => .mixed,
@@ -338,7 +346,6 @@ pub const Controller = struct {
                 break;
             }
         };
-        app.message("Recovered as unsaved copies. Original files were not changed; use Save As to choose where to save. The original recovery is retained until you explicitly discard it.");
     }
 };
 

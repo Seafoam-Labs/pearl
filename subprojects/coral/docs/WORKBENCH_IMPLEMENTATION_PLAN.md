@@ -1,6 +1,6 @@
 # Coral workbench implementation plan
 
-Status: **M0 tradeoffs accepted; M1 complete; M2 workspace, explorer, search and settings/trust increments delivered**
+Status: **M0 tradeoffs accepted; M1 complete; M2 workspace, explorer, search, settings/trust and explicit-session increments delivered**
 
 See [current implementation status and validation](WORKBENCH_STATUS.md). The roadmap below remains the target, not a claim that all milestones are complete.
 
@@ -262,7 +262,7 @@ The integrated bounded M1 foundation passes unit/widget/native/group/recovery ac
 7. **Delivered:** versioned durable recovery, explicit restore/keep/discard, conflict-safe unsaved copies and native crash/interrupted-publication tests.
 8. **M0 tradeoffs accepted by the user:** retain the measured syntax/long-line policy and bounded-excerpt fallback, accept documented timing misses for the foundation, and defer injected-input-to-paint qualification. Full giant-paragraph rendering remains unsupported/guarded; bounded 1 MiB excerpt editing passes its workload. Original targets remain recorded, not relabelled as passing measurements.
 
-### M2 workspace, explorer, search and policy increments
+### M2 workspace, explorer, search, policy and explicit-session increments
 
 Version-1 workspace manifests, canonical typed roots, native folder/workspace opening, root-qualified tabs and an asynchronous bounded directory browser are integrated. Restricted mode cannot be promoted by workspace content. Safe editor settings and separate explicit machine-owned trust are now supported, as described below. Native two-root, malformed-input, stale-result, no-execution and request-budget tests are in `tests/workspaces.py` (`zig build test-m2-slice`). See [workspace usage and remaining gates](WORKBENCH_M2_WORKSPACES.md).
 
@@ -272,7 +272,9 @@ The search increment delivers **Ctrl+P Quick Open** and **Ctrl+Shift+F streaming
 
 The policy increment delivers safe `lines`/`wrap`/`spaces`/`indent` settings with per-key provenance and workspace/folder/language precedence, preserving user preferences. Explicit persistent trust binds exact root incarnations and effective policy; revocation invalidates generation-checked permits without enabling any executable feature. `zig build test-m2-policy` covers 17 native groups plus separate settings/trust unit tests. See [policy usage, storage requirements and boundaries](WORKBENCH_M2_POLICY.md).
 
-This is **not completed M2**: workspace-root session restore, docking and multi-window workflows remain. The next standard increment is versioned workspace/session persistence alongside recovery. The 100k explorer/search and settings/trust fixtures are validated, not the complete workbench milestone.
+The session increment delivers **Save Workspace Session / Restore Workspace Session**: one versioned explicit checkpoint separate from crash recovery, restoring roots, tabs, groups, excerpts and view state. Clean files rebind only after content/etag verification; dirty/conflicting/unavailable files become unsaved copies, preserving existing documents. Fresh manifest/settings and separate trust revalidation apply. `zig build test-m2-sessions` covers 19 native scenarios and 18 backend tests, including publication failure, lexical roots, stale completions and rollback/retry. See [session usage and boundaries](WORKBENCH_M2_SESSIONS.md). No automatic startup resume, quit-time save, per-project history or missing-manifest fallback is implemented.
+
+This is **not completed M2**: docking and multi-window workflows remain. The next standard increment is workbench docking/panel and picker integration, followed by multi-window lifecycle. The delivered fixtures validate bounded increments, not the complete workbench milestone.
 
 ## 11. Validation and release acceptance
 

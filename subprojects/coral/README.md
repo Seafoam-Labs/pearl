@@ -5,7 +5,8 @@ GtkSourceView editing and offline Enchant spell checking. Its native foundation
 includes independent editor groups, editable source excerpts and crash recovery,
 with Pearl appearance. Multi-root workspaces include a bounded virtualized explorer,
 Quick Open, streaming text search, safe settings with provenance, and explicit
-persistent workspace trust. LSP, Git and agent services remain later work.
+persistent workspace trust. Explicit saved sessions restore workspace roots and
+editor layout safely. LSP, Git and agent services remain later work.
 
 ![Native Coral editor](artifacts/native/editor-dark.png)
 
@@ -100,9 +101,17 @@ its permits immediately and removes the approval asynchronously. Trust is not
 blanket tool permission and starts no services. See the [settings/trust guide](docs/WORKBENCH_M2_POLICY.md)
 for filesystem identity requirements, storage errors and revocation limits.
 
-This remains an **M2 preview**, without persistent indexing, workspace-wide replace
-or complete project sessions. Recovery restores documents/layout but not workspace
-roots; reopen the manifest explicitly. See [workspace usage and remaining gates](docs/WORKBENCH_M2_WORKSPACES.md).
+**Save Workspace Session** / **Restore Workspace Session** in the palette persist
+one explicit checkpoint of roots, tabs, groups, excerpts and view state. Clean files
+rebind only after verification; dirty/conflicting/unavailable files become unsaved
+copies. Existing documents stay intact. Close an active workspace before restoring.
+There is no automatic startup restore or quit-time save; later Discard does not
+remove an explicitly saved checkpoint. See [session usage and safety limits](docs/WORKBENCH_M2_SESSIONS.md).
+
+This remains an **M2 preview**, without persistent indexing, workspace-wide replace,
+automatic/per-project session history, docking or multi-window support. Crash recovery
+still restores documents/layout but not roots; the explicit session is separate.
+See [workspace usage and remaining gates](docs/WORKBENCH_M2_WORKSPACES.md).
 
 ## Implemented
 
@@ -223,6 +232,7 @@ zig build test-m2-slice -Doptimize=safe -j1
 zig build test-m2-explorer -Doptimize=safe -j1
 zig build test-m2-search -Doptimize=safe -j1
 zig build test-m2-policy -Doptimize=safe -j1
+zig build test-m2-sessions -Doptimize=safe -j1
 zig build widgets -Doptimize=safe -- --aqueous-prefix /usr
 ```
 
@@ -234,8 +244,8 @@ The [original plan](docs/IMPLEMENTATION_PLAN.md), [interactive mockup](docs/mock
 and [mockup gallery](docs/mockups/README.md) remain design references. They do
 not replace the native test evidence.
 
-Multi-root workspace sessions, remote files, legacy encodings, grammar checking,
-project tooling and plugins are outside this preview. The user accepted M0's
+Automatic session history, multi-window support, remote files, legacy encodings,
+grammar checking, project tooling and plugins are outside this preview. The user accepted M0's
 bounded-editor tradeoffs to proceed to M2. Full giant-line rendering remains
 unsupported and original input-to-paint targets remain unverified; acceptance
 does not change the recorded measurements.

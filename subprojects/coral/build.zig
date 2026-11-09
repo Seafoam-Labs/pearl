@@ -66,6 +66,12 @@ pub fn build(b: *std.Build) void {
     const trust_module = createModule(b, .{ .root_source_file = b.path("src/workspace/trust_test.zig"), .target = target, .optimize = optimize, .link_libc = true });
     const trust_tests = b.addTest(.{ .root_module = trust_module });
     test_step.dependOn(&b.addRunArtifact(trust_tests).step);
+    // Session publication tests fork too; keep them outside the GIO test process.
+    const session_module = b.createModule(.{ .root_source_file = b.path("src/workspace/session_test.zig"), .target = target, .optimize = optimize, .link_libc = true });
+    const session_tests = b.addTest(.{ .root_module = session_module });
+    const session_units = b.addRunArtifact(session_tests);
+    test_step.dependOn(&session_units.step);
+    b.step("session-unit", "Test saved-session schema and durable publication").dependOn(&session_units.step);
     const appearance_module = createModule(b, .{ .root_source_file = b.path("src/appearance.zig"), .target = target, .optimize = optimize, .link_libc = true });
     for ([_][]const u8{ "gtk4", "gdk4", "gio2", "glib2", "gobject2" }) |name| appearance_module.addImport(name, bindings.module(name));
     appearance_module.addImport("appearance_client", appearance);
@@ -123,6 +129,13 @@ pub fn build(b: *std.Build) void {
     const m2_policy = b.step("test-m2-policy", "Run settings/trust units, widgets and native acceptance");
     m2_policy.dependOn(test_step);
     m2_policy.dependOn(&policy.step);
+    const sessions = b.addSystemCommand(&.{ "python3", "tests/sessions.py", "--binary" });
+    sessions.addArtifactArg(ie);
+    sessions.addPassthruArgs();
+    b.step("sessions", "Run explicit workspace session native acceptance").dependOn(&sessions.step);
+    const m2_sessions = b.step("test-m2-sessions", "Run session units, widgets and native acceptance");
+    m2_sessions.dependOn(test_step);
+    m2_sessions.dependOn(&sessions.step);
     const m1 = b.step("test-m1", "Run unit, widget, native, group and recovery acceptance tests");
     m1.dependOn(test_step);
     m1.dependOn(&integration.step);
@@ -144,6 +157,7 @@ pub fn build(b: *std.Build) void {
     m2_explorer.dependOn(&widgets.step);
     m2_search.dependOn(&widgets.step);
     m2_policy.dependOn(&widgets.step);
+    m2_sessions.dependOn(&widgets.step);
 
     const bm = createModule(b, .{ .root_source_file = b.path("src/benchmark_m0.zig"), .target = target, .optimize = optimize, .link_libc = true });
     for ([_][]const u8{ "gtk4", "gtksourceview-5", "enchant-2" }) |lib| bm.linkSystemLibrary(lib, .{ .use_pkg_config = .yes });

@@ -36,6 +36,8 @@ pub const Command = enum {
     workspace_policy,
     workspace_trust,
     workspace_revoke,
+    save_workspace_session,
+    restore_workspace_session,
 
     pub fn metadata(self: Command) Metadata {
         return entries[@backingInt(self)];
@@ -76,6 +78,8 @@ pub const Command = enum {
             .workspace_policy => i18n.dtr("coral", "Workspace: Settings and Trust…"),
             .workspace_trust => i18n.dtr("coral", "Trust workspace…"),
             .workspace_revoke => i18n.dtr("coral", "Workspace: Revoke trust"),
+            .save_workspace_session => i18n.dtr("coral", "Save Workspace Session"),
+            .restore_workspace_session => i18n.dtr("coral", "Restore Workspace Session"),
         };
     }
 };
@@ -122,6 +126,8 @@ pub const entries = [_]Metadata{
     .{ .command = .workspace_policy, .action = "workspace-policy", .detailed_action = "app.workspace-policy", .label = "Workspace: Settings and Trust…", .shortcut = null },
     .{ .command = .workspace_trust, .action = "workspace-trust", .detailed_action = "app.workspace-trust", .label = "Trust workspace…", .shortcut = null },
     .{ .command = .workspace_revoke, .action = "workspace-revoke", .detailed_action = "app.workspace-revoke", .label = "Workspace: Revoke trust", .shortcut = null },
+    .{ .command = .save_workspace_session, .action = "save-workspace-session", .detailed_action = "app.save-workspace-session", .label = "Save Workspace Session", .shortcut = null },
+    .{ .command = .restore_workspace_session, .action = "restore-workspace-session", .detailed_action = "app.restore-workspace-session", .label = "Restore Workspace Session", .shortcut = null },
 };
 
 pub fn fromAction(action: []const u8) ?Command {
@@ -166,7 +172,7 @@ pub fn fromKey(key: u32, state: u32) ?Command {
 
 test "registry is exhaustive, ordered and has unique stable actions" {
     try std.testing.expectEqual(@typeInfo(Command).@"enum".field_names.len, entries.len);
-    const actions = [_][]const u8{ "new", "open", "save", "save-as", "reload", "find", "goto", "spelling", "preferences", "about", "close", "quit", "command-palette", "split-group", "focus-next-group", "focus-previous-group", "close-group", "excerpt", "grouped-undo", "grouped-redo", "open-folder", "open-workspace", "workspace-roots", "workspace-back", "workspace-rescan", "close-workspace", "quick-open", "workspace-search", "workspace-policy", "workspace-trust", "workspace-revoke" };
+    const actions = [_][]const u8{ "new", "open", "save", "save-as", "reload", "find", "goto", "spelling", "preferences", "about", "close", "quit", "command-palette", "split-group", "focus-next-group", "focus-previous-group", "close-group", "excerpt", "grouped-undo", "grouped-redo", "open-folder", "open-workspace", "workspace-roots", "workspace-back", "workspace-rescan", "close-workspace", "quick-open", "workspace-search", "workspace-policy", "workspace-trust", "workspace-revoke", "save-workspace-session", "restore-workspace-session" };
     for (entries, actions, 0..) |entry, action, index| {
         try std.testing.expectEqual(index, @backingInt(entry.command));
         try std.testing.expectEqualStrings(action, entry.action);
@@ -180,6 +186,16 @@ test "registry is exhaustive, ordered and has unique stable actions" {
     for ([_][]const u8{ "", "app.save", "SAVE", "save_as", "goto-line", "terminal", "agent" }) |unknown| {
         try std.testing.expectEqual(@as(?Command, null), fromAction(unknown));
     }
+}
+
+test "workspace sessions are explicit palette actions without automatic shortcuts" {
+    inline for (.{ Command.save_workspace_session, Command.restore_workspace_session }) |command| {
+        const metadata = command.metadata();
+        try std.testing.expectEqual(command, fromAction(metadata.action).?);
+        try std.testing.expectEqual(@as(?[:0]const u8, null), metadata.shortcut);
+    }
+    try std.testing.expectEqualStrings("Save Workspace Session", Command.save_workspace_session.metadata().label);
+    try std.testing.expectEqualStrings("Restore Workspace Session", Command.restore_workspace_session.metadata().label);
 }
 
 test "reload is an explicit palette action without a key binding" {
