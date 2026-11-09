@@ -1,6 +1,6 @@
 # M2: native workspaces and bounded explorer
 
-**Status: workspace, explorer, search, safe settings, persistent trust and explicit saved-session increments implemented and tested; M2 remains in progress.** The user accepted M0's documented bounded-editor tradeoffs. See the [search guide](WORKBENCH_M2_SEARCH.md), [settings/trust guide](WORKBENCH_M2_POLICY.md) and [session guide](WORKBENCH_M2_SESSIONS.md). Automatic/per-project session history, docking and multi-window support remain future work.
+**Status: workspace, explorer, search, safe settings, persistent trust and explicit saved-session increments implemented and tested; M2 remains in progress.** The user accepted M0's documented bounded-editor tradeoffs. See the [search guide](WORKBENCH_M2_SEARCH.md), [settings/trust guide](WORKBENCH_M2_POLICY.md) and [session guide](WORKBENCH_M2_SESSIONS.md). Native [dock/picker integration](WORKBENCH_M2_DOCKS.md) is now implemented. Automatic/per-project session history and multi-window support remain future work.
 
 ## Open a workspace
 
@@ -42,7 +42,7 @@ The manifest is opened read-only and nonblocking and must be a regular file. FIF
 
 ## Native explorer
 
-A virtualized **GtkListView** above the editor groups renders a bounded expandable tree with recycled row widgets:
+A virtualized **GtkListView** in the movable **Explorer dock** renders a bounded expandable tree with recycled row widgets:
 
 - **Roots** returns to the root list; **Back** moves toward the parent/root list.
 - Activate a root/directory to expand or collapse it. Only accessed directories are enumerated, on workers; opening a workspace does not enumerate unopened descendants.
@@ -181,6 +181,8 @@ Safe settings precedence/provenance and machine-owned trust approval/revocation 
 
 Versioned **explicit workspace sessions** are now [implemented and validated](WORKBENCH_M2_SESSIONS.md), including missing-root/conflict handling and restoration of tabs/layout without recreating paths. Automatic/per-project management and missing-manifest fallback are not implemented.
 
-Next: workbench docking/pickers, multi-window lifecycle and separately authorized filesystem operations.
+Native [Explorer/Search docks and Quick Open picker integration](WORKBENCH_M2_DOCKS.md) are now implemented, with session v2 layout persistence and compact-window behavior.
+
+Next: multi-window lifecycle. Additional pickers, automatic/per-project session management and separately authorized filesystem operations remain open items.
 
 M2 remains **in progress**.

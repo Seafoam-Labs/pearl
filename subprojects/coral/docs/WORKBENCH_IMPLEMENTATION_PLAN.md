@@ -1,6 +1,6 @@
 # Coral workbench implementation plan
 
-Status: **M0 tradeoffs accepted; M1 complete; M2 workspace, explorer, search, settings/trust and explicit-session increments delivered**
+Status: **M0 tradeoffs accepted; M1 complete; M2 workspace, explorer, search, settings/trust, explicit-session and docking/picker increments delivered**
 
 See [current implementation status and validation](WORKBENCH_STATUS.md). The roadmap below remains the target, not a claim that all milestones are complete.
 
@@ -274,7 +274,9 @@ The policy increment delivers safe `lines`/`wrap`/`spaces`/`indent` settings wit
 
 The session increment delivers **Save Workspace Session / Restore Workspace Session**: one versioned explicit checkpoint separate from crash recovery, restoring roots, tabs, groups, excerpts and view state. Clean files rebind only after content/etag verification; dirty/conflicting/unavailable files become unsaved copies, preserving existing documents. Fresh manifest/settings and separate trust revalidation apply. `zig build test-m2-sessions` covers 19 native scenarios and 18 backend tests, including publication failure, lexical roots, stale completions and rollback/retry. See [session usage and boundaries](WORKBENCH_M2_SESSIONS.md). No automatic startup resume, quit-time save, per-project history or missing-manifest fallback is implemented.
 
-This is **not completed M2**: docking and multi-window workflows remain. The next standard increment is workbench docking/panel and picker integration, followed by multi-window lifecycle. The delivered fixtures validate bounded increments, not the complete workbench milestone.
+The docking increment delivers native movable/resizable/hideable Explorer and Search docks, activity-rail and keyboard/palette controls, compact-window presentation, central split-group containment and a transient Quick Open overlay. Session v2 persists desired dock layout with v1 default migration; Quick Open and Search deliberately share one query/result controller. `zig build test-m2-docks` covers 27 native scenarios plus dock widgets. See [controls, scope and validation](WORKBENCH_M2_DOCKS.md).
+
+This is **not completed M2**: multi-window lifecycle remains the next standard increment. Automatic/per-project session management, additional pickers and separately authorized filesystem operations remain open items. The delivered fixtures validate bounded increments, not the complete workbench milestone.
 
 ## 11. Validation and release acceptance
 

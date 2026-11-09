@@ -3,6 +3,10 @@
 .coral .status { padding: 5px 12px; font-size: 11px; }
 .coral .notice { padding: 6px 12px; }
 .coral .search { padding: 8px 12px; }
+.coral .activity-rail { padding: 4px; border-right: 1px solid alpha(currentColor, 0.15); }
+.coral .dock { padding: 4px; }
+.coral .dock button { padding: 4px 6px; }
+.coral .quick-picker { background-color: @window_bg_color; border: 1px solid alpha(currentColor, 0.3); border-radius: 10px; box-shadow: 0 8px 24px alpha(black, 0.3); padding: 6px; }
 .coral button { border-radius: 8px; background-image: none; box-shadow: none; padding: 6px 10px; border: 1px solid transparent; }
 .coral button:disabled { opacity: 0.5; }
 .coral button.flat { padding: 4px; border-color: transparent; }

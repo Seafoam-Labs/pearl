@@ -67,7 +67,7 @@ pub fn build(b: *std.Build) void {
     const trust_tests = b.addTest(.{ .root_module = trust_module });
     test_step.dependOn(&b.addRunArtifact(trust_tests).step);
     // Session publication tests fork too; keep them outside the GIO test process.
-    const session_module = b.createModule(.{ .root_source_file = b.path("src/workspace/session_test.zig"), .target = target, .optimize = optimize, .link_libc = true });
+    const session_module = b.createModule(.{ .root_source_file = b.path("src/session_tests.zig"), .target = target, .optimize = optimize, .link_libc = true });
     const session_tests = b.addTest(.{ .root_module = session_module });
     const session_units = b.addRunArtifact(session_tests);
     test_step.dependOn(&session_units.step);
@@ -136,6 +136,13 @@ pub fn build(b: *std.Build) void {
     const m2_sessions = b.step("test-m2-sessions", "Run session units, widgets and native acceptance");
     m2_sessions.dependOn(test_step);
     m2_sessions.dependOn(&sessions.step);
+    const docks = b.addSystemCommand(&.{ "python3", "tests/docks.py", "--binary" });
+    docks.addArtifactArg(ie);
+    docks.addPassthruArgs();
+    b.step("docks", "Run native dock geometry, focus and picker acceptance").dependOn(&docks.step);
+    const m2_docks = b.step("test-m2-docks", "Run dock units, widgets and native acceptance");
+    m2_docks.dependOn(test_step);
+    m2_docks.dependOn(&docks.step);
     const m1 = b.step("test-m1", "Run unit, widget, native, group and recovery acceptance tests");
     m1.dependOn(test_step);
     m1.dependOn(&integration.step);
@@ -158,6 +165,7 @@ pub fn build(b: *std.Build) void {
     m2_search.dependOn(&widgets.step);
     m2_policy.dependOn(&widgets.step);
     m2_sessions.dependOn(&widgets.step);
+    m2_docks.dependOn(&widgets.step);
 
     const bm = createModule(b, .{ .root_source_file = b.path("src/benchmark_m0.zig"), .target = target, .optimize = optimize, .link_libc = true });
     for ([_][]const u8{ "gtk4", "gtksourceview-5", "enchant-2" }) |lib| bm.linkSystemLibrary(lib, .{ .use_pkg_config = .yes });

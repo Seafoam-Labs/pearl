@@ -37,6 +37,8 @@ extern "gtksourceview-5" fn gtk_source_language_get_id(language: *c.GtkSourceLan
 const load_file = @import("platform/load_file.zig");
 const commands = @import("workbench/commands.zig");
 const Palette = @import("workbench/palette.zig").Palette;
+const dock_ui = @import("workbench/dock.zig");
+const dock_layout = @import("workbench/layout.zig");
 const codec = @import("platform/codec.zig");
 const spell = @import("spelling/checker.zig");
 const Settings = @import("platform/settings.zig").Settings;
@@ -55,6 +57,7 @@ pub const App = struct {
     workspace_policy: WorkspacePolicy = undefined,
     session: WorkspaceSession = undefined,
     window: W,
+    dock: dock_ui.Controller = undefined,
     /// Alias of the active group's notebook, retained for tab cycling.
     notebook: W,
     groups: group_model.Groups,
@@ -142,6 +145,7 @@ pub const App = struct {
         c.gtk_menu_button_set_menu_model(u.cast(c.GtkMenuButton, menu), u.cast(c.GMenuModel, model));
         var groups = group_model.Groups.init();
         const notebook = (groups.add() catch @panic("Could not create editor group")).notebook;
+        dock_ui.wrapEditorGroup(groups.root, notebook);
         const searchbox = u.box(false, 4);
         c.gtk_widget_add_css_class(searchbox, "search");
         const row = u.box(true, 6);
@@ -181,11 +185,8 @@ pub const App = struct {
         c.gtk_label_set_wrap(u.cast(c.GtkLabel, notice), 1);
         u.append(root, notice);
         c.gtk_widget_set_visible(notice, 0);
-        const workspace_slot = u.box(false, 0);
-        u.append(root, workspace_slot);
-        const workspace_search_slot = u.box(false, 0);
-        u.append(root, workspace_search_slot);
-        u.append(root, groups.root);
+        const dock = dock_ui.Controller.init(groups.root);
+        u.append(root, dock.root);
         const footer = u.box(true, 8);
         c.gtk_widget_add_css_class(footer, "status");
         const status = u.label("");
@@ -197,10 +198,19 @@ pub const App = struct {
         u.connect(spell_button, "clicked", &onSpelling, self);
         u.append(root, footer);
         self.* = .{ .application = application, .workspace = .init(), .window = window, .notebook = notebook, .groups = groups, .new_button = new, .search_button = search, .searchbox = searchbox, .query = query, .replacement = replacement, .matches = matches, .status = status, .spell_button = spell_button, .notice = notice, .settings = settings, .worker = spell.Worker.start(), .css = c.gtk_css_provider_new().?, .font_css = c.gtk_css_provider_new().? };
-        self.workspace_search = WorkspaceSearch.init(self, workspace_search_slot);
+        self.dock = dock;
+        self.workspace_search = WorkspaceSearch.init(self, self.dock.search_slot);
+        self.workspace_search.present = &presentWorkspaceSearch;
+        self.workspace_search.dismiss = &dismissWorkspaceSearch;
         self.workspace_search.attach();
-        self.browser = WorkspaceController.init(self, workspace_slot);
+        // Dock slots own visibility, including a restored search dock with no
+        // query yet. Restoring presentation never starts a worker or takes focus.
+        self.workspace_search.mode = .text;
+        self.workspace_search.view.setMode(.text);
+        c.gtk_widget_set_visible(self.workspace_search.view.panel, 1);
+        self.browser = WorkspaceController.init(self, self.dock.explorer_slot);
         self.browser.attach();
+        self.dock.attach();
         self.workspace_policy = WorkspacePolicy.init(self);
         self.session = .{ .app = self };
         c.g_weak_ref_init(&self.palette_focus, null);
@@ -215,8 +225,15 @@ pub const App = struct {
         u.connect(notebook, "page-reordered", &onPageReordered, self);
         u.connect(query, "search-changed", &onQuery, self);
         u.connect(query, "activate", &onNext, self);
+        u.connect(query, "stop-search", &onStopSearch, self);
+        const shortcuts = c.gtk_event_controller_key_new().?;
+        c.gtk_event_controller_set_propagation_phase(shortcuts, c.GTK_PHASE_CAPTURE);
+        u.connect(shortcuts, "key-pressed", &onShortcut, self);
+        c.gtk_widget_add_controller(window, shortcuts);
         const keys = c.gtk_event_controller_key_new().?;
-        c.gtk_event_controller_set_propagation_phase(keys, c.GTK_PHASE_CAPTURE);
+        // Only explicit workbench shortcuts are captured. Text editing, IME
+        // composition and widget-local keys get first refusal before fallback.
+        c.gtk_event_controller_set_propagation_phase(keys, c.GTK_PHASE_BUBBLE);
         u.connect(keys, "key-pressed", &onKey, self);
         c.gtk_widget_add_controller(window, keys);
         for (commands.entries) |entry| {
@@ -231,7 +248,29 @@ pub const App = struct {
         c.gtk_window_present(u.cast(c.GtkWindow, window));
         return self;
     }
+    pub fn snapshotDockLayout(self: *App) dock_layout.State {
+        return self.dock.snapshot();
+    }
+    pub fn restoreDockLayout(self: *App, state: dock_layout.State) void {
+        self.dock.restore(state);
+    }
+    pub fn focusEditor(self: *App) void {
+        if (self.closing) return;
+        if (self.activeFocusWidget()) |widget| _ = c.gtk_widget_grab_focus(widget);
+    }
+    fn focusExplorer(self: *App) void {
+        if (self.dock.picking) self.workspace_search.hide();
+        self.dock.show(.explorer);
+        _ = c.gtk_widget_grab_focus(self.browser.rows);
+    }
+    fn hidePanel(self: *App, panel: dock_layout.Panel) void {
+        if (panel == .search) self.workspace_search.hide() else {
+            self.dock.hide(panel);
+            self.focusEditor();
+        }
+    }
     pub fn deinit(self: *App) void {
+        self.dock.shutdown();
         std.debug.assert(!self.preferences_running and self.preferences_pending == null);
         self.session.deinit();
         self.browser.deinit();
@@ -396,6 +435,7 @@ pub const App = struct {
     }
     pub fn createGroup(self: *App) !u64 {
         const group = try self.groups.add();
+        dock_ui.wrapEditorGroup(self.groups.root, group.notebook);
         u.connect(group.notebook, "switch-page", &onSwitch, self);
         u.connect(group.notebook, "page-reordered", &onPageReordered, self);
         self.scheduleCheckpoint();
@@ -404,8 +444,13 @@ pub const App = struct {
     pub fn splitGroup(self: *App) !void {
         const d = self.active() orelse return;
         const id = try self.createGroup();
-        errdefer self.groups.remove(id);
+        errdefer self.removeGroup(id);
         _ = try self.addView(d, id);
+    }
+    fn removeGroup(self: *App, id: u64) void {
+        const group = self.groups.get(id) orelse return;
+        dock_ui.unwrapEditorGroup(self.groups.root, group.notebook);
+        self.groups.remove(id);
     }
     pub fn focusGroup(self: *App, id: u64) void {
         const group = self.groups.get(id) orelse return;
@@ -531,7 +576,7 @@ pub const App = struct {
             if (c.gtk_notebook_get_n_pages(u.cast(c.GtkNotebook, group.notebook)) == 0 and self.closing_group != group.id) {
                 if (self.notebook == group.notebook) self.notebook = self.groups.items.items[if (index == 0) 1 else 0].notebook;
                 _ = c.g_signal_handlers_disconnect_matched(group.notebook, c.G_SIGNAL_MATCH_DATA, 0, 0, null, null, self);
-                self.groups.remove(group.id);
+                self.removeGroup(group.id);
             } else index += 1;
         }
         self.active_page = c.gtk_notebook_get_nth_page(u.cast(c.GtkNotebook, self.notebook), c.gtk_notebook_get_current_page(u.cast(c.GtkNotebook, self.notebook)));
@@ -549,6 +594,11 @@ pub const App = struct {
             excerpt.deinit();
             return err;
         };
+        // The full source path is useful in a tooltip, not as a minimum width
+        // for every homogeneous split in the central editor area.
+        const source_label = c.gtk_widget_get_first_child(editor.root).?;
+        c.gtk_label_set_ellipsize(u.cast(c.GtkLabel, source_label), c.PANGO_ELLIPSIZE_MIDDLE);
+        c.gtk_widget_set_tooltip_text(source_label, header);
         @import("editor_primary.zig").attach(editor.widget, editor.display) catch |err| {
             editor.destroy();
             return err;
@@ -791,7 +841,7 @@ pub const App = struct {
         while (self.groups.items.items.len > groups) {
             const group = self.groups.items.items[self.groups.items.items.len - 1];
             _ = c.g_signal_handlers_disconnect_matched(group.notebook, c.G_SIGNAL_MATCH_DATA, 0, 0, null, null, self);
-            self.groups.remove(group.id);
+            self.removeGroup(group.id);
         }
         self.repairActive();
         if (previous_focus) |id| self.restoreFocus(id);
@@ -1369,6 +1419,7 @@ pub const App = struct {
     fn shutdownWindow(self: *App) void {
         self.checkpoint();
         self.closing = true;
+        self.dock.shutdown();
         self.session.shutdown();
         self.workspace_policy.shutdown();
         self.workspace_search.shutdown();
@@ -1503,6 +1554,7 @@ pub const App = struct {
             return;
         };
         self.styleWindow(self.palette.?.window);
+        testKeys(self, self.palette.?.window);
         self.palette.?.show();
     }
     fn execute(self: *App, command: commands.Command) void {
@@ -1514,12 +1566,33 @@ pub const App = struct {
             .open => self.chooseOpen(),
             .open_folder => self.browser.choose(.folder),
             .open_workspace => self.browser.choose(.manifest),
-            .workspace_roots => self.browser.roots(),
+            .workspace_roots => {
+                self.browser.roots();
+                self.focusExplorer();
+            },
             .workspace_back => self.browser.back(),
             .workspace_rescan => self.browser.rescan(),
             .close_workspace => self.browser.closeWorkspace(),
             .quick_open => self.workspace_search.show(.quick_open),
-            .workspace_search => self.workspace_search.show(.text),
+            .workspace_search, .focus_search => self.workspace_search.show(.text),
+            .focus_explorer => self.focusExplorer(),
+            .toggle_explorer => if (self.dock.visible(.explorer)) self.hidePanel(.explorer) else self.focusExplorer(),
+            .toggle_search => if (self.dock.visible(.search)) self.hidePanel(.search) else self.workspace_search.show(.text),
+            .focus_editor => {
+                if (self.dock.picking) self.workspace_search.hide();
+                self.focusEditor();
+            },
+            .hide_panel => if (self.dock.picking) self.workspace_search.hide() else self.hidePanel(self.dock.state.active),
+            .dock_left => self.dock.move(.left),
+            .dock_right => self.dock.move(.right),
+            .dock_bottom => self.dock.move(.bottom),
+            .dock_grow => self.dock.grow(true),
+            .dock_shrink => self.dock.grow(false),
+            .reset_docks => {
+                if (self.dock.picking) self.workspace_search.hide();
+                self.dock.restore(.{});
+                self.focusEditor();
+            },
             .workspace_policy => self.showPolicy(false),
             .workspace_trust => self.showPolicy(true),
             .workspace_revoke => self.workspace_policy.revoke(),
@@ -1539,6 +1612,12 @@ pub const App = struct {
             .preferences => self.preferences(),
             .close => self.closeActiveView(),
             .split_group => self.splitGroup() catch |err| self.editFailure(err),
+            .next_tab, .previous_tab => {
+                const current = c.gtk_notebook_get_current_page(u.cast(c.GtkNotebook, self.notebook));
+                const count = c.gtk_notebook_get_n_pages(u.cast(c.GtkNotebook, self.notebook));
+                if (count > 0) c.gtk_notebook_set_current_page(u.cast(c.GtkNotebook, self.notebook), @mod(current + if (command == .previous_tab) @as(c_int, -1) else 1, count));
+                self.focusEditor();
+            },
             .focus_next_group => self.cycleGroup(false),
             .focus_previous_group => self.cycleGroup(true),
             .close_group => self.closeGroup(),
@@ -2486,6 +2565,10 @@ fn onSave(_: ?*c.GtkButton, data: ?*anyopaque) callconv(.c) void {
 fn onSearch(_: ?*c.GtkButton, data: ?*anyopaque) callconv(.c) void {
     u.cast(App, data.?).execute(.find);
 }
+fn onStopSearch(_: ?*c.GtkSearchEntry, data: ?*anyopaque) callconv(.c) void {
+    const self = u.cast(App, data.?);
+    if (!self.closing) self.showSearch(false);
+}
 fn onHideSearch(_: ?*c.GtkButton, data: ?*anyopaque) callconv(.c) void {
     u.cast(App, data.?).showSearch(false);
 }
@@ -2657,6 +2740,17 @@ fn onAction(action: ?*c.GSimpleAction, _: ?*c.GVariant, data: ?*anyopaque) callc
     const name = std.mem.span(c.g_action_get_name(u.cast(c.GAction, action.?)));
     if (commands.fromAction(name)) |command| self.execute(command);
 }
+fn presentWorkspaceSearch(self: *App, mode: @import("workspace/search.zig").Mode) void {
+    if (mode == .quick_open) self.dock.presentPicker() else {
+        self.dock.dismissPicker();
+        self.dock.show(.search);
+    }
+}
+fn dismissWorkspaceSearch(self: *App, cancelled: bool) void {
+    if (self.closing) return;
+    if (self.dock.picking) self.dock.dismissPicker() else if (cancelled) self.dock.hide(.search);
+    if (cancelled) self.focusEditor();
+}
 fn paletteCommand(context: *anyopaque, command: commands.Command) void {
     u.cast(App, context).execute(command);
 }
@@ -2675,12 +2769,11 @@ fn paletteClosed(context: *anyopaque) void {
     }
     if (self.activeFocusWidget()) |widget| _ = c.gtk_widget_grab_focus(widget);
 }
-fn onKey(_: ?*c.GtkEventControllerKey, key: c_uint, _: c_uint, state: c.GdkModifierType, data: ?*anyopaque) callconv(.c) c_int {
+fn onTestKey(_: ?*c.GtkEventControllerKey, key: c_uint, _: c_uint, state: c.GdkModifierType, data: ?*anyopaque) callconv(.c) c_int {
     const self = u.cast(App, data.?);
-    const ctrl = state & c.GDK_CONTROL_MASK != 0;
+    if (!test_hooks or self.closing) return 0;
     const shift = state & c.GDK_SHIFT_MASK != 0;
-
-    if (test_hooks and key == c.GDK_KEY_F11) {
+    if (key == c.GDK_KEY_F11) {
         testCommand(self);
         return 1;
     }
@@ -2700,13 +2793,25 @@ fn onKey(_: ?*c.GtkEventControllerKey, key: c_uint, _: c_uint, state: c.GdkModif
         if (self.active()) |d| self.requestSuggestions(d);
         return 1;
     }
-    if (self.dialog != null or self.palette != null) return 0;
+    return 0;
+}
+fn onShortcut(controller: ?*c.GtkEventControllerKey, key: c_uint, code: c_uint, state: c.GdkModifierType, data: ?*anyopaque) callconv(.c) c_int {
+    if (onTestKey(controller, key, code, state, data) != 0) return 1;
+    const self = u.cast(App, data.?);
+    if (self.closing or self.dialog != null or self.palette != null) return 0;
     if (commands.fromKey(key, state)) |command| {
         self.execute(command);
         return 1;
     }
+    return 0;
+}
+fn onKey(_: ?*c.GtkEventControllerKey, key: c_uint, _: c_uint, state: c.GdkModifierType, data: ?*anyopaque) callconv(.c) c_int {
+    const self = u.cast(App, data.?);
+    if (self.closing or self.dialog != null or self.palette != null) return 0;
+    const ctrl = state & c.GDK_CONTROL_MASK != 0;
+    const shift = state & c.GDK_SHIFT_MASK != 0;
     if (key == c.GDK_KEY_Escape) {
-        if (c.gtk_widget_get_visible(self.workspace_search.view.panel) != 0) {
+        if (self.dock.picking or dock_ui.inside(c.gtk_window_get_focus(u.cast(c.GtkWindow, self.window)), self.dock.search_slot)) {
             self.workspace_search.hide();
             return 1;
         }
@@ -2720,12 +2825,6 @@ fn onKey(_: ?*c.GtkEventControllerKey, key: c_uint, _: c_uint, state: c.GdkModif
     }
     if (ctrl) {
         switch (key) {
-            c.GDK_KEY_Tab, c.GDK_KEY_ISO_Left_Tab => {
-                const current = c.gtk_notebook_get_current_page(u.cast(c.GtkNotebook, self.notebook));
-                const count = c.gtk_notebook_get_n_pages(u.cast(c.GtkNotebook, self.notebook));
-                if (count > 0) c.gtk_notebook_set_current_page(u.cast(c.GtkNotebook, self.notebook), @mod(current + if (shift) @as(c_int, -1) else 1, count));
-                if (self.activeFocusWidget()) |widget| _ = c.gtk_widget_grab_focus(widget);
-            },
             c.GDK_KEY_plus, c.GDK_KEY_equal, c.GDK_KEY_minus, c.GDK_KEY_0 => {
                 self.settings.font = if (key == c.GDK_KEY_0) 14 else std.math.clamp(self.settings.font + if (key == c.GDK_KEY_minus) @as(c_int, -1) else 1, 8, 32);
                 self.applySettings();
@@ -2754,7 +2853,7 @@ fn testKeys(self: *App, widget: W) void {
     if (!test_hooks) return;
     const keys = c.gtk_event_controller_key_new().?;
     c.gtk_event_controller_set_propagation_phase(keys, c.GTK_PHASE_CAPTURE);
-    u.connect(keys, "key-pressed", &onKey, self);
+    u.connect(keys, "key-pressed", &onTestKey, self);
     c.gtk_widget_add_controller(widget, keys);
 }
 fn testCommand(self: *App) void {
@@ -2768,10 +2867,22 @@ fn testCommand(self: *App) void {
     if (raw == null) return;
     defer c.g_free(raw);
     const action = std.mem.span(raw);
+
     const value = c.g_key_file_get_string(file, "Test", "value", null);
     defer c.g_free(value);
     const d = self.active();
-    if (std.mem.eql(u8, action, "session-probe")) {
+    if (std.mem.eql(u8, action, "dock-probe")) {
+        self.dock.probe(self.window);
+    } else if (std.mem.eql(u8, action, "dock-resize")) {
+        if (value != null) if (std.meta.stringToEnum(dock_layout.Dock, std.mem.span(value))) |side| {
+            const size = c.g_key_file_get_integer(file, "Test", "size", null);
+            self.dock.resize(side, @intCast(std.math.clamp(size, 0, 65535)));
+        };
+    } else if (std.mem.eql(u8, action, "window-resize")) {
+        const width = c.g_key_file_get_integer(file, "Test", "width", null);
+        const height = c.g_key_file_get_integer(file, "Test", "height", null);
+        c.gtk_window_set_default_size(u.cast(c.GtkWindow, self.window), std.math.clamp(width, 320, 4096), std.math.clamp(height, 240, 2160));
+    } else if (std.mem.eql(u8, action, "session-probe")) {
         self.session.probe();
     } else if (std.mem.eql(u8, action, "session-delay")) {
         const delay = if (value != null) std.fmt.parseInt(u64, std.mem.span(value), 10) catch 0 else 0;

@@ -1,4 +1,5 @@
-//! Explicit saved session v1, independent of crash-recovery journal versions.
+//! Explicit saved session v2, independent of crash-recovery journal versions.
+//! Version 1 remains readable with default dock layout; v2 requires layout.
 //! Wire: header, SHA-256 hex + newline, one-line workspace JSON + newline,
 //! then an unchanged recovery_model encoding (currently v2). The outer checksum
 //! covers BOTH the descriptor and recovery bytes. Paths are native bytes/base64;
@@ -6,6 +7,7 @@
 //! A saved session is the last explicitly accepted checkpoint, not live state.
 const std = @import("std");
 const recovery = @import("recovery_model.zig");
+pub const layout = @import("../workbench/layout.zig");
 const a = std.heap.c_allocator;
 
 pub const limits = struct {
@@ -25,6 +27,7 @@ pub const Workspace = struct {
 pub const Value = struct {
     snapshot: recovery.Snapshot,
     workspace: ?Workspace = null,
+    layout: layout.State = .{},
 };
 
 /// Immutable deep copy; c_allocator-backed ownership may cross worker threads.
@@ -37,11 +40,11 @@ pub const Owned = struct {
         try validate(value);
         const snapshot = try recovery.OwnedSnapshot.create(value.snapshot);
         errdefer snapshot.deinit();
-        return fromSnapshot(snapshot, value.workspace);
+        return fromSnapshot(snapshot, value.workspace, value.layout);
     }
 
     // Consumes snapshot only on success.
-    fn fromSnapshot(snapshot: *recovery.OwnedSnapshot, workspace: ?Workspace) !*Owned {
+    fn fromSnapshot(snapshot: *recovery.OwnedSnapshot, workspace: ?Workspace, dock_layout: layout.State) !*Owned {
         const self = try a.create(Owned);
         errdefer a.destroy(self);
         var arena = std.heap.ArenaAllocator.init(a);
@@ -56,7 +59,7 @@ pub const Owned = struct {
             }
             copied = .{ .source = w.source, .path = try alloc.dupe(u8, w.path), .roots = roots };
         }
-        self.* = .{ .value = .{ .snapshot = snapshot.value, .workspace = copied }, .arena = arena, .snapshot_owner = snapshot };
+        self.* = .{ .value = .{ .snapshot = snapshot.value, .workspace = copied, .layout = dock_layout }, .arena = arena, .snapshot_owner = snapshot };
         return self;
     }
 
@@ -87,6 +90,7 @@ fn validateWorkspace(workspace: ?Workspace) !void {
 fn validate(value: Value) !void {
     try recovery.validate(value.snapshot);
     try validateWorkspace(value.workspace);
+    try layout.validate(value.layout);
     // Recovery validates bounds and excerpt boundaries. Also reject directed
     // selections into continuation bytes, before any later GTK conversion.
     for (value.snapshot.views) |view| {
@@ -102,9 +106,11 @@ fn validate(value: Value) !void {
 
 const WireRoot = struct { path: []const u8, name: []const u8 };
 const WireWorkspace = struct { source: @FieldType(Workspace, "source"), path: []const u8, roots: []const WireRoot };
-const Descriptor = struct { workspace: ?WireWorkspace };
+const DescriptorV1 = struct { workspace: ?WireWorkspace };
+const Descriptor = struct { workspace: ?WireWorkspace, layout: layout.State };
 const magic = "CORAL-SESSION ";
-const header = magic ++ "1\n";
+const header = magic ++ "2\n";
+const legacy_header = magic ++ "1\n";
 const digest_len = 64;
 const prefix_len = header.len + digest_len + 1;
 
@@ -139,7 +145,7 @@ pub fn encode(allocator: std.mem.Allocator, value: Value) ![]u8 {
         for (w.roots, roots) |root, *out| out.* = .{ .path = try b64(temp, root.path), .name = root.name };
         workspace = .{ .source = w.source, .path = try b64(temp, w.path), .roots = roots };
     }
-    const json = try std.json.Stringify.valueAlloc(temp, Descriptor{ .workspace = workspace }, .{});
+    const json = try std.json.Stringify.valueAlloc(temp, Descriptor{ .workspace = workspace, .layout = value.layout }, .{});
     if (json.len > limits.descriptor_bytes) return error.TooLarge;
     const snapshot = try recovery.encode(temp, value.snapshot);
     const out = try allocator.alloc(u8, prefix_len + json.len + 1 + snapshot.len);
@@ -156,7 +162,8 @@ pub fn encode(allocator: std.mem.Allocator, value: Value) ![]u8 {
 pub fn decode(bytes: []const u8) !*Owned {
     if (bytes.len > limits.session_bytes) return error.TooLarge;
     if (!std.mem.startsWith(u8, bytes, magic)) return error.CorruptSession;
-    if (!std.mem.startsWith(u8, bytes, header)) return error.UnsupportedVersion;
+    const legacy = std.mem.startsWith(u8, bytes, legacy_header);
+    if (!legacy and !std.mem.startsWith(u8, bytes, header)) return error.UnsupportedVersion;
     if (bytes.len < prefix_len or bytes[prefix_len - 1] != '\n') return error.CorruptSession;
     const payload = bytes[prefix_len..];
     if (!std.mem.eql(u8, bytes[header.len..][0..digest_len], &digest(payload))) return error.CorruptSession;
@@ -165,13 +172,13 @@ pub fn decode(bytes: []const u8) !*Owned {
     const memory = try a.alloc(u8, limits.descriptor_bytes * 4);
     defer a.free(memory);
     var fixed = std.heap.FixedBufferAllocator.init(memory);
-    return decodePayload(fixed.allocator(), payload[0..end], payload[end + 1 ..]) catch |err| switch (err) {
+    return (if (legacy) decodePayload(true, fixed.allocator(), payload[0..end], payload[end + 1 ..]) else decodePayload(false, fixed.allocator(), payload[0..end], payload[end + 1 ..])) catch |err| switch (err) {
         error.OutOfMemory => error.TooLarge,
         else => err,
     };
 }
-fn decodePayload(temp: std.mem.Allocator, json: []const u8, snapshot_bytes: []const u8) !*Owned {
-    const parsed = std.json.parseFromSlice(Descriptor, temp, json, .{ .allocate = .alloc_always, .max_value_len = limits.descriptor_bytes }) catch |err| switch (err) {
+fn decodePayload(comptime legacy: bool, temp: std.mem.Allocator, json: []const u8, snapshot_bytes: []const u8) !*Owned {
+    const parsed = std.json.parseFromSlice(if (legacy) DescriptorV1 else Descriptor, temp, json, .{ .allocate = .alloc_always, .max_value_len = limits.descriptor_bytes }) catch |err| switch (err) {
         error.OutOfMemory => return error.TooLarge,
         else => return error.CorruptSession,
     };
@@ -186,6 +193,7 @@ fn decodePayload(temp: std.mem.Allocator, json: []const u8, snapshot_bytes: []co
     try validateWorkspace(workspace);
     const snapshot = try recovery.decode(snapshot_bytes);
     errdefer snapshot.deinit();
-    try validate(.{ .snapshot = snapshot.value, .workspace = workspace });
-    return Owned.fromSnapshot(snapshot, workspace);
+    const dock_layout: layout.State = if (legacy) .{} else parsed.value.layout;
+    try validate(.{ .snapshot = snapshot.value, .workspace = workspace, .layout = dock_layout });
+    return Owned.fromSnapshot(snapshot, workspace, dock_layout);
 }

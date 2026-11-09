@@ -1,5 +1,5 @@
-//! Standalone backend tests: zig test src/workspace/session_test.zig -lc
-//! No GTK, pearl_app_c, build changes, or test-root integration required.
+//! Standalone backend tests: zig test src/session_tests.zig -lc
+//! Separate from GTK/GIO worker tests because publication tests fork.
 const std = @import("std");
 const model = @import("session_model.zig");
 const fs = @import("session_fs.zig");
@@ -114,7 +114,7 @@ fn chmod(path: [:0]const u8, mode: std.c.mode_t) !void {
 test "explicit session owns and roundtrips binary paths, metadata, excerpts and untitled bytes" {
     const encoded = try model.encode(a, sample);
     defer a.free(encoded);
-    try expect(std.mem.startsWith(u8, encoded, "CORAL-SESSION 1\n"));
+    try expect(std.mem.startsWith(u8, encoded, "CORAL-SESSION 2\n"));
     try expect(std.mem.indexOf(u8, encoded, "\nCORAL-RECOVERY 2\n") != null);
     try expect(std.mem.indexOf(u8, encoded, sample.workspace.?.path) == null);
     const decoded = try model.decode(encoded);
@@ -133,6 +133,60 @@ test "explicit session owns and roundtrips binary paths, metadata, excerpts and 
     const folder_owned = try model.decode(folder_bytes);
     defer folder_owned.deinit();
     try equal(.folder, folder_owned.value.workspace.?.source);
+}
+
+test "v2 preserves desired dock state and v1 migrates to defaults" {
+    var value = sample;
+    value.layout = .{ .explorer = .right, .search = .left, .explorer_visible = false, .search_visible = true, .active = .search, .left_size = 455, .right_size = 521, .bottom_size = 309 };
+    const encoded = try model.encode(a, value);
+    defer a.free(encoded);
+    const decoded = try model.decode(encoded);
+    defer decoded.deinit();
+    try std.testing.expectEqualDeep(value.layout, decoded.value.layout);
+    const owned = try model.Owned.create(value);
+    defer owned.deinit();
+    try std.testing.expectEqualDeep(value.layout, owned.value.layout);
+    const snapshot = try recovery.encode(a, sample.snapshot);
+    defer a.free(snapshot);
+    const legacy = try wire("{\"workspace\":null}", snapshot);
+    defer a.free(legacy);
+    const migrated = try model.decode(legacy);
+    defer migrated.deinit();
+    try std.testing.expectEqualDeep(model.layout.State{}, migrated.value.layout);
+    const upgraded = try model.encode(a, migrated.value);
+    defer a.free(upgraded);
+    try expect(std.mem.startsWith(u8, upgraded, "CORAL-SESSION 2\n"));
+}
+
+test "v2 requires valid bounded layout and v1 refuses future layout fields" {
+    const snapshot = try recovery.encode(a, newer.snapshot);
+    defer a.free(snapshot);
+    for ([_][]const u8{
+        "{\"workspace\":null}",
+        "{\"workspace\":null,\"layout\":null}",
+        "{\"workspace\":null,\"layout\":{\"explorer\":\"floating\"}}",
+        "{\"workspace\":null,\"layout\":{\"trust\":true}}",
+        "{\"workspace\":null,\"layout\":{\"left_size\":-1}}",
+        "{\"workspace\":null,\"layout\":{},\"layout\":{}}",
+    }) |json| {
+        const payload = try std.fmt.allocPrint(a, "{s}\n{s}", .{ json, snapshot });
+        defer a.free(payload);
+        const encoded = try frame("CORAL-SESSION 2\n", payload);
+        defer a.free(encoded);
+        try expectError(error.CorruptSession, model.decode(encoded));
+    }
+    const legacy_extra = try wire("{\"workspace\":null,\"layout\":{}}", snapshot);
+    defer a.free(legacy_extra);
+    try expectError(error.CorruptSession, model.decode(legacy_extra));
+    var invalid = newer;
+    invalid.layout.left_size = 119;
+    try expectError(error.InvalidLayout, model.encode(a, invalid));
+    try expectError(error.InvalidLayout, model.Owned.create(invalid));
+    const payload = try std.fmt.allocPrint(a, "{{\"workspace\":null,\"layout\":{{\"bottom_size\":1001}}}}\n{s}", .{snapshot});
+    defer a.free(payload);
+    const encoded = try frame("CORAL-SESSION 2\n", payload);
+    defer a.free(encoded);
+    try expectError(error.InvalidLayout, model.decode(encoded));
 }
 
 test "strict version, checksum, schema, required fields and base64" {

@@ -14,7 +14,7 @@ Open a folder or workspace first, then use:
 | Dismiss | Escape; cancels outstanding work and restores editor focus |
 | Refresh | Explicitly rerun the current query against current files/buffers |
 
-Both commands are also in the menu/command palette. Results use recycled GTK list rows, with root-qualified identities; text matches are grouped by root and file. Opening a result uses the captured active editor group. Quick Open closes after successful activation; text search remains available beside the editor workflow.
+Both commands are also in the menu/command palette. Results use recycled GTK list rows, with root-qualified identities; text matches are grouped by root and file. Opening a result uses the captured active editor group. Quick Open closes after successful activation; text search remains available beside the editor workflow. Quick Open now uses an in-window overlay and text Search uses a movable dock. They share one query/result controller; switching modes replaces results rather than starting a second independent search. See [dock/picker controls](WORKBENCH_M2_DOCKS.md).
 
 Quick Open ranks subsequence matches, preferring consecutive matches, boundaries, basename matches and shorter paths. It retains the best **128 evaluated candidates**, not an unlimited project index. Empty Quick Open queries are allowed. Text queries must be nonempty; matches are nonoverlapping. Both modes use Unicode simple lowercase, **not** normalization, full case folding, regex or locale-specific tailoring.
 
@@ -120,4 +120,4 @@ Evidence: `pearl/.cache/coral-search/results.json` and adjacent screenshots/sess
 
 ## Next M2 work
 
-[Safe settings precedence/provenance and persistent machine-owned trust](WORKBENCH_M2_POLICY.md) are now implemented. Workspace/session restoration comes next, followed by docking and multi-window lifecycle. Persistent indexing is not supplied by this on-demand scanner. LSP, Git and agents remain later milestones.
+[Safe settings precedence/provenance and persistent machine-owned trust](WORKBENCH_M2_POLICY.md) are now implemented. [Explicit sessions](WORKBENCH_M2_SESSIONS.md) and [native docks/picker integration](WORKBENCH_M2_DOCKS.md) are also implemented. Multi-window lifecycle comes next. Persistent indexing is not supplied by this on-demand scanner. LSP, Git and agents remain later milestones.

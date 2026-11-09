@@ -61,6 +61,8 @@ const Navigation = struct {
 pub const Controller = struct {
     app: *App,
     view: View,
+    present: ?*const fn (*App, search.Mode) void = null,
+    dismiss: ?*const fn (*App, bool) void = null,
     mode: search.Mode = .quick_open,
     query: []const u8 = "",
     generation: u64 = 1,
@@ -119,18 +121,22 @@ pub const Controller = struct {
     pub fn show(self: *Controller, mode: search.Mode) void {
         if (self.closed) return;
         self.mode = mode;
+        if (self.present) |present| present(self.app, mode);
         self.view.show(mode);
         self.refresh();
     }
     pub fn hide(self: *Controller) void {
         if (self.closed) return;
         self.invalidate("Search cancelled.");
-        c.gtk_widget_set_visible(self.view.panel, 0);
-        if (self.app.activeWidget()) |widget| _ = c.gtk_widget_grab_focus(widget);
+        if (self.dismiss) |dismiss| dismiss(self.app, true) else {
+            c.gtk_widget_set_visible(self.view.panel, 0);
+            self.app.focusEditor();
+        }
     }
     pub fn setQuery(self: *Controller, mode: search.Mode, text: []const u8) void {
         if (self.closed) return;
         self.mode = mode;
+        if (self.present) |present| present(self.app, mode);
         self.view.show(mode);
         self.view.setQuery(text);
         self.refresh();
@@ -464,6 +470,7 @@ pub const Controller = struct {
         });
         defer a.free(label);
         u.setLabel(self.view.status, label);
+        c.gtk_widget_set_tooltip_text(self.view.status, label);
     }
     pub fn activate(self: *Controller, index: usize) void {
         if (!self.validGeneration(self.generation) or index >= self.results.items.len) {
@@ -532,7 +539,11 @@ pub const Controller = struct {
             return;
         };
         self.activations += 1;
-        if (self.mode == .quick_open) c.gtk_widget_set_visible(self.view.panel, 0);
+        // Do not invalidate the generation/navigation when dismissing a
+        // committed Quick Open. Explicit cancellation goes through hide().
+        if (self.mode == .quick_open) {
+            if (self.dismiss) |dismiss| dismiss(self.app, false) else c.gtk_widget_set_visible(self.view.panel, 0);
+        }
     }
     pub fn probe(self: *Controller) void {
         if (!hooks) return;
@@ -549,7 +560,7 @@ pub const Controller = struct {
             .status = self.status,
             .stale = self.stale,
             .complete = self.status == .complete and !self.stale and (if (self.snapshot) |s| s.unavailable_roots == 0 else false),
-            .visible = c.gtk_widget_get_visible(self.view.panel) != 0,
+            .visible = c.gtk_widget_is_visible(self.view.panel) != 0,
             .pending = self.pending,
             .active = self.active != null,
             .recursive_monitoring = false,

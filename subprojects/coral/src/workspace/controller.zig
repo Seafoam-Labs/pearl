@@ -69,6 +69,15 @@ pub const Controller = struct {
 
     pub fn init(app: *App, parent: u.W) Controller {
         const panel = u.box(false, 4);
+        c.gtk_widget_set_focusable(panel, 1);
+        c.gtk_widget_set_vexpand(panel, 1);
+        const open_bar = u.box(true, 4);
+        u.append(panel, open_bar);
+        inline for (.{ .{ "Open Folder…", "app.open-folder" }, .{ "Workspace…", "app.open-workspace" } }) |item| {
+            const button = u.button(item[0]);
+            c.gtk_actionable_set_action_name(u.cast(c.GtkActionable, button), item[1]);
+            u.append(open_bar, button);
+        }
         const banner = u.label("Restricted explorer · 256-entry page windows · no auto-execution");
         c.gtk_label_set_wrap(u.cast(c.GtkLabel, banner), 1);
         u.append(panel, banner);
@@ -89,14 +98,16 @@ pub const Controller = struct {
         c.gtk_label_set_ellipsize(u.cast(c.GtkLabel, status), c.PANGO_ELLIPSIZE_MIDDLE);
         u.append(panel, status);
         const scroll = c.gtk_scrolled_window_new().?;
-        c.gtk_widget_set_size_request(scroll, -1, 155);
+        c.gtk_widget_set_vexpand(scroll, 1);
+        c.gtk_scrolled_window_set_policy(u.cast(c.GtkScrolledWindow, scroll), c.GTK_POLICY_NEVER, c.GTK_POLICY_AUTOMATIC);
+        c.gtk_scrolled_window_set_min_content_height(u.cast(c.GtkScrolledWindow, scroll), 40);
         const view = explorer.View.init();
         const rows = view.widget;
         u.connect(rows, "activate", &rowActivated, app);
         c.gtk_scrolled_window_set_child(u.cast(c.GtkScrolledWindow, scroll), rows);
         u.append(panel, scroll);
         u.append(parent, panel);
-        c.gtk_widget_set_visible(panel, 0);
+        u.setLabel(status, "Open a folder or workspace to browse files.");
         return .{ .app = app, .requests = .init(), .panel = panel, .status = status, .policy_status = banner, .rows = rows, .view = view };
     }
 
@@ -133,6 +144,10 @@ pub const Controller = struct {
         self.relative = "";
     }
     fn clearRows(self: *Controller) void {
+        const focus = c.gtk_window_get_focus(u.cast(c.GtkWindow, self.app.window));
+        // GtkListView can leave GtkRoot.focus on an unparented list item when
+        // its model is emptied. Park it before splicing, not after destruction.
+        if (@import("../workbench/dock.zig").inside(focus, self.rows)) _ = c.gtk_widget_grab_focus(self.panel);
         self.view.clear();
         self.tree.rows.clearRetainingCapacity();
     }
@@ -177,7 +192,7 @@ pub const Controller = struct {
         self.app.workspace_policy.modelChanged();
         if (!self.closed) {
             self.clearRows();
-            c.gtk_widget_set_visible(self.panel, 0);
+            u.setLabel(self.status, "Open a folder or workspace to browse files.");
             self.app.refreshWorkspaceLabels();
         }
     }
@@ -236,6 +251,7 @@ pub const Controller = struct {
     pub fn load(self: *Controller, source: Source, path: []const u8) void {
         if (!self.admit(path, null)) return;
         const token = self.beginRequest() orelse return;
+        self.app.dock.show(.explorer);
         self.loadRequest(source, path, token);
     }
     /// Explicit session restore uses the ordinary watched load/policy pipeline.
@@ -274,6 +290,7 @@ pub const Controller = struct {
         }
         if (!self.admit("", null)) return;
         const token = self.beginRequest() orelse return;
+        self.app.dock.show(.explorer);
         const choice = a.create(Choice) catch unreachable;
         choice.* = .{ .controller = self, .source = source, .token = token };
         self.choosing = true;
@@ -497,6 +514,13 @@ pub const Controller = struct {
         if (self.closed) return;
         self.rendering = true;
         defer self.rendering = false;
+        const window = u.cast(c.GtkWindow, self.app.window);
+        const had_list_focus = @import("../workbench/dock.zig").inside(c.gtk_window_get_focus(window), self.rows);
+        defer if (had_list_focus and c.gtk_window_get_focus(window) == self.panel and c.gtk_widget_get_mapped(self.rows) != 0) {
+            // Preserve list focus, never take it from an editor/query or reopen
+            // a hidden dock when a watcher publishes a new page.
+            _ = c.gtk_widget_grab_focus(self.rows);
+        };
         self.clearRows();
         if (self.model) |snapshot| for (snapshot.roots) |root| {
             if (self.tree.find(root.id, "")) |i| {
@@ -702,7 +726,6 @@ pub const Controller = struct {
             self.invalidateLoaded();
             self.app.workspace_policy.modelChanged();
             self.render();
-            c.gtk_widget_set_visible(self.panel, 1);
             return;
         };
         self.retireBrowse();

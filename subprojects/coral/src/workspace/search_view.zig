@@ -26,30 +26,33 @@ pub const View = struct {
     pub fn init(parent: u.W, context: *anyopaque, changed: *const fn (*anyopaque) void, activate: *const fn (*anyopaque, usize) void, refresh: *const fn (*anyopaque) void, close: *const fn (*anyopaque) void) View {
         const panel = u.box(false, 4);
         u.margin(panel, 6);
-        const title = u.label("Quick Open · Ctrl+P");
+        c.gtk_widget_set_vexpand(panel, 1);
+        const title = u.label("Workspace search");
+        c.gtk_label_set_wrap(u.cast(c.GtkLabel, title), 1);
         u.append(panel, title);
-        const bar = u.box(true, 6);
+        const bar = u.box(true, 4);
         u.append(panel, bar);
         const entry = c.gtk_entry_new().?;
         c.gtk_entry_set_max_length(u.cast(c.GtkEntry, entry), 1024);
         c.gtk_widget_set_hexpand(entry, 1);
+        c.gtk_editable_set_width_chars(u.cast(c.GtkEditable, entry), 6);
         c.gtk_accessible_update_property(u.cast(c.GtkAccessible, entry), @as(c_int, c.GTK_ACCESSIBLE_PROPERTY_LABEL), @as([*:0]const u8, "Workspace search query"), @as(c_int, -1));
         u.append(bar, entry);
-        const refresh_button = u.button("Refresh");
+        const refresh_button = u.icon("view-refresh-symbolic", "Refresh shared search results");
         u.append(bar, refresh_button);
-
-        const close_button = u.button("Close search");
+        const close_button = u.icon("window-close-symbolic", "Close search · Escape");
         u.append(bar, close_button);
 
         const status = u.label("Open a workspace to search.");
-        c.gtk_label_set_wrap(u.cast(c.GtkLabel, status), 1);
+        c.gtk_label_set_ellipsize(u.cast(c.GtkLabel, status), c.PANGO_ELLIPSIZE_END);
         u.append(panel, status);
         const list = explorer.View.init();
         c.gtk_list_view_set_single_click_activate(u.cast(c.GtkListView, list.widget), 0);
         const scroll = c.gtk_scrolled_window_new().?;
         c.gtk_scrolled_window_set_policy(u.cast(c.GtkScrolledWindow, scroll), c.GTK_POLICY_NEVER, c.GTK_POLICY_AUTOMATIC);
         c.gtk_scrolled_window_set_child(u.cast(c.GtkScrolledWindow, scroll), list.widget);
-        c.gtk_widget_set_size_request(scroll, -1, 180);
+        c.gtk_widget_set_vexpand(scroll, 1);
+        c.gtk_scrolled_window_set_min_content_height(u.cast(c.GtkScrolledWindow, scroll), 40);
         u.append(panel, scroll);
         u.append(parent, panel);
         c.gtk_widget_set_visible(panel, 0);
@@ -64,19 +67,22 @@ pub const View = struct {
         u.connect(self.entry, "activate", &entryActivated, self);
         u.connect(self.list.widget, "activate", &rowActivated, self);
         self.keys = c.gtk_event_controller_key_new().?;
-        c.gtk_event_controller_set_propagation_phase(self.keys, c.GTK_PHASE_CAPTURE);
+        c.gtk_event_controller_set_propagation_phase(self.keys, c.GTK_PHASE_BUBBLE);
         u.connect(self.keys, "key-pressed", &keyPressed, self);
         c.gtk_widget_add_controller(self.entry, self.keys);
         const list_keys = c.gtk_event_controller_key_new().?;
-        c.gtk_event_controller_set_propagation_phase(list_keys, c.GTK_PHASE_CAPTURE);
+        c.gtk_event_controller_set_propagation_phase(list_keys, c.GTK_PHASE_BUBBLE);
         u.connect(list_keys, "key-pressed", &keyPressed, self);
         c.gtk_widget_add_controller(self.list.widget, list_keys);
     }
     pub fn deinit(self: *View) void {
         self.rows.deinit(a);
     }
+    pub fn setMode(self: *View, mode: search.Mode) void {
+        u.setLabel(self.title, if (mode == .quick_open) "Quick Open · query/results shared with Search" else "Text search · query/results shared with Quick Open");
+    }
     pub fn show(self: *View, mode: search.Mode) void {
-        u.setLabel(self.title, if (mode == .quick_open) "Quick Open · Ctrl+P — ranked paths" else "Workspace text search · Ctrl+Shift+F — literal, case-insensitive");
+        self.setMode(mode);
         c.gtk_widget_set_visible(self.panel, 1);
         _ = c.gtk_widget_grab_focus(self.entry);
     }

@@ -403,7 +403,9 @@ def damaged_slot(h, future):
     h.save_session()
     valid = h.checkpoint_bytes('valid')
     h.stop()
-    damaged = valid.replace(b'CORAL-SESSION 1\n', b'CORAL-SESSION 999\n', 1) if future else b'not a session\n'
+    header, payload = valid.split(b'\n', 1)
+    assert header in (b'CORAL-SESSION 1', b'CORAL-SESSION 2'), header
+    damaged = b'CORAL-SESSION 999\n' + payload if future else b'not a session\n'
     assert damaged != valid
     h.slot.write_bytes(damaged)
     h.launch()

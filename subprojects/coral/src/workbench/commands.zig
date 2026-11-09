@@ -38,6 +38,20 @@ pub const Command = enum {
     workspace_revoke,
     save_workspace_session,
     restore_workspace_session,
+    toggle_explorer,
+    toggle_search,
+    focus_explorer,
+    focus_search,
+    focus_editor,
+    hide_panel,
+    dock_left,
+    dock_right,
+    dock_bottom,
+    reset_docks,
+    dock_grow,
+    dock_shrink,
+    next_tab,
+    previous_tab,
 
     pub fn metadata(self: Command) Metadata {
         return entries[@backingInt(self)];
@@ -80,6 +94,20 @@ pub const Command = enum {
             .workspace_revoke => i18n.dtr("coral", "Workspace: Revoke trust"),
             .save_workspace_session => i18n.dtr("coral", "Save Workspace Session"),
             .restore_workspace_session => i18n.dtr("coral", "Restore Workspace Session"),
+            .toggle_explorer => i18n.dtr("coral", "Toggle Explorer dock"),
+            .toggle_search => i18n.dtr("coral", "Toggle Search dock"),
+            .focus_explorer => i18n.dtr("coral", "Focus Explorer"),
+            .focus_search => i18n.dtr("coral", "Focus Search"),
+            .focus_editor => i18n.dtr("coral", "Focus editor"),
+            .hide_panel => i18n.dtr("coral", "Hide active panel"),
+            .dock_left => i18n.dtr("coral", "Move active panel left"),
+            .dock_right => i18n.dtr("coral", "Move active panel right"),
+            .dock_bottom => i18n.dtr("coral", "Move active panel bottom"),
+            .reset_docks => i18n.dtr("coral", "Reset dock layout"),
+            .dock_grow => i18n.dtr("coral", "Grow active dock"),
+            .dock_shrink => i18n.dtr("coral", "Shrink active dock"),
+            .next_tab => i18n.dtr("coral", "Next editor tab"),
+            .previous_tab => i18n.dtr("coral", "Previous editor tab"),
         };
     }
 };
@@ -128,6 +156,20 @@ pub const entries = [_]Metadata{
     .{ .command = .workspace_revoke, .action = "workspace-revoke", .detailed_action = "app.workspace-revoke", .label = "Workspace: Revoke trust", .shortcut = null },
     .{ .command = .save_workspace_session, .action = "save-workspace-session", .detailed_action = "app.save-workspace-session", .label = "Save Workspace Session", .shortcut = null },
     .{ .command = .restore_workspace_session, .action = "restore-workspace-session", .detailed_action = "app.restore-workspace-session", .label = "Restore Workspace Session", .shortcut = null },
+    .{ .command = .toggle_explorer, .action = "toggle-explorer", .detailed_action = "app.toggle-explorer", .label = "Toggle Explorer dock", .shortcut = "Ctrl+B" },
+    .{ .command = .toggle_search, .action = "toggle-search", .detailed_action = "app.toggle-search", .label = "Toggle Search dock", .shortcut = null },
+    .{ .command = .focus_explorer, .action = "focus-explorer", .detailed_action = "app.focus-explorer", .label = "Focus Explorer", .shortcut = "Ctrl+Shift+E" },
+    .{ .command = .focus_search, .action = "focus-search", .detailed_action = "app.focus-search", .label = "Focus Search", .shortcut = null },
+    .{ .command = .focus_editor, .action = "focus-editor", .detailed_action = "app.focus-editor", .label = "Focus editor", .shortcut = "Ctrl+1" },
+    .{ .command = .hide_panel, .action = "hide-panel", .detailed_action = "app.hide-panel", .label = "Hide active panel", .shortcut = "Ctrl+Shift+B" },
+    .{ .command = .dock_left, .action = "dock-left", .detailed_action = "app.dock-left", .label = "Move active panel left", .shortcut = "Ctrl+Alt+Left" },
+    .{ .command = .dock_right, .action = "dock-right", .detailed_action = "app.dock-right", .label = "Move active panel right", .shortcut = "Ctrl+Alt+Right" },
+    .{ .command = .dock_bottom, .action = "dock-bottom", .detailed_action = "app.dock-bottom", .label = "Move active panel bottom", .shortcut = "Ctrl+Alt+Down" },
+    .{ .command = .reset_docks, .action = "reset-docks", .detailed_action = "app.reset-docks", .label = "Reset dock layout", .shortcut = null },
+    .{ .command = .dock_grow, .action = "dock-grow", .detailed_action = "app.dock-grow", .label = "Grow active dock", .shortcut = "Ctrl+Alt+PageUp" },
+    .{ .command = .dock_shrink, .action = "dock-shrink", .detailed_action = "app.dock-shrink", .label = "Shrink active dock", .shortcut = "Ctrl+Alt+PageDown" },
+    .{ .command = .next_tab, .action = "next-tab", .detailed_action = "app.next-tab", .label = "Next editor tab", .shortcut = "Ctrl+Tab" },
+    .{ .command = .previous_tab, .action = "previous-tab", .detailed_action = "app.previous-tab", .label = "Previous editor tab", .shortcut = "Ctrl+Shift+Tab" },
 };
 
 pub fn fromAction(action: []const u8) ?Command {
@@ -139,7 +181,8 @@ pub fn fromAction(action: []const u8) ?Command {
 
 /// GDK keyvals/modifier bits, kept independent of GTK so these tests need no
 /// native libraries or display. Lock and mouse-button state are irrelevant;
-/// Alt, Super, Hyper, Meta (and unknown modifier bits) must not become commands.
+/// Only explicitly registered modifier combinations become commands; Super,
+/// Hyper, Meta and unknown modifier bits never do.
 pub fn fromKey(key: u32, state: u32) ?Command {
     const shift = 1 << 0;
     const lock = 1 << 1;
@@ -147,7 +190,18 @@ pub fn fromKey(key: u32, state: u32) ?Command {
     const buttons = 0x1f << 8;
     const modifiers = state & ~@as(u32, lock | buttons);
     const lower = if (key >= 'A' and key <= 'Z') key + ('a' - 'A') else key;
+    if (modifiers == ctrl | (1 << 3)) return switch (key) {
+        0xff51 => .dock_left,
+        0xff53 => .dock_right,
+        0xff54 => .dock_bottom,
+        0xff55 => .dock_grow,
+        0xff56 => .dock_shrink,
+        else => null,
+    };
     if (modifiers == ctrl | shift) return switch (lower) {
+        0xff09, 0xfe20 => .previous_tab, // Tab and ISO_Left_Tab
+        'e' => .focus_explorer,
+        'b' => .hide_panel,
         's' => .save_as,
         'p' => .command_palette,
         'f' => .workspace_search,
@@ -156,6 +210,10 @@ pub fn fromKey(key: u32, state: u32) ?Command {
     if (modifiers == shift and key == 0xffc7) return .spelling; // GDK_KEY_F10
     if (modifiers != ctrl) return null;
     return switch (lower) {
+        0xff09 => .next_tab,
+        0xfe20 => .previous_tab,
+        'b' => .toggle_explorer,
+        '1' => .focus_editor,
         'n' => .new,
         'o' => .open,
         'p' => .quick_open,
@@ -172,7 +230,7 @@ pub fn fromKey(key: u32, state: u32) ?Command {
 
 test "registry is exhaustive, ordered and has unique stable actions" {
     try std.testing.expectEqual(@typeInfo(Command).@"enum".field_names.len, entries.len);
-    const actions = [_][]const u8{ "new", "open", "save", "save-as", "reload", "find", "goto", "spelling", "preferences", "about", "close", "quit", "command-palette", "split-group", "focus-next-group", "focus-previous-group", "close-group", "excerpt", "grouped-undo", "grouped-redo", "open-folder", "open-workspace", "workspace-roots", "workspace-back", "workspace-rescan", "close-workspace", "quick-open", "workspace-search", "workspace-policy", "workspace-trust", "workspace-revoke", "save-workspace-session", "restore-workspace-session" };
+    const actions = [_][]const u8{ "new", "open", "save", "save-as", "reload", "find", "goto", "spelling", "preferences", "about", "close", "quit", "command-palette", "split-group", "focus-next-group", "focus-previous-group", "close-group", "excerpt", "grouped-undo", "grouped-redo", "open-folder", "open-workspace", "workspace-roots", "workspace-back", "workspace-rescan", "close-workspace", "quick-open", "workspace-search", "workspace-policy", "workspace-trust", "workspace-revoke", "save-workspace-session", "restore-workspace-session", "toggle-explorer", "toggle-search", "focus-explorer", "focus-search", "focus-editor", "hide-panel", "dock-left", "dock-right", "dock-bottom", "reset-docks", "dock-grow", "dock-shrink", "next-tab", "previous-tab" };
     for (entries, actions, 0..) |entry, action, index| {
         try std.testing.expectEqual(index, @backingInt(entry.command));
         try std.testing.expectEqualStrings(action, entry.action);
@@ -196,6 +254,24 @@ test "workspace sessions are explicit palette actions without automatic shortcut
     }
     try std.testing.expectEqualStrings("Save Workspace Session", Command.save_workspace_session.metadata().label);
     try std.testing.expectEqualStrings("Restore Workspace Session", Command.restore_workspace_session.metadata().label);
+}
+
+test "dock shortcuts are explicit and do not claim unmodified typing or AltGr letters" {
+    try std.testing.expectEqual(Command.toggle_explorer, fromKey('b', 4).?);
+    try std.testing.expectEqual(Command.focus_explorer, fromKey('E', 5).?);
+    try std.testing.expectEqual(Command.focus_editor, fromKey('1', 4).?);
+    try std.testing.expectEqual(Command.hide_panel, fromKey('B', 5).?);
+    try std.testing.expectEqual(Command.dock_left, fromKey(0xff51, 12).?);
+    try std.testing.expectEqual(Command.dock_right, fromKey(0xff53, 12).?);
+    try std.testing.expectEqual(Command.dock_bottom, fromKey(0xff54, 12).?);
+    try std.testing.expectEqual(Command.dock_grow, fromKey(0xff55, 12).?);
+    try std.testing.expectEqual(Command.dock_shrink, fromKey(0xff56, 12).?);
+    for ([_]u32{ 'b', 'e', '1', 0xff51, 0xff53, 0xff54 }) |key| {
+        try std.testing.expectEqual(@as(?Command, null), fromKey(key, 0));
+        try std.testing.expectEqual(@as(?Command, null), fromKey(key, 8));
+        try std.testing.expectEqual(@as(?Command, null), fromKey(key, 4 | (1 << 26)));
+    }
+    try std.testing.expectEqual(@as(?Command, null), fromKey('e', 12));
 }
 
 test "reload is an explicit palette action without a key binding" {
@@ -229,8 +305,20 @@ test "command shortcuts include shifted keyvals and existing find alias" {
     }) |case| try std.testing.expectEqual(case.command, fromKey(case.key, case.state).?);
 }
 
+test "tab navigation is explicit and rejects text input and unrelated modifiers" {
+    try std.testing.expectEqual(Command.next_tab, fromKey(0xff09, 4).?);
+    try std.testing.expectEqual(Command.previous_tab, fromKey(0xff09, 5).?);
+    try std.testing.expectEqual(Command.previous_tab, fromKey(0xfe20, 5).?);
+    try std.testing.expectEqual(Command.previous_tab, fromKey(0xfe20, 4).?);
+    for ([_]u32{ 0xff09, 0xfe20 }) |key| {
+        for ([_]u32{ 0, 1, 8, 12, 4 | (1 << 26) }) |state| {
+            try std.testing.expectEqual(@as(?Command, null), fromKey(key, state));
+        }
+    }
+}
+
 test "unmapped editor keys and other modifiers remain with the parent" {
-    for ([_]u32{ 0xff1b, 0xffc0, 0xff09, 0xfe20, 'z', 'Z', 'y', '+', '=', '-', '0' }) |key| {
+    for ([_]u32{ 0xff1b, 0xffc0, 'z', 'Z', 'y', '+', '=', '-', '0' }) |key| {
         try std.testing.expectEqual(@as(?Command, null), fromKey(key, 4));
     }
     for ([_]u32{ 0, 1, 5, 4 | 8, 4 | (1 << 26), 4 | (1 << 27), 4 | (1 << 28), 4 | (1 << 7) }) |state| {

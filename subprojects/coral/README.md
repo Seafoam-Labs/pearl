@@ -4,8 +4,8 @@ A standalone Linux text editor written in **Zig 0.17.1 and GTK4**, with
 GtkSourceView editing and offline Enchant spell checking. Its native foundation
 includes independent editor groups, editable source excerpts and crash recovery,
 with Pearl appearance. Multi-root workspaces include a bounded virtualized explorer,
-Quick Open, streaming text search, safe settings with provenance, and explicit
-persistent workspace trust. Explicit saved sessions restore workspace roots and
+Quick Open, streaming text search, movable native Explorer/Search docks, safe
+settings with provenance, and explicit persistent workspace trust. Explicit saved sessions restore workspace roots and
 editor layout safely. LSP, Git and agent services remain later work.
 
 ![Native Coral editor](artifacts/native/editor-dark.png)
@@ -102,14 +102,20 @@ blanket tool permission and starts no services. See the [settings/trust guide](d
 for filesystem identity requirements, storage errors and revocation limits.
 
 **Save Workspace Session** / **Restore Workspace Session** in the palette persist
-one explicit checkpoint of roots, tabs, groups, excerpts and view state. Clean files
+one explicit checkpoint of roots, tabs, groups, excerpts, view state and dock layout. Clean files
 rebind only after verification; dirty/conflicting/unavailable files become unsaved
 copies. Existing documents stay intact. Close an active workspace before restoring.
 There is no automatic startup restore or quit-time save; later Discard does not
 remove an explicitly saved checkpoint. See [session usage and safety limits](docs/WORKBENCH_M2_SESSIONS.md).
 
+Explorer and Search can be docked **left, right or bottom**, resized, hidden and
+focused from the activity rail or palette. **Ctrl+B** toggles Explorer; **Ctrl+1**
+returns to the editor. Quick Open is a transient overlay sharing Search's query
+and results. Compact windows retain one auxiliary panel and preserve the desired
+wide layout. See [dock controls and validation](docs/WORKBENCH_M2_DOCKS.md).
+
 This remains an **M2 preview**, without persistent indexing, workspace-wide replace,
-automatic/per-project session history, docking or multi-window support. Crash recovery
+automatic/per-project session history or multi-window support. Crash recovery
 still restores documents/layout but not roots; the explicit session is separate.
 See [workspace usage and remaining gates](docs/WORKBENCH_M2_WORKSPACES.md).
 
@@ -233,6 +239,7 @@ zig build test-m2-explorer -Doptimize=safe -j1
 zig build test-m2-search -Doptimize=safe -j1
 zig build test-m2-policy -Doptimize=safe -j1
 zig build test-m2-sessions -Doptimize=safe -j1
+zig build test-m2-docks -Doptimize=safe -j1
 zig build widgets -Doptimize=safe -- --aqueous-prefix /usr
 ```
 

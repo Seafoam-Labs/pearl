@@ -153,4 +153,4 @@ Evidence: `pearl/.cache/coral-policy/results.json`, adjacent screenshots/session
 
 ## Next standard M2 increment
 
-Versioned workspace/session persistence alongside recovery: restore roots, tabs and layout while preserving dirty-buffer conflict handling and explicitly unavailable paths. Docking/pickers and multi-window lifecycle follow. The current layout remains unchanged; LSP, Git and agents remain later milestones.
+[Explicit workspace sessions](WORKBENCH_M2_SESSIONS.md) and [native dock/picker integration](WORKBENCH_M2_DOCKS.md) are now implemented, without changing the trust boundary. Multi-window lifecycle comes next; LSP, Git and agents remain later milestones.

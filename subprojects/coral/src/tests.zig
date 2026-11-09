@@ -19,5 +19,6 @@ test {
     _ = @import("terminal/pty.zig");
     _ = @import("tasks/process.zig");
     _ = @import("workbench/commands.zig");
+    _ = @import("workbench/layout.zig");
     _ = @import("workbench/palette.zig");
 }

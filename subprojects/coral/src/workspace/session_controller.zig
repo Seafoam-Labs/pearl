@@ -98,7 +98,7 @@ pub const Controller = struct {
                 for (current.roots) |root| try roots.append(a, .{ .path = root.lexical_path, .name = root.display_name });
                 workspace = .{ .source = if (current.manifest_path != null) .manifest else .folder, .path = current.manifest_path orelse current.roots[0].lexical_path, .roots = roots.items };
             }
-            work.value = try model.Owned.create(.{ .snapshot = snapshot.value, .workspace = workspace });
+            work.value = try model.Owned.create(.{ .snapshot = snapshot.value, .workspace = workspace, .layout = self.app.snapshotDockLayout() });
         }
         self.work = work;
         c.g_application_hold(u.cast(c.GApplication, self.app.application));
@@ -203,6 +203,7 @@ pub const Controller = struct {
             errdefer app.rollbackSessionRestore(documents_before, groups_before, focus_before);
             try snapshots.restoreApp(app, snapshot, states);
         }
+        app.restoreDockLayout(value.layout);
         app.scheduleCheckpoint(); // crash recovery only, never the explicit slot
         self.state.status = .restored;
         app.message(text);

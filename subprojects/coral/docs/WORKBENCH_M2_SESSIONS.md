@@ -1,6 +1,6 @@
 # M2: explicit workspace sessions
 
-**Status: implemented and validated, alongside—not replacing—crash recovery.** This increment adds one explicit saved checkpoint. It does not implement automatic startup resume, per-project session history, docking or multiple windows. M2 remains in progress.
+**Status: implemented and validated, alongside—not replacing—crash recovery.** This increment adds one explicit saved checkpoint. It does not implement automatic startup resume, per-project session history or multiple windows. The [dock increment](WORKBENCH_M2_DOCKS.md) adds persisted panel layout to session v2. M2 remains in progress.
 
 ## Use
 
@@ -17,6 +17,7 @@ There is no automatic restore or quit-time session save. Explicit CLI files/work
 - Folder/manifest source and supplied path; saved root paths/display names for diagnostics.
 - Canonical document sharing, ordered tabs, current equal-width horizontal groups, active tab/group, directed Unicode selections, logical vertical/horizontal scrolling and source-mapped editable excerpts.
 - Document text, BOM/newline metadata and saved disk etags, within the existing recovery caps.
+- Desired Explorer/Search dock placement, visibility, active panel and sizes (v2). Layout applies only after successful restoration; v1 restores defaults.
 
 The source manifest and folder settings are **reread**, not replaced with saved configuration. Current manifest roots/names/excludes/settings win if the manifest changed. Lexical `.` and `..` root components are preserved, not normalized across symlinks. Missing roots remain unavailable; no project paths are created. A missing/unreadable/invalid manifest **aborts restore** and reports the saved roots; these are not a fallback manifest. The checkpoint is kept for retry after repairing or restoring the manifest.
 
@@ -41,7 +42,7 @@ The single slot is `$XDG_STATE_HOME/coral/sessions/current`, normally `~/.local/
 
 - Existing, user-owned state home required; no implicit creation of its ancestors. Traversal uses checked no-symlink descriptors, with search-only ancestors supported.
 - `coral/sessions` directories are private `0700`; `current` is an owner-only regular, single-link `0600` file. Contents include source text and are **not encrypted**.
-- Independent **session v1** envelope: SHA-256 over a bounded workspace descriptor plus the existing versioned recovery payload. Native paths are base64; checksums detect corruption, not malicious same-UID tampering. Unknown fields/versions fail closed.
+- Independent **session v2** envelope: SHA-256 over a bounded workspace/layout descriptor plus the existing versioned recovery payload. V1 remains readable with default dock layout; the next explicit save upgrades it. Older binaries refuse v2. Native paths are base64; checksums detect corruption, not malicious same-UID tampering. Unknown fields/versions fail closed.
 - At most **32 roots**, **4,096 bytes/path or saved name**, **1 MiB descriptor**. Recovery bounds remain **128 documents, 64 groups, 256 views, 4 MiB/document, 8 MiB total text and 12 MiB encoded recovery payload**. The complete session cap includes that payload, descriptor, separator and fixed header.
 - One operation per controller, owned snapshot, GTask worker and application hold. No storage/encoding/fsync or file verification on the GTK submit thread; bounded buffer capture still runs on GTK.
 - Publication: exclusive directory lock → validate previous checkpoint → write private temporary file → file fsync → atomic rename → directory fsync. Load holds a shared lock. Corrupt, unsafe, oversized and unsupported existing checkpoints are retained and block replacement, rather than being silently destroyed.
@@ -77,10 +78,12 @@ zig build test-m2-sessions -Doptimize=safe -j1 --summary all
 
 Backend tests are also included in `zig build test`, in a **separate process** because publication/death tests fork. Native tests use disposable files and private HOME/XDG/Wayland sessions, never the live desktop.
 
-**Validation on Zig 0.17.1 (2026-11-09):** all sequential safe gates passed: `test-m2-sessions`, `test-m1`, `test-m2-slice`, `test-m2-explorer`, `test-m2-search`, `test-m2-policy`, followed by a production build with `-Dtest-hooks=false`. The session gate executed **265 main headless tests, 18 separate session tests, 181 widget-root tests and 19 native session scenarios**. Trust/appearance runners were cached successes; counts overlap transitively and must not be added as unique tests. Existing native gates passed **40 workflows, 14 group/history checks, 13 recovery groups, 18 workspace groups, 19 explorer groups, nine search groups and 17 policy groups**.
+**Original session-increment validation on Zig 0.17.1 (2026-11-09):** all sequential safe gates passed: `test-m2-sessions`, `test-m1`, `test-m2-slice`, `test-m2-explorer`, `test-m2-search`, `test-m2-policy`, followed by a production build with `-Dtest-hooks=false`. The session gate executed **265 main headless tests, 18 separate session tests, 181 widget-root tests and 19 native session scenarios**. Trust/appearance runners were cached successes; counts overlap transitively and must not be added as unique tests. Existing native gates passed **40 workflows, 14 group/history checks, 13 recovery groups, 18 workspace groups, 19 explorer groups, nine search groups and 17 policy groups**.
 
 The 19 session scenarios cover layout/Unicode/scroll/excerpts, roots/clean rebinding, dirty/conflict/missing/special files, existing CLI and dirty-document preservation, explicit-only restart/Discard behavior, trust/config revalidation, malformed/future retention, cap refusal, lexical root spelling, stale callbacks, shutdown, and post-load rollback/retry with newer-workspace protection. Backend tests also cover locks, privacy/symlinks, interrupted publication and process death. Formatting, Python compilation and diff whitespace checks passed.
 
 Evidence: `pearl/.cache/coral-sessions/results.json` and adjacent native logs/screenshots; full gate logs under `pearl/.cache/coral-session-validation-logs/`. Earlier focused runs remain in `coral-sessions-review-run2/` as additional evidence.
 
-**Next standard M2 work:** docking/panel and picker integration, then multi-window lifecycle. Automatic/per-project session management and missing-manifest fallback remain explicitly outside this saved-checkpoint increment; no LSP/Git/agent parity is claimed.
+**Dock follow-up:** session v2 and v1 migration are now tested by the [27-scenario native dock gate](WORKBENCH_M2_DOCKS.md). The existing 19 session scenarios also pass after the schema upgrade; their future-version fixture no longer assumes a v1 writer. The separate backend root is now `src/session_tests.zig` and includes 23 tests with transitive layout checks.
+
+**Next standard M2 work:** multi-window lifecycle. Automatic/per-project session management and missing-manifest fallback remain explicitly outside this saved-checkpoint increment; no LSP/Git/agent parity is claimed.
