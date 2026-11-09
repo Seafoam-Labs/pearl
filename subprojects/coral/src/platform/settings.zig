@@ -1,7 +1,11 @@
 const u = @import("../c.zig");
 const c = u.c;
 const std = @import("std");
+const policy = @import("../workspace/settings.zig");
 pub const Settings = struct {
+    /// Presence is independent of value: an explicitly chosen default is a user override.
+    present: policy.KeyMask = .{},
+
     /// 0 Pearl dark, 1 Pearl light, 2 Native GTK, 3 Follow Pearl (default).
     theme: c_int = 3,
     font: c_int = 14,
@@ -16,6 +20,10 @@ pub const Settings = struct {
     /// (the font-zoom shortcuts) can name the cause instead of losing the change
     /// silently.
     pub const SaveError = error{ Directory, Serialize, Write };
+
+    pub fn baseline(s: Settings) policy.Baseline {
+        return .{ .lines = s.lines, .wrap = s.wrap, .spaces = s.spaces, .indent = @intCast(std.math.clamp(s.indent, 1, 8)) };
+    }
 
     pub fn load() Settings {
         const p = u.fmt("{s}/coral/preferences.ini", .{std.mem.span(c.g_get_user_config_dir())});
@@ -35,6 +43,9 @@ pub const Settings = struct {
         }
         inline for (.{ "lines", "wrap", "spaces", "spelling" }) |key| {
             if (c.g_key_file_has_key(k, "Coral", key, null) != 0) @field(s, key) = c.g_key_file_get_boolean(k, "Coral", key, null) != 0;
+        }
+        inline for (.{ "lines", "wrap", "spaces", "indent" }) |key| {
+            @field(s.present, key) = c.g_key_file_has_key(k, "Coral", key, null) != 0;
         }
         s.theme = std.math.clamp(s.theme, 0, 3);
         s.font = std.math.clamp(s.font, 8, 32);
@@ -64,8 +75,12 @@ pub const Settings = struct {
         defer u.a.free(path);
         const k = c.g_key_file_new().?;
         defer c.g_key_file_unref(k);
-        inline for (.{ "theme", "font", "indent" }) |key| c.g_key_file_set_integer(k, "Coral", key, @field(s, key));
-        inline for (.{ "lines", "wrap", "spaces", "spelling" }) |key| c.g_key_file_set_boolean(k, "Coral", key, @intFromBool(@field(s, key)));
+        inline for (.{ "theme", "font" }) |key| c.g_key_file_set_integer(k, "Coral", key, @field(s, key));
+        if (s.present.indent) c.g_key_file_set_integer(k, "Coral", "indent", s.indent);
+        inline for (.{ "lines", "wrap", "spaces" }) |key| {
+            if (@field(s.present, key)) c.g_key_file_set_boolean(k, "Coral", key, @intFromBool(@field(s, key)));
+        }
+        c.g_key_file_set_boolean(k, "Coral", "spelling", @intFromBool(s.spelling));
         c.g_key_file_set_string(k, "Coral", "language", &s.language);
         var n: usize = 0;
         var serialize_err: ?*c.GError = null;
@@ -121,6 +136,7 @@ test "settings round-trip through save and load" {
         allocator.free(dir);
     }
     var stored: Settings = .{ .theme = 2, .font = 20, .lines = false, .wrap = false, .spaces = false, .indent = 8, .spelling = false };
+    stored.present = .{ .lines = true, .wrap = true, .spaces = true, .indent = true };
     stored.setLanguage("en_US");
     try stored.saveIn(dir);
     const path = try joinZ(dir, "preferences.ini");
@@ -164,6 +180,46 @@ test "saving over an unwritable target reports a write failure" {
     if (c.g_mkdir_with_parents(blocked, 0o700) != 0) return error.TestSetup;
     const empty: Settings = .{};
     try std.testing.expectError(error.Write, empty.saveIn(dir));
+}
+
+test "absent safe keys stay absent when unrelated preferences are saved" {
+    const dir = try tempDir();
+    defer {
+        removeTree(dir);
+        allocator.free(dir);
+    }
+    const path = try joinZ(dir, "preferences.ini");
+    defer allocator.free(path);
+    if (c.g_file_set_contents(path, "[Coral]\nfont=18\nwrap=true\n", -1, null) == 0) return error.TestSetup;
+    var stored = Settings.loadFrom(path);
+    try std.testing.expect(stored.present.wrap);
+    try std.testing.expect(!stored.present.lines and !stored.present.spaces and !stored.present.indent);
+    try std.testing.expectEqual(policy.Origin.user, policy.resolve(stored.baseline(), stored.present, .{}, .{}, .{}).origins.wrap);
+    stored.font = 20;
+    try stored.saveIn(dir);
+    const loaded = Settings.loadFrom(path);
+    try std.testing.expectEqualDeep(stored.present, loaded.present);
+    try std.testing.expectEqual(@as(c_int, 20), loaded.font);
+}
+
+test "explicit default safe preferences survive without serializing repository values" {
+    const dir = try tempDir();
+    defer {
+        removeTree(dir);
+        allocator.free(dir);
+    }
+    const path = try joinZ(dir, "preferences.ini");
+    defer allocator.free(path);
+    var stored: Settings = .{};
+    stored.present = .{ .lines = true, .wrap = true, .spaces = true, .indent = true };
+    const effective = policy.resolve(stored.baseline(), stored.present, .{ .general = .{ .indent = 8, .lines = false } }, .{}, .{});
+    try std.testing.expectEqual(@as(u8, 8), effective.values.indent);
+    try stored.saveIn(dir);
+    const loaded = Settings.loadFrom(path);
+    try std.testing.expectEqualDeep(stored.present, loaded.present);
+    try std.testing.expectEqual(@as(c_int, 4), loaded.indent);
+    try std.testing.expect(loaded.lines);
+    try std.testing.expectEqual(policy.Origin.user, policy.resolve(loaded.baseline(), loaded.present, .{}, .{}, .{}).origins.indent);
 }
 
 test "saving under a path whose parent is a file reports a directory failure" {

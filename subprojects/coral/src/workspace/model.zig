@@ -4,6 +4,8 @@
 const std = @import("std");
 const manifest = @import("manifest.zig");
 const fs = @import("manifest_fs.zig");
+pub const settings = @import("settings.zig");
+const settings_fs = @import("settings_fs.zig");
 pub const identity = @import("identity.zig");
 pub const Error = fs.Error;
 
@@ -32,11 +34,12 @@ pub const Root = struct {
     /// Present only for an available directory. No invented identity for offline roots.
     canonical_path: ?[]const u8,
     availability: Availability,
+    folder_settings: settings.Config = .{},
 };
 
 /// Single-owner, move-only model. Treat roots/strings/trust as read-only. Scope
 /// belongs to this model, not a second App owner. Borrowed root pointers remain
-/// valid until deinit(). Availability is a snapshot; refresh is deferred in M2.
+/// valid until deinit(). Availability/settings are snapshots; rescan builds a new one.
 pub const Model = struct {
     allocator: std.mem.Allocator,
     scope: identity.Scope,
@@ -45,12 +48,16 @@ pub const Model = struct {
     manifest_path: ?[]const u8,
     /// Owned immutable final-hide patterns, applied independently to every root.
     exclude: []const []const u8 = &.{},
+    workspace_settings: settings.Config = .{},
+    /// Canonical immutable policy input digest, not a filesystem identity/trust key.
+    policy_fingerprint: [32]u8 = @splat(0),
 
-    /// Native absolute folder path; missing/offline/non-directory targets are
-    /// retained unavailable, not created. Input storage is never borrowed.
+    /// Native absolute folder path; missing/non-directory targets are retained
+    /// unavailable, not created. Permission/I/O failures reject: folder policy
+    /// cannot safely be classified as absent. Input storage is never borrowed.
     pub fn fromFolder(allocator: std.mem.Allocator, path: []const u8) Error!Model {
         try fs.absolutePath(path);
-        return build(allocator, null, &.{.{ .path = path }}, &.{});
+        return build(allocator, null, &.{.{ .path = path }}, &.{}, .{});
     }
 
     /// Read an existing regular manifest through a checked, nonblocking descriptor.
@@ -67,11 +74,29 @@ pub const Model = struct {
         if (path[path.len - 1] == '/') return error.InvalidSchema;
         var parsed = try manifest.parse(allocator, bytes);
         defer parsed.deinit();
-        return build(allocator, path, parsed.roots, parsed.exclude);
+        return build(allocator, path, parsed.roots, parsed.exclude, parsed.settings);
+    }
+
+    /// WORKER-only explicit rescan. Never mutates this snapshot. On failure the
+    /// integrator retains it; on success publish the new snapshot atomically.
+    /// Manifest workspaces reload the manifest as well as all folder configs.
+    pub fn rescan(self: *const Model) Error!Model {
+        if (self.manifest_path) |path| return fromManifest(self.allocator, path);
+        return fromFolder(self.allocator, self.roots[0].lexical_path);
+    }
+
+    /// Pure borrowed result. Unknown root IDs have workspace-only scope.
+    pub fn effectiveSettings(self: *const Model, root_id: ?RootId, language: ?[]const u8, user: settings.Baseline, present: settings.KeyMask) settings.Effective {
+        const root = if (root_id) |id| self.rootById(id) else null;
+        return settings.resolve(user, present, self.workspace_settings, if (root) |r| r.folder_settings else .{}, .{
+            .root_path = if (root) |r| r.canonical_path orelse r.lexical_path else null,
+            .language = language,
+        });
     }
 
     pub fn deinit(self: *Model) void {
         self.scope.close();
+        self.workspace_settings.deinit(self.allocator);
         for (self.roots) |root| freeRoot(self.allocator, root);
         self.allocator.free(self.roots);
         for (self.exclude) |pattern| self.allocator.free(pattern);
@@ -117,7 +142,11 @@ pub const Model = struct {
     }
 };
 
-fn build(allocator: std.mem.Allocator, manifest_path: ?[]const u8, specs: []const manifest.Root, excludes: []const []const u8) Error!Model {
+fn build(allocator: std.mem.Allocator, manifest_path: ?[]const u8, specs: []const manifest.Root, excludes: []const []const u8, workspace_settings: settings.Config) Error!Model {
+    // A hard source bound even if this private constructor gains new callers.
+    if (specs.len > manifest.limits.roots) return error.TooLarge;
+    var owned_settings = try workspace_settings.clone(allocator);
+    errdefer owned_settings.deinit(allocator);
     var owned_excludes: std.ArrayList([]const u8) = .empty;
     errdefer {
         for (owned_excludes.items) |pattern| allocator.free(pattern);
@@ -131,7 +160,7 @@ fn build(allocator: std.mem.Allocator, manifest_path: ?[]const u8, specs: []cons
         roots.deinit(allocator);
     }
     for (specs) |spec| {
-        const root = try makeRoot(allocator, manifest_path, spec);
+        var root = try makeRoot(allocator, manifest_path, spec);
         errdefer freeRoot(allocator, root);
         // First declared available alias wins, including its display name. Missing
         // declarations stay distinct; there is no canonical identity to merge yet.
@@ -150,6 +179,12 @@ fn build(allocator: std.mem.Allocator, manifest_path: ?[]const u8, specs: []cons
             freeRoot(allocator, root);
             continue;
         }
+        switch (root.availability) {
+            .permission_denied => return error.PermissionDenied,
+            .io => return error.Io,
+            else => {},
+        }
+        if (root.canonical_path) |path| root.folder_settings = try settings_fs.load(allocator, path);
         try roots.append(allocator, root);
     }
     const owned_manifest = if (manifest_path) |path| try allocator.dupe(u8, path) else null;
@@ -159,8 +194,11 @@ fn build(allocator: std.mem.Allocator, manifest_path: ?[]const u8, specs: []cons
         for (exclude) |pattern| allocator.free(pattern);
         allocator.free(exclude);
     }
+    const fingerprint = try policyFingerprint(allocator, manifest_path, roots.items, workspace_settings, excludes);
     return .{
         .allocator = allocator,
+        .workspace_settings = owned_settings,
+        .policy_fingerprint = fingerprint,
         .exclude = exclude,
         .scope = identity.Scope.init(),
         .roots = try roots.toOwnedSlice(allocator),
@@ -197,9 +235,48 @@ fn makeRoot(allocator: std.mem.Allocator, manifest_path: ?[]const u8, spec: mani
 }
 
 fn freeRoot(allocator: std.mem.Allocator, root: Root) void {
+    var config = root.folder_settings;
+    config.deinit(allocator);
     allocator.free(root.display_name);
     allocator.free(root.lexical_path);
     if (root.canonical_path) |path| allocator.free(path);
+}
+
+/// Versioned length-framed encoding. Root declaration order is meaningful (first
+/// alias wins); language maps are sorted by Config.hashInto. Excludes are sorted
+/// since final-hide patterns are an unordered union. Missing paths use exact
+/// lexical spellings and an explicit absence tag, never invented canonical IDs:
+/// collapsing dot-dot could erase physical traversal through an existing symlink.
+fn policyFingerprint(allocator: std.mem.Allocator, manifest_path: ?[]const u8, roots: []const Root, config: settings.Config, excludes: []const []const u8) Error![32]u8 {
+    var hash = std.crypto.hash.sha2.Sha256.init(.{});
+    settings.hashField(&hash, "coral-safe-policy-v1");
+    hash.update(&.{@intFromBool(manifest_path != null)});
+    if (manifest_path) |path| {
+        const canonical = fs.canonical(allocator, path) catch |err| switch (err) {
+            error.NotFound, error.NotDirectory => null,
+            else => return err,
+        };
+        defer if (canonical) |p| allocator.free(p);
+        hash.update(&.{@intFromBool(canonical != null)});
+        settings.hashField(&hash, canonical orelse path);
+    }
+    config.hashInto(&hash);
+    settings.hashLength(&hash, roots.len);
+    for (roots) |root| {
+        hash.update(&.{@intFromBool(root.canonical_path != null)});
+        settings.hashField(&hash, root.canonical_path orelse root.lexical_path);
+        root.folder_settings.hashInto(&hash);
+    }
+    var sorted: [manifest.limits.excludes][]const u8 = undefined;
+    @memcpy(sorted[0..excludes.len], excludes);
+    std.mem.sort([]const u8, sorted[0..excludes.len], {}, struct {
+        fn less(_: void, left: []const u8, right: []const u8) bool {
+            return std.mem.order(u8, left, right) == .lt;
+        }
+    }.less);
+    settings.hashLength(&hash, excludes.len);
+    for (sorted[0..excludes.len]) |pattern| settings.hashField(&hash, pattern);
+    return hash.finalResult();
 }
 
 test {

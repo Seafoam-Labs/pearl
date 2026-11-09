@@ -1,16 +1,17 @@
 # Coral
 
-A standalone Linux text editor written in **Zig 0.17.0 and GTK4**, with
+A standalone Linux text editor written in **Zig 0.17.1 and GTK4**, with
 GtkSourceView editing and offline Enchant spell checking. Its native foundation
 includes independent editor groups, editable source excerpts and crash recovery,
-with Pearl appearance. A bounded, virtualized multi-root workspace explorer is available;
-workspace search, LSP, Git and agent services remain later work.
+with Pearl appearance. Multi-root workspaces include a bounded virtualized explorer,
+Quick Open, streaming text search, safe settings with provenance, and explicit
+persistent workspace trust. LSP, Git and agent services remain later work.
 
 ![Native Coral editor](artifacts/native/editor-dark.png)
 
 ## Build and run
 
-Use Zig 0.17.0, `pkg-config`, a C toolchain, GTK **4.12+**, GtkSourceView **5**,
+Use Zig 0.17.1, `pkg-config`, a C toolchain, GTK **4.12+**, GtkSourceView **5**,
 Enchant **2**, and their development headers. GTK 4.24.1, GtkSourceView 5.22.0,
 and Enchant 2.8.21 are the current tested versions. Older supported API baselines have
 not been tested in a separate distribution image.
@@ -49,7 +50,7 @@ Options: `--workspace PATH`, `--folder PATH`, `--follow-pearl`, `--light`, `--da
 local filenames or local file URIs. Diagnostics share Pearl's log handler and
 land wherever stderr goes; see [logging](../../docs/LOGGING.md).
 
-## Workspaces — M2 explorer preview
+## Workspaces — M2 preview
 
 Choose **Open Folder…** or **Open Workspace…** from the menu or command palette,
 or launch `coral --folder PATH` / `coral --workspace PATH`. A workspace file is
@@ -79,12 +80,29 @@ resident pages and 1 MiB of page arenas. Native acceptance reached all 100,000
 files across 391 pages with bounded widgets/memory. Watch failures show a manual
 Rescan fallback; ignore-policy errors fail closed.
 
-This remains a **restricted-only M2 preview**, without quick-open, recursive
-indexing/search or complete project sessions. Settings must be omitted or empty;
-workspace content cannot launch tasks or grant trust. Recovery restores
-documents/layout but not workspace roots; reopen the manifest explicitly. See
-[workspace usage, measurements and remaining M2 gates](docs/WORKBENCH_M2_WORKSPACES.md)
-for exact bounds and security boundaries.
+**Ctrl+P** opens the fuzzy file picker; **Ctrl+Shift+F** searches text across roots.
+Results stream into a virtualized list, honor ignore/exclude rules, and use dirty
+buffer contents instead of stale disk text. Enter opens the selected result in
+the active editor group. Search is literal, case-insensitive and bounded to 1,024
+text results / 128 ranked paths; omissions are visible. These are snapshots, not
+a continuously monitored recursive index—use **Refresh** for unmonitored changes.
+See [search usage, limits and 100k validation](docs/WORKBENCH_M2_SEARCH.md).
+
+Workspace manifests and root-local `.coral/settings.json` can set `lines`, `wrap`,
+`spaces` and `indent`, with language overrides. Resolution is defaults → explicit
+user → workspace → folder → language overrides. **Workspace: Settings and Trust…**
+shows effective values and their origins. **Rescan** adopts updated folder settings;
+repository values never overwrite user preferences.
+
+Workspaces start **restricted**. **Trust workspace…** requires confirmation and
+persists an exact machine-owned approval; **Workspace: Revoke trust** invalidates
+its permits immediately and removes the approval asynchronously. Trust is not
+blanket tool permission and starts no services. See the [settings/trust guide](docs/WORKBENCH_M2_POLICY.md)
+for filesystem identity requirements, storage errors and revocation limits.
+
+This remains an **M2 preview**, without persistent indexing, workspace-wide replace
+or complete project sessions. Recovery restores documents/layout but not workspace
+roots; reopen the manifest explicitly. See [workspace usage and remaining gates](docs/WORKBENCH_M2_WORKSPACES.md).
 
 ## Implemented
 
@@ -152,6 +170,8 @@ explicitly—recovery is not a backup service.
 | --- | --- |
 | Ctrl+N / Ctrl+O | New document / open existing file |
 | Ctrl+Shift+P | Command palette |
+| Ctrl+P | Quick Open workspace file |
+| Ctrl+Shift+F | Search workspace text |
 | Ctrl+\\ | Split editor group |
 | Ctrl+S / Ctrl+Shift+S | Save / Save As |
 | Ctrl+W / Ctrl+Q | Close tab / quit |
@@ -201,6 +221,8 @@ and crash recovery), or individual display-backed checks:
 zig build test-m1 -Doptimize=safe -j1
 zig build test-m2-slice -Doptimize=safe -j1
 zig build test-m2-explorer -Doptimize=safe -j1
+zig build test-m2-search -Doptimize=safe -j1
+zig build test-m2-policy -Doptimize=safe -j1
 zig build widgets -Doptimize=safe -- --aqueous-prefix /usr
 ```
 

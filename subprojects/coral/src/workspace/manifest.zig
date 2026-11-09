@@ -1,7 +1,8 @@
 //! Bounded version-1 .coral-workspace JSON. No filesystem access or execution.
-//! Only empty settings are supported in this first M2 slice: no key is ignored.
+//! Settings support only the bounded safe-key/language schema; no key is ignored.
 //! All returned strings are owned; callers may release the input after parse().
 const std = @import("std");
+pub const settings = @import("settings.zig");
 
 pub const limits = struct {
     pub const manifest_bytes = 1024 * 1024;
@@ -19,6 +20,8 @@ pub const Root = struct { name: ?[]const u8 = null, path: []const u8 };
 pub const Manifest = struct {
     arena: std.heap.ArenaAllocator,
     roots: []const Root,
+    /// Owned by this manifest's arena; do not deinit this field separately.
+    settings: settings.Config = .{},
     /// Final, root-relative hide patterns, applied independently to each root.
     exclude: []const []const u8 = &.{},
 
@@ -49,7 +52,7 @@ pub fn validateString(value: []const u8, maximum: usize) Error!void {
 }
 
 /// Accepts 0..32 roots, exact integer version 1, optional nonempty names, and
-/// optional empty settings object and <=128 root-relative exclude globs (<=1024
+/// optional safe settings object and <=128 root-relative exclude globs (<=1024
 /// bytes each; final hides, no negation). Unknown/duplicate fields (including escaped
 /// spellings), explicit null optionals, trailing documents and future versions
 /// fail closed. Parsing has fixed schema depth, never builds arbitrary JSON trees.
@@ -67,6 +70,7 @@ pub fn parse(allocator: std.mem.Allocator, bytes: []const u8) Error!Manifest {
     var count: usize = 0;
     var excludes: [limits.excludes][]const u8 = undefined;
     var exclude_count: usize = 0;
+    var config: settings.Config = .{};
     while (true) {
         const token = try p.next();
         if (token == .object_end) break;
@@ -93,10 +97,7 @@ pub fn parse(allocator: std.mem.Allocator, bytes: []const u8) Error!Manifest {
                     count += 1;
                 }
             },
-            4 => {
-                try p.expect(.object_begin);
-                if (try p.next() != .object_end) return error.UnsupportedSettings;
-            },
+            4 => config = try settings.parseObject(p.allocator, &p.scanner),
             8 => {
                 try p.expect(.array_begin);
                 while (true) {
@@ -115,7 +116,7 @@ pub fn parse(allocator: std.mem.Allocator, bytes: []const u8) Error!Manifest {
     }
     if (seen & 3 != 3) return error.InvalidSchema;
     try p.expect(.end_of_document);
-    return .{ .roots = try arena.allocator().dupe(Root, roots[0..count]), .exclude = try arena.allocator().dupe([]const u8, excludes[0..exclude_count]), .arena = arena };
+    return .{ .settings = config, .roots = try arena.allocator().dupe(Root, roots[0..count]), .exclude = try arena.allocator().dupe([]const u8, excludes[0..exclude_count]), .arena = arena };
 }
 
 fn string(token: std.json.Token) Error![]const u8 {

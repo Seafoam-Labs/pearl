@@ -8,6 +8,7 @@ const editor = @import("editor/view.zig");
 const EditorView = editor.EditorView;
 test {
     _ = @import("workspace/explorer_widget_test.zig");
+    _ = @import("workspace/search_widget_test.zig");
     _ = @import("workspace/explorer_watch.zig");
 }
 const Palette = @import("workbench/palette.zig").Palette;

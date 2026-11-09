@@ -48,6 +48,9 @@ pub const Page = struct {
     /// Committed records, including skipped/ignored ones, <=record_limit.
     /// Does not count a candidate whose unfinished match must be retried.
     processed: usize = 0,
+    /// Search-only omissions of children exceeding the root-relative path limit.
+    /// scanPage retains its strict TooLarge behavior and never sets this field.
+    path_omissions: usize = 0,
     work: Work = .{},
 
     pub fn deinit(self: *Page) void {
@@ -168,6 +171,18 @@ pub fn checkFile(root: []const u8, relative: []const u8) !void {
 /// Linux seekable directories and are never persisted or reused after a reset.
 /// .git (file or directory) is always hidden at every depth, even when negated.
 pub fn scanPage(allocator: std.mem.Allocator, root: []const u8, relative: []const u8, excludes: []const []const u8, continuation: ?Continuation, cancel: *c.GCancellable) !Page {
+    return scanPageImpl(allocator, root, relative, excludes, continuation, cancel, false);
+}
+
+/// Same policy/generation/record bounds as scanPage, but reports overlong child
+/// paths as explicit omissions and continues to valid siblings. This does NOT
+/// soften invalid request, exclude, or ignore-policy errors. Tokens must stay
+/// within the API that issued them; explorer scanPage remains strict.
+pub fn scanSearchPage(allocator: std.mem.Allocator, root: []const u8, relative: []const u8, excludes: []const []const u8, continuation: ?Continuation, cancel: *c.GCancellable) !Page {
+    return scanPageImpl(allocator, root, relative, excludes, continuation, cancel, true);
+}
+
+fn scanPageImpl(allocator: std.mem.Allocator, root: []const u8, relative: []const u8, excludes: []const []const u8, continuation: ?Continuation, cancel: *c.GCancellable, comptime omit_overlong_children: bool) !Page {
     try validateRequest(root, relative, excludes);
     try ignore_fs.cancelled(cancel);
     var policy_work = PolicyWork{ .matching = .{ .remaining = ignore.limits.policy_match_steps, .kind = .policy, .cancellation = ignore_fs.cancellation(cancel) } };
@@ -205,6 +220,7 @@ pub fn scanPage(allocator: std.mem.Allocator, root: []const u8, relative: []cons
     const entries = try a.alloc(Entry, page_limit);
     var count: usize = 0;
     var processed: usize = 0;
+    var path_omissions: usize = 0;
     var complete = false;
     var retry_cookie: ?c_long = null;
     var path_buffer: [manifest.limits.path_bytes]u8 = undefined;
@@ -225,7 +241,11 @@ pub fn scanPage(allocator: std.mem.Allocator, root: []const u8, relative: []cons
         const name = std.mem.sliceTo(&raw.name, 0);
         if (std.mem.eql(u8, name, ".") or std.mem.eql(u8, name, "..") or std.mem.eql(u8, name, ".git")) continue;
         const path_len = relative.len + @intFromBool(relative.len != 0) + name.len;
-        if (path_len > path_buffer.len) return error.TooLarge;
+        if (path_len > path_buffer.len) {
+            if (!omit_overlong_children) return error.TooLarge;
+            path_omissions += 1;
+            continue;
+        }
         @memcpy(path_buffer[0..relative.len], relative);
         var offset = relative.len;
         if (offset > 0) {
@@ -279,7 +299,99 @@ pub fn scanPage(allocator: std.mem.Allocator, root: []const u8, relative: []cons
             return std.mem.order(u8, x.name, y.name) == .lt;
         }
     }.less);
-    return .{ .arena = arena, .entries = entries[0..count], .continuation = if (complete) null else .{ .cookie = cookie, .generation = policy.generation, .directory = identity }, .generation = policy.generation, .directory = identity, .complete = complete, .status = .ready, .processed = processed, .work = policy_work.report(&matching) };
+    return .{ .arena = arena, .entries = entries[0..count], .continuation = if (complete) null else .{ .cookie = cookie, .generation = policy.generation, .directory = identity }, .generation = policy.generation, .directory = identity, .complete = complete, .status = .ready, .processed = processed, .path_omissions = path_omissions, .work = policy_work.report(&matching) };
+}
+
+/// Worker-only checked-read boundary for search. Retains a descriptor and the
+/// existing browser policy; callers must validate before publishing a batch.
+/// Work is added on success AND failure, rather than reserving a page per file.
+/// No pathname-based read may follow openFile: consume the returned descriptor.
+pub const CheckedDirectory = struct {
+    policy: Policy,
+    allocator: std.mem.Allocator,
+    root: []const u8,
+    relative: []const u8,
+    excludes: []const []const u8,
+    cancel: *c.GCancellable,
+
+    pub fn open(allocator: std.mem.Allocator, root: []const u8, relative: []const u8, excludes: []const []const u8, expected: ?Generation, cancel: *c.GCancellable, work: *Work) !CheckedDirectory {
+        try validateRequest(root, relative, excludes);
+        var pw = PolicyWork{ .matching = .{ .remaining = ignore.limits.policy_match_steps, .kind = .policy, .cancellation = ignore_fs.cancellation(cancel) } };
+        defer addWork(work, pw.report(&.{ .remaining = ignore.limits.page_match_steps }));
+        var policy = try loadPolicy(allocator, root, relative, excludes, cancel, &pw);
+        errdefer policy.deinit();
+        if (expected) |expected_generation| {
+            if (policy.hidden or !std.mem.eql(u8, &expected_generation, &policy.generation)) return error.DirectoryChanged;
+        }
+        return .{ .policy = policy, .allocator = allocator, .root = root, .relative = relative, .excludes = excludes, .cancel = cancel };
+    }
+
+    pub fn deinit(self: *CheckedDirectory) void {
+        self.policy.deinit();
+        self.* = undefined;
+    }
+
+    pub fn generation(self: *const CheckedDirectory) Generation {
+        return self.policy.generation;
+    }
+
+    pub fn hidden(self: *const CheckedDirectory) bool {
+        return self.policy.hidden;
+    }
+
+    pub fn validate(self: *CheckedDirectory, work: *Work) !void {
+        var after = open(self.allocator, self.root, self.relative, self.excludes, null, self.cancel, work) catch |err| {
+            if (err == error.UnavailableOrSymlink) return error.DirectoryChanged;
+            return err;
+        };
+        defer after.deinit();
+        if (after.policy.hidden != self.policy.hidden or !std.mem.eql(u8, &after.policy.generation, &self.policy.generation)) return error.DirectoryChanged;
+    }
+
+    /// Includes hypothetical missing leaves, but never symlinks or special files.
+    pub fn allowsOverlay(self: *CheckedDirectory, name: []const u8, work: *Work) !bool {
+        try component(name);
+        try ignore_fs.cancelled(self.cancel);
+        if (self.policy.hidden or std.mem.eql(u8, name, ".git")) return false;
+        var buffer: [manifest.limits.path_bytes + 1]u8 = undefined;
+        const path = if (self.relative.len == 0) name else try std.fmt.bufPrint(&buffer, "{s}/{s}", .{ self.relative, name });
+        var matching = ignore.Budget{ .remaining = ignore.limits.page_match_steps, .kind = .page, .cancellation = ignore_fs.cancellation(self.cancel) };
+        defer work.match_steps += ignore.limits.page_match_steps - matching.remaining;
+        try matching.beginPath();
+        if (try hiddenByPolicy(&self.policy.rules, self.excludes, path, false, &matching)) return false;
+        var leaf: [manifest.limits.path_bytes + 1]u8 = undefined;
+        const z = try std.fmt.bufPrintSentinel(&leaf, "{s}", .{name}, 0);
+        var stat: std.os.linux.Statx = undefined;
+        if (std.c.statx(self.policy.fd, z, std.os.linux.AT.SYMLINK_NOFOLLOW, .{ .TYPE = true }, &stat) != 0) {
+            if (std.c.errno(@as(c_int, -1)) == .NOENT) return true;
+            return error.UnavailableOrSymlink;
+        }
+        if (!stat.mask.TYPE or stat.mode & std.c.S.IFMT != std.c.S.IFREG) return error.NotRegularFile;
+        return true;
+    }
+
+    /// name must be a file from a page with this generation, or an allowed leaf.
+    /// Caller owns fd; NOFOLLOW applies to the leaf, ancestors are already pinned.
+    pub fn openFile(self: *CheckedDirectory, name: []const u8) !c_int {
+        try component(name);
+        try ignore_fs.cancelled(self.cancel);
+        if (self.policy.hidden) return error.OutsideRoot;
+        var buffer: [manifest.limits.path_bytes + 1]u8 = undefined;
+        const z = try std.fmt.bufPrintSentinel(&buffer, "{s}", .{name}, 0);
+        const fd = std.c.openat(self.policy.fd, z, .{ .ACCMODE = .RDONLY, .NOFOLLOW = true, .NONBLOCK = true, .CLOEXEC = true });
+        if (fd < 0) return error.UnavailableOrSymlink;
+        errdefer _ = std.c.close(fd);
+        const stat = try ignore_fs.inspect(fd);
+        if (stat.mode & std.c.S.IFMT != std.c.S.IFREG) return error.NotRegularFile;
+        return fd;
+    }
+};
+
+fn addWork(total: *Work, work: Work) void {
+    total.match_steps += work.match_steps;
+    total.policy_match_steps += work.policy_match_steps;
+    total.policy_bytes += work.policy_bytes;
+    total.policy_files += work.policy_files;
 }
 
 fn directoryCookie(dir: *std.c.DIR) !c_long {

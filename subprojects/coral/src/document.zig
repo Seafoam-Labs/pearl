@@ -33,6 +33,9 @@ pub const Document = struct {
     cancelled_close: bool = false,
     cancellable: ?*c.GCancellable = null,
     large: bool = false,
+    /// Logical syntax selection survives presentation-budget parser detachment.
+    language: ?*c.GtkSourceLanguage = null,
+    language_applying: bool = false,
     spell_override: ?bool = null,
     priority_start: c_int = 0,
     priority_end: c_int = 0,
@@ -68,6 +71,12 @@ pub const Document = struct {
         const d = u.cast(Document, data.?);
         d.revision = std.math.add(u64, d.revision, 1) catch @panic("Document revision exhausted");
     }
+    pub fn setLanguage(d: *Document, language: ?*c.GtkSourceLanguage) void {
+        if (d.language == language) return;
+        if (language) |value| _ = c.g_object_ref(value);
+        if (d.language) |value| c.g_object_unref(value);
+        d.language = language;
+    }
     pub fn dirty(d: *Document) bool {
         return d.saved_checkpoint_stale or c.gtk_text_buffer_get_modified(d.buffer) != 0;
     }
@@ -98,6 +107,7 @@ pub const Document = struct {
         if (d.pending_etag) |p| u.a.free(p);
         if (d.path) |p| u.a.free(p);
         if (d.etag) |p| u.a.free(p);
+        if (d.language) |language| c.g_object_unref(language);
         var it = d.ignored.keyIterator();
         while (it.next()) |key| u.a.free(key.*);
         d.ignored.deinit(u.a);

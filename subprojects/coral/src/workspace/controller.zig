@@ -14,6 +14,7 @@ const explorer = @import("explorer.zig");
 const watch = @import("explorer_watch.zig");
 pub const Source = enum { folder, manifest };
 pub const RootId = model.RootId;
+const SearchActivation = @import("search_controller.zig").Activation;
 
 /// One shared App budget across operation kinds, including cancelled workers
 /// until their callbacks finish. Load/file admission has no secondary queue;
@@ -34,6 +35,7 @@ pub const Controller = struct {
     choosing: bool = false,
     panel: u.W,
     status: u.W,
+    policy_status: u.W,
     rows: u.W,
     selected: ?RootId = null,
     relative: []const u8 = "",
@@ -95,7 +97,7 @@ pub const Controller = struct {
         u.append(panel, scroll);
         u.append(parent, panel);
         c.gtk_widget_set_visible(panel, 0);
-        return .{ .app = app, .requests = .init(), .panel = panel, .status = status, .rows = rows, .view = view };
+        return .{ .app = app, .requests = .init(), .panel = panel, .status = status, .policy_status = banner, .rows = rows, .view = view };
     }
 
     fn retireBrowse(self: *Controller) void {
@@ -160,6 +162,7 @@ pub const Controller = struct {
         self.app.message("Explorer state reset: directory slots released. Workspace root IDs and documents are unchanged.");
     }
     pub fn closeWorkspace(self: *Controller) void {
+        self.app.workspace_search.invalidate("Stale — workspace closed. Open a workspace and refresh.");
         self.requests.invalidate();
         self.cancelWaitingLoad();
         self.test_drain = false;
@@ -171,6 +174,7 @@ pub const Controller = struct {
         self.selected = null;
         if (self.model) |*m| m.deinit();
         self.model = null;
+        self.app.workspace_policy.modelChanged();
         if (!self.closed) {
             self.clearRows();
             c.gtk_widget_set_visible(self.panel, 0);
@@ -236,6 +240,7 @@ pub const Controller = struct {
     }
     fn loadRequest(self: *Controller, source: Source, path: []const u8, token: identity.Token) void {
         if (!self.requests.accepts(token)) return;
+        self.app.workspace_policy.invalidate();
         self.loading = true;
         self.error_name = null;
         self.app.message("Loading workspace on a worker… Existing documents remain open.");
@@ -410,15 +415,15 @@ pub const Controller = struct {
         }
     }
     pub fn rescan(self: *Controller) void {
-        // Even without a delivered notification (or a working monitor), Rescan
-        // must reread the lexical manifest, not reuse its old exclude snapshot.
-        if (self.model) |snapshot| if (snapshot.manifest_path) |path| {
-            self.load(.manifest, path);
-            return;
-        };
-        if (self.model) |*snapshot| self.rebuildWatches(snapshot);
+        // Both constructors reread every folder config on the worker. Never
+        // reuse a folder workspace's old settings snapshot on explicit Rescan.
+        if (self.model) |snapshot| {
+            if (snapshot.manifest_path) |path| self.load(.manifest, path) else if (snapshot.roots.len != 0) self.load(.folder, snapshot.roots[0].lexical_path);
+        }
     }
     fn invalidateLoaded(self: *Controller) void {
+        self.app.workspace_policy.invalidate();
+        self.app.workspace_search.invalidate("Stale — workspace contents or monitoring changed. Refresh required.");
         for (self.tree.nodes.items) |*node| node.invalidate();
         for (self.jobs.items) |job| if (job.kind == .scan) c.g_cancellable_cancel(job.cancel);
         self.render_pending = true;
@@ -426,6 +431,7 @@ pub const Controller = struct {
     fn requirePolicyRefresh(self: *Controller) void {
         if (self.model) |snapshot| if (snapshot.manifest_path != null) {
             self.policy_pending = true;
+            self.app.workspace_search.invalidate("Stale — workspace policy is being refreshed.");
             const now = c.g_get_monotonic_time();
             if (self.manifest_first == 0) self.manifest_first = now;
             self.manifest_last = now;
@@ -524,34 +530,51 @@ pub const Controller = struct {
         return false;
     }
     pub fn openFile(self: *Controller, path: []const u8, root_id: ?RootId) void {
-        if (self.closed) return;
+        _ = self.openFileRequest(path, root_id, null, false);
+    }
+    pub fn openSearchFile(self: *Controller, path: []const u8, root_id: RootId, activation: SearchActivation, overlay: bool) bool {
+        if (self.policy_pending or !self.app.workspace_search.validActivation(activation)) return false;
+        return self.openFileRequest(path, root_id, activation, overlay);
+    }
+    fn openFileRequest(self: *Controller, path: []const u8, root_id: ?RootId, search_activation: ?SearchActivation, overlay: bool) bool {
+        if (self.closed) return false;
         var base: ?[]const u8 = null;
         var token: ?identity.Token = null;
         if (root_id) |id| {
-            const snapshot = if (self.model) |*m| m else return;
-            const root = snapshot.rootById(id) orelse return;
+            const snapshot = if (self.model) |*m| m else return false;
+            const root = snapshot.rootById(id) orelse return false;
             base = root.canonical_path orelse root.lexical_path;
             token = snapshot.scope.capture();
         }
         // Deduplicate before checking capacity, including when the budget is full.
         // Exact input spelling and boundary identity matter, not canonical aliases.
         for (self.jobs.items) |job| {
-            if (job.kind == .file and job.root_id == root_id and
+            if (job.kind == .file and job.root_id == root_id and std.meta.eql(job.search_activation, search_activation) and
                 std.meta.eql(job.model_token, token) and
                 self.app.workspace.accepts(job.document_token) and
-                std.mem.eql(u8, job.path, path)) return;
+                std.mem.eql(u8, job.path, path)) return true;
         }
         if (!self.admit(path, base)) {
             // Match the existing-file failure path during startup: a rejected
             // argument must not look like a closed, zero-document session.
             if (self.app.snapshotDocuments().len == 0 and !self.hasPendingFiles()) _ = self.app.newDocument();
-            return;
+            return false;
         }
         const job = self.work(.file, path);
+        job.search_activation = search_activation;
+        job.search_overlay = overlay;
+        if (@import("build_options").test_hooks and search_activation != null) {
+            if (self.app.workspace_search.test_activation_delay_us != 0) job.test_delay_us = @intCast(self.app.workspace_search.test_activation_delay_us);
+            job.test_search_fail = self.app.workspace_search.test_activation_fail;
+            self.app.workspace_search.test_activation_delay_us = 0;
+            self.app.workspace_search.test_activation_fail = false;
+        }
+        if (search_activation != null) job.policy = if (self.policy) |policy| policy.ref() else explorer.Policy.create(self.model.?.exclude);
         job.root = if (base) |root| u.z(root) else null;
         job.root_id = root_id;
         job.model_token = token;
         self.run(job);
+        return true;
     }
     fn work(self: *Controller, kind: Kind, path: []const u8) *Work {
         const job = a.create(Work) catch unreachable;
@@ -599,6 +622,7 @@ pub const Controller = struct {
         job.test_delay_us = 0;
         self.pending_load = job;
         self.policy_pending = true;
+        self.app.workspace_search.invalidate("Stale — workspace model is being refreshed.");
         self.manifest_first = 0;
         self.rebuildWatches(&job.candidate.?);
     }
@@ -639,19 +663,25 @@ pub const Controller = struct {
         }
     }
     fn publishLoad(self: *Controller, job: *Work) void {
+        self.app.workspace_search.invalidate("Stale — workspace model changed. Refresh to search the current roots.");
         self.loading = false;
         self.policy_pending = false;
         self.manifest_first = 0;
         self.manifest_last = 0;
         self.error_name = null;
         if (self.model) |*previous| if (sameModel(previous, &job.result.?)) {
-            for (previous.exclude) |pattern| a.free(pattern);
-            a.free(previous.exclude);
-            previous.exclude = job.result.?.exclude;
-            job.result.?.exclude = &.{};
+            const candidate = &job.result.?;
+            for (@constCast(candidate.roots), previous.roots) |*root, old| root.id = old.id;
+            // Transfer the full immutable policy, retaining routing/root IDs and
+            // editor documents. The retired snapshot is destroyed with the job.
+            std.mem.swap([]const model.Root, &previous.roots, &candidate.roots);
+            std.mem.swap([]const []const u8, &previous.exclude, &candidate.exclude);
+            std.mem.swap(model.settings.Config, &previous.workspace_settings, &candidate.workspace_settings);
+            std.mem.swap([32]u8, &previous.policy_fingerprint, &candidate.policy_fingerprint);
             if (self.policy) |policy| policy.unref();
             self.policy = explorer.Policy.create(previous.exclude);
             self.invalidateLoaded();
+            self.app.workspace_policy.modelChanged();
             self.render();
             c.gtk_widget_set_visible(self.panel, 1);
             return;
@@ -663,6 +693,7 @@ pub const Controller = struct {
         job.result = null;
         self.policy = explorer.Policy.create(self.model.?.exclude);
         self.roots();
+        self.app.workspace_policy.modelChanged();
         self.app.refreshWorkspaceLabels();
         self.app.message("Workspace opened in restricted mode. Documents kept. Recovery does not restore workspace roots; reopen the manifest explicitly.");
     }
@@ -689,7 +720,7 @@ pub const Controller = struct {
         const index = self.current();
         const node: ?explorer.Node = if (index) |i| self.tree.nodes.items[i] else null;
         const entries: []const fs.Entry = if (node) |n| if (n.page) |page| page.entries else &.{} else &.{};
-        const text = std.json.Stringify.valueAlloc(a, .{ .roots = roots_list.items, .status = std.mem.span(c.gtk_label_get_text(u.cast(c.GtkLabel, self.status))), .restricted = true, .loading = self.loading, .scanning = self.scanPending(), .pending = self.jobs.items.len, .in_flight = self.inFlight(), .request_bytes = self.request_bytes, .choosing = self.choosing, .operation_limit = limits.in_flight, .request_byte_limit = limits.request_bytes, .selected = if (self.selected) |id| @as(?u64, @intCast(@backingInt(id))) else null, .relative = self.relative, .entries = entries, .truncated = false, .complete = if (node) |n| n.complete else false, .offset = if (node) |n| n.offset else 0, .visible_rows = self.tree.rows.items.len, .resident_pages = self.tree.pages(), .resident_bytes = self.tree.bytes(), .node_count = self.tree.nodes.items.len, .live_widgets = self.view.live_widgets, .peak_widgets = self.view.peak_widgets, .watches = self.watches.count, .watch_worker_limit = @as(usize, 1), .watch_queue_depth = queued_watches.count, .watch_queued_bytes = queued_watches.bytes, .watch_plan_byte_limit = watch.byte_limit, .watch_generation = self.watches.generation, .watch_ready = self.watches.ready(), .watch_worker_busy = self.watches.worker_busy.load(.acquire), .watch_builds = self.watches.builds.load(.monotonic), .watch_fallback = self.watches.failed, .selected_path = self.tree.selected_path, .loop_gap_us = self.test_max_tick_us, .draining = self.test_drain, .scans_started = self.scans_started, .resets = self.resets, .overflows = self.overflows, .directories = directories.items, .error_name = self.error_name, .manifest = if (self.model) |m| m.manifest_path else null }, .{}) catch unreachable;
+        const text = std.json.Stringify.valueAlloc(a, .{ .roots = roots_list.items, .status = std.mem.span(c.gtk_label_get_text(u.cast(c.GtkLabel, self.status))), .restricted = self.app.workspace_policy.policy.state != .trusted, .loading = self.loading, .scanning = self.scanPending(), .pending = self.jobs.items.len, .in_flight = self.inFlight(), .request_bytes = self.request_bytes, .choosing = self.choosing, .operation_limit = limits.in_flight, .request_byte_limit = limits.request_bytes, .selected = if (self.selected) |id| @as(?u64, @intCast(@backingInt(id))) else null, .relative = self.relative, .entries = entries, .truncated = false, .complete = if (node) |n| n.complete else false, .offset = if (node) |n| n.offset else 0, .visible_rows = self.tree.rows.items.len, .resident_pages = self.tree.pages(), .resident_bytes = self.tree.bytes(), .node_count = self.tree.nodes.items.len, .live_widgets = self.view.live_widgets, .peak_widgets = self.view.peak_widgets, .watches = self.watches.count, .watch_worker_limit = @as(usize, 1), .watch_queue_depth = queued_watches.count, .watch_queued_bytes = queued_watches.bytes, .watch_plan_byte_limit = watch.byte_limit, .watch_generation = self.watches.generation, .watch_ready = self.watches.ready(), .watch_worker_busy = self.watches.worker_busy.load(.acquire), .watch_builds = self.watches.builds.load(.monotonic), .watch_fallback = self.watches.failed, .selected_path = self.tree.selected_path, .loop_gap_us = self.test_max_tick_us, .draining = self.test_drain, .scans_started = self.scans_started, .resets = self.resets, .overflows = self.overflows, .directories = directories.items, .error_name = self.error_name, .manifest = if (self.model) |m| m.manifest_path else null }, .{}) catch unreachable;
         defer a.free(text);
         const z = u.z(text);
         defer a.free(z);
@@ -723,6 +754,8 @@ const Work = struct {
     path: [:0]u8,
     root: ?[:0]u8 = null,
     root_id: ?RootId = null,
+    search_activation: ?SearchActivation = null,
+    search_overlay: bool = false,
     document_token: identity.Token,
     request: ?identity.Token = null,
     model_token: ?identity.Token = null,
@@ -745,6 +778,7 @@ const Work = struct {
     canonical: ?[:0]u8 = null,
     err: ?anyerror = null,
     test_delay_us: c_ulong = 0,
+    test_search_fail: bool = false,
     delivering: bool = false,
     fn destroy(self: *Work) void {
         if (self.policy) |policy| policy.unref();
@@ -759,6 +793,7 @@ const Work = struct {
     }
     fn perform(self: *Work) !void {
         if (c.g_cancellable_is_cancelled(self.cancel) != 0) return error.Cancelled;
+        if (@import("build_options").test_hooks and self.test_search_fail) return error.TestSearchOpenFailed;
         switch (self.kind) {
             .load => {
                 const path = try fs.absolute(a, self.path);
@@ -770,12 +805,22 @@ const Work = struct {
             },
             .scan => self.listing = try fs.scanPage(a, self.root.?, self.path, self.policy.?.patterns, self.continuation, self.cancel),
             .file => {
+                var checked: ?fs.CheckedDirectory = null;
+                defer if (checked) |*directory| directory.deinit();
+                var policy_work: fs.Work = .{};
                 if (self.root) |root| {
                     if (!contained(root, self.path) or self.path.len <= root.len) return error.OutsideRoot;
                     const relative = self.path[root.len + @as(usize, if (root.len == 1) 0 else 1) ..];
-                    try fs.checkFile(root, relative);
+                    if (self.search_activation != null) {
+                        checked = try fs.CheckedDirectory.open(a, root, std.fs.path.dirname(relative) orelse "", self.policy.?.patterns, null, self.cancel, &policy_work);
+                        if (!try checked.?.allowsOverlay(std.fs.path.basename(relative), &policy_work)) return error.OutsideRoot;
+                    }
+                    if (!self.search_overlay) try fs.checkFile(root, relative);
                 }
-                self.canonical = try open_target.resolveExisting(a, self.path);
+                // A deleted dirty file is an existing document, not a request to
+                // create/reload a missing file. Its safe parents/policy were checked.
+                self.canonical = if (self.search_overlay) u.z(self.path) else try open_target.resolveExisting(a, self.path);
+                if (checked) |*directory| try directory.validate(&policy_work);
                 if (self.root) |root| if (!contained(root, self.canonical.?)) return error.OutsideRoot;
             },
         }
@@ -804,6 +849,9 @@ fn done(_: ?*c.GObject, result: ?*c.GAsyncResult, data: ?*anyopaque) callconv(.c
     if (job.model_token) |token| if (!self.acceptsModel(token)) return;
     if (job.kind == .scan and job.epoch != self.epoch) return;
     self.pollWatches();
+    // Gate both success and error delivery before either can affect the current
+    // navigation. Query identity alone cannot distinguish A then B activations.
+    if (job.search_activation) |activation| if (!self.app.workspace_search.acceptActivationCompletion(activation)) return;
     if (job.kind == .scan) {
         const node = &self.tree.nodes.items[job.node];
         node.busy = false;
@@ -818,13 +866,17 @@ fn done(_: ?*c.GObject, result: ?*c.GAsyncResult, data: ?*anyopaque) callconv(.c
         }
     }
     if (job.err) |err| {
-        if (job.kind == .load) self.loading = false;
+        if (job.kind == .load) {
+            self.loading = false;
+            self.app.workspace_policy.modelFailed(err);
+        }
         if (job.kind == .scan) {
             const node = &self.tree.nodes.items[job.node];
             node.clear();
             node.err = @errorName(err);
             self.render();
         }
+        if (job.search_activation != null) self.app.workspace_search.invalidate("Search activation rejected: target or policy changed. Refresh required.");
         if (job.kind == .file) self.app.existingFailed(err) else self.fail(err);
         if (job.kind == .load and self.policy_pending) self.render();
         return;
@@ -869,7 +921,7 @@ fn done(_: ?*c.GObject, result: ?*c.GAsyncResult, data: ?*anyopaque) callconv(.c
             if (job.navigate) self.focusNode(job.node);
             self.render();
         },
-        .file => self.app.acceptExisting(job.canonical.?),
+        .file => if (job.search_activation) |activation| self.app.workspace_search.acceptOpen(job.canonical.?, activation) else self.app.acceptExisting(job.canonical.?),
     }
 }
 const Choice = struct { controller: *Controller, source: Source, token: identity.Token };
@@ -934,6 +986,8 @@ fn rowActivated(_: ?*c.GtkListView, index: c_uint, data: ?*anyopaque) callconv(.
 fn directoryChanged(data: ?*anyopaque, index: usize) void {
     const self = u.cast(Controller, data.?);
     if (self.closed) return;
+    self.app.workspace_policy.recheck();
+    self.app.workspace_search.invalidate("Stale — workspace watch event. Refresh to search current contents.");
     if (index == watch.overflow_index) {
         self.overflows += 1;
         const now = c.g_get_monotonic_time();

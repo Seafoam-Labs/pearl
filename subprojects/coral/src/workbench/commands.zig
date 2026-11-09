@@ -31,6 +31,11 @@ pub const Command = enum {
     workspace_back,
     workspace_rescan,
     close_workspace,
+    quick_open,
+    workspace_search,
+    workspace_policy,
+    workspace_trust,
+    workspace_revoke,
 
     pub fn metadata(self: Command) Metadata {
         return entries[@backingInt(self)];
@@ -66,6 +71,11 @@ pub const Command = enum {
             .workspace_back => i18n.dtr("coral", "Workspace: Back"),
             .workspace_rescan => i18n.dtr("coral", "Workspace: Rescan directory"),
             .close_workspace => i18n.dtr("coral", "Close workspace (keep documents)"),
+            .quick_open => i18n.dtr("coral", "Quick Open…"),
+            .workspace_search => i18n.dtr("coral", "Search workspace…"),
+            .workspace_policy => i18n.dtr("coral", "Workspace: Settings and Trust…"),
+            .workspace_trust => i18n.dtr("coral", "Trust workspace…"),
+            .workspace_revoke => i18n.dtr("coral", "Workspace: Revoke trust"),
         };
     }
 };
@@ -107,6 +117,11 @@ pub const entries = [_]Metadata{
     .{ .command = .workspace_back, .action = "workspace-back", .detailed_action = "app.workspace-back", .label = "Workspace: Back", .shortcut = null },
     .{ .command = .workspace_rescan, .action = "workspace-rescan", .detailed_action = "app.workspace-rescan", .label = "Workspace: Rescan directory", .shortcut = null },
     .{ .command = .close_workspace, .action = "close-workspace", .detailed_action = "app.close-workspace", .label = "Close workspace (keep documents)", .shortcut = null },
+    .{ .command = .quick_open, .action = "quick-open", .detailed_action = "app.quick-open", .label = "Quick Open…", .shortcut = "Ctrl+P" },
+    .{ .command = .workspace_search, .action = "workspace-search", .detailed_action = "app.workspace-search", .label = "Search workspace…", .shortcut = "Ctrl+Shift+F" },
+    .{ .command = .workspace_policy, .action = "workspace-policy", .detailed_action = "app.workspace-policy", .label = "Workspace: Settings and Trust…", .shortcut = null },
+    .{ .command = .workspace_trust, .action = "workspace-trust", .detailed_action = "app.workspace-trust", .label = "Trust workspace…", .shortcut = null },
+    .{ .command = .workspace_revoke, .action = "workspace-revoke", .detailed_action = "app.workspace-revoke", .label = "Workspace: Revoke trust", .shortcut = null },
 };
 
 pub fn fromAction(action: []const u8) ?Command {
@@ -129,6 +144,7 @@ pub fn fromKey(key: u32, state: u32) ?Command {
     if (modifiers == ctrl | shift) return switch (lower) {
         's' => .save_as,
         'p' => .command_palette,
+        'f' => .workspace_search,
         else => null,
     };
     if (modifiers == shift and key == 0xffc7) return .spelling; // GDK_KEY_F10
@@ -136,6 +152,7 @@ pub fn fromKey(key: u32, state: u32) ?Command {
     return switch (lower) {
         'n' => .new,
         'o' => .open,
+        'p' => .quick_open,
         's' => .save,
         'f', 'h' => .find,
         'g' => .goto_line,
@@ -149,7 +166,7 @@ pub fn fromKey(key: u32, state: u32) ?Command {
 
 test "registry is exhaustive, ordered and has unique stable actions" {
     try std.testing.expectEqual(@typeInfo(Command).@"enum".field_names.len, entries.len);
-    const actions = [_][]const u8{ "new", "open", "save", "save-as", "reload", "find", "goto", "spelling", "preferences", "about", "close", "quit", "command-palette", "split-group", "focus-next-group", "focus-previous-group", "close-group", "excerpt", "grouped-undo", "grouped-redo", "open-folder", "open-workspace", "workspace-roots", "workspace-back", "workspace-rescan", "close-workspace" };
+    const actions = [_][]const u8{ "new", "open", "save", "save-as", "reload", "find", "goto", "spelling", "preferences", "about", "close", "quit", "command-palette", "split-group", "focus-next-group", "focus-previous-group", "close-group", "excerpt", "grouped-undo", "grouped-redo", "open-folder", "open-workspace", "workspace-roots", "workspace-back", "workspace-rescan", "close-workspace", "quick-open", "workspace-search", "workspace-policy", "workspace-trust", "workspace-revoke" };
     for (entries, actions, 0..) |entry, action, index| {
         try std.testing.expectEqual(index, @backingInt(entry.command));
         try std.testing.expectEqualStrings(action, entry.action);
@@ -188,6 +205,8 @@ test "command shortcuts include shifted keyvals and existing find alias" {
         .{ .key = ',', .state = 4, .command = .preferences },
         .{ .key = 'w', .state = 4, .command = .close },
         .{ .key = 'q', .state = 4, .command = .quit },
+        .{ .key = 'p', .state = 4, .command = .quick_open },
+        .{ .key = 'F', .state = 5, .command = .workspace_search },
         .{ .key = 'p', .state = 5, .command = .command_palette },
         .{ .key = 'P', .state = 5, .command = .command_palette },
         .{ .key = 0xffc7, .state = 1, .command = .spelling },
@@ -195,7 +214,7 @@ test "command shortcuts include shifted keyvals and existing find alias" {
 }
 
 test "unmapped editor keys and other modifiers remain with the parent" {
-    for ([_]u32{ 0xff1b, 0xffc0, 0xff09, 0xfe20, 'z', 'Z', 'y', '+', '=', '-', '0', 'p' }) |key| {
+    for ([_]u32{ 0xff1b, 0xffc0, 0xff09, 0xfe20, 'z', 'Z', 'y', '+', '=', '-', '0' }) |key| {
         try std.testing.expectEqual(@as(?Command, null), fromKey(key, 4));
     }
     for ([_]u32{ 0, 1, 5, 4 | 8, 4 | (1 << 26), 4 | (1 << 27), 4 | (1 << 28), 4 | (1 << 7) }) |state| {

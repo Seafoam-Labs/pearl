@@ -2,7 +2,7 @@ const std = @import("std");
 const m = @import("manifest.zig");
 const a = std.testing.allocator;
 
-test "manifest owns UTF-8 strings and accepts only version one and empty settings" {
+test "manifest owns UTF-8 strings and accepts version one and optional settings" {
     const input = try a.dupe(u8,
         \\{"version":1,"roots":[{"name":"café","path":"../src"},{"path":"/tmp/二"}],"settings":{}}
     );
@@ -68,7 +68,7 @@ test "manifest rejects duplicate keys including escaped names at every schema le
         \\{"version":1,"roots":[{"path":".","name":"one","name":"two"}]}
         ,
     }) |bytes| try std.testing.expectError(error.DuplicateField, m.parse(a, bytes));
-    // No settings member is supported, so even its first occurrence fails closed.
+    // Unknown settings fail closed even before a duplicate can be encountered.
     try std.testing.expectError(error.UnsupportedSettings, m.parse(a,
         \\{"version":1,"roots":[],"settings":{"trust":false,"trust":true}}
     ));
@@ -154,7 +154,7 @@ test "manifest caps bytes and root count before unbounded collection allocation"
 
 fn allocationCase(allocator: std.mem.Allocator) !void {
     var parsed = try m.parse(allocator,
-        \\{"version":1,"roots":[{"name":"caf\u00e9","path":"../src"},{"path":"/tmp/other"}],"settings":{},"exclude":["**/out/","*.tmp"]}
+        \\{"version":1,"roots":[{"name":"caf\u00e9","path":"../src"},{"path":"/tmp/other"}],"settings":{"indent":2,"languages":{"z\u0069g":{"wrap":false}}},"exclude":["**/out/","*.tmp"]}
     );
     defer parsed.deinit();
 }
@@ -203,6 +203,31 @@ test "manifest optional excludes are bounded owned and strictly typed" {
     json.shrinkRetainingCapacity(end);
     try json.appendSlice(a, ",\"overflow\"]}");
     try std.testing.expectError(error.TooLarge, m.parse(a, json.items));
+}
+
+test "manifest safe settings share strict parser and own language strings" {
+    const input = try a.dupe(u8,
+        \\{"version":1,"roots":[],"settings":{"lines":false,"indent":2,"languages":{"z\u0069g":{"indent":8}}}}
+    );
+    defer a.free(input);
+    var parsed = try m.parse(a, input);
+    defer parsed.deinit();
+    @memset(input, 'x');
+    try std.testing.expectEqual(false, parsed.settings.general.lines.?);
+    try std.testing.expectEqualStrings("zig", parsed.settings.languages[0].id);
+    try std.testing.expectEqual(@as(u8, 8), parsed.settings.forLanguage("zig").indent.?);
+    try std.testing.expectError(error.DuplicateField, m.parse(a,
+        \\{"version":1,"roots":[],"settings":{"wrap":true,"wr\u0061p":false}}
+    ));
+    try std.testing.expectError(error.DuplicateField, m.parse(a,
+        \\{"version":1,"roots":[],"settings":{"languages":{"zig":{},"z\u0069g":{}}}}
+    ));
+    try std.testing.expectError(error.InvalidSchema, m.parse(a,
+        \\{"version":1,"roots":[],"settings":{"languages":{"zig":{"indent":null}}}}
+    ));
+    try std.testing.expectError(error.UnsupportedSettings, m.parse(a,
+        \\{"version":1,"roots":[],"settings":{"languages":{"zig":{"command":"no"}}}}}
+    ));
 }
 
 test "manifest cleans up every caller allocation failure" {

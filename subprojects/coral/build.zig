@@ -62,6 +62,10 @@ pub fn build(b: *std.Build) void {
     const tests = b.addTest(.{ .root_module = tm });
     const test_step = b.step("test", "Test file format, revisions, Unicode tokenization and real GIO saves");
     test_step.dependOn(&b.addRunArtifact(tests).step);
+    // Trust concurrency tests fork; isolate them from the GIO tests' worker pool.
+    const trust_module = createModule(b, .{ .root_source_file = b.path("src/workspace/trust_test.zig"), .target = target, .optimize = optimize, .link_libc = true });
+    const trust_tests = b.addTest(.{ .root_module = trust_module });
+    test_step.dependOn(&b.addRunArtifact(trust_tests).step);
     const appearance_module = createModule(b, .{ .root_source_file = b.path("src/appearance.zig"), .target = target, .optimize = optimize, .link_libc = true });
     for ([_][]const u8{ "gtk4", "gdk4", "gio2", "glib2", "gobject2" }) |name| appearance_module.addImport(name, bindings.module(name));
     appearance_module.addImport("appearance_client", appearance);
@@ -105,6 +109,20 @@ pub fn build(b: *std.Build) void {
     const m2_explorer = b.step("test-m2-explorer", "Run explorer unit and 100k native acceptance");
     m2_explorer.dependOn(test_step);
     m2_explorer.dependOn(&explorer.step);
+    const search = b.addSystemCommand(&.{ "python3", "tests/search.py", "--binary" });
+    search.addArtifactArg(ie);
+    search.addPassthruArgs();
+    b.step("search", "Run native quick-open and workspace search acceptance").dependOn(&search.step);
+    const m2_search = b.step("test-m2-search", "Run search unit, widget and 100k native acceptance");
+    m2_search.dependOn(test_step);
+    m2_search.dependOn(&search.step);
+    const policy = b.addSystemCommand(&.{ "python3", "tests/policy.py", "--binary" });
+    policy.addArtifactArg(ie);
+    policy.addPassthruArgs();
+    b.step("policy", "Run native settings provenance and workspace trust acceptance").dependOn(&policy.step);
+    const m2_policy = b.step("test-m2-policy", "Run settings/trust units, widgets and native acceptance");
+    m2_policy.dependOn(test_step);
+    m2_policy.dependOn(&policy.step);
     const m1 = b.step("test-m1", "Run unit, widget, native, group and recovery acceptance tests");
     m1.dependOn(test_step);
     m1.dependOn(&integration.step);
@@ -124,6 +142,8 @@ pub fn build(b: *std.Build) void {
     b.step("widgets", "Test editor views and palette lifetimes in a private Wayland session").dependOn(&widgets.step);
     m1.dependOn(&widgets.step);
     m2_explorer.dependOn(&widgets.step);
+    m2_search.dependOn(&widgets.step);
+    m2_policy.dependOn(&widgets.step);
 
     const bm = createModule(b, .{ .root_source_file = b.path("src/benchmark_m0.zig"), .target = target, .optimize = optimize, .link_libc = true });
     for ([_][]const u8{ "gtk4", "gtksourceview-5", "enchant-2" }) |lib| bm.linkSystemLibrary(lib, .{ .use_pkg_config = .yes });

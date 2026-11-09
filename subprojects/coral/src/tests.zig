@@ -15,6 +15,7 @@ test {
     _ = @import("workspace/identity.zig");
     _ = @import("workspace/model.zig");
     _ = @import("workspace/browser_fs.zig");
+    _ = @import("workspace/search_test.zig");
     _ = @import("terminal/pty.zig");
     _ = @import("tasks/process.zig");
     _ = @import("workbench/commands.zig");

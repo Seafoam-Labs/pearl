@@ -1,6 +1,6 @@
 # M2: native workspaces and bounded explorer
 
-**Status: multi-root workspace and paged explorer increments implemented and tested; M2 remains in progress.** The user accepted M0's documented bounded-editor tradeoffs. Workspace search, settings/trust persistence and full project sessions remain future work.
+**Status: workspace, explorer, search, safe settings and persistent trust increments implemented and tested; M2 remains in progress.** The user accepted M0's documented bounded-editor tradeoffs. See the [search guide](WORKBENCH_M2_SEARCH.md) and [settings/trust guide](WORKBENCH_M2_POLICY.md). Full project sessions and workbench docking remain future work.
 
 ## Open a workspace
 
@@ -32,9 +32,9 @@ Explicit workspace paths can be relative to the working directory. If several `-
 - `name` is optional. Names are display labels, not identities; identical names are supported.
 - Root paths resolve against the **supplied manifest path's parent**, not the process working directory. Symlinked manifests retain that lexical parent for relative roots; symlink/`..` semantics are not flattened before filesystem resolution.
 - Available roots receive canonical directory paths and process-local typed `RootId`s. Canonical aliases deduplicate, preserving the first declaration's name. File ownership in nested roots uses the longest canonical component prefix.
-- Unavailable roots remain visible and are never recreated. Covered parent watches detect disappearance/return; **Rescan** provides an explicit fallback.
+- Missing/non-directory roots remain visible and are never recreated. Covered parent watches detect disappearance/return; **Rescan** provides an explicit fallback. Permission/I/O-denied roots reject the candidate if their folder settings cannot be safely inspected.
 - Optional `exclude` contains at most **128 root-relative patterns, 1,024 bytes each**. These final hides apply after `.gitignore`; negation is not accepted in `exclude`.
-- `settings` must currently be **omitted or empty**. Unsupported settings are rejected. Existing user `preferences.ini` remains unchanged.
+- Optional `settings` accepts safe `lines`, `wrap`, `spaces`, `indent` and `languages` overrides. Root-local `.coral/settings.json` supplies folder overrides. Unknown/executable settings remain rejected even when trusted; repository values never enter user `preferences.ini`. See [schema and precedence](WORKBENCH_M2_POLICY.md).
 - Unknown/duplicate fields (including escaped spellings), explicit null optionals, unsupported versions, invalid UTF-8/NUL and trailing JSON documents fail closed.
 - Other limits: **1 MiB JSON**, **4,095-byte native paths**, **256-byte explicit root names**.
 
@@ -48,7 +48,7 @@ A virtualized **GtkListView** above the editor groups renders a bounded expandab
 - Activate a root/directory to expand or collapse it. Only accessed directories are enumerated, on workers; opening a workspace does not enumerate unopened descendants.
 - Activate a regular file to open it in the canonical document registry.
 - **Load more** replaces the directory's current **256-entry page window**. It does not accumulate all names or widgets in memory.
-- **Rescan** refreshes content and rereads manifest policy, including when monitoring is unavailable. Invalidated directory continuations discard old pages and restart from the beginning.
+- **Rescan** refreshes content and rereads manifest/folder settings, including folder-only workspaces and when monitoring is unavailable. Invalidated directory continuations discard old pages and restart from the beginning.
 - **Reset tree** releases cached directory state while preserving root identities and documents. It cannot bypass a pending policy error.
 - **Close workspace** removes the model/explorer, **not open tabs or dirty text**.
 
@@ -96,9 +96,9 @@ Initial manifest loading is staged: unpublished candidate → watch installation
 
 Registration failures/capacity limits show a manual **Rescan** fallback. Notifications are not guaranteed on all remote filesystems. Blocking filesystem calls cannot be forcibly interrupted; shutdown can wait for the worker's hold to be released. No periodic recursive scans are used.
 
-## Restricted workspace policy
+## Workspace trust boundary
 
-The model has only **restricted** state. JSON/repository contents cannot grant trust. There is no persistent approval store or trusted-mode button yet. Browsing launches no tasks, language servers, hooks, agents or terminals. Explicit editing/saves remain available. No new create/rename/delete/move operations are provided by the explorer.
+Workspaces default to **restricted**. JSON/repository contents cannot grant trust. A separate machine-owned policy controller now provides [explicit persistent approval and revocation](WORKBENCH_M2_POLICY.md), with exact root/policy identities and generation-checked permits. Trust is not per-tool approval and launches no tasks, language servers, hooks, agents or terminals. Explicit editing/saves remain available without trust. No new create/rename/delete/move operations are provided by the explorer.
 
 Browser traversal opens directory components descriptor-relatively without following symlinks. Traversal-only ancestors use `O_PATH`, supporting readable projects beneath search-only ancestors. Symlinks, special/inaccessible entries and unsupported filename encodings are disabled. File activation revalidates the selected root/path and regular-file type on a worker.
 
@@ -146,7 +146,7 @@ zig build -Doptimize=safe -Dtest-hooks=false
 
 `test-m2-slice` includes headless tests and workspace compatibility acceptance. `test-m2-explorer` includes headless/widget tests and native explorer acceptance. `workspaces` and `explorer` run the respective native harness alone. Private Wayland/XDG sessions use disposable fixtures; `-- --aqueous-prefix /usr` selects this host's installed test tooling.
 
-### Final validation, 2026-11-09
+### Explorer-increment validation, 2026-11-09
 
 All three targets passed separately: **158 widget-root tests, 40 native workflow groups, 14 group/history checks, 13 recovery groups, 18 workspace groups and 19 explorer groups**. Headless unit/appearance steps were cached successes on the final rerun. Production safe build, Zig formatting, Python compilation and diff whitespace checks passed.
 
@@ -173,9 +173,11 @@ Evidence: `pearl/.cache/coral-explorer/results.json`, `100k-paged.png` and adjac
 
 ## Next M2 increments
 
-1. Bounded quick-open and streaming workspace search, including unsaved-buffer overlays and unambiguous root identity; separately qualify indexing/search on 100k files.
-2. Safe workspace/folder/language settings precedence with provenance; persistent machine-owned trust approval/revocation before executable features.
-3. Versioned workspace/session persistence alongside recovery, including missing roots/conflicts; restore roots, tabs and layout without recreating paths.
-4. Workbench docking/pickers, multi-window lifecycle and separately authorized filesystem operations.
+Quick Open and streaming workspace search with unsaved overlays are now [implemented and validated on 100k nonempty files](WORKBENCH_M2_SEARCH.md). This is on-demand traversal, not a persistent index.
+
+Safe settings precedence/provenance and machine-owned trust approval/revocation are now [implemented](WORKBENCH_M2_POLICY.md), without executable features.
+
+1. Versioned workspace/session persistence alongside recovery, including missing roots/conflicts; restore roots, tabs and layout without recreating paths.
+2. Workbench docking/pickers, multi-window lifecycle and separately authorized filesystem operations.
 
 M2 remains **in progress**.

@@ -233,7 +233,40 @@ test "absolute roots UTF-8 input canonical identity and joined path bounds" {
     try std.testing.expectError(error.TooLarge, model.Model.fromManifestBytes(a, "/parent/workspace", oversized));
 }
 
-test "permission-denied roots remain visible but unreadable manifests fail" {
+test "folder model retains readable root below execute-only ancestor and rejects unreadable settings" {
+    if (std.c.geteuid() == 0) return error.SkipZigTest;
+    var f = try Fixture.init();
+    defer f.deinit();
+    try f.mkdir("ancestor");
+    try f.mkdir("ancestor/root");
+    try f.mkdir("ancestor/root/.coral");
+    try f.write("ancestor/root/.coral/settings.json", "{\"version\":1,\"settings\":{\"indent\":2}}");
+    const ancestor = try f.path("ancestor");
+    defer a.free(ancestor);
+    const root = try f.path("ancestor/root");
+    defer a.free(root);
+    const directory = try f.path("ancestor/root/.coral");
+    defer a.free(directory);
+    const leaf = try f.path("ancestor/root/.coral/settings.json");
+    defer a.free(leaf);
+    try std.testing.expectEqual(@as(c_int, 0), std.c.chmod(ancestor, 0o100));
+    defer std.debug.assert(std.c.chmod(ancestor, 0o700) == 0);
+    try std.testing.expectEqual(@as(c_int, 0), std.c.chmod(directory, 0o100));
+    defer std.debug.assert(std.c.chmod(directory, 0o700) == 0);
+    var value = try model.Model.fromFolder(a, root);
+    defer value.deinit();
+    try std.testing.expectEqual(@as(usize, 1), value.roots.len);
+    try std.testing.expectEqual(model.Availability.available, value.roots[0].availability);
+    try std.testing.expectEqualStrings(root, value.roots[0].canonical_path.?);
+    try std.testing.expectEqual(@as(u8, 2), value.roots[0].folder_settings.general.indent.?);
+    try std.testing.expectEqual(@as(c_int, 0), std.c.chmod(leaf, 0));
+    defer std.debug.assert(std.c.chmod(leaf, 0o600) == 0);
+    try std.testing.expectError(error.PermissionDenied, model.Model.fromFolder(a, root));
+    try std.testing.expectError(error.PermissionDenied, value.rescan());
+    try std.testing.expectEqual(@as(u8, 2), value.roots[0].folder_settings.general.indent.?);
+}
+
+test "permission-denied roots reject unreadable folder policy and unreadable manifests fail" {
     if (std.c.geteuid() == 0) return error.SkipZigTest;
     var f = try Fixture.init();
     defer f.deinit();
@@ -242,10 +275,7 @@ test "permission-denied roots remain visible but unreadable manifests fail" {
     defer a.free(denied);
     try std.testing.expectEqual(@as(c_int, 0), std.c.chmod(denied, 0));
     defer std.debug.assert(std.c.chmod(denied, 0o700) == 0);
-    var value = try model.Model.fromFolder(a, denied);
-    defer value.deinit();
-    try std.testing.expectEqual(model.Availability.permission_denied, value.roots[0].availability);
-    try std.testing.expect(value.roots[0].canonical_path == null);
+    try std.testing.expectError(error.PermissionDenied, model.Model.fromFolder(a, denied));
     try f.write("unreadable", "{\"version\":1,\"roots\":[]}");
     const p = try f.path("unreadable");
     defer a.free(p);
@@ -305,11 +335,179 @@ test "model descriptor parser dedup and ownership allocation failures clean up" 
     defer f.deinit();
     try f.mkdir("root");
     try f.symlink("root", "alias");
+    try f.mkdir("root/.coral");
+    try f.write("root/.coral/settings.json",
+        \\{"version":1,"settings":{"indent":3,"languages":{"zig":{"spaces":false}}}}
+    );
     try f.write("workspace",
-        \\{"version":1,"roots":[{"name":"one","path":"root"},{"path":"alias"},{"path":"missing"}],"exclude":["**/out/","二/*.tmp"]}
+        \\{"version":1,"roots":[{"name":"one","path":"root"},{"path":"alias"},{"path":"missing"}],"settings":{"lines":false,"languages":{"c":{"indent":2}}},"exclude":["**/out/","二/*.tmp"]}
     );
     const p = try f.path("workspace");
     defer a.free(p);
     try std.testing.checkAllAllocationFailures(a, allocationCase, .{p});
-    try std.testing.checkAllAllocationFailures(a, folderAllocationCase, .{f.base});
+    const root = try f.path("root");
+    defer a.free(root);
+    try std.testing.checkAllAllocationFailures(a, folderAllocationCase, .{root});
+}
+
+fn replaceFixtureFile(path: [:0]const u8, bytes: []const u8) !void {
+    const fd = std.c.open(path, .{ .ACCMODE = .WRONLY, .TRUNC = true, .CLOEXEC = true });
+    try std.testing.expect(fd >= 0);
+    defer _ = std.c.close(fd);
+    var at: usize = 0;
+    while (at < bytes.len) {
+        const n = std.c.write(fd, bytes[at..].ptr, bytes.len - at);
+        if (n < 0 and std.c.errno(n) == .INTR) continue;
+        try std.testing.expect(n > 0);
+        at += @intCast(n);
+    }
+}
+
+test "model owns workspace and folder configs deduplicates first alias and resolves context" {
+    var f = try Fixture.init();
+    defer f.deinit();
+    try f.mkdir("root");
+    try f.mkdir("root/.coral");
+    try f.symlink("root", "alias");
+    try f.write("root/.coral/settings.json",
+        \\{"version":1,"settings":{"indent":3,"languages":{"zig":{"spaces":false}}}}
+    );
+    const path = try f.path("workspace");
+    defer a.free(path);
+    const input = try a.dupe(u8,
+        \\{"version":1,"roots":[{"name":"first","path":"alias"},{"name":"second","path":"root"}],"settings":{"lines":false,"languages":{"zig":{"indent":7}}}}
+    );
+    defer a.free(input);
+    var value = try model.Model.fromManifestBytes(a, path, input);
+    defer value.deinit();
+    @memset(input, 'x');
+    try std.testing.expectEqual(@as(usize, 1), value.roots.len);
+    const root = &value.roots[0];
+    try std.testing.expectEqualStrings("first", root.display_name);
+    try std.testing.expectEqualStrings("zig", value.workspace_settings.languages[0].id);
+    try std.testing.expectEqualStrings("zig", root.folder_settings.languages[0].id);
+    const effective = value.effectiveSettings(root.id, "zig", .{}, .{ .wrap = true });
+    try std.testing.expectEqual(model.settings.Baseline{ .lines = false, .spaces = false, .indent = 7 }, effective.values);
+    try std.testing.expectEqual(model.settings.Origins{ .lines = .workspace, .wrap = .user, .spaces = .folder_language, .indent = .workspace_language }, effective.origins);
+    try std.testing.expectEqualStrings(root.canonical_path.?, effective.context.root_path.?);
+    try std.testing.expectEqualStrings("zig", effective.context.language.?);
+    const no_root = value.effectiveSettings(null, null, .{}, .{});
+    try std.testing.expect(no_root.context.root_path == null);
+    try std.testing.expectEqual(@as(u8, 4), no_root.values.indent);
+    const folder_path = try f.path("root");
+    defer a.free(folder_path);
+    var folder = try model.Model.fromFolder(a, folder_path);
+    defer folder.deinit();
+    try std.testing.expect(folder.workspace_settings.general.indent == null);
+    try std.testing.expectEqual(@as(u8, 3), folder.roots[0].folder_settings.general.indent.?);
+}
+
+test "explicit folder rescan reloads configs and failed candidate retains old snapshot" {
+    var f = try Fixture.init();
+    defer f.deinit();
+    var before = try model.Model.fromFolder(a, f.base);
+    defer before.deinit();
+    const fingerprint = before.policy_fingerprint;
+    try f.mkdir(".coral");
+    try f.write(".coral/settings.json", "{\"version\":1,\"settings\":{\"indent\":2}}");
+    var updated = try before.rescan();
+    defer updated.deinit();
+    try std.testing.expect(!std.mem.eql(u8, &fingerprint, &updated.policy_fingerprint));
+    try std.testing.expect(before.roots[0].folder_settings.general.indent == null);
+    try std.testing.expectEqual(@as(u8, 2), updated.roots[0].folder_settings.general.indent.?);
+    const path = try f.path(".coral/settings.json");
+    defer a.free(path);
+    try replaceFixtureFile(path, "{\"version\":1,\"settings\":{\"indent\":null}}");
+    try std.testing.expectError(error.InvalidSchema, updated.rescan());
+    try std.testing.expectEqual(@as(u8, 2), updated.roots[0].folder_settings.general.indent.?);
+    try std.testing.expectEqual(fingerprint, before.policy_fingerprint);
+    try std.testing.expectError(error.InvalidSchema, model.Model.fromFolder(a, f.base));
+}
+
+test "manifest rescan reloads folder policy and all roots reject on bad folder config" {
+    var f = try Fixture.init();
+    defer f.deinit();
+    try f.mkdir("one");
+    try f.mkdir("two");
+    try f.mkdir("two/.coral");
+    try f.write("workspace", "{\"version\":1,\"roots\":[{\"path\":\"one\"},{\"path\":\"two\"}]}");
+    const path = try f.path("workspace");
+    defer a.free(path);
+    var before = try model.Model.fromManifest(a, path);
+    defer before.deinit();
+    try f.write("two/.coral/settings.json", "{\"version\":1,\"settings\":{\"wrap\":false}}");
+    var updated = try before.rescan();
+    defer updated.deinit();
+    try std.testing.expectEqual(false, updated.roots[1].folder_settings.general.wrap.?);
+    const config_path = try f.path("two/.coral/settings.json");
+    defer a.free(config_path);
+    try replaceFixtureFile(config_path, "{\"version\":1,\"settings\":{\"command\":\"no\"}}");
+    try std.testing.expectError(error.UnsupportedSettings, model.Model.fromManifest(a, path));
+    try std.testing.expectError(error.UnsupportedSettings, updated.rescan());
+    try std.testing.expectEqual(false, updated.roots[1].folder_settings.general.wrap.?);
+}
+
+test "policy fingerprint canonicalizes JSON language order aliases and excludes but binds policy and paths" {
+    var f = try Fixture.init();
+    defer f.deinit();
+    try f.mkdir("root");
+    try f.mkdir("other");
+    try f.symlink("root", "alias");
+    try f.write("workspace", "{\"version\":1,\"roots\":[]}");
+    try f.symlink("workspace", "workspace-alias");
+    const path = try f.path("workspace");
+    defer a.free(path);
+    const alias = try f.path("workspace-alias");
+    defer a.free(alias);
+    const first =
+        \\{"version":1,"roots":[{"path":"root"}],"settings":{"lines":false,"indent":2,"languages":{"zig":{"indent":8},"c":{"wrap":false}}},"exclude":["out/**","*.tmp"]}
+    ;
+    const equivalent =
+        \\{"settings":{"languages":{"c":{"wrap":false},"z\u0069g":{"indent":8}},"indent":2,"lines":false},"roots":[{"name":"new name","path":"alias"},{"path":"root"}],"exclude":["*.tmp","out/**"],"version":1}
+    ;
+    var left = try model.Model.fromManifestBytes(a, path, first);
+    defer left.deinit();
+    var right = try model.Model.fromManifestBytes(a, alias, equivalent);
+    defer right.deinit();
+    try std.testing.expectEqual(left.policy_fingerprint, right.policy_fingerprint);
+    for ([_][]const u8{
+        \\{"version":1,"roots":[{"path":"other"}],"settings":{"lines":false,"indent":2,"languages":{"zig":{"indent":8},"c":{"wrap":false}}},"exclude":["out/**","*.tmp"]}
+        ,
+        \\{"version":1,"roots":[{"path":"root"}],"settings":{"lines":true,"indent":2,"languages":{"zig":{"indent":8},"c":{"wrap":false}}},"exclude":["out/**","*.tmp"]}
+        ,
+        \\{"version":1,"roots":[{"path":"root"}],"settings":{"lines":false,"indent":2,"languages":{"zig":{"indent":7},"c":{"wrap":false}}},"exclude":["out/**","*.tmp"]}
+        ,
+        \\{"version":1,"roots":[{"path":"root"}],"settings":{"lines":false,"indent":2,"languages":{"zig":{"indent":8},"c":{"wrap":false}}},"exclude":["out/**"]}
+        ,
+    }) |changed| {
+        var value = try model.Model.fromManifestBytes(a, path, changed);
+        defer value.deinit();
+        try std.testing.expect(!std.mem.eql(u8, &left.policy_fingerprint, &value.policy_fingerprint));
+    }
+    const other_path = try f.path("different-workspace");
+    defer a.free(other_path);
+    var relocated = try model.Model.fromManifestBytes(a, other_path, first);
+    defer relocated.deinit();
+    try std.testing.expect(!std.mem.eql(u8, &left.policy_fingerprint, &relocated.policy_fingerprint));
+}
+
+test "unavailable policy paths never collapse physical symlink dot-dot spellings" {
+    var f = try Fixture.init();
+    defer f.deinit();
+    try f.mkdir("real");
+    try f.mkdir("real/child");
+    try f.symlink("real/child", "link");
+    const path = try f.path("workspace");
+    defer a.free(path);
+    var physical = try model.Model.fromManifestBytes(a, path,
+        \\{"version":1,"roots":[{"path":"link/../absent"}]}
+    );
+    defer physical.deinit();
+    var lexical = try model.Model.fromManifestBytes(a, path,
+        \\{"version":1,"roots":[{"path":"absent"}]}
+    );
+    defer lexical.deinit();
+    try std.testing.expect(physical.roots[0].canonical_path == null);
+    try std.testing.expect(lexical.roots[0].canonical_path == null);
+    try std.testing.expect(!std.mem.eql(u8, &physical.policy_fingerprint, &lexical.policy_fingerprint));
 }
