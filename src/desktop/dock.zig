@@ -52,7 +52,11 @@ const DragBinding = struct {
     /// Pointer visited a real slot at least once; distinguishes a sweep from
     /// a click that never moved off the source icon.
     dragged: bool = false,
+    press_time: i64 = 0,
 };
+/// Hold time before a press may turn into a reorder drag, so plain clicks on
+/// dock icons are not instantly picked up. Microseconds, per glib.getMonotonicTime.
+const drag_debounce_us: i64 = 500 * std.time.us_per_ms;
 pub const Dock = struct {
     client: *Client,
     index: *Apps.Index,
@@ -602,6 +606,23 @@ pub const Dock = struct {
                 const drag = try alloc.create(DragBinding);
                 drag.* = .{ .dock = self, .key = try alloc.dupeSentinel(u8, id, 0), .widget = primary.as(gtk.Widget), .box = box.as(gtk.Widget), .icon = icon, .pins = pins };
                 const gesture = gtk.GestureDrag.new();
+                // GtkGesture begin/end are not exposed in the bindings; connect them
+                // directly to stamp when the press started. ("pressed" does not exist
+                // on GestureSingle in GTK 4.24 — the lookup silently returns 0.)
+                _ = object.signalConnectClosureById(
+                    @ptrCast(@alignCast(gesture)),
+                    object.signalLookup("begin", gtk.GestureDrag.getGObjectType()),
+                    glib.quarkFromString(null),
+                    object.CClosure.new(@ptrCast(&dragGestureBegin), drag, null),
+                    0,
+                );
+                _ = object.signalConnectClosureById(
+                    @ptrCast(@alignCast(gesture)),
+                    object.signalLookup("end", gtk.GestureDrag.getGObjectType()),
+                    glib.quarkFromString(null),
+                    object.CClosure.new(@ptrCast(&dragGestureEnd), drag, null),
+                    0,
+                );
                 _ = gtk.GestureDrag.signals.drag_begin.connect(gesture, *DragBinding, dragBegan, drag, .{});
                 _ = gtk.GestureDrag.signals.drag_update.connect(gesture, *DragBinding, dragMoved, drag, .{});
                 _ = gtk.GestureDrag.signals.drag_end.connect(gesture, *DragBinding, dragDone, drag, .{});
@@ -734,9 +755,22 @@ pub const Dock = struct {
             slot.removeCssClass("pearl-drag-src");
         }
     }
+    fn dragGestureBegin(_: *gtk.GestureDrag, _: ?*gdk.EventSequence, binding: *DragBinding) callconv(.c) void {
+        binding.press_time = glib.getMonotonicTime();
+    }
+    fn dragGestureEnd(_: *gtk.GestureDrag, _: ?*gdk.EventSequence, binding: *DragBinding) callconv(.c) void {
+        binding.press_time = 0;
+    }
     /// Keeps autohide/intelligent docks revealed while an icon is being moved;
     /// the pointer leaves the surface during the drag and would hide it.
     fn dragBegan(_: *gtk.GestureDrag, x: f64, y: f64, binding: *DragBinding) callconv(.c) void {
+        // Decline quick press-and-move so a click never yoinks the icon out of
+        // place; dragMoved arms the drag once the hold passes the debounce.
+        if (binding.press_time == 0) binding.press_time = glib.getMonotonicTime();
+        if (glib.getMonotonicTime() - binding.press_time < drag_debounce_us) return;
+        beginDrag(binding, x, y);
+    }
+    fn beginDrag(binding: *DragBinding, x: f64, y: f64) void {
         const self = binding.dock;
         if (self.locked or self.destroying or self.dragging) return;
         var box_rect: gtk.Allocation = undefined;
@@ -783,6 +817,8 @@ pub const Dock = struct {
         self.ghost.setPixelSize(self.config.icon_size);
         const half = @as(f64, @floatFromInt(self.config.icon_size)) / 2;
         self.fixed.move(self.ghost.as(gtk.Widget), binding.win_x + binding.origin_x + x - half, binding.win_y + binding.origin_y + y - half);
+        // Removed again in dragDone so the pickup pop replays on every grab.
+        self.ghost.as(gtk.Widget).addCssClass("pearl-drag-pickup");
         self.ghost.as(gtk.Widget).setVisible(1);
         binding.widget.addCssClass("pearl-dragging");
         binding.box.addCssClass("pearl-drag-src");
@@ -796,9 +832,19 @@ pub const Dock = struct {
     }
     /// Translates the gesture offset into panel coordinates, finds the hovered
     /// slot and slides the row live so the gap travels with the pointer.
-    fn dragMoved(_: *gtk.GestureDrag, off_x: f64, off_y: f64, binding: *DragBinding) callconv(.c) void {
+    fn dragMoved(gesture: *gtk.GestureDrag, off_x: f64, off_y: f64, binding: *DragBinding) callconv(.c) void {
         const self = binding.dock;
-        if (!self.dragging or self.destroying) return;
+        if (self.destroying) return;
+        if (!self.dragging) {
+            // drag-begin was declined by the debounce; arm the drag now that
+            // the hold passed it, so hold + drag still reorders.
+            if (glib.getMonotonicTime() - binding.press_time < drag_debounce_us) return;
+            var sx: f64 = 0;
+            var sy: f64 = 0;
+            _ = gesture.getStartPoint(&sx, &sy);
+            beginDrag(binding, sx, sy);
+            if (!self.dragging) return;
+        }
         const px = binding.origin_x + binding.start_x + off_x;
         const py = binding.origin_y + binding.start_y + off_y;
         const half = @as(f64, @floatFromInt(self.config.icon_size)) / 2;
@@ -879,6 +925,7 @@ pub const Dock = struct {
         self.dragging = false;
         binding.widget.removeCssClass("pearl-dragging");
         self.ghost.as(gtk.Widget).setVisible(0);
+        self.ghost.as(gtk.Widget).removeCssClass("pearl-drag-pickup");
         self.clearDragClasses();
         self.loadDragCss(false, 0, 0);
         const target = binding.target;

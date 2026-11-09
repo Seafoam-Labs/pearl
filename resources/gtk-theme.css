@@ -84,6 +84,8 @@
 /* The grabbed icon hides: its slot travels to the landing spot as an empty gap. */
 .pearl-root.pearl-gtk .pearl-dock button.pearl-dragging { opacity: 0; }
 .pearl-root.pearl-gtk .pearl-dock-ghost { filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.45)); }
+@keyframes pearl-dock-pickup { 0% { opacity: 0.5; transform: scale(0.65); } 55% { opacity: 1; transform: scale(1.12); } 100% { opacity: 1; transform: scale(1); } }
+.pearl-root.pearl-gtk .pearl-dock-ghost.pearl-drag-pickup { animation: pearl-dock-pickup 220ms ease-out; }
 @keyframes pearl-dock-landed { from { opacity: 0.35; transform: scale(1.15); } to { opacity: 1; transform: scale(1); } }
 .pearl-root.pearl-gtk .pearl-dock > box.pearl-drop-landed { animation: pearl-dock-landed 240ms ease-out; }
 .pearl-root.pearl-gtk .pearl-dock-indicator { color: @theme_selected_bg_color; font-size: 0.75em; margin-top: -3px; margin-bottom: -2px; }
