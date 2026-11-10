@@ -46,10 +46,13 @@ const diagnostics = @import("diagnostics");
 const file_error = @import("platform/file_error.zig");
 const test_hooks = @import("build_options").test_hooks;
 const log = std.log.scoped(.platform);
-const config_log = std.log.scoped(.config);
 
 pub const App = struct {
     application: *c.GtkApplication,
+    manager: ?*@import("application.zig").Manager = null,
+    window_id: u64 = 0,
+    scope_class: [:0]const u8 = "",
+    holds: usize = 0,
     workspace: workspace_identity.Scope,
     // Document lifecycle scope above is independent of the browser model's scope.
     browser: WorkspaceController = undefined,
@@ -73,6 +76,7 @@ pub const App = struct {
     checkpoint_idle: c_uint = 0,
     checkpoint_running: bool = false,
     test_checkpoint_count: u64 = 0,
+    test_save_delay_ms: c_uint = 0,
     new_button: W,
     search_button: W,
     searchbox: W,
@@ -87,8 +91,6 @@ pub const App = struct {
     palette: ?*Palette = null,
     palette_focus: c.GWeakRef = undefined,
     settings: Settings,
-    preferences_running: bool = false,
-    preferences_pending: ?Settings = null,
     worker: *spell.Worker,
     timer: c_uint = 0,
     generation: u64 = 1,
@@ -111,7 +113,7 @@ pub const App = struct {
     menu_word: ?[:0]u8 = null,
     dialog_kind: DialogKind = .close,
     goto_input: ?W = null,
-    pub fn create(application: *c.GtkApplication, settings: Settings, width: c_int, height: c_int) *App {
+    pub fn create(application: *c.GtkApplication, settings: Settings, width: c_int, height: c_int, manager: *@import("application.zig").Manager, window_id: u64) *App {
         const self = a.create(App) catch unreachable;
 
         const window = c.gtk_application_window_new(application).?;
@@ -198,6 +200,10 @@ pub const App = struct {
         u.connect(spell_button, "clicked", &onSpelling, self);
         u.append(root, footer);
         self.* = .{ .application = application, .workspace = .init(), .window = window, .notebook = notebook, .groups = groups, .new_button = new, .search_button = search, .searchbox = searchbox, .query = query, .replacement = replacement, .matches = matches, .status = status, .spell_button = spell_button, .notice = notice, .settings = settings, .worker = spell.Worker.start(), .css = c.gtk_css_provider_new().?, .font_css = c.gtk_css_provider_new().? };
+        self.manager = manager;
+        self.window_id = window_id;
+        self.scope_class = u.fmt("coral-window-{d}", .{window_id});
+        _ = c.g_object_ref(window); // Keep the widget tree rooted until all callbacks drain.
         self.dock = dock;
         self.workspace_search = WorkspaceSearch.init(self, self.dock.search_slot);
         self.workspace_search.present = &presentWorkspaceSearch;
@@ -217,7 +223,7 @@ pub const App = struct {
         c.gtk_css_provider_load_from_string(self.css, @embedFile("style"));
         c.gtk_style_context_add_provider_for_display(c.gdk_display_get_default(), u.cast(c.GtkStyleProvider, self.css), c.GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
         c.gtk_style_context_add_provider_for_display(c.gdk_display_get_default(), u.cast(c.GtkStyleProvider, self.font_css), c.GTK_STYLE_PROVIDER_PRIORITY_APPLICATION + 1);
-        self.appearance = .{ .context = self, .changed = appearanceChanged };
+        self.appearance = .{ .context = self, .changed = appearanceChanged, .scope = self.scope_class };
         self.appearance.setMode(@import("appearance.zig").modeFrom(settings.theme));
         c.gtk_widget_add_css_class(window, "coral");
         u.connect(window, "close-request", &onCloseWindow, self);
@@ -239,7 +245,7 @@ pub const App = struct {
         for (commands.entries) |entry| {
             const action = c.g_simple_action_new(entry.action, null).?;
             u.connect(action, "activate", &onAction, self);
-            c.g_action_map_add_action(u.cast(c.GActionMap, application), u.cast(c.GAction, action));
+            c.g_action_map_add_action(u.cast(c.GActionMap, window), u.cast(c.GAction, action));
             c.g_object_unref(action);
         }
         self.applySettings();
@@ -269,9 +275,29 @@ pub const App = struct {
             self.focusEditor();
         }
     }
+    /// GTK-thread ownership. Release never frees inline: the manager reaps on
+    /// a later loop turn, after callback stacks and recovery work have drained.
+    pub fn hold(self: *App) void {
+        self.holds += 1;
+        c.g_application_hold(u.cast(c.GApplication, self.application));
+    }
+    pub fn release(self: *App) void {
+        std.debug.assert(self.holds > 0);
+        self.holds -= 1;
+        c.g_application_release(u.cast(c.GApplication, self.application));
+    }
     pub fn deinit(self: *App) void {
+        std.debug.assert(self.holds == 0);
+        self.disconnectCallbacks(self.window);
+        inline for (.{ self.browser.view, self.workspace_search.view.list }) |view| {
+            self.disconnectObject(view.selection);
+            self.disconnectObject(c.gtk_list_view_get_factory(u.cast(c.GtkListView, view.widget)).?);
+        }
+        for (commands.entries) |entry| {
+            if (c.g_action_map_lookup_action(u.cast(c.GActionMap, self.window), entry.action)) |action| self.disconnectObject(action);
+            c.g_action_map_remove_action(u.cast(c.GActionMap, self.window), entry.action);
+        }
         self.dock.shutdown();
-        std.debug.assert(!self.preferences_running and self.preferences_pending == null);
         self.session.deinit();
         self.browser.deinit();
         self.workspace_policy.deinit();
@@ -282,7 +308,7 @@ pub const App = struct {
         self.appearance.deinit();
         self.worker.stop();
         if (self.palette) |palette| palette.close();
-        // Async operations hold the application until their callbacks are reaped;
+        // Async operations retain this exact App until their callbacks are reaped;
         // watcher queries allow tabs/windows to close while that hold is active.
         // Views release their buffer references and callbacks before documents.
         while (self.views.items.len > 0) self.detachView(self.views.items[self.views.items.len - 1]);
@@ -301,6 +327,9 @@ pub const App = struct {
         c.g_object_unref(self.css);
         c.gtk_style_context_remove_provider_for_display(c.gdk_display_get_default(), u.cast(c.GtkStyleProvider, self.font_css));
         c.g_object_unref(self.font_css);
+        c.gtk_window_destroy(u.cast(c.GtkWindow, self.window));
+        c.g_object_unref(self.window);
+        a.free(self.scope_class);
         a.destroy(self);
     }
     pub fn active(self: *App) ?*Document {
@@ -504,7 +533,8 @@ pub const App = struct {
         return count;
     }
     pub fn closeActiveView(self: *App) void {
-        if (self.dialog != null or self.closing) return;
+        if (self.dialog != null or self.closing or self.quitting) return;
+        if (self.manager) |manager| if (manager.quitting) return;
         const d = self.active() orelse return;
         if (self.viewCount(d) == 1) self.closeDocument(d) else {
             self.detachActive();
@@ -973,10 +1003,63 @@ pub const App = struct {
             c.gtk_text_view_set_editable(u.cast(c.GtkTextView, pane.editor.widget), @intFromBool(editable and !d.loading and d.pending == null));
         };
     }
-    fn styleWindow(self: *App, widget: W) void {
+    fn disconnectObject(self: *App, object: anytype) void {
+        inline for (.{ self, &self.browser, &self.browser.view, &self.workspace_search, &self.workspace_search.view, &self.workspace_search.view.list, &self.workspace_policy, &self.session }) |context| {
+            _ = c.g_signal_handlers_disconnect_matched(@ptrCast(object), c.G_SIGNAL_MATCH_DATA, 0, 0, null, null, context);
+        }
+    }
+    fn disconnectCallbacks(self: *App, widget: W) void {
+        self.disconnectObject(widget);
+        // Transient action groups hold a GObject reference to the owner window.
+        // Drop it even when GTK or an async chooser retains a closed dialog.
+        c.gtk_widget_insert_action_group(widget, "win", null);
+        const controllers = c.gtk_widget_observe_controllers(widget).?;
+        defer c.g_object_unref(controllers);
+        for (0..c.g_list_model_get_n_items(controllers)) |i| {
+            const controller = c.g_list_model_get_item(controllers, @intCast(i)).?;
+            self.disconnectObject(controller);
+            c.g_object_unref(controller);
+        }
+        var child = c.gtk_widget_get_first_child(widget);
+        while (child) |current| : (child = c.gtk_widget_get_next_sibling(current)) self.disconnectCallbacks(current);
+    }
+    /// Shared chooser/about APIs return no widget. Resolve their exact transient
+    /// ancestry, never the display's focused/active window, and retain the list
+    /// while destroying children (which mutates GTK's toplevel model).
+    pub fn transients(self: *App, close: bool) void {
+        const model = c.gtk_window_get_toplevels().?;
+        var owned: std.ArrayList(*c.GtkWindow) = .empty;
+        defer owned.deinit(a);
+        const count = c.g_list_model_get_n_items(model);
+        for (0..count) |i| {
+            const object = c.g_list_model_get_item(model, @intCast(i)) orelse continue;
+            const window = u.cast(c.GtkWindow, object);
+            var parent = c.gtk_window_get_transient_for(window);
+            var depth: usize = 0;
+            while (parent != null and parent != u.cast(c.GtkWindow, self.window) and depth < 32) : (depth += 1) parent = c.gtk_window_get_transient_for(parent);
+            if (parent == u.cast(c.GtkWindow, self.window)) owned.append(a, window) catch unreachable else c.g_object_unref(object);
+        }
+        for (owned.items) |window| {
+            const is_chooser = c.g_object_get_data(u.cast(c.GObject, window), "pearl-chooser") != null;
+            if (close) {
+                self.disconnectCallbacks(u.cast(c.GtkWidget, window));
+                // The chooser's task itself retains its dialog. A destroy signal
+                // can wait for finalization; response completes the task now.
+                if (is_chooser) c.gtk_dialog_response(u.cast(c.GtkDialog, window), c.GTK_RESPONSE_CANCEL) else c.gtk_window_destroy(window);
+            } else {
+                self.styleWindow(u.cast(c.GtkWidget, window));
+                if (test_hooks and is_chooser) testKeys(self, u.cast(c.GtkWidget, window));
+            }
+            c.g_object_unref(window);
+        }
+    }
+    pub fn styleWindow(self: *App, widget: W) void {
         self.themeClasses(widget);
+        // Transient roots do not inherit their parent's widget action groups.
+        c.gtk_widget_insert_action_group(widget, "win", u.cast(c.GActionGroup, self.window));
     }
     fn themeClasses(self: *App, widget: W) void {
+        c.gtk_widget_add_css_class(widget, self.scope_class);
         const class = self.appearance.themeClass();
         if (std.mem.eql(u8, "native", class)) c.gtk_widget_remove_css_class(widget, "coral") else c.gtk_widget_add_css_class(widget, "coral");
         inline for (.{ "dark", "light" }) |name| {
@@ -984,29 +1067,19 @@ pub const App = struct {
         }
     }
     fn savePreferences(self: *App) void {
-        // Only the user layer is copied. Never serialize an Effective value.
-        self.preferences_pending = self.settings;
-        self.startPreferencesSave();
+        if (self.manager) |manager| manager.savePreferences(self.settings);
     }
-    fn startPreferencesSave(self: *App) void {
-        if (self.preferences_running) return;
-        const snapshot = self.preferences_pending orelse return;
-        self.preferences_pending = null;
-        const job = a.create(PreferencesSave) catch unreachable;
-        job.* = .{ .app = self, .settings = snapshot };
-        self.preferences_running = true;
-        c.g_application_hold(u.cast(c.GApplication, self.application));
-        const task = c.g_task_new(null, null, &preferencesSaved, job).?;
-        c.g_task_set_task_data(task, job, null);
-        c.g_task_run_in_thread(task, &preferencesWorker);
-        c.g_object_unref(task);
+    pub fn receivePreferences(self: *App, settings: Settings) void {
+        self.settings = settings;
+        self.appearance.setMode(@import("appearance.zig").modeFrom(settings.theme));
+        self.applySettings();
+        self.resetSpelling();
     }
     fn applySettings(self: *App) void {
         self.workspace_policy.userSettingsChanged();
-        if (self.dialog) |dialog| self.styleWindow(dialog);
-        if (self.palette) |palette| self.styleWindow(palette.window);
+        self.transients(false);
         self.themeClasses(self.window);
-        const css = u.fmt("textview {{ font-family: monospace; font-size: {d:.3}em; }}", .{@as(f64, @floatFromInt(self.settings.font)) / 14.667});
+        const css = u.fmt(".{s} textview {{ font-family: monospace; font-size: {d:.3}em; }}", .{ self.scope_class, @as(f64, @floatFromInt(self.settings.font)) / 14.667 });
         defer a.free(css);
         c.gtk_css_provider_load_from_string(self.font_css, css);
         for (self.documents.entries.items) |d| self.configure(d, false);
@@ -1017,6 +1090,7 @@ pub const App = struct {
         self.applySettings();
     }
     pub fn message(self: *App, text: []const u8) void {
+        if (self.closing) return;
         u.setLabel(self.notice, text);
         c.gtk_widget_set_visible(self.notice, @intFromBool(text.len > 0));
     }
@@ -1244,7 +1318,7 @@ pub const App = struct {
         d.watch_pending = false;
         const file = c.g_file_new_for_path(path).?;
         defer c.g_object_unref(file);
-        c.g_application_hold(u.cast(c.GApplication, self.application));
+        self.hold();
         c.g_file_query_info_async(file, "standard::type,etag::value", c.G_FILE_QUERY_INFO_NONE, c.G_PRIORITY_DEFAULT, op.cancel, &diskQueried, op);
     }
     fn requestReload(self: *App, d: *Document) void {
@@ -1267,7 +1341,7 @@ pub const App = struct {
         // removed or a new generation replaces the document's request.
         d.cancellable = u.cast(c.GCancellable, c.g_object_ref(op.cancel).?);
         self.setEditable(d, false);
-        c.g_application_hold(u.cast(c.GApplication, self.application));
+        self.hold();
         load_file.load(path, d.cancellable.?, &loaded, op);
         self.update();
     }
@@ -1307,6 +1381,14 @@ pub const App = struct {
     }
     fn saveTo(self: *App, d: *Document, requested_path: []const u8, force: bool, as: bool) void {
         if (d.busy) return;
+        // A missing baseline must not turn an ordinary Save into an unchecked
+        // replacement (including independent copies open in another window).
+        if (!force and !as and d.etag == null) {
+            d.close_after_save = false;
+            self.cancelClosing();
+            self.ask(.conflict, d, "Cannot verify the saved version", "This document has no saved file identity. Save a copy instead of overwriting an unverified version on disk.", &.{ .{ .text = "Cancel", .id = 0 }, .{ .text = "Save As…", .id = 2 } });
+            return;
+        }
         const path = u.canonicalPath(requested_path);
         defer a.free(path);
         for (self.documents.entries.items) |other| {
@@ -1321,6 +1403,21 @@ pub const App = struct {
                 }
             }
         }
+        const reservation = if (self.manager) |manager| manager.reserveSave(self.window_id, d.id, path) catch |err| {
+            d.close_after_save = false;
+            self.cancelClosing();
+            self.message(switch (err) {
+                error.SaveDestinationBusy => "Save destination is busy in another window. Wait for that save to finish, then retry; your edits are preserved.",
+                error.SaveLimit => "Coral allows 16 in-flight saves. Wait for a save to finish, then retry; your edits are preserved.",
+                error.SavePathTooLong => "Save destination exceeds the 4095-byte path limit; your edits are preserved.",
+                else => "Could not reserve the save destination; your edits are preserved.",
+            });
+            return;
+        } else null;
+        var admitted = false;
+        defer if (!admitted) {
+            if (reservation) |slot| self.manager.?.releaseSave(slot);
+        };
         const text = u.bufferText(d.buffer);
         defer a.free(text);
         const bytes = codec.encode(a, text, d.bom, d.newline) catch {
@@ -1328,26 +1425,30 @@ pub const App = struct {
             return;
         };
         const op = a.create(SaveOp) catch unreachable;
-        op.* = .{ .doc = d, .path = u.z(path), .data = bytes, .revision = d.revision, .etag = if (!force and !as) if (d.etag) |e| u.z(e) else null else null };
-        const file = c.g_file_new_for_path(op.path).?;
-        defer c.g_object_unref(file);
+        op.* = .{ .doc = d, .path = u.z(path), .data = bytes, .revision = d.revision, .etag = if (!force and !as) if (d.etag) |e| u.z(e) else null else null, .reservation = reservation };
+        admitted = true;
         d.stopWatching();
         d.busy = true;
         d.cancellable = c.g_cancellable_new();
-        c.g_application_hold(u.cast(c.GApplication, self.application));
-        if (!force and !as) c.g_file_query_info_async(file, "etag::value", c.G_FILE_QUERY_INFO_NONE, c.G_PRIORITY_DEFAULT, d.cancellable, &savePreflight, op) else startReplace(file, op);
+        self.hold();
+        if (test_hooks and self.test_save_delay_ms != 0) {
+            _ = c.g_timeout_add(self.test_save_delay_ms, &delayedSave, op);
+            self.test_save_delay_ms = 0;
+        } else dispatchSave(op);
         self.update();
     }
     fn chooseOpen(self: *App) void {
-        c.g_application_hold(u.cast(c.GApplication, self.application));
+        self.hold();
         chooser.openAsync(@ptrCast(self.window), 1, @ptrCast(&chosenOpen), self);
+        self.transients(false);
     }
     fn chooseSave(self: *App, d: *Document) void {
         d.busy = true;
-        c.g_application_hold(u.cast(c.GApplication, self.application));
+        self.hold();
         const name = u.z(if (d.path) |p| std.fs.path.basename(p) else "Untitled.txt");
         defer a.free(name);
         chooser.saveAsync(@ptrCast(self.window), name, @ptrCast(&chosenSave), d);
+        self.transients(false);
     }
     fn ask(self: *App, kind: DialogKind, d: ?*Document, title: [*:0]const u8, detail: [*:0]const u8, buttons: []const Button) void {
         if (self.dialog != null) return;
@@ -1417,6 +1518,7 @@ pub const App = struct {
         }
     }
     fn shutdownWindow(self: *App) void {
+        if (self.closing) return;
         self.checkpoint();
         self.closing = true;
         self.dock.shutdown();
@@ -1425,21 +1527,42 @@ pub const App = struct {
         self.workspace_search.shutdown();
         self.browser.shutdown();
         self.workspace.close();
-        if (self.palette) |palette| palette.close();
+        if (self.palette) |palette| {
+            self.disconnectCallbacks(palette.window);
+            palette.close();
+        }
         if (self.timer != 0) {
             _ = c.g_source_remove(self.timer);
             self.timer = 0;
         }
         while (self.views.items.len > 0) self.detachView(self.views.items[self.views.items.len - 1]);
         while (self.excerpts.items.len > 0) self.detachExcerpt(self.excerpts.items[self.excerpts.items.len - 1]);
-        c.gtk_window_destroy(u.cast(c.GtkWindow, self.window));
+        if (self.checkpoint_idle != 0) {
+            _ = c.g_source_remove(self.checkpoint_idle);
+            self.checkpoint_idle = 0;
+        }
+        // Remove the native window now, but do not destroy its widget tree while
+        // chooser/worker callbacks still own this App. Recovery observes removal.
+        c.gtk_widget_set_visible(self.window, 0);
+        c.gtk_application_remove_window(self.application, u.cast(c.GtkWindow, self.window));
+        self.transients(true);
     }
     fn cancelClosing(self: *App) void {
+        if (self.manager) |manager| manager.cancelQuit(self.window_id);
         self.quitting = false;
         self.closing_group = null;
     }
-    fn quit(self: *App) void {
-        if (self.dialog != null) return;
+    pub fn quit(self: *App) void {
+        if (self.closing or self.quitting) return;
+        if (self.manager) |manager| if (manager.quitting and manager.quit_waiting != self.window_id) {
+            self.message("Quit All is resolving another window. Cancel its prompt to stop quitting.");
+            return;
+        };
+        if (self.dialog != null or self.recovery_suspended) {
+            self.cancelClosing();
+            self.message("Finish the current dialog or startup recovery before closing this window.");
+            return;
+        }
         self.quitting = true;
         if (self.documents.entries.items.len > 0) self.closeDocument(self.documents.entries.items[self.documents.entries.items.len - 1]) else self.shutdownWindow();
     }
@@ -1558,7 +1681,14 @@ pub const App = struct {
         self.palette.?.show();
     }
     fn execute(self: *App, command: commands.Command) void {
-        if (self.closing or self.dialog != null) return;
+        if (self.closing) return;
+        // New Window must be rejected even when a quit prompt is modal.
+        if (command == .new_window) {
+            if (self.manager) |manager| manager.create(self);
+            return;
+        }
+        if (self.dialog != null or self.quitting) return;
+        if (self.manager) |manager| if (manager.quitting) return;
         switch (command) {
             .new => {
                 _ = self.newDocument();
@@ -1624,9 +1754,15 @@ pub const App = struct {
             .excerpt => self.excerptSelection() catch |err| self.editFailure(err),
             .grouped_undo => self.replayGrouped(false) catch |err| self.editFailure(err),
             .grouped_redo => self.replayGrouped(true) catch |err| self.editFailure(err),
-            .quit => self.quit(),
+            .new_window => unreachable,
+            .close_window => self.quit(),
+            .next_window, .previous_window => if (self.manager) |manager| manager.cycle(self.window_id, command == .previous_window),
+            .quit => if (self.manager) |manager| manager.quitAll(self) else self.quit(),
             .command_palette => self.showPalette(),
-            .about => c.gtk_show_about_dialog(u.cast(c.GtkWindow, self.window), "program-name", @as([*:0]const u8, "Coral"), "version", @as([*:0]const u8, "0.1.1"), "comments", @as([*:0]const u8, "A focused Zig and GTK4 text editor with offline spelling."), @as(?*anyopaque, null)),
+            .about => {
+                c.gtk_show_about_dialog(u.cast(c.GtkWindow, self.window), "program-name", @as([*:0]const u8, "Coral"), "version", @as([*:0]const u8, "0.1.1"), "comments", @as([*:0]const u8, "A focused Zig and GTK4 text editor with offline spelling."), @as(?*anyopaque, null));
+                self.transients(false);
+            },
         }
     }
     fn showPolicy(self: *App, confirmation: bool) void {
@@ -1861,7 +1997,8 @@ pub const App = struct {
         const labels = a.alloc([]const u8, self.views.items.len) catch return;
         defer a.free(labels);
         for (self.views.items, labels) |view, *label| label.* = std.mem.span(c.gtk_label_get_text(u.cast(c.GtkLabel, view.tab_label)));
-        const json = std.json.Stringify.valueAlloc(a, .{ .session = self.session.testState(), .tab_labels = labels, .notice = std.mem.span(c.gtk_label_get_text(u.cast(c.GtkLabel, self.notice))), .layout_blocked = blocked, .syntax_limited = if (self.active()) |d| @import("editor/presentation_policy.zig").limited(d.buffer) else false, .documents = docs, .views = views, .groups = groups, .history_cursor = self.history.cursor, .history_records = self.history.records.items.len, .active_view = self.activeViewId(), .dialog = self.dialog != null, .checkpoints = self.test_checkpoint_count, .editor_focused = self.activeWidget() == c.gtk_window_get_focus(u.cast(c.GtkWindow, self.window)), .editable = if (self.activeWidget()) |widget| c.gtk_text_view_get_editable(u.cast(c.GtkTextView, widget)) != 0 else false }, .{}) catch return;
+        const font = if (self.activeWidget()) |widget| c.pango_context_get_font_description(c.gtk_widget_get_pango_context(widget)) else null;
+        const json = std.json.Stringify.valueAlloc(a, .{ .window_id = self.window_id, .editor_font_size = if (font) |description| c.pango_font_description_get_size(description) else @as(c_int, 0), .editor_font_absolute = if (font) |description| c.pango_font_description_get_size_is_absolute(description) != 0 else false, .settings = self.settings, .session = self.session.testState(), .tab_labels = labels, .notice = std.mem.span(c.gtk_label_get_text(u.cast(c.GtkLabel, self.notice))), .layout_blocked = blocked, .syntax_limited = if (self.active()) |d| @import("editor/presentation_policy.zig").limited(d.buffer) else false, .documents = docs, .views = views, .groups = groups, .history_cursor = self.history.cursor, .history_records = self.history.records.items.len, .active_view = self.activeViewId(), .dialog = self.dialog != null, .checkpoints = self.test_checkpoint_count, .editor_focused = self.activeWidget() == c.gtk_window_get_focus(u.cast(c.GtkWindow, self.window)), .editable = if (self.activeWidget()) |widget| c.gtk_text_view_get_editable(u.cast(c.GtkTextView, widget)) != 0 else false }, .{}) catch return;
         defer a.free(json);
         const line = u.z(json);
         defer a.free(line);
@@ -2018,7 +2155,7 @@ fn diskChanged(monitor: ?*c.GFileMonitor, _: ?*c.GFile, _: ?*c.GFile, _: c.GFile
 fn diskQueried(source: ?*c.GObject, result: ?*c.GAsyncResult, data: ?*anyopaque) callconv(.c) void {
     const op = u.cast(WatchOp, data.?);
     const self = op.app;
-    defer c.g_application_release(u.cast(c.GApplication, self.application));
+    defer self.release();
     defer {
         c.g_object_unref(op.cancel);
         a.destroy(op);
@@ -2041,7 +2178,7 @@ fn diskQueried(source: ?*c.GObject, result: ?*c.GAsyncResult, data: ?*anyopaque)
     if (d.watch_pending) self.queryDisk(d);
 }
 const LoadOp = struct { app: *App, workspace: workspace_identity.Token, id: u64, cancel: *c.GCancellable, reload: bool, revision: u64 };
-const SaveOp = struct { doc: *Document, path: [:0]u8, data: []u8, revision: u64, etag: ?[:0]u8 = null };
+const SaveOp = struct { doc: *Document, path: [:0]u8, data: []u8, revision: u64, etag: ?[:0]u8 = null, reservation: ?usize = null };
 fn editTarget(d: *Document, expected_revision: u64) transactions.Target {
     return .{ .id = d.id, .buffer = d.buffer, .revision = &d.revision, .expected_revision = expected_revision, .busy = d.loading or d.pending != null };
 }
@@ -2071,7 +2208,7 @@ fn loaded(_: ?*c.GObject, result: ?*c.GAsyncResult, data: ?*anyopaque) callconv(
     const self = op.app;
     defer a.destroy(op);
     defer c.g_object_unref(op.cancel);
-    defer c.g_application_release(u.cast(c.GApplication, self.application));
+    defer self.release();
     var contents: [*c]u8 = null;
     var size: usize = 0;
     var etag: [*c]u8 = null;
@@ -2167,6 +2304,15 @@ fn acceptLoaded(self: *App, d: *Document, large: bool) void {
     self.watch(d);
     self.message(if (d.newline == .mixed) @import("i18n").dtr("coral", "Mixed line endings detected. Choose LF or CRLF when you save.") else "");
 }
+fn dispatchSave(op: *SaveOp) void {
+    const file = c.g_file_new_for_path(op.path).?;
+    defer c.g_object_unref(file);
+    if (op.etag != null) c.g_file_query_info_async(file, "etag::value", c.G_FILE_QUERY_INFO_NONE, c.G_PRIORITY_DEFAULT, op.doc.cancellable, &savePreflight, op) else startReplace(file, op);
+}
+fn delayedSave(data: ?*anyopaque) callconv(.c) c_int {
+    dispatchSave(u.cast(SaveOp, data.?));
+    return 0;
+}
 fn startReplace(file: *c.GFile, op: *SaveOp) void {
     c.g_file_replace_contents_async(file, op.data.ptr, op.data.len, if (op.etag) |e| e.ptr else null, 0, c.G_FILE_CREATE_NONE, op.doc.cancellable, &saved, op);
 }
@@ -2199,11 +2345,12 @@ fn finishSave(op: *SaveOp, ok: bool, etag: [*c]u8, err: ?*c.GError) void {
     const d = op.doc;
     const self = owner(d);
     defer {
+        if (op.reservation) |slot| self.manager.?.releaseSave(slot);
         a.free(op.path);
         a.free(op.data);
         if (op.etag) |e| a.free(e);
         a.destroy(op);
-        c.g_application_release(u.cast(c.GApplication, self.application));
+        self.release();
     }
     d.busy = false;
     if (d.cancellable) |p| c.g_object_unref(p);
@@ -2245,7 +2392,7 @@ fn finishSave(op: *SaveOp, ok: bool, etag: [*c]u8, err: ?*c.GError) void {
 }
 fn chosenOpen(_: ?*c.GObject, result: ?*c.GAsyncResult, data: ?*anyopaque) callconv(.c) void {
     const self = u.cast(App, data.?);
-    defer c.g_application_release(u.cast(c.GApplication, self.application));
+    defer self.release();
     var err: ?*c.GError = null;
     const files: ?*c.GListModel = @ptrCast(chooser.openFinish(@ptrCast(result.?), @ptrCast(&err)));
     if (files) |list| {
@@ -2269,7 +2416,7 @@ fn chosenSave(_: ?*c.GObject, result: ?*c.GAsyncResult, data: ?*anyopaque) callc
     const d = u.cast(Document, data.?);
     const self = owner(d);
     d.busy = false;
-    defer c.g_application_release(u.cast(c.GApplication, self.application));
+    defer self.release();
     var err: ?*c.GError = null;
     const file: ?*c.GFile = @ptrCast(chooser.saveFinish(@ptrCast(result.?), @ptrCast(&err)));
     if (file) |f| {
@@ -2295,6 +2442,7 @@ fn dialogResponse(dialog: ?*c.GtkDialog, response: c_int, data: ?*anyopaque) cal
     const line = if (kind == .goto) c.gtk_spin_button_get_value_as_int(u.cast(c.GtkSpinButton, self.goto_input.?)) else 1;
     self.dialog = null;
     self.dialog_doc = null;
+    self.disconnectCallbacks(u.cast(c.GtkWidget, dialog.?));
     c.gtk_window_destroy(u.cast(c.GtkWindow, dialog.?));
     switch (kind) {
         .policy => switch (response) {
@@ -2385,8 +2533,12 @@ fn tick(data: ?*anyopaque) callconv(.c) c_int {
                     }
                 }
             }
+            const language_changed = !std.mem.eql(u8, saved_lang, chosen);
             self.settings.setLanguage(chosen);
             self.dictionary = chosen.len > 0;
+            // Dictionary discovery changes the user snapshot too; do not leave
+            // another window holding a stale language for its next preference save.
+            if (language_changed) self.savePreferences();
             self.update();
             continue;
         }
@@ -2613,31 +2765,7 @@ fn onContext(gesture: ?*c.GtkGestureClick, _: c_int, x: f64, y: f64, data: ?*any
         self.requestSuggestions(d);
     }
 }
-const PreferencesSave = struct { app: *App, settings: Settings, err: ?anyerror = null };
-fn preferencesWorker(task: ?*c.GTask, _: ?*anyopaque, data: ?*anyopaque, _: ?*c.GCancellable) callconv(.c) void {
-    const job = u.cast(PreferencesSave, data.?);
-    job.settings.save() catch |err| {
-        job.err = err;
-    };
-    c.g_task_return_boolean(task, 1);
-}
-fn preferencesSaved(_: ?*c.GObject, result: ?*c.GAsyncResult, data: ?*anyopaque) callconv(.c) void {
-    const job = u.cast(PreferencesSave, data.?);
-    const self = job.app;
-    _ = c.g_task_propagate_boolean(u.cast(c.GTask, result.?), null);
-    self.preferences_running = false;
-    if (job.err) |err| {
-        config_log.err("event=preferences-save-failed error={s}", .{@errorName(err)});
-        if (!self.closing) {
-            const text = u.fmt("Could not save {s}/coral/preferences.ini: {s}. Check directory permissions.", .{ std.mem.span(c.g_get_user_config_dir()), @errorName(err) });
-            defer a.free(text);
-            self.message(text);
-        }
-    }
-    a.destroy(job);
-    self.startPreferencesSave();
-    c.g_application_release(u.cast(c.GApplication, self.application));
-}
+
 fn prefTheme(widget: ?*c.GtkComboBox, data: ?*anyopaque) callconv(.c) void {
     const self = u.cast(App, data.?);
     self.settings.theme = c.gtk_combo_box_get_active(widget);
@@ -2648,13 +2776,13 @@ fn prefTheme(widget: ?*c.GtkComboBox, data: ?*anyopaque) callconv(.c) void {
 fn prefFont(widget: ?*c.GtkSpinButton, data: ?*anyopaque) callconv(.c) void {
     const self = u.cast(App, data.?);
     self.settings.font = c.gtk_spin_button_get_value_as_int(widget);
-    self.applySettings();
+    self.savePreferences();
 }
 fn prefIndent(widget: ?*c.GtkSpinButton, data: ?*anyopaque) callconv(.c) void {
     const self = u.cast(App, data.?);
     self.settings.indent = c.gtk_spin_button_get_value_as_int(widget);
     self.settings.present.indent = true;
-    self.applySettings();
+    self.savePreferences();
 }
 fn prefToggle(widget: ?*c.GtkCheckButton, data: ?*anyopaque) callconv(.c) void {
     const self = u.cast(App, data.?);
@@ -2665,8 +2793,7 @@ fn prefToggle(widget: ?*c.GtkCheckButton, data: ?*anyopaque) callconv(.c) void {
             if (comptime !std.mem.eql(u8, name, "spelling")) @field(self.settings.present, name) = true;
         }
     }
-    self.applySettings();
-    self.resetSpelling();
+    self.savePreferences();
 }
 fn prefLanguage(widget: ?*c.GtkComboBox, data: ?*anyopaque) callconv(.c) void {
     const self = u.cast(App, data.?);
@@ -2674,7 +2801,7 @@ fn prefLanguage(widget: ?*c.GtkComboBox, data: ?*anyopaque) callconv(.c) void {
     if (id != null) {
         self.settings.setLanguage(std.mem.span(id));
         self.dictionary = std.mem.span(id).len > 0;
-        self.resetSpelling();
+        self.savePreferences();
     }
 }
 fn prefDocument(widget: ?*c.GtkCheckButton, data: ?*anyopaque) callconv(.c) void {
@@ -2756,6 +2883,7 @@ fn paletteCommand(context: *anyopaque, command: commands.Command) void {
 }
 fn paletteClosed(context: *anyopaque) void {
     const self = u.cast(App, context);
+    if (self.palette) |palette| self.disconnectCallbacks(palette.window);
     self.palette = null;
     const previous = c.g_weak_ref_get(&self.palette_focus);
     defer if (previous) |object| c.g_object_unref(object);
@@ -2851,12 +2979,14 @@ fn onKey(_: ?*c.GtkEventControllerKey, key: c_uint, _: c_uint, state: c.GdkModif
 }
 fn testKeys(self: *App, widget: W) void {
     if (!test_hooks) return;
+    if (c.g_object_get_data(u.cast(c.GObject, widget), "coral-test-keys") != null) return;
+    c.g_object_set_data(u.cast(c.GObject, widget), "coral-test-keys", self);
     const keys = c.gtk_event_controller_key_new().?;
     c.gtk_event_controller_set_propagation_phase(keys, c.GTK_PHASE_CAPTURE);
     u.connect(keys, "key-pressed", &onTestKey, self);
     c.gtk_widget_add_controller(widget, keys);
 }
-fn testCommand(self: *App) void {
+fn testCommand(receiver: *App) void {
     if (!test_hooks) return;
     const path = c.g_getenv("CORAL_TEST_COMMAND");
     if (path == null) return;
@@ -2867,6 +2997,28 @@ fn testCommand(self: *App) void {
     if (raw == null) return;
     defer c.g_free(raw);
     const action = std.mem.span(raw);
+    // Test-only routing by registry identity, never GtkApplication.active-window.
+    const targeted = c.g_key_file_has_key(file, "Test", "window", null) != 0;
+    var target_error: ?*c.GError = null;
+    const target_window = if (targeted) c.g_key_file_get_uint64(file, "Test", "window", &target_error) else 0;
+    if (target_error) |err| {
+        c.g_error_free(err);
+        c.g_print("CORAL_COMMAND_REJECTED invalid-window\nCORAL_COMMAND_DONE\n");
+        return;
+    }
+    const self = if (!targeted) receiver else if (receiver.manager) |manager| manager.find(target_window) orelse {
+        c.g_print("CORAL_COMMAND_REJECTED unknown-window\nCORAL_COMMAND_DONE\n");
+        return;
+    } else return;
+    if (std.mem.eql(u8, action, "windows-probe")) {
+        if (self.manager) |manager| manager.probe();
+        c.g_print("CORAL_COMMAND_DONE\n");
+        return;
+    }
+    if (self.closing) {
+        c.g_print("CORAL_COMMAND_REJECTED closing-window\nCORAL_COMMAND_DONE\n");
+        return;
+    }
 
     const value = c.g_key_file_get_string(file, "Test", "value", null);
     defer c.g_free(value);
@@ -2936,6 +3088,9 @@ fn testCommand(self: *App) void {
         }
     } else if (std.mem.eql(u8, action, "respond")) {
         if (self.dialog) |dialog| c.gtk_dialog_response(u.cast(c.GtkDialog, dialog), c.g_key_file_get_integer(file, "Test", "response", null));
+    } else if (std.mem.eql(u8, action, "save-delay")) {
+        const delay = if (value != null) std.fmt.parseInt(u32, std.mem.span(value), 10) catch 0 else 0;
+        self.test_save_delay_ms = @min(delay, 5000);
     } else if (std.mem.eql(u8, action, "save-path")) {
         if (d) |doc| {
             if (value != null) self.saveTo(doc, std.mem.span(value), false, true);

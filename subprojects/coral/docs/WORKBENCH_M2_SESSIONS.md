@@ -1,6 +1,6 @@
 # M2: explicit workspace sessions
 
-**Status: implemented and validated, alongside—not replacing—crash recovery.** This increment adds one explicit saved checkpoint. It does not implement automatic startup resume, per-project session history or multiple windows. The [dock increment](WORKBENCH_M2_DOCKS.md) adds persisted panel layout to session v2. M2 remains in progress.
+**Status: implemented and validated, alongside—not replacing—crash recovery.** This increment adds one explicit saved checkpoint. It does not implement automatic startup resume or per-project session history. [Independent windows](WORKBENCH_M2_WINDOWS.md) are now supported, but their arrangement is not automatically restored. The [dock increment](WORKBENCH_M2_DOCKS.md) adds persisted panel layout to session v2. M2 remains in progress.
 
 ## Use
 
@@ -10,7 +10,7 @@
 
 There is no automatic restore or quit-time session save. Explicit CLI files/workspaces are never silently displaced. Restore preserves existing documents, including dirty and unnamed buffers, and appends restored groups/views. Repeated restore can therefore create additional copies. It does not create isolated per-workspace tab sets.
 
-**One shared slot:** another successful explicit Save Workspace Session replaces the previous checkpoint, even for another project or Coral application variant. Concurrent operations within one window are rejected; cross-process reads/writes use nonblocking locks. Sequential writers are last-accepted-save wins, not compare-and-swap: the API cannot detect a snapshot captured before another process completed its save. This is not a backup/history service.
+**One shared slot:** another successful explicit Save Workspace Session replaces the previous checkpoint, even for another project or Coral application variant. Only one session operation is admitted across all windows in this process; concurrent requests receive Busy. Cross-process reads/writes use nonblocking locks. Sequential writers are last-accepted-save wins, not compare-and-swap: the API cannot detect a snapshot captured before another process completed its save. This is not a backup/history service.
 
 ## What is restored
 
@@ -86,4 +86,4 @@ Evidence: `pearl/.cache/coral-sessions/results.json` and adjacent native logs/sc
 
 **Dock follow-up:** session v2 and v1 migration are now tested by the [27-scenario native dock gate](WORKBENCH_M2_DOCKS.md). The existing 19 session scenarios also pass after the schema upgrade; their future-version fixture no longer assumes a v1 writer. The separate backend root is now `src/session_tests.zig` and includes 23 tests with transitive layout checks.
 
-**Next standard M2 work:** multi-window lifecycle. Automatic/per-project session management and missing-manifest fallback remain explicitly outside this saved-checkpoint increment; no LSP/Git/agent parity is claimed.
+[Multi-window lifecycle](WORKBENCH_M2_WINDOWS.md) is now implemented; restore affects only its requesting window and the explicit checkpoint remains shared. **Next standard M2 work:** separately authorized workspace create/rename/move/delete with dirty-buffer and containment safeguards. Automatic/per-project session management and missing-manifest fallback remain explicitly outside this saved-checkpoint increment; no LSP/Git/agent parity is claimed.

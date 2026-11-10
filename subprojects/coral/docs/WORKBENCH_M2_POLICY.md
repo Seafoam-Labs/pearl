@@ -112,6 +112,8 @@ The store is **`$XDG_STATE_HOME/coral/trust/store`**, normally `~/.local/state/c
 
 A failed revoke remains sticky locally across same-scope model replacements/rechecks; it is not silently cleared by an old disk approval. **If persistence fails, an old approval can still exist on disk and another process/restart may see it.** Resolve the reported storage issue and retry Revoke. Do not treat closing the dialog as successful durable revocation. Other running instances observe removal only when they revalidate; cross-process instantaneous cancellation is not implemented. Quarantine repair is explicit machine-state maintenance, not an automatic deletion of uncertain data.
 
+With [multi-window support](WORKBENCH_M2_WINDOWS.md), explicit revoke synchronously restricts every matching lexical workspace scope in this process before persistence. Up to 256 non-evicted generation markers prevent newly opened windows from reviving an old approval after pending/failed removal, even after the original owner closes; saturation fails closed. Fresh approval acknowledges the generation only for its owner. Scope/key associations for queued removals survive owner closure, and approval waits for matching cleanup to drain so delayed removal cannot erase a fresh grant. This does not provide cross-process revocation notification or enable executable features.
+
 ## Ownership and bounds
 
 One policy worker runs at a time, with one coalesced recheck. Revocation queues, local scope restrictions, known approvals and continuity records are each capped at 256; saturation fails closed. Inputs and safe-user snapshots are owned/immutable. Model/request/policy generations guard callbacks. Pending revocations are serialized behind an in-flight approval, and worker holds remain until cleanup after window close.
@@ -153,4 +155,4 @@ Evidence: `pearl/.cache/coral-policy/results.json`, adjacent screenshots/session
 
 ## Next standard M2 increment
 
-[Explicit workspace sessions](WORKBENCH_M2_SESSIONS.md) and [native dock/picker integration](WORKBENCH_M2_DOCKS.md) are now implemented, without changing the trust boundary. Multi-window lifecycle comes next; LSP, Git and agents remain later milestones.
+[Explicit workspace sessions](WORKBENCH_M2_SESSIONS.md), [native dock/picker integration](WORKBENCH_M2_DOCKS.md) and [multi-window lifecycle](WORKBENCH_M2_WINDOWS.md) are now implemented, without enabling executable consumers. Next: separately authorized workspace create/rename/move/delete with dirty-buffer and containment safeguards. LSP, Git and agents remain later milestones.

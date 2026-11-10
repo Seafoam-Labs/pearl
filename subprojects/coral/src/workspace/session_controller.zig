@@ -100,8 +100,15 @@ pub const Controller = struct {
             }
             work.value = try model.Owned.create(.{ .snapshot = snapshot.value, .workspace = workspace, .layout = self.app.snapshotDockLayout() });
         }
+        if (self.app.manager) |manager| {
+            if (manager.session_owner != null) {
+                if (work.value) |value| value.deinit();
+                return error.Busy;
+            }
+            manager.session_owner = self.app.window_id;
+        }
         self.work = work;
-        c.g_application_hold(u.cast(c.GApplication, self.app.application));
+        self.app.hold();
         const task = c.g_task_new(null, null, &done, work).?;
         c.g_task_set_task_data(task, work, null);
         c.g_task_run_in_thread(task, &worker);
@@ -115,9 +122,13 @@ pub const Controller = struct {
     fn reap(self: *Controller, work: *Work) void {
         if (work.value) |value| value.deinit();
         self.work = null;
+        if (self.app.manager) |manager| {
+            std.debug.assert(manager.session_owner == self.app.window_id);
+            manager.session_owner = null;
+        }
         a.destroy(work);
         self.probe();
-        c.g_application_release(u.cast(c.GApplication, self.app.application));
+        self.app.release();
     }
     fn report(self: *Controller, err: anyerror, workspace: ?model.Workspace) void {
         self.state.status = if (err == error.StaleWorkspace or err == error.Closing) .stale else .failed;
@@ -262,7 +273,7 @@ fn done(_: ?*c.GObject, result: ?*c.GAsyncResult, data: ?*anyopaque) callconv(.c
         self.state.documents = work.value.?.value.snapshot.documents.len;
         self.state.groups = work.value.?.value.snapshot.groups.len;
         self.state.views = work.value.?.value.snapshot.views.len;
-        self.app.message("Workspace session saved explicitly. It survives graceful exit; later edits and Discard do not replace it. Restore Workspace Session is always explicit.");
+        self.app.message("Workspace session saved explicitly to the shared slot (last accepted save across all windows). It survives graceful exit; later edits and Discard do not replace it. Restore Workspace Session is always explicit.");
         return;
     }
     self.ready(.restore) catch |err| {

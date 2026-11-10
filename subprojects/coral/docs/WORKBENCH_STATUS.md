@@ -1,6 +1,6 @@
 # Coral workbench implementation status
 
-**M0 is accepted with the documented bounded-editor tradeoffs. M1 implementation and native correctness acceptance are complete. M2 is in progress: native multi-root workspaces, the paged explorer, Quick Open/search, safe settings with provenance, persistent workspace trust, explicit saved sessions and native dock/picker integration are implemented and tested.**
+**M0 is accepted with the documented bounded-editor tradeoffs. M1 implementation and native correctness acceptance are complete. M2 is in progress: native multi-root workspaces, the paged explorer, Quick Open/search, safe settings with provenance, persistent workspace trust, explicit saved sessions, native dock/picker integration and multi-window ownership are implemented and tested.**
 
 The user explicitly accepted the M0 tradeoffs and requested work on M2. This acceptance does not turn failed or unmeasured performance targets into passing measurements. This is not a full IDE or Zed parity release. M2 is partial; M3–M8 remain future milestones; M9 remains removed. The [interactive prototype](mockups/workbench/index.html) is a design fixture, not connected to native Git, LSP or agents.
 
@@ -54,7 +54,7 @@ The native explorer fixture reached **100,000 files exactly once across 391 page
 - Safe `lines`, `wrap`, `spaces`, `indent` resolve defaults → explicit user → workspace → folder → workspace language → folder language. **Workspace: Settings and Trust…** shows values/origins; real full, duplicate and excerpt views use them. Logical language survives syntax-budget detachment. Global appearance/spelling remain user-owned.
 - Optional root `.coral/settings.json` is bounded and descriptor-read on workers. Rescan refreshes folder-only and manifest models. Malformed/unreadable policy rejects the candidate without losing dirty documents; execute-only ancestors remain supported. Repository values never overwrite user preferences.
 - Explicit confirmation persists trust outside the project. Exact identities include root/manifest-base paths, device/inode/birth time, repository policy, safe-user values/presence and versioned defaults/precedence. Unsupported birth time remains restricted. Ongoing identity changes need fresh approval, even when an alternate identity has a prior grant.
-- Immediate local revoke invalidates permits, with serialized persistence and stale-approval cleanup. Failed persistence stays visibly restricted locally but may leave a disk approval; cross-process cancellation is not instantaneous. Bounded private store, locks, atomic synced writes and quarantine are covered. No executable consumer or blanket tool permission is implied.
+- Immediate revoke synchronously invalidates permits for matching lexical workspace scopes across this process, with serialized persistence and stale-approval cleanup. Failed persistence stays visibly restricted locally but may leave a disk approval; cross-process cancellation is not instantaneous. Bounded private store, locks, atomic synced writes and quarantine are covered. No executable consumer or blanket tool permission is implied.
 - **17 native policy groups passed**, 168 fixture hashes and 34 absent execution sentinels. See [settings/trust guide](WORKBENCH_M2_POLICY.md) for schema, storage requirements, failure behavior and full validation.
 
 ### Explicit saved-session increment
@@ -74,11 +74,21 @@ The native explorer fixture reached **100,000 files exactly once across 391 page
 - Session **v2** adds validated desired dock layout, applied after successful restoration. V1 loads with default docks; older readers reject v2. Persistence remains an explicit single checkpoint, not per-project autosave. Crash recovery format is unchanged.
 - **27 native dock scenarios and 190 widget-root tests passed**, including actual splitter drags, geometry across compact/wide sizes, tab/Find keyboard regressions, focus-safe watcher refresh, v1/v2 session handling and shutdown. See [dock guide](WORKBENCH_M2_DOCKS.md).
 
+### Multi-window ownership increment
+
+- **Ctrl+Shift+N** creates an independent native window; **Ctrl+Shift+W** closes its owner; **Ctrl+Q** now means **Quit All**, resolving windows sequentially. Cancel/save failure stops the chain without reopening already closed windows. Next/Previous Window are available in the menu/palette.
+- Stable IDs and a limit of **16 live plus draining windows**. Window-local actions and worker/chooser/recovery holds keep callbacks bound to the correct App; closed owners are reclaimed after draining, not retained until process exit. CLI inputs and recovery discovery apply only to the first window.
+- Documents, groups/history, workspaces, search, docks and recovery journals are independent. Canonical paths deduplicate only within a window. Same-file buffers are not shared; saved etags and **16 in-flight destination reservations** protect against conflicting/overlapping saves within the process, not external filesystem races.
+- User preferences broadcast to live windows, each retaining its repository overrides; writes use one running plus latest pending snapshot. Palette/font CSS is scoped per owner. Named GTK themes remain display-wide with reference-counted lifetime.
+- Matching-scope revocation uses **256 non-evicted generation markers**, failing closed at saturation. New windows cannot revive an old approval after pending/failed removal; fresh approval waits for matching cleanup even after its owner closes. Cross-process notification is not implemented.
+- The explicit saved-session slot remains shared, with one operation admitted process-wide. No cross-window tab transfer, shared buffers or automatic restoration of window arrangement.
+- **27 native window cases and 191 widget-root tests passed**, including real shortcuts/chooser buttons, callback drains, 24 create/close cycles, same-file saves, preference/CSS isolation, recovery and trust races. See [multi-window usage, bounds and evidence](WORKBENCH_M2_WINDOWS.md).
+
 ## M1 foundation: implemented and integrated
 
 ### Canonical documents, independent views and groups
 
-- `src/editor/registry.zig` owns canonical documents with process-wide nonrecycled IDs. Canonical paths deduplicate opens and follow Save As.
+- `src/editor/registry.zig` owns canonical documents with process-wide nonrecycled IDs. Canonical paths deduplicate opens within each window and follow Save As.
 - `src/editor/view.zig` and `projection.zig` give each view its own GtkSourceBuffer, selection, caret and scroll. Edits synchronize incrementally with one authoritative document; mirrors never own file saves or divergent undo histories.
 - `src/editor_groups.zig` and `src/app.zig` provide equal-width horizontal groups, split/focus/close actions and duplicate views. Closing a duplicate view does not prompt or destroy the document. Quit resolves each canonical dirty document once.
 - Search, status, go-to, spelling, context menus, styles and editability route through the appropriate presentation. GTK iterators are not exchanged between buffers.
@@ -150,6 +160,7 @@ zig build test-m2-search -Doptimize=safe -j1 --summary all
 zig build test-m2-policy -Doptimize=safe -j1 --summary all
 zig build test-m2-sessions -Doptimize=safe -j1 --summary all
 zig build test-m2-docks -Doptimize=safe -j1 --summary all
+zig build test-m2-windows -Doptimize=safe -j1 --summary all
 zig build -Doptimize=safe -Dtest-hooks=false -j1 --summary all
 ```
 
@@ -169,9 +180,11 @@ Final session-increment validation on **Zig 0.17.1** ran all six aggregate gates
 
 Final dock-increment validation ran all seven aggregate gates separately with safe optimization and `-j1`; all passed, followed by the production build with hooks disabled (cached compilation). Fresh native checks: **27 docks, 19 sessions, 40 workflows, 14 group/history, 13 recovery, 18 workspace, 19 explorer, nine search and 17 policy**. Each applicable final gate executed **190 widget-root tests**; all four headless runners were cached on this final rerun. Focused session/layout validation executed 23 tests. Initial failing session-version fixture and keyboard/focus runs are retained, with fixes and repeatable regressions documented in the [dock guide](WORKBENCH_M2_DOCKS.md). Logs: `pearl/.cache/coral-dock-validation-logs/final-*.log`; native evidence: `pearl/.cache/coral-docks/`. These counts overlap and must not be summed as unique tests.
 
+Final multi-window-increment validation on **Zig 0.17.1** ran all eight aggregate gates sequentially with safe optimization and `-j1`, followed by a fresh hooks-disabled production compilation; all passed. The window suite passed **27 native cases**, with no GTK warnings/criticals, panics or protocol errors. Each applicable gate freshly executed **191 widget-root tests**; all four direct headless runners were cached on the final rerun (earlier this increment: 270 main-root and seven appearance tests executed). Existing native suites passed **40 workflows, 14 group/history, 13 recovery, 18 workspace, 19 explorer, nine search, 17 policy, 19 sessions and 27 docks**. Counts overlap, not unique totals. Evidence: `pearl/.cache/coral-windows/results.json` and `pearl/.cache/coral-window-validation-logs/final-*.log`; earlier failures remain retained. See the [window guide](WORKBENCH_M2_WINDOWS.md) for fixture isolation and coverage limits.
+
 Earlier foundation validation: **40 prototype browser checks / 55 geometry checkpoints**; optional GTK4 VTE fixture **four native scenarios**; final B05 and 1 MiB fallback benchmark run **three trials / zero trial failures**. Timing budget misses are reported separately from trial completion.
 
-Current dock-increment toolchain: Zig 0.17.1 (earlier foundation used 0.17.0), GTK 4.24.1, GtkSourceView 5.22.0, Enchant 2.8.21. Evidence lives under `pearl/.cache/coral-native`, `coral-app-groups`, `coral-app-recovery`, `coral-widgets`, `coral-terminal-spike`, and `coral-benchmarks/run-ldrbm59w`. Prototype review artifacts live beside the interactive mockup. Older failing benchmark and native reports remain historical evidence, not current successes.
+Current multi-window-increment toolchain: Zig 0.17.1 (earlier foundation used 0.17.0), GTK 4.24.1, GtkSourceView 5.22.0, Enchant 2.8.21. Evidence lives under `pearl/.cache/coral-native`, `coral-app-groups`, `coral-app-recovery`, `coral-widgets`, `coral-terminal-spike`, and `coral-benchmarks/run-ldrbm59w`. Prototype review artifacts live beside the interactive mockup. Older failing benchmark and native reports remain historical evidence, not current successes.
 
 All native tests use private Wayland/XDG sessions and disposable files, not the live desktop. `--aqueous-prefix /usr` selects this host's installed test tooling; other setups can use the prepared private prefix. No service credentials, paid API calls, language servers, extension downloads or host VTE installation were configured. No commits were created.
 
@@ -179,6 +192,6 @@ All native tests use private Wayland/XDG sessions and disposable files, not the 
 
 - **M0:** accepted bounded-foundation tradeoffs; unsupported full giant-line rendering and deferred paint qualification remain documented, not passed.
 - **M1:** implemented/tested bounded foundation; retain the documented undo, recovery, file-size and process-ownership limits.
-- **M2:** workspace/root, explorer, search, safe settings/provenance, persistent trust, explicit sessions and native docking/picker integration delivered. Next: multi-window lifecycle. Automatic/per-project session management, additional pickers and separately authorized filesystem operations remain open. Both 100k explorer and on-demand search fixtures are validated; no persistent index is implemented.
+- **M2:** workspace/root, explorer, search, safe settings/provenance, persistent trust, explicit sessions, native docking/picker integration and multi-window lifecycle delivered. Next: separately authorized workspace create/rename/move/delete with dirty-buffer and containment safeguards, then remaining M2 acceptance review. Automatic/per-project session management and additional pickers remain open. Both 100k explorer and on-demand search fixtures are validated; no persistent index is implemented.
 - **M3–M8:** LSP, real Git workbench, production terminal/tasks, native/ACP agents, MCP, DAP/test UI, extensions and advanced editing/accessibility qualification.
 - **M9:** removed, not silently reintroduced.

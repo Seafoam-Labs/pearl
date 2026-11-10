@@ -143,6 +143,13 @@ pub fn build(b: *std.Build) void {
     const m2_docks = b.step("test-m2-docks", "Run dock units, widgets and native acceptance");
     m2_docks.dependOn(test_step);
     m2_docks.dependOn(&docks.step);
+    const windows = b.addSystemCommand(&.{ "python3", "tests/windows.py", "--binary" });
+    windows.addArtifactArg(ie);
+    windows.addPassthruArgs();
+    b.step("windows", "Run native multi-window ownership and lifecycle acceptance").dependOn(&windows.step);
+    const m2_windows = b.step("test-m2-windows", "Run units, widgets and multi-window acceptance");
+    m2_windows.dependOn(test_step);
+    m2_windows.dependOn(&windows.step);
     const m1 = b.step("test-m1", "Run unit, widget, native, group and recovery acceptance tests");
     m1.dependOn(test_step);
     m1.dependOn(&integration.step);
@@ -166,6 +173,7 @@ pub fn build(b: *std.Build) void {
     m2_policy.dependOn(&widgets.step);
     m2_sessions.dependOn(&widgets.step);
     m2_docks.dependOn(&widgets.step);
+    m2_windows.dependOn(&widgets.step);
 
     const bm = createModule(b, .{ .root_source_file = b.path("src/benchmark_m0.zig"), .target = target, .optimize = optimize, .link_libc = true });
     for ([_][]const u8{ "gtk4", "gtksourceview-5", "enchant-2" }) |lib| bm.linkSystemLibrary(lib, .{ .use_pkg_config = .yes });

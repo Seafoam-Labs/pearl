@@ -15,7 +15,7 @@ const test_hooks = @import("build_options").test_hooks;
 pub const Status = enum { restricted, verifying, trusted, failed };
 const Kind = enum { recheck, approve, revoke };
 const Confirmation = struct { request: u64, model_generation: u64, key: trust.Fingerprint };
-const KnownApproval = struct { scope: trust.Fingerprint, key: trust.Fingerprint };
+const KnownApproval = struct { scope: trust.Fingerprint, key: trust.Fingerprint, approved_revocation: u64 = 0 };
 
 /// Immutable safe-user snapshot. Hash fields explicitly, never native padding.
 /// The domain versions the schema, precedence and language-ID interpretation.
@@ -79,6 +79,9 @@ pub const Controller = struct {
     error_is_revoke: bool = false,
     known: [trust.limits.records]KnownApproval = undefined,
     known_len: usize = 0,
+    // If an association cannot be retained, do not let another owner approve
+    // while this controller still has removal writes that could delete it.
+    unscoped_removals: bool = false,
     identity: ?trust.Identity = null,
     active: ?*Job = null,
     pending: bool = false,
@@ -166,7 +169,18 @@ pub const Controller = struct {
             self.block_all = true;
         };
     }
-    fn queueRevoke(self: *Controller, key: trust.Fingerprint) void {
+    fn queueRevoke(self: *Controller, scope: ?trust.Fingerprint, key: trust.Fingerprint) void {
+        // Retain the scope even for never-trusted identities, before deduping
+        // queued/active writes. Models can disappear before these writes drain.
+        if (scope) |value| self.remember(value, key);
+        var associated = false;
+        for (self.known[0..self.known_len]) |known| {
+            if (trust.same(known.key, key) and (if (scope) |value| trust.same(known.scope, value) else true)) {
+                associated = true;
+                break;
+            }
+        }
+        if (!associated) self.unscoped_removals = true;
         if (self.active) |job| if (job.kind == .revoke and trust.same(job.expected.?, key)) return;
         self.revokes.approve(key) catch {
             self.block_all = true;
@@ -182,7 +196,7 @@ pub const Controller = struct {
             job.cancelled.store(true, .release);
             if (job.kind == .approve) {
                 self.block(job.scope_key);
-                self.queueRevoke(job.expected.?);
+                self.queueRevoke(job.scope_key, job.expected.?);
             }
         }
         _ = self.policy.begin(self.token()) catch {
@@ -233,22 +247,75 @@ pub const Controller = struct {
         if (self.closed) return;
         self.invalidate();
     }
+    pub fn currentScope(self: *Controller) ?trust.Fingerprint {
+        return if (self.app.browser.model) |*m| scopeKey(m) else null;
+    }
+    fn sharedRevocation(self: *Controller, scope: trust.Fingerprint) u64 {
+        return if (self.app.manager) |manager| manager.revocationGeneration(scope) else 0;
+    }
+    fn sharedBlocked(self: *Controller, scope: trust.Fingerprint) bool {
+        if (self.app.manager) |manager| if (manager.revocation_saturated) return true;
+        const generation = self.sharedRevocation(scope);
+        if (generation == 0) return false;
+        for (self.known[0..self.known_len]) |known| {
+            if (trust.same(known.scope, scope) and known.approved_revocation == generation) return false;
+        }
+        return true;
+    }
+    fn removalPending(self: *const Controller, scope: trust.Fingerprint, active_key: ?trust.Fingerprint) bool {
+        if (self.unscoped_removals and (self.revokes.len != 0 or active_key != null)) return true;
+        for (self.known[0..self.known_len]) |known| if (trust.same(known.scope, scope)) {
+            if (self.revokes.contains(known.key)) return true;
+            if (active_key) |key| if (trust.same(key, known.key)) return true;
+        };
+        return false;
+    }
+    pub fn scopeCleanupPending(self: *Controller, scope: trust.Fingerprint) bool {
+        const active_key = if (self.active) |job| (if (job.kind == .revoke) job.expected else null) else null;
+        if (self.removalPending(scope, active_key)) return true;
+        // An old lookup can still discover a grant to remove; a cancelled
+        // approval may have committed before cancellation reached its worker.
+        if (self.currentScope()) |current| if (trust.same(current, scope)) {
+            if (self.pending or self.revokes.len != 0) return true;
+            if (self.active) |job| if (job.kind != .approve or job.cancelled.load(.acquire)) return true;
+        };
+        if (self.active) |job| {
+            if (job.kind != .revoke and trust.same(job.scope_key, scope) and job.cancelled.load(.acquire)) return true;
+        }
+        return false;
+    }
+    fn sharedCleanupPending(self: *Controller) bool {
+        const scope = self.currentScope() orelse return false;
+        return if (self.app.manager) |manager| manager.scopeCleanupPending(scope) else false;
+    }
     pub fn revoke(self: *Controller) void {
         if (self.closed) return;
-        if (self.app.browser.model) |*m| {
-            const scope = scopeKey(m);
-            self.block(scope);
-            for (self.known[0..self.known_len]) |known| if (trust.same(known.scope, scope)) self.queueRevoke(known.key);
+        if (self.app.manager) |manager| if (self.currentScope()) |scope| {
+            manager.revokeWorkspace(scope);
+            return;
+        };
+        self.revokeLocal();
+        self.pump();
+    }
+    /// Nonbroadcast half of explicit revoke. Manager completes this in every
+    /// matching owner before starting any removal, including failed persistence.
+    pub fn revokeLocal(self: *Controller) void {
+        if (self.closed) return;
+        const scope = self.currentScope();
+        if (scope) |value| {
+            self.block(value);
+            for (self.known[0..self.known_len]) |known| if (trust.same(known.scope, value)) self.queueRevoke(value, known.key);
         }
-        if (self.identity) |id| self.queueRevoke(id.fingerprint);
-        if (self.policy.key) |key| self.queueRevoke(key);
+        if (self.identity) |id| self.queueRevoke(scope, id.fingerprint);
+        if (self.policy.key) |key| self.queueRevoke(scope, key);
         self.invalidate();
         self.policy.revoke();
         // Failed writes are retried only on an explicit Revoke, not a busy loop.
-        for (self.failed_revokes.keys[0..self.failed_revokes.len]) |key| self.queueRevoke(key);
+        for (self.failed_revokes.keys[0..self.failed_revokes.len]) |key| self.queueRevoke(null, key);
         self.pending = self.identity == null and self.app.browser.model != null;
         self.status = .restricted;
-        self.pump();
+        self.app.message("Workspace trust revoked for this scope in all open windows. Fresh explicit confirmation is required; removal failures remain restricted.");
+        self.refreshStatus();
     }
     /// Called from the existing GTK tick and after every reaped policy job.
     pub fn pump(self: *Controller) void {
@@ -305,6 +372,18 @@ pub const Controller = struct {
             model_digest = m.policy_fingerprint;
             inputs = try inputsFor(m, self.user);
             scope_key = scopeKey(m);
+            if (self.sharedBlocked(scope_key)) {
+                self.block(scope_key);
+                continuity.approval_required = true;
+                continuity.initial = false;
+                // Never load an old grant into a new window while removal is
+                // pending/failed. Capture identity for fresh confirmation only.
+                // This also avoids deleting a peer's later explicit approval.
+                if (kind == .recheck) {
+                    initial_restore = false;
+                    expected_key = null;
+                }
+            }
             if (self.block_all or self.blocked.contains(scope_key)) self.policy.revoke();
         }
         const ticket = if (kind == .approve) try self.policy.beginApproval(self.token(), .user_approved) else try self.policy.begin(self.token());
@@ -336,19 +415,19 @@ pub const Controller = struct {
         self.jobs_started += 1;
         if (kind != .revoke) self.status = .verifying;
         self.cancelGate();
-        c.g_application_hold(u.cast(c.GApplication, self.app.application));
+        self.app.hold();
         const task = c.g_task_new(null, null, &done, job).?;
         c.g_task_set_task_data(task, job, null);
         c.g_task_run_in_thread(task, &worker);
         c.g_object_unref(task);
     }
     pub fn canConfirm(self: *Controller) bool {
-        return !self.closed and !self.block_all and self.active == null and !self.pending and self.revokes.len == 0 and self.identity != null and self.app.browser.model != null and !self.app.browser.loading and !self.app.browser.policy_pending and self.status != .failed;
+        return !self.closed and !self.block_all and self.active == null and !self.pending and self.revokes.len == 0 and self.identity != null and self.app.browser.model != null and !self.app.browser.loading and !self.app.browser.policy_pending and self.status != .failed and !self.sharedCleanupPending() and !(if (self.app.manager) |manager| manager.revocation_saturated else false);
     }
     /// Freeze the exact scope shown by the modal dialog. No approval occurs here.
     pub fn prepareConfirmation(self: *Controller) bool {
         if (!self.canConfirm()) {
-            self.app.message("Trust is unavailable while verification is pending or failed. All roots must be available. Recheck or Rescan, then retry.");
+            self.app.message("Trust is unavailable while verification or same-scope revocation cleanup is pending or failed. All roots must be available. Recheck or Rescan, then retry.");
             return false;
         }
         self.confirmation = .{ .request = self.request, .model_generation = self.model_generation, .key = self.identity.?.fingerprint };
@@ -368,10 +447,11 @@ pub const Controller = struct {
     /// only a precondition: service-specific user approval is still required.
     pub fn issue(self: *Controller, capability: trust.Capability) !trust.Permit {
         if (self.closed or self.block_all or self.revokes.len != 0 or self.active != null or self.pending or self.app.browser.loading or self.app.browser.policy_pending or self.app.browser.model == null) return error.Restricted;
+        if (self.sharedBlocked(self.currentScope().?)) return error.Restricted;
         return self.policy.issue(capability);
     }
     pub fn validate(self: *Controller, permit: trust.Permit, capability: trust.Capability) bool {
-        return !self.closed and !self.block_all and self.revokes.len == 0 and self.active == null and !self.pending and !self.app.browser.loading and !self.app.browser.policy_pending and self.app.browser.model != null and self.policy.validate(permit, self.token(), capability);
+        return !self.closed and !self.block_all and self.revokes.len == 0 and self.active == null and !self.pending and !self.app.browser.loading and !self.app.browser.policy_pending and self.app.browser.model != null and !self.sharedBlocked(self.currentScope().?) and self.policy.validate(permit, self.token(), capability);
     }
     /// A fixture-only pending gate, not a task runner. Revoke/recheck/switch cancels it.
     pub fn fixtureGate(self: *Controller) void {
@@ -459,7 +539,13 @@ pub const Controller = struct {
         const continuity = self.currentContinuity();
         const expected = if (continuity) |entry| entry.expected else null;
         const expected_hex = if (expected) |key| std.fmt.bytesToHex(&key, .lower) else @as([64]u8, @splat(0));
+        const scope = self.currentScope();
+        const scope_hex = if (scope) |key| std.fmt.bytesToHex(&key, .lower) else @as([64]u8, @splat(0));
         const text = std.json.Stringify.valueAlloc(a, .{
+            .scope_key = if (scope != null) @as(?[]const u8, &scope_hex) else null,
+            .shared_revocation_generation = if (scope) |key| self.sharedRevocation(key) else 0,
+            .shared_revocation_blocked = if (scope) |key| self.sharedBlocked(key) else false,
+            .shared_cleanup_pending = self.sharedCleanupPending(),
             .pending = @as(usize, @intFromBool(self.active != null)) + @intFromBool(self.pending) + self.revokes.len,
             .active = if (self.active) |job| @as(?[]const u8, @tagName(job.kind)) else null,
             .pending_recheck = self.pending,
@@ -496,7 +582,7 @@ pub const Controller = struct {
             .worker_limit = @as(usize, 1),
             .recheck_limit = @as(usize, 1),
             .revocation_limit = @as(usize, trust.limits.records),
-            .preferences_pending = self.app.preferences_running or self.app.preferences_pending != null,
+            .preferences_pending = if (self.app.manager) |manager| manager.preferences_running or manager.preferences_pending != null else false,
             .permit_scope_generation = self.permit_scope.generation,
         }, .{}) catch unreachable;
         defer a.free(text);
@@ -508,6 +594,7 @@ pub const Controller = struct {
 
 /// Also invoked by the native policy-checks hook; no filesystem or approval.
 pub fn validatePolicyContracts() !void {
+    try validateRemovalScope();
     const model_digest: trust.PolicyDigest = @splat(7);
     const baseline: UserPolicy = .{ .values = .{}, .present = .{} };
     const base_digest = baseline.digest(model_digest);
@@ -535,6 +622,41 @@ pub fn validatePolicyContracts() !void {
     var failed_initial: Continuity = .{ .workspace = @splat(0), .initial = false };
     failed_initial.observe(alternate, false);
     if (!failed_initial.approval_required) return error.FailedInitialRestored;
+}
+
+// Core smoke for the identity-only revoke/close race: the association query
+// must work without an App/model, through queue -> active -> retry -> drain.
+fn validateRemovalScope() !void {
+    const token_scope = routing.Scope.init();
+    var controller: Controller = .{
+        .app = undefined, // No GTK or model access is allowed in this core check.
+        .policy = .init(token_scope.capture().?),
+        .permit_scope = token_scope,
+        .user = .{ .values = .{}, .present = .{} },
+    };
+    const scope: trust.Fingerprint = @splat(1);
+    const key: trust.Fingerprint = @splat(2);
+    const unrelated: trust.Fingerprint = @splat(3);
+    controller.queueRevoke(scope, key);
+    if (controller.policy.state != .restricted or controller.known_len != 1 or controller.known[0].approved_revocation != 0) return error.RemovalGrantedTrust;
+    if (!controller.removalPending(scope, null) or controller.removalPending(unrelated, null)) return error.QueuedRemovalLostScope;
+    controller.revokes.revoke(key);
+    if (!controller.removalPending(scope, key) or controller.removalPending(unrelated, key)) return error.ActiveRemovalLostScope;
+    if (controller.removalPending(scope, null)) return error.DrainedRemovalBlockedApproval;
+    controller.queueRevoke(null, key); // Retry after the model/identity is gone.
+    if (controller.known_len != 1 or controller.unscoped_removals or !controller.removalPending(scope, null)) return error.RetriedRemovalLostScope;
+    controller.revokes.revoke(key);
+
+    // Association saturation must not make a queued or active write invisible
+    // to a different owner. The conservative fallback ends when writes drain.
+    for (&controller.known, 0..) |*known, i| known.* = .{ .scope = unrelated, .key = @splat(@intCast(i)) };
+    controller.known_len = controller.known.len;
+    controller.queueRevoke(scope, key);
+    if (controller.known_len != controller.known.len or !controller.block_all or !controller.unscoped_removals) return error.RemovalAssociationLimitBypassed;
+    if (!controller.removalPending(scope, null)) return error.UnscopedQueuedRemovalLost;
+    controller.revokes.revoke(key);
+    if (!controller.removalPending(scope, key)) return error.UnscopedActiveRemovalLost;
+    if (controller.removalPending(scope, null)) return error.UnscopedDrainedRemovalBlockedApproval;
 }
 
 fn checkWidget(widget: u.W, effective: settings.Effective) !void {
@@ -669,7 +791,7 @@ fn done(_: ?*c.GObject, result: ?*c.GAsyncResult, data: ?*anyopaque) callconv(.c
         job.destroy();
         self.jobs_reaped += 1;
         self.pump(); // Acquire the next hold BEFORE releasing this one.
-        c.g_application_release(u.cast(c.GApplication, self.app.application));
+        self.app.release();
     }
     if (job.kind == .revoke) {
         if (job.err) |err| {
@@ -689,10 +811,12 @@ fn done(_: ?*c.GObject, result: ?*c.GAsyncResult, data: ?*anyopaque) callconv(.c
     // A stale approval must be removed on DISK, not only ignored on delivery.
     if (job.kind == .approve and (!current or job.err != null)) {
         self.block(job.scope_key);
-        self.queueRevoke(job.expected.?);
+        self.queueRevoke(job.scope_key, job.expected.?);
     }
     if (job.kind == .recheck and self.blocked.contains(job.scope_key)) {
-        if (job.decision) |decision| if (decision.state == .trusted) self.queueRevoke(decision.fingerprint);
+        if (job.decision) |decision| if (decision.state == .trusted) {
+            self.queueRevoke(job.scope_key, decision.fingerprint);
+        };
     }
     if (!current) return;
     if (job.err) |err| {
@@ -707,12 +831,15 @@ fn done(_: ?*c.GObject, result: ?*c.GAsyncResult, data: ?*anyopaque) callconv(.c
     const continuity = &self.continuity[job.continuity_index.?];
     if (job.kind == .recheck) continuity.observe(decision.fingerprint, job.initial_restore);
     if (decision.state == .trusted) self.remember(job.scope_key, decision.fingerprint);
-    const blocked = self.block_all or continuity.approval_required or self.blocked.contains(job.scope_key) or self.failed_revokes.contains(decision.fingerprint);
+    const blocked = self.block_all or continuity.approval_required or self.blocked.contains(job.scope_key) or self.sharedBlocked(job.scope_key) or self.failed_revokes.contains(decision.fingerprint);
     const granted = self.policy.complete(job.ticket, decision.fingerprint, if (!self.block_all and (job.kind == .approve or !blocked)) decision.approvedKey() else null);
     if (granted and job.kind == .approve) {
         continuity.approve(decision.fingerprint);
         self.blocked.revoke(job.scope_key);
         self.failed_revokes.revoke(decision.fingerprint);
+        for (self.known[0..self.known_len]) |*known| {
+            if (trust.same(known.scope, job.scope_key) and trust.same(known.key, decision.fingerprint)) known.approved_revocation = self.sharedRevocation(job.scope_key);
+        }
     }
     self.status = if (granted) .trusted else .restricted;
     if (self.failed_revokes.len == 0) self.clearError();

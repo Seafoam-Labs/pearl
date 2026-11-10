@@ -10,30 +10,21 @@ const logging = @import("logging");
 const diagnostics = @import("diagnostics");
 const command = if (build_options.git_variant) "coral-git" else "coral";
 const App = @import("app.zig").App;
-const Recovery = @import("workspace/recovery_controller.zig").Controller;
+const Manager = @import("application.zig").Manager;
 const Settings = @import("platform/settings.zig").Settings;
 const log = std.log.scoped(.cli);
 
 pub const std_options = logging.std_options;
 
-var app: ?*App = null;
-var recovery: ?Recovery = null;
 var settings: Settings = undefined;
 var paths: std.ArrayList([:0]const u8) = .empty;
 var workspace_source: ?@import("workspace/controller.zig").Source = null;
 var workspace_path: []const u8 = "";
 var width: c_int = 1000;
 var height: c_int = 740;
-fn activate(application: ?*c.GApplication, _: ?*anyopaque) callconv(.c) void {
+fn activate(_: ?*c.GApplication, context: ?*anyopaque) callconv(.c) void {
     c.gtk_widget_set_default_direction(if (@import("i18n").rtl()) c.GTK_TEXT_DIR_RTL else c.GTK_TEXT_DIR_LTR);
-    if (app) |p| {
-        if (p.closing) return;
-        c.gtk_window_present(u.cast(c.GtkWindow, p.window));
-        return;
-    }
-    recovery = Recovery.init(application.?, &openInitialDocuments);
-    app = App.create(u.cast(c.GtkApplication, application.?), settings, width, height);
-    recovery.?.attach(app.?);
+    u.cast(Manager, context.?).activate();
 }
 fn openInitialDocuments(p: *App) void {
     const recovered = p.snapshotDocuments().len != 0;
@@ -72,8 +63,8 @@ pub fn main(init: std.process.Init) void {
             continue;
         }
         if (std.mem.eql(u8, arg, "--help")) {
-            c.g_print("Workspace slice: --workspace PATH opens a version-1 .coral-workspace manifest; --folder PATH opens a root. Last explicit workspace option wins. Relative paths use the current directory. Bare directories remain invalid FILE arguments. Restricted-only, bounded direct-directory browser; no auto-execution. Recovery does not restore workspace roots.\n");
-            c.g_print("Coral 0.1.1 — Zig / GTK4 text editor\nUsage: " ++ command ++ " [--follow-pearl|--light|--dark|--native-theme] [--width=N] [--height=N] [--log-level LEVEL] [--log-scopes LIST] [FILE…]\nCtrl+N new, Ctrl+O open, Ctrl+S save, Ctrl+Shift+S Save As, Ctrl+F find,\nCtrl+H replace, Ctrl+G go to line, Ctrl+, preferences, Shift+F10 spelling.\nCtrl+Shift+P command palette, including Reload from Disk.\nFILE arguments must exist; use New document and Save As to create a file.\nFollow Pearl is the first-run default; without Pearl it uses Coral's own dark palette.\n--log-level: error, warning, info or debug. Release builds default to info.\n--log-scopes: comma-separated scopes, all for every scope, ~scope to exclude.\n");
+            c.g_print("Workspace slice: --workspace PATH opens a version-1 .coral-workspace manifest; --folder PATH opens a root. Last explicit workspace option wins. Relative paths use the current directory. Bare directories remain invalid FILE arguments. Bounded workspace explorer/search with explicit trust and no auto-execution. Recovery does not restore workspace roots. Explicit saved sessions are separate.\n");
+            c.g_print("Coral 0.1.1 — Zig / GTK4 text editor\nUsage: " ++ command ++ " [--follow-pearl|--light|--dark|--native-theme] [--width=N] [--height=N] [--log-level LEVEL] [--log-scopes LIST] [FILE…]\nCtrl+N new, Ctrl+O open, Ctrl+S save, Ctrl+Shift+S Save As, Ctrl+F find,\nCtrl+H replace, Ctrl+G go to line, Ctrl+, preferences, Shift+F10 spelling.\nCtrl+Shift+P command palette, including Reload from Disk and window switching.\nCtrl+Shift+N new window, Ctrl+Shift+W close window, Ctrl+Q quit all windows.\nUp to 16 live/draining windows; FILE/workspace options apply only to the first window.\nFILE arguments must exist; use New document and Save As to create a file.\nFollow Pearl is the first-run default; without Pearl it uses Coral's own dark palette.\n--log-level: error, warning, info or debug. Release builds default to info.\n--log-scopes: comma-separated scopes, all for every scope, ~scope to exclude.\n");
             return;
         }
         if (std.mem.eql(u8, arg, "--version")) {
@@ -107,10 +98,11 @@ pub fn main(init: std.process.Init) void {
     c.gtk_source_style_scheme_manager_append_search_path(c.gtk_source_style_scheme_manager_get_default(), cache_z);
     const application = c.gtk_application_new(if (build_options.git_variant) "org.aqueous.Coral.Git" else "org.aqueous.Coral", c.G_APPLICATION_NON_UNIQUE).?;
     defer c.g_object_unref(application);
-    u.connect(application, "activate", &activate, null);
+    var manager: Manager = .{ .application = application, .settings = settings, .width = width, .height = height, .initial = &openInitialDocuments };
+    defer manager.deinit();
+    u.connect(application, "activate", &activate, &manager);
     var argv = [_][*:0]u8{@constCast(command)};
     const result = c.g_application_run(u.cast(c.GApplication, application), 1, @ptrCast(&argv));
-    if (recovery) |*controller| controller.deinit();
-    if (app) |p| p.deinit();
+
     if (result != 0) std.process.exit(@intCast(result));
 }

@@ -1,6 +1,6 @@
 # Coral workbench implementation plan
 
-Status: **M0 tradeoffs accepted; M1 complete; M2 workspace, explorer, search, settings/trust, explicit-session and docking/picker increments delivered**
+Status: **M0 tradeoffs accepted; M1 complete; M2 workspace, explorer, search, settings/trust, explicit-session, docking/picker and multi-window increments delivered**
 
 See [current implementation status and validation](WORKBENCH_STATUS.md). The roadmap below remains the target, not a claim that all milestones are complete.
 
@@ -276,7 +276,9 @@ The session increment delivers **Save Workspace Session / Restore Workspace Sess
 
 The docking increment delivers native movable/resizable/hideable Explorer and Search docks, activity-rail and keyboard/palette controls, compact-window presentation, central split-group containment and a transient Quick Open overlay. Session v2 persists desired dock layout with v1 default migration; Quick Open and Search deliberately share one query/result controller. `zig build test-m2-docks` covers 27 native scenarios plus dock widgets. See [controls, scope and validation](WORKBENCH_M2_DOCKS.md).
 
-This is **not completed M2**: multi-window lifecycle remains the next standard increment. Automatic/per-project session management, additional pickers and separately authorized filesystem operations remain open items. The delivered fixtures validate bounded increments, not the complete workbench milestone.
+The multi-window increment delivers independent native windows, window-local actions, deferred callback-safe reclamation, sequential Quit All, per-window recovery journals, shared user preferences and serialized explicit-session operations. In-process destination reservations prevent overlapping saves; matching-scope revocation invalidates peer permits synchronously. `zig build test-m2-windows` covers 27 native scenarios. See [window controls, ownership and limits](WORKBENCH_M2_WINDOWS.md). Same-file buffers remain independent; cross-window tab transfer and automatic window-session restoration are not implemented.
+
+This is **not completed M2**. Next: separately authorized workspace create/rename/move/delete with dirty-buffer and containment safeguards, then remaining M2 acceptance review. Automatic/per-project session management and additional pickers remain open items. The delivered fixtures validate bounded increments, not the complete workbench milestone.
 
 ## 11. Validation and release acceptance
 

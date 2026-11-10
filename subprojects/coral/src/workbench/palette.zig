@@ -177,6 +177,9 @@ pub const Palette = struct {
         // on_closed may destroy the parent; retain it only across teardown so
         // disconnecting our cancellation handlers never touches freed memory.
         const parent = c.g_object_ref(self.parent).?;
+        // The owner may disconnect its own widget callbacks in on_closed, even
+        // after gtk_window_destroy drops GTK's last reference to this window.
+        const window = c.g_object_ref(self.window).?;
         disconnect(self.search, self);
         disconnect(self.list, self);
         disconnect(self.keys, self);
@@ -187,6 +190,7 @@ pub const Palette = struct {
         // destroy the parent, or reenter close, in which case dispatch is unsafe.
         self.on_closed(self.context);
         disconnect(self.parent, self);
+        c.g_object_unref(window);
         c.g_object_unref(parent);
         const pending = self.pending;
         const context = self.context;
@@ -294,6 +298,7 @@ fn nextVisible(visible: []const bool, current: ?usize, backwards: bool) ?usize {
 /// display is an error, not a silently skipped test.
 pub fn validateGtk() !void {
     if (c.gtk_init_check() == 0) return error.NoDisplay;
+    try validateOwnerCleanup();
     try std.testing.expectEqual(Command.save_as, commands.fromKey(c.GDK_KEY_S, c.GDK_CONTROL_MASK | c.GDK_SHIFT_MASK).?);
     try std.testing.expectEqual(Command.spelling, commands.fromKey(c.GDK_KEY_F10, c.GDK_SHIFT_MASK).?);
     const parent = c.gtk_window_new().?;
@@ -379,6 +384,66 @@ pub fn validateGtk() !void {
     while (c.g_main_context_iteration(null, 0) != 0) {}
     try std.testing.expectEqual(@as(usize, 0), other.executed);
 }
+
+// Unlike GtkFixture, this owner deliberately holds no strong window reference.
+// Model App's cleanup during external Quit All and reentrant parent teardown.
+fn validateOwnerCleanup() !void {
+    for ([_]bool{ false, true }) |show| {
+        for ([_]bool{ false, true }) |cancel| {
+            const parent = c.gtk_window_new().?;
+            _ = c.g_object_ref(parent);
+            defer c.g_object_unref(parent);
+            defer c.gtk_window_destroy(u.cast(c.GtkWindow, parent));
+            var owner: CleanupFixture = .{ .parent = parent, .cancel = cancel };
+            owner.palette = try Palette.create(parent, &owner, CleanupFixture.command, CleanupFixture.closed);
+            const window = owner.palette.?.window;
+            c.g_object_weak_ref(u.cast(c.GObject, window), &CleanupFixture.finalized, &owner);
+            defer if (!owner.gone) c.g_object_weak_unref(u.cast(c.GObject, window), &CleanupFixture.finalized, &owner);
+            if (show) {
+                c.gtk_window_present(u.cast(c.GtkWindow, parent));
+                owner.palette.?.show();
+            }
+            if (cancel) activated(null, owner.palette.?) else owner.palette.?.close();
+            try std.testing.expect(owner.cleaned);
+            try std.testing.expect(owner.palette == null);
+            try std.testing.expectEqual(@as(usize, 0), owner.executed);
+            while (c.g_main_context_iteration(null, 0) != 0) {}
+            try std.testing.expect(owner.gone);
+        }
+    }
+}
+
+const CleanupFixture = struct {
+    parent: u.W,
+    palette: ?*Palette = null,
+    cancel: bool,
+    gone: bool = false,
+    cleaned: bool = false,
+    executed: usize = 0,
+
+    fn finalized(data: ?*anyopaque, _: ?*c.GObject) callconv(.c) void {
+        u.cast(CleanupFixture, data.?).gone = true;
+    }
+    fn closed(context: *anyopaque) void {
+        const self = u.cast(CleanupFixture, context);
+        const palette = self.palette.?;
+        self.palette = null;
+        if (!self.gone) {
+            _ = c.g_signal_handlers_disconnect_matched(palette.window, c.G_SIGNAL_MATCH_DATA, 0, 0, null, null, self);
+            c.gtk_widget_insert_action_group(palette.window, "win", null);
+            const controllers = c.gtk_widget_observe_controllers(palette.window).?;
+            c.g_object_unref(controllers);
+            self.cleaned = true;
+        }
+        if (self.cancel) {
+            palette.close();
+            c.gtk_window_destroy(u.cast(c.GtkWindow, self.parent));
+        }
+    }
+    fn command(context: *anyopaque, _: Command) void {
+        u.cast(CleanupFixture, context).executed += 1;
+    }
+};
 
 fn selectedIndex(palette: *Palette) ?usize {
     const row = c.gtk_list_box_get_selected_row(u.cast(c.GtkListBox, palette.list)) orelse return null;

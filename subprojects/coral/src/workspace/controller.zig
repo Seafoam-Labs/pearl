@@ -73,7 +73,7 @@ pub const Controller = struct {
         c.gtk_widget_set_vexpand(panel, 1);
         const open_bar = u.box(true, 4);
         u.append(panel, open_bar);
-        inline for (.{ .{ "Open Folder…", "app.open-folder" }, .{ "Workspace…", "app.open-workspace" } }) |item| {
+        inline for (.{ .{ "Open Folder…", "win.open-folder" }, .{ "Workspace…", "win.open-workspace" } }) |item| {
             const button = u.button(item[0]);
             c.gtk_actionable_set_action_name(u.cast(c.GtkActionable, button), item[1]);
             u.append(open_bar, button);
@@ -122,7 +122,7 @@ pub const Controller = struct {
         self.watches.context = self;
         self.watches.init();
         self.watch_running = true;
-        c.g_application_hold(u.cast(c.GApplication, self.app.application));
+        self.app.hold();
         const task = c.g_task_new(null, null, &watchDone, self).?;
         c.g_task_set_task_data(task, self, null);
         c.g_task_run_in_thread(task, &watchWorker);
@@ -294,8 +294,9 @@ pub const Controller = struct {
         const choice = a.create(Choice) catch unreachable;
         choice.* = .{ .controller = self, .source = source, .token = token };
         self.choosing = true;
-        c.g_application_hold(u.cast(c.GApplication, self.app.application));
+        self.app.hold();
         if (source == .folder) chooser.folderAsync(@ptrCast(self.app.window), @ptrCast(&chosen), choice) else chooser.openAsync(@ptrCast(self.app.window), 0, @ptrCast(&chosen), choice);
+        self.app.transients(false);
     }
     fn fail(self: *Controller, err: anyerror) void {
         self.error_name = @errorName(err);
@@ -629,7 +630,7 @@ pub const Controller = struct {
         std.debug.assert(bytes <= limits.request_bytes - self.request_bytes);
         self.jobs.append(a, job) catch unreachable;
         self.request_bytes += bytes;
-        c.g_application_hold(u.cast(c.GApplication, self.app.application));
+        self.app.hold();
         self.dispatch(job);
     }
     fn dispatch(_: *Controller, job: *Work) void {
@@ -648,7 +649,7 @@ pub const Controller = struct {
         self.request_bytes -= inputBytes(job.path, job.root);
         if (job.session_completion) |completion| completion(job.session_context.?, if (job.published) null else job.err orelse error.StaleWorkspace);
         job.destroy();
-        c.g_application_release(u.cast(c.GApplication, self.app.application));
+        self.app.release();
     }
     fn cancelWaitingLoad(self: *Controller) void {
         if (self.pending_load) |job| {
@@ -986,11 +987,10 @@ fn chosen(_: ?*c.GObject, result: ?*c.GAsyncResult, data: ?*anyopaque) callconv(
     const choice = u.cast(Choice, data.?);
     const self = choice.controller;
     defer a.destroy(choice);
-    // Release the chooser's reserved slot/hold before handing it to a worker.
-    // This callback does not iterate the main context; App remains alive through
-    // callback return even when this was the final application hold.
+    // Release the reserved slot before handing it to a worker, but retain the
+    // exact App until this callback has consumed the chooser result.
     self.choosing = false;
-    c.g_application_release(u.cast(c.GApplication, self.app.application));
+    defer self.app.release();
     var err: ?*c.GError = null;
     defer if (err) |e| c.g_error_free(e);
     const files: ?*c.GListModel = @ptrCast(chooser.openFinish(@ptrCast(result.?), @ptrCast(&err)));
@@ -1093,7 +1093,7 @@ fn watchDone(_: ?*c.GObject, result: ?*c.GAsyncResult, data: ?*anyopaque) callco
     const self = u.cast(Controller, data.?);
     _ = c.g_task_propagate_boolean(u.cast(c.GTask, result.?), null);
     self.watch_running = false;
-    c.g_application_release(u.cast(c.GApplication, self.app.application));
+    self.app.release();
 }
 fn pump(data: ?*anyopaque) callconv(.c) c_int {
     const self = u.cast(Controller, data.?);

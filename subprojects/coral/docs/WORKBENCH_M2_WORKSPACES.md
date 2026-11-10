@@ -1,6 +1,6 @@
 # M2: native workspaces and bounded explorer
 
-**Status: workspace, explorer, search, safe settings, persistent trust and explicit saved-session increments implemented and tested; M2 remains in progress.** The user accepted M0's documented bounded-editor tradeoffs. See the [search guide](WORKBENCH_M2_SEARCH.md), [settings/trust guide](WORKBENCH_M2_POLICY.md) and [session guide](WORKBENCH_M2_SESSIONS.md). Native [dock/picker integration](WORKBENCH_M2_DOCKS.md) is now implemented. Automatic/per-project session history and multi-window support remain future work.
+**Status: workspace, explorer, search, safe settings, persistent trust and explicit saved-session increments implemented and tested; M2 remains in progress.** The user accepted M0's documented bounded-editor tradeoffs. See the [search guide](WORKBENCH_M2_SEARCH.md), [settings/trust guide](WORKBENCH_M2_POLICY.md) and [session guide](WORKBENCH_M2_SESSIONS.md). Native [dock/picker integration](WORKBENCH_M2_DOCKS.md) and [independent windows](WORKBENCH_M2_WINDOWS.md) are now implemented. Automatic/per-project session history remains future work.
 
 ## Open a workspace
 
@@ -123,7 +123,7 @@ M1 recovery protects documents, groups, excerpts and selection/scroll under its 
 
 The separate **Save Workspace Session / Restore Workspace Session** palette commands now persist one explicit checkpoint of workspace source/roots, tabs, groups, excerpts and view state. Verified clean files rebind; dirty/conflicting/unavailable files become unsaved copies. Existing documents are preserved. Missing roots remain unavailable; missing manifests abort restore with saved-root diagnostics rather than creating a fallback manifest. Trust is revalidated separately. See [session behavior and validation](WORKBENCH_M2_SESSIONS.md).
 
-Model replacement does not create separate per-workspace tab sets. There is no automatic startup resume or quit-time session save; explicit checkpoints survive later Discard. Multiple windows and automatic/per-project session management remain future work.
+Model replacement does not create separate per-workspace tab sets. There is no automatic startup resume or quit-time session save; explicit checkpoints survive later Discard. Independent windows now provide separate document/workspace ownership; automatic/per-project session management remains future work.
 
 ## Source and validation
 
@@ -183,6 +183,6 @@ Versioned **explicit workspace sessions** are now [implemented and validated](WO
 
 Native [Explorer/Search docks and Quick Open picker integration](WORKBENCH_M2_DOCKS.md) are now implemented, with session v2 layout persistence and compact-window behavior.
 
-Next: multi-window lifecycle. Additional pickers, automatic/per-project session management and separately authorized filesystem operations remain open items.
+[Multi-window lifecycle](WORKBENCH_M2_WINDOWS.md) is now delivered. Next: separately authorized workspace create/rename/move/delete with dirty-buffer and containment safeguards. Additional pickers and automatic/per-project session management remain open items.
 
 M2 remains **in progress**.

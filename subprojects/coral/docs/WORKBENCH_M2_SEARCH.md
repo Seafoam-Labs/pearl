@@ -120,4 +120,4 @@ Evidence: `pearl/.cache/coral-search/results.json` and adjacent screenshots/sess
 
 ## Next M2 work
 
-[Safe settings precedence/provenance and persistent machine-owned trust](WORKBENCH_M2_POLICY.md) are now implemented. [Explicit sessions](WORKBENCH_M2_SESSIONS.md) and [native docks/picker integration](WORKBENCH_M2_DOCKS.md) are also implemented. Multi-window lifecycle comes next. Persistent indexing is not supplied by this on-demand scanner. LSP, Git and agents remain later milestones.
+[Safe settings precedence/provenance and persistent machine-owned trust](WORKBENCH_M2_POLICY.md) are now implemented. [Explicit sessions](WORKBENCH_M2_SESSIONS.md) and [native docks/picker integration](WORKBENCH_M2_DOCKS.md) are also implemented. [Multi-window lifecycle](WORKBENCH_M2_WINDOWS.md) is now delivered; search and dirty-buffer overlays belong to their window, not to peer windows. Next: separately authorized workspace create/rename/move/delete with dirty-buffer and containment safeguards. Persistent indexing is not supplied by this on-demand scanner. LSP, Git and agents remain later milestones.

@@ -97,7 +97,8 @@ repository values never overwrite user preferences.
 
 Workspaces start **restricted**. **Trust workspace…** requires confirmation and
 persists an exact machine-owned approval; **Workspace: Revoke trust** invalidates
-its permits immediately and removes the approval asynchronously. Trust is not
+permits for matching workspace scopes across this process immediately and removes
+the approval asynchronously. Trust is not
 blanket tool permission and starts no services. See the [settings/trust guide](docs/WORKBENCH_M2_POLICY.md)
 for filesystem identity requirements, storage errors and revocation limits.
 
@@ -114,8 +115,14 @@ returns to the editor. Quick Open is a transient overlay sharing Search's query
 and results. Compact windows retain one auxiliary panel and preserve the desired
 wide layout. See [dock controls and validation](docs/WORKBENCH_M2_DOCKS.md).
 
+**Ctrl+Shift+N** opens an independent window; **Ctrl+Shift+W** closes its window,
+and **Ctrl+Q** quits all windows with sequential dirty-document prompts. Each window
+owns its documents, workspace, search and docks. User preferences are shared;
+same-file buffers are independent, with coordinated in-process saves and disk
+conflict checks. See [multi-window usage and limits](docs/WORKBENCH_M2_WINDOWS.md).
+
 This remains an **M2 preview**, without persistent indexing, workspace-wide replace,
-automatic/per-project session history or multi-window support. Crash recovery
+automatic/per-project session history or workspace create/rename/move/delete. Crash recovery
 still restores documents/layout but not roots; the explicit session is separate.
 See [workspace usage and remaining gates](docs/WORKBENCH_M2_WORKSPACES.md).
 
@@ -189,7 +196,8 @@ explicitly—recovery is not a backup service.
 | Ctrl+Shift+F | Search workspace text |
 | Ctrl+\\ | Split editor group |
 | Ctrl+S / Ctrl+Shift+S | Save / Save As |
-| Ctrl+W / Ctrl+Q | Close tab / quit |
+| Ctrl+W / Ctrl+Q | Close tab / Quit All |
+| Ctrl+Shift+N / Ctrl+Shift+W | New window / close window |
 | Ctrl+Tab / Ctrl+Shift+Tab | Next / previous tab |
 | Ctrl+Z / Ctrl+Shift+Z | Undo / redo |
 | Ctrl+F / Ctrl+H | Find / replace |
@@ -240,6 +248,7 @@ zig build test-m2-search -Doptimize=safe -j1
 zig build test-m2-policy -Doptimize=safe -j1
 zig build test-m2-sessions -Doptimize=safe -j1
 zig build test-m2-docks -Doptimize=safe -j1
+zig build test-m2-windows -Doptimize=safe -j1
 zig build widgets -Doptimize=safe -- --aqueous-prefix /usr
 ```
 
@@ -251,7 +260,7 @@ The [original plan](docs/IMPLEMENTATION_PLAN.md), [interactive mockup](docs/mock
 and [mockup gallery](docs/mockups/README.md) remain design references. They do
 not replace the native test evidence.
 
-Automatic session history, multi-window support, remote files, legacy encodings,
+Automatic session history, cross-window tab transfer, remote files, legacy encodings,
 grammar checking, project tooling and plugins are outside this preview. The user accepted M0's
 bounded-editor tradeoffs to proceed to M2. Full giant-line rendering remains
 unsupported and original input-to-paint targets remain unverified; acceptance

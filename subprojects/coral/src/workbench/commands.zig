@@ -52,6 +52,10 @@ pub const Command = enum {
     dock_shrink,
     next_tab,
     previous_tab,
+    new_window,
+    close_window,
+    next_window,
+    previous_window,
 
     pub fn metadata(self: Command) Metadata {
         return entries[@backingInt(self)];
@@ -72,7 +76,7 @@ pub const Command = enum {
             .preferences => i18n.dtr("coral", "Preferences…"),
             .about => i18n.dtr("coral", "About Coral"),
             .close => i18n.dtr("coral", "Close tab"),
-            .quit => i18n.dtr("coral", "Quit"),
+            .quit => i18n.dtr("coral", "Quit All"),
             .command_palette => i18n.dtr("coral", "Command Palette…"),
             .split_group => i18n.dtr("coral", "Split editor group"),
             .focus_next_group => i18n.dtr("coral", "Focus next editor group"),
@@ -108,6 +112,10 @@ pub const Command = enum {
             .dock_shrink => i18n.dtr("coral", "Shrink active dock"),
             .next_tab => i18n.dtr("coral", "Next editor tab"),
             .previous_tab => i18n.dtr("coral", "Previous editor tab"),
+            .new_window => i18n.dtr("coral", "New Window"),
+            .close_window => i18n.dtr("coral", "Close Window"),
+            .next_window => i18n.dtr("coral", "Next Window"),
+            .previous_window => i18n.dtr("coral", "Previous Window"),
         };
     }
 };
@@ -123,53 +131,57 @@ pub const Metadata = struct {
 };
 
 pub const entries = [_]Metadata{
-    .{ .command = .new, .action = "new", .detailed_action = "app.new", .label = "New document", .shortcut = "Ctrl+N" },
-    .{ .command = .open, .action = "open", .detailed_action = "app.open", .label = "Open…", .shortcut = "Ctrl+O" },
-    .{ .command = .save, .action = "save", .detailed_action = "app.save", .label = "Save", .shortcut = "Ctrl+S" },
-    .{ .command = .save_as, .action = "save-as", .detailed_action = "app.save-as", .label = "Save As…", .shortcut = "Ctrl+Shift+S" },
-    .{ .command = .reload, .action = "reload", .detailed_action = "app.reload", .label = "Reload from Disk", .shortcut = null },
-    .{ .command = .find, .action = "find", .detailed_action = "app.find", .label = "Find / Replace", .shortcut = "Ctrl+F" },
-    .{ .command = .goto_line, .action = "goto", .detailed_action = "app.goto", .label = "Go to Line…", .shortcut = "Ctrl+G" },
-    .{ .command = .spelling, .action = "spelling", .detailed_action = "app.spelling", .label = "Spelling suggestions", .shortcut = "Shift+F10" },
-    .{ .command = .preferences, .action = "preferences", .detailed_action = "app.preferences", .label = "Preferences…", .shortcut = "Ctrl+," },
-    .{ .command = .about, .action = "about", .detailed_action = "app.about", .label = "About Coral", .shortcut = null },
-    .{ .command = .close, .action = "close", .detailed_action = "app.close", .label = "Close tab", .shortcut = "Ctrl+W" },
-    .{ .command = .quit, .action = "quit", .detailed_action = "app.quit", .label = "Quit", .shortcut = "Ctrl+Q" },
-    .{ .command = .command_palette, .action = "command-palette", .detailed_action = "app.command-palette", .label = "Command Palette…", .shortcut = "Ctrl+Shift+P" },
-    .{ .command = .split_group, .action = "split-group", .detailed_action = "app.split-group", .label = "Split editor group", .shortcut = "Ctrl+\\" },
-    .{ .command = .focus_next_group, .action = "focus-next-group", .detailed_action = "app.focus-next-group", .label = "Focus next editor group", .shortcut = null },
-    .{ .command = .focus_previous_group, .action = "focus-previous-group", .detailed_action = "app.focus-previous-group", .label = "Focus previous editor group", .shortcut = null },
-    .{ .command = .close_group, .action = "close-group", .detailed_action = "app.close-group", .label = "Close editor group", .shortcut = null },
-    .{ .command = .excerpt, .action = "excerpt", .detailed_action = "app.excerpt", .label = "Edit selection as excerpt", .shortcut = null },
-    .{ .command = .grouped_undo, .action = "grouped-undo", .detailed_action = "app.grouped-undo", .label = "Undo grouped edit", .shortcut = null },
-    .{ .command = .grouped_redo, .action = "grouped-redo", .detailed_action = "app.grouped-redo", .label = "Redo grouped edit", .shortcut = null },
-    .{ .command = .open_folder, .action = "open-folder", .detailed_action = "app.open-folder", .label = "Open Folder…", .shortcut = null },
-    .{ .command = .open_workspace, .action = "open-workspace", .detailed_action = "app.open-workspace", .label = "Open Workspace…", .shortcut = null },
-    .{ .command = .workspace_roots, .action = "workspace-roots", .detailed_action = "app.workspace-roots", .label = "Workspace: Roots", .shortcut = null },
-    .{ .command = .workspace_back, .action = "workspace-back", .detailed_action = "app.workspace-back", .label = "Workspace: Back", .shortcut = null },
-    .{ .command = .workspace_rescan, .action = "workspace-rescan", .detailed_action = "app.workspace-rescan", .label = "Workspace: Rescan directory", .shortcut = null },
-    .{ .command = .close_workspace, .action = "close-workspace", .detailed_action = "app.close-workspace", .label = "Close workspace (keep documents)", .shortcut = null },
-    .{ .command = .quick_open, .action = "quick-open", .detailed_action = "app.quick-open", .label = "Quick Open…", .shortcut = "Ctrl+P" },
-    .{ .command = .workspace_search, .action = "workspace-search", .detailed_action = "app.workspace-search", .label = "Search workspace…", .shortcut = "Ctrl+Shift+F" },
-    .{ .command = .workspace_policy, .action = "workspace-policy", .detailed_action = "app.workspace-policy", .label = "Workspace: Settings and Trust…", .shortcut = null },
-    .{ .command = .workspace_trust, .action = "workspace-trust", .detailed_action = "app.workspace-trust", .label = "Trust workspace…", .shortcut = null },
-    .{ .command = .workspace_revoke, .action = "workspace-revoke", .detailed_action = "app.workspace-revoke", .label = "Workspace: Revoke trust", .shortcut = null },
-    .{ .command = .save_workspace_session, .action = "save-workspace-session", .detailed_action = "app.save-workspace-session", .label = "Save Workspace Session", .shortcut = null },
-    .{ .command = .restore_workspace_session, .action = "restore-workspace-session", .detailed_action = "app.restore-workspace-session", .label = "Restore Workspace Session", .shortcut = null },
-    .{ .command = .toggle_explorer, .action = "toggle-explorer", .detailed_action = "app.toggle-explorer", .label = "Toggle Explorer dock", .shortcut = "Ctrl+B" },
-    .{ .command = .toggle_search, .action = "toggle-search", .detailed_action = "app.toggle-search", .label = "Toggle Search dock", .shortcut = null },
-    .{ .command = .focus_explorer, .action = "focus-explorer", .detailed_action = "app.focus-explorer", .label = "Focus Explorer", .shortcut = "Ctrl+Shift+E" },
-    .{ .command = .focus_search, .action = "focus-search", .detailed_action = "app.focus-search", .label = "Focus Search", .shortcut = null },
-    .{ .command = .focus_editor, .action = "focus-editor", .detailed_action = "app.focus-editor", .label = "Focus editor", .shortcut = "Ctrl+1" },
-    .{ .command = .hide_panel, .action = "hide-panel", .detailed_action = "app.hide-panel", .label = "Hide active panel", .shortcut = "Ctrl+Shift+B" },
-    .{ .command = .dock_left, .action = "dock-left", .detailed_action = "app.dock-left", .label = "Move active panel left", .shortcut = "Ctrl+Alt+Left" },
-    .{ .command = .dock_right, .action = "dock-right", .detailed_action = "app.dock-right", .label = "Move active panel right", .shortcut = "Ctrl+Alt+Right" },
-    .{ .command = .dock_bottom, .action = "dock-bottom", .detailed_action = "app.dock-bottom", .label = "Move active panel bottom", .shortcut = "Ctrl+Alt+Down" },
-    .{ .command = .reset_docks, .action = "reset-docks", .detailed_action = "app.reset-docks", .label = "Reset dock layout", .shortcut = null },
-    .{ .command = .dock_grow, .action = "dock-grow", .detailed_action = "app.dock-grow", .label = "Grow active dock", .shortcut = "Ctrl+Alt+PageUp" },
-    .{ .command = .dock_shrink, .action = "dock-shrink", .detailed_action = "app.dock-shrink", .label = "Shrink active dock", .shortcut = "Ctrl+Alt+PageDown" },
-    .{ .command = .next_tab, .action = "next-tab", .detailed_action = "app.next-tab", .label = "Next editor tab", .shortcut = "Ctrl+Tab" },
-    .{ .command = .previous_tab, .action = "previous-tab", .detailed_action = "app.previous-tab", .label = "Previous editor tab", .shortcut = "Ctrl+Shift+Tab" },
+    .{ .command = .new, .action = "new", .detailed_action = "win.new", .label = "New document", .shortcut = "Ctrl+N" },
+    .{ .command = .open, .action = "open", .detailed_action = "win.open", .label = "Open…", .shortcut = "Ctrl+O" },
+    .{ .command = .save, .action = "save", .detailed_action = "win.save", .label = "Save", .shortcut = "Ctrl+S" },
+    .{ .command = .save_as, .action = "save-as", .detailed_action = "win.save-as", .label = "Save As…", .shortcut = "Ctrl+Shift+S" },
+    .{ .command = .reload, .action = "reload", .detailed_action = "win.reload", .label = "Reload from Disk", .shortcut = null },
+    .{ .command = .find, .action = "find", .detailed_action = "win.find", .label = "Find / Replace", .shortcut = "Ctrl+F" },
+    .{ .command = .goto_line, .action = "goto", .detailed_action = "win.goto", .label = "Go to Line…", .shortcut = "Ctrl+G" },
+    .{ .command = .spelling, .action = "spelling", .detailed_action = "win.spelling", .label = "Spelling suggestions", .shortcut = "Shift+F10" },
+    .{ .command = .preferences, .action = "preferences", .detailed_action = "win.preferences", .label = "Preferences…", .shortcut = "Ctrl+," },
+    .{ .command = .about, .action = "about", .detailed_action = "win.about", .label = "About Coral", .shortcut = null },
+    .{ .command = .close, .action = "close", .detailed_action = "win.close", .label = "Close tab", .shortcut = "Ctrl+W" },
+    .{ .command = .quit, .action = "quit", .detailed_action = "win.quit", .label = "Quit All", .shortcut = "Ctrl+Q" },
+    .{ .command = .command_palette, .action = "command-palette", .detailed_action = "win.command-palette", .label = "Command Palette…", .shortcut = "Ctrl+Shift+P" },
+    .{ .command = .split_group, .action = "split-group", .detailed_action = "win.split-group", .label = "Split editor group", .shortcut = "Ctrl+\\" },
+    .{ .command = .focus_next_group, .action = "focus-next-group", .detailed_action = "win.focus-next-group", .label = "Focus next editor group", .shortcut = null },
+    .{ .command = .focus_previous_group, .action = "focus-previous-group", .detailed_action = "win.focus-previous-group", .label = "Focus previous editor group", .shortcut = null },
+    .{ .command = .close_group, .action = "close-group", .detailed_action = "win.close-group", .label = "Close editor group", .shortcut = null },
+    .{ .command = .excerpt, .action = "excerpt", .detailed_action = "win.excerpt", .label = "Edit selection as excerpt", .shortcut = null },
+    .{ .command = .grouped_undo, .action = "grouped-undo", .detailed_action = "win.grouped-undo", .label = "Undo grouped edit", .shortcut = null },
+    .{ .command = .grouped_redo, .action = "grouped-redo", .detailed_action = "win.grouped-redo", .label = "Redo grouped edit", .shortcut = null },
+    .{ .command = .open_folder, .action = "open-folder", .detailed_action = "win.open-folder", .label = "Open Folder…", .shortcut = null },
+    .{ .command = .open_workspace, .action = "open-workspace", .detailed_action = "win.open-workspace", .label = "Open Workspace…", .shortcut = null },
+    .{ .command = .workspace_roots, .action = "workspace-roots", .detailed_action = "win.workspace-roots", .label = "Workspace: Roots", .shortcut = null },
+    .{ .command = .workspace_back, .action = "workspace-back", .detailed_action = "win.workspace-back", .label = "Workspace: Back", .shortcut = null },
+    .{ .command = .workspace_rescan, .action = "workspace-rescan", .detailed_action = "win.workspace-rescan", .label = "Workspace: Rescan directory", .shortcut = null },
+    .{ .command = .close_workspace, .action = "close-workspace", .detailed_action = "win.close-workspace", .label = "Close workspace (keep documents)", .shortcut = null },
+    .{ .command = .quick_open, .action = "quick-open", .detailed_action = "win.quick-open", .label = "Quick Open…", .shortcut = "Ctrl+P" },
+    .{ .command = .workspace_search, .action = "workspace-search", .detailed_action = "win.workspace-search", .label = "Search workspace…", .shortcut = "Ctrl+Shift+F" },
+    .{ .command = .workspace_policy, .action = "workspace-policy", .detailed_action = "win.workspace-policy", .label = "Workspace: Settings and Trust…", .shortcut = null },
+    .{ .command = .workspace_trust, .action = "workspace-trust", .detailed_action = "win.workspace-trust", .label = "Trust workspace…", .shortcut = null },
+    .{ .command = .workspace_revoke, .action = "workspace-revoke", .detailed_action = "win.workspace-revoke", .label = "Workspace: Revoke trust", .shortcut = null },
+    .{ .command = .save_workspace_session, .action = "save-workspace-session", .detailed_action = "win.save-workspace-session", .label = "Save Workspace Session", .shortcut = null },
+    .{ .command = .restore_workspace_session, .action = "restore-workspace-session", .detailed_action = "win.restore-workspace-session", .label = "Restore Workspace Session", .shortcut = null },
+    .{ .command = .toggle_explorer, .action = "toggle-explorer", .detailed_action = "win.toggle-explorer", .label = "Toggle Explorer dock", .shortcut = "Ctrl+B" },
+    .{ .command = .toggle_search, .action = "toggle-search", .detailed_action = "win.toggle-search", .label = "Toggle Search dock", .shortcut = null },
+    .{ .command = .focus_explorer, .action = "focus-explorer", .detailed_action = "win.focus-explorer", .label = "Focus Explorer", .shortcut = "Ctrl+Shift+E" },
+    .{ .command = .focus_search, .action = "focus-search", .detailed_action = "win.focus-search", .label = "Focus Search", .shortcut = null },
+    .{ .command = .focus_editor, .action = "focus-editor", .detailed_action = "win.focus-editor", .label = "Focus editor", .shortcut = "Ctrl+1" },
+    .{ .command = .hide_panel, .action = "hide-panel", .detailed_action = "win.hide-panel", .label = "Hide active panel", .shortcut = "Ctrl+Shift+B" },
+    .{ .command = .dock_left, .action = "dock-left", .detailed_action = "win.dock-left", .label = "Move active panel left", .shortcut = "Ctrl+Alt+Left" },
+    .{ .command = .dock_right, .action = "dock-right", .detailed_action = "win.dock-right", .label = "Move active panel right", .shortcut = "Ctrl+Alt+Right" },
+    .{ .command = .dock_bottom, .action = "dock-bottom", .detailed_action = "win.dock-bottom", .label = "Move active panel bottom", .shortcut = "Ctrl+Alt+Down" },
+    .{ .command = .reset_docks, .action = "reset-docks", .detailed_action = "win.reset-docks", .label = "Reset dock layout", .shortcut = null },
+    .{ .command = .dock_grow, .action = "dock-grow", .detailed_action = "win.dock-grow", .label = "Grow active dock", .shortcut = "Ctrl+Alt+PageUp" },
+    .{ .command = .dock_shrink, .action = "dock-shrink", .detailed_action = "win.dock-shrink", .label = "Shrink active dock", .shortcut = "Ctrl+Alt+PageDown" },
+    .{ .command = .next_tab, .action = "next-tab", .detailed_action = "win.next-tab", .label = "Next editor tab", .shortcut = "Ctrl+Tab" },
+    .{ .command = .previous_tab, .action = "previous-tab", .detailed_action = "win.previous-tab", .label = "Previous editor tab", .shortcut = "Ctrl+Shift+Tab" },
+    .{ .command = .new_window, .action = "new-window", .detailed_action = "win.new-window", .label = "New Window", .shortcut = "Ctrl+Shift+N" },
+    .{ .command = .close_window, .action = "close-window", .detailed_action = "win.close-window", .label = "Close Window", .shortcut = "Ctrl+Shift+W" },
+    .{ .command = .next_window, .action = "next-window", .detailed_action = "win.next-window", .label = "Next Window", .shortcut = null },
+    .{ .command = .previous_window, .action = "previous-window", .detailed_action = "win.previous-window", .label = "Previous Window", .shortcut = null },
 };
 
 pub fn fromAction(action: []const u8) ?Command {
@@ -200,6 +212,8 @@ pub fn fromKey(key: u32, state: u32) ?Command {
     };
     if (modifiers == ctrl | shift) return switch (lower) {
         0xff09, 0xfe20 => .previous_tab, // Tab and ISO_Left_Tab
+        'n' => .new_window,
+        'w' => .close_window,
         'e' => .focus_explorer,
         'b' => .hide_panel,
         's' => .save_as,
@@ -230,20 +244,35 @@ pub fn fromKey(key: u32, state: u32) ?Command {
 
 test "registry is exhaustive, ordered and has unique stable actions" {
     try std.testing.expectEqual(@typeInfo(Command).@"enum".field_names.len, entries.len);
-    const actions = [_][]const u8{ "new", "open", "save", "save-as", "reload", "find", "goto", "spelling", "preferences", "about", "close", "quit", "command-palette", "split-group", "focus-next-group", "focus-previous-group", "close-group", "excerpt", "grouped-undo", "grouped-redo", "open-folder", "open-workspace", "workspace-roots", "workspace-back", "workspace-rescan", "close-workspace", "quick-open", "workspace-search", "workspace-policy", "workspace-trust", "workspace-revoke", "save-workspace-session", "restore-workspace-session", "toggle-explorer", "toggle-search", "focus-explorer", "focus-search", "focus-editor", "hide-panel", "dock-left", "dock-right", "dock-bottom", "reset-docks", "dock-grow", "dock-shrink", "next-tab", "previous-tab" };
+    const actions = [_][]const u8{ "new", "open", "save", "save-as", "reload", "find", "goto", "spelling", "preferences", "about", "close", "quit", "command-palette", "split-group", "focus-next-group", "focus-previous-group", "close-group", "excerpt", "grouped-undo", "grouped-redo", "open-folder", "open-workspace", "workspace-roots", "workspace-back", "workspace-rescan", "close-workspace", "quick-open", "workspace-search", "workspace-policy", "workspace-trust", "workspace-revoke", "save-workspace-session", "restore-workspace-session", "toggle-explorer", "toggle-search", "focus-explorer", "focus-search", "focus-editor", "hide-panel", "dock-left", "dock-right", "dock-bottom", "reset-docks", "dock-grow", "dock-shrink", "next-tab", "previous-tab", "new-window", "close-window", "next-window", "previous-window" };
     for (entries, actions, 0..) |entry, action, index| {
         try std.testing.expectEqual(index, @backingInt(entry.command));
         try std.testing.expectEqualStrings(action, entry.action);
         try std.testing.expectEqual(entry.command, fromAction(action).?);
         try std.testing.expectEqualStrings(action, entry.detailed_action[4..]);
-        try std.testing.expect(std.mem.startsWith(u8, entry.detailed_action, "app."));
+        try std.testing.expect(std.mem.startsWith(u8, entry.detailed_action, "win."));
         try std.testing.expect(entry.label.len > 0);
         try std.testing.expectEqualStrings(entry.label, entry.command.metadata().label);
         for (entries[0..index]) |other| try std.testing.expect(!std.mem.eql(u8, other.action, action));
     }
-    for ([_][]const u8{ "", "app.save", "SAVE", "save_as", "goto-line", "terminal", "agent" }) |unknown| {
+    for ([_][]const u8{ "", "win.save", "SAVE", "save_as", "goto-line", "terminal", "agent" }) |unknown| {
         try std.testing.expectEqual(@as(?Command, null), fromAction(unknown));
     }
+}
+
+test "native window actions are owner scoped and distinct from document actions" {
+    try std.testing.expectEqual(Command.new, fromKey('n', 4).?);
+    try std.testing.expectEqual(Command.new_window, fromKey('N', 5).?);
+    try std.testing.expectEqual(Command.close, fromKey('w', 4).?);
+    try std.testing.expectEqual(Command.close_window, fromKey('W', 5).?);
+    try std.testing.expectEqualStrings("Quit All", Command.quit.metadata().label);
+    inline for (.{ Command.new_window, Command.close_window, Command.next_window, Command.previous_window }) |command| {
+        const entry = command.metadata();
+        try std.testing.expect(std.mem.startsWith(u8, entry.detailed_action, "win."));
+        try std.testing.expectEqual(command, fromAction(entry.action).?);
+    }
+    try std.testing.expectEqual(@as(?[:0]const u8, null), Command.next_window.metadata().shortcut);
+    try std.testing.expectEqual(@as(?[:0]const u8, null), Command.previous_window.metadata().shortcut);
 }
 
 test "workspace sessions are explicit palette actions without automatic shortcuts" {
@@ -285,6 +314,8 @@ test "command shortcuts include shifted keyvals and existing find alias" {
     const Case = struct { key: u32, state: u32, command: Command };
     for ([_]Case{
         .{ .key = 'n', .state = 4, .command = .new },
+        .{ .key = 'N', .state = 5, .command = .new_window },
+        .{ .key = 'W', .state = 5, .command = .close_window },
         .{ .key = '\\', .state = 4, .command = .split_group },
         .{ .key = 'O', .state = 6, .command = .open },
         .{ .key = 's', .state = 4, .command = .save },
@@ -321,7 +352,7 @@ test "unmapped editor keys and other modifiers remain with the parent" {
     for ([_]u32{ 0xff1b, 0xffc0, 'z', 'Z', 'y', '+', '=', '-', '0' }) |key| {
         try std.testing.expectEqual(@as(?Command, null), fromKey(key, 4));
     }
-    for ([_]u32{ 0, 1, 5, 4 | 8, 4 | (1 << 26), 4 | (1 << 27), 4 | (1 << 28), 4 | (1 << 7) }) |state| {
+    for ([_]u32{ 0, 1, 4 | 8, 4 | (1 << 26), 4 | (1 << 27), 4 | (1 << 28), 4 | (1 << 7) }) |state| {
         try std.testing.expectEqual(@as(?Command, null), fromKey('n', state));
     }
     try std.testing.expectEqual(@as(?Command, null), fromKey(0xffc7, 0));

@@ -58,12 +58,12 @@ pub const Controller = struct {
             c.gtk_widget_add_css_class(host, "dock");
             const bar = u.box(true, 0);
             u.append(host, bar);
-            tabs[i] = .{ actionButton("Explorer", "app.focus-explorer"), actionButton("Search", "app.focus-search") };
+            tabs[i] = .{ actionButton("Explorer", "win.focus-explorer"), actionButton("Search", "win.focus-search") };
             for (tabs[i]) |tab| u.append(bar, tab);
             const controls = u.box(true, 0);
             c.gtk_widget_set_halign(controls, c.GTK_ALIGN_END);
             u.append(host, controls);
-            inline for (.{ .{ "go-previous-symbolic", "Move panel left", "app.dock-left" }, .{ "go-next-symbolic", "Move panel right", "app.dock-right" }, .{ "go-down-symbolic", "Move panel bottom", "app.dock-bottom" }, .{ "list-add-symbolic", "Grow dock · Ctrl+Alt+PageUp", "app.dock-grow" }, .{ "list-remove-symbolic", "Shrink dock · Ctrl+Alt+PageDown", "app.dock-shrink" }, .{ "window-close-symbolic", "Hide panel", "app.hide-panel" } }) |item| {
+            inline for (.{ .{ "go-previous-symbolic", "Move panel left", "win.dock-left" }, .{ "go-next-symbolic", "Move panel right", "win.dock-right" }, .{ "go-down-symbolic", "Move panel bottom", "win.dock-bottom" }, .{ "list-add-symbolic", "Grow dock · Ctrl+Alt+PageUp", "win.dock-grow" }, .{ "list-remove-symbolic", "Shrink dock · Ctrl+Alt+PageDown", "win.dock-shrink" }, .{ "window-close-symbolic", "Hide panel", "win.hide-panel" } }) |item| {
                 const button = u.icon(item[0], item[1]);
                 c.gtk_widget_add_css_class(button, "flat");
                 c.gtk_actionable_set_action_name(u.cast(c.GtkActionable, button), item[2]);
@@ -110,7 +110,7 @@ pub const Controller = struct {
         c.gtk_overlay_set_measure_overlay(u.cast(c.GtkOverlay, overlay), picker, 0);
         c.gtk_overlay_set_clip_overlay(u.cast(c.GtkOverlay, overlay), picker, 1);
         c.gtk_widget_set_visible(picker, 0);
-        inline for (.{ .{ "system-file-manager-symbolic", "Explorer · Ctrl+Shift+E", "app.toggle-explorer" }, .{ "edit-find-symbolic", "Workspace search · Ctrl+Shift+F", "app.toggle-search" }, .{ "view-refresh-symbolic", "Reset dock layout", "app.reset-docks" }, .{ "input-keyboard-symbolic", "Focus editor · Ctrl+1", "app.focus-editor" } }) |item| {
+        inline for (.{ .{ "system-file-manager-symbolic", "Explorer · Ctrl+Shift+E", "win.toggle-explorer" }, .{ "edit-find-symbolic", "Workspace search · Ctrl+Shift+F", "win.toggle-search" }, .{ "view-refresh-symbolic", "Reset dock layout", "win.reset-docks" }, .{ "input-keyboard-symbolic", "Focus editor · Ctrl+1", "win.focus-editor" } }) |item| {
             const button = u.icon(item[0], item[1]);
             c.gtk_actionable_set_action_name(u.cast(c.GtkActionable, button), item[2]);
             u.append(rail, button);

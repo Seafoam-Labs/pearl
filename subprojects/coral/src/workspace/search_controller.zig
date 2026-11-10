@@ -361,7 +361,7 @@ pub const Controller = struct {
         self.test_delay_us = 0;
         self.active = job;
         self.started += 1;
-        c.g_application_hold(u.cast(c.GApplication, self.app.application));
+        self.app.hold();
         self.render_pending = true;
         dispatch(job);
     }
@@ -682,7 +682,7 @@ fn done(_: ?*c.GObject, result: ?*c.GAsyncResult, data: ?*anyopaque) callconv(.c
     a.destroy(job);
     self.active = null;
     self.reaped += 1;
-    c.g_application_release(u.cast(c.GApplication, self.app.application));
+    self.app.release();
 }
 fn pump(data: ?*anyopaque) callconv(.c) c_int {
     const self = u.cast(Controller, data.?);

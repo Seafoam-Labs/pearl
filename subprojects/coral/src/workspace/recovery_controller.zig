@@ -26,6 +26,8 @@ pub const Controller = struct {
     closing: bool = false,
     resolved: bool = false,
     saves: usize = 0,
+    holds: usize = 0,
+    opening: bool = false,
     failed: bool = false,
     dialog: ?u.W = null,
     claim: ?*Work = null,
@@ -48,6 +50,35 @@ pub const Controller = struct {
         return self;
     }
 
+    fn hold(self: *Controller) void {
+        self.holds += 1;
+        c.g_application_hold(self.application);
+    }
+    fn release(self: *Controller) void {
+        std.debug.assert(self.holds > 0);
+        self.holds -= 1;
+        c.g_application_release(self.application);
+    }
+    pub fn drained(self: *Controller) bool {
+        return self.closing and self.holds == 0 and !self.opening and self.store == null and self.claim == null and self.saves == 0;
+    }
+    /// Only process startup discovers candidates. Later windows open a distinct
+    /// journal off GTK and never rediscover journals the user kept for later.
+    pub fn attachNew(self: *Controller, app: *App) void {
+        self.app = app;
+        app.recovery_context = self;
+        app.recovery_checkpoint = &changed;
+        u.connect(self.application, "window-removed", &windowRemoved, self);
+        self.opening = true;
+        // A later window is usable/closable immediately. Capture its latest
+        // state when the journal is ready; never read worker-owned store here.
+        self.ready(app);
+        self.hold();
+        const task = c.g_task_new(null, null, &opened, self).?;
+        c.g_task_set_task_data(task, self, null);
+        c.g_task_run_in_thread(task, &openWorker);
+        c.g_object_unref(task);
+    }
     pub fn attach(self: *Controller, app: *App) void {
         self.app = app;
         app.recovery_context = self;
@@ -61,7 +92,7 @@ pub const Controller = struct {
     pub fn deinit(self: *Controller) void {
         // All worker callbacks own application holds; g_application_run must
         // remain alive until they finish, including coalesced save callbacks.
-        std.debug.assert(self.store == null and self.claim == null);
+        std.debug.assert(self.drained());
         if (self.discovery) |list| list.deinit();
         _ = c.g_signal_handlers_disconnect_matched(self.application, c.G_SIGNAL_MATCH_DATA, 0, 0, null, null, self);
     }
@@ -121,6 +152,7 @@ pub const Controller = struct {
         c.gtk_window_set_title(u.cast(c.GtkWindow, dialog), if (transferred) "Recovery copied safely" else "Recover interrupted session");
         c.gtk_window_set_transient_for(u.cast(c.GtkWindow, dialog), u.cast(c.GtkWindow, app.window));
         c.gtk_window_set_modal(u.cast(c.GtkWindow, dialog), 1);
+        app.styleWindow(dialog);
         c.gtk_window_set_destroy_with_parent(u.cast(c.GtkWindow, dialog), 1);
         const label = u.label(if (transferred)
             "The recovered unsaved copies have a durable checkpoint in this session. Keep the original recovery for later, or explicitly discard it?"
@@ -150,7 +182,7 @@ pub const Controller = struct {
     fn run(self: *Controller, work: *Work, operation: Operation) void {
         work.operation = operation;
         work.err = null;
-        c.g_application_hold(self.application);
+        self.hold();
         const task = c.g_task_new(null, null, &workDone, work).?;
         c.g_task_set_task_data(task, work, null);
         c.g_task_run_in_thread(task, &worker);
@@ -230,7 +262,7 @@ pub const Controller = struct {
     }
 
     fn save(self: *Controller) void {
-        if (self.closing or self.store == null) return;
+        if (self.closing or self.opening or self.store == null) return;
         const snapshot = captureApp(self.app orelse return) catch |err| {
             if (err == error.Loading) {
                 self.timer = c.g_timeout_add(250, &debounced, self);
@@ -243,12 +275,12 @@ pub const Controller = struct {
             }
             return;
         };
-        c.g_application_hold(self.application);
+        self.hold();
         self.saves += 1;
         self.store.?.saveAsync(snapshot, &saved, self) catch |err| {
             self.saves -= 1;
             snapshot.deinit();
-            c.g_application_release(self.application);
+            self.release();
             self.report(err);
             if (self.awaiting_checkpoint) {
                 self.awaiting_checkpoint = false;
@@ -268,16 +300,16 @@ pub const Controller = struct {
         // An earlier failed write may still have an undelivered callback while
         // the latest write succeeds. Do not authorize removal before observing
         // every result. Each accepted save holds the application across this gap.
-        if (self.saves == 0) self.closeStore();
+        if (self.saves == 0 and !self.opening) self.closeStore();
     }
 
     fn closeStore(self: *Controller) void {
         if (self.store) |store| {
-            c.g_application_hold(self.application);
+            self.hold();
             store.closeAsync(if (self.resolved and !self.failed) .remove_after_resolution else .keep, &closed, self) catch |err| {
                 // Allocation failure cannot be recovered by destroying an open
                 // Store. Keep its lock until process exit, but do not hang exit.
-                c.g_application_release(self.application);
+                self.release();
                 self.report(err);
                 self.store = null;
             };
@@ -349,9 +381,31 @@ pub const Controller = struct {
     }
 };
 
+fn openWorker(task: ?*c.GTask, _: ?*anyopaque, data: ?*anyopaque, _: ?*c.GCancellable) callconv(.c) void {
+    const self = u.cast(Controller, data.?);
+    // GTK does not access store/startup_error until opening completes.
+    self.store = recovery.Store.open(.{ .before_checkpoint_commit = if (hooks) &testBeforeCommit else null }) catch |err| blk: {
+        self.startup_error = err;
+        break :blk null;
+    };
+    c.g_task_return_boolean(task, 1);
+}
+fn opened(_: ?*c.GObject, result: ?*c.GAsyncResult, data: ?*anyopaque) callconv(.c) void {
+    const self = u.cast(Controller, data.?);
+    defer self.release();
+    _ = c.g_task_propagate_boolean(u.cast(c.GTask, result.?), null);
+    self.opening = false;
+    if (self.closing) {
+        if (self.startup_error) |err| self.report(err);
+        self.closeStore();
+    } else {
+        if (self.startup_error) |err| self.report(err);
+        if (self.app) |app| app.checkpoint();
+    }
+}
 fn changed(data: ?*anyopaque, app: *App) void {
     const self = u.cast(Controller, data.?);
-    if (self.closing) return;
+    if (self.closing or self.opening) return;
     if (hooks) app.test_checkpoint_count += 1;
     // App emits its final synchronous observer notification before destroying
     // the window, after every canonical document was saved/discarded/closed.
@@ -378,7 +432,7 @@ fn saved(data: ?*anyopaque, result: recovery.Result) void {
     defer {
         self.saves -= 1;
         if (self.closing and self.saves == 0) self.closeStore();
-        c.g_application_release(self.application);
+        self.release();
     }
     switch (result) {
         .checkpoint => |status| {
@@ -404,7 +458,7 @@ fn saved(data: ?*anyopaque, result: recovery.Result) void {
 }
 fn closed(data: ?*anyopaque, result: recovery.Result) void {
     const self = u.cast(Controller, data.?);
-    defer c.g_application_release(self.application);
+    defer self.release();
     if (result == .failed) self.report(result.failed);
     self.store.?.destroy();
     self.store = null;
@@ -516,7 +570,7 @@ fn perform(work: *Work) !void {
 fn workDone(_: ?*c.GObject, result: ?*c.GAsyncResult, data: ?*anyopaque) callconv(.c) void {
     const work = u.cast(Work, data.?);
     const self = work.controller;
-    defer c.g_application_release(self.application);
+    defer self.release();
     _ = c.g_task_propagate_boolean(@ptrCast(result), null);
     if (work.err) |err| self.report(err);
     if (work.operation == .load and work.journal != null) {

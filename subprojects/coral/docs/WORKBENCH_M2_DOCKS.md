@@ -77,4 +77,4 @@ Initial broad validation caught a stale v1-only test fixture and real key/focus 
 
 Evidence: `pearl/.cache/coral-docks/results.json`, adjacent logs/screenshots, and `pearl/.cache/coral-dock-validation-logs/final-*.log`. Focused run evidence under `pearl/subprojects/coral/.cache/docks-focus-acceptance-agent-20261109/full/` includes 172 geometry observations and 18 screenshots; these are local functional checks, not paint-latency measurements.
 
-**Next standard M2 increment:** multi-window lifecycle and command/document ownership. Automatic/per-project session management and separately authorized filesystem operations remain open roadmap items. LSP, Git, terminal/tasks and agents remain later milestones.
+[Multi-window lifecycle](WORKBENCH_M2_WINDOWS.md) is now implemented: each window owns its dock state, while Save/Restore Workspace Session still uses one shared explicit checkpoint. **Next standard M2 increment:** separately authorized workspace create/rename/move/delete with dirty-buffer and containment safeguards. Automatic/per-project session management remains open. LSP, Git, terminal/tasks and agents remain later milestones.
