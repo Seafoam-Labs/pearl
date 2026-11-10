@@ -3,7 +3,8 @@
 scx's `services/CATALOG.md` is the contract between the scheduler catalog,
 `scxcli` and its clients, and its fixtures are the executable form of that
 contract; clients are meant to copy them to test their parsers. These are
-copied from sched-ext/scx at b19726e95a8e (`rust/scx_catalog/fixtures`):
+copied from sched-ext/scx at 458caad6 (`rust/scx_catalog/fixtures`; all but
+`detection/13` are unchanged since b19726e95a8e):
 
 - `detection/` — `scxcli get --json` output (under `expected`) for each
   detection case, with the unit, environment and sysfs state it comes from.

@@ -278,7 +278,13 @@ pub const Service = struct {
         const name = if (selected) |value| value.label else "";
         return switch (self.status.kind) {
             .unavailable => if (self.listing == null) @import("i18n").dtr("pearl", "Checking the scheduler...") else if (self.listing.?.current.kernel_state == null) @import("i18n").dtr("pearl", "This kernel does not support sched_ext schedulers.") else if (self.unit_state == .missing) @import("i18n").dtr("pearl", "scx.service is not installed.") else @import("i18n").dtr("pearl", "Checking the scheduler..."),
-            .off => @import("i18n").fmt(buffer, "{s} - kernel scheduler (EEVDF)", .{name}),
+            .off => if (p.idleNext(self.listing.?, self.status)) |next| blk: {
+                const listing = self.listing.?;
+                const pick = p.selection(listing);
+                const what = if (pick.first) |i| listing.profiles[i].label else p.schedName(next.sched);
+                // Translators: The default profile, then the profile or scheduler scx.service is set up to run.
+                break :blk @import("i18n").fmt(buffer, "{s} - kernel scheduler (EEVDF). scx.service is set to run {s}, but it is not enabled, so nothing starts it; choose that profile to start it.", .{ name, what });
+            } else @import("i18n").fmt(buffer, "{s} - kernel scheduler (EEVDF)", .{name}),
             .running => blk: {
                 const sched = if (selected) |value| value.scheduler() orelse "" else "";
                 const version = p.opsVersion(sched, self.ops);
