@@ -14,6 +14,7 @@ pub const Controller = struct {
     overlay: u.W,
     editor: u.W,
     rail: u.W,
+    activities: [2]u.W,
     picker: u.W,
     explorer_slot: u.W,
     search_slot: u.W,
@@ -42,7 +43,7 @@ pub const Controller = struct {
         const root = u.box(true, 0);
         c.gtk_widget_set_hexpand(root, 1);
         c.gtk_widget_set_vexpand(root, 1);
-        const rail = u.box(false, 4);
+        const rail = u.box(false, 5);
         c.gtk_widget_add_css_class(rail, "activity-rail");
         u.append(root, rail);
         const overlay = c.gtk_overlay_new().?;
@@ -57,18 +58,32 @@ pub const Controller = struct {
             const host = u.box(false, 0);
             c.gtk_widget_add_css_class(host, "dock");
             const bar = u.box(true, 0);
+            c.gtk_widget_add_css_class(bar, "dock-header");
             u.append(host, bar);
             tabs[i] = .{ actionButton("Explorer", "win.focus-explorer"), actionButton("Search", "win.focus-search") };
-            for (tabs[i]) |tab| u.append(bar, tab);
-            const controls = u.box(true, 0);
-            c.gtk_widget_set_halign(controls, c.GTK_ALIGN_END);
-            u.append(host, controls);
-            inline for (.{ .{ "go-previous-symbolic", "Move panel left", "win.dock-left" }, .{ "go-next-symbolic", "Move panel right", "win.dock-right" }, .{ "go-down-symbolic", "Move panel bottom", "win.dock-bottom" }, .{ "list-add-symbolic", "Grow dock · Ctrl+Alt+PageUp", "win.dock-grow" }, .{ "list-remove-symbolic", "Shrink dock · Ctrl+Alt+PageDown", "win.dock-shrink" }, .{ "window-close-symbolic", "Hide panel", "win.hide-panel" } }) |item| {
-                const button = u.icon(item[0], item[1]);
-                c.gtk_widget_add_css_class(button, "flat");
-                c.gtk_actionable_set_action_name(u.cast(c.GtkActionable, button), item[2]);
-                u.append(controls, button);
+            for (tabs[i]) |tab| {
+                c.gtk_widget_add_css_class(tab, "dock-tab");
+                u.append(bar, tab);
             }
+            const spacer = u.box(true, 0);
+            c.gtk_widget_set_hexpand(spacer, 1);
+            u.append(bar, spacer);
+            const menu = c.gtk_menu_button_new().?;
+            c.gtk_widget_add_css_class(menu, "dock-menu");
+            c.gtk_menu_button_set_icon_name(u.cast(c.GtkMenuButton, menu), "view-more-symbolic");
+            c.gtk_widget_set_tooltip_text(menu, "Panel options");
+            c.gtk_accessible_update_property(u.cast(c.GtkAccessible, menu), @as(c_int, c.GTK_ACCESSIBLE_PROPERTY_LABEL), @as([*:0]const u8, "Panel options"), @as(c_int, -1));
+            const model = c.g_menu_new().?;
+            defer c.g_object_unref(model);
+            inline for (.{ .{ "Move panel left", "win.dock-left" }, .{ "Move panel right", "win.dock-right" }, .{ "Move panel bottom", "win.dock-bottom" }, .{ "Grow dock · Ctrl+Alt+PageUp", "win.dock-grow" }, .{ "Shrink dock · Ctrl+Alt+PageDown", "win.dock-shrink" }, .{ "Reset dock layout", "win.reset-docks" } }) |item| {
+                c.g_menu_append(model, item[0], item[1]);
+            }
+            c.gtk_menu_button_set_menu_model(u.cast(c.GtkMenuButton, menu), u.cast(c.GMenuModel, model));
+            u.append(bar, menu);
+            const hide_button = u.icon("window-close-symbolic", "Hide panel");
+            c.gtk_widget_add_css_class(hide_button, "flat");
+            c.gtk_actionable_set_action_name(u.cast(c.GtkActionable, hide_button), "win.hide-panel");
+            u.append(bar, hide_button);
             hosts[i] = host;
             const frame = c.gtk_scrolled_window_new().?;
             // Overflow is only a sizing fallback, not an extra keyboard target.
@@ -77,6 +92,7 @@ pub const Controller = struct {
             c.gtk_scrolled_window_set_child(u.cast(c.GtkScrolledWindow, frame), host);
             frames[i] = frame;
             const paned = u.cast(c.GtkPaned, c.gtk_paned_new(if (dock == .bottom) c.GTK_ORIENTATION_VERTICAL else c.GTK_ORIENTATION_HORIZONTAL).?);
+            c.gtk_widget_add_css_class(u.cast(c.GtkWidget, paned), "dock-split");
             c.gtk_paned_set_wide_handle(paned, 1);
             c.gtk_paned_set_shrink_start_child(paned, 1);
             c.gtk_paned_set_shrink_end_child(paned, 1);
@@ -110,12 +126,20 @@ pub const Controller = struct {
         c.gtk_overlay_set_measure_overlay(u.cast(c.GtkOverlay, overlay), picker, 0);
         c.gtk_overlay_set_clip_overlay(u.cast(c.GtkOverlay, overlay), picker, 1);
         c.gtk_widget_set_visible(picker, 0);
-        inline for (.{ .{ "system-file-manager-symbolic", "Explorer · Ctrl+Shift+E", "win.toggle-explorer" }, .{ "edit-find-symbolic", "Workspace search · Ctrl+Shift+F", "win.toggle-search" }, .{ "view-refresh-symbolic", "Reset dock layout", "win.reset-docks" }, .{ "input-keyboard-symbolic", "Focus editor · Ctrl+1", "win.focus-editor" } }) |item| {
+        var activities: [2]u.W = undefined;
+        inline for (.{ .{ "system-file-manager-symbolic", "Explorer · Ctrl+Shift+E", "win.toggle-explorer" }, .{ "edit-find-symbolic", "Workspace search · Ctrl+Shift+F", "win.toggle-search" }, .{ "input-keyboard-symbolic", "Focus editor · Ctrl+1", "win.focus-editor" }, .{ "view-refresh-symbolic", "Reset dock layout", "win.reset-docks" } }, 0..) |item, i| {
+            if (i == 2) {
+                const spacer = u.box(false, 0);
+                c.gtk_widget_set_vexpand(spacer, 1);
+                u.append(rail, spacer);
+            }
             const button = u.icon(item[0], item[1]);
+            c.gtk_widget_add_css_class(button, "activity");
+            if (i < 2) activities[i] = button;
             c.gtk_actionable_set_action_name(u.cast(c.GtkActionable, button), item[2]);
             u.append(rail, button);
         }
-        return .{ .root = root, .overlay = overlay, .editor = editor, .rail = rail, .picker = picker, .explorer_slot = explorer_slot, .search_slot = search_slot, .hosts = hosts, .frames = frames, .search_placeholder = search_placeholder, .tabs = tabs, .paneds = paneds };
+        return .{ .root = root, .overlay = overlay, .editor = editor, .rail = rail, .activities = activities, .picker = picker, .explorer_slot = explorer_slot, .search_slot = search_slot, .hosts = hosts, .frames = frames, .search_placeholder = search_placeholder, .tabs = tabs, .paneds = paneds };
     }
 
     /// Call only once the controller is at its stable address.
@@ -198,7 +222,7 @@ pub const Controller = struct {
         self.apply();
     }
     pub fn grow(self: *Controller, larger: bool) void {
-        const side = if (self.state.active == .explorer) self.state.explorer else self.state.search;
+        const side = self.presentationDock(if (self.state.active == .explorer) self.state.explorer else self.state.search);
         const size = switch (side) {
             .left => self.state.left_size,
             .right => self.state.right_size,
@@ -227,20 +251,28 @@ pub const Controller = struct {
         self.picking = false;
         self.apply();
     }
+    // A side strip narrower than its controls is not usable. Reflow only the
+    // presentation on small windows; desired placement survives widening.
+    fn presentationDock(self: *const Controller, dock: Dock) Dock {
+        return if (self.width > 0 and self.width < 520) .bottom else dock;
+    }
     fn apply(self: *Controller) void {
         if (self.closed) return;
         self.applying = true;
         defer self.applying = false;
+        const explorer_dock = self.presentationDock(self.state.explorer);
+        const search_dock = self.presentationDock(self.state.search);
         const root = c.gtk_widget_get_root(self.root);
         const focused = if (root) |r| c.gtk_root_get_focus(r) else null;
+
         if (focused) |widget| {
             _ = c.g_object_ref(widget);
-            const search_parent = if (self.picking) self.picker else self.hosts[index(self.state.search)];
+            const search_parent = if (self.picking) self.picker else self.hosts[index(search_dock)];
             const moving_focus = (inside(widget, self.search_slot) and c.gtk_widget_get_parent(self.search_slot) != search_parent) or
-                (inside(widget, self.explorer_slot) and c.gtk_widget_get_parent(self.explorer_slot) != self.hosts[index(self.state.explorer)]);
+                (inside(widget, self.explorer_slot) and c.gtk_widget_get_parent(self.explorer_slot) != self.hosts[index(explorer_dock)]);
             if (moving_focus) {
                 c.g_weak_ref_set(&self.pending_focus, @ptrCast(widget));
-                self.pending_focus_frames = 2;
+                self.pending_focus_frames = 4;
             }
         }
         defer if (focused) |widget| {
@@ -249,7 +281,7 @@ pub const Controller = struct {
             if (c.gtk_widget_get_root(widget) == root and c.gtk_widget_is_visible(widget) != 0 and root != null and c.gtk_root_get_focus(root.?) != widget) {
                 if (c.gtk_widget_grab_focus(widget) == 0) {
                     c.g_weak_ref_set(&self.pending_focus, @ptrCast(widget));
-                    self.pending_focus_frames = 2;
+                    self.pending_focus_frames = 4;
                 }
             }
             c.g_object_unref(widget);
@@ -259,20 +291,22 @@ pub const Controller = struct {
             shown[if (self.state.active == .explorer) @as(usize, 1) else 0] = false;
         }
         self.effective = shown;
-        reparent(self.explorer_slot, self.hosts[index(self.state.explorer)]);
-        reparent(self.search_slot, if (self.picking) self.picker else self.hosts[index(self.state.search)]);
-        reparent(self.search_placeholder, self.hosts[index(self.state.search)]);
+        reparent(self.explorer_slot, self.hosts[index(explorer_dock)]);
+        reparent(self.search_slot, if (self.picking) self.picker else self.hosts[index(search_dock)]);
+        reparent(self.search_placeholder, self.hosts[index(search_dock)]);
         c.gtk_widget_set_visible(self.search_placeholder, @intFromBool(self.picking and shown[1]));
         c.gtk_widget_set_visible(self.explorer_slot, @intFromBool(shown[0]));
         c.gtk_widget_set_visible(self.search_slot, @intFromBool(shown[1] or self.picking));
         c.gtk_widget_set_visible(self.picker, @intFromBool(self.picking));
         for (docks, 0..) |dock, i| {
-            const explorer_here = self.state.explorer == dock;
-            const search_here = self.state.search == dock;
+            const explorer_here = explorer_dock == dock;
+            const search_here = search_dock == dock;
             c.gtk_widget_set_visible(self.frames[i], @intFromBool((shown[0] and explorer_here) or (shown[1] and search_here)));
             c.gtk_widget_set_visible(self.tabs[i][0], @intFromBool(explorer_here and self.state.explorer_visible));
             c.gtk_widget_set_visible(self.tabs[i][1], @intFromBool(search_here and self.state.search_visible));
+            for (self.tabs[i], 0..) |tab, panel| setActive(tab, shown[panel]);
         }
+        for (self.activities, 0..) |activity, panel| setActive(activity, shown[panel]);
         self.setPositions();
     }
     fn setPositions(self: *Controller) void {
@@ -286,8 +320,9 @@ pub const Controller = struct {
             self.extents[i] = extent;
             if (extent <= 1 or c.gtk_widget_get_visible(self.frames[i]) == 0) continue;
             // Reserve a useful central editor, even for oversized saved values.
-            const reserve: c_int = if (i == 2) 160 else 240;
-            const size = @min(@as(c_int, sizes[i]), @max(0, @divTrunc(extent - reserve, 2)));
+            const reserve: c_int = if (i == 2) 165 else 245;
+            const shared = i != 2 and c.gtk_widget_get_visible(self.frames[0]) != 0 and c.gtk_widget_get_visible(self.frames[1]) != 0;
+            const size = @min(@as(c_int, sizes[i]), @max(0, @divTrunc(extent - reserve, if (shared) @as(c_int, 2) else 1)));
             const position = if (i == 0) size else @max(0, extent - size);
             self.applied[i] = position;
             c.gtk_paned_set_position(paned, position);
@@ -300,13 +335,19 @@ pub const Controller = struct {
         const widget = u.cast(c.GtkWidget, object);
         const root = c.gtk_widget_get_root(self.root) orelse return;
         const focused = c.gtk_root_get_focus(root);
+
         var wrapper_focus = false;
-        for (self.frames) |frame| if (focused == frame) {
+        for (self.frames) |frame| if (focused == frame and inside(widget, frame)) {
             wrapper_focus = true;
         };
-        // GtkScrolledWindow can focus its wrapper on the allocation following
-        // reparent. Repair that for at most two frames, but never override a
-        // user's focus in another control/editor or resurrect a hidden panel.
+        for (self.paneds) |paned| if (focused == u.cast(c.GtkWidget, paned) and inside(widget, focused.?)) {
+            wrapper_focus = true;
+        };
+        // Nested paneds can temporarily unmap a reparented panel on the next
+        // allocation, moving focus to its paned (or scrolled-window wrapper).
+        // Allow the subsequent remap before repairing focus, bounded to four
+        // frames. Only ancestor fallbacks qualify, not another control/editor;
+        // hidden panels must never be reopened.
         if (c.gtk_widget_get_root(widget) != root or c.gtk_widget_is_visible(widget) == 0 or
             (focused != null and focused != widget and !wrapper_focus))
         {
@@ -314,11 +355,13 @@ pub const Controller = struct {
             return;
         }
         if (c.gtk_widget_get_mapped(widget) != 0) _ = c.gtk_widget_grab_focus(widget);
+
         self.pending_focus_frames -|= 1;
         if (self.pending_focus_frames == 0) c.g_weak_ref_set(&self.pending_focus, null);
     }
     pub fn probe(self: *Controller, window: u.W) void {
         const focus = c.gtk_window_get_focus(u.cast(c.GtkWindow, window));
+
         const Bounds = struct { x: f32, y: f32, width: f32, height: f32 };
         var bounds: [3]Bounds = undefined;
         for (self.paneds, &bounds) |paned, *rect| {
@@ -399,8 +442,12 @@ pub fn unwrapEditorGroup(root: u.W, notebook: u.W) void {
     u.append(root, notebook);
 }
 
+fn setActive(widget: u.W, active: bool) void {
+    if (active) c.gtk_widget_add_css_class(widget, "active") else c.gtk_widget_remove_css_class(widget, "active");
+}
 fn actionButton(text: [*:0]const u8, action: [*:0]const u8) u.W {
     const button = u.button(text);
+    c.gtk_widget_set_tooltip_text(button, text);
     c.gtk_actionable_set_action_name(u.cast(c.GtkActionable, button), action);
     return button;
 }
@@ -466,6 +513,8 @@ fn handlePressed(gesture: ?*c.GtkGestureClick, _: c_int, x: f64, y: f64, data: ?
     for (self.paneds, 0..) |paned, i| if (u.cast(c.GtkWidget, paned) == widget) {
         const position: f64 = @floatFromInt(c.gtk_paned_get_position(paned));
         self.dragging[i] = @abs((if (i == 2) y else x) - position) < 16;
+        // A deliberate splitter interaction supersedes reparent focus repair.
+        if (self.dragging[i]) c.g_weak_ref_set(&self.pending_focus, null);
     };
 }
 fn pointerEvent(_: ?*c.GtkEventControllerLegacy, event: ?*c.GdkEvent, data: ?*anyopaque) callconv(.c) c_int {
@@ -482,7 +531,7 @@ fn hostFocused(controller: ?*c.GtkEventControllerFocus, data: ?*anyopaque) callc
     if (self.closed or self.applying) return;
     const widget = c.gtk_event_controller_get_widget(u.cast(c.GtkEventController, controller.?));
     for (self.hosts, 0..) |host, i| if (host == widget) {
-        self.state.active = if (self.effective[0] and index(self.state.explorer) == i) .explorer else .search;
+        self.state.active = if (self.effective[0] and index(self.presentationDock(self.state.explorer)) == i) .explorer else .search;
     };
 }
 fn explorerFocused(_: ?*c.GtkEventControllerFocus, data: ?*anyopaque) callconv(.c) void {

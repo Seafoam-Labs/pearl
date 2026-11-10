@@ -207,6 +207,10 @@ pub fn build(b: *std.Build) void {
     m2_operations.dependOn(&widgets.step);
     m2_projects.dependOn(&widgets.step);
     m2_roots.dependOn(&widgets.step);
+    const visual = b.addSystemCommand(&.{ native_python, "tests/visual.py", "--binary" });
+    visual.addArtifactArg(ie);
+    visual.addPassthruArgs();
+    b.step("visual", "Capture and test native M2 workbench visuals in private Wayland sessions").dependOn(&visual.step);
     const m2 = b.step("test-m2", "Run complete bounded M2 acceptance, including M1 regressions");
     for ([_]*std.Build.Step{ m1, m2_slice, m2_explorer, m2_search, m2_policy, m2_sessions, m2_docks, m2_windows, m2_operations, m2_projects, m2_roots }) |gate| m2.dependOn(gate);
 

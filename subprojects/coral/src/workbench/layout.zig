@@ -9,7 +9,7 @@ pub const State = struct {
     explorer_visible: bool = true,
     search_visible: bool = false,
     active: Panel = .explorer,
-    left_size: u16 = 280,
+    left_size: u16 = 222,
     right_size: u16 = 320,
     bottom_size: u16 = 240,
 };

@@ -12,6 +12,24 @@ const projection = @import("projection.zig");
 // Process-wide, never recycled, and only accessed on the GTK thread.
 var next_id: u64 = 1;
 
+/// GtkSourceView moves private highlight-region marks while snapshotting. Those
+/// are not caret changes: updating shell widgets then invalidates allocations
+/// halfway through painting. Full views and excerpts must filter by identity,
+/// not by mark names (private marks may be either named or anonymous).
+pub fn isSelectionMark(buffer: *c.GtkTextBuffer, mark: *c.GtkTextMark) bool {
+    return mark == c.gtk_text_buffer_get_insert(buffer) or mark == c.gtk_text_buffer_get_selection_bound(buffer);
+}
+
+/// GtkNotebook allocates scrollable tabs from their minimum requests, not the
+/// labels' natural widths. Give each label a text-sized minimum, bounded by its
+/// own group's allocation so narrow windows and splits retain scrollable tabs.
+pub fn sizeTabLabel(widget: u.W, group_width: c_int) void {
+    const label = u.cast(c.GtkLabel, widget);
+    const count = c.g_utf8_strlen(c.gtk_label_get_text(label), -1);
+    const limit: c_int = if (group_width >= 600) 36 else if (group_width >= 360) 24 else 16;
+    c.gtk_label_set_width_chars(label, @intCast(@min(count + 2, limit)));
+}
+
 /// Non-copyable owner of two anonymous, invisible marks. Borrows the buffer, which
 /// must outlive deinit(). Requires no gtk_init/display and never changes text,
 /// modified state, or undo history. Positions use GTK character offsets, not bytes.
@@ -106,11 +124,12 @@ pub const EditorView = struct {
         c.gtk_widget_set_hexpand(page, 1);
         c.gtk_widget_set_vexpand(page, 1);
         const tab = u.box(true, 6);
+        c.gtk_widget_add_css_class(tab, "editor-tab");
         _ = c.g_object_ref_sink(tab);
         const tab_label = u.label(@import("i18n").dtr("coral", "Untitled"));
         c.gtk_label_set_ellipsize(u.cast(c.GtkLabel, tab_label), c.PANGO_ELLIPSIZE_MIDDLE);
-        c.gtk_label_set_max_width_chars(u.cast(c.GtkLabel, tab_label), 28);
-        c.gtk_label_set_width_chars(u.cast(c.GtkLabel, tab_label), 18);
+        c.gtk_label_set_max_width_chars(u.cast(c.GtkLabel, tab_label), 36);
+        sizeTabLabel(tab_label, 0);
         u.append(tab, tab_label);
         const close_button = u.icon("window-close-symbolic", @import("i18n").dtr("coral", "Close document"));
         c.gtk_widget_add_css_class(close_button, "flat");

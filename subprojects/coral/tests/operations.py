@@ -25,7 +25,7 @@ from pathlib import Path
 
 from windows import (WindowHarness, PEARL, PrivateSession, fixture_prefix,
                      wait_for, stage_styles, digest, save, BudgetExpired,
-                     pointer_move, pointer_click, resource_sample)
+                     pointer_move, pointer_click, resource_sample, start_accessibility)
 
 
 KINDS = ('create_file', 'create_directory', 'rename', 'move', 'delete')
@@ -248,16 +248,10 @@ def palette_workflow(h):
 def explorer_buttons(h):
     h.select_row()
     h.command('settings', theme=1, font=14)
-    dock = h.probe('dock')
-    surface = next(w for w in h.native_windows() if w['id'] == h.native_ids[h.target])
-    panel = dock['paned_bounds'][0]
-    # Material theme's 280px Explorer: operations follow the navigation rows.
-    x = surface['geometry']['x'] + panel['x'] + 60
-    y = surface['geometry']['y'] + panel['y'] + 354
     h.screenshot('explorer-before-click')
-    pointer_move(h.session, x, y)
-    pointer_click(h.session)
-    h.evidence.setdefault('pointer_routes', []).append(dict(case=h.name, action='workspace-create-file', pointer=[x, y]))
+    route = h.click_accessible('New file…')
+    h.evidence.setdefault('pointer_routes', []).append(
+        dict(case=h.name, action='workspace-create-file', pointer=route['pointer'], control=route['control']))
     before = h.state_is('input')['completed']
     h.ui_review('create_file', 'clicked.txt')
     h.click_dialog('Confirm workspace file operation', accept=False)
@@ -669,6 +663,8 @@ def main():
         with PrivateSession(output / 'session', tool_prefix=args.aqueous_prefix) as session:
             session.env.update(GSETTINGS_BACKEND='memory', LANG='en_US.UTF-8', LC_ALL='en_US.UTF-8', LANGUAGE='en_US')
             styles = stage_styles(session, evidence)
+            if any(name == 'explorer_buttons' for name, _ in scenarios):
+                start_accessibility(session)
             for name, scenario in scenarios:
                 record = dict(name=name, status='running')
                 evidence['checks'].append(record)

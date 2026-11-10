@@ -25,12 +25,14 @@ pub const View = struct {
 
     pub fn init(parent: u.W, context: *anyopaque, changed: *const fn (*anyopaque) void, activate: *const fn (*anyopaque, usize) void, refresh: *const fn (*anyopaque) void, close: *const fn (*anyopaque) void) View {
         const panel = u.box(false, 4);
-        u.margin(panel, 6);
+        c.gtk_widget_add_css_class(panel, "workspace-search");
         c.gtk_widget_set_vexpand(panel, 1);
         const title = u.label("Workspace search");
-        c.gtk_label_set_wrap(u.cast(c.GtkLabel, title), 1);
+        c.gtk_widget_add_css_class(title, "search-title");
+        c.gtk_label_set_ellipsize(u.cast(c.GtkLabel, title), c.PANGO_ELLIPSIZE_END);
         u.append(panel, title);
         const bar = u.box(true, 4);
+        c.gtk_widget_add_css_class(bar, "workspace-search-toolbar");
         u.append(panel, bar);
         const entry = c.gtk_entry_new().?;
         c.gtk_entry_set_max_length(u.cast(c.GtkEntry, entry), 1024);
@@ -42,10 +44,13 @@ pub const View = struct {
         u.append(bar, refresh_button);
         const close_button = u.icon("window-close-symbolic", "Close search · Escape");
         u.append(bar, close_button);
+        for ([_]u.W{ refresh_button, close_button }) |button| c.gtk_widget_add_css_class(button, "flat");
 
         const status = u.label("Open a workspace to search.");
+        c.gtk_widget_add_css_class(status, "panel-status");
         c.gtk_label_set_ellipsize(u.cast(c.GtkLabel, status), c.PANGO_ELLIPSIZE_END);
-        u.append(panel, status);
+        c.gtk_widget_set_tooltip_text(status, "Open a workspace to search.");
+        u.connect(status, "notify::label", &statusChanged, null);
         const list = explorer.View.init();
         c.gtk_list_view_set_single_click_activate(u.cast(c.GtkListView, list.widget), 0);
         const scroll = c.gtk_scrolled_window_new().?;
@@ -54,6 +59,7 @@ pub const View = struct {
         c.gtk_widget_set_vexpand(scroll, 1);
         c.gtk_scrolled_window_set_min_content_height(u.cast(c.GtkScrolledWindow, scroll), 40);
         u.append(panel, scroll);
+        u.append(panel, status);
         u.append(parent, panel);
         c.gtk_widget_set_visible(panel, 0);
         return .{ .panel = panel, .entry = entry, .title = title, .status = status, .list = list, .refresh_button = refresh_button, .close_button = close_button, .context = context, .changed = changed, .activate = activate, .refresh = refresh, .close = close };
@@ -79,7 +85,9 @@ pub const View = struct {
         self.rows.deinit(a);
     }
     pub fn setMode(self: *View, mode: search.Mode) void {
-        u.setLabel(self.title, if (mode == .quick_open) "Quick Open · query/results shared with Search" else "Text search · query/results shared with Quick Open");
+        u.setLabel(self.title, if (mode == .quick_open) "Quick Open" else "Search files");
+        c.gtk_widget_set_tooltip_text(self.title, "Quick Open and Search share their query and results. Results are snapshots; Refresh updates unmonitored files.");
+        c.gtk_entry_set_placeholder_text(u.cast(c.GtkEntry, self.entry), if (mode == .quick_open) "Find a file…" else "Find in workspace…");
     }
     pub fn show(self: *View, mode: search.Mode) void {
         self.setMode(mode);
@@ -128,6 +136,9 @@ pub const View = struct {
         }
     }
 };
+fn statusChanged(label: ?*c.GtkLabel, _: ?*c.GParamSpec, _: ?*anyopaque) callconv(.c) void {
+    c.gtk_widget_set_tooltip_text(u.cast(c.GtkWidget, label.?), c.gtk_label_get_text(label));
+}
 fn queryChanged(_: ?*c.GtkEditable, data: ?*anyopaque) callconv(.c) void {
     const self = u.cast(View, data.?);
     if (!self.quiet) self.changed(self.context);

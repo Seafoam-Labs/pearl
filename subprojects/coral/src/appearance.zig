@@ -6,6 +6,39 @@ const c = u.c;
 const client = @import("appearance_client");
 const log = std.log.scoped(.config);
 
+// Coral's explicit modes follow the workbench design, not Pearl's stock hues.
+// A committed Follow Pearl snapshot still supplies every semantic role itself.
+pub const coral_dark: client.theme.Palette = .{
+    .surface = "#1b1d21",
+    .low = "#18191c",
+    .container = "#1e2024",
+    .high = "#25272c",
+    .text = "#d6d7dc",
+    .secondary = "#92959f",
+    .primary = "#e5a08e",
+    .on_primary = "#18191c",
+    .primary_container = "#382c2b",
+    .on_container = "#d6d7dc",
+    .outline = "#303238",
+    .error_color = "#e3999a",
+    .error_container = "#382c2b",
+};
+pub const coral_light: client.theme.Palette = .{
+    .surface = "#f8f7f4",
+    .low = "#e8e6e3",
+    .container = "#efeeeb",
+    .high = "#e3e1de",
+    .text = "#33383f",
+    .secondary = "#60666f",
+    .primary = "#9b4d3e",
+    .on_primary = "#faf9f7",
+    .primary_container = "#f1dfd7",
+    .on_container = "#33383f",
+    .outline = "#d5d2ce",
+    .error_color = "#a9444b",
+    .error_container = "#f1dfd7",
+};
+
 pub const Mode = enum { dark, light, native_gtk, follow_pearl };
 pub fn modeFrom(theme: c_int) Mode {
     return switch (theme) {
@@ -34,7 +67,7 @@ pub const Appearance = struct {
     reduced_motion: bool = false,
     snapshot_gtk: bool = false,
     variant: enum { dark, light } = .dark,
-    palette: client.theme.Palette = client.theme.dark,
+    palette: client.theme.Palette = coral_dark,
     owns_palette: bool = false,
     revision: ?u64 = null,
     context: *anyopaque,
@@ -44,7 +77,7 @@ pub const Appearance = struct {
         if (self.mode == mode) return;
         self.clear();
         self.mode = mode;
-        self.palette = if (mode == .light) client.theme.light else client.theme.dark;
+        self.palette = if (mode == .light) coral_light else coral_dark;
         if (mode == .follow_pearl) self.subscription = client.Subscription.start(self, received) catch null;
         self.paint();
         self.changed(self.context);
@@ -84,7 +117,7 @@ pub const Appearance = struct {
     pub fn sheet(self: *const Appearance, a: std.mem.Allocator) ![:0]u8 {
         if (self.mode == .native_gtk or self.followsGtk()) return a.dupeSentinel(u8, "", 0);
         const scope = self.cssScope();
-        const palette = if (self.mode == .follow_pearl and self.revision != null) self.palette else if (self.mode == .light) client.theme.light else client.theme.dark;
+        const palette = if (self.mode == .follow_pearl and self.revision != null) self.palette else if (self.mode == .light) coral_light else coral_dark;
         try client.theme.validate(palette);
         const base = try client.theme.scopedCss(a, @embedFile("theme_style"), scope, palette);
         if (self.mode != .follow_pearl or self.revision == null) return base;
@@ -201,7 +234,7 @@ pub const Appearance = struct {
         self.gtk_name = "";
         self.font = "";
         if (self.owns_palette) freePalette(u.a, self.palette);
-        self.palette = client.theme.dark;
+        self.palette = coral_dark;
         self.owns_palette = false;
         self.font_size = 14;
         self.reduced_motion = false;
@@ -263,6 +296,21 @@ fn freePalette(alloc: std.mem.Allocator, p: client.theme.Palette) void {
     inline for (@typeInfo(client.theme.Palette).@"struct".field_names) |field| alloc.free(@field(p, field));
 }
 
+test "Coral workbench palettes meet semantic contrast and fallback stays scoped" {
+    try client.theme.validate(coral_dark);
+    try client.theme.validate(coral_light);
+    var self: Appearance = .{ .scope = "coral-window-42", .context = undefined, .changed = undefined };
+    for ([_]Mode{ .dark, .light, .follow_pearl }) |mode| {
+        self.mode = mode;
+        const css = try self.sheet(std.testing.allocator);
+        defer std.testing.allocator.free(css);
+        try expectScopedSheet(css, self.scope);
+        const palette = if (mode == .light) coral_light else coral_dark;
+        try std.testing.expect(std.mem.indexOf(u8, css, palette.surface) != null);
+        try std.testing.expect(std.mem.indexOf(u8, css, palette.primary) != null);
+    }
+}
+
 test "committed palette, font and motion render into the coral sheet" {
     const a = std.testing.allocator;
     var self: Appearance = .{ .context = undefined, .changed = undefined };
@@ -288,7 +336,7 @@ test "committed palette, font and motion render into the coral sheet" {
     const light = try self.sheet(a);
     defer a.free(light);
     try std.testing.expect(std.mem.indexOf(u8, light, "window.coral.light") != null);
-    try std.testing.expect(std.mem.indexOf(u8, light, "#6750a4") != null);
+    try std.testing.expect(std.mem.indexOf(u8, light, "#9b4d3e") != null);
     try std.testing.expect(std.mem.indexOf(u8, light, "16pt") == null);
     self.mode = .follow_pearl;
     self.revision = 1;

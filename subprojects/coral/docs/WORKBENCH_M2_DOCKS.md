@@ -2,9 +2,11 @@
 
 **Implemented:** Explorer and workspace Search now live in movable, resizable, hideable native docks around the central editor. Quick Open uses a transient in-window picker. This is a functional workbench-layout increment, not pixel-for-pixel mockup parity or a complete IDE. No placeholder Git, agent, terminal or debugger services were added. **M2 implementation is now COMPLETE for the bounded preview; M3 is next.** See the [acceptance audit](WORKBENCH_M2_ACCEPTANCE.md).
 
+The subsequent [native visual-alignment pass](WORKBENCH_M2_VISUAL.md) adds compact headers/overflow menus, design palettes and per-group breadcrumbs. Its validation and screenshots are separate from the historical dock-increment evidence below.
+
 ## Controls
 
-Default placement is **Explorer left**, **Search bottom** (initially hidden). The activity rail opens/toggles the real panels and provides Reset layout and Focus editor. Empty Explorer offers Open Folder / Workspace actions.
+Default placement is **Explorer left** (222px default width), **Search bottom** (initially hidden). Existing saved dimensions remain honored. The activity rail opens/toggles the real panels and provides Reset layout and Focus editor. Open Folder / Workspace are available through the titlebar workspace menu and Explorer overflow.
 
 | Shortcut | Action |
 | --- | --- |
@@ -21,19 +23,21 @@ Default placement is **Explorer left**, **Search bottom** (initially hidden). Th
 | Ctrl+Tab / Ctrl+Shift+Tab | Next / previous editor tab |
 | Ctrl+Shift+P | Command palette |
 
-All dock operations also have palette/menu commands. Dock headers provide move, grow/shrink and hide controls. Drag a native splitter to resize. Placement is command/button-driven, **not drag-and-drop panel placement**. If the desktop reserves a shortcut, use the palette or buttons.
+All dock operations also have palette/menu commands. Dock headers provide **Panel options** for move/grow/shrink/reset and a directly accessible Hide control. Drag a native splitter to resize. Placement is command/button-driven, **not drag-and-drop panel placement**. If the desktop reserves a shortcut, use the palette or buttons.
 
 When both panels occupy the same dock, their header tabs select the visible panel. Empty docks collapse. Move/hide/reset operations preserve editor groups, documents, excerpts, selections and edit history. Each editor group has an independently shrinkable viewport so long tab/excerpt content cannot push siblings outside the central allocation; overflowing content may scroll.
 
 ### Explorer file-operation controls
 
-Explorer now has **New file… / New directory… / Rename… / Move… / Delete…** buttons, also exposed through menu and **Explorer:** palette commands. Select the entry first; **every kind requires input/review, worker preparation and a separate explicit confirmation before writing**. Creates do not auto-open. Delete is permanent, file/empty-directory only, with no trash, undo or recursion. These are real bounded operations, not dock placeholders or drag-and-drop moves.
+Explorer provides **New file…** in its compact toolbar; **New directory… / Rename… / Move… / Delete…** are in **Explorer actions and safety information**. All remain exposed through menu and **Explorer:** palette commands. Select the entry first; **every kind requires input/review, worker preparation and a separate explicit confirmation before writing**. Creates do not auto-open. Delete is permanent, file/empty-directory only, with no trash, undo or recursion. These are real bounded operations, not dock placeholders or drag-and-drop moves.
 
 All affected open documents (clean or dirty, in any window) must be resolved and closed first. The apply barrier refuses opens/saves/session/workspace switches/New Window through callback delivery while unaffected buffers remain editable. Success rescans Explorer and invalidates Search for explicit Refresh, without changing desired dock layout. See [file-operation usage, process-wide refusal rules and safety limits](WORKBENCH_M2_OPERATIONS.md), including the conservative `WorkspaceBusy` rule for any unavailable root or lexical `..` root/manifest anywhere in the process.
 
 ## Compact windows and focus
 
 If the workbench content area is narrower than **900 px** or shorter than **420 px**, only one auxiliary dock panel is displayed at a time. Desired visibility, placement and dimensions are retained; widening the window restores the wide layout. The transient Quick Open picker can overlay this arrangement.
+
+Below **520px content width**, the active panel is presented at the bottom rather than squeezing a side strip; widening restores its desired side placement. This responsive presentation does not rewrite saved placement.
 
 Desired side widths are bounded to **120–1200 px**; bottom height to **100–1000 px**. Effective allocations may be smaller to retain editor space. Resizing the window does not serialize its temporary clamped allocation as the desired size. These bounds are logical GTK pixels, not device pixels.
 
@@ -43,7 +47,7 @@ Explorer row refreshes park focus on a stable container before recycling rows, t
 
 **Ctrl+P** presents the existing bounded, virtualized path search in an overlay without reducing the editor allocation. Escape cancels it and returns to the active editor/excerpt. Successful activation first completes the checked navigation, then dismisses the presentation; dismissal does not invalidate that activation prematurely.
 
-**Quick Open and text Search share one query/result controller**, explicitly labelled in both presentations. Switching modes replaces that query's results; two simultaneous search engines are not implemented. A visible Search dock shows a sharing notice while Quick Open borrows its content. Explicit close cancels outstanding search work; moving a panel does not.
+**Quick Open and text Search share one query/result controller**, explained in their title tooltips. Switching modes replaces that query's results; two simultaneous search engines are not implemented. A visible Search dock shows a sharing notice while Quick Open borrows its content. Explicit close cancels outstanding search work; moving a panel does not.
 
 The command palette remains its existing transient modal window. Open Folder / Workspace continue using the existing choosers. Native [Recent Projects and Open Buffers](WORKBENCH_M2_PROJECTS.md) now use separate modal snapshot pickers: at most 512 captured items and 50 displayed matches; refine the filter, with no unlimited history-addressability claim. Recent Projects activates a matching owner or restores an independent window. Worktree/symbol pickers, floating docks and cross-window tab dragging remain outside M2.
 

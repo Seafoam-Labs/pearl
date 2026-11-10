@@ -1,18 +1,69 @@
-/* Colors resolved from Pearl's committed semantic palette at runtime; layout
- * stays in style.css. Tokens mirror Pearl src/theme/theme.zig. */
+/* Every palette selector is scoped to its owning Material-mode window.
+ * Native GTK keeps native colors; permanent geometry lives in style.css. */
 window.coral.$scope { background: $surface$; color: $text$; --window-bg-color: $surface$; --window-fg-color: $text$; }
-.coral.$scope headerbar, .coral.$scope .status { background: $container$; }
-.coral.$scope .status label { color: $secondary$; }
-.coral.$scope .notice { background: $high$; }
-.coral.$scope .search, .coral.$scope notebook > header { background: $low$; }
-.coral.$scope .dock, .coral.$scope .activity-rail { background: $low$; }
-.coral.$scope .quick-picker { background: $container$; color: $text$; border-color: $outline$; }
-.coral.$scope notebook > header tab:checked { background: $container$; border-bottom-color: $primary$; box-shadow: inset 0 -2px $primary$; }
-.coral.$scope .suggested-action { background: $primary$; color: $on_primary$; }
-.coral.$scope button { background: $high$; background-image: none; color: $text$; border-color: alpha($outline$, 0.25); }
-.coral.$scope button:hover { background: mix($high$, $text$, 0.08); }
-.coral.$scope button.flat { background: transparent; border-color: transparent; }
-.coral.$scope notebook > header tab { color: $secondary$; }
-.coral.$scope notebook > header tab:checked { color: $text$; }
-.coral.$scope entry { background: $container$; color: $text$; border-color: $outline$; }
-.coral.$scope spinbutton, .coral.$scope combobox button, .coral.$scope checkbutton { color: $text$; }
+/* Transient windows have native headerbars, not the workbench-titlebar class. */
+window.coral.$scope headerbar,
+window.coral.$scope .status { background: $container$; color: $text$; border-color: alpha($outline$, 0.35); }
+window.coral.$scope headerbar .title,
+window.coral.$scope headerbar .subtitle { color: $text$; }
+window.coral.$scope .brand { color: $primary$; }
+window.coral.$scope .status label { color: $secondary$; }
+window.coral.$scope .status .status-trust label { color: $primary$; }
+window.coral.$scope .notice { background: $high$; }
+window.coral.$scope .search,
+window.coral.$scope notebook > header { background: $low$; }
+window.coral.$scope .dock,
+window.coral.$scope .activity-rail { background: $container$; border-color: alpha($outline$, 0.35); }
+window.coral.$scope .dock-header,
+window.coral.$scope .panel-status { border-color: alpha($outline$, 0.35); }
+window.coral.$scope .panel-status,
+window.coral.$scope .explorer-safety { color: $secondary$; }
+window.coral.$scope .quick-picker,
+window.coral.$scope popover > contents { background: $container$; color: $text$; border-color: $outline$; }
+window.coral.$scope button { background: $high$; background-image: none; color: $text$; border-color: alpha($outline$, 0.25); box-shadow: none; }
+window.coral.$scope button:hover { background: mix($high$, $text$, 0.08); }
+window.coral.$scope button.flat,
+window.coral.$scope .workbench-titlebar button,
+window.coral.$scope .dock-header button,
+window.coral.$scope .explorer-toolbar button,
+window.coral.$scope .activity-rail button.activity { background: transparent; border-color: transparent; box-shadow: none; }
+window.coral.$scope button.flat:hover,
+window.coral.$scope .workbench-titlebar button:hover,
+window.coral.$scope .dock-header button:hover,
+window.coral.$scope .explorer-toolbar button:hover,
+window.coral.$scope .activity-rail button.activity:hover { background: $high$; }
+window.coral.$scope .workbench-titlebar button.command-button { background: $low$; color: $secondary$; border-color: alpha($outline$, 0.35); }
+window.coral.$scope .activity-rail button.activity { color: $secondary$; }
+window.coral.$scope .activity-rail button.activity.active { color: $text$; background: $high$; box-shadow: inset 2px 0 $primary$; }
+window.coral.$scope .dock-tab { color: $secondary$; }
+window.coral.$scope .dock-tab.active { color: $text$; }
+window.coral.$scope paned.dock-split > separator { background: alpha($outline$, 0.35); background-image: none; }
+window.coral.$scope .workspace-list { background: transparent; color: $text$; }
+window.coral.$scope .workspace-list > row:hover { background: alpha($high$, 0.6); }
+window.coral.$scope .workspace-list > row:selected { background: $high$; color: $text$; }
+window.coral.$scope notebook > header tab { background: transparent; color: $secondary$; box-shadow: none; }
+window.coral.$scope notebook > header tab:checked { background: $surface$; color: $text$; box-shadow: none; }
+window.coral.$scope .editor-tab { border-right-color: alpha($outline$, 0.35); color: $secondary$; }
+window.coral.$scope .editor-tab.active { background: $surface$; color: $text$; border-top-color: $primary$; }
+window.coral.$scope .suggested-action { background: $primary$; color: $on_primary$; }
+/* GTK4 spin buttons and search entries own text nodes rather than entries. */
+window.coral.$scope entry,
+window.coral.$scope searchentry,
+window.coral.$scope spinbutton { background: $surface$; color: $text$; border-color: alpha($outline$, 0.5); }
+window.coral.$scope spinbutton > text,
+window.coral.$scope searchentry > text { background: $surface$; color: $text$; }
+/* Command and workspace pickers use GtkListBox, independently of the explorer. */
+window.coral.$scope list { background: $surface$; color: $text$; }
+window.coral.$scope list > row { background: transparent; color: $text$; }
+window.coral.$scope list > row:hover { background: $high$; }
+window.coral.$scope list > row:selected { background: $primary$; color: $on_primary$; }
+window.coral.$scope list > row:selected label { color: $on_primary$; }
+window.coral.$scope spinbutton,
+window.coral.$scope combobox button,
+window.coral.$scope checkbutton { color: $text$; }
+
+window.coral.$scope .breadcrumbs {
+    background: $surface$;
+    color: $secondary$;
+    border-color: alpha($outline$, 0.35);
+}

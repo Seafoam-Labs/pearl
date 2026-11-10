@@ -2,6 +2,10 @@
 
 **Implementation disposition: COMPLETE.** The final feature audit concludes that all mandatory M2 features are implemented. **M3 language intelligence is next.** M2 closes as a bounded native workspace preview, not a full IDE, Zed parity release or a revision of the accepted M0 engine decision. The consolidated final acceptance gate and hooks-disabled production build both passed; the precise fresh/cached results are recorded below.
 
+## Subsequent native visual-alignment pass
+
+The requested visual pass is implemented **before M3**. See [native screenshots, scope and validation](WORKBENCH_M2_VISUAL.md): compact shell/panels/tabs/status, real per-group breadcrumbs, responsive layout and mockup-derived manual palettes, without simulated services. Final checks passed **16 visual cases, 201 widgets, 271 native groups**, and a fresh production build. The latest aggregate command failed on an unchanged process-supervisor unit-test abort; the separate main-root rerun passed **326/326**. The full aggregate success described below is the **earlier feature-closure checkpoint**, not a claim that this newer aggregate run passed.
+
 ## Mandatory scope and evidence map
 
 | M2 requirement | Implemented behavior | Native / backend evidence |

@@ -16,6 +16,7 @@ Cached build artifacts use the relative development style path `resources`;
 the private working directory receives exact copies of the shipped XML schemes.
 """
 import argparse
+import ast
 import base64
 from collections import Counter
 from contextlib import contextmanager
@@ -62,6 +63,20 @@ def stage_styles(session, evidence):
     return staged
 
 
+def start_accessibility(session):
+    """Expose only this disposable session's native widgets, never the host bus."""
+    session.child('accessibility-bus', ['/usr/lib/at-spi-bus-launcher', '--launch-immediately'])
+    wait_for(lambda: 'org.a11y.Bus' in session.run(
+        ['busctl', '--address=' + session.env['DBUS_SESSION_BUS_ADDRESS'], 'list']).stdout)
+    address = ast.literal_eval(session.run([
+        'gdbus', 'call', '--session', '--dest', 'org.a11y.Bus', '--object-path',
+        '/org/a11y/bus', '--method', 'org.a11y.Bus.GetAddress']).stdout)[0]
+    session.env.update(AT_SPI_BUS_ADDRESS=address, GTK_A11Y='atspi')
+    session.child('accessibility-registry', ['/usr/lib/at-spi2-registryd'])
+    wait_for(lambda: 'org.a11y.atspi.Registry' in session.run(
+        ['busctl', '--address=' + address, 'list']).stdout)
+
+
 class WindowHarness(PolicyHarness):
     def launch(self, recovery=False, paths=()):
         self.target = None
@@ -85,6 +100,59 @@ class WindowHarness(PolicyHarness):
         # The private session runs only this Coral process. Palette transients
         # need not carry GtkApplication's app_id, so do not filter them out.
         return [w for w in self.ipc.state() if w['kind'] == 'window']
+
+    def click_accessible(self, label):
+        """Resolve a visible control in the named owner, then send a real click."""
+        surface = next(w for w in self.native_windows() if w['id'] == self.native_ids[self.target])
+        assert surface['focused'], ('Accessible click must target the focused owner', surface)
+        script = '''
+import json, sys, gi
+gi.require_version('Atspi', '2.0')
+from gi.repository import Atspi
+pid, label, title = int(sys.argv[1]), sys.argv[2], sys.argv[3]
+desktop = Atspi.get_desktop(0)
+queue, matches = [], []
+for i in range(desktop.get_child_count()):
+    app = desktop.get_child_at_index(i)
+    if app.get_process_id() == pid:
+        for j in range(app.get_child_count()):
+            frame = app.get_child_at_index(j)
+            if frame.get_name() == title and frame.get_state_set().contains(Atspi.StateType.SHOWING):
+                queue.append((frame, 0))
+assert len(queue) <= 1, ('Ambiguous owner title', title)
+seen = 0
+while queue and seen < 5000:
+    node, depth = queue.pop(0)
+    seen += 1
+    states = node.get_state_set()
+    if (node.get_name() == label and node.get_role() in (Atspi.Role.PUSH_BUTTON, Atspi.Role.TOGGLE_BUTTON)
+            and states.contains(Atspi.StateType.SHOWING)
+            and states.contains(Atspi.StateType.SENSITIVE)
+            and node.get_action_iface() is not None
+            and node.get_action_iface().get_n_actions() > 0):
+        rect = node.get_component_iface().get_extents(Atspi.CoordType.WINDOW)
+        if rect.width > 0 and rect.height > 0:
+            matches.append(dict(label=label, role=node.get_role_name(),
+                                x=rect.x, y=rect.y, width=rect.width, height=rect.height))
+    if depth < 32:
+        queue.extend((node.get_child_at_index(i), depth + 1)
+                     for i in range(min(node.get_child_count(), 1024)))
+print(json.dumps(matches))
+'''
+        def locate():
+            matches = json.loads(self.session.run(
+                [sys.executable, '-c', script, str(self.app.proc.pid), label, surface['title']]).stdout)
+            assert len(matches) <= 1, ('Ambiguous accessible control', label, matches)
+            return matches[0] if matches else None
+
+        control = wait_for(locate, 8)
+        x = round(surface['geometry']['x'] + control['x'] + control['width'] / 2)
+        y = round(surface['geometry']['y'] + control['y'] + control['height'] / 2)
+        pointer_move(self.session, x, y)
+        pointer_click(self.session)
+        route = dict(case=self.name, owner=self.target, control=control, pointer=[x, y])
+        self.evidence.setdefault('accessible_pointer_routes', []).append(route)
+        return route
 
     def dbus(self, destination, path, method, *arguments):
         return self.session.run(['gdbus', 'call', '--session', '--dest', destination,
@@ -891,6 +959,11 @@ def explorer_button_owners(h):
         h.write(root / 'sentinel.txt', root.name + '\n')
     workspace = h.write(h.fixtures / 'clicked.coral-workspace', json.dumps(
         {'version': 1, 'roots': [{'path': str(roots[1])}]}))
+    # GTK's AT-SPI frames do not expose ACTIVE here. Distinct real document
+    # titles bind accessible controls unambiguously to each native owner.
+    for owner in (first, second):
+        h.select(owner)
+        h.open_document(h.write(h.fixtures / f'owner-{owner}.txt', 'chooser owner\n'))
     two_window_shot(h, first, second, 'explorer-buttons-before-clicks')
     for owner, sibling, folder in ((first, second, True), (second, first, False),
                                     (first, second, False), (second, first, True)):
@@ -900,15 +973,9 @@ def explorer_button_owners(h):
         h.action('win.focus-explorer')
         dock = h.probe('dock')
         assert dock['desired']['explorer'] == 'left' and dock['explorer_visible'], dock
-        surface = next(w for w in h.native_windows() if w['id'] == h.native_ids[owner])
-        panel = dock['paned_bounds'][0]
-        # Material theme, default 280px Explorer: tab/control rows precede the
-        # two text buttons. Anchor to allocated paned bounds, not screen origin.
-        x = surface['geometry']['x'] + panel['x'] + (70 if folder else 195)
-        y = surface['geometry']['y'] + panel['y'] + 88
+        h.click_accessible('Explorer actions and safety information')
         previous = {w['id'] for w in h.native_windows()}
-        pointer_move(h.session, x, y)
-        pointer_click(h.session)
+        route = h.click_accessible('Open Folder…' if folder else 'Workspace…')
         chooser = wait_for(lambda: next((w for w in h.native_windows() if w['id'] not in previous), None))
         assert 'Palette' not in chooser.get('title', ''), chooser
         # Probe from the sibling: the chooser itself has no Coral F11 handler.
@@ -919,7 +986,7 @@ def explorer_button_owners(h):
         assert choosing['choosing'], ('Explorer button chose the wrong owner', owner, choosing)
         h.evidence.setdefault('explorer_clicks', []).append(dict(
             owner=owner, action='win.open-folder' if folder else 'win.open-workspace',
-            pointer=[x, y], chooser=chooser, owner_browser=choosing))
+            pointer=route['pointer'], control=route['control'], chooser=chooser, owner_browser=choosing))
         h.ipc.call('command', action='window.activate', fields={'id': chooser['id']})
         h.key('l', 'ctrl')
         h.key('a', 'ctrl')
@@ -1385,6 +1452,8 @@ def main():
         with PrivateSession(output / 'session', tool_prefix=args.aqueous_prefix) as session:
             session.env.update(GSETTINGS_BACKEND='memory', LANG='en_US.UTF-8', LC_ALL='en_US.UTF-8', LANGUAGE='en_US')
             staged_styles = stage_styles(session, evidence)
+            if any(name == 'explorer_real_button_click_chooser_ownership' for name, _ in scenarios):
+                start_accessibility(session)
             for name, scenario in scenarios:
                 record = dict(name=name, status='running')
                 evidence['checks'].append(record)

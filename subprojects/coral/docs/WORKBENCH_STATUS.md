@@ -4,6 +4,12 @@
 
 The user explicitly accepted the M0 tradeoffs and requested work on M2. This acceptance does not turn failed or unmeasured performance targets into passing measurements. This is not a full IDE or Zed parity release. M2 implementation is complete within its documented bounds; M3–M8 remain future milestones; M9 remains removed. The [interactive prototype](mockups/workbench/index.html) is a design fixture, not connected to native Git, LSP or agents.
 
+## Native visual alignment before M3
+
+The requested **M2 visual-alignment pass is implemented**: compact workspace/command titlebar, activity rail, Explorer/dock overflow controls, root-qualified tabs, per-group breadcrumbs, live status bar, responsive bottom-panel presentation and Coral mockup palettes. Native GTK and committed Follow Pearl ownership remain intact; no fake Git/LSP/terminal/agent panels were added. **M3 has not started.**
+
+Final visual matrix **16/16**, widget suite **201/201**, all native M1/M2 checks **271/271**, and hooks-disabled production build passed. The latest `test-m2` aggregate nevertheless failed on an unchanged process-supervisor unit-test abort; the standalone rerun freshly passed **326/326** main-root tests. This caveat is not erased by the rerun. See [visual scope, screenshots, intentional differences and exact validation](WORKBENCH_M2_VISUAL.md). Earlier closure counts below are historical, not the current patch's aggregate result.
+
 ## Milestone acceptance
 
 | Gate | Current evidence / disposition |

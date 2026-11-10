@@ -38,6 +38,7 @@ extern "gtksourceview-5" fn gtk_source_language_get_id(language: *c.GtkSourceLan
 const load_file = @import("platform/load_file.zig");
 const commands = @import("workbench/commands.zig");
 const Palette = @import("workbench/palette.zig").Palette;
+const chrome_ui = @import("workbench/chrome.zig");
 const dock_ui = @import("workbench/dock.zig");
 const dock_layout = @import("workbench/layout.zig");
 const codec = @import("platform/codec.zig");
@@ -98,6 +99,7 @@ pub const App = struct {
     replacement: W,
     matches: W,
     status: W,
+    chrome: ?chrome_ui.Chrome = null,
     spell_button: W,
     notice: W,
     documents: DocumentRegistry = DocumentRegistry.init(a),
@@ -131,17 +133,20 @@ pub const App = struct {
         const self = a.create(App) catch unreachable;
 
         const window = c.gtk_application_window_new(application).?;
+        c.gtk_widget_add_css_class(window, "coral-workbench");
         c.gtk_window_set_title(u.cast(c.GtkWindow, window), @import("i18n").dtr("coral", "Coral"));
         c.gtk_window_set_default_size(u.cast(c.GtkWindow, window), width, height);
         const root = u.box(false, 0);
         c.gtk_window_set_child(u.cast(c.GtkWindow, window), root);
         const header = c.gtk_header_bar_new().?;
         c.gtk_window_set_titlebar(u.cast(c.GtkWindow, window), header);
-        const title = u.label(@import("i18n").dtr("coral", "Coral"));
-        c.gtk_header_bar_set_title_widget(u.cast(c.GtkHeaderBar, header), title);
+        const footer = u.box(true, 8);
+        c.gtk_widget_add_css_class(footer, "status");
+        var chrome = chrome_ui.Chrome.init(header, footer);
         const open = u.icon("document-open-symbolic", @import("i18n").dtr("coral", "Open files · Ctrl+O"));
         c.gtk_header_bar_pack_start(u.cast(c.GtkHeaderBar, header), open);
         u.connect(open, "clicked", &onOpen, self);
+        chrome.open_button = open;
         const new = u.icon("list-add-symbolic", @import("i18n").dtr("coral", "New document · Ctrl+N"));
         c.gtk_header_bar_pack_start(u.cast(c.GtkHeaderBar, header), new);
         u.connect(new, "clicked", &onNew, self);
@@ -155,13 +160,16 @@ pub const App = struct {
         const save_button = u.icon("document-save-symbolic", @import("i18n").dtr("coral", "Save · Ctrl+S"));
         c.gtk_header_bar_pack_end(u.cast(c.GtkHeaderBar, header), save_button);
         u.connect(save_button, "clicked", &onSave, self);
+        chrome.save_button = save_button;
         const model = c.g_menu_new().?;
         defer c.g_object_unref(model);
-        for (commands.entries) |entry| c.g_menu_append(model, entry.command.label(), entry.detailed_action);
+        chrome_ui.populateMenu(model);
+        inline for (.{ open, new, search, save_button, menu }) |button| c.gtk_widget_add_css_class(button, "flat");
         c.gtk_menu_button_set_menu_model(u.cast(c.GtkMenuButton, menu), u.cast(c.GMenuModel, model));
         var groups = group_model.Groups.init();
-        const notebook = (groups.add() catch @panic("Could not create editor group")).notebook;
-        dock_ui.wrapEditorGroup(groups.root, notebook);
+        const first_group = groups.add() catch @panic("Could not create editor group");
+        const notebook = first_group.notebook;
+        dock_ui.wrapEditorGroup(groups.root, first_group.chrome.root);
         const searchbox = u.box(false, 4);
         c.gtk_widget_add_css_class(searchbox, "search");
         const row = u.box(true, 6);
@@ -203,17 +211,18 @@ pub const App = struct {
         c.gtk_widget_set_visible(notice, 0);
         const dock = dock_ui.Controller.init(groups.root);
         u.append(root, dock.root);
-        const footer = u.box(true, 8);
-        c.gtk_widget_add_css_class(footer, "status");
         const status = u.label("");
-        c.gtk_widget_set_hexpand(status, 1);
+        c.gtk_widget_add_css_class(status, "status-document");
+        c.gtk_label_set_xalign(u.cast(c.GtkLabel, status), 1);
         c.gtk_label_set_ellipsize(u.cast(c.GtkLabel, status), c.PANGO_ELLIPSIZE_END);
         u.append(footer, status);
         const spell_button = u.button(@import("i18n").dtr("coral", "Checking dictionaries…"));
+        c.gtk_widget_add_css_class(spell_button, "flat");
         u.append(footer, spell_button);
         u.connect(spell_button, "clicked", &onSpelling, self);
         u.append(root, footer);
         self.* = .{ .application = application, .workspace = .init(), .window = window, .notebook = notebook, .groups = groups, .new_button = new, .search_button = search, .searchbox = searchbox, .query = query, .replacement = replacement, .matches = matches, .status = status, .spell_button = spell_button, .notice = notice, .settings = settings, .worker = spell.Worker.start(), .css = c.gtk_css_provider_new().?, .font_css = c.gtk_css_provider_new().? };
+        self.chrome = chrome;
         self.manager = manager;
         self.window_id = window_id;
         self.scope_class = u.fmt("coral-window-{d}", .{window_id});
@@ -266,9 +275,12 @@ pub const App = struct {
             c.g_object_unref(action);
         }
         self.applySettings();
+        // Start compact before the first allocation, including a 390px launch.
+        self.update();
         self.timer = c.g_timeout_add(20, &tick, self);
         self.worker.submit(spell.Job.create(.list, "", ""));
         c.gtk_window_present(u.cast(c.GtkWindow, window));
+
         return self;
     }
     pub fn snapshotDockLayout(self: *App) dock_layout.State {
@@ -492,7 +504,7 @@ pub const App = struct {
     pub fn createGroup(self: *App) !u64 {
         if (self.editingFrozen()) return error.Closing;
         const group = try self.groups.add();
-        dock_ui.wrapEditorGroup(self.groups.root, group.notebook);
+        dock_ui.wrapEditorGroup(self.groups.root, group.chrome.root);
         u.connect(group.notebook, "switch-page", &onSwitch, self);
         u.connect(group.notebook, "page-reordered", &onPageReordered, self);
         self.scheduleCheckpoint();
@@ -506,7 +518,7 @@ pub const App = struct {
     }
     fn removeGroup(self: *App, id: u64) void {
         const group = self.groups.get(id) orelse return;
-        dock_ui.unwrapEditorGroup(self.groups.root, group.notebook);
+        dock_ui.unwrapEditorGroup(self.groups.root, group.chrome.root);
         self.groups.remove(id);
     }
     pub fn focusGroup(self: *App, id: u64) void {
@@ -665,9 +677,13 @@ pub const App = struct {
             return err;
         };
         const tab = u.box(true, 6);
+        c.gtk_widget_add_css_class(tab, "editor-tab");
         _ = c.g_object_ref_sink(tab);
-        const label = u.label("Excerpt");
-        const close = u.icon("window-close-symbolic", "Close excerpt");
+        const label = u.label(@import("i18n").dtr("coral", "Excerpt"));
+        c.gtk_label_set_ellipsize(u.cast(c.GtkLabel, label), c.PANGO_ELLIPSIZE_MIDDLE);
+        c.gtk_label_set_max_width_chars(u.cast(c.GtkLabel, label), 36);
+        const close = u.icon("window-close-symbolic", @import("i18n").dtr("coral", "Close excerpt"));
+        c.gtk_widget_add_css_class(close, "flat");
         u.append(tab, label);
         u.append(tab, close);
         pane.* = .{ .id = self.next_excerpt_id, .app = self, .document = d, .editor = editor, .tab = tab, .label = label, .close = close, .search = c.gtk_source_search_context_new(u.cast(c.GtkSourceBuffer, editor.display), d.search_settings).?, .spelling_tag = c.gtk_text_buffer_create_tag(editor.display, "coral-excerpt-spelling", "underline", @as(c_int, c.PANGO_UNDERLINE_ERROR), @as(?*anyopaque, null)).? };
@@ -1191,10 +1207,15 @@ pub const App = struct {
     }
     fn update(self: *App) void {
         if (self.closing) return;
-        const wide = c.gtk_widget_get_width(self.window) >= 620;
+
+        const width = c.gtk_widget_get_width(self.window);
+        const wide = width >= 760;
+        if (self.chrome) |*chrome| chrome.update(self, width);
         c.gtk_widget_set_visible(self.new_button, @intFromBool(wide));
         c.gtk_widget_set_visible(self.search_button, @intFromBool(wide));
+        for (self.groups.items.items) |group| group.chrome.clearIfEmpty();
         for (self.views.items) |presentation| {
+            self.updateBreadcrumb(presentation.page, presentation.document, false);
             const d = presentation.document;
             var name: []const u8 = if (d.path) |p| std.fs.path.basename(p) else @import("i18n").dtr("coral", "Untitled");
             if (d.path) |p| {
@@ -1222,23 +1243,38 @@ pub const App = struct {
             };
             const title = u.fmt("{s}{s}", .{ name, if (d.dirty()) " •" else "" });
             u.setLabel(presentation.tab_label, title);
+            self.updateTabClass(presentation.tab, presentation.tab_label, presentation.page);
             a.free(title);
             if (d.path) |p| c.gtk_widget_set_tooltip_text(presentation.tab, p);
             presentation.setEditable(!self.editingFrozen());
         }
         for (self.excerpts.items) |pane| {
+            self.updateBreadcrumb(pane.editor.root, pane.document, true);
             const title = u.fmt("Excerpt · {s}{s}", .{ if (pane.document.path) |path| std.fs.path.basename(path) else "Untitled", if (pane.document.dirty()) " •" else "" });
             defer a.free(title);
             u.setLabel(pane.label, title);
+            self.updateTabClass(pane.tab, pane.label, pane.editor.root);
             c.gtk_text_view_set_editable(u.cast(c.GtkTextView, pane.editor.widget), @intFromBool(!self.editingFrozen() and !pane.document.loading and pane.document.pending == null));
         }
-        const d = self.active() orelse return;
+        const d = self.active() orelse {
+            u.setLabel(self.status, "");
+            c.gtk_widget_set_tooltip_text(self.status, null);
+            c.gtk_widget_set_visible(self.spell_button, 0);
+            c.gtk_window_set_title(u.cast(c.GtkWindow, self.window), @import("i18n").dtr("coral", "Coral"));
+            return;
+        };
         var iter: c.GtkTextIter = undefined;
         const buffer = self.activeBuffer() orelse return;
         c.gtk_text_buffer_get_iter_at_mark(buffer, &iter, c.gtk_text_buffer_get_insert(buffer));
         var status_buffer: [2048]u8 = undefined;
         const status = @import("i18n").dfmt("coral", &status_buffer, "Ln {d}, Col {d}   ·   UTF-8{s} · {s}{s}{s}", .{ c.gtk_text_iter_get_line(&iter) + 1, c.gtk_text_iter_get_line_offset(&iter) + 1, if (d.bom) " BOM" else "", @tagName(d.newline), if (d.busy) @import("i18n").dtr("coral", " · Working…") else if (d.large or @import("editor/presentation_policy.zig").limited(d.buffer)) @import("i18n").dtr("coral", " · Syntax/spelling off (presentation budget)") else "", if (d.external_changed) @import("i18n").dtr("coral", " · Changed on disk") else "" });
-        u.setLabel(self.status, status);
+        // Keep the complete document state available even when metadata collapses.
+        const status_tooltip = u.z(status);
+        defer a.free(status_tooltip);
+        c.gtk_widget_set_tooltip_text(self.status, status_tooltip);
+        var caret_buffer: [256]u8 = undefined;
+        const caret = @import("i18n").dfmt("coral", &caret_buffer, "Ln {d}, Col {d}{s}", .{ c.gtk_text_iter_get_line(&iter) + 1, c.gtk_text_iter_get_line_offset(&iter) + 1, if (d.external_changed) " !" else if (d.busy) " …" else "" });
+        u.setLabel(self.status, if (wide) status else caret);
         const spelling_text: [*:0]const u8 = if (!self.enumerated) @import("i18n").dtr("coral", "Checking dictionaries…") else if (!self.dictionary) @import("i18n").dtr("coral", "Dictionary unavailable") else if (!self.spellingEnabled(d)) @import("i18n").dtr("coral", "Spelling off") else @import("i18n").dtr("coral", "Spelling");
         c.gtk_button_set_label(u.cast(c.GtkButton, self.spell_button), spelling_text);
         const count = c.gtk_source_search_context_get_occurrences_count(self.activeSearch());
@@ -1250,6 +1286,17 @@ pub const App = struct {
         const title = u.fmt("{s}{s} — Coral", .{ if (d.path) |p| std.fs.path.basename(p) else @import("i18n").dtr("coral", "Untitled"), if (d.dirty()) " •" else "" });
         c.gtk_window_set_title(u.cast(c.GtkWindow, self.window), title);
         a.free(title);
+    }
+    fn updateBreadcrumb(self: *App, page: W, document: *Document, excerpt: bool) void {
+        const group = self.groups.forPage(page) orelse return;
+        group.chrome.showDocument(page, document.path, if (self.browser.model) |*model| model else null, excerpt);
+    }
+    fn updateTabClass(self: *App, tab: W, label: W, page: W) void {
+        const group = self.groups.forPage(page) orelse return;
+        @import("editor/view.zig").sizeTabLabel(label, c.gtk_widget_get_width(group.notebook));
+        const notebook = u.cast(c.GtkNotebook, group.notebook);
+        const selected = c.gtk_notebook_get_nth_page(notebook, c.gtk_notebook_get_current_page(notebook)) == page;
+        if (selected) c.gtk_widget_add_css_class(tab, "active") else c.gtk_widget_remove_css_class(tab, "active");
     }
     fn spellingEnabled(self: *App, d: *Document) bool {
         if (d.large or @import("editor/presentation_policy.zig").limited(d.buffer)) return false;
@@ -2293,6 +2340,7 @@ pub const App = struct {
         c.g_print("CORAL_PROBE {\"tabs\":%zu,\"id\":%llu,\"dirty\":%s,\"external_changed\":%s,\"busy\":%s,\"revision\":%llu,\"chars\":%d,\"spelling\":%zu,\"dictionary\":%s,\"enumerated\":%s,\"search\":%d,\"dialog\":%d,\"popover\":%s,\"theme\":%d,\"font\":%d,\"lines\":%s,\"bom\":%s,\"newline\":%d,\"check_from\":%d,\"inflight\":%s,\"checking_enabled\":%s,\"large\":%s,\"max_spell_tick_us\":%lld}\n", self.documents.entries.items.len, @as(c_ulonglong, d.id), boolZ(d.dirty()), boolZ(d.external_changed), boolZ(d.busy), @as(c_ulonglong, d.revision), c.gtk_text_buffer_get_char_count(d.buffer), count, boolZ(self.dictionary), boolZ(self.enumerated), c.gtk_source_search_context_get_occurrences_count(d.search), @as(c_int, if (self.dialog != null) @intCast(@backingInt(self.dialog_kind)) else -1), boolZ(self.popover != null), self.settings.theme, self.settings.font, boolZ(self.settings.lines), boolZ(d.bom), @as(c_int, @intCast(@backingInt(d.newline))), d.check_from, boolZ(d.inflight), boolZ(self.spellingEnabled(d)), boolZ(d.large), @as(c_longlong, self.max_spell_tick_us));
     }
 };
+
 fn hashMetadata(hash: *std.hash.Wyhash, value: anytype) !void {
     const json = try std.json.Stringify.valueAlloc(a, value, .{});
     defer a.free(json);
@@ -2337,7 +2385,8 @@ fn excerptFocused(_: ?*c.GtkEventControllerFocus, context: ?*anyopaque) callconv
     self.update();
     self.scheduleCheckpoint();
 }
-fn excerptMark(_: ?*c.GtkTextBuffer, _: ?*c.GtkTextIter, _: ?*c.GtkTextMark, context: ?*anyopaque) callconv(.c) void {
+fn excerptMark(buffer: ?*c.GtkTextBuffer, _: ?*c.GtkTextIter, mark: ?*c.GtkTextMark, context: ?*anyopaque) callconv(.c) void {
+    if (!@import("editor/view.zig").isSelectionMark(buffer orelse return, mark orelse return)) return;
     const pane = u.cast(ExcerptPane, context.?);
     pane.app.update();
     pane.app.scheduleCheckpoint();
@@ -2988,7 +3037,8 @@ fn onModified(_: ?*c.GtkTextBuffer, data: ?*anyopaque) callconv(.c) void {
     self.update();
     self.scheduleCheckpoint();
 }
-fn onViewMark(_: ?*c.GtkTextBuffer, _: ?*c.GtkTextIter, _: ?*c.GtkTextMark, data: ?*anyopaque) callconv(.c) void {
+fn onViewMark(buffer: ?*c.GtkTextBuffer, _: ?*c.GtkTextIter, mark: ?*c.GtkTextMark, data: ?*anyopaque) callconv(.c) void {
+    if (!@import("editor/view.zig").isSelectionMark(buffer orelse return, mark orelse return)) return;
     const view = u.cast(EditorView, data.?);
     const self = owner(view.document);
     self.update();

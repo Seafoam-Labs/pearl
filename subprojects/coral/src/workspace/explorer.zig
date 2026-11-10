@@ -144,6 +144,7 @@ pub const View = struct {
         c.gtk_single_selection_set_can_unselect(selection, 1);
         const factory = c.gtk_signal_list_item_factory_new().?;
         const widget = c.gtk_list_view_new(u.cast(c.GtkSelectionModel, selection), factory).?;
+        c.gtk_widget_add_css_class(widget, "workspace-list");
         c.gtk_list_view_set_single_click_activate(u.cast(c.GtkListView, widget), 1);
         return .{ .widget = widget, .strings = strings, .selection = selection };
     }
@@ -167,7 +168,7 @@ fn setup(_: ?*c.GtkSignalListItemFactory, item: ?*c.GtkListItem, data: ?*anyopaq
     const label = u.label("");
     c.gtk_label_set_xalign(u.cast(c.GtkLabel, label), 0);
     c.gtk_label_set_ellipsize(u.cast(c.GtkLabel, label), c.PANGO_ELLIPSIZE_MIDDLE);
-    u.margin(label, 3);
+    c.gtk_widget_add_css_class(label, "workspace-row");
     c.gtk_list_item_set_child(item, label);
 }
 fn bind(_: ?*c.GtkSignalListItemFactory, item: ?*c.GtkListItem, _: ?*anyopaque) callconv(.c) void {

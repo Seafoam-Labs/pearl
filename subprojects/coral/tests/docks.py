@@ -31,7 +31,7 @@ from wayland_test_input import pointer_drag, pointer_move
 
 SIDES = ('left', 'right', 'bottom')
 DEFAULT = dict(explorer='left', search='bottom', explorer_visible=True,
-               search_visible=False, active='explorer', left_size=280,
+               search_visible=False, active='explorer', left_size=222,
                right_size=320, bottom_size=240)
 
 

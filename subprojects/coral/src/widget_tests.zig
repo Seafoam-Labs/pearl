@@ -98,6 +98,153 @@ fn attachContext(view: *EditorView) *c.GtkEventController {
     return controller;
 }
 
+test "shell selection notifications ignore named and anonymous rendering marks" {
+    try initGtk();
+    const document = try Document.create(710, null);
+    defer document.destroy();
+    const view = try EditorView.create(document);
+    defer view.destroy();
+    c.gtk_text_buffer_set_text(document.buffer, "first\nsecond\n", -1);
+    const Observer = struct {
+        selections: usize = 0,
+        private_marks: usize = 0,
+        fn markSet(buffer: ?*c.GtkTextBuffer, _: ?*c.GtkTextIter, mark: ?*c.GtkTextMark, data: ?*anyopaque) callconv(.c) void {
+            const self = u.cast(@This(), data.?);
+            if (!editor.isSelectionMark(buffer.?, mark.?)) {
+                self.private_marks += 1;
+                return;
+            }
+            self.selections += 1;
+        }
+    };
+    var observer: Observer = .{};
+    u.connect(view.buffer, "mark-set", &Observer.markSet, &observer);
+    defer _ = c.g_signal_handlers_disconnect_matched(view.buffer, c.G_SIGNAL_MATCH_DATA, 0, 0, null, null, &observer);
+    var at: c.GtkTextIter = undefined;
+    c.gtk_text_buffer_get_start_iter(view.buffer, &at);
+    const anonymous = c.gtk_text_buffer_create_mark(view.buffer, null, &at, 0).?;
+    const named = c.gtk_text_buffer_create_mark(view.buffer, "render-region", &at, 0).?;
+    defer c.gtk_text_buffer_delete_mark(view.buffer, anonymous);
+    defer c.gtk_text_buffer_delete_mark(view.buffer, named);
+    for (0..8) |offset| {
+        c.gtk_text_buffer_get_iter_at_offset(view.buffer, &at, @intCast(offset));
+        c.gtk_text_buffer_move_mark(view.buffer, anonymous, &at);
+        c.gtk_text_buffer_move_mark(view.buffer, named, &at);
+    }
+    try testing.expect(observer.private_marks >= 16);
+    try testing.expectEqual(@as(usize, 0), observer.selections);
+    c.gtk_text_buffer_move_mark(view.buffer, c.gtk_text_buffer_get_insert(view.buffer), &at);
+    try testing.expectEqual(@as(usize, 1), observer.selections);
+    c.gtk_text_buffer_move_mark(view.buffer, c.gtk_text_buffer_get_selection_bound(view.buffer), &at);
+    try testing.expectEqual(@as(usize, 2), observer.selections);
+}
+
+test "wide notebook tabs retain root-qualified filenames without needless ellipsizing" {
+    try initGtk();
+    const document = try Document.create(711, null);
+    defer document.destroy();
+    const view = try EditorView.create(document);
+    defer view.destroy();
+    const window = c.gtk_window_new().?;
+    defer c.gtk_window_destroy(u.cast(c.GtkWindow, window));
+    c.gtk_window_set_default_size(u.cast(c.GtkWindow, window), 1000, 400);
+    const notebook = c.gtk_notebook_new().?;
+    c.gtk_notebook_set_scrollable(u.cast(c.GtkNotebook, notebook), 1);
+    c.gtk_window_set_child(u.cast(c.GtkWindow, window), notebook);
+    u.setLabel(view.tab_label, "#2 coral-workbench · welcome.md");
+    editor.sizeTabLabel(view.tab_label, 1000);
+    _ = c.gtk_notebook_append_page(u.cast(c.GtkNotebook, notebook), view.page, view.tab);
+    c.gtk_window_present(u.cast(c.GtkWindow, window));
+    try waitMapped(view.widget);
+    drain();
+    try testing.expectEqual(@as(c_int, 0), c.pango_layout_is_ellipsized(c.gtk_label_get_layout(u.cast(c.GtkLabel, view.tab_label))));
+    editor.sizeTabLabel(view.tab_label, 320);
+    try testing.expectEqual(@as(c_int, 16), c.gtk_label_get_width_chars(u.cast(c.GtkLabel, view.tab_label)));
+    try testing.expectEqualStrings("#2 coral-workbench · welcome.md", std.mem.span(c.gtk_label_get_text(u.cast(c.GtkLabel, view.tab_label))));
+}
+
+test "group breadcrumbs follow selected pages below tabs without replacing scrollers" {
+    try initGtk();
+    const group_ui = @import("editor_groups.zig");
+    const dock = @import("workbench/dock.zig");
+    const model = @import("workspace/model.zig");
+    const document = try Document.create(700, null);
+    defer document.destroy();
+    const other = try Document.create(701, null);
+    defer other.destroy();
+    const first = try EditorView.create(document);
+    defer first.destroy();
+    const second = try EditorView.create(other);
+    defer second.destroy();
+    const split = try EditorView.create(document);
+    defer split.destroy();
+    var groups = group_ui.Groups.init();
+    defer groups.deinit();
+    const left = try groups.add();
+    const right = try groups.add();
+    dock.wrapEditorGroup(groups.root, left.chrome.root);
+    dock.wrapEditorGroup(groups.root, right.chrome.root);
+    const window = c.gtk_window_new().?;
+    defer c.gtk_window_destroy(u.cast(c.GtkWindow, window));
+    c.gtk_window_set_default_size(u.cast(c.GtkWindow, window), 780, 500);
+    c.gtk_window_set_child(u.cast(c.GtkWindow, window), groups.root);
+    const left_book = u.cast(c.GtkNotebook, left.notebook);
+    const right_book = u.cast(c.GtkNotebook, right.notebook);
+    _ = c.gtk_notebook_append_page(left_book, first.page, first.tab);
+    _ = c.gtk_notebook_append_page(left_book, second.page, second.tab);
+    _ = c.gtk_notebook_append_page(right_book, split.page, split.tab);
+    // The same mechanism accepts excerpt roots, which are boxes, not scrollers.
+    const excerpt_page = u.box(false, 0);
+    _ = c.gtk_notebook_append_page(right_book, excerpt_page, u.label("Excerpt"));
+    c.gtk_notebook_set_current_page(left_book, 0);
+    c.gtk_notebook_set_current_page(right_book, 0);
+    const roots = [_]model.Root{
+        .{ .id = @fromBackingInt(7), .display_name = "same", .lexical_path = "/workspace", .canonical_path = "/workspace", .availability = .available },
+        .{ .id = @fromBackingInt(9), .display_name = "same", .lexical_path = "/workspace/nested", .canonical_path = "/workspace/nested", .availability = .available },
+    };
+    var snapshot: model.Model = .{ .allocator = u.a, .scope = .init(), .roots = &roots, .manifest_path = null };
+    defer snapshot.scope.close();
+    const path = "/workspace/nested/a-very-long-directory-name/another-long-directory/main.zig";
+    left.chrome.showDocument(first.page, path, &snapshot, false);
+    left.chrome.showDocument(second.page, "/other/notes.md", null, false);
+    right.chrome.showDocument(split.page, "/workspace/readme.md", &snapshot, false);
+    try testing.expectEqualStrings("#9 same › a-very-long-directory-name/another-long-directory/main.zig", std.mem.span(c.gtk_label_get_text(u.cast(c.GtkLabel, left.chrome.label))));
+    try testing.expectEqualStrings("#7 same › readme.md", std.mem.span(c.gtk_label_get_text(u.cast(c.GtkLabel, right.chrome.label))));
+    try testing.expect(std.mem.endsWith(u8, std.mem.span(c.gtk_widget_get_tooltip_text(left.chrome.breadcrumbs)), path));
+    try testing.expectEqual(@as(c_uint, c.PANGO_ELLIPSIZE_MIDDLE), c.gtk_label_get_ellipsize(u.cast(c.GtkLabel, left.chrome.label)));
+    c.gtk_window_present(u.cast(c.GtkWindow, window));
+    try waitMapped(first.widget);
+    try waitMapped(split.widget);
+    drain();
+    for ([_]group_ui.Group{ left, right }, [_]*EditorView{ first, split }) |group, view| {
+        var page_bounds: c.graphene_rect_t = std.mem.zeroes(c.graphene_rect_t);
+        var row_bounds: c.graphene_rect_t = std.mem.zeroes(c.graphene_rect_t);
+        try testing.expect(c.gtk_widget_compute_bounds(view.page, group.chrome.root, &page_bounds) != 0);
+        try testing.expect(c.gtk_widget_compute_bounds(group.chrome.breadcrumbs, group.chrome.root, &row_bounds) != 0);
+        try testing.expectEqual(@as(f32, 33), row_bounds.size.height);
+        try testing.expectApproxEqAbs(page_bounds.origin.y, row_bounds.origin.y + row_bounds.size.height, 1);
+        try testing.expect(row_bounds.origin.y > 0); // Below actual tabs, not over them.
+        try testing.expectApproxEqAbs(page_bounds.size.width, row_bounds.size.width, 1);
+        try testing.expectEqual(view.widget, c.gtk_scrolled_window_get_child(u.cast(c.GtkScrolledWindow, view.page)).?);
+        try testing.expectEqual(view.page, group.chrome.selected().?);
+    }
+    c.gtk_notebook_set_current_page(left_book, 1);
+    left.chrome.showDocument(first.page, path, &snapshot, false);
+    left.chrome.showDocument(second.page, null, null, false);
+    try testing.expectEqualStrings("Untitled", std.mem.span(c.gtk_label_get_text(u.cast(c.GtkLabel, left.chrome.label))));
+    c.gtk_notebook_set_current_page(right_book, 1);
+    right.chrome.showDocument(excerpt_page, path, &snapshot, true);
+    try testing.expect(std.mem.startsWith(u8, std.mem.span(c.gtk_label_get_text(u.cast(c.GtkLabel, right.chrome.label))), "Excerpt · #9 same ›"));
+    try testing.expectEqual(@as(c_int, 33), c.gtk_widget_get_margin_top(excerpt_page));
+    c.gtk_notebook_remove_page(right_book, 1);
+    c.gtk_notebook_remove_page(right_book, 0);
+    right.chrome.clearIfEmpty();
+    try testing.expectEqual(@as(c_int, 0), c.gtk_widget_get_visible(right.chrome.breadcrumbs));
+    try testing.expectEqual(@as(c_int, 0), c.gtk_widget_get_margin_top(split.page));
+    dock.unwrapEditorGroup(groups.root, right.chrome.root);
+    groups.remove(right.id);
+}
+
 test "retained page and close button survive view destruction without document callbacks" {
     try initGtk();
     for ([_]bool{ false, true }) |with_context| {

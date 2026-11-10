@@ -1,19 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <style-scheme id="coral-light" name="Coral light" version="1.0">
 <author>Coral contributors</author>
-<style name="text" foreground="#1d1b20" background="#fdf7ff"/>
-<style name="selection" foreground="#1d1b20" background="#6750a455"/>
-<style name="line-numbers" foreground="#79747e" background="#fdf7ff"/>
-<style name="current-line" background="#f7f2fa"/>
-<style name="cursor" foreground="#6750a4"/>
-<style name="def:comment" foreground="#79747e"/>
-<style name="def:keyword" foreground="#6750a4"/>
-<style name="def:string" foreground="#34704c"/>
-<style name="def:number" foreground="#95542e"/>
-<style name="def:type" foreground="#386297"/>
-<style name="def:heading" foreground="#6750a4" bold="true"/>
-<style name="def:link-text" foreground="#386297"/>
-<style name="def:emphasis" foreground="#95542e" italic="true"/>
-<style name="def:strong-emphasis" foreground="#6750a4" bold="true"/>
-<style name="search-match" background="#eaddff" foreground="#21005d"/>
+<style name="text" foreground="#33383f" background="#f8f7f4"/>
+<style name="selection" foreground="#33383f" background="#9b4d3e55"/>
+<style name="line-numbers" foreground="#727780" background="#f8f7f4"/>
+<style name="current-line" background="#efeeeb"/>
+<style name="cursor" foreground="#9b4d3e"/>
+<style name="def:comment" foreground="#60666f"/>
+<style name="def:keyword" foreground="#9b4d3e"/>
+<style name="def:string" foreground="#42705b"/>
+<style name="def:number" foreground="#9b4d3e"/>
+<style name="def:type" foreground="#3c647f"/>
+<style name="def:heading" foreground="#9b4d3e" bold="true"/>
+<style name="def:link-text" foreground="#3c647f"/>
+<style name="def:emphasis" foreground="#9b4d3e" italic="true"/>
+<style name="def:strong-emphasis" foreground="#9b4d3e" bold="true"/>
+<style name="search-match" background="#f1dfd7" foreground="#33383f"/>
 </style-scheme>

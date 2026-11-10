@@ -2,7 +2,7 @@
 
 Status: **M0 tradeoffs accepted; M1 complete; M2 implementation COMPLETE for the bounded workspace preview; M3 next.** All mandatory M2 features are implemented, including automatic projects/startup, native recents/buffer pickers and reviewed workspace-root management. See the [acceptance audit and validation checkpoint](WORKBENCH_M2_ACCEPTANCE.md).
 
-See [current implementation status and validation](WORKBENCH_STATUS.md). The roadmap below remains the target, not a claim that all milestones are complete.
+See [current implementation status and validation](WORKBENCH_STATUS.md). The requested [native M2 visual-alignment pass](WORKBENCH_M2_VISUAL.md) is implemented before M3, with screenshots and an explicit aggregate-test caveat. M3 has not started. The roadmap below remains the target, not a claim that all milestones are complete.
 
 ## 1. Product direction
 

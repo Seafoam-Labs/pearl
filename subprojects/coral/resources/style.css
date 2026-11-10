@@ -1,16 +1,131 @@
-/* Layout shared by Material and native GTK mode. Semantic colors live in
- * theme.css and are resolved from Pearl's committed palette at runtime. */
-.coral .status { padding: 5px 12px; font-size: 11px; }
-.coral .notice { padding: 6px 12px; }
-.coral .search { padding: 8px 12px; }
-.coral .activity-rail { padding: 4px; border-right: 1px solid alpha(currentColor, 0.15); }
-.coral .dock { padding: 4px; }
-.coral .dock button { padding: 4px 6px; }
-.coral .quick-picker { background-color: @window_bg_color; border: 1px solid alpha(currentColor, 0.3); border-radius: 10px; box-shadow: 0 8px 24px alpha(black, 0.3); padding: 6px; }
-.coral button { border-radius: 8px; background-image: none; box-shadow: none; padding: 6px 10px; border: 1px solid transparent; }
-.coral button:disabled { opacity: 0.5; }
-.coral button.flat { padding: 4px; border-color: transparent; }
-.coral headerbar { padding: 6px 10px; }
-.coral headerbar windowcontrols button { min-width: 24px; min-height: 24px; padding: 4px; margin: 0 2px; }
-.coral notebook > header tab { padding: 6px 10px; }
-.coral notebook > header tab:checked { border-bottom: 2px solid transparent; }
+/* Geometry is permanent, including Native GTK. Palette overrides belong only
+ * to window.coral.$scope in theme.css. Never style the source-view scroller. */
+window.coral-workbench .workbench-titlebar {
+    min-height: 42px;
+    padding: 0 8px;
+    border-bottom-width: 1px;
+    font-size: 12px;
+}
+window.coral-workbench .workbench-titlebar > windowhandle > box { min-height: 42px; }
+window.coral-workbench .workbench-titlebar button {
+    min-width: 20px;
+    min-height: 26px;
+    padding: 0 4px;
+    margin: 0;
+    border-radius: 4px;
+}
+window.coral-workbench .workbench-titlebar windowcontrols button {
+    min-width: 20px;
+    min-height: 24px;
+    padding: 0 2px;
+    margin: 0 1px;
+}
+window.coral-workbench .brand { font-size: 24px; font-weight: 800; letter-spacing: -2px; padding-right: 5px; }
+window.coral-workbench .workspace-button > button { font-weight: 600; }
+window.coral-workbench .command-button { padding: 0 8px; font-size: 11px; }
+window.coral-workbench .command-button .dim-label { font-size: 9px; }
+
+window.coral-workbench .status {
+    min-height: 25px;
+    padding: 0 8px;
+    border-top: 1px solid alpha(currentColor, 0.15);
+    font-size: 10px;
+}
+window.coral-workbench .status button {
+    min-height: 22px;
+    min-width: 0;
+    padding: 0 4px;
+    margin: 0;
+    border-radius: 0;
+    font-size: 10px;
+}
+window.coral-workbench .status-workspace, window.coral-workbench .status-document { min-width: 0; }
+window.coral-workbench .notice { padding: 6px 12px; }
+window.coral-workbench .search { padding: 6px 8px; }
+
+window.coral-workbench .activity-rail {
+    min-width: 47px;
+    padding: 7px 0 4px;
+    border-right: 1px solid alpha(currentColor, 0.15);
+}
+window.coral-workbench .activity-rail button.activity {
+    min-width: 45px;
+    min-height: 42px;
+    padding: 0;
+    margin: 0;
+    border-radius: 0;
+    border-width: 1px;
+}
+window.coral-workbench .activity-rail image { -gtk-icon-size: 20px; }
+window.coral-workbench .dock { padding: 0; font-size: 11px; }
+window.coral-workbench .dock-header {
+    min-height: 39px;
+    padding: 0 6px;
+    border-bottom: 1px solid alpha(currentColor, 0.15);
+}
+window.coral-workbench .dock-header button,
+window.coral-workbench .explorer-toolbar button,
+window.coral-workbench .workspace-search-toolbar button {
+    min-width: 22px;
+    min-height: 26px;
+    padding: 0 2px;
+    margin: 0;
+    border-radius: 4px;
+}
+window.coral-workbench .dock-header button.dock-tab {
+    min-width: 0;
+    padding: 0 6px;
+    font-weight: 600;
+}
+/* Keep the native wide-handle hit target, with a quiet visual separator. */
+window.coral-workbench paned.dock-split > separator { min-width: 5px; min-height: 5px; }
+window.coral-workbench .explorer-toolbar { min-height: 34px; padding: 0 6px; }
+window.coral-workbench .explorer-actions button { min-height: 26px; padding: 0 8px; }
+window.coral-workbench .explorer-safety { padding: 6px 8px; font-size: 10px; }
+window.coral-workbench .panel-status {
+    min-height: 23px;
+    padding: 0 8px;
+    border-top: 1px solid alpha(currentColor, 0.15);
+    font-size: 10px;
+}
+window.coral-workbench .workspace-list { padding: 0; font-size: 11px; }
+window.coral-workbench .workspace-list > row { min-height: 29px; padding: 0; margin: 0; border-radius: 0; }
+window.coral-workbench .workspace-row { min-height: 29px; padding: 0 10px; }
+window.coral-workbench .workspace-search { padding: 0; }
+window.coral-workbench .search-title { padding: 6px 8px 0; font-size: 11px; font-weight: 600; }
+window.coral-workbench .workspace-search-toolbar { padding: 0 6px; }
+window.coral-workbench .workspace-search-toolbar entry { min-height: 28px; min-width: 0; padding: 0 6px; font-size: 11px; }
+window.coral-workbench .quick-picker {
+    background-color: @theme_bg_color;
+    color: @theme_fg_color;
+    border: 1px solid alpha(currentColor, 0.3);
+    border-radius: 6px;
+    padding: 6px;
+}
+
+window.coral-workbench notebook > header { min-height: 40px; padding: 0; border-width: 0; }
+window.coral-workbench notebook > header > tabs { min-height: 40px; padding: 0; }
+window.coral-workbench notebook > header tab { min-height: 40px; padding: 0; margin: 0; border-width: 0; border-radius: 0; }
+window.coral-workbench .editor-tab {
+    min-height: 38px;
+    padding: 0 8px 0 12px;
+    border-top: 2px solid transparent;
+    border-right: 1px solid alpha(currentColor, 0.15);
+    font-size: 11px;
+}
+window.coral-workbench .editor-tab button {
+    min-width: 20px;
+    min-height: 20px;
+    padding: 0;
+    margin: 0;
+    border-radius: 4px;
+}
+
+/* Group chrome reserves 33px without changing editor scroller identities. */
+window.coral-workbench .breadcrumbs {
+    min-height: 32px;
+    padding: 0 12px;
+    border-bottom: 1px solid alpha(currentColor, 0.15);
+    font-size: 10px;
+}
+window.coral-workbench .breadcrumbs label { min-width: 0; }

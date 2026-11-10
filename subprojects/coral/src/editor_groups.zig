@@ -5,6 +5,7 @@ const c = u.c;
 pub const Group = struct {
     id: u64,
     notebook: u.W,
+    chrome: @import("workbench/chrome.zig").GroupChrome,
 };
 pub const Groups = struct {
     root: u.W,
@@ -26,9 +27,9 @@ pub const Groups = struct {
         c.gtk_notebook_set_scrollable(u.cast(c.GtkNotebook, notebook), 1);
         c.gtk_widget_set_hexpand(notebook, 1);
         c.gtk_widget_set_vexpand(notebook, 1);
-        const group = Group{ .id = id, .notebook = notebook };
+        const group = Group{ .id = id, .notebook = notebook, .chrome = .init(notebook) };
         self.items.appendAssumeCapacity(group);
-        u.append(self.root, notebook);
+        u.append(self.root, group.chrome.root);
         return group;
     }
     pub fn get(self: *const Groups, id: u64) ?Group {
@@ -43,7 +44,7 @@ pub const Groups = struct {
         for (self.items.items, 0..) |group, index| {
             if (group.id != id) continue;
             std.debug.assert(c.gtk_notebook_get_n_pages(u.cast(c.GtkNotebook, group.notebook)) == 0);
-            c.gtk_box_remove(u.cast(c.GtkBox, self.root), group.notebook);
+            c.gtk_box_remove(u.cast(c.GtkBox, self.root), group.chrome.root);
             c.g_object_unref(group.notebook);
             _ = self.items.orderedRemove(index);
             return;

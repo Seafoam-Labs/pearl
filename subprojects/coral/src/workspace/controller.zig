@@ -71,44 +71,66 @@ pub const Controller = struct {
     test_max_tick_us: i64 = 0,
 
     pub fn init(app: *App, parent: u.W) Controller {
-        const panel = u.box(false, 4);
+        const panel = u.box(false, 0);
+        c.gtk_widget_add_css_class(panel, "explorer-panel");
         c.gtk_widget_set_focusable(panel, 1);
         c.gtk_widget_set_vexpand(panel, 1);
-        const open_bar = u.box(true, 4);
-        u.append(panel, open_bar);
-        inline for (.{ .{ "Open Folder…", "win.open-folder" }, .{ "Workspace…", "win.open-workspace" } }) |item| {
-            const button = u.button(item[0]);
-            c.gtk_actionable_set_action_name(u.cast(c.GtkActionable, button), item[1]);
-            u.append(open_bar, button);
-        }
-        const banner = u.label("Restricted explorer · 256-entry page windows · no auto-execution");
-        c.gtk_label_set_wrap(u.cast(c.GtkLabel, banner), 1);
-        u.append(panel, banner);
-        const warning = u.label("Recovery restores documents only, not workspace roots or manifests. Reopen the workspace explicitly.");
-        c.gtk_label_set_wrap(u.cast(c.GtkLabel, warning), 1);
-        u.append(panel, warning);
-        const bar = c.gtk_flow_box_new().?;
-        c.gtk_flow_box_set_selection_mode(u.cast(c.GtkFlowBox, bar), c.GTK_SELECTION_NONE);
-        c.gtk_flow_box_set_min_children_per_line(u.cast(c.GtkFlowBox, bar), 1);
-        c.gtk_flow_box_set_max_children_per_line(u.cast(c.GtkFlowBox, bar), 5);
+        const bar = u.box(true, 2);
+        c.gtk_widget_add_css_class(bar, "explorer-toolbar");
         u.append(panel, bar);
-        inline for (.{ .{ "Roots", &rootsClicked }, .{ "Back", &backClicked }, .{ "Rescan", &rescanClicked }, .{ "Reset tree", &resetClicked }, .{ "Close workspace", &closeClicked } }) |item| {
-            const button = u.button(item[0]);
-            u.connect(button, "clicked", item[1], app);
-            c.gtk_flow_box_insert(u.cast(c.GtkFlowBox, bar), button, -1);
+        inline for (.{ .{ "go-home-symbolic", "Roots", &rootsClicked }, .{ "go-previous-symbolic", "Back", &backClicked }, .{ "view-refresh-symbolic", "Rescan", &rescanClicked } }) |item| {
+            const button = u.icon(item[0], item[1]);
+            c.gtk_widget_add_css_class(button, "flat");
+            u.connect(button, "clicked", item[2], app);
+            u.append(bar, button);
         }
-        const operations = c.gtk_flow_box_new().?;
-        c.gtk_flow_box_set_selection_mode(u.cast(c.GtkFlowBox, operations), c.GTK_SELECTION_NONE);
-        c.gtk_flow_box_set_max_children_per_line(u.cast(c.GtkFlowBox, operations), 3);
-        inline for (.{ .{ "New file…", "win.workspace-create-file" }, .{ "New directory…", "win.workspace-create-directory" }, .{ "Rename…", "win.workspace-rename" }, .{ "Move…", "win.workspace-move" }, .{ "Delete…", "win.workspace-delete" } }) |item| {
+        const create = u.icon("document-new-symbolic", "New file…");
+        c.gtk_widget_add_css_class(create, "flat");
+        c.gtk_actionable_set_action_name(u.cast(c.GtkActionable, create), "win.workspace-create-file");
+        u.append(bar, create);
+        const spacer = u.box(true, 0);
+        c.gtk_widget_set_hexpand(spacer, 1);
+        u.append(bar, spacer);
+        const menu = c.gtk_menu_button_new().?;
+        c.gtk_widget_add_css_class(menu, "explorer-menu");
+        c.gtk_menu_button_set_icon_name(u.cast(c.GtkMenuButton, menu), "view-more-symbolic");
+        c.gtk_widget_set_tooltip_text(menu, "Explorer actions and safety information");
+        c.gtk_accessible_update_property(u.cast(c.GtkAccessible, menu), @as(c_int, c.GTK_ACCESSIBLE_PROPERTY_LABEL), @as([*:0]const u8, "Explorer actions and safety information"), @as(c_int, -1));
+        const popover = c.gtk_popover_new().?;
+        c.gtk_widget_add_css_class(popover, "explorer-actions");
+        const actions = u.box(false, 2);
+        c.gtk_popover_set_child(u.cast(c.GtkPopover, popover), actions);
+        c.gtk_menu_button_set_popover(u.cast(c.GtkMenuButton, menu), popover);
+        u.append(bar, menu);
+        inline for (.{ .{ "Open Folder…", "win.open-folder" }, .{ "Workspace…", "win.open-workspace" }, .{ "New directory…", "win.workspace-create-directory" }, .{ "Rename…", "win.workspace-rename" }, .{ "Move…", "win.workspace-move" }, .{ "Delete…", "win.workspace-delete" } }) |item| {
             const button = u.button(item[0]);
+            c.gtk_widget_add_css_class(button, "flat");
+            c.gtk_widget_set_tooltip_text(button, if (std.mem.eql(u8, item[0], "Delete…")) "Delete permanently… · requires review; no trash or undo" else item[0]);
+            u.connect(button, "clicked", &closeActions, popover);
             c.gtk_actionable_set_action_name(u.cast(c.GtkActionable, button), item[1]);
-            c.gtk_flow_box_insert(u.cast(c.GtkFlowBox, operations), button, -1);
+            u.append(actions, button);
         }
-        u.append(panel, operations);
+        inline for (.{ .{ "Reset tree", &resetClicked }, .{ "Close workspace", &closeClicked } }) |item| {
+            const button = u.button(item[0]);
+            c.gtk_widget_add_css_class(button, "flat");
+            c.gtk_widget_set_tooltip_text(button, item[0]);
+            u.connect(button, "clicked", &closeActions, popover);
+            u.connect(button, "clicked", item[1], app);
+            u.append(actions, button);
+        }
+        u.append(actions, c.gtk_separator_new(c.GTK_ORIENTATION_HORIZONTAL).?);
+        const banner = u.label("Restricted explorer · no auto-execution");
+        const warning = u.label("256-entry page windows; 64 directories / 8 resident pages. Load more replaces the page; Rescan restarts.\nRecovery restores documents only, not workspace roots or manifests. Reopen the workspace explicitly.\nFile changes require review. Delete is permanent; no trash or undo.");
+        for ([_]u.W{ banner, warning }) |label| {
+            c.gtk_widget_add_css_class(label, "explorer-safety");
+            c.gtk_label_set_wrap(u.cast(c.GtkLabel, label), 1);
+            c.gtk_label_set_max_width_chars(u.cast(c.GtkLabel, label), 32);
+            u.append(actions, label);
+        }
         const status = u.label("");
-        c.gtk_label_set_ellipsize(u.cast(c.GtkLabel, status), c.PANGO_ELLIPSIZE_MIDDLE);
-        u.append(panel, status);
+        c.gtk_widget_add_css_class(status, "panel-status");
+        c.gtk_label_set_ellipsize(u.cast(c.GtkLabel, status), c.PANGO_ELLIPSIZE_END);
+        u.connect(status, "notify::label", &statusChanged, null);
         const scroll = c.gtk_scrolled_window_new().?;
         c.gtk_widget_set_vexpand(scroll, 1);
         c.gtk_scrolled_window_set_policy(u.cast(c.GtkScrolledWindow, scroll), c.GTK_POLICY_NEVER, c.GTK_POLICY_AUTOMATIC);
@@ -118,6 +140,7 @@ pub const Controller = struct {
         u.connect(rows, "activate", &rowActivated, app);
         c.gtk_scrolled_window_set_child(u.cast(c.GtkScrolledWindow, scroll), rows);
         u.append(panel, scroll);
+        u.append(panel, status);
         u.append(parent, panel);
         u.setLabel(status, "Open a folder or workspace to browse files.");
         return .{ .app = app, .requests = .init(), .panel = panel, .status = status, .policy_status = banner, .rows = rows, .view = view };
@@ -573,7 +596,7 @@ pub const Controller = struct {
                 self.renderNode(i, 0, label);
             }
         };
-        const text = u.fmt("{d}/64 directories · {d}/8 resident pages · 256 entries/page · {s}{s}", .{ self.tree.nodes.items.len, self.tree.pages(), if (self.loading or !self.watches.ready()) "Registering watches / validating policy… " else if (self.policy_pending) "Policy unavailable — repair manifest and Rescan. " else if (self.scanPending()) "Reading… " else "Load more replaces the page; Rescan restarts. ", if (self.watches.failed) "WATCH UNAVAILABLE/LIMIT — use Rescan" else "Live directory watches" });
+        const text = u.fmt("{s}{s} · {d}/64 directories · {d}/8 resident pages · 256 entries/page · Load more replaces the page; Rescan restarts.", .{ if (self.loading or !self.watches.ready()) "Registering watches / validating policy… " else if (self.policy_pending) "Policy unavailable — repair manifest and Rescan. " else if (self.scanPending()) "Reading… " else "", if (self.watches.failed) "WATCH UNAVAILABLE/LIMIT — use Rescan" else "Live directory watches", self.tree.nodes.items.len, self.tree.pages() });
         defer a.free(text);
         u.setLabel(self.status, text);
     }
@@ -1084,6 +1107,12 @@ fn chosen(_: ?*c.GObject, result: ?*c.GAsyncResult, data: ?*anyopaque) callconv(
             if (self.admit(std.mem.span(path), null)) self.loadRequest(choice.source, std.mem.span(path), choice.token);
         } else self.fail(error.NonLocalPath);
     }
+}
+fn closeActions(_: ?*c.GtkButton, data: ?*anyopaque) callconv(.c) void {
+    c.gtk_popover_popdown(u.cast(c.GtkPopover, data.?));
+}
+fn statusChanged(label: ?*c.GtkLabel, _: ?*c.GParamSpec, _: ?*anyopaque) callconv(.c) void {
+    c.gtk_widget_set_tooltip_text(u.cast(c.GtkWidget, label.?), c.gtk_label_get_text(label));
 }
 fn rootsClicked(_: ?*c.GtkButton, data: ?*anyopaque) callconv(.c) void {
     u.cast(App, data.?).browser.roots();
