@@ -50,20 +50,7 @@ pub const Provider = struct {
             if (ok != 0 and output != null) {
                 const text = std.mem.span(output);
                 if (text.len <= 16384) {
-                    var lines = std.mem.splitScalar(u8, text, '\n');
-                    while (lines.next()) |line| {
-                        if (self.count >= 16) break;
-                        var words = std.mem.splitScalar(u8, line, '\t');
-                        const key = words.next() orelse continue;
-                        const name = words.next() orelse continue;
-                        var gpu: m.Gpu = .{ .key = m.Path.init(key), .name = m.Name.init(name), .vendor = 0x10de, .driver = m.Name.init("NVIDIA NVML") };
-                        inline for (.{ "usage", "used", "total", "temp", "power", "encode", "decode" }) |field| {
-                            const number = m.number(words.next() orelse "") orelse -1;
-                            if (number >= 0) @field(gpu, field) = number / (if (comptime std.mem.eql(u8, field, "power")) @as(f64, 1000) else 1);
-                        }
-                        self.devices[self.count] = gpu;
-                        self.count += 1;
-                    }
+                    self.count = m.parseGpuProbe(text, &self.devices);
                     if (self.count > 0) self.last_success = io.monotonic();
                 }
             }
@@ -95,17 +82,39 @@ pub const Provider = struct {
         }
     }
 };
+const NVML_CLOCK_SM = 1;
+const NVML_CLOCK_MEM = 2;
+const NVML_CLOCK_VIDEO = 3;
+const NVML_PCIE_UTIL_TX_BYTES = 0;
+const NVML_PCIE_UTIL_RX_BYTES = 1;
+const NVML_PSTATE_MAX = 15;
+inline fn symbol(comptime T: type, lib: *anyopaque, name: [*:0]const u8) ?T {
+    const resolved = c.dlsym(lib, name) orelse return null;
+    return @ptrCast(resolved);
+}
+/// Direct write-all: rows must not sit in stdio buffers if teardown stalls, and
+/// device names must never reach a format string.
+fn writeOutput(bytes: []const u8) bool {
+    var offset: usize = 0;
+    while (offset < bytes.len) {
+        const wrote = c.write(1, bytes[offset..].ptr, bytes.len - offset);
+        if (wrote > 0) {
+            offset += @intCast(wrote);
+            continue;
+        }
+        if (wrote < 0 and c.__errno_location().* == c.EINTR) continue;
+        return false;
+    }
+    return true;
+}
 pub fn probe() void {
     if (@import("build_options").test_hooks and c.g_getenv("DOME_TEST_GPU_HANG") != null) {
         while (true) _ = c.pause();
     }
     const lib = c.dlopen("libnvidia-ml.so.1", c.RTLD_NOW | c.RTLD_LOCAL) orelse return;
-    defer _ = c.dlclose(lib);
     const Init = *const fn () callconv(.c) c_int;
-    const init: @TypeOf(@as(Init, undefined)) = @ptrCast(c.dlsym(lib, "nvmlInit_v2") orelse return);
-    const shutdown: Init = @ptrCast(c.dlsym(lib, "nvmlShutdown") orelse return);
+    const init: Init = @ptrCast(c.dlsym(lib, "nvmlInit_v2") orelse return);
     if (init() != 0) return;
-    defer _ = shutdown();
     const Count = *const fn (*c_uint) callconv(.c) c_int;
     const count_fn: Count = @ptrCast(c.dlsym(lib, "nvmlDeviceGetCount_v2") orelse return);
     var count: c_uint = 0;
@@ -120,52 +129,158 @@ pub fn probe() void {
     const pci_fn: PciFn = @ptrCast(c.dlsym(lib, "nvmlDeviceGetPciInfo_v3") orelse return);
     const Util = extern struct { gpu: c_uint, memory: c_uint };
     const UtilFn = *const fn (Device, *Util) callconv(.c) c_int;
+    const MemoryV2 = extern struct { version: c_uint, total: c_ulonglong, reserved: c_ulonglong, free: c_ulonglong, used: c_ulonglong };
+    const MemoryV2Fn = *const fn (Device, *MemoryV2) callconv(.c) c_int;
     const Memory = extern struct { total: c_ulonglong, free: c_ulonglong, used: c_ulonglong };
     const MemFn = *const fn (Device, *Memory) callconv(.c) c_int;
     const UintFn = *const fn (Device, *c_uint) callconv(.c) c_int;
-    const TempFn = *const fn (Device, c_uint, *c_uint) callconv(.c) c_int;
+    const TypedFn = *const fn (Device, c_uint, *c_uint) callconv(.c) c_int;
     const VideoFn = *const fn (Device, *c_uint, *c_uint) callconv(.c) c_int;
+    const MaskFn = *const fn (Device, *c_ulonglong) callconv(.c) c_int;
+    const ComputeFn = *const fn (Device, *c_int, *c_int) callconv(.c) c_int;
+    const CudaFn = *const fn (*c_int) callconv(.c) c_int;
+    const SystemString = *const fn ([*]u8, c_uint) callconv(.c) c_int;
+    const get_memory_v2 = symbol(MemoryV2Fn, lib, "nvmlDeviceGetMemoryInfo_v2");
+    const get_memory = symbol(MemFn, lib, "nvmlDeviceGetMemoryInfo");
+    const get_util = symbol(UtilFn, lib, "nvmlDeviceGetUtilizationRates");
+    const get_power = symbol(UintFn, lib, "nvmlDeviceGetPowerUsage");
+    const get_temp = symbol(TypedFn, lib, "nvmlDeviceGetTemperature");
+    const get_encode = symbol(VideoFn, lib, "nvmlDeviceGetEncoderUtilization");
+    const get_decode = symbol(VideoFn, lib, "nvmlDeviceGetDecoderUtilization");
+    const get_clock = symbol(TypedFn, lib, "nvmlDeviceGetClockInfo");
+    const get_max_clock = symbol(TypedFn, lib, "nvmlDeviceGetMaxClockInfo");
+    const get_power_limit = symbol(UintFn, lib, "nvmlDeviceGetEnforcedPowerLimit");
+    const get_fan = symbol(UintFn, lib, "nvmlDeviceGetFanSpeed");
+    const get_pstate = symbol(UintFn, lib, "nvmlDeviceGetPerformanceState");
+    const get_pcie_gen = symbol(UintFn, lib, "nvmlDeviceGetCurrPcieLinkGeneration");
+    const get_pcie_width = symbol(UintFn, lib, "nvmlDeviceGetCurrPcieLinkWidth");
+    const get_pcie_throughput = symbol(TypedFn, lib, "nvmlDeviceGetPcieThroughput");
+    const get_event_reasons = symbol(MaskFn, lib, "nvmlDeviceGetCurrentClocksEventReasons");
+    const get_legacy_reasons = symbol(MaskFn, lib, "nvmlDeviceGetCurrentClocksThrottleReasons");
+    const get_compute = symbol(ComputeFn, lib, "nvmlDeviceGetCudaComputeCapability");
+    const driver_version = symbol(SystemString, lib, "nvmlSystemGetDriverVersion");
+    const cuda_v2 = symbol(CudaFn, lib, "nvmlSystemGetCudaDriverVersion_v2");
+    const cuda_v1 = symbol(CudaFn, lib, "nvmlSystemGetCudaDriverVersion");
+    var driver_buffer: [80]u8 = undefined;
+    var driver_text: []const u8 = "";
+    if (driver_version) |f| if (f(&driver_buffer, driver_buffer.len) == 0) {
+        driver_buffer[driver_buffer.len - 1] = 0;
+        driver_text = driver_buffer[0 .. std.mem.indexOfScalar(u8, &driver_buffer, 0) orelse driver_buffer.len];
+    };
+    var cuda_raw: i32 = -1;
+    if (cuda_v2 orelse cuda_v1) |f| {
+        var version: c_int = 0;
+        if (f(&version) == 0) cuda_raw = version;
+    }
+    var meta: [192]u8 = undefined;
+    if (m.formatGpuMeta(driver_text, cuda_raw, &meta)) |line| {
+        if (!writeOutput(line) or !writeOutput("\n")) c._exit(1);
+    }
     for (0..@min(count, 16)) |i| {
         var device: Device = null;
         if (handle(@intCast(i), &device) != 0) continue;
         var name: [128]u8 = @splat(0);
         _ = name_fn(device, &name, name.len);
         name[name.len - 1] = 0;
-        for (&name) |*ch| if (ch.* == '\t' or ch.* == '\n') {
-            ch.* = ' ';
-        };
         var pci: Pci = std.mem.zeroes(Pci);
         if (pci_fn(device, &pci) != 0) continue;
-        var util: Util = .{ .gpu = 0, .memory = 0 };
-        var usage: i64 = -1;
-        if (c.dlsym(lib, "nvmlDeviceGetUtilizationRates")) |f| if (@as(UtilFn, @ptrCast(f))(device, &util) == 0) {
-            usage = util.gpu;
-        };
-        var memory: Memory = std.mem.zeroes(Memory);
-        var used: i64 = -1;
-        var total: i64 = -1;
-        if (c.dlsym(lib, "nvmlDeviceGetMemoryInfo")) |f| if (@as(MemFn, @ptrCast(f))(device, &memory) == 0) {
-            used = @intCast(@min(memory.used, std.math.maxInt(i64)));
-            total = @intCast(@min(memory.total, std.math.maxInt(i64)));
+        var gpu: m.Gpu = .{ .vendor = 0x10de };
+        var key_buffer: [64]u8 = undefined;
+        const key = std.fmt.bufPrint(&key_buffer, "{x:0>4}:{x:0>2}:{x:0>2}.0", .{ pci.domain, pci.bus, pci.device }) catch continue;
+        gpu.key.set(key);
+        const device_name = name[0 .. std.mem.indexOfScalar(u8, &name, 0) orelse name.len];
+        gpu.name.set(if (device_name.len == 0) "NVIDIA GPU" else device_name);
+        if (get_util) |f| {
+            var util: Util = .{ .gpu = 0, .memory = 0 };
+            if (f(device, &util) == 0) {
+                gpu.usage = @floatFromInt(util.gpu);
+                gpu.mem_usage = @floatFromInt(util.memory);
+            }
+        }
+        var memory_read = false;
+        if (get_memory_v2) |f| {
+            var memory: MemoryV2 = std.mem.zeroes(MemoryV2);
+            // nvmlMemory_v2_t requires a version word, not a bare 2 (nvtop #531).
+            memory.version = (2 << 24) | @as(c_uint, @sizeOf(MemoryV2));
+            if (f(device, &memory) == 0) {
+                gpu.total = @floatFromInt(memory.total);
+                gpu.used = @floatFromInt(memory.used);
+                gpu.reserved = @floatFromInt(memory.reserved);
+                memory_read = true;
+            }
+        }
+        if (!memory_read) if (get_memory) |f| {
+            var memory: Memory = std.mem.zeroes(Memory);
+            if (f(device, &memory) == 0) {
+                gpu.total = @floatFromInt(memory.total);
+                gpu.used = @floatFromInt(memory.used);
+            }
         };
         var value: c_uint = 0;
-        var power: i64 = -1;
-        if (c.dlsym(lib, "nvmlDeviceGetPowerUsage")) |f| if (@as(UintFn, @ptrCast(f))(device, &value) == 0) {
-            power = value;
+        if (get_power) |f| if (f(device, &value) == 0) {
+            gpu.power = m.milliwattsToWatts(value);
         };
-        var temp: i64 = -1;
-        if (c.dlsym(lib, "nvmlDeviceGetTemperature")) |f| if (@as(TempFn, @ptrCast(f))(device, 0, &value) == 0) {
-            temp = value;
+        if (get_temp) |f| if (f(device, 0, &value) == 0) {
+            gpu.temp = @floatFromInt(value);
         };
-        var enc: i64 = -1;
-        var dec: i64 = -1;
         var period: c_uint = 0;
-        if (c.dlsym(lib, "nvmlDeviceGetEncoderUtilization")) |f| if (@as(VideoFn, @ptrCast(f))(device, &value, &period) == 0) {
-            enc = value;
+        if (get_encode) |f| if (f(device, &value, &period) == 0) {
+            gpu.encode = @floatFromInt(value);
         };
-        if (c.dlsym(lib, "nvmlDeviceGetDecoderUtilization")) |f| if (@as(VideoFn, @ptrCast(f))(device, &value, &period) == 0) {
-            dec = value;
+        if (get_decode) |f| if (f(device, &value, &period) == 0) {
+            gpu.decode = @floatFromInt(value);
         };
-        c.g_print("%04x:%02x:%02x.0\t%s\t%lld\t%lld\t%lld\t%lld\t%lld\t%lld\t%lld\n", pci.domain, pci.bus, pci.device, &name, usage, used, total, temp, power, enc, dec);
+        if (get_clock) |f| {
+            if (f(device, NVML_CLOCK_SM, &value) == 0) gpu.frequency = @floatFromInt(value);
+            if (f(device, NVML_CLOCK_MEM, &value) == 0) gpu.mem_frequency = @floatFromInt(value);
+            if (f(device, NVML_CLOCK_VIDEO, &value) == 0) gpu.video_frequency = @floatFromInt(value);
+        }
+        if (get_max_clock) |f| if (f(device, NVML_CLOCK_SM, &value) == 0) {
+            gpu.max_frequency = @floatFromInt(value);
+        };
+        if (get_power_limit) |f| if (f(device, &value) == 0) {
+            gpu.power_cap = m.milliwattsToWatts(value);
+        };
+        if (get_fan) |f| if (f(device, &value) == 0) {
+            gpu.fan = @floatFromInt(value);
+        };
+        if (get_pstate) |f| if (f(device, &value) == 0 and value <= NVML_PSTATE_MAX) {
+            gpu.pstate = value;
+        };
+        if (get_pcie_gen) |f| if (f(device, &value) == 0 and value != 0) {
+            gpu.pcie_gen = value;
+        };
+        if (get_pcie_width) |f| if (f(device, &value) == 0 and value != 0) {
+            gpu.pcie_width = value;
+        };
+        if (get_pcie_throughput) |f| {
+            if (f(device, NVML_PCIE_UTIL_TX_BYTES, &value) == 0) gpu.pcie_tx = m.kilobytesToBytes(value);
+            if (f(device, NVML_PCIE_UTIL_RX_BYTES, &value) == 0) gpu.pcie_rx = m.kilobytesToBytes(value);
+        }
+        if (get_event_reasons) |f| {
+            var mask: c_ulonglong = 0;
+            if (f(device, &mask) == 0) {
+                gpu.throttle = mask;
+            } else if (get_legacy_reasons) |legacy| {
+                if (legacy(device, &mask) == 0) gpu.throttle = mask;
+            }
+        } else if (get_legacy_reasons) |f| {
+            var mask: c_ulonglong = 0;
+            if (f(device, &mask) == 0) gpu.throttle = mask;
+        }
+        if (get_compute) |f| {
+            var major: c_int = -1;
+            var minor: c_int = -1;
+            if (f(device, &major, &minor) == 0 and major >= 0 and minor >= 0) {
+                gpu.cuda_major = @intCast(major);
+                gpu.cuda_minor = @intCast(minor);
+            }
+        }
+        var row: [1024]u8 = undefined;
+        if (m.formatGpuRow(&gpu, &row)) |line| {
+            if (!writeOutput(line) or !writeOutput("\n")) c._exit(1);
+        }
     }
+    // The disposable child exits without nvmlShutdown; the OS reclaims NVML state.
+    c._exit(0);
 }

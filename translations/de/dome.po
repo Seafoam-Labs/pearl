@@ -72,6 +72,14 @@ msgid ""
 "groups use cgroup scopes; uncertain processes stay separate."
 msgstr ""
 
+#: subprojects/dome/src/app.zig:660
+msgid "CUDA compute"
+msgstr "CUDA-Rechenleistung"
+
+#: subprojects/dome/src/app.zig:675
+msgid "CUDA driver: {0}"
+msgstr "CUDA-Treiber: {0}"
+
 #: subprojects/dome/src/app.zig:521
 msgid "Cached"
 msgstr ""
@@ -83,6 +91,10 @@ msgstr ""
 #: subprojects/dome/src/app.zig:643
 msgid "Clock"
 msgstr ""
+
+#: subprojects/dome/src/app.zig:680
+msgid "Clock limits: {0}"
+msgstr "Taktgrenzen: {0}"
 
 #: subprojects/dome/src/app.zig:149
 msgid "Collecting the first sample…"
@@ -120,6 +132,10 @@ msgstr ""
 #: subprojects/dome/src/app.zig:627
 msgid "Device memory"
 msgstr ""
+
+#: subprojects/dome/src/app.zig:671
+msgid "Driver-reserved memory: {0}"
+msgstr "Vom Treiber reservierter Speicher: {0}"
 
 #: subprojects/dome/src/app.zig:460
 msgid ""
@@ -248,6 +264,10 @@ msgstr ""
 msgid "Memory capacity"
 msgstr ""
 
+#: subprojects/dome/src/app.zig:655
+msgid "Memory clock"
+msgstr "Speichertakt"
+
 #: subprojects/dome/src/app.zig:630
 msgid "Memory utilization"
 msgstr "Speicherauslastung"
@@ -317,6 +337,14 @@ msgstr ""
 msgid "PCIe link"
 msgstr "PCIe-Verbindung"
 
+#: subprojects/dome/src/app.zig:663
+msgid "PCIe receive · rate"
+msgstr "PCIe-Empfang · Rate"
+
+#: subprojects/dome/src/app.zig:664
+msgid "PCIe send · rate"
+msgstr "PCIe-Senden · Rate"
+
 #: subprojects/dome/src/app.zig:730
 msgid "Pause"
 msgstr ""
@@ -324,6 +352,10 @@ msgstr ""
 #: subprojects/dome/src/app.zig:131
 msgid "Pause sampling · Ctrl+P"
 msgstr ""
+
+#: subprojects/dome/src/app.zig:659
+msgid "Performance state"
+msgstr "Leistungszustand"
 
 #: subprojects/dome/src/app.zig:634
 msgid "Power"
@@ -538,6 +570,10 @@ msgstr ""
 #: subprojects/dome/src/app.zig:494 subprojects/dome/src/app.zig:626
 msgid "Utilization"
 msgstr ""
+
+#: subprojects/dome/src/app.zig:656
+msgid "Video clock"
+msgstr "Videotakt"
 
 #: subprojects/dome/src/app.zig:639
 msgid "Video decode"
