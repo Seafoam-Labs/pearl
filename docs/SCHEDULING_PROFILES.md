@@ -85,6 +85,32 @@ start will run.
 measurement say. Pearl shows that profile as **Selected, stopped**, dimmed in
 the flyout, with an amber dot; choosing it starts it again.
 
+That holds while the unit is enabled, as `scxcli start` leaves it: the next
+boot brings the scheduler back. A runtime enablement (`systemctl enable
+--runtime`) counts too, but lasts only for the current boot.
+
+A command in the file that nothing starts is different. scx ships
+`/etc/default/scx` naming a scheduler (`SCX_SCHEDULER=scx_cosmos`) while
+`scx.service` stays disabled, so on a fresh system the kernel's own
+scheduler runs and nothing will start Cosmos; an administrator may equally
+have written a scheduler there without enabling the unit, and the two
+cannot be told apart, by a bare name, an absolute path or otherwise. So
+Pearl does not guess. When systemd reports the unit inactive, not enabled (nor
+`--runtime`), its last run did not fail and its environment could be read
+whole (no `config_error`; `next` is incomplete otherwise), **Default** is shown as what
+runs, and the command `scx.service` is configured to run next (from the
+file, or from an `SCX_SCHEDULER_OVERRIDE`/`SCX_FLAGS_OVERRIDE` in systemd's
+environment) stays on show as what a manual start would
+run: the status says "scx.service is set to run Cosmos, but it is not
+enabled", and Settings marks that profile **Configured, not started at
+boot**. Choosing the profile starts and enables it. A run that failed is
+still that profile's failure, enabled or not: a manual `systemctl start`
+of a disabled unit that fails shows as failed, not as Default, and one
+that systemd reports active before scxcli has been asked again shows as
+starting. A
+distribution that enables `scx.service` by default does start the shipped
+scheduler at every boot, and Pearl then shows it as running.
+
 A start scxcli refuses (an id the catalog no longer has, a configuration it
 cannot write, a dismissed password prompt) is not a failed scheduler:
 scxcli checks before it touches the unit, so whatever ran before still runs.

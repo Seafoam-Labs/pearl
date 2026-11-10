@@ -131,7 +131,7 @@ msgstr ""
 msgid "A profile applies immediately and stays selected after a restart."
 msgstr ""
 
-#: src/settings/scheduler_view.zig:459
+#: src/settings/scheduler_view.zig:461
 msgid "A profile takes at most 32 options."
 msgstr ""
 
@@ -283,7 +283,7 @@ msgstr ""
 msgid "Add rule"
 msgstr ""
 
-#: src/settings/scheduler_view.zig:400
+#: src/settings/scheduler_view.zig:402
 msgid "Add scheduler profile"
 msgstr ""
 
@@ -454,7 +454,7 @@ msgstr ""
 msgid "Another notification service is active."
 msgstr ""
 
-#: src/desktop/scheduling.zig:191 src/settings/scheduler_view.zig:297
+#: src/desktop/scheduling.zig:192 src/settings/scheduler_view.zig:299
 msgid "Another profile is being applied."
 msgstr ""
 
@@ -1059,7 +1059,7 @@ msgstr ""
 msgid "Calculation · Enter to copy · = to continue"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:770 src/desktop/clipboard_capture.zig:146 src/desktop/connectivity.zig:117 src/desktop/services.zig:296 src/desktop/wallpaper_crop.zig:226 src/services/polkit.zig:315 src/settings/bar_view.zig:1144 src/settings/notification_filters_view.zig:437 src/settings/scheduler_view.zig:385 src/settings/scheduler_view.zig:438
+#: src/desktop/aqueous_settings.zig:770 src/desktop/clipboard_capture.zig:146 src/desktop/connectivity.zig:117 src/desktop/services.zig:296 src/desktop/wallpaper_crop.zig:226 src/services/polkit.zig:315 src/settings/bar_view.zig:1144 src/settings/notification_filters_view.zig:437 src/settings/scheduler_view.zig:387 src/settings/scheduler_view.zig:440
 msgid "Cancel"
 msgstr ""
 
@@ -1286,7 +1286,7 @@ msgstr ""
 msgid "Choose a saved profile"
 msgstr ""
 
-#: src/settings/scheduler_view.zig:462
+#: src/settings/scheduler_view.zig:464
 msgid "Choose a scheduler."
 msgstr ""
 
@@ -1567,6 +1567,11 @@ msgstr ""
 
 #: src/settings/window.zig:405
 msgid "Configure your compositor by section."
+msgstr ""
+
+#: src/settings/scheduler_view.zig:266
+#. A profile scx.service is set up to run, while the service is neither running nor started at boot.
+msgid "Configured, not started at boot"
 msgstr ""
 
 #: src/desktop/connectivity.zig:117
@@ -1868,11 +1873,11 @@ msgstr ""
 msgid "Custom"
 msgstr ""
 
-#: src/services/scheduling.zig:304
+#: src/services/scheduling.zig:310
 msgid "Custom - a scheduler configured outside these profiles is running."
 msgstr ""
 
-#: src/services/scheduling.zig:304
+#: src/services/scheduling.zig:310
 msgid "Custom - scx_{0} is running outside these profiles."
 msgstr ""
 
@@ -1965,7 +1970,7 @@ msgstr ""
 msgid "December"
 msgstr ""
 
-#: src/desktop/bar.zig:719 src/services/scheduling.zig:324
+#: src/desktop/bar.zig:719 src/services/scheduling.zig:330
 msgid "Default"
 msgstr ""
 
@@ -2002,7 +2007,7 @@ msgstr ""
 msgid "Delete filter"
 msgstr ""
 
-#: src/settings/scheduler_view.zig:437
+#: src/settings/scheduler_view.zig:439
 msgid "Delete profile"
 msgstr ""
 
@@ -2022,7 +2027,7 @@ msgstr ""
 msgid "Density"
 msgstr ""
 
-#: src/settings/scheduler_view.zig:407
+#: src/settings/scheduler_view.zig:409
 msgid "Description"
 msgstr ""
 
@@ -2284,7 +2289,7 @@ msgstr ""
 msgid "Dock visibility"
 msgstr ""
 
-#: src/settings/scheduler_view.zig:271
+#: src/settings/scheduler_view.zig:273
 msgid "Done"
 msgstr ""
 
@@ -2431,7 +2436,7 @@ msgstr ""
 msgid "Edit profile"
 msgstr ""
 
-#: src/settings/scheduler_view.zig:75 src/settings/scheduler_view.zig:271
+#: src/settings/scheduler_view.zig:75 src/settings/scheduler_view.zig:273
 msgid "Edit profiles"
 msgstr ""
 
@@ -2443,7 +2448,7 @@ msgstr ""
 msgid "Edit rule"
 msgstr ""
 
-#: src/settings/scheduler_view.zig:400
+#: src/settings/scheduler_view.zig:402
 msgid "Edit scheduler profile"
 msgstr ""
 
@@ -2558,7 +2563,7 @@ msgstr ""
 msgid "English"
 msgstr ""
 
-#: src/settings/scheduler_view.zig:461
+#: src/settings/scheduler_view.zig:463
 msgid "Enter a description of at most 256 characters."
 msgstr ""
 
@@ -2566,7 +2571,7 @@ msgstr ""
 msgid "Enter a location name to search."
 msgstr ""
 
-#: src/settings/scheduler_view.zig:460
+#: src/settings/scheduler_view.zig:462
 msgid "Enter a name of at most 64 characters."
 msgstr ""
 
@@ -3919,7 +3924,7 @@ msgstr ""
 msgid "Mystify"
 msgstr ""
 
-#: src/desktop/icons/view.zig:505 src/settings/scheduler_view.zig:406
+#: src/desktop/icons/view.zig:505 src/settings/scheduler_view.zig:408
 msgid "Name"
 msgstr ""
 
@@ -4146,7 +4151,7 @@ msgstr ""
 msgid "No saved networks"
 msgstr ""
 
-#: src/settings/scheduler_view.zig:428
+#: src/settings/scheduler_view.zig:430
 msgid "No sched_ext schedulers are installed."
 msgstr ""
 
@@ -4421,15 +4426,15 @@ msgstr ""
 msgid "Optional permissions"
 msgstr ""
 
-#: src/settings/scheduler_view.zig:422
+#: src/settings/scheduler_view.zig:424
 msgid "Options"
 msgstr ""
 
-#: src/settings/scheduler_view.zig:424
+#: src/settings/scheduler_view.zig:426
 msgid "Options are passed to the scheduler as typed, separated by spaces, for example --slice-us 1600. Run the scheduler with --help in a terminal to list them. Without options it starts with its own defaults. Saving asks for an administrator password."
 msgstr ""
 
-#: src/settings/scheduler_view.zig:458
+#: src/settings/scheduler_view.zig:460
 msgid "Options may contain only letters, digits and - _ = . , : / +, separated by spaces, at most 256 characters each."
 msgstr ""
 
@@ -5327,11 +5332,11 @@ msgstr ""
 msgid "Restart…"
 msgstr ""
 
-#: src/settings/scheduler_view.zig:380
+#: src/settings/scheduler_view.zig:382
 msgid "Restore default profiles"
 msgstr ""
 
-#: src/settings/scheduler_view.zig:74 src/settings/scheduler_view.zig:386
+#: src/settings/scheduler_view.zig:74 src/settings/scheduler_view.zig:388
 msgid "Restore defaults"
 msgstr ""
 
@@ -5513,12 +5518,12 @@ msgstr ""
 msgid "Rules: window rules"
 msgstr ""
 
-#: src/services/scheduling.zig:296
+#: src/services/scheduling.zig:302
 #. Scheduler identity and a regional date/time, respectively.
 msgid "Running - {0}"
 msgstr ""
 
-#: src/services/scheduling.zig:296
+#: src/services/scheduling.zig:302
 #. Scheduler identity and a regional date/time, respectively.
 msgid "Running - {0} - since {1}"
 msgstr ""
@@ -5588,7 +5593,7 @@ msgctxt "aqueous.blur.vibrancy.description"
 msgid "Saturation boost applied to blurred colors."
 msgstr ""
 
-#: src/settings/scheduler_view.zig:439
+#: src/settings/scheduler_view.zig:441
 msgid "Save"
 msgstr ""
 
@@ -5680,7 +5685,7 @@ msgstr ""
 msgid "Scheduled"
 msgstr ""
 
-#: src/settings/scheduler_view.zig:420
+#: src/settings/scheduler_view.zig:422
 msgid "Scheduler"
 msgstr ""
 
@@ -5841,7 +5846,8 @@ msgstr ""
 msgid "Selected model"
 msgstr ""
 
-#: src/desktop/scheduling.zig:170 src/settings/scheduler_view.zig:161
+#: src/desktop/scheduling.zig:171 src/settings/scheduler_view.zig:161 src/settings/scheduler_view.zig:266
+#. A profile scx.service is set up to run, while the service is neither running nor started at boot.
 msgid "Selected, stopped"
 msgstr ""
 
@@ -6754,7 +6760,7 @@ msgstr ""
 msgid "Starting authentication…"
 msgstr ""
 
-#: src/services/scheduling.zig:275 src/services/scheduling.zig:300
+#: src/services/scheduling.zig:275 src/services/scheduling.zig:306
 msgid "Starting {0}..."
 msgstr ""
 
@@ -6782,7 +6788,7 @@ msgstr ""
 msgid "Stopped"
 msgstr ""
 
-#: src/services/scheduling.zig:275 src/services/scheduling.zig:300
+#: src/services/scheduling.zig:275 src/services/scheduling.zig:306
 msgid "Stopping the scheduler..."
 msgstr ""
 
@@ -6958,7 +6964,7 @@ msgstr ""
 msgid "That selection is not a usable wallpaper."
 msgstr ""
 
-#: src/settings/scheduler_view.zig:382
+#: src/settings/scheduler_view.zig:384
 msgid "The administrator's scheduler catalog is removed for every user, and the profiles that came with scx are used again. If the running profile changes, it is applied again. This asks for an administrator password."
 msgstr ""
 
@@ -6978,7 +6984,7 @@ msgstr ""
 msgid "The connection ended during an operation. Review the current settings before applying again."
 msgstr ""
 
-#: src/settings/scheduler_view.zig:451
+#: src/settings/scheduler_view.zig:453
 msgid "The default profiles could not be restored."
 msgstr ""
 
@@ -7026,24 +7032,24 @@ msgstr ""
 msgid "The preview could not be loaded."
 msgstr ""
 
-#: src/settings/scheduler_view.zig:321 src/settings/scheduler_view.zig:464 src/settings/scheduler_view.zig:493 src/settings/scheduler_view.zig:497
+#: src/settings/scheduler_view.zig:323 src/settings/scheduler_view.zig:466 src/settings/scheduler_view.zig:495 src/settings/scheduler_view.zig:499
 msgid "The profiles could not be saved."
 msgstr ""
 
-#: src/services/scheduling.zig:912
+#: src/services/scheduling.zig:918
 msgid "The profiles could not be saved: scxcli could not be started."
 msgstr ""
 
-#: src/services/scheduling.zig:915
+#: src/services/scheduling.zig:921
 msgid "The profiles could not be saved: the scheduler catalog could not be read."
 msgstr ""
 
-#: src/settings/scheduler_view.zig:320
+#: src/settings/scheduler_view.zig:322
 #. scxcli catalog save reads at most 64 KiB.
 msgid "The profiles do not fit in the scheduler catalog's 64 KiB; remove some or shorten their descriptions."
 msgstr ""
 
-#: src/settings/scheduler_view.zig:463
+#: src/settings/scheduler_view.zig:465
 msgid "The profiles were changed elsewhere while this dialog was open. Nothing was saved; close it and edit the profile again."
 msgstr ""
 
@@ -7071,11 +7077,11 @@ msgstr ""
 msgid "The scheduler action could not be completed. Review its status and refresh before retrying."
 msgstr ""
 
-#: src/services/scheduling.zig:700
+#: src/services/scheduling.zig:706
 msgid "The scheduler catalog could not be read: {0}"
 msgstr ""
 
-#: src/services/scheduling.zig:915
+#: src/services/scheduling.zig:921
 msgid "The scheduler catalog was changed elsewhere meanwhile. Nothing was saved; review the profiles and save again."
 msgstr ""
 
@@ -7179,11 +7185,11 @@ msgstr ""
 msgid "This power mode is unavailable"
 msgstr ""
 
-#: src/desktop/scheduling.zig:193 src/settings/scheduler_view.zig:299
+#: src/desktop/scheduling.zig:194 src/settings/scheduler_view.zig:301
 msgid "This profile cannot be applied right now."
 msgstr ""
 
-#: src/desktop/scheduling.zig:192 src/settings/scheduler_view.zig:298
+#: src/desktop/scheduling.zig:193 src/settings/scheduler_view.zig:300
 msgid "This profile's scheduler is not installed."
 msgstr ""
 
@@ -7199,7 +7205,7 @@ msgstr ""
 msgid "This thinking model needs a runtime with reasoning-format support. Update llama.cpp or choose an Instruct model."
 msgstr ""
 
-#: src/services/scheduling.zig:687
+#: src/services/scheduling.zig:693
 msgid "This version of scxcli is not supported; update Pearl."
 msgstr ""
 
@@ -7631,7 +7637,7 @@ msgstr ""
 msgid "WE"
 msgstr ""
 
-#: src/settings/scheduler_view.zig:318
+#: src/settings/scheduler_view.zig:320
 msgid "Wait until the profile being applied or saved is done."
 msgstr ""
 
@@ -7929,7 +7935,7 @@ msgstr ""
 msgid "Zone name"
 msgstr ""
 
-#: src/services/scheduling.zig:293
+#: src/services/scheduling.zig:299
 msgid "a command outside these profiles"
 msgstr ""
 
@@ -8895,15 +8901,15 @@ msgstr ""
 msgid "scx.service is not installed."
 msgstr ""
 
-#: src/services/scheduling.zig:654
+#: src/services/scheduling.zig:660
 msgid "scxcli could not be started."
 msgstr ""
 
-#: src/services/scheduling.zig:646
+#: src/services/scheduling.zig:652
 msgid "scxcli is not installed, so the scheduler catalog cannot be read."
 msgstr ""
 
-#: src/services/scheduling.zig:687
+#: src/services/scheduling.zig:693
 msgid "scxcli printed a listing Pearl cannot read."
 msgstr ""
 
@@ -9266,7 +9272,7 @@ msgstr ""
 msgid "x,y,width,height"
 msgstr ""
 
-#: src/settings/scheduler_view.zig:415
+#: src/settings/scheduler_view.zig:417
 #. A scheduler the scx maintainers do not call stable.
 msgid "{0} (experimental)"
 msgstr ""
@@ -9280,16 +9286,21 @@ msgstr ""
 msgid "{0} (not confirmed: scxcli could not be asked what runs now)"
 msgstr ""
 
-#: src/settings/scheduler_view.zig:417
+#: src/settings/scheduler_view.zig:419
 #. An installed scheduler the scx catalog says nothing about.
 msgid "{0} (not in the catalog)"
 msgstr ""
 
-#: src/services/scheduling.zig:281
+#: src/services/scheduling.zig:287
 msgid "{0} - kernel scheduler (EEVDF)"
 msgstr ""
 
-#: src/services/scheduling.zig:302
+#: src/services/scheduling.zig:286
+#. The default profile, then the profile or scheduler scx.service is set up to run.
+msgid "{0} - kernel scheduler (EEVDF). scx.service is set to run {1}, but it is not enabled, so nothing starts it; choose that profile to start it."
+msgstr ""
+
+#: src/services/scheduling.zig:308
 #. A profile kept selected while scx.service is stopped, for example by scxcli stop.
 msgid "{0} is selected but stopped; the kernel's default scheduler is running. Choose it to start it again."
 msgstr ""
@@ -9306,19 +9317,19 @@ msgstr ""
 msgid "{0} more windows"
 msgstr ""
 
-#: src/services/scheduling.zig:318
+#: src/services/scheduling.zig:324
 msgid "{0} stopped unexpectedly. Switched back to {1}."
 msgstr ""
 
-#: src/services/scheduling.zig:303
+#: src/services/scheduling.zig:309
 msgid "{0} stopped unexpectedly; the kernel's default scheduler is running."
 msgstr ""
 
-#: src/services/scheduling.zig:316
+#: src/services/scheduling.zig:322
 msgid "{0} stopped: {1}. Switched back to {2}."
 msgstr ""
 
-#: src/services/scheduling.zig:303
+#: src/services/scheduling.zig:309
 msgid "{0} stopped: {1}. The kernel's default scheduler is running."
 msgstr ""
 
@@ -9359,7 +9370,7 @@ msgstr ""
 msgid "{0}% remaining · about {1} h {2} min left"
 msgstr ""
 
-#: src/services/scheduling.zig:298
+#: src/services/scheduling.zig:304
 #. A running scheduler, then the profile the unit's file now selects for its next start.
 msgid "{0}. The next start runs {1}."
 msgstr ""
