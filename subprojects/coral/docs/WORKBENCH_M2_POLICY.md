@@ -74,7 +74,9 @@ No new recursive settings watcher is installed. Existing explorer/manifest notif
 
 ## Persistent, explicit trust
 
-Unfamiliar workspaces start **restricted**. Reading, browsing, searching, editing and explicit saves remain available without trust.
+Unfamiliar workspaces start **restricted**. Reading, browsing, searching, editing and explicit saves remain available without trust. The delivered [Explorer file operations](WORKBENCH_M2_OPERATIONS.md) are also permitted as explicit local edits: input → worker preparation → review confirmation for every kind, including creation, with no writes before confirmation. They do not invoke hooks, tools, LSP or agents, promote trust, or grant reusable execution permission.
+
+Mutation admission independently refuses all affected open documents (clean or dirty across live/draining windows), pending loads/choosers/saves/sessions/recovery, and changes affecting peer/nested roots or active manifests. **Any unavailable root or lexical `..` in any open process workspace's root/manifest blocks all mutations with `WorkspaceBusy`**, even outside that workspace. Close the affected workspace or reopen verified available normalized/canonical paths; do not blindly collapse `..`. Trust approval cannot bypass these checks. Descriptor/metadata revalidation remains best-effort against final external rename/source races, not a sandbox, content hash or fsync guarantee.
 
 - **Trust workspace…** opens a real confirmation dialog listing the exact scope. Cancel changes nothing. A repository cannot approve itself.
 - Successful approval persists only after worker-side scope/policy revalidation and a durable store write.
@@ -153,6 +155,6 @@ Latest delayed-shutdown fixture acknowledged input in about **25 ms** and closed
 
 Evidence: `pearl/.cache/coral-policy/results.json`, adjacent screenshots/session logs, and `pearl/.cache/coral-policy-validation-logs/`. All native fixtures use private Wayland, HOME and XDG state. No user workspace was trusted, no packages installed, and no commits created by this work.
 
-## Next standard M2 increment
+## Remaining M2 work
 
-[Explicit workspace sessions](WORKBENCH_M2_SESSIONS.md), [native dock/picker integration](WORKBENCH_M2_DOCKS.md) and [multi-window lifecycle](WORKBENCH_M2_WINDOWS.md) are now implemented, without enabling executable consumers. Next: separately authorized workspace create/rename/move/delete with dirty-buffer and containment safeguards. LSP, Git and agents remain later milestones.
+[Explicit workspace sessions](WORKBENCH_M2_SESSIONS.md), [native dock/picker integration](WORKBENCH_M2_DOCKS.md), [multi-window lifecycle](WORKBENCH_M2_WINDOWS.md) and [bounded explicit file operations](WORKBENCH_M2_OPERATIONS.md) are now implemented, without enabling executable consumers. [Final file-operation validation](WORKBENCH_M2_OPERATIONS.md#final-validation--2026-11-09) passed all 25 native scenarios together, all nine aggregate gates and a fresh hooks-disabled production build. The policy gate again passed 17 native groups and executed 191 widget tests; the policy validation above remains historical evidence. Next focused work is remaining M2 acceptance review, automatic/per-project workspace/session management and additional pickers. LSP, Git and agents remain later milestones.

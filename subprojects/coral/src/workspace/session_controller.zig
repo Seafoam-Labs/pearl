@@ -65,6 +65,7 @@ pub const Controller = struct {
     fn ready(self: *Controller, operation: Operation) !void {
         const app = self.app;
         if (self.closed or app.closing or app.quitting) return error.Closing;
+        if (app.fileOperationBarrier() or app.workspaceOperationBusy()) return error.FileOperationBusy;
         if (app.recovery_suspended or app.dialog != null or app.closing_group != null or
             app.browser.loading or app.browser.choosing or app.browser.hasPendingFiles() or
             @import("../editor/transactions.zig").isApplying() or app.history.active) return error.Loading;
@@ -116,7 +117,7 @@ pub const Controller = struct {
         self.app.message(if (operation == .save) "Saving explicit workspace session…" else "Loading explicit workspace session… Existing documents will be kept.");
     }
     fn accepts(self: *Controller, work: *Work) bool {
-        return !self.closed and !self.app.closing and !self.app.quitting and
+        return !self.closed and !self.app.closing and !self.app.quitting and !self.app.fileOperationBarrier() and
             self.app.workspace.accepts(work.document_token) and self.app.browser.requests.accepts(work.request);
     }
     fn reap(self: *Controller, work: *Work) void {
@@ -137,6 +138,7 @@ pub const Controller = struct {
         if (!self.closed and !self.app.closing) {
             const explanation = switch (err) {
                 error.ActiveWorkspace => "Close the active workspace first (documents are kept), then explicitly Restore Workspace Session. No workspace was replaced.",
+                error.FileOperationBusy => "Wait for the workspace file operation to finish before saving or restoring a session. Existing documents and the saved session are kept.",
                 error.Loading => "Finish startup recovery, pending file/workspace operations and dialogs before saving or restoring a workspace session.",
                 error.NotFound => "No readable saved workspace session or workspace manifest was found. The checkpoint is not discarded.",
                 error.Busy => "The workspace session slot or workspace loader is busy. Retry after the other operation finishes.",

@@ -1,6 +1,6 @@
 # M2: native workspaces and bounded explorer
 
-**Status: workspace, explorer, search, safe settings, persistent trust and explicit saved-session increments implemented and tested; M2 remains in progress.** The user accepted M0's documented bounded-editor tradeoffs. See the [search guide](WORKBENCH_M2_SEARCH.md), [settings/trust guide](WORKBENCH_M2_POLICY.md) and [session guide](WORKBENCH_M2_SESSIONS.md). Native [dock/picker integration](WORKBENCH_M2_DOCKS.md) and [independent windows](WORKBENCH_M2_WINDOWS.md) are now implemented. Automatic/per-project session history remains future work.
+**Status: workspace, explorer, search, safe settings, persistent trust and explicit saved-session increments implemented and tested; M2 remains in progress.** The user accepted M0's documented bounded-editor tradeoffs. See the [search guide](WORKBENCH_M2_SEARCH.md), [settings/trust guide](WORKBENCH_M2_POLICY.md) and [session guide](WORKBENCH_M2_SESSIONS.md). Native [dock/picker integration](WORKBENCH_M2_DOCKS.md) and [independent windows](WORKBENCH_M2_WINDOWS.md) are now implemented. The bounded [explicit file-operation increment](WORKBENCH_M2_OPERATIONS.md) is also delivered; its final all-25 native, nine-gate and fresh production-build validation passed. Automatic/per-project workspace/session management remains future work.
 
 ## Open a workspace
 
@@ -54,6 +54,16 @@ A virtualized **GtkListView** in the movable **Explorer dock** renders a bounded
 
 Root-qualified labels/tooltips distinguish identical names across roots. Switching workspaces preserves document IDs, revisions, paths and edits. Expanded/selected paths survive paging, refresh, collapse/reexpand and reopening the same workspace; replacement root identities do not inherit unrelated state.
 
+### Explicit file operations
+
+Select an Explorer entry, then use **New file… / New directory… / Rename… / Move… / Delete…** buttons or the matching menu/**Explorer:** palette commands. Creates use the selected directory (or selected file's parent); Rename accepts one sibling basename; Move accepts a destination relative to the same workspace root. Input and worker preparation make no writes. **All kinds require a separate explicit review confirmation**, and created files are not automatically opened. Destination parents must exist; destinations are never overwritten; moves cannot cross filesystems or fall back to copying. Delete permanently removes only a regular file or empty directory, with a warning and no trash, undo or recursion.
+
+All affected open documents, clean or dirty, must be resolved and closed in every live/draining window first. Pending loads, choosers, saves, sessions and recovery decisions also block admission; roots (including peers/nested roots) and active manifests are protected. From accepted confirmation through apply callback, a process-wide barrier refuses opens/saves/session/workspace switches/New Window while unaffected buffers remain editable. Success rescans Explorer and marks Search stale for explicit Refresh.
+
+**Conservative `WorkspaceBusy`: any unavailable root or lexical `..` in any root/manifest path in any open process workspace blocks all mutations**, even elsewhere. Close that workspace or reopen verified available normalized/canonical paths. Do not blindly collapse `..`: symlinks can change its meaning. Workspace/session loading still preserves those lexical spellings; mutation admission is deliberately stricter.
+
+Operation paths reject symlink components (including canonical-root ancestors), special files, empty/`.`/`..`/`.git` components, and full paths beyond 4,095 bytes. Retained source and parent descriptors/metadata are rechecked before syscall, but final external namespace races remain best-effort, not sandboxed; no content hash or fsync guarantee is provided. See the [operations guide](WORKBENCH_M2_OPERATIONS.md) for permissions, lifecycle, refusal/retry instructions and completed final validation.
+
 ### Paging and memory bounds
 
 | Resource | Bound |
@@ -98,11 +108,11 @@ Registration failures/capacity limits show a manual **Rescan** fallback. Notific
 
 ## Workspace trust boundary
 
-Workspaces default to **restricted**. JSON/repository contents cannot grant trust. A separate machine-owned policy controller now provides [explicit persistent approval and revocation](WORKBENCH_M2_POLICY.md), with exact root/policy identities and generation-checked permits. Trust is not per-tool approval and launches no tasks, language servers, hooks, agents or terminals. Explicit editing/saves remain available without trust. No new create/rename/delete/move operations are provided by the explorer.
+Workspaces default to **restricted**. JSON/repository contents cannot grant trust. A separate machine-owned policy controller now provides [explicit persistent approval and revocation](WORKBENCH_M2_POLICY.md), with exact root/policy identities and generation-checked permits. Trust is not per-tool approval and launches no tasks, language servers, hooks, agents or terminals. Explicit editing/saves and the separately confirmed [Explorer file operations](WORKBENCH_M2_OPERATIONS.md) remain available without trust. Their review authorizes one bounded local mutation, not execution or future operations.
 
 Browser traversal opens directory components descriptor-relatively without following symlinks. Traversal-only ancestors use `O_PATH`, supporting readable projects beneath search-only ancestors. Symlinks, special/inaccessible entries and unsupported filename encodings are disabled. File activation revalidates the selected root/path and regular-file type on a worker.
 
-**This is not an OS sandbox:** the subsequent document loader remains path-based, so concurrent namespace replacement can race preliminary explorer validation. Future executable/destructive operations must not treat that check as authorization. Manually opened files retain existing canonical symlink semantics.
+**This is not an OS sandbox:** the subsequent document loader remains path-based, so concurrent namespace replacement can race preliminary explorer validation. Executable consumers must not treat that check as authorization; the delivered file-operation backend uses its own prepared descriptor checks and explicit confirmation, still with documented best-effort external-race limits. Manually opened files retain existing canonical symlink semantics.
 
 ## Async ownership and request bounds
 
@@ -183,6 +193,6 @@ Versioned **explicit workspace sessions** are now [implemented and validated](WO
 
 Native [Explorer/Search docks and Quick Open picker integration](WORKBENCH_M2_DOCKS.md) are now implemented, with session v2 layout persistence and compact-window behavior.
 
-[Multi-window lifecycle](WORKBENCH_M2_WINDOWS.md) is now delivered. Next: separately authorized workspace create/rename/move/delete with dirty-buffer and containment safeguards. Additional pickers and automatic/per-project session management remain open items.
+[Multi-window lifecycle](WORKBENCH_M2_WINDOWS.md) and [bounded, explicitly confirmed workspace file operations](WORKBENCH_M2_OPERATIONS.md) are now delivered. The latter's [final validation](WORKBENCH_M2_OPERATIONS.md#final-validation--2026-11-09) passed all 25 native scenarios together, all nine aggregate gates and a fresh hooks-disabled production build; the explorer gate again passed 19 native groups and executed 191 widget tests. Prior validation counts above remain historical explorer-increment evidence. Next focused work is remaining M2 acceptance review; additional pickers and automatic/per-project workspace/session management remain open items.
 
 M2 remains **in progress**.

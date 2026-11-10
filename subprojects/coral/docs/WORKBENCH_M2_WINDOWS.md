@@ -36,6 +36,16 @@ A process-wide reservation table allows at most **16 in-flight saves**, using th
 
 This coordinates **this process only**. It is not an atomic filesystem compare-and-swap against other processes or external rename/symlink races. Explicit overwrite and Save As retain their existing user-authorized replacement behavior.
 
+## Process-wide workspace file operations
+
+[Explorer file operations](WORKBENCH_M2_OPERATIONS.md) now provide explicitly reviewed create/rename/move/permanent-delete actions. Their manager checks include **live and closing/draining owners**. All affected open file-backed documents block admission, **clean as well as dirty**, including descendants of affected directories and destination paths. Resolve edits by saving or explicitly discarding as needed, then close the documents in **every** window and wait for cleanup; merely saving a still-open clean document is insufficient. No open-document rebinding or LSP events are implemented.
+
+Pending loads/load decisions, file/workspace choosers, saves/reservations, session work, recovery decisions/claims and competing dialogs also block admission. Peer/nested workspace roots and active manifests are protected. **Any unavailable root or lexical `..` root/manifest in any open process workspace blocks all mutations with `WorkspaceBusy`, even in an unrelated window.** Close the affected workspace or reopen verified available normalized/canonical paths. Do not blindly collapse `..`: symlink traversal can change the intended location.
+
+Accepted confirmation acquires one process-wide apply barrier, released at completion callback—not at worker return. It refuses competing mutations, opens/reloads, saves/Save As, session save/restore, workspace switches/close and New Window. Existing unaffected buffers remain editable. Normal Close Window/Quit All refuses an active operation and cancels aggregate quitting rather than abandoning its owner; finish/cancel the operation and wait for worker cleanup. Application holds retain cancelled/prepared work until descriptor retirement and callback delivery. Stale workspace state fails safely; successful mutation is not relabelled cancelled if cancellation races completion.
+
+Success rescans current Explorer and invalidates Search for explicit Refresh; created files do not auto-open. This barrier coordinates only this process. Retained source/root/parent descriptors and metadata are rechecked before mutation, but final external parent/source rename races cannot be fully prevented by Linux fd-based checks. This is best-effort containment, not a sandbox, content-hash guarantee or fsync durability promise.
+
 ## Shared preferences and appearance
 
 Only user preferences are broadcast to live windows; each window reapplies its own workspace/folder/language overrides. Repository settings never become user defaults. Persistence has one running write and one latest pending snapshot, avoiding racing preference writers within the process. New windows inherit the current user layer.
@@ -77,7 +87,7 @@ zig build test-m2-windows -Doptimize=safe -j1 --summary all
 zig build -Doptimize=safe -Dtest-hooks=false -j1 --summary all
 ```
 
-**Final validation on Zig 0.17.1:** all eight aggregate gates ran sequentially and passed: windows, M1, workspace slice, explorer, search, policy, sessions and docks, followed by a fresh hooks-disabled production compilation. Each command used `-Doptimize=safe -j1 --summary all` and a 600-second bound.
+**Historical multi-window-increment final validation on Zig 0.17.1:** all eight aggregate gates ran sequentially and passed: windows, M1, workspace slice, explorer, search, policy, sessions and docks, followed by a fresh hooks-disabled production compilation. Each command used `-Doptimize=safe -j1 --summary all` and a 600-second bound.
 
 - **27 native multi-window cases**, using real keyboard/palette input, exported GTK window actions and actual chooser-button clicks—not only direct test dispatch.
 - Coverage includes isolated documents/roots/groups/docks/search, close/quit cancellation, delayed worker/chooser/journal drains, 24 create/close cycles, the 16-window limit, same-file conflicts and save reservations, recovery discovery/crash restoration, shared sessions/preferences, scoped CSS and Native GTK sizing, same-scope revocation/failure inheritance, and delayed removal after owner closure.
@@ -89,4 +99,4 @@ Evidence: `pearl/.cache/coral-windows/results.json`, adjacent logs/screenshots, 
 
 ## Remaining roadmap
 
-Multi-window ownership is delivered, not full IDE parity. Cross-window tab transfer/shared buffers, automatic/per-project session history and additional workspace pickers remain unimplemented. The next focused M2 work is separately authorized workspace filesystem operations (create/rename/move/delete with dirty-buffer and containment safeguards), followed by remaining M2 acceptance review. LSP/Git/terminal/agent service milestones remain later work; M9 remains removed.
+Multi-window ownership and [bounded explicit file operations](WORKBENCH_M2_OPERATIONS.md) are delivered, not full IDE parity. [Final file-operation validation](WORKBENCH_M2_OPERATIONS.md#final-validation--2026-11-09) passed all 25 native scenarios together, all nine aggregate gates and a fresh hooks-disabled production build. The window gate again passed 27 native cases and executed 191 widget tests; the counts above remain historical multi-window evidence. Next focused M2 work is remaining acceptance review, automatic/per-project workspace/session management and additional pickers. Cross-window tab transfer/shared buffers also remain unimplemented. LSP/Git/terminal/agent service milestones remain later work; M9 remains removed.

@@ -59,6 +59,9 @@ pub fn build(b: *std.Build) void {
     const tm = createModule(b, .{ .root_source_file = b.path("src/tests.zig"), .target = target, .optimize = optimize, .link_libc = true });
     for ([_][]const u8{ "gtk4", "gtksourceview-5", "enchant-2" }) |lib| tm.linkSystemLibrary(lib, .{ .use_pkg_config = .yes });
     tm.addCSourceFile(.{ .file = b.path("src/spelling/pango_words.c"), .flags = &.{"-std=c11"} });
+    // Admission tests use real App types but perform no GTK or filesystem I/O.
+    // Keep their module boundaries identical to the production application.
+    inline for (.{ "build_options", "appearance_client", "logging", "diagnostics", "style", "theme_style", "previews", "file_chooser" }) |name| tm.addImport(name, m.import_table.get(name).?);
     const tests = b.addTest(.{ .root_module = tm });
     const test_step = b.step("test", "Test file format, revisions, Unicode tokenization and real GIO saves");
     test_step.dependOn(&b.addRunArtifact(tests).step);
@@ -150,6 +153,13 @@ pub fn build(b: *std.Build) void {
     const m2_windows = b.step("test-m2-windows", "Run units, widgets and multi-window acceptance");
     m2_windows.dependOn(test_step);
     m2_windows.dependOn(&windows.step);
+    const operations = b.addSystemCommand(&.{ "python3", "tests/operations.py", "--binary" });
+    operations.addArtifactArg(ie);
+    operations.addPassthruArgs();
+    b.step("operations", "Run native workspace file operation acceptance").dependOn(&operations.step);
+    const m2_operations = b.step("test-m2-operations", "Run units, widgets and workspace file operation acceptance");
+    m2_operations.dependOn(test_step);
+    m2_operations.dependOn(&operations.step);
     const m1 = b.step("test-m1", "Run unit, widget, native, group and recovery acceptance tests");
     m1.dependOn(test_step);
     m1.dependOn(&integration.step);
@@ -174,6 +184,7 @@ pub fn build(b: *std.Build) void {
     m2_sessions.dependOn(&widgets.step);
     m2_docks.dependOn(&widgets.step);
     m2_windows.dependOn(&widgets.step);
+    m2_operations.dependOn(&widgets.step);
 
     const bm = createModule(b, .{ .root_source_file = b.path("src/benchmark_m0.zig"), .target = target, .optimize = optimize, .link_libc = true });
     for ([_][]const u8{ "gtk4", "gtksourceview-5", "enchant-2" }) |lib| bm.linkSystemLibrary(lib, .{ .use_pkg_config = .yes });

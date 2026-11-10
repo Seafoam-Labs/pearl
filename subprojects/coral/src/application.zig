@@ -28,6 +28,8 @@ pub const Manager = struct {
     // One explicit shared session slot, not a per-window session registry.
     // Admission is serialized: the last accepted save owns the resulting slot.
     session_owner: ?u64 = null,
+    // GTK-thread admission through the mutation worker's completion callback.
+    file_operation_owner: ?u64 = null,
     preferences_running: bool = false,
     preferences_pending: ?Settings = null,
     initial: *const fn (*App) void,
@@ -43,6 +45,7 @@ pub const Manager = struct {
         for (self.entries) |entry| std.debug.assert(entry == null);
         for (self.saves) |save| std.debug.assert(save == null);
         std.debug.assert(!self.preferences_running and self.preferences_pending == null);
+        std.debug.assert(self.file_operation_owner == null);
         if (self.source != 0) _ = c.g_source_remove(self.source);
     }
     pub fn find(self: *Manager, id: u64) ?*App {
@@ -61,6 +64,10 @@ pub const Manager = struct {
         if (!self.first_created) self.create(null);
     }
     pub fn create(self: *Manager, requester: ?*App) void {
+        if (self.file_operation_owner != null) {
+            if (requester) |app| app.message("New Window is unavailable while a workspace file operation is applying. Retry after it finishes.");
+            return;
+        }
         if (self.quitting) {
             if (requester) |app| app.message("New Window is unavailable while Quit All is in progress.");
             return;
@@ -158,10 +165,61 @@ pub const Manager = struct {
         };
         return false;
     }
+    /// No I/O or GTK reentry between this check and acquiring the barrier. Include
+    /// draining windows: cancelled work and bound documents still belong to them.
+    pub fn checkFileOperation(self: *Manager, owner: *App, source_abs: []const u8, destination_abs: []const u8) !void {
+        if (owner.manager != self or self.find(owner.window_id) != owner) return error.NoManager;
+        if (self.quitting or owner.closing or owner.quitting) return error.Closing;
+        if (self.file_operation_owner != null) return error.OperationPending;
+        if (self.session_owner != null) return error.WorkspaceBusy;
+        for (self.saves) |save| if (save != null) return error.WorkspaceBusy;
+        for (self.entries) |entry| if (entry) |e| {
+            const app = e.app;
+            // The owner's operation dialog is the confirmation being admitted,
+            // not a competing modal. Other windows' dialogs must finish first.
+            if (app.dialog != null or app.file_open_choosers != 0 or
+                (app != owner and app.openDialogs())) return error.DialogPending;
+            if (app.quitting or app.closing_group != null or app.recovery_suspended or e.recovery.claim != null or
+                app.pending_file_loads != 0 or app.browser.hasPendingOperations() or
+                app.session.work != null) return error.WorkspaceBusy;
+            for (app.snapshotDocuments()) |doc| {
+                if (doc.busy or doc.loading or doc.pending != null) return error.WorkspaceBusy;
+                // Clean documents are just as bound as dirty ones. Never leave an
+                // editor saving back to a renamed/deleted/replaced pathname.
+                if (doc.path) |path| if (affectsPath(source_abs, destination_abs, path)) return error.OpenDocument;
+            }
+            if (app.browser.model) |snapshot| {
+                for (snapshot.roots) |root| {
+                    // Unavailable roots can hide a physical alias through symlinked
+                    // ancestors. '..' spellings also depend on traversed directories
+                    // absent from the canonical endpoint. Without a complete physical
+                    // dependency snapshot, fail closed rather than guess protection.
+                    if (root.canonical_path == null or hasParentComponent(root.lexical_path)) return error.WorkspaceBusy;
+                    if (affectsPath(source_abs, destination_abs, root.lexical_path)) return error.RootMutation;
+                    if (root.canonical_path) |path| if (affectsPath(source_abs, destination_abs, path)) return error.RootMutation;
+                }
+                if (snapshot.manifest_path) |path| {
+                    if (hasParentComponent(path)) return error.WorkspaceBusy;
+                    if (affectsPath(source_abs, destination_abs, path)) return error.ProtectedManifest;
+                    const canonical = app.browser.manifest_canonical orelse return error.WorkspaceBusy;
+                    if (affectsPath(source_abs, destination_abs, canonical)) return error.ProtectedManifest;
+                }
+            }
+        };
+    }
+    pub fn beginFileOperation(self: *Manager, owner: *App, source_abs: []const u8, destination_abs: []const u8) !void {
+        try self.checkFileOperation(owner, source_abs, destination_abs);
+        self.file_operation_owner = owner.window_id;
+    }
+    pub fn endFileOperation(self: *Manager, owner: *App) void {
+        std.debug.assert(self.file_operation_owner == owner.window_id);
+        self.file_operation_owner = null;
+    }
     /// GTK-thread admission only, using saveTo's already canonicalized spelling.
     /// This is NOT an atomic filesystem compare-and-swap against other processes
     /// or concurrent external symlink/rename changes; GIO etags still apply.
     pub fn reserveSave(self: *Manager, window: u64, document: u64, path: []const u8) !usize {
+        if (self.file_operation_owner != null) return error.FileOperationBusy;
         if (path.len > save_path_limit) return error.SavePathTooLong;
         var free: ?usize = null;
         for (self.saves, 0..) |reservation, i| {
@@ -220,13 +278,144 @@ pub const Manager = struct {
             saves[save_count] = save;
             save_count += 1;
         };
-        const json = std.json.Stringify.valueAlloc(u.a, .{ .saves = saves[0..save_count], .save_limit = save_limit, .revoked_scopes = self.revocation_count, .revocation_limit = trust.limits.records, .revocation_saturated = self.revocation_saturated, .windows = windows[0..count], .live = live, .closing = count - live, .holds = holds, .quitting = self.quitting, .limit = limit, .session_owner = self.session_owner, .preferences_pending = self.preferences_running or self.preferences_pending != null }, .{}) catch return;
+        const json = std.json.Stringify.valueAlloc(u.a, .{ .saves = saves[0..save_count], .save_limit = save_limit, .revoked_scopes = self.revocation_count, .revocation_limit = trust.limits.records, .revocation_saturated = self.revocation_saturated, .windows = windows[0..count], .live = live, .closing = count - live, .holds = holds, .quitting = self.quitting, .limit = limit, .session_owner = self.session_owner, .file_operation_owner = self.file_operation_owner, .preferences_pending = self.preferences_running or self.preferences_pending != null }, .{}) catch return;
         defer u.a.free(json);
         const line = u.z(json);
         defer u.a.free(line);
         c.g_print("CORAL_WINDOWS %s\n", line.ptr);
     }
 };
+// Empty source/destination means creation/deletion, never the filesystem root.
+// Compare components, not string prefixes: /work/a must not cover /work/ab.
+// Only protected spellings may contain redundant separators or '.' components;
+// operation spellings are left untouched for the backend's strict validation.
+fn containsPath(operation: []const u8, protected: []const u8) bool {
+    if (operation.len == 0 or protected.len == 0) return false;
+    if (operation[0] != '/' or protected[0] != '/') return false;
+    var prefix = std.mem.tokenizeScalar(u8, operation, '/');
+    var path = std.mem.tokenizeScalar(u8, protected, '/');
+    while (prefix.next()) |part| {
+        const next = while (path.next()) |component| {
+            if (!std.mem.eql(u8, component, ".")) break component;
+        } else return false;
+        if (!std.mem.eql(u8, part, next)) return false;
+    }
+    return true;
+}
+fn affectsPath(source: []const u8, destination: []const u8, protected: []const u8) bool {
+    return containsPath(source, protected) or containsPath(destination, protected);
+}
+fn hasParentComponent(path: []const u8) bool {
+    var parts = std.mem.tokenizeScalar(u8, path, '/');
+    while (parts.next()) |part| if (std.mem.eql(u8, part, "..")) return true;
+    return false;
+}
+
+test "file operation protection uses component boundaries and optional endpoints" {
+    const expect = std.testing.expect;
+    try expect(affectsPath("/work/a", "", "/work/a"));
+    try expect(affectsPath("/work/a", "", "/work/a/nested/file"));
+    try expect(affectsPath("", "/work/a", "/work/a/nested/file"));
+    try expect(!affectsPath("/work/a", "", "/work/ab/file"));
+    try expect(!affectsPath("/work/a/file", "", "/work/a"));
+    try expect(!affectsPath("", "", "/work/a"));
+    try expect(containsPath("/", "/work/a"));
+    try expect(containsPath("/work/a", "/work//./a/file"));
+    try expect(!containsPath("/work/a", "/other/work/a"));
+    try expect(hasParentComponent("/work/../offline"));
+    try expect(!hasParentComponent("/work/.../offline"));
+}
+
+test "file operation admission covers peer and draining documents, roots, manifests and pending work" {
+    const expectError = std.testing.expectError;
+    var manager: Manager = .{ .application = undefined, .settings = undefined, .width = 0, .height = 0, .initial = undefined };
+    var apps: [2]App = undefined;
+    var entries: [2]Entry = undefined;
+    for (&apps, &entries, 0..) |*app, *entry, i| {
+        // Admission is deliberately metadata-only: no GTK objects or disk I/O.
+        app.manager = &manager;
+        app.window_id = i + 1;
+        app.closing = false;
+        app.quitting = false;
+        app.closing_group = null;
+        app.dialog = null;
+        app.file_open_choosers = 0;
+        app.pending_file_loads = 0;
+        app.recovery_suspended = false;
+        app.workspace_operations = .init(app);
+        app.browser.model = null;
+        app.browser.loading = false;
+        app.browser.choosing = false;
+        app.browser.pending_load = null;
+        app.browser.jobs = .empty;
+        app.browser.manifest_canonical = null;
+        app.session.work = null;
+        app.documents.entries = .empty;
+        entry.* = .{ .app = app, .recovery = .{ .application = undefined, .ready = undefined } };
+        manager.entries[i] = entry;
+    }
+    const owner = &apps[0];
+    const peer = &apps[1];
+    try manager.beginFileOperation(owner, "/work/a", "/work/b");
+    try std.testing.expectEqual(owner.window_id, manager.file_operation_owner.?);
+    try expectError(error.OperationPending, manager.beginFileOperation(peer, "/other/a", "/other/b"));
+    try expectError(error.FileOperationBusy, manager.reserveSave(peer.window_id, 1, "/unrelated"));
+    manager.endFileOperation(owner);
+    try std.testing.expect(manager.file_operation_owner == null);
+
+    var doc: @import("document.zig").Document = undefined;
+    doc.path = try std.testing.allocator.dupeSentinel(u8, "/work/a/clean.txt", 0);
+    defer std.testing.allocator.free(doc.path.?);
+    doc.busy = false;
+    doc.loading = false;
+    doc.pending = null;
+    var docs = [_]*@import("document.zig").Document{&doc};
+    peer.documents.entries.items = &docs;
+    try expectError(error.OpenDocument, manager.checkFileOperation(owner, "/work/a", ""));
+    try expectError(error.OpenDocument, manager.checkFileOperation(owner, "", "/work/a"));
+    peer.closing = true;
+    try expectError(error.OpenDocument, manager.checkFileOperation(owner, "/work/a", ""));
+    try manager.checkFileOperation(owner, "/work/ab", "");
+    doc.busy = true;
+    try expectError(error.WorkspaceBusy, manager.checkFileOperation(owner, "/unrelated", ""));
+    doc.busy = false;
+    peer.documents.entries = .empty;
+    peer.pending_file_loads = 1;
+    try expectError(error.WorkspaceBusy, manager.checkFileOperation(owner, "/unrelated", ""));
+    peer.pending_file_loads = 0;
+    peer.file_open_choosers = 1;
+    try expectError(error.DialogPending, manager.checkFileOperation(owner, "/unrelated", ""));
+    peer.file_open_choosers = 0;
+    manager.session_owner = peer.window_id;
+    try expectError(error.WorkspaceBusy, manager.checkFileOperation(owner, "/unrelated", ""));
+    manager.session_owner = null;
+
+    const model = @import("workspace/model.zig");
+    peer.browser.model = .{ .allocator = std.testing.allocator, .scope = model.identity.Scope.init(), .roots = &.{.{ .id = @fromBackingInt(@intCast(1)), .display_name = "Nested", .lexical_path = "/work/a/nested", .canonical_path = "/work/a/nested", .availability = .available }}, .manifest_path = "/work/config/active.json" };
+    peer.browser.manifest_canonical = try std.testing.allocator.dupeSentinel(u8, "/physical/config/active.json", 0);
+    defer std.testing.allocator.free(peer.browser.manifest_canonical.?);
+    try expectError(error.RootMutation, manager.checkFileOperation(owner, "/work/a", ""));
+    try expectError(error.RootMutation, manager.checkFileOperation(owner, "", "/work/a/nested"));
+    try expectError(error.ProtectedManifest, manager.checkFileOperation(owner, "/work/config", ""));
+    try expectError(error.ProtectedManifest, manager.checkFileOperation(owner, "", "/physical/config/active.json"));
+    try manager.checkFileOperation(owner, "/work/ab", "/work/ac");
+
+    // A symlinked lexical ancestor can alias a not-directory/missing root without
+    // any '..'. No physical identity means no safe process-local protection.
+    var protected_roots = [_]model.Root{.{ .id = @fromBackingInt(@intCast(2)), .display_name = "Alias", .lexical_path = "/alias/unavailable", .canonical_path = null, .availability = .not_directory }};
+    peer.browser.model.?.roots = &protected_roots;
+    try expectError(error.WorkspaceBusy, manager.checkFileOperation(owner, "/work/unavailable", ""));
+    protected_roots[0].availability = .missing;
+    try expectError(error.WorkspaceBusy, manager.checkFileOperation(owner, "", "/work/unavailable"));
+    protected_roots[0].availability = .available;
+    protected_roots[0].canonical_path = "/work";
+    protected_roots[0].lexical_path = "/alias/sub/..";
+    try expectError(error.WorkspaceBusy, manager.checkFileOperation(owner, "/work/sub", ""));
+    protected_roots[0].lexical_path = "/alias";
+    peer.browser.model.?.manifest_path = "/alias/sub/../active.json";
+    try expectError(error.WorkspaceBusy, manager.checkFileOperation(owner, "/work/sub", ""));
+}
+
 fn emptyWindow(app: *App) void {
     _ = app.newDocument();
 }

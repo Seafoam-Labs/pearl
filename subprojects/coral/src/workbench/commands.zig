@@ -56,6 +56,11 @@ pub const Command = enum {
     close_window,
     next_window,
     previous_window,
+    create_workspace_file,
+    create_workspace_directory,
+    rename_workspace_entry,
+    move_workspace_entry,
+    delete_workspace_entry,
 
     pub fn metadata(self: Command) Metadata {
         return entries[@backingInt(self)];
@@ -116,6 +121,11 @@ pub const Command = enum {
             .close_window => i18n.dtr("coral", "Close Window"),
             .next_window => i18n.dtr("coral", "Next Window"),
             .previous_window => i18n.dtr("coral", "Previous Window"),
+            .create_workspace_file => i18n.dtr("coral", "Explorer: New file…"),
+            .create_workspace_directory => i18n.dtr("coral", "Explorer: New directory…"),
+            .rename_workspace_entry => i18n.dtr("coral", "Explorer: Rename…"),
+            .move_workspace_entry => i18n.dtr("coral", "Explorer: Move…"),
+            .delete_workspace_entry => i18n.dtr("coral", "Explorer: Delete permanently…"),
         };
     }
 };
@@ -182,6 +192,11 @@ pub const entries = [_]Metadata{
     .{ .command = .close_window, .action = "close-window", .detailed_action = "win.close-window", .label = "Close Window", .shortcut = "Ctrl+Shift+W" },
     .{ .command = .next_window, .action = "next-window", .detailed_action = "win.next-window", .label = "Next Window", .shortcut = null },
     .{ .command = .previous_window, .action = "previous-window", .detailed_action = "win.previous-window", .label = "Previous Window", .shortcut = null },
+    .{ .command = .create_workspace_file, .action = "workspace-create-file", .detailed_action = "win.workspace-create-file", .label = "Explorer: New file…", .shortcut = null },
+    .{ .command = .create_workspace_directory, .action = "workspace-create-directory", .detailed_action = "win.workspace-create-directory", .label = "Explorer: New directory…", .shortcut = null },
+    .{ .command = .rename_workspace_entry, .action = "workspace-rename", .detailed_action = "win.workspace-rename", .label = "Explorer: Rename…", .shortcut = null },
+    .{ .command = .move_workspace_entry, .action = "workspace-move", .detailed_action = "win.workspace-move", .label = "Explorer: Move…", .shortcut = null },
+    .{ .command = .delete_workspace_entry, .action = "workspace-delete", .detailed_action = "win.workspace-delete", .label = "Explorer: Delete permanently…", .shortcut = null },
 };
 
 pub fn fromAction(action: []const u8) ?Command {
@@ -244,7 +259,7 @@ pub fn fromKey(key: u32, state: u32) ?Command {
 
 test "registry is exhaustive, ordered and has unique stable actions" {
     try std.testing.expectEqual(@typeInfo(Command).@"enum".field_names.len, entries.len);
-    const actions = [_][]const u8{ "new", "open", "save", "save-as", "reload", "find", "goto", "spelling", "preferences", "about", "close", "quit", "command-palette", "split-group", "focus-next-group", "focus-previous-group", "close-group", "excerpt", "grouped-undo", "grouped-redo", "open-folder", "open-workspace", "workspace-roots", "workspace-back", "workspace-rescan", "close-workspace", "quick-open", "workspace-search", "workspace-policy", "workspace-trust", "workspace-revoke", "save-workspace-session", "restore-workspace-session", "toggle-explorer", "toggle-search", "focus-explorer", "focus-search", "focus-editor", "hide-panel", "dock-left", "dock-right", "dock-bottom", "reset-docks", "dock-grow", "dock-shrink", "next-tab", "previous-tab", "new-window", "close-window", "next-window", "previous-window" };
+    const actions = [_][]const u8{ "new", "open", "save", "save-as", "reload", "find", "goto", "spelling", "preferences", "about", "close", "quit", "command-palette", "split-group", "focus-next-group", "focus-previous-group", "close-group", "excerpt", "grouped-undo", "grouped-redo", "open-folder", "open-workspace", "workspace-roots", "workspace-back", "workspace-rescan", "close-workspace", "quick-open", "workspace-search", "workspace-policy", "workspace-trust", "workspace-revoke", "save-workspace-session", "restore-workspace-session", "toggle-explorer", "toggle-search", "focus-explorer", "focus-search", "focus-editor", "hide-panel", "dock-left", "dock-right", "dock-bottom", "reset-docks", "dock-grow", "dock-shrink", "next-tab", "previous-tab", "new-window", "close-window", "next-window", "previous-window", "workspace-create-file", "workspace-create-directory", "workspace-rename", "workspace-move", "workspace-delete" };
     for (entries, actions, 0..) |entry, action, index| {
         try std.testing.expectEqual(index, @backingInt(entry.command));
         try std.testing.expectEqualStrings(action, entry.action);

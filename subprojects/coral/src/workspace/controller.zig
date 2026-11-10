@@ -28,6 +28,8 @@ pub const limits = struct {
 pub const Controller = struct {
     app: *App,
     model: ?model.Model = null,
+    // Resolved on the load worker, never by synchronous GTK-thread I/O.
+    manifest_canonical: ?[:0]u8 = null,
     requests: identity.Scope,
     epoch: u64 = 0,
     jobs: std.ArrayList(*Work) = .empty,
@@ -94,6 +96,15 @@ pub const Controller = struct {
             u.connect(button, "clicked", item[1], app);
             c.gtk_flow_box_insert(u.cast(c.GtkFlowBox, bar), button, -1);
         }
+        const operations = c.gtk_flow_box_new().?;
+        c.gtk_flow_box_set_selection_mode(u.cast(c.GtkFlowBox, operations), c.GTK_SELECTION_NONE);
+        c.gtk_flow_box_set_max_children_per_line(u.cast(c.GtkFlowBox, operations), 3);
+        inline for (.{ .{ "New file…", "win.workspace-create-file" }, .{ "New directory…", "win.workspace-create-directory" }, .{ "Rename…", "win.workspace-rename" }, .{ "Move…", "win.workspace-move" }, .{ "Delete…", "win.workspace-delete" } }) |item| {
+            const button = u.button(item[0]);
+            c.gtk_actionable_set_action_name(u.cast(c.GtkActionable, button), item[1]);
+            c.gtk_flow_box_insert(u.cast(c.GtkFlowBox, operations), button, -1);
+        }
+        u.append(panel, operations);
         const status = u.label("");
         c.gtk_label_set_ellipsize(u.cast(c.GtkLabel, status), c.PANGO_ELLIPSIZE_MIDDLE);
         u.append(panel, status);
@@ -177,6 +188,7 @@ pub const Controller = struct {
         self.app.message("Explorer state reset: directory slots released. Workspace root IDs and documents are unchanged.");
     }
     pub fn closeWorkspace(self: *Controller) void {
+        if (!self.closed and (self.app.rejectFileOperationBarrier() or self.app.workspaceOperationBusy())) return;
         self.app.workspace_search.invalidate("Stale — workspace closed. Open a workspace and refresh.");
         self.requests.invalidate();
         self.cancelWaitingLoad();
@@ -187,8 +199,14 @@ pub const Controller = struct {
         self.retireBrowse();
         self.clearListing();
         self.selected = null;
-        if (self.model) |*m| m.deinit();
-        self.model = null;
+        // Keep root/manifest protection visible in the manager until a closing
+        // App's holds drain. No closed browser can publish or browse this model.
+        if (!self.closed) {
+            if (self.model) |*m| m.deinit();
+            self.model = null;
+            if (self.manifest_canonical) |path| a.free(path);
+            self.manifest_canonical = null;
+        }
         self.app.workspace_policy.modelChanged();
         if (!self.closed) {
             self.clearRows();
@@ -212,6 +230,10 @@ pub const Controller = struct {
         self.jobs.deinit(a);
         std.debug.assert(!self.watch_running);
         self.watches.deinit();
+        if (self.model) |*m| m.deinit();
+        self.model = null;
+        if (self.manifest_canonical) |path| a.free(path);
+        self.manifest_canonical = null;
     }
     fn inFlight(self: *const Controller) usize {
         return self.jobs.items.len + @intFromBool(self.choosing);
@@ -249,6 +271,7 @@ pub const Controller = struct {
         return self.requests.capture();
     }
     pub fn load(self: *Controller, source: Source, path: []const u8) void {
+        if (self.app.rejectFileOperationBarrier()) return;
         if (!self.admit(path, null)) return;
         const token = self.beginRequest() orelse return;
         self.app.dock.show(.explorer);
@@ -257,6 +280,7 @@ pub const Controller = struct {
     /// Explicit session restore uses the ordinary watched load/policy pipeline.
     /// Completion is delivered exactly once, including stale/cancelled loads.
     pub fn loadSession(self: *Controller, source: Source, path: []const u8, context: *anyopaque, completion: *const fn (*anyopaque, ?anyerror) void) !identity.Token {
+        if (self.app.fileOperationBarrier() or self.app.workspaceOperationBusy()) return error.FileOperationBusy;
         if (self.model != null or self.loading or self.choosing) return error.ActiveWorkspace;
         if (!self.admit(path, null)) return error.Busy;
         const token = self.beginRequest() orelse return error.Closing;
@@ -272,6 +296,7 @@ pub const Controller = struct {
         return token;
     }
     fn loadRequest(self: *Controller, source: Source, path: []const u8, token: identity.Token) void {
+        if (self.app.rejectFileOperationBarrier()) return;
         if (!self.requests.accepts(token)) return;
         self.app.workspace_policy.invalidate();
         self.loading = true;
@@ -283,7 +308,7 @@ pub const Controller = struct {
         self.run(job);
     }
     pub fn choose(self: *Controller, source: Source) void {
-        if (self.closed) return;
+        if (self.closed or self.app.rejectFileOperationBarrier() or self.app.workspaceOperationBusy()) return;
         if (self.choosing) {
             self.reject(error.ChooserPending);
             return;
@@ -567,6 +592,12 @@ pub const Controller = struct {
         };
         if (!node.complete or node.page == null) self.appendRow(.{ .node = index, .more = true }, depth + 1, if (node.busy) "Reading…" else if (node.page == null and node.continuation != null) "Load more (previous page evicted)" else "Load more / retry");
     }
+    pub fn hasPendingOperations(self: *const Controller) bool {
+        if (self.loading or self.choosing or self.pending_load != null) return true;
+        // Include stale/cancelled and delivering jobs until they are reaped.
+        for (self.jobs.items) |job| if (job.kind != .scan) return true;
+        return false;
+    }
     pub fn hasPendingFiles(self: *const Controller) bool {
         for (self.jobs.items) |job| if (job.kind == .file and !job.delivering) return true;
         return false;
@@ -579,7 +610,7 @@ pub const Controller = struct {
         return self.openFileRequest(path, root_id, activation, overlay);
     }
     fn openFileRequest(self: *Controller, path: []const u8, root_id: ?RootId, search_activation: ?SearchActivation, overlay: bool) bool {
-        if (self.closed) return false;
+        if (self.closed or self.app.rejectFileOperationBarrier() or self.app.workspaceOperationBusy()) return false;
         var base: ?[]const u8 = null;
         var token: ?identity.Token = null;
         if (root_id) |id| {
@@ -678,6 +709,7 @@ pub const Controller = struct {
         }
     }
     fn progressLoad(self: *Controller) void {
+        if (self.app.fileOperationBarrier()) return;
         const job = self.pending_load orelse return;
         if (!self.watches.ready()) return;
         if (job.stage == .waiting_watch) {
@@ -706,6 +738,12 @@ pub const Controller = struct {
         }
     }
     fn publishLoad(self: *Controller, job: *Work) void {
+        if (self.app.fileOperationBarrier()) {
+            self.loading = false;
+            job.err = error.FileOperationBusy;
+            return;
+        }
+        std.mem.swap(?[:0]u8, &self.manifest_canonical, &job.canonical);
         job.published = true;
         self.app.workspace_search.invalidate("Stale — workspace model changed. Refresh to search the current roots.");
         self.loading = false;
@@ -848,6 +886,13 @@ const Work = struct {
                     .folder => try model.Model.fromFolder(a, path),
                     .manifest => try model.Model.fromManifest(a, path),
                 };
+                if (self.canonical) |previous| a.free(previous);
+                self.canonical = null;
+                if (self.source == .manifest) {
+                    const canonical = try @import("manifest_fs.zig").canonical(a, path);
+                    defer a.free(canonical);
+                    self.canonical = try a.dupeSentinel(u8, canonical, 0);
+                }
             },
             .scan => self.listing = try fs.scanPage(a, self.root.?, self.path, self.policy.?.patterns, self.continuation, self.cancel),
             .file => {
@@ -903,6 +948,7 @@ fn done(_: ?*c.GObject, result: ?*c.GAsyncResult, data: ?*anyopaque) callconv(.c
     job.delivering = true;
     _ = c.g_task_propagate_boolean(u.cast(c.GTask, result.?), null);
     if (self.closed or !self.app.workspace.accepts(job.document_token)) return;
+    if (job.kind == .file and self.app.rejectFileOperationBarrier()) return;
     if (job.request) |token| if (!self.requests.accepts(token)) return;
     if (job.model_token) |token| if (!self.acceptsModel(token)) return;
     if (job.kind == .scan and job.epoch != self.epoch) return;
@@ -1111,7 +1157,7 @@ fn pump(data: ?*anyopaque) callconv(.c) c_int {
             self.requirePolicyRefresh();
         } else self.watches_dirty = false;
     }
-    if (self.watches.ready() and self.manifest_first != 0 and !self.loading and !self.choosing and self.inFlight() < limits.in_flight and (now - self.manifest_last >= 100000 or now - self.manifest_first >= 500000)) {
+    if (!self.app.fileOperationBarrier() and !self.app.workspaceOperationBusy() and self.watches.ready() and self.manifest_first != 0 and !self.loading and !self.choosing and self.inFlight() < limits.in_flight and (now - self.manifest_last >= 100000 or now - self.manifest_first >= 500000)) {
         self.manifest_first = 0;
         if (self.model) |snapshot| if (snapshot.manifest_path) |path| self.load(.manifest, path);
     }

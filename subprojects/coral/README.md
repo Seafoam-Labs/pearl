@@ -6,7 +6,8 @@ includes independent editor groups, editable source excerpts and crash recovery,
 with Pearl appearance. Multi-root workspaces include a bounded virtualized explorer,
 Quick Open, streaming text search, movable native Explorer/Search docks, safe
 settings with provenance, and explicit persistent workspace trust. Explicit saved sessions restore workspace roots and
-editor layout safely. LSP, Git and agent services remain later work.
+editor layout safely. Explicit, reviewed Explorer file operations add bounded
+create/rename/move/permanent-delete workflows. LSP, Git and agent services remain later work.
 
 ![Native Coral editor](artifacts/native/editor-dark.png)
 
@@ -121,8 +122,21 @@ owns its documents, workspace, search and docks. User preferences are shared;
 same-file buffers are independent, with coordinated in-process saves and disk
 conflict checks. See [multi-window usage and limits](docs/WORKBENCH_M2_WINDOWS.md).
 
+Select an Explorer entry, then use its buttons, menu or **Explorer:** palette commands
+for **New file… / New directory… / Rename… / Move… / Delete permanently…**. Input
+and worker preparation do not write: **all five kinds require explicit review confirmation**.
+Creates are exclusive and do not auto-open; moves stay within one root/filesystem;
+delete is permanent, regular-file/empty-directory only, with no trash, undo or recursion.
+Restricted workspaces permit these explicit edits without running tools. All affected
+open documents, **clean or dirty in any window**, must be resolved and closed first.
+Any unavailable root or root/manifest lexical `..` in any open process workspace blocks
+all mutations with `WorkspaceBusy`; close that workspace or reopen verified available,
+normalized/canonical paths—never blindly collapse `..`. See the [file-operation guide](docs/WORKBENCH_M2_OPERATIONS.md)
+for path checks, process-wide barriers and best-effort external-race limits.
+
 This remains an **M2 preview**, without persistent indexing, workspace-wide replace,
-automatic/per-project session history or workspace create/rename/move/delete. Crash recovery
+automatic/per-project workspace/session management or additional workspace pickers.
+Remaining M2 acceptance review is still open. Crash recovery
 still restores documents/layout but not roots; the explicit session is separate.
 See [workspace usage and remaining gates](docs/WORKBENCH_M2_WORKSPACES.md).
 
@@ -249,12 +263,25 @@ zig build test-m2-policy -Doptimize=safe -j1
 zig build test-m2-sessions -Doptimize=safe -j1
 zig build test-m2-docks -Doptimize=safe -j1
 zig build test-m2-windows -Doptimize=safe -j1
+zig build operations -Doptimize=safe -j1
+zig build test-m2-operations -Doptimize=safe -j1
 zig build widgets -Doptimize=safe -- --aqueous-prefix /usr
 ```
 
 `/usr` is the installed-tool prefix used for this host's foundation validation;
 use the prepared fixture prefix on other setups. See the [status report](docs/WORKBENCH_STATUS.md#validation-completed)
-for all commands and current acceptance limits.
+for all commands and current acceptance limits. **File-operation final validation passed:**
+all **25 native scenarios together**, all **nine aggregate gates** sequentially with
+600-second bounds, and a fresh hooks-disabled production build (**46/46 steps;
+25-second executable compilation**). Each of eight widget-including gates executed
+191 tests; four headless runners were cached on the final rerun. Earlier fresh
+validation passed 305 main-root tests, including 23 operation-backend tests and manager
+tests (overlapping counts). The initial 22 native scenarios and three added alias-review
+scenarios also passed in separate historical runs. No final regressions, timeouts or
+leaked test-session processes were reported. See the [operations validation](docs/WORKBENCH_M2_OPERATIONS.md#final-validation--2026-11-09),
+[gate logs](../../.cache/coral-operations-validation-logs/),
+[production log](../../.cache/coral-operations-validation-logs/final-build.log) and
+[native results](../../.cache/coral-operations/results.json). **M2 remains in progress.**
 
 The [original plan](docs/IMPLEMENTATION_PLAN.md), [interactive mockup](docs/mockups/index.html),
 and [mockup gallery](docs/mockups/README.md) remain design references. They do

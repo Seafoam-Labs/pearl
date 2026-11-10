@@ -23,6 +23,12 @@ All dock operations also have palette/menu commands. Dock headers provide move, 
 
 When both panels occupy the same dock, their header tabs select the visible panel. Empty docks collapse. Move/hide/reset operations preserve editor groups, documents, excerpts, selections and edit history. Each editor group has an independently shrinkable viewport so long tab/excerpt content cannot push siblings outside the central allocation; overflowing content may scroll.
 
+### Explorer file-operation controls
+
+Explorer now has **New file… / New directory… / Rename… / Move… / Delete…** buttons, also exposed through menu and **Explorer:** palette commands. Select the entry first; **every kind requires input/review, worker preparation and a separate explicit confirmation before writing**. Creates do not auto-open. Delete is permanent, file/empty-directory only, with no trash, undo or recursion. These are real bounded operations, not dock placeholders or drag-and-drop moves.
+
+All affected open documents (clean or dirty, in any window) must be resolved and closed first. The apply barrier refuses opens/saves/session/workspace switches/New Window through callback delivery while unaffected buffers remain editable. Success rescans Explorer and invalidates Search for explicit Refresh, without changing desired dock layout. See [file-operation usage, process-wide refusal rules and safety limits](WORKBENCH_M2_OPERATIONS.md), including the conservative `WorkspaceBusy` rule for any unavailable root or lexical `..` root/manifest anywhere in the process.
+
 ## Compact windows and focus
 
 If the workbench content area is narrower than **900 px** or shorter than **420 px**, only one auxiliary dock panel is displayed at a time. Desired visibility, placement and dimensions are retained; widening the window restores the wide layout. The transient Quick Open picker can overlay this arrangement.
@@ -66,7 +72,7 @@ zig build test-m2-docks -Doptimize=safe -j1 --summary all
 zig test src/session_tests.zig -lc
 ```
 
-**Final sequential safe gates all passed:** `test-m2-docks`, `test-m2-sessions`, `test-m1`, `test-m2-slice`, `test-m2-explorer`, `test-m2-search`, `test-m2-policy`, then the production build with `-Dtest-hooks=false`. Every command used `-j1`; native fixtures use private Wayland/HOME/XDG directories and disposable files.
+**Historical dock-increment final sequential safe gates all passed:** `test-m2-docks`, `test-m2-sessions`, `test-m1`, `test-m2-slice`, `test-m2-explorer`, `test-m2-search`, `test-m2-policy`, then the production build with `-Dtest-hooks=false`. Every command used `-j1`; native fixtures use private Wayland/HOME/XDG directories and disposable files.
 
 - **27 native dock scenarios**, including real pointer drags on all three splitters, dock geometry, same-dock tabs, compact/wide transitions, editor-group containment, picker activation/cancellation, palette focus, hidden-worker behavior, edits/history, v2 roundtrip/v1 migration and invalid-layout retention.
 - Keyboard regressions cover Ctrl+Tab/ISO_Left_Tab, ordinary Tab/Unicode input, undo/redo, Find Escape, focused Explorer row replacement and watcher focus ownership.
@@ -77,4 +83,4 @@ Initial broad validation caught a stale v1-only test fixture and real key/focus 
 
 Evidence: `pearl/.cache/coral-docks/results.json`, adjacent logs/screenshots, and `pearl/.cache/coral-dock-validation-logs/final-*.log`. Focused run evidence under `pearl/subprojects/coral/.cache/docks-focus-acceptance-agent-20261109/full/` includes 172 geometry observations and 18 screenshots; these are local functional checks, not paint-latency measurements.
 
-[Multi-window lifecycle](WORKBENCH_M2_WINDOWS.md) is now implemented: each window owns its dock state, while Save/Restore Workspace Session still uses one shared explicit checkpoint. **Next standard M2 increment:** separately authorized workspace create/rename/move/delete with dirty-buffer and containment safeguards. Automatic/per-project session management remains open. LSP, Git, terminal/tasks and agents remain later milestones.
+[Multi-window lifecycle](WORKBENCH_M2_WINDOWS.md) and [bounded explicit file operations](WORKBENCH_M2_OPERATIONS.md) are now implemented: each window owns its dock state, while Save/Restore Workspace Session still uses one shared explicit checkpoint. [Final file-operation validation](WORKBENCH_M2_OPERATIONS.md#final-validation--2026-11-09) passed all 25 native scenarios together, all nine aggregate gates and a fresh hooks-disabled production build. The dock gate again passed 27 native scenarios and executed 191 widget tests, separate from the historical dock evidence above. **Next focused M2 work:** remaining acceptance review, automatic/per-project workspace/session management and additional pickers. LSP, Git, terminal/tasks and agents remain later milestones.

@@ -30,6 +30,7 @@ const WorkspaceController = @import("workspace/controller.zig").Controller;
 const WorkspaceSearch = @import("workspace/search_controller.zig").Controller;
 const WorkspacePolicy = @import("workspace/policy_controller.zig").Controller;
 const WorkspaceSession = @import("workspace/session_controller.zig").Controller;
+const WorkspaceOperations = @import("workspace/operations_controller.zig").Controller;
 const safe_settings = @import("workspace/settings.zig");
 // c.h imports the manager but not the language accessor header. Keep this
 // narrow existing-library ABI declaration local to the native integration.
@@ -59,6 +60,9 @@ pub const App = struct {
     workspace_search: WorkspaceSearch = undefined,
     workspace_policy: WorkspacePolicy = undefined,
     session: WorkspaceSession = undefined,
+    workspace_operations: WorkspaceOperations = undefined,
+    file_open_choosers: usize = 0,
+    pending_file_loads: usize = 0,
     window: W,
     dock: dock_ui.Controller = undefined,
     /// Alias of the active group's notebook, retained for tab cycling.
@@ -219,6 +223,7 @@ pub const App = struct {
         self.dock.attach();
         self.workspace_policy = WorkspacePolicy.init(self);
         self.session = .{ .app = self };
+        self.workspace_operations = .init(self);
         c.g_weak_ref_init(&self.palette_focus, null);
         c.gtk_css_provider_load_from_string(self.css, @embedFile("style"));
         c.gtk_style_context_add_provider_for_display(c.gdk_display_get_default(), u.cast(c.GtkStyleProvider, self.css), c.GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
@@ -288,6 +293,7 @@ pub const App = struct {
     }
     pub fn deinit(self: *App) void {
         std.debug.assert(self.holds == 0);
+        if (self.manager != null) self.workspace_operations.deinit();
         self.disconnectCallbacks(self.window);
         inline for (.{ self.browser.view, self.workspace_search.view.list }) |view| {
             self.disconnectObject(view.selection);
@@ -498,6 +504,7 @@ pub const App = struct {
         };
     }
     pub fn closeGroup(self: *App) void {
+        if (self.rejectOperationClose()) return;
         if (self.dialog != null or self.closing) return;
         self.closing_group = self.activeGroupId();
         self.continueCloseGroup();
@@ -533,6 +540,7 @@ pub const App = struct {
         return count;
     }
     pub fn closeActiveView(self: *App) void {
+        if (self.rejectOperationClose()) return;
         if (self.dialog != null or self.closing or self.quitting) return;
         if (self.manager) |manager| if (manager.quitting) return;
         const d = self.active() orelse return;
@@ -818,6 +826,7 @@ pub const App = struct {
     /// Creates a canonical document without a view. Call restoreView before yielding.
     /// Caller owns disk identity verification and maps old IDs to the returned ID.
     pub fn restoreDocument(self: *App, state: RestoreDocument) !*Document {
+        if (self.fileOperationBarrier()) return error.FileOperationBusy;
         if (!std.unicode.utf8ValidateSlice(state.text) or std.mem.indexOfScalar(u8, state.text, 0) != null) return error.InvalidUtf8;
         if (state.text.len > 128 * 1024 * 1024) return error.LimitExceeded;
         if (state.path) |path| if (self.documents.findPath(path) != null) return error.DuplicateTarget;
@@ -1053,6 +1062,9 @@ pub const App = struct {
             c.g_object_unref(window);
         }
     }
+    pub fn installTestKeys(self: *App, widget: W) void {
+        testKeys(self, widget);
+    }
     pub fn styleWindow(self: *App, widget: W) void {
         self.themeClasses(widget);
         // Transient roots do not inherit their parent's widget action groups.
@@ -1088,6 +1100,28 @@ pub const App = struct {
         const self: *App = @ptrCast(@alignCast(context));
         if (self.closing) return;
         self.applySettings();
+    }
+    pub fn fileOperationBarrier(self: *const App) bool {
+        return if (self.manager) |manager| manager.file_operation_owner != null else false;
+    }
+    pub fn workspaceOperationBusy(self: *const App) bool {
+        // Lightweight widget-test Apps have no manager/controller lifecycle.
+        return self.manager != null and self.workspace_operations.busy();
+    }
+    pub fn openDialogs(self: *const App) bool {
+        return self.dialog != null or self.workspaceOperationBusy() or
+            self.file_open_choosers != 0 or self.browser.choosing;
+    }
+    pub fn rejectFileOperationBarrier(self: *App) bool {
+        if (!self.fileOperationBarrier()) return false;
+        self.message("A workspace file operation is applying. Retry after it finishes; existing document edits are kept.");
+        return true;
+    }
+    fn rejectOperationClose(self: *App) bool {
+        if (!self.workspaceOperationBusy() and !self.fileOperationBarrier()) return false;
+        self.cancelClosing();
+        self.message("Finish or cancel the workspace file operation and wait for its worker cleanup before closing. Quit All was cancelled; your documents are kept.");
+        return true;
     }
     pub fn message(self: *App, text: []const u8) void {
         if (self.closing) return;
@@ -1205,7 +1239,7 @@ pub const App = struct {
         if (self.documents.entries.items.len == 0 and !self.browser.hasPendingFiles()) _ = self.newDocument();
     }
     pub fn acceptExisting(self: *App, canonical: []const u8) void {
-        if (self.closing) return;
+        if (self.closing or self.rejectFileOperationBarrier() or self.workspaceOperationBusy()) return;
         if (self.documents.findPath(canonical)) |d| {
             self.focus(d);
             return;
@@ -1322,12 +1356,14 @@ pub const App = struct {
         c.g_file_query_info_async(file, "standard::type,etag::value", c.G_FILE_QUERY_INFO_NONE, c.G_PRIORITY_DEFAULT, op.cancel, &diskQueried, op);
     }
     fn requestReload(self: *App, d: *Document) void {
+        if (self.rejectFileOperationBarrier() or self.workspaceOperationBusy()) return;
         if (d.busy or d.pending != null or d.path == null) return;
         if (d.dirty()) {
             self.ask(.reload, d, @import("i18n").dtr("coral", "Discard unsaved edits?"), @import("i18n").dtr("coral", "Reloading replaces your current edits with the version on disk."), &.{ .{ .text = @import("i18n").dtr("coral", "Cancel"), .id = 0 }, .{ .text = @import("i18n").dtr("coral", "Discard and reload"), .id = 1 } });
         } else self.load(d, true);
     }
     fn load(self: *App, d: *Document, reload: bool) void {
+        if (self.rejectFileOperationBarrier()) return;
         const workspace = self.workspace.capture() orelse return;
         if (d.busy) return;
         const path = d.path orelse return;
@@ -1342,6 +1378,7 @@ pub const App = struct {
         d.cancellable = u.cast(c.GCancellable, c.g_object_ref(op.cancel).?);
         self.setEditable(d, false);
         self.hold();
+        self.pending_file_loads += 1;
         load_file.load(path, d.cancellable.?, &loaded, op);
         self.update();
     }
@@ -1364,6 +1401,11 @@ pub const App = struct {
         self.workspace_search.afterLoad(d);
     }
     fn save(self: *App, d: *Document, save_as: bool, force: bool) void {
+        if (self.rejectFileOperationBarrier() or self.workspaceOperationBusy()) {
+            d.close_after_save = false;
+            self.cancelClosing();
+            return;
+        }
         if (d.busy) {
             self.message(@import("i18n").dtr("coral", "Wait for the current file operation to finish."));
             return;
@@ -1380,6 +1422,11 @@ pub const App = struct {
         self.saveTo(d, d.path.?, force, false);
     }
     fn saveTo(self: *App, d: *Document, requested_path: []const u8, force: bool, as: bool) void {
+        if (self.rejectFileOperationBarrier()) {
+            d.close_after_save = false;
+            self.cancelClosing();
+            return;
+        }
         if (d.busy) return;
         // A missing baseline must not turn an ordinary Save into an unchecked
         // replacement (including independent copies open in another window).
@@ -1438,11 +1485,14 @@ pub const App = struct {
         self.update();
     }
     fn chooseOpen(self: *App) void {
+        if (self.rejectFileOperationBarrier() or self.workspaceOperationBusy()) return;
+        self.file_open_choosers += 1;
         self.hold();
         chooser.openAsync(@ptrCast(self.window), 1, @ptrCast(&chosenOpen), self);
         self.transients(false);
     }
     fn chooseSave(self: *App, d: *Document) void {
+        if (self.rejectFileOperationBarrier() or self.workspaceOperationBusy()) return;
         d.busy = true;
         self.hold();
         const name = u.z(if (d.path) |p| std.fs.path.basename(p) else "Untitled.txt");
@@ -1451,7 +1501,7 @@ pub const App = struct {
         self.transients(false);
     }
     fn ask(self: *App, kind: DialogKind, d: ?*Document, title: [*:0]const u8, detail: [*:0]const u8, buttons: []const Button) void {
-        if (self.dialog != null) return;
+        if (self.dialog != null or self.workspaceOperationBusy()) return;
         self.hidePopover();
         const dialog = c.gtk_message_dialog_new(u.cast(c.GtkWindow, self.window), c.GTK_DIALOG_MODAL, c.GTK_MESSAGE_QUESTION, c.GTK_BUTTONS_NONE, "%s", title).?;
         c.gtk_message_dialog_format_secondary_text(u.cast(c.GtkMessageDialog, dialog), "%s", detail);
@@ -1466,6 +1516,7 @@ pub const App = struct {
         c.gtk_window_present(u.cast(c.GtkWindow, dialog));
     }
     fn closeDocument(self: *App, d: *Document) void {
+        if (self.rejectOperationClose()) return;
         self.hidePopover();
         if (d.busy) {
             if (d.loading) {
@@ -1518,8 +1569,9 @@ pub const App = struct {
         }
     }
     fn shutdownWindow(self: *App) void {
-        if (self.closing) return;
+        if (self.closing or self.rejectOperationClose()) return;
         self.checkpoint();
+        if (self.manager != null) self.workspace_operations.shutdown();
         self.closing = true;
         self.dock.shutdown();
         self.session.shutdown();
@@ -1553,7 +1605,9 @@ pub const App = struct {
         self.closing_group = null;
     }
     pub fn quit(self: *App) void {
-        if (self.closing or self.quitting) return;
+        if (self.closing) return;
+        if (self.rejectOperationClose()) return;
+        if (self.quitting) return;
         if (self.manager) |manager| if (manager.quitting and manager.quit_waiting != self.window_id) {
             self.message("Quit All is resolving another window. Cancel its prompt to stop quitting.");
             return;
@@ -1664,7 +1718,7 @@ pub const App = struct {
         });
     }
     fn showPalette(self: *App) void {
-        if (self.dialog != null or self.closing) return;
+        if (self.dialog != null or self.workspaceOperationBusy() or self.closing) return;
         self.hidePopover();
         if (self.palette) |palette| {
             palette.show();
@@ -1687,7 +1741,10 @@ pub const App = struct {
             if (self.manager) |manager| manager.create(self);
             return;
         }
-        if (self.dialog != null or self.quitting) return;
+        if (command == .quit or command == .close_window) {
+            if (self.rejectOperationClose()) return;
+        }
+        if (self.dialog != null or self.workspaceOperationBusy() or self.quitting) return;
         if (self.manager) |manager| if (manager.quitting) return;
         switch (command) {
             .new => {
@@ -1702,6 +1759,11 @@ pub const App = struct {
             },
             .workspace_back => self.browser.back(),
             .workspace_rescan => self.browser.rescan(),
+            .create_workspace_file => self.workspace_operations.request(.create_file),
+            .create_workspace_directory => self.workspace_operations.request(.create_directory),
+            .rename_workspace_entry => self.workspace_operations.request(.rename),
+            .move_workspace_entry => self.workspace_operations.request(.move),
+            .delete_workspace_entry => self.workspace_operations.request(.delete),
             .close_workspace => self.browser.closeWorkspace(),
             .quick_open => self.workspace_search.show(.quick_open),
             .workspace_search, .focus_search => self.workspace_search.show(.text),
@@ -1766,7 +1828,7 @@ pub const App = struct {
         }
     }
     fn showPolicy(self: *App, confirmation: bool) void {
-        if (self.dialog != null or self.closing) return;
+        if (self.dialog != null or self.workspaceOperationBusy() or self.closing) return;
         if (confirmation and !self.workspace_policy.prepareConfirmation()) return;
         const text = self.workspace_policy.describe();
         defer a.free(text);
@@ -1805,7 +1867,7 @@ pub const App = struct {
         c.gtk_window_present(u.cast(c.GtkWindow, dialog));
     }
     fn preferences(self: *App) void {
-        if (self.dialog != null) return;
+        if (self.dialog != null or self.workspaceOperationBusy()) return;
         self.hidePopover();
         const dialog = c.gtk_dialog_new().?;
         c.gtk_window_set_title(u.cast(c.GtkWindow, dialog), @import("i18n").dtr("coral", "Coral preferences"));
@@ -1876,7 +1938,7 @@ pub const App = struct {
         u.append(box, row);
     }
     fn gotoLine(self: *App) void {
-        if (self.dialog != null) return;
+        if (self.dialog != null or self.workspaceOperationBusy()) return;
         const d = self.active() orelse return;
         self.ask(.goto, d, @import("i18n").dtr("coral", "Go to line"), @import("i18n").dtr("coral", "Enter a line number."), &.{ .{ .text = @import("i18n").dtr("coral", "Cancel"), .id = 0 }, .{ .text = @import("i18n").dtr("coral", "Go"), .id = 1 } });
         const input = c.gtk_spin_button_new_with_range(1, @floatFromInt(@max(c.gtk_text_buffer_get_line_count(self.activeBuffer()), 1)), 1).?;
@@ -2206,6 +2268,8 @@ fn logFileFailure(comptime format: []const u8, err: ?*c.GError) void {
 fn loaded(_: ?*c.GObject, result: ?*c.GAsyncResult, data: ?*anyopaque) callconv(.c) void {
     const op = u.cast(LoadOp, data.?);
     const self = op.app;
+    std.debug.assert(self.pending_file_loads > 0);
+    defer self.pending_file_loads -= 1;
     defer a.destroy(op);
     defer c.g_object_unref(op.cancel);
     defer self.release();
@@ -2231,6 +2295,7 @@ fn loaded(_: ?*c.GObject, result: ?*c.GAsyncResult, data: ?*anyopaque) callconv(
         }
     };
     self.setEditable(d, true);
+    if (self.rejectFileOperationBarrier()) return;
     if (d.cancelled_close) {
         self.remove(d);
         return;
@@ -2283,6 +2348,7 @@ fn loaded(_: ?*c.GObject, result: ?*c.GAsyncResult, data: ?*anyopaque) callconv(
     } else acceptLoaded(self, d, false);
 }
 fn acceptLoaded(self: *App, d: *Document, large: bool) void {
+    if (self.rejectFileOperationBarrier()) return;
     const decoded = d.pending orelse return;
     d.pending = null;
     defer a.free(decoded.text);
@@ -2392,12 +2458,14 @@ fn finishSave(op: *SaveOp, ok: bool, etag: [*c]u8, err: ?*c.GError) void {
 }
 fn chosenOpen(_: ?*c.GObject, result: ?*c.GAsyncResult, data: ?*anyopaque) callconv(.c) void {
     const self = u.cast(App, data.?);
+    std.debug.assert(self.file_open_choosers > 0);
+    defer self.file_open_choosers -= 1;
     defer self.release();
     var err: ?*c.GError = null;
     const files: ?*c.GListModel = @ptrCast(chooser.openFinish(@ptrCast(result.?), @ptrCast(&err)));
     if (files) |list| {
         defer c.g_object_unref(list);
-        if (self.closing) return;
+        if (self.closing or self.rejectFileOperationBarrier()) return;
         const n = c.g_list_model_get_n_items(list);
         for (0..n) |i| {
             const file = c.g_list_model_get_item(list, @intCast(i)).?;
@@ -3023,7 +3091,28 @@ fn testCommand(receiver: *App) void {
     const value = c.g_key_file_get_string(file, "Test", "value", null);
     defer c.g_free(value);
     const d = self.active();
-    if (std.mem.eql(u8, action, "dock-probe")) {
+    if (std.mem.eql(u8, action, "operations-probe")) {
+        self.workspace_operations.probe();
+    } else if (std.mem.eql(u8, action, "operations-request")) {
+        if (value != null) if (std.meta.stringToEnum(@import("workspace/operations_fs.zig").Kind, std.mem.span(value))) |kind| {
+            const source = c.g_key_file_get_string(file, "Test", "source", null);
+            defer c.g_free(source);
+            const destination = c.g_key_file_get_string(file, "Test", "destination", null);
+            defer c.g_free(destination);
+            const root = c.g_key_file_get_integer(file, "Test", "root", null);
+            if (root >= 0) self.workspace_operations.testRequest(kind, @intCast(root), if (source != null) std.mem.span(source) else "", if (destination != null) std.mem.span(destination) else "");
+        };
+    } else if (std.mem.eql(u8, action, "operations-respond")) {
+        self.workspace_operations.respond(value != null and std.mem.eql(u8, std.mem.span(value), "accept"));
+    } else if (std.mem.eql(u8, action, "operations-input")) {
+        if (self.workspace_operations.entry) |entry| if (value != null) c.gtk_editable_set_text(u.cast(c.GtkEditable, entry), value);
+        if (self.workspace_operations.dialog) |dialog| c.gtk_dialog_response(u.cast(c.GtkDialog, dialog), c.GTK_RESPONSE_ACCEPT);
+    } else if (std.mem.eql(u8, action, "operations-cancel")) {
+        if (self.workspace_operations.dialog) |dialog| c.gtk_dialog_response(u.cast(c.GtkDialog, dialog), c.GTK_RESPONSE_CANCEL);
+    } else if (std.mem.eql(u8, action, "operations-delay")) {
+        const delay = if (value != null) std.fmt.parseInt(u64, std.mem.span(value), 10) catch 0 else 0;
+        self.workspace_operations.test_next_delay_us = @as(u64, @min(delay, 2000)) * 1000;
+    } else if (std.mem.eql(u8, action, "dock-probe")) {
         self.dock.probe(self.window);
     } else if (std.mem.eql(u8, action, "dock-resize")) {
         if (value != null) if (std.meta.stringToEnum(dock_layout.Dock, std.mem.span(value))) |side| {
