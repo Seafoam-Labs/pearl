@@ -11,7 +11,7 @@ pub const Provider = struct {
     closed: bool = false,
     last_attempt: i64 = 0,
     last_success: i64 = 0,
-    devices: [16]m.Gpu = undefined,
+    devices: [m.max_gpus]m.Gpu = undefined,
     count: usize = 0,
     timeouts: usize = 0,
     pub fn tick(self: *Provider, enabled: bool) void {
@@ -49,7 +49,7 @@ pub const Provider = struct {
             self.count = 0;
             if (ok != 0 and output != null) {
                 const text = std.mem.span(output);
-                if (text.len <= 16384) {
+                if (text.len <= m.max_gpu_probe_bytes) {
                     self.count = m.parseGpuProbe(text, &self.devices);
                     if (self.count > 0) self.last_success = io.monotonic();
                 }
@@ -85,6 +85,7 @@ pub const Provider = struct {
 const NVML_CLOCK_SM = 1;
 const NVML_CLOCK_MEM = 2;
 const NVML_CLOCK_VIDEO = 3;
+const NVML_TEMPERATURE_GPU = 0;
 const NVML_PCIE_UTIL_TX_BYTES = 0;
 const NVML_PCIE_UTIL_RX_BYTES = 1;
 const NVML_PSTATE_MAX = 15;
@@ -107,26 +108,31 @@ fn writeOutput(bytes: []const u8) bool {
     }
     return true;
 }
+/// A null formatter result is a buffer bug: skip that line rather than emit a partial row.
+fn writeLine(line: ?[]const u8) void {
+    const bytes = line orelse return;
+    if (!writeOutput(bytes) or !writeOutput("\n")) c._exit(1);
+}
 pub fn probe() void {
     if (@import("build_options").test_hooks and c.g_getenv("DOME_TEST_GPU_HANG") != null) {
         while (true) _ = c.pause();
     }
     const lib = c.dlopen("libnvidia-ml.so.1", c.RTLD_NOW | c.RTLD_LOCAL) orelse return;
     const Init = *const fn () callconv(.c) c_int;
-    const init: Init = @ptrCast(c.dlsym(lib, "nvmlInit_v2") orelse return);
+    const init = symbol(Init, lib, "nvmlInit_v2") orelse return;
     if (init() != 0) return;
     const Count = *const fn (*c_uint) callconv(.c) c_int;
-    const count_fn: Count = @ptrCast(c.dlsym(lib, "nvmlDeviceGetCount_v2") orelse return);
+    const count_fn = symbol(Count, lib, "nvmlDeviceGetCount_v2") orelse return;
     var count: c_uint = 0;
     if (count_fn(&count) != 0) return;
     const Device = ?*anyopaque;
     const Handle = *const fn (c_uint, *Device) callconv(.c) c_int;
-    const handle: Handle = @ptrCast(c.dlsym(lib, "nvmlDeviceGetHandleByIndex_v2") orelse return);
+    const handle = symbol(Handle, lib, "nvmlDeviceGetHandleByIndex_v2") orelse return;
     const String = *const fn (Device, [*]u8, c_uint) callconv(.c) c_int;
-    const name_fn: String = @ptrCast(c.dlsym(lib, "nvmlDeviceGetName") orelse return);
+    const name_fn = symbol(String, lib, "nvmlDeviceGetName") orelse return;
     const Pci = extern struct { bus_id_legacy: [16]u8, domain: c_uint, bus: c_uint, device: c_uint, pci_device_id: c_uint, pci_subsystem_id: c_uint, bus_id: [32]u8 };
     const PciFn = *const fn (Device, *Pci) callconv(.c) c_int;
-    const pci_fn: PciFn = @ptrCast(c.dlsym(lib, "nvmlDeviceGetPciInfo_v3") orelse return);
+    const pci_fn = symbol(PciFn, lib, "nvmlDeviceGetPciInfo_v3") orelse return;
     const Util = extern struct { gpu: c_uint, memory: c_uint };
     const UtilFn = *const fn (Device, *Util) callconv(.c) c_int;
     const MemoryV2 = extern struct { version: c_uint, total: c_ulonglong, reserved: c_ulonglong, free: c_ulonglong, used: c_ulonglong };
@@ -172,11 +178,9 @@ pub fn probe() void {
         var version: c_int = 0;
         if (f(&version) == 0) cuda_raw = version;
     }
-    var meta: [192]u8 = undefined;
-    if (m.formatGpuMeta(driver_text, cuda_raw, &meta)) |line| {
-        if (!writeOutput(line) or !writeOutput("\n")) c._exit(1);
-    }
-    for (0..@min(count, 16)) |i| {
+    var meta: [m.max_gpu_meta_bytes]u8 = undefined;
+    writeLine(m.formatGpuMeta(driver_text, cuda_raw, &meta));
+    for (0..@min(count, m.max_gpus)) |i| {
         var device: Device = null;
         if (handle(@intCast(i), &device) != 0) continue;
         var name: [128]u8 = @splat(0);
@@ -220,7 +224,7 @@ pub fn probe() void {
         if (get_power) |f| if (f(device, &value) == 0) {
             gpu.power = m.milliwattsToWatts(value);
         };
-        if (get_temp) |f| if (f(device, 0, &value) == 0) {
+        if (get_temp) |f| if (f(device, NVML_TEMPERATURE_GPU, &value) == 0) {
             gpu.temp = @floatFromInt(value);
         };
         var period: c_uint = 0;
@@ -257,17 +261,13 @@ pub fn probe() void {
             if (f(device, NVML_PCIE_UTIL_TX_BYTES, &value) == 0) gpu.pcie_tx = m.kilobytesToBytes(value);
             if (f(device, NVML_PCIE_UTIL_RX_BYTES, &value) == 0) gpu.pcie_rx = m.kilobytesToBytes(value);
         }
-        if (get_event_reasons) |f| {
-            var mask: c_ulonglong = 0;
-            if (f(device, &mask) == 0) {
-                gpu.throttle = mask;
-            } else if (get_legacy_reasons) |legacy| {
-                if (legacy(device, &mask) == 0) gpu.throttle = mask;
-            }
-        } else if (get_legacy_reasons) |f| {
-            var mask: c_ulonglong = 0;
-            if (f(device, &mask) == 0) gpu.throttle = mask;
-        }
+        var mask: c_ulonglong = 0;
+        if (get_event_reasons) |f| if (f(device, &mask) == 0) {
+            gpu.throttle = mask;
+        };
+        if (gpu.throttle == null) if (get_legacy_reasons) |f| if (f(device, &mask) == 0) {
+            gpu.throttle = mask;
+        };
         if (get_compute) |f| {
             var major: c_int = -1;
             var minor: c_int = -1;
@@ -276,10 +276,8 @@ pub fn probe() void {
                 gpu.cuda_minor = @intCast(minor);
             }
         }
-        var row: [1024]u8 = undefined;
-        if (m.formatGpuRow(&gpu, &row)) |line| {
-            if (!writeOutput(line) or !writeOutput("\n")) c._exit(1);
-        }
+        var row: [m.max_gpu_row_bytes]u8 = undefined;
+        writeLine(m.formatGpuRow(&gpu, &row));
     }
     // The disposable child exits without nvmlShutdown; the OS reclaims NVML state.
     c._exit(0);

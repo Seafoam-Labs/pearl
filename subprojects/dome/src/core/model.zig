@@ -301,6 +301,10 @@ pub fn milliwattsToWatts(value: u32) f64 {
 pub fn kilobytesToBytes(value: u32) f64 {
     return @as(f64, @floatFromInt(value)) * 1024;
 }
+pub const max_gpus = 16;
+pub const max_gpu_meta_bytes = 192;
+pub const max_gpu_row_bytes = 1024;
+pub const max_gpu_probe_bytes = 16384;
 const ColumnKind = enum { number, int, mask };
 const gpu_columns = [_]struct { field: []const u8, kind: ColumnKind = .number }{
     .{ .field = "usage" },
@@ -359,7 +363,7 @@ pub fn formatGpuRow(g: *const Gpu, buf: []u8) ?[]const u8 {
     }
     return buf[0..writer.end];
 }
-pub fn parseGpuProbe(text: []const u8, out: *[16]Gpu) usize {
+pub fn parseGpuProbe(text: []const u8, out: *[max_gpus]Gpu) usize {
     var driver: ?[]const u8 = null;
     var cuda_raw: i32 = -1;
     var count: usize = 0;
@@ -629,7 +633,7 @@ fn fullGpuProbeText() []const u8 {
         "0000:03:00.0\tNVIDIA GeForce RTX 4090\t30\t6442450944\t25769803776\t61\t45.2\t10\t20\t35\t268435456\t2520\t10501\t1500\t2520\t450\t60\t0\t4\t16\t102400\t204800\t26\t1\t8\n";
 }
 test "GPU probe row decodes every column in canonical units" {
-    var devices: [16]Gpu = undefined;
+    var devices: [max_gpus]Gpu = undefined;
     const count = parseGpuProbe(fullGpuProbeText(), &devices);
     try std.testing.expectEqual(@as(usize, 1), count);
     const g = devices[0];
@@ -649,7 +653,7 @@ test "GPU probe row decodes every column in canonical units" {
     try std.testing.expectEqual(@as(?u32, 8), g.cuda_minor);
 }
 test "GPU probe sentinels: -1, missing columns and malformed lines" {
-    var devices: [16]Gpu = undefined;
+    var devices: [max_gpus]Gpu = undefined;
     var count = parseGpuProbe("0000:03:00.0\tGPU\t-1\t-1\t-1\t-1\t-1\t-1\t-1\n", &devices);
     try std.testing.expectEqual(@as(usize, 1), count);
     inline for (gpu_columns) |column| try std.testing.expect(@field(devices[0], column.field) == null);
@@ -680,7 +684,7 @@ test "GPU probe sentinels: -1, missing columns and malformed lines" {
     try std.testing.expect(devices[0].mem_usage == null);
 }
 test "GPU probe meta: first line wins, applies after rows, defaults on absent" {
-    var devices: [16]Gpu = undefined;
+    var devices: [max_gpus]Gpu = undefined;
     var count = parseGpuProbe("#\t-\t-1\n0000:03:00.0\tGPU\t30\n", &devices);
     try std.testing.expectEqual(@as(usize, 1), count);
     try std.testing.expectEqualStrings("NVIDIA NVML", devices[0].driver.slice());
@@ -701,17 +705,17 @@ test "GPU probe meta: first line wins, applies after rows, defaults on absent" {
     try std.testing.expectEqual(@as(usize, 0), devices[0].cuda.len);
 }
 test "GPU probe truncates beyond 16 devices" {
-    var devices: [16]Gpu = undefined;
+    var devices: [max_gpus]Gpu = undefined;
     var text: [6000]u8 = undefined;
     var writer = std.Io.Writer.fixed(&text);
     for (0..20) |i| {
         writer.print("{d}\tGPU\t30\n", .{i}) catch unreachable;
     }
     const count = parseGpuProbe(text[0..writer.end], &devices);
-    try std.testing.expectEqual(@as(usize, 16), count);
+    try std.testing.expectEqual(@as(usize, max_gpus), count);
 }
 test "GPU probe int columns reject floats, sentinels and overflow" {
-    var devices: [16]Gpu = undefined;
+    var devices: [max_gpus]Gpu = undefined;
     // pstate, pcie_gen and pcie_width sit at table positions 15, 16 and 17.
     const base = "0000:03:00.0\tGPU";
     const zeros = "\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0";
@@ -724,7 +728,7 @@ test "GPU probe int columns reject floats, sentinels and overflow" {
     try std.testing.expect(devices[0].pcie_width == null);
 }
 test "GPU probe mask column is exact u64 hex, not float" {
-    var devices: [16]Gpu = undefined;
+    var devices: [max_gpus]Gpu = undefined;
     const base = "0000:03:00.0\tGPU";
     const zeros = "\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0";
     _ = parseGpuProbe(base ++ zeros ++ "\tffffffffffffffff\n", &devices);
@@ -761,16 +765,16 @@ test "GPU probe codec round trips and stays stable" {
     source.throttle = 0xdeadc0decafebabe;
     source.cuda_major = 1;
     source.cuda_minor = 0;
-    var row: [1024]u8 = undefined;
+    var row: [max_gpu_row_bytes]u8 = undefined;
     const formatted = formatGpuRow(&source, &row).?;
-    var devices: [16]Gpu = undefined;
+    var devices: [max_gpus]Gpu = undefined;
     try std.testing.expectEqual(@as(usize, 1), parseGpuProbe(formatted, &devices));
     const g = devices[0];
     inline for (.{ "usage", "used", "total", "temp", "power", "encode", "decode", "mem_usage", "reserved", "frequency", "mem_frequency", "video_frequency", "max_frequency", "power_cap", "fan", "pstate", "pcie_gen", "pcie_width", "pcie_tx", "pcie_rx", "cuda_major", "cuda_minor" }) |column| {
         try std.testing.expectEqual(@field(&source, column), @field(g, column));
     }
     try std.testing.expectEqual(@as(?u64, 0xdeadc0decafebabe), g.throttle);
-    var again: [1024]u8 = undefined;
+    var again: [max_gpu_row_bytes]u8 = undefined;
     try std.testing.expectEqualStrings(formatted, formatGpuRow(&g, &again).?);
 }
 test "GPU throttle labels follow fixed order and skip unnamed bits" {
@@ -818,13 +822,13 @@ test "GPU probe output fits the provider guard at maximum width" {
     g.throttle = std.math.maxInt(u64);
     g.cuda_major = std.math.maxInt(u32);
     g.cuda_minor = std.math.maxInt(u32);
-    var total: usize = 192;
-    var row: [1024]u8 = undefined;
-    for (0..16) |_| total += (formatGpuRow(&g, &row) orelse return error.TestUnexpectedResult).len + 1;
-    try std.testing.expect(total <= 16384);
+    var total: usize = max_gpu_meta_bytes;
+    var row: [max_gpu_row_bytes]u8 = undefined;
+    for (0..max_gpus) |_| total += (formatGpuRow(&g, &row) orelse return error.TestUnexpectedResult).len + 1;
+    try std.testing.expect(total <= max_gpu_probe_bytes);
 }
 test "GPU probe helpers survive bounded random input" {
-    var devices: [16]Gpu = undefined;
+    var devices: [max_gpus]Gpu = undefined;
     var buf: [512]u8 = undefined;
     var seed: u64 = 0x646f6d65;
     for (0..500) |i| {
