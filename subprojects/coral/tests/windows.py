@@ -63,7 +63,7 @@ def stage_styles(session, evidence):
 
 
 class WindowHarness(PolicyHarness):
-    def launch(self, recovery=False):
+    def launch(self, recovery=False, paths=()):
         self.target = None
         self.native_ids, self.actions = {}, {}
         self.serial += 1
@@ -72,7 +72,7 @@ class WindowHarness(PolicyHarness):
         self.load_gate = self.command_path.with_name('session-load.gate')
         self.session.env['CORAL_TEST_SESSION_LOAD_PAUSE'] = str(self.load_gate)
         self.app = self.session.child(f'{self.name}-{self.serial}',
-                                      [self.binary, '--width=900', '--height=620'],
+                                      [self.binary, '--width=900', '--height=620', *paths],
                                       G_DEBUG='fatal-criticals')
         self.first_native = wait_for(lambda: next((w['id'] for w in self.native_windows()
                                                   if w.get('title', '').endswith('Coral')), None))
@@ -210,8 +210,8 @@ class WindowHarness(PolicyHarness):
         path = wait_for(lambda: next(iter(self.action_paths() - paths), None))
         self.bind(new, native, path)
         self.target = new
-        wait_for(lambda: self.state()['documents'])
         if wait_ready:
+            wait_for(lambda: self.state()['documents'])
             self.drained()
         return new
 
@@ -539,20 +539,39 @@ def delayed_close(h, kind):
             h.command('workspace-rescan' if kind == 'browser' else 'open', None if kind == 'browser' else path)
             assert h.probe('browser')['pending'] > 0, h.last
         before = h.windows()
+        documents = h.state()['documents']
         assert next(w for w in before['windows'] if w['id'] == first)['holds'] > 1, before
         h.action('win.close-window')
         h.select(second, focus=True)
-        closing = h.windows()
-        if gate:
-            # This gate explicitly observes cancellation and can reap before
-            # the next F11. Unlike the delay hooks it need not remain blocked.
-            assert all(w['id'] != first or w['closing'] for w in closing['windows']), closing
+        if kind in ('browser', 'load', 'session', 'session_load'):
+            # These workers can change the snapshot. M2 refuses close until
+            # they resolve; no documents may be removed on that refusal.
+            with h.at(first):
+                rejected = wait_for(lambda: p if (p := h.state())['notice'] ==
+                                    'Finish pending operations before closing this window.' else None, 2)
+                assert rejected['documents'] == documents and not rejected['dialog'], rejected
+            closing = h.windows()
+            assert any(w['id'] == first and not w['closing'] and not w['quitting'] and
+                       w['holds'] > 1 for w in closing['windows']), closing
         else:
-            assert any(w['id'] == first and w['closing'] and w['holds'] > 0 for w in closing['windows']), closing
+            # Closing now first commits an automatic snapshot. Observe native
+            # teardown, not the transient pre-commit registry state.
+            closing = wait_for(lambda: p if (p := h.windows())['closing'] == 1 else None, 2)
+            assert any(w['id'] == first and w['closing'] and w['holds'] > 0
+                       for w in closing['windows']), closing
         h.evidence.setdefault('inflight', []).append(dict(case=h.name, before=before, closing=closing))
         h.responsive(second)
     finally:
         h.load_gate.unlink(missing_ok=True)
+    if kind in ('browser', 'load', 'session', 'session_load'):
+        h.drained(2)
+        h.select(first, focus=True)
+        documents = h.state()['documents']
+        h.action('win.close-window')
+        for _ in range(sum(d['dirty'] for d in documents)):
+            wait_for(lambda: h.state()['dialog'])
+            h.command('respond', response=1)
+        h.select(second, focus=True)
     h.gone(first)
     h.drained(1)
     assert not any(d['path'] == str(path) for d in h.state()['documents']), h.state()
@@ -572,12 +591,20 @@ def recovery_startup_drain(h):
         h.action('win.close-window')
         h.select(first, focus=True)
         p = h.windows()
-        closing = next(w for w in p['windows'] if w['id'] == second)
-        assert closing['closing'] and closing['recovery_opening'] and closing['recovery_holds'] > 0, p
+        opening = next(w for w in p['windows'] if w['id'] == second)
+        assert not opening['closing'] and opening['recovery_opening'] and opening['recovery_holds'] > 0, p
+        with h.at(second):
+            state = h.state()
+            assert not state['documents'] and not state['dialog'], state
+            assert 'Finish the current dialog or startup recovery' in state['notice'], state
         h.responsive(first)
-        h.evidence.setdefault('inflight', []).append(dict(case=h.name, closing=p))
+        h.evidence.setdefault('inflight', []).append(dict(case=h.name, refused_close=p))
     finally:
         os.close(fd)
+    h.drained(2)
+    with h.at(second):
+        wait_for(lambda: h.state()['documents'])
+    h.close_window(second, first)
     h.gone(second)
     h.drained(1)
     assert len(list(h.recovery_root.iterdir())) == 1
@@ -627,7 +654,7 @@ def window_limit(h):
     wait_for(lambda: h.probe('search')['active'])
     h.action('win.close-window')
     h.select(first, focus=True)
-    p = h.windows()
+    p = wait_for(lambda: p if (p := h.windows())['closing'] == 1 else None, 2)
     assert (p['live'], p['closing']) == (15, 1), p
     h.action('win.new-window')
     p = h.windows()
@@ -654,7 +681,7 @@ def save_conflict(h):
     assert h.document(path)['dirty'] and h.document(path)['text'] == 'second edits 🙂'
     h.key('s', 'ctrl')
     wait_for(lambda: h.state()['dialog'])
-    assert h.native_probe()['dialog'] == 2, 'Expected native etag-conflict dialog'
+    assert h.native_probe()['dialog'] == 3, 'Expected native etag-conflict dialog'
     assert path.read_text() == 'first edits π'
     h.command('respond', response=0)
     assert h.document(path)['dirty'] and h.document(path)['text'] == 'second edits 🙂'
@@ -836,7 +863,10 @@ def external_quit_palette(h):
     """Reproduce teardown from another owner, not activation within the palette."""
     for attempt in range(3):
         if attempt:
-            h.launch()
+            # This teardown fixture needs exactly two clean owners. An explicit
+            # file launch suppresses the preceding Quit All's automatic reopen.
+            path = h.write(h.fixtures / 'palette-relaunch.txt', 'clean palette owner\n')
+            h.launch(paths=(path,))
         first, second = pair(h)
         h.select(second, focus=True)
         assert all(not d['dirty'] for d in h.state()['documents'])
@@ -1208,7 +1238,7 @@ def save_overlap(h, alias=False):
     h.expected[path] = digest(path.read_bytes())
     h.key('s', 'ctrl')
     wait_for(lambda: h.state()['dialog'])
-    assert h.native_probe()['dialog'] == 2, 'Post-overlap Save must still see the old etag conflict'
+    assert h.native_probe()['dialog'] == 3, 'Post-overlap Save must still see the old etag conflict'
     assert not h.windows()['saves']
     # Leave B's conflict dialog open, acquire A's next reservation, then choose
     # the real Overwrite response. Force must not bypass cross-window admission.
@@ -1231,7 +1261,7 @@ def save_overlap(h, alias=False):
     h.select(second, focus=True)
     h.key('s', 'ctrl')
     wait_for(lambda: h.state()['dialog'])
-    assert h.native_probe()['dialog'] == 2
+    assert h.native_probe()['dialog'] == 3
     h.command('respond', response=3)
     wait_for(lambda: not h.document(path)['dirty'])
     h.drained(2)

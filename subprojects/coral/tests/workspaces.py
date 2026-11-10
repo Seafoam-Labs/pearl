@@ -430,10 +430,16 @@ def main():
         close()
         passed('Explicit relative --folder and last-option --workspace work; bare directories and oversized file arguments reject without filesystem mutation')
         launch('--workspace', manifest)
+        before = probe()
         command('workspace-quit-race', manifest)
-        assert app.wait(timeout=15) == 0, app.lines[-30:]
-        wait_for(lambda: not windows())
-        passed('Window shutdown cancels pending model work and drains its application hold before App destruction')
+        refused = probe()
+        assert refused['notice'] == 'Quit All could not freeze project sessions: Loading. All windows kept open.', refused
+        assert refused['documents'] == before['documents'] and not refused['dialog'], refused
+        assert app.proc.poll() is None and windows()
+        state = settled()
+        assert state['in_flight'] == state['request_bytes'] == 0, state
+        close()
+        passed('Pending model work refuses snapshot close without destroying documents; retry drains all holds before App destruction')
         assert filesystem() == baseline
     (output / 'results.json').write_text(json.dumps({'slice': 'M2 workspace compatibility with paged explorer', 'checks': checks, 'limitations': [
         '256-entry windows; 64 directory states, 8 resident pages/1 MiB page arenas; explicit Load more reaches later windows',

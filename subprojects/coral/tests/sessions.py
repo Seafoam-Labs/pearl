@@ -51,9 +51,32 @@ class SessionHarness(PolicyHarness):
         self.settled()
         docs = wait_for(lambda: self.state()['documents'])
         self.startup_blank = docs[0]['id'] if len(docs) == 1 and not docs[0]['text'] and docs[0]['path'] is None else None
+        wait_for(lambda: not (p := self.probe('projects'))['busy'] and
+                 not p['suppression_pending'] and not p['restore_cleanup'], 20)
         p = self.probe('session')
-        assert not p['busy'] and p['status'] == 'idle', p
+        assert not p['busy'], p
+        if any(not str(path).startswith('--') for path in paths):
+            assert p['status'] == 'idle', ('Explicit CLI must suppress automatic restore', p)
         self.slot = Path(self.session.env['XDG_STATE_HOME']) / 'coral/sessions/current'
+
+    def launch_explicit(self, *flags):
+        # Exercise the real explicit-CLI precedence, not a global auto-session
+        # switch or removal of retained state. Only explicit-restore cases use it.
+        path = self.write(self.fixtures / 'explicit-launch.txt', 'explicit CLI startup\n')
+        self.launch(*flags, path)
+        wait_for(lambda: self.document(path))
+        assert len(self.state()['documents']) == 1, self.state()
+        assert not self.probe('browser')['roots']
+        self.key('n', 'ctrl')
+        wait_for(lambda: len(self.state()['documents']) == 2)
+        self.command('focus-view', index=0)
+        self.command('close')
+        self.startup_blank = self.state()['documents'][0]['id']
+        self.no_resume()
+
+    def restart_explicit(self):
+        self.stop()
+        self.launch_explicit()
 
     def state(self):
         return self.probe('workspace')
@@ -165,7 +188,7 @@ class SessionHarness(PolicyHarness):
         assert not p['dialog'] and all(not d['text'] and d['path'] is None for d in p['documents']), p
         assert not self.probe('browser')['roots']
         assert not any('CORAL_RECOVERY_PROMPT' in line for line in self.app.lines), self.app.lines[-20:]
-        assert p['session']['status'] == 'idle', p['session']
+        assert not p['session']['busy'], p['session']
 
 
 def layout(state, group_ids=None):
@@ -204,7 +227,12 @@ def layout_roundtrip(h):
     assert (saved['documents'], saved['groups'], saved['views']) == (2, 2, 4), saved
     raw = h.checkpoint_bytes('layout')
     h.restart()
-    h.no_resume()
+    automatic = h.state()
+    assert layout(automatic) == layout(before), (layout(before), layout(automatic))
+    assert [(r['path'], r['name']) for r in h.browser()['roots']] == roots
+    assert all(not d['dirty'] for d in automatic['documents'])
+    h.unchanged(raw)
+    h.restart_explicit()
     existing_groups = {g['id'] for g in h.state()['groups']}
     restored = h.restore_session()
     assert (restored['bound'], restored['copies'], restored['conflicts']) == (2, 0, 0), restored
@@ -234,7 +262,7 @@ def copies_without_writes(h):
     h.stop()
     h.write(paths[2], 'external replacement MUST survive\n')
     h.remove_fixture(paths[3])
-    h.launch()
+    h.launch_explicit()
     p = h.restore_session()
     assert (p['bound'], p['copies'], p['conflicts'], p['unavailable']) == (1, 3, 1, 1), p
     after = h.state()
@@ -277,6 +305,8 @@ def explicit_lifecycle(h):
     h.stop()  # Discard must neither delete nor update the explicit slot.
     h.unchanged(raw)
     h.launch()
+    # Ordinary startup may restore its automatic layout, but neither the
+    # discarded text nor the separate explicit checkpoint may auto-resurrect.
     h.no_resume()
     h.unchanged(raw)
     h.stop()  # Nor does a clean/empty quit replace it.
@@ -321,7 +351,7 @@ def fresh_manifest_and_settings(h):
     h.spec['settings'] = {'indent': 7, 'wrap': False}
     h.write(h.manifest, json.dumps(h.spec))
     h.folder_settings(0, {'lines': False})
-    h.launch()
+    h.launch_explicit()
     h.restore_session()
     browser = h.browser()
     assert [r['path'] for r in browser['roots']] == [str(r) for r in reversed(h.roots)], browser
@@ -339,13 +369,13 @@ def trust_revalidated(h):
     h.approve()
     h.save_session()
     raw = h.checkpoint_bytes('saved-while-trusted')
-    h.restart()
+    h.restart_explicit()
     h.restore_session()
     h.trusted(h.settled())  # Existing approval is checked through the normal loader.
     h.stop()
     assert h.store.exists()
     h.store.unlink()  # Revoke the private approval, leave the checkpoint untouched.
-    h.launch()
+    h.launch_explicit()
     h.restore_session()
     h.restricted(h.settled())
     h.unchanged(raw)
@@ -359,7 +389,7 @@ def missing_manifest(h):
     raw = h.checkpoint_bytes('missing-manifest')
     h.stop()
     h.remove_fixture(h.manifest)
-    h.launch()
+    h.launch_explicit()
     before = h.state()['documents']
     h.restore_session('failed', 'NotFound')
     p = h.state()
@@ -384,7 +414,7 @@ def unavailable_root(h):
     for old in list(h.expected):
         if old.is_relative_to(h.roots[1]):
             h.expected[parked / old.relative_to(h.roots[1])] = h.expected.pop(old)
-    h.launch()
+    h.launch_explicit()
     p = h.restore_session()
     assert (p['unavailable_roots'], p['unavailable'], p['copies']) == (1, 1, 1), p
     roots = h.browser()['roots']
@@ -433,7 +463,12 @@ def oversized_save(h):
     h.save_session('failed', 'TooLarge')
     assert h.document(large)['path'] == str(large)
     h.unchanged(raw)
-    h.restart()
+    # The clean over-cap file also exceeds automatic retention. Close just that
+    # tab before restarting; the failed explicit save must remain unchanged.
+    h.command('close')
+    assert h.document(large) is None
+    h.unchanged(raw)
+    h.restart_explicit()
     h.no_resume()
     p = h.restore_session()
     assert p['bound'] == 1 and p['copies'] == 0, p
@@ -466,7 +501,7 @@ def lexical_roots_roundtrip(h):
     descriptor = json.loads(raw.split(b'\n', 3)[2])['workspace']
     assert [base64.b64decode(r['path']).decode() for r in descriptor['roots']] == lexical, descriptor
     assert [r['name'] for r in descriptor['roots']] == ['Local dot', 'Shared parent'], descriptor
-    h.restart()
+    h.restart_explicit()
     h.no_resume()
     restored = h.restore_session()
     assert (restored['bound'], restored['copies'], restored['unavailable_roots']) == (2, 0, 0), restored
@@ -559,7 +594,7 @@ def paused_newer_workspace(h):
     h.open_document(h.roots[0] / 'plain.txt')
     h.save_session()
     raw = h.checkpoint_bytes('before-paused-switch')
-    h.restart()
+    h.restart_explicit()
     h.command('insert', 'existing unsaved document kept across workspace switch')
     before = h.state()
     with h.paused_restore() as gate:
@@ -586,7 +621,7 @@ def stale_workspace_switch(h):
     h.open_document(h.roots[0] / 'plain.txt')
     h.save_session()
     raw = h.checkpoint_bytes('before-switch')
-    h.restart()
+    h.restart_explicit()
     before = h.state()['documents']
     h.command('session-delay', 4000)
     _, elapsed = h.command('restore-workspace-session')
@@ -606,28 +641,33 @@ def delayed_shutdown(h, operation):
     h.save_session()
     raw = h.checkpoint_bytes('before-shutdown')
     if operation == 'restore':
-        h.restart()
+        h.restart_explicit()
+    before = h.state()
     h.command('session-delay', 5000)
     _, elapsed = h.command(operation + '-workspace-session')
     assert elapsed < 1 and h.probe('session')['busy'], elapsed
-    began = time.monotonic()
     h.key('q', 'ctrl')
-    wait_for(lambda: not any(w['kind'] == 'window' for w in h.ipc.state()), 2)
-    window_seconds = time.monotonic() - began
-    assert h.app.proc.poll() is None, 'Worker was not retained after window close'
-    assert h.app.wait(timeout=10) == 0, h.app.lines[-30:]
-    h.no_criticals()
-    final = [json.loads(line.removeprefix('CORAL_SESSION ')) for line in h.app.lines
-             if line.startswith('CORAL_SESSION ')]
-    assert final and not final[-1]['busy'] and final[-1]['status'] == 'stale', final
-    # An explicitly requested save can finish its I/O after close; it captured
-    # the same document/layout here. Shutdown itself must not save or restore.
+    # M2 cannot freeze a consistent automatic snapshot while an explicit
+    # session worker is active. Refusal must keep the window/documents alive,
+    # rather than destroying them before the worker has resolved.
+    rejected = wait_for(lambda: p if
+                        (p := h.state())['notice'] ==
+                        'Quit All could not freeze project sessions: Loading. All windows kept open.'
+                        else None, 2)
+    assert h.probe('session')['busy'], 'Worker finished before close rejection was observed'
+    assert h.app.proc.poll() is None and any(w['kind'] == 'window' for w in h.ipc.state())
+    assert rejected['documents'] == before['documents'] and rejected['views'] == before['views']
+    assert not rejected['dialog'] and rejected['editable'], rejected
+    final = h.session_done('restored' if operation == 'restore' else 'saved')
+    assert h.state()['documents'][:len(before['documents'])] == before['documents']
+    h.unchanged(raw)
+    h.stop()
     h.unchanged(raw)
     h.evidence.setdefault('shutdown', []).append(
-        {'operation': operation, 'input_ack_seconds': elapsed, 'window_close_seconds': window_seconds,
-         'window_closed_before_worker_exit': True, 'exit_status': 0, 'final_session': final[-1]})
+        {'operation': operation, 'input_ack_seconds': elapsed,
+         'close_refused_while_worker_active': True, 'exit_status': 0, 'final_session': final})
     h.launch()
-    h.no_resume()
+    assert h.document(path)['text'] == path.read_text()
     h.unchanged(raw)
 
 
@@ -635,7 +675,7 @@ SCENARIOS = [
     ('layout_roundtrip_clean_rebound', layout_roundtrip),
     ('dirty_conflict_unavailable_copies_no_writes', copies_without_writes),
     ('existing_cli_and_unsaved_documents_retained', existing_cli_documents),
-    ('explicit_only_restart_discard_no_quit_save', explicit_lifecycle),
+    ('explicit_checkpoint_immutable_discard_not_auto_restored', explicit_lifecycle),
     ('close_active_workspace_prerequisite', active_workspace_prerequisite),
     ('fresh_manifest_roots_and_settings', fresh_manifest_and_settings),
     ('trust_revalidated_not_deserialized', trust_revalidated),

@@ -61,6 +61,16 @@ pub const App = struct {
     workspace_policy: WorkspacePolicy = undefined,
     session: WorkspaceSession = undefined,
     workspace_operations: WorkspaceOperations = undefined,
+    workspace_roots: @import("workspace/roots_controller.zig").Controller = undefined,
+    projects: @import("workspace/project_controller.zig").Controller = undefined,
+    recovery_claimed: bool = false,
+    close_resolved: std.ArrayList(u64) = .empty,
+    close_focus: ?u64 = null,
+    project_close_committed: bool = false,
+    project_close_waiting: bool = false,
+    close_without_session: bool = false,
+    close_guard: ?[]CloseDocument = null,
+    final_close_guard: ?[]CloseDocument = null,
     file_open_choosers: usize = 0,
     pending_file_loads: usize = 0,
     window: W,
@@ -224,6 +234,8 @@ pub const App = struct {
         self.workspace_policy = WorkspacePolicy.init(self);
         self.session = .{ .app = self };
         self.workspace_operations = .init(self);
+        self.workspace_roots = .init(self);
+        self.projects = .init(self);
         c.g_weak_ref_init(&self.palette_focus, null);
         c.gtk_css_provider_load_from_string(self.css, @embedFile("style"));
         c.gtk_style_context_add_provider_for_display(c.gdk_display_get_default(), u.cast(c.GtkStyleProvider, self.css), c.GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
@@ -293,7 +305,14 @@ pub const App = struct {
     }
     pub fn deinit(self: *App) void {
         std.debug.assert(self.holds == 0);
-        if (self.manager != null) self.workspace_operations.deinit();
+        if (self.close_guard) |guard| a.free(guard);
+        if (self.final_close_guard) |guard| a.free(guard);
+        self.close_resolved.deinit(a);
+        if (self.manager != null) {
+            self.projects.deinit();
+            self.workspace_roots.deinit();
+            self.workspace_operations.deinit();
+        }
         self.disconnectCallbacks(self.window);
         inline for (.{ self.browser.view, self.workspace_search.view.list }) |view| {
             self.disconnectObject(view.selection);
@@ -420,6 +439,7 @@ pub const App = struct {
         self.scheduleCheckpoint();
     }
     pub fn newDocument(self: *App) *Document {
+        std.debug.assert(!self.editingFrozen());
         const d = self.documents.create(self) catch @panic("Could not create document");
         self.observeDocument(d);
         _ = self.addView(d, self.activeGroupId()) catch @panic("Could not create editor view");
@@ -438,6 +458,7 @@ pub const App = struct {
         u.connect(buffer, "delete-range", &onDelete, d);
     }
     pub fn addView(self: *App, d: *Document, group_id: u64) !*EditorView {
+        if (self.editingFrozen()) return error.Closing;
         const group = self.groups.get(group_id) orelse return error.UnknownGroup;
         const presentation = try EditorView.create(d);
         errdefer presentation.destroy();
@@ -469,6 +490,7 @@ pub const App = struct {
         return self.groups.items.items[0].id;
     }
     pub fn createGroup(self: *App) !u64 {
+        if (self.editingFrozen()) return error.Closing;
         const group = try self.groups.add();
         dock_ui.wrapEditorGroup(self.groups.root, group.notebook);
         u.connect(group.notebook, "switch-page", &onSwitch, self);
@@ -504,7 +526,7 @@ pub const App = struct {
         };
     }
     pub fn closeGroup(self: *App) void {
-        if (self.rejectOperationClose()) return;
+        if (self.editingFrozen() or self.rejectOperationClose()) return;
         if (self.dialog != null or self.closing) return;
         self.closing_group = self.activeGroupId();
         self.continueCloseGroup();
@@ -540,7 +562,7 @@ pub const App = struct {
         return count;
     }
     pub fn closeActiveView(self: *App) void {
-        if (self.rejectOperationClose()) return;
+        if (self.editingFrozen() or self.rejectOperationClose()) return;
         if (self.dialog != null or self.closing or self.quitting) return;
         if (self.manager) |manager| if (manager.quitting) return;
         const d = self.active() orelse return;
@@ -621,6 +643,7 @@ pub const App = struct {
         if (self.activeFocusWidget()) |widget| _ = c.gtk_widget_grab_focus(widget);
     }
     pub fn openExcerpt(self: *App, d: *Document, group_id: u64, range: excerpt_model.Range) !u64 {
+        if (self.editingFrozen()) return error.Closing;
         const group = self.groups.get(group_id) orelse return error.UnknownGroup;
         try self.excerpts.ensureUnusedCapacity(a, 1);
         const pane = try a.create(ExcerptPane);
@@ -739,6 +762,7 @@ pub const App = struct {
         self.update();
     }
     fn undo(self: *App, redo: bool) void {
+        if (self.editingFrozen()) return;
         const d = self.active() orelse return;
         if (d.loading or d.pending != null) return;
         const record = if (redo) self.history.redoRecord() else self.history.undoRecord();
@@ -781,6 +805,33 @@ pub const App = struct {
         self.scheduleCheckpoint();
     }
     /// Borrowed canonical documents; valid only until the next App mutation.
+    /// Cheap automatic-session change detection: no buffer text extraction.
+    pub fn projectFingerprint(self: *App) !u64 {
+        var hash = std.hash.Wyhash.init(0);
+        for (self.snapshotDocuments()) |doc| {
+            try hashMetadata(&hash, .{ doc.id, doc.revision, doc.dirty(), doc.path, doc.etag, doc.bom, doc.newline });
+        }
+        for (self.groups.items.items) |group| try hashMetadata(&hash, .{ group.id, group.notebook == self.notebook, c.gtk_notebook_get_current_page(u.cast(c.GtkNotebook, group.notebook)) });
+        for (self.views.items) |view| try hashMetadata(&hash, self.viewState(view.id, view.document, view.page, view.widget, view.buffer));
+        for (self.excerpts.items) |pane| {
+            try hashMetadata(&hash, self.viewState(pane.id, pane.document, pane.editor.root, pane.editor.widget, pane.editor.display));
+            if (pane.editor.excerpt.source) |source| {
+                var end: c.GtkTextIter = undefined;
+                c.gtk_text_buffer_get_iter_at_mark(pane.document.buffer, &end, source.end);
+                try hashMetadata(&hash, .{ excerptBase(pane), c.gtk_text_iter_get_offset(&end) });
+            }
+        }
+        try hashMetadata(&hash, self.snapshotDockLayout());
+        if (self.browser.model) |current| {
+            hash.update(&current.policy_fingerprint);
+            if (current.manifest_path) |path| hash.update(path);
+            for (current.roots) |root| {
+                hash.update(root.lexical_path);
+                hash.update(root.display_name);
+            }
+        }
+        return hash.final();
+    }
     pub fn snapshotDocuments(self: *App) []const *Document {
         return self.documents.entries.items;
     }
@@ -826,6 +877,7 @@ pub const App = struct {
     /// Creates a canonical document without a view. Call restoreView before yielding.
     /// Caller owns disk identity verification and maps old IDs to the returned ID.
     pub fn restoreDocument(self: *App, state: RestoreDocument) !*Document {
+        if (self.editingFrozen()) return error.Closing;
         if (self.fileOperationBarrier()) return error.FileOperationBusy;
         if (!std.unicode.utf8ValidateSlice(state.text) or std.mem.indexOfScalar(u8, state.text, 0) != null) return error.InvalidUtf8;
         if (state.text.len > 128 * 1024 * 1024) return error.LimitExceeded;
@@ -912,6 +964,7 @@ pub const App = struct {
             pane.editor.refresh() catch |err| self.editFailure(err);
         };
         if (self.recovery_checkpoint) |callback| callback(self.recovery_context, self);
+        if (self.manager != null) self.projects.changed();
     }
     pub fn scheduleCheckpoint(self: *App) void {
         if (self.closing or self.recovery_suspended or self.checkpoint_running or self.recovery_checkpoint == null or self.checkpoint_idle != 0) return;
@@ -970,7 +1023,7 @@ pub const App = struct {
         self.configurePolicy(d);
     }
     fn configure(self: *App, d: *Document, detect_language: bool) void {
-        for (self.views.items) |view| if (view.document == d) view.setEditable(true);
+        for (self.views.items) |view| if (view.document == d) view.setEditable(!self.editingFrozen());
         const manager = c.gtk_source_style_scheme_manager_get_default();
         var prefer_dark: c_int = 0;
         c.g_object_get(c.gtk_settings_get_default(), "gtk-application-prefer-dark-theme", &prefer_dark, @as(?*anyopaque, null));
@@ -1007,9 +1060,9 @@ pub const App = struct {
         };
     }
     fn setEditable(self: *App, d: *Document, editable: bool) void {
-        for (self.views.items) |view| if (view.document == d) view.setEditable(editable);
+        for (self.views.items) |view| if (view.document == d) view.setEditable(editable and !self.editingFrozen());
         for (self.excerpts.items) |pane| if (pane.document == d) {
-            c.gtk_text_view_set_editable(u.cast(c.GtkTextView, pane.editor.widget), @intFromBool(editable and !d.loading and d.pending == null));
+            c.gtk_text_view_set_editable(u.cast(c.GtkTextView, pane.editor.widget), @intFromBool(editable and !self.editingFrozen() and !d.loading and d.pending == null));
         };
     }
     fn disconnectObject(self: *App, object: anytype) void {
@@ -1101,16 +1154,21 @@ pub const App = struct {
         if (self.closing) return;
         self.applySettings();
     }
+    pub fn editingFrozen(self: *const App) bool {
+        return self.closing or self.quitting or self.project_close_waiting or self.close_guard != null or
+            (if (self.manager) |manager| manager.quitting or self.projects.frozen != null or self.projects.retiring else false);
+    }
     pub fn fileOperationBarrier(self: *const App) bool {
         return if (self.manager) |manager| manager.file_operation_owner != null else false;
     }
     pub fn workspaceOperationBusy(self: *const App) bool {
         // Lightweight widget-test Apps have no manager/controller lifecycle.
-        return self.manager != null and self.workspace_operations.busy();
+        return self.manager != null and (self.workspace_operations.busy() or self.workspace_roots.busy());
     }
     pub fn openDialogs(self: *const App) bool {
         return self.dialog != null or self.workspaceOperationBusy() or
-            self.file_open_choosers != 0 or self.browser.choosing;
+            self.file_open_choosers != 0 or self.browser.choosing or
+            (self.manager != null and (self.projects.dialog != null or self.projects.picker != null));
     }
     pub fn rejectFileOperationBarrier(self: *App) bool {
         if (!self.fileOperationBarrier()) return false;
@@ -1166,13 +1224,13 @@ pub const App = struct {
             u.setLabel(presentation.tab_label, title);
             a.free(title);
             if (d.path) |p| c.gtk_widget_set_tooltip_text(presentation.tab, p);
-            presentation.setEditable(true);
+            presentation.setEditable(!self.editingFrozen());
         }
         for (self.excerpts.items) |pane| {
             const title = u.fmt("Excerpt · {s}{s}", .{ if (pane.document.path) |path| std.fs.path.basename(path) else "Untitled", if (pane.document.dirty()) " •" else "" });
             defer a.free(title);
             u.setLabel(pane.label, title);
-            c.gtk_text_view_set_editable(u.cast(c.GtkTextView, pane.editor.widget), @intFromBool(!pane.document.loading and pane.document.pending == null));
+            c.gtk_text_view_set_editable(u.cast(c.GtkTextView, pane.editor.widget), @intFromBool(!self.editingFrozen() and !pane.document.loading and pane.document.pending == null));
         }
         const d = self.active() orelse return;
         var iter: c.GtkTextIter = undefined;
@@ -1224,6 +1282,7 @@ pub const App = struct {
     /// Browser opens include a typed root boundary. Both CLI and browser metadata
     /// checks run on workers; the existing descriptor-safe loader owns file reads.
     pub fn openExisting(self: *App, path: []const u8, root: ?@import("workspace/model.zig").RootId) void {
+        if (self.editingFrozen()) return;
         self.browser.openFile(path, root);
     }
     pub fn existingFailed(self: *App, err: anyerror) void {
@@ -1236,10 +1295,10 @@ pub const App = struct {
             error.OutsideRoot, error.UnavailableOrSymlink => "Browser open rejected: symlink, unavailable path, or path outside the selected root.",
             else => @import("i18n").dtr("coral", "Could not resolve this file. Check the path and permissions."),
         });
-        if (self.documents.entries.items.len == 0 and !self.browser.hasPendingFiles()) _ = self.newDocument();
+        if (!self.editingFrozen() and self.documents.entries.items.len == 0 and !self.browser.hasPendingFiles()) _ = self.newDocument();
     }
     pub fn acceptExisting(self: *App, canonical: []const u8) void {
-        if (self.closing or self.rejectFileOperationBarrier() or self.workspaceOperationBusy()) return;
+        if (self.editingFrozen() or self.rejectFileOperationBarrier() or self.workspaceOperationBusy()) return;
         if (self.documents.findPath(canonical)) |d| {
             self.focus(d);
             return;
@@ -1363,6 +1422,7 @@ pub const App = struct {
         } else self.load(d, true);
     }
     fn load(self: *App, d: *Document, reload: bool) void {
+        if (self.editingFrozen()) return;
         if (self.rejectFileOperationBarrier()) return;
         const workspace = self.workspace.capture() orelse return;
         if (d.busy) return;
@@ -1383,6 +1443,7 @@ pub const App = struct {
         self.update();
     }
     fn commitLoad(self: *App, d: *Document, text: []const u8) void {
+        if (self.editingFrozen()) return;
         self.workspace_search.beforeLoad(d);
         c.gtk_text_buffer_begin_irreversible_action(d.buffer);
         c.gtk_text_buffer_set_text(d.buffer, text.ptr, @intCast(text.len));
@@ -1485,6 +1546,7 @@ pub const App = struct {
         self.update();
     }
     fn chooseOpen(self: *App) void {
+        if (self.editingFrozen()) return;
         if (self.rejectFileOperationBarrier() or self.workspaceOperationBusy()) return;
         self.file_open_choosers += 1;
         self.hold();
@@ -1517,6 +1579,10 @@ pub const App = struct {
     }
     fn closeDocument(self: *App, d: *Document) void {
         if (self.rejectOperationClose()) return;
+        if (!self.quitting and self.snapshotDocuments().len == 1) {
+            self.quit();
+            return;
+        }
         self.hidePopover();
         if (d.busy) {
             if (d.loading) {
@@ -1533,7 +1599,80 @@ pub const App = struct {
             self.ask(.close, d, @import("i18n").dtr("coral", "Save your changes?"), @import("i18n").dtr("coral", "Save this document before closing it? Discarding loses the unsaved edits."), &.{ .{ .text = @import("i18n").dtr("coral", "Cancel"), .id = 0 }, .{ .text = @import("i18n").dtr("coral", "Discard"), .id = 1 }, .{ .text = @import("i18n").dtr("coral", "Save"), .id = 2 } });
             return;
         }
-        self.remove(d);
+        if (self.quitting) self.resolveClose(d, false) else self.remove(d);
+    }
+    fn resolveClose(self: *App, d: *Document, discard: bool) void {
+        if (!self.quitting) {
+            self.remove(d);
+            return;
+        }
+        if (discard) self.projects.discard(d.id);
+        self.close_resolved.append(a, d.id) catch {
+            self.cancelClosing();
+            self.message("Could not allocate close bookkeeping. All documents were kept.");
+            return;
+        };
+        self.continueWindowClose();
+    }
+    fn continueWindowClose(self: *App) void {
+        if (self.project_close_waiting) return;
+        for (self.snapshotDocuments()) |doc| {
+            if (std.mem.indexOfScalar(u64, self.close_resolved.items, doc.id) == null) {
+                self.closeDocument(doc);
+                return;
+            }
+        }
+        if (self.close_guard) |guard| if (!self.closeDocumentsMatch(guard, false)) {
+            self.cancelClosing();
+            self.message("Documents changed during close. Nothing was removed; review the changes and retry.");
+            return;
+        };
+        if (self.final_close_guard) |guard| a.free(guard);
+        self.final_close_guard = self.closeDocuments() catch {
+            self.cancelClosing();
+            return;
+        };
+        if (self.close_without_session) {
+            self.project_close_waiting = true;
+            self.projects.closeWithoutSession() catch |err| {
+                self.cancelClosing();
+                self.message(@errorName(err));
+            };
+            return;
+        }
+        const reopen = if (self.manager) |manager| manager.shouldReopenOnClose(self) else true;
+        if (self.manager != null and self.projects.frozen != null) {
+            self.project_close_waiting = true;
+            self.projects.finishClose(reopen) catch |err| {
+                self.automaticCloseFailed(err);
+            };
+        } else self.projectCloseCompleted(true);
+    }
+    pub fn projectCloseCompleted(self: *App, success: bool) void {
+        self.project_close_waiting = false;
+        if (!success) {
+            self.cancelClosing();
+            return;
+        }
+        if (self.final_close_guard) |guard| if (!self.closeDocumentsMatch(guard, true)) {
+            self.cancelClosing();
+            self.message("Documents changed while the automatic session was being written. The window was kept open; no documents were removed.");
+            return;
+        };
+        self.project_close_committed = true;
+        while (self.snapshotDocuments().len != 0) self.remove(self.snapshotDocuments()[self.snapshotDocuments().len - 1]);
+        self.shutdownWindow();
+    }
+    pub fn automaticCloseFailed(self: *App, err: anyerror) void {
+        self.project_close_waiting = false;
+        if (self.close_guard == null) {
+            self.cancelClosing();
+            self.message("Finish pending operations before closing this window.");
+            return;
+        }
+        const detail = u.fmt("Automatic session retention failed: {s}. Close without retaining this window's automatic session? Existing startup membership will be cleared durably before closing. You must still Save or Discard every unsaved document. Files and explicit checkpoints are not deleted.", .{@errorName(err)});
+        defer a.free(detail);
+        self.ask(.close_without_session, null, "Close without retaining this automatic session?", detail, &.{ .{ .text = "Cancel", .id = 0 }, .{ .text = "Close without automatic session", .id = 1 } });
     }
     fn remove(self: *App, d: *Document) void {
         self.workspace_search.documentChanged(d);
@@ -1560,8 +1699,8 @@ pub const App = struct {
             return;
         }
         self.update();
-        if (self.quitting) {
-            self.closeDocument(self.documents.entries.items[self.documents.entries.items.len - 1]);
+        if (self.quitting and !self.project_close_committed) {
+            self.continueWindowClose();
         } else if (self.closing_group != null) {
             self.continueCloseGroup();
         } else if (self.activeWidget()) |widget| {
@@ -1571,7 +1710,11 @@ pub const App = struct {
     fn shutdownWindow(self: *App) void {
         if (self.closing or self.rejectOperationClose()) return;
         self.checkpoint();
-        if (self.manager != null) self.workspace_operations.shutdown();
+        if (self.manager != null) {
+            self.projects.shutdown();
+            self.workspace_roots.shutdown();
+            self.workspace_operations.shutdown();
+        }
         self.closing = true;
         self.dock.shutdown();
         self.session.shutdown();
@@ -1599,10 +1742,64 @@ pub const App = struct {
         c.gtk_application_remove_window(self.application, u.cast(c.GtkWindow, self.window));
         self.transients(true);
     }
+    pub const CloseDocument = struct {
+        id: u64,
+        revision: u64,
+        path: u64,
+        etag: u64,
+        dirty: bool,
+
+        fn capture(doc: *Document) CloseDocument {
+            return .{ .id = doc.id, .revision = doc.revision, .path = std.hash.Wyhash.hash(0, doc.path orelse ""), .etag = std.hash.Wyhash.hash(0, doc.etag orelse ""), .dirty = doc.dirty() };
+        }
+        fn matches(self: CloseDocument, other: CloseDocument, baselines: bool) bool {
+            return self.id == other.id and self.revision == other.revision and
+                (!baselines or (self.path == other.path and self.etag == other.etag and self.dirty == other.dirty));
+        }
+    };
+    fn closeDocuments(self: *App) ![]CloseDocument {
+        const result = try a.alloc(CloseDocument, self.snapshotDocuments().len);
+        for (self.snapshotDocuments(), result) |doc, *out| out.* = CloseDocument.capture(doc);
+        return result;
+    }
+    fn closeDocumentsMatch(self: *App, guard: []const CloseDocument, baselines: bool) bool {
+        if (self.snapshotDocuments().len != guard.len) return false;
+        for (self.snapshotDocuments(), guard) |doc, baseline| {
+            if (!baseline.matches(CloseDocument.capture(doc), baselines)) return false;
+        }
+        return true;
+    }
+    pub fn prepareProjectClose(self: *App) !void {
+        if (self.recovery_suspended or self.browser.hasPendingOperations() or self.pending_file_loads != 0 or self.session.work != null or self.projects.restoring or self.projects.restore_cleanup or self.projects.retiring or self.openDialogs()) return error.Loading;
+        for (self.snapshotDocuments()) |doc| if (doc.busy or doc.loading or doc.pending != null) return error.Loading;
+        if (self.close_guard == null) self.close_guard = try self.closeDocuments();
+        if (self.close_focus == null) self.close_focus = self.activeViewId();
+        for (self.snapshotDocuments()) |doc| self.setEditable(doc, false);
+        if (!self.close_without_session) try self.projects.freeze();
+    }
+    pub fn thawProjectClose(self: *App) void {
+        self.projects.cancelClose();
+        if (self.close_guard) |guard| a.free(guard);
+        self.close_guard = null;
+        if (self.final_close_guard) |guard| a.free(guard);
+        self.final_close_guard = null;
+        self.close_without_session = false;
+        for (self.snapshotDocuments()) |doc| self.setEditable(doc, !doc.busy);
+        if (self.close_focus) |id| self.restoreFocus(id);
+        self.close_focus = null;
+    }
     fn cancelClosing(self: *App) void {
-        if (self.manager) |manager| manager.cancelQuit(self.window_id);
+        if (self.manager) |manager| {
+            manager.cancelQuit(self.window_id);
+            self.thawProjectClose();
+        }
         self.quitting = false;
+        self.project_close_waiting = false;
+        self.close_resolved.clearRetainingCapacity();
         self.closing_group = null;
+        for (self.snapshotDocuments()) |doc| self.setEditable(doc, !doc.busy);
+        if (self.close_focus) |id| self.restoreFocus(id);
+        self.close_focus = null;
     }
     pub fn quit(self: *App) void {
         if (self.closing) return;
@@ -1617,8 +1814,15 @@ pub const App = struct {
             self.message("Finish the current dialog or startup recovery before closing this window.");
             return;
         }
+        if (self.manager != null) self.prepareProjectClose() catch |err| {
+            self.automaticCloseFailed(err);
+            return;
+        };
+        if (self.close_focus == null) self.close_focus = self.activeViewId();
+        self.close_resolved.clearRetainingCapacity();
         self.quitting = true;
-        if (self.documents.entries.items.len > 0) self.closeDocument(self.documents.entries.items[self.documents.entries.items.len - 1]) else self.shutdownWindow();
+        for (self.snapshotDocuments()) |doc| self.setEditable(doc, false);
+        self.continueWindowClose();
     }
     fn showSearch(self: *App, show: bool) void {
         c.gtk_widget_set_visible(self.searchbox, @intFromBool(show));
@@ -1744,15 +1948,22 @@ pub const App = struct {
         if (command == .quit or command == .close_window) {
             if (self.rejectOperationClose()) return;
         }
-        if (self.dialog != null or self.workspaceOperationBusy() or self.quitting) return;
+        if (self.dialog != null or self.workspaceOperationBusy() or self.editingFrozen()) return;
         if (self.manager) |manager| if (manager.quitting) return;
         switch (command) {
+            .recent_projects => self.projects.showProjects(false),
+            .open_buffers => self.projects.showBuffers(),
+            .forget_project_session => self.projects.showProjects(true),
+            .add_workspace_root => self.workspace_roots.request(.add),
+            .remove_workspace_root => self.workspace_roots.request(.remove),
+            .save_workspace_as => self.workspace_roots.request(.save_as),
             .new => {
                 _ = self.newDocument();
             },
             .open => self.chooseOpen(),
             .open_folder => self.browser.choose(.folder),
             .open_workspace => self.browser.choose(.manifest),
+
             .workspace_roots => {
                 self.browser.roots();
                 self.focusExplorer();
@@ -1816,11 +2027,12 @@ pub const App = struct {
             .excerpt => self.excerptSelection() catch |err| self.editFailure(err),
             .grouped_undo => self.replayGrouped(false) catch |err| self.editFailure(err),
             .grouped_redo => self.replayGrouped(true) catch |err| self.editFailure(err),
-            .new_window => unreachable,
+
             .close_window => self.quit(),
             .next_window, .previous_window => if (self.manager) |manager| manager.cycle(self.window_id, command == .previous_window),
             .quit => if (self.manager) |manager| manager.quitAll(self) else self.quit(),
             .command_palette => self.showPalette(),
+            .new_window => unreachable,
             .about => {
                 c.gtk_show_about_dialog(u.cast(c.GtkWindow, self.window), "program-name", @as([*:0]const u8, "Coral"), "version", @as([*:0]const u8, "0.1.1"), "comments", @as([*:0]const u8, "A focused Zig and GTK4 text editor with offline spelling."), @as(?*anyopaque, null));
                 self.transients(false);
@@ -2081,6 +2293,11 @@ pub const App = struct {
         c.g_print("CORAL_PROBE {\"tabs\":%zu,\"id\":%llu,\"dirty\":%s,\"external_changed\":%s,\"busy\":%s,\"revision\":%llu,\"chars\":%d,\"spelling\":%zu,\"dictionary\":%s,\"enumerated\":%s,\"search\":%d,\"dialog\":%d,\"popover\":%s,\"theme\":%d,\"font\":%d,\"lines\":%s,\"bom\":%s,\"newline\":%d,\"check_from\":%d,\"inflight\":%s,\"checking_enabled\":%s,\"large\":%s,\"max_spell_tick_us\":%lld}\n", self.documents.entries.items.len, @as(c_ulonglong, d.id), boolZ(d.dirty()), boolZ(d.external_changed), boolZ(d.busy), @as(c_ulonglong, d.revision), c.gtk_text_buffer_get_char_count(d.buffer), count, boolZ(self.dictionary), boolZ(self.enumerated), c.gtk_source_search_context_get_occurrences_count(d.search), @as(c_int, if (self.dialog != null) @intCast(@backingInt(self.dialog_kind)) else -1), boolZ(self.popover != null), self.settings.theme, self.settings.font, boolZ(self.settings.lines), boolZ(d.bom), @as(c_int, @intCast(@backingInt(d.newline))), d.check_from, boolZ(d.inflight), boolZ(self.spellingEnabled(d)), boolZ(d.large), @as(c_longlong, self.max_spell_tick_us));
     }
 };
+fn hashMetadata(hash: *std.hash.Wyhash, value: anytype) !void {
+    const json = try std.json.Stringify.valueAlloc(a, value, .{});
+    defer a.free(json);
+    hash.update(json);
+}
 fn scrollChanged(_: ?*c.GtkAdjustment, context: ?*anyopaque) callconv(.c) void {
     u.cast(App, context.?).scheduleCheckpoint();
 }
@@ -2201,7 +2418,25 @@ fn checkpointIdle(context: ?*anyopaque) callconv(.c) c_int {
     self.checkpoint();
     return 0;
 }
-const DialogKind = enum { close, mixed, conflict, large, reload, preferences, goto, policy, trust };
+test "close guards permit Save baselines only before the final write and reject changed documents" {
+    const original: App.CloseDocument = .{ .id = 1, .revision = 7, .path = 10, .etag = 20, .dirty = true };
+    var baseline = original;
+    baseline.path = 11;
+    baseline.etag = 21;
+    baseline.dirty = false;
+    try std.testing.expect(original.matches(baseline, false));
+    try std.testing.expect(!original.matches(baseline, true));
+    try std.testing.expect(baseline.matches(baseline, true));
+    var changed = baseline;
+    changed.revision += 1;
+    try std.testing.expect(!baseline.matches(changed, false));
+    try std.testing.expect(!baseline.matches(changed, true));
+    changed = baseline;
+    changed.id += 1;
+    try std.testing.expect(!baseline.matches(changed, false));
+}
+
+const DialogKind = enum { close, close_without_session, mixed, conflict, large, reload, preferences, goto, policy, trust };
 const Button = struct { text: [*:0]const u8, id: c_int };
 const WatchOp = struct { app: *App, workspace: workspace_identity.Token, id: u64, generation: u64, cancel: *c.GCancellable };
 fn diskChanged(monitor: ?*c.GFileMonitor, _: ?*c.GFile, _: ?*c.GFile, _: c.GFileMonitorEvent, data: ?*anyopaque) callconv(.c) void {
@@ -2242,7 +2477,7 @@ fn diskQueried(source: ?*c.GObject, result: ?*c.GAsyncResult, data: ?*anyopaque)
 const LoadOp = struct { app: *App, workspace: workspace_identity.Token, id: u64, cancel: *c.GCancellable, reload: bool, revision: u64 };
 const SaveOp = struct { doc: *Document, path: [:0]u8, data: []u8, revision: u64, etag: ?[:0]u8 = null, reservation: ?usize = null };
 fn editTarget(d: *Document, expected_revision: u64) transactions.Target {
-    return .{ .id = d.id, .buffer = d.buffer, .revision = &d.revision, .expected_revision = expected_revision, .busy = d.loading or d.pending != null };
+    return .{ .id = d.id, .buffer = d.buffer, .revision = &d.revision, .expected_revision = expected_revision, .busy = d.loading or d.pending != null, .writable = !owner(d).editingFrozen() };
 }
 // Search walks forward through a stable UTF-8 snapshot, so each byte is scanned
 // at most once even when replace-all has many matches.
@@ -2288,7 +2523,7 @@ fn loaded(_: ?*c.GObject, result: ?*c.GAsyncResult, data: ?*anyopaque) callconv(
     d.loading = false;
     if (d.cancellable) |p| c.g_object_unref(p);
     d.cancellable = null;
-    if (!self.workspace.accepts(op.workspace)) return;
+    if (!self.workspace.accepts(op.workspace) or self.editingFrozen()) return;
     defer if (self.workspace.accepts(op.workspace)) {
         if (self.find(op.id)) |remaining| {
             if (remaining.monitor == null and remaining.pending == null) self.watch(remaining);
@@ -2348,7 +2583,7 @@ fn loaded(_: ?*c.GObject, result: ?*c.GAsyncResult, data: ?*anyopaque) callconv(
     } else acceptLoaded(self, d, false);
 }
 fn acceptLoaded(self: *App, d: *Document, large: bool) void {
-    if (self.rejectFileOperationBarrier()) return;
+    if (self.editingFrozen() or self.rejectFileOperationBarrier()) return;
     const decoded = d.pending orelse return;
     d.pending = null;
     defer a.free(decoded.text);
@@ -2435,7 +2670,7 @@ fn finishSave(op: *SaveOp, ok: bool, etag: [*c]u8, err: ?*c.GError) void {
         if (d.close_after_save) {
             d.close_after_save = false;
             if (!d.dirty()) {
-                self.remove(d);
+                if (self.quitting) self.resolveClose(d, false) else self.remove(d);
             } else {
                 self.cancelClosing();
                 self.message(@import("i18n").dtr("coral", "Saved the earlier revision. Newer edits are still unsaved."));
@@ -2520,9 +2755,17 @@ fn dialogResponse(dialog: ?*c.GtkDialog, response: c_int, data: ?*anyopaque) cal
             else => {},
         },
         .trust => self.workspace_policy.confirm(response == 1),
+        .close_without_session => {
+            if (response != 1) {
+                self.cancelClosing();
+                return;
+            }
+            self.close_without_session = true;
+            if (self.quitting) self.continueWindowClose() else self.quit();
+        },
         .close => {
             const d = doc.?;
-            if (response == 1) self.remove(d) else if (response == 2) {
+            if (response == 1) self.resolveClose(d, true) else if (response == 2) {
                 d.close_after_save = true;
                 self.save(d, false, false);
             } else {
@@ -2774,6 +3017,7 @@ fn onCloseTab(_: ?*c.GtkButton, data: ?*anyopaque) callconv(.c) void {
     self.closeActiveView();
 }
 fn onNew(_: ?*c.GtkButton, data: ?*anyopaque) callconv(.c) void {
+    if (u.cast(App, data.?).editingFrozen()) return;
     u.cast(App, data.?).execute(.new);
 }
 fn onOpen(_: ?*c.GtkButton, data: ?*anyopaque) callconv(.c) void {
@@ -3003,6 +3247,7 @@ fn onShortcut(controller: ?*c.GtkEventControllerKey, key: c_uint, code: c_uint, 
 }
 fn onKey(_: ?*c.GtkEventControllerKey, key: c_uint, _: c_uint, state: c.GdkModifierType, data: ?*anyopaque) callconv(.c) c_int {
     const self = u.cast(App, data.?);
+    if (self.editingFrozen()) return 0;
     if (self.closing or self.dialog != null or self.palette != null) return 0;
     const ctrl = state & c.GDK_CONTROL_MASK != 0;
     const shift = state & c.GDK_SHIFT_MASK != 0;
@@ -3091,7 +3336,67 @@ fn testCommand(receiver: *App) void {
     const value = c.g_key_file_get_string(file, "Test", "value", null);
     defer c.g_free(value);
     const d = self.active();
-    if (std.mem.eql(u8, action, "operations-probe")) {
+    if (std.mem.eql(u8, action, "project-probe") or std.mem.eql(u8, action, "projects-probe")) {
+        self.projects.probe();
+    } else if (std.mem.eql(u8, action, "project-insert-canonical")) {
+        // Fault injection: bypass the read-only view bridge to test the final
+        // close revision guard against an unexpected canonical-buffer writer.
+        if (value != null) if (d) |doc| c.gtk_text_buffer_insert_at_cursor(doc.buffer, value, -1);
+    } else if (std.mem.eql(u8, action, "lifecycle-probe")) {
+        var full_editable: usize = 0;
+        var excerpts_editable: usize = 0;
+        for (self.views.items) |view| if (c.gtk_text_view_get_editable(u.cast(c.GtkTextView, view.widget)) != 0) {
+            full_editable += 1;
+        };
+        for (self.excerpts.items) |pane| if (c.gtk_text_view_get_editable(u.cast(c.GtkTextView, pane.editor.widget)) != 0) {
+            excerpts_editable += 1;
+        };
+        const json = std.json.Stringify.valueAlloc(a, .{ .window = self.window_id, .frozen = self.editingFrozen(), .quitting = self.quitting, .dialog = if (self.dialog != null) @as(?DialogKind, self.dialog_kind) else null, .documents = self.snapshotDocuments().len, .full_editable = full_editable, .excerpts_editable = excerpts_editable, .full_views = self.views.items.len, .excerpt_views = self.excerpts.items.len, .active_revision = if (d) |doc| @as(?u64, doc.revision) else null, .active_dirty = if (d) |doc| doc.dirty() else false, .recovery_claimed = self.recovery_claimed, .notice = std.mem.span(c.gtk_label_get_text(u.cast(c.GtkLabel, self.notice))) }, .{}) catch return;
+        defer a.free(json);
+        const line = u.z(json);
+        defer a.free(line);
+        c.g_print("CORAL_LIFECYCLE %s\n", line.ptr);
+    } else if (std.mem.eql(u8, action, "project-refresh")) {
+        self.projects.refresh();
+    } else if (std.mem.eql(u8, action, "project-checkpoint")) {
+        self.projects.checkpoint();
+    } else if (std.mem.eql(u8, action, "project-delay")) {
+        const delay = if (value != null) std.fmt.parseInt(u64, std.mem.span(value), 10) catch 0 else 0;
+        self.projects.test_next_delay_us = @as(u64, @min(delay, 5000)) * 1000;
+    } else if (std.mem.eql(u8, action, "project-open")) {
+        if (value != null) if (self.projects.targetFromText(std.mem.span(value))) |target| self.projects.open(target);
+    } else if (std.mem.eql(u8, action, "project-forget")) {
+        if (value != null) {
+            if (std.mem.eql(u8, std.mem.span(value), "accept")) self.projects.confirmForget(true) else if (std.mem.eql(u8, std.mem.span(value), "cancel")) self.projects.confirmForget(false) else if (self.projects.targetFromText(std.mem.span(value))) |target| self.projects.requestForget(target);
+        }
+    } else if (std.mem.eql(u8, action, "project-respond")) {
+        self.projects.confirmForget(value != null and std.mem.eql(u8, std.mem.span(value), "accept"));
+    } else if (std.mem.eql(u8, action, "picker-probe")) {
+        self.projects.pickerProbe();
+    } else if (std.mem.eql(u8, action, "picker-show")) {
+        if (value != null and std.mem.eql(u8, std.mem.span(value), "buffers")) self.projects.showBuffers() else self.projects.showProjects(value != null and std.mem.eql(u8, std.mem.span(value), "forget"));
+    } else if (std.mem.eql(u8, action, "picker-query")) {
+        if (self.projects.picker) |picker| if (value != null) picker.setFilter(std.mem.span(value)) catch |err| self.editFailure(err);
+    } else if (std.mem.eql(u8, action, "picker-activate")) {
+        if (self.projects.picker) |picker| picker.activate();
+    } else if (std.mem.eql(u8, action, "picker-select")) {
+        if (self.projects.picker) |picker| if (value != null) {
+            _ = picker.select(std.fmt.parseInt(usize, std.mem.span(value), 10) catch 0);
+        };
+    } else if (std.mem.eql(u8, action, "roots-probe")) {
+        self.workspace_roots.probe();
+    } else if (std.mem.eql(u8, action, "roots-request")) {
+        if (value != null) if (std.meta.stringToEnum(@import("workspace/roots_controller.zig").Kind, std.mem.span(value))) |kind| {
+            const root_path = c.g_key_file_get_string(file, "Test", "path", null);
+            defer c.g_free(root_path);
+            self.workspace_roots.testRequest(kind, if (root_path != null) std.mem.span(root_path) else "");
+        };
+    } else if (std.mem.eql(u8, action, "roots-respond")) {
+        self.workspace_roots.respond(value != null and std.mem.eql(u8, std.mem.span(value), "accept"));
+    } else if (std.mem.eql(u8, action, "roots-delay")) {
+        const delay = if (value != null) std.fmt.parseInt(u64, std.mem.span(value), 10) catch 0 else 0;
+        self.workspace_roots.test_next_delay_us = @as(u64, @min(delay, 5000)) * 1000;
+    } else if (std.mem.eql(u8, action, "operations-probe")) {
         self.workspace_operations.probe();
     } else if (std.mem.eql(u8, action, "operations-request")) {
         if (value != null) if (std.meta.stringToEnum(@import("workspace/operations_fs.zig").Kind, std.mem.span(value))) |kind| {

@@ -1,6 +1,6 @@
 # M2: native workspaces and bounded explorer
 
-**Status: workspace, explorer, search, safe settings, persistent trust and explicit saved-session increments implemented and tested; M2 remains in progress.** The user accepted M0's documented bounded-editor tradeoffs. See the [search guide](WORKBENCH_M2_SEARCH.md), [settings/trust guide](WORKBENCH_M2_POLICY.md) and [session guide](WORKBENCH_M2_SESSIONS.md). Native [dock/picker integration](WORKBENCH_M2_DOCKS.md) and [independent windows](WORKBENCH_M2_WINDOWS.md) are now implemented. The bounded [explicit file-operation increment](WORKBENCH_M2_OPERATIONS.md) is also delivered; its final all-25 native, nine-gate and fresh production-build validation passed. Automatic/per-project workspace/session management remains future work.
+**M2 implementation COMPLETE: bounded workspace preview; M3 next.** This guide describes workspace/explorer behavior and preserves its historical increment evidence. [Automatic projects, recent/buffer pickers and reviewed root management](WORKBENCH_M2_PROJECTS.md) complete the mandatory M2 scope alongside [search](WORKBENCH_M2_SEARCH.md), [settings/trust](WORKBENCH_M2_POLICY.md), [explicit checkpoints](WORKBENCH_M2_SESSIONS.md), [docks](WORKBENCH_M2_DOCKS.md), [windows](WORKBENCH_M2_WINDOWS.md) and [file operations](WORKBENCH_M2_OPERATIONS.md). See the [acceptance audit](WORKBENCH_M2_ACCEPTANCE.md). Accepted M0 tradeoffs are unchanged.
 
 ## Open a workspace
 
@@ -13,6 +13,12 @@ coral --workspace ./project.coral-workspace ./notes.txt
 ```
 
 Explicit workspace paths can be relative to the working directory. If several `--folder` / `--workspace` options are supplied, the last one wins. Bare file arguments retain their existing meaning: a bare directory is not implicitly opened as a workspace. Opening a missing path never creates files or directories.
+
+Open Folder/Workspace keeps existing documents and durably retires the prior automatic project snapshot before switching. **Open Recent Project… (Ctrl+Alt+P)** instead activates a matching live owner or restores an independent window. Ordinary no-CLI startup restores retained membership; explicit file/folder/workspace CLI inputs and real recovery decisions suppress the old set but retain recents. Empty recovery does not suppress it.
+
+### Reviewed root management
+
+For a folder-only workspace, use **Save Workspace As…** to a new destination first. Then **Workspace: Add Folder…** selects an existing directory and **Workspace: Remove Selected Root…** removes the selected Explorer root from the manifest. Review confirmation writes immediately, without deleting disk content or closing documents. The last root and existing Save As destinations are refused. Supported settings/excludes/root names are preserved semantically, with absolute lexical paths that retain symlink/`..` meaning; source bytes and etag are revalidated. Dedicated root rename/reorder controls are not implemented. See [root-management controls and safety](WORKBENCH_M2_PROJECTS.md#reviewed-workspace-root-management).
 
 ### Manifest format
 
@@ -38,7 +44,7 @@ Explicit workspace paths can be relative to the working directory. If several `-
 - Unknown/duplicate fields (including escaped spellings), explicit null optionals, unsupported versions, invalid UTF-8/NUL and trailing JSON documents fail closed.
 - Other limits: **1 MiB JSON**, **4,095-byte native paths**, **256-byte explicit root names**.
 
-The manifest is opened read-only and nonblocking and must be a regular file. FIFOs/devices/directories are rejected. This does not make arbitrary mount I/O interruptible or provide universal atomic snapshots during concurrent writes.
+Workspace loading opens the manifest read-only and nonblocking; it must be a regular file. The separate reviewed root-management actions can write it. FIFOs/devices/directories are rejected. This does not make arbitrary mount I/O interruptible or provide universal atomic snapshots during concurrent writes.
 
 ## Native explorer
 
@@ -133,7 +139,7 @@ M1 recovery protects documents, groups, excerpts and selection/scroll under its 
 
 The separate **Save Workspace Session / Restore Workspace Session** palette commands now persist one explicit checkpoint of workspace source/roots, tabs, groups, excerpts and view state. Verified clean files rebind; dirty/conflicting/unavailable files become unsaved copies. Existing documents are preserved. Missing roots remain unavailable; missing manifests abort restore with saved-root diagnostics rather than creating a fallback manifest. Trust is revalidated separately. See [session behavior and validation](WORKBENCH_M2_SESSIONS.md).
 
-Model replacement does not create separate per-workspace tab sets. There is no automatic startup resume or quit-time session save; explicit checkpoints survive later Discard. Independent windows now provide separate document/workspace ownership; automatic/per-project session management remains future work.
+Model replacement does not create isolated same-window tab sets. [Automatic project sessions](WORKBENCH_M2_PROJECTS.md) now retain per-window/project and scratch snapshots, startup membership and recents independently of the explicit checkpoint. Recent Projects restores another owner rather than replacing this window's documents. Graceful close freezes before prompts, reconciles Save and excludes Discard from its new snapshot; cancellation/failure thaws. Older explicit checkpoints survive later Discard and are never overwritten by automatic persistence. Recovery decisions take startup precedence; reopen roots explicitly after document-only recovery.
 
 ## Source and validation
 
@@ -183,16 +189,16 @@ These are local fixture measurements, **not keystroke-to-paint latency**. The in
 
 Evidence: `pearl/.cache/coral-explorer/results.json`, `100k-paged.png` and adjacent session logs; compatibility/M1 outputs under `pearl/.cache/coral-{workspaces,widgets,native,app-groups,app-recovery}/`. No host package installation, live-desktop mutation, paid service or commit was required.
 
-## Next M2 increments
+## Completed M2 scope and next milestone
 
 Quick Open and streaming workspace search with unsaved overlays are now [implemented and validated on 100k nonempty files](WORKBENCH_M2_SEARCH.md). This is on-demand traversal, not a persistent index.
 
 Safe settings precedence/provenance and machine-owned trust approval/revocation are now [implemented](WORKBENCH_M2_POLICY.md), without executable features.
 
-Versioned **explicit workspace sessions** are now [implemented and validated](WORKBENCH_M2_SESSIONS.md), including missing-root/conflict handling and restoration of tabs/layout without recreating paths. Automatic/per-project management and missing-manifest fallback are not implemented.
+Versioned **explicit workspace sessions** are now [implemented and validated](WORKBENCH_M2_SESSIONS.md), including missing-root/conflict handling and restoration of tabs/layout without recreating paths. Automatic/per-project management is delivered separately; missing-manifest fallback remains unsupported.
 
 Native [Explorer/Search docks and Quick Open picker integration](WORKBENCH_M2_DOCKS.md) are now implemented, with session v2 layout persistence and compact-window behavior.
 
-[Multi-window lifecycle](WORKBENCH_M2_WINDOWS.md) and [bounded, explicitly confirmed workspace file operations](WORKBENCH_M2_OPERATIONS.md) are now delivered. The latter's [final validation](WORKBENCH_M2_OPERATIONS.md#final-validation--2026-11-09) passed all 25 native scenarios together, all nine aggregate gates and a fresh hooks-disabled production build; the explorer gate again passed 19 native groups and executed 191 widget tests. Prior validation counts above remain historical explorer-increment evidence. Next focused work is remaining M2 acceptance review; additional pickers and automatic/per-project workspace/session management remain open items.
+[Multi-window lifecycle](WORKBENCH_M2_WINDOWS.md) and [bounded, explicitly confirmed workspace file operations](WORKBENCH_M2_OPERATIONS.md) are now delivered. The latter's [final validation](WORKBENCH_M2_OPERATIONS.md#final-validation--2026-11-09) passed all 25 native scenarios together, all nine aggregate gates and a fresh hooks-disabled production build; the explorer gate again passed 19 native groups and executed 191 widget tests. Prior validation counts above remain historical explorer-increment evidence. Automatic projects, recents/buffer pickers and reviewed root management now close the remaining mandatory feature scope; see the [project guide](WORKBENCH_M2_PROJECTS.md) and [composed acceptance evidence](WORKBENCH_M2_ACCEPTANCE.md).
 
-M2 remains **in progress**.
+**M2 implementation is COMPLETE as a bounded workspace preview. M3 is next.** Persistent indexing, workspace-wide replace and later IDE services are not implied.

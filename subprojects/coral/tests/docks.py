@@ -768,6 +768,10 @@ def session_v2(h):
     assert header == b'CORAL-SESSION 2', header
     assert descriptor['layout'] == wanted, descriptor
     h.restart()
+    assert h.dock('v2-automatic-restored')['desired'] == wanted
+    assert editor_layout(h.state()) == editor_layout(before)
+    h.unchanged(raw)
+    h.restart_explicit()
     h.no_resume()
     h.resize()
     initial_groups = {g['id'] for g in h.state()['groups']}
@@ -791,7 +795,7 @@ def session_v1(h):
     legacy = encode_slot(b'CORAL-SESSION 1', descriptor, recovery)
     h.stop()
     h.slot.write_bytes(legacy)
-    h.launch()
+    h.launch_explicit()
     h.no_resume()
     h.resize()
     custom_layout(h)
@@ -809,7 +813,7 @@ def invalid_layout(h):
     h.save_session()
     header, descriptor, recovery = decode_slot(h.checkpoint_bytes('before-layout-corruption'))
     assert header == b'CORAL-SESSION 2', header
-    h.restart()
+    h.restart_explicit()
     h.no_resume()
     h.resize()
     custom_layout(h)
@@ -873,7 +877,7 @@ def inflight_shutdown(h):
 
 def appearance(h, theme):
     h.stop()
-    h.launch('--' + theme)
+    h.launch_explicit('--' + theme)
     h.setup()
     start = len(h.app.lines)
     h.key('F12')

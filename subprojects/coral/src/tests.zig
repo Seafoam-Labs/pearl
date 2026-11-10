@@ -16,6 +16,8 @@ test {
     _ = @import("workspace/model.zig");
     _ = @import("workspace/browser_fs.zig");
     _ = @import("workspace/operations_test.zig");
+    _ = @import("workspace/roots_test.zig");
+    _ = @import("workspace/project_controller.zig");
     _ = @import("application.zig");
     _ = @import("workspace/search_test.zig");
     _ = @import("terminal/pty.zig");

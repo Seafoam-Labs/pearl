@@ -1,6 +1,6 @@
 # M2: native docks and picker integration
 
-**Implemented:** Explorer and workspace Search now live in movable, resizable, hideable native docks around the central editor. Quick Open uses a transient in-window picker. This is a functional workbench-layout increment, not pixel-for-pixel mockup parity or a complete IDE. No placeholder Git, agent, terminal or debugger services were added.
+**Implemented:** Explorer and workspace Search now live in movable, resizable, hideable native docks around the central editor. Quick Open uses a transient in-window picker. This is a functional workbench-layout increment, not pixel-for-pixel mockup parity or a complete IDE. No placeholder Git, agent, terminal or debugger services were added. **M2 implementation is now COMPLETE for the bounded preview; M3 is next.** See the [acceptance audit](WORKBENCH_M2_ACCEPTANCE.md).
 
 ## Controls
 
@@ -12,6 +12,8 @@ Default placement is **Explorer left**, **Search bottom** (initially hidden). Th
 | Ctrl+Shift+E | Show/focus Explorer |
 | Ctrl+Shift+F | Show workspace text search |
 | Ctrl+P | Quick Open picker |
+| Ctrl+Alt+P | Open Recent Project |
+| Ctrl+Shift+O | Open Buffers in this window |
 | Ctrl+1 | Focus the active editor/excerpt |
 | Ctrl+Shift+B | Hide active auxiliary panel |
 | Ctrl+Alt+Left / Right / Down | Move active panel left / right / bottom |
@@ -43,7 +45,7 @@ Explorer row refreshes park focus on a stable container before recycling rows, t
 
 **Quick Open and text Search share one query/result controller**, explicitly labelled in both presentations. Switching modes replaces that query's results; two simultaneous search engines are not implemented. A visible Search dock shows a sharing notice while Quick Open borrows its content. Explicit close cancels outstanding search work; moving a panel does not.
 
-The command palette remains its existing transient modal window. Open Folder / Workspace continue using the existing choosers. Recent-workspace/worktree/symbol pickers, floating docks and cross-window tab dragging remain future work.
+The command palette remains its existing transient modal window. Open Folder / Workspace continue using the existing choosers. Native [Recent Projects and Open Buffers](WORKBENCH_M2_PROJECTS.md) now use separate modal snapshot pickers: at most 512 captured items and 50 displayed matches; refine the filter, with no unlimited history-addressability claim. Recent Projects activates a matching owner or restores an independent window. Worktree/symbol pickers, floating docks and cross-window tab dragging remain outside M2.
 
 ## Saved layout and migration
 
@@ -51,7 +53,7 @@ The command palette remains its existing transient modal window. Open Folder / W
 
 The session envelope is now **v2**. It requires a layout object; unknown fields/enums, invalid types and out-of-range dimensions fail closed. Existing **v1** checkpoints remain readable and restore the default dock layout. A subsequent explicit save upgrades the slot to v2. Older binaries refuse v2 rather than silently dropping its layout. Recovery journals remain unchanged and do not persist dock state.
 
-Persistence is still **one explicit shared checkpoint**, not automatic layout autosave, a per-project layout registry, or automatic startup resume. Unsaved dock changes are not restored after exit. No new preference file or repository setting was introduced. See [session safety and limits](WORKBENCH_M2_SESSIONS.md).
+The original explicit checkpoint remains shared and unchanged by automatic persistence. The separate [automatic project catalog](WORKBENCH_M2_PROJECTS.md) now captures desired layout with each per-window/project snapshot and restores eligible windows on ordinary startup. Retention is bounded and errors are visible; it is not every-keystroke durability or desktop window-position restoration. No repository setting grants restoration authority. See [explicit session safety and limits](WORKBENCH_M2_SESSIONS.md).
 
 ## Implementation
 
@@ -83,4 +85,4 @@ Initial broad validation caught a stale v1-only test fixture and real key/focus 
 
 Evidence: `pearl/.cache/coral-docks/results.json`, adjacent logs/screenshots, and `pearl/.cache/coral-dock-validation-logs/final-*.log`. Focused run evidence under `pearl/subprojects/coral/.cache/docks-focus-acceptance-agent-20261109/full/` includes 172 geometry observations and 18 screenshots; these are local functional checks, not paint-latency measurements.
 
-[Multi-window lifecycle](WORKBENCH_M2_WINDOWS.md) and [bounded explicit file operations](WORKBENCH_M2_OPERATIONS.md) are now implemented: each window owns its dock state, while Save/Restore Workspace Session still uses one shared explicit checkpoint. [Final file-operation validation](WORKBENCH_M2_OPERATIONS.md#final-validation--2026-11-09) passed all 25 native scenarios together, all nine aggregate gates and a fresh hooks-disabled production build. The dock gate again passed 27 native scenarios and executed 191 widget tests, separate from the historical dock evidence above. **Next focused M2 work:** remaining acceptance review, automatic/per-project workspace/session management and additional pickers. LSP, Git, terminal/tasks and agents remain later milestones.
+[Multi-window lifecycle](WORKBENCH_M2_WINDOWS.md) and [bounded explicit file operations](WORKBENCH_M2_OPERATIONS.md) are now implemented: each window owns its dock state, while Save/Restore Workspace Session still uses one shared explicit checkpoint. [Final file-operation validation](WORKBENCH_M2_OPERATIONS.md#final-validation--2026-11-09) passed all 25 native scenarios together, all nine aggregate gates and a fresh hooks-disabled production build. The dock gate again passed 27 native scenarios and executed 191 widget tests, separate from the historical dock evidence above. [Automatic projects, recent/buffer pickers and reviewed root management](WORKBENCH_M2_PROJECTS.md) now complete mandatory M2 scope. The [acceptance report](WORKBENCH_M2_ACCEPTANCE.md) separates current validation from historical dock counts. M3 is next; LSP, Git, terminal/tasks and agents remain later milestones.

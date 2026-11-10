@@ -28,6 +28,11 @@ fn activate(_: ?*c.GApplication, context: ?*anyopaque) callconv(.c) void {
 }
 fn openInitialDocuments(p: *App) void {
     const recovered = p.snapshotDocuments().len != 0;
+    if (workspace_source == null and paths.items.len == 0) {
+        p.projects.startup(p.recovery_claimed);
+        return;
+    }
+    p.projects.suppressStartup();
     if (workspace_source) |source| p.browser.load(source, workspace_path);
     for (paths.items) |path| p.openExisting(path, null);
     if (paths.items.len == 0 and p.snapshotDocuments().len == 0) _ = p.newDocument();
@@ -63,7 +68,7 @@ pub fn main(init: std.process.Init) void {
             continue;
         }
         if (std.mem.eql(u8, arg, "--help")) {
-            c.g_print("Workspace slice: --workspace PATH opens a version-1 .coral-workspace manifest; --folder PATH opens a root. Last explicit workspace option wins. Relative paths use the current directory. Bare directories remain invalid FILE arguments. Bounded workspace explorer/search with explicit trust and no auto-execution. Recovery does not restore workspace roots. Explicit saved sessions are separate.\n");
+            c.g_print("Workspace slice: --workspace PATH opens a version-1 .coral-workspace manifest; --folder PATH opens a root. Last explicit workspace option wins. Relative paths use the current directory. Bare directories remain invalid FILE arguments. Bounded workspace explorer/search with explicit trust and no auto-execution. Recovery does not restore workspace roots. Automatic per-project sessions reopen independent windows on ordinary launch; explicit FILE/folder/workspace arguments suppress automatic reopening. Recovery chooser decisions take precedence. Explicit saved sessions are separate.\n");
             c.g_print("Coral 0.1.1 — Zig / GTK4 text editor\nUsage: " ++ command ++ " [--follow-pearl|--light|--dark|--native-theme] [--width=N] [--height=N] [--log-level LEVEL] [--log-scopes LIST] [FILE…]\nCtrl+N new, Ctrl+O open, Ctrl+S save, Ctrl+Shift+S Save As, Ctrl+F find,\nCtrl+H replace, Ctrl+G go to line, Ctrl+, preferences, Shift+F10 spelling.\nCtrl+Shift+P command palette, including Reload from Disk and window switching.\nCtrl+Shift+N new window, Ctrl+Shift+W close window, Ctrl+Q quit all windows.\nUp to 16 live/draining windows; FILE/workspace options apply only to the first window.\nFILE arguments must exist; use New document and Save As to create a file.\nFollow Pearl is the first-run default; without Pearl it uses Coral's own dark palette.\n--log-level: error, warning, info or debug. Release builds default to info.\n--log-scopes: comma-separated scopes, all for every scope, ~scope to exclude.\n");
             return;
         }

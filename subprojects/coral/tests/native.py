@@ -151,8 +151,23 @@ def main():
                 window = wait_for(lambda: next(iter(windows()), None))
                 ipc.call('command', action='window.activate', fields={'id': window['id']})
                 return settled()
-            def close():
+            def launch_blank():
+                # A deliberate CLI open suppresses startup restoration for cases
+                # specifically exercising a fresh unnamed buffer.
+                path = fixtures / 'explicit-launch.txt'
+                path.write_text('explicit CLI startup\n')
+                launch(path)
+                key('n', 'ctrl')
+                key('Tab', 'ctrl')
+                key('w', 'ctrl')
+                state = settled()
+                assert state['tabs'] == 1 and not state['dirty'] and state['chars'] == 0, state
+                return state
+            def close(without_session=False):
                 key('q', 'ctrl')
+                if without_session:
+                    wait_for(lambda: probe()['dialog'] == 1)  # close_without_session
+                    command('respond', response=1)
                 assert app.wait(timeout=10) == 0, app.lines[-40:]
                 assert not any('CRITICAL' in line or 'panic:' in line for line in app.lines), app.lines[-40:]
                 wait_for(lambda: not windows())
@@ -224,7 +239,7 @@ def main():
             state = probe()
             assert not state['dirty'] and state['chars'] == len('palette typing restored saved'), state
             palette('preferences')
-            wait_for(lambda: probe()['dialog'] == 5)
+            wait_for(lambda: probe()['dialog'] == 6)
             command('respond', response=0)
             wait_for(lambda: probe()['dialog'] == -1)
             key('w', 'ctrl')
@@ -307,7 +322,7 @@ def main():
             state = disk_state(True)
             assert idle_state(state) == idle_state(before_state | {'external_changed': True}), (before_state, state)
             palette('reload from disk')
-            wait_for(lambda: probe()['dialog'] == 4)
+            wait_for(lambda: probe()['dialog'] == 5)
             command('respond', response=0)
             assert idle_state(probe()) == idle_state(state), 'Cancelling reload changed the dirty buffer'
             # Search verifies the actual text, not just its length/revision.
@@ -315,7 +330,7 @@ def main():
             wait_for(lambda: probe()['search'] == 1)
             key('Escape')
             palette('reload from disk')
-            wait_for(lambda: probe()['dialog'] == 4)
+            wait_for(lambda: probe()['dialog'] == 5)
             command('respond', response=1)
             state = disk_state(False)
             assert not state['dirty'] and state['chars'] == len(watched.read_text()), state
@@ -467,7 +482,7 @@ def main():
             passed('Dirty-tab close prompts, cancellation and discard')
             key('a', 'ctrl'); text('my edits')
             sample.write_text('external changes')
-            key('s', 'ctrl'); wait_for(lambda: probe()['dialog'] == 2)
+            key('s', 'ctrl'); wait_for(lambda: probe()['dialog'] == 3)
             capture('file-conflict')
             assert sample.read_text() == 'external changes'
             command('respond', response=3)
@@ -525,7 +540,7 @@ def main():
             assert sample.read_text() == before_undo_race
             passed('Undo during save remains dirty and requires close confirmation until a current revision is saved')
             sample.unlink()
-            key('s', 'ctrl'); wait_for(lambda: probe()['dialog'] == 2)
+            key('s', 'ctrl'); wait_for(lambda: probe()['dialog'] == 3)
             assert not sample.exists()
             command('respond', response=3)
             wait_for(lambda: not probe()['busy'])
@@ -543,7 +558,7 @@ def main():
             mixed = fixtures / 'mixed.txt'
             mixed.write_bytes(b'hello\r\nworld\n')
             command('open', mixed); settled()
-            key('s', 'ctrl'); wait_for(lambda: probe()['dialog'] == 1)
+            key('s', 'ctrl'); wait_for(lambda: probe()['dialog'] == 2)
             command('respond', response=0)
             assert mixed.read_bytes() == b'hello\r\nworld\n'
             key('s', 'ctrl'); command('respond', response=1)
@@ -579,7 +594,7 @@ def main():
                 capture(name)
                 close()
             passed('Light/dark/native themes, narrow window and 200% interface text')
-            launch()
+            launch_blank()
             text('hello world')
             key('s', 'ctrl'); time.sleep(.4); key('Escape')
             assert probe()['dirty'] and not probe()['busy']
@@ -600,7 +615,8 @@ def main():
             key('q', 'ctrl'); command('respond', response=0)
             assert probe()['tabs'] == 2
             key('q', 'ctrl'); command('respond', response=1)
-            assert probe()['tabs'] == 1 and probe()['dialog'] == 0
+            # Prompts resolve before any canonical document is destroyed.
+            assert probe()['tabs'] == 2 and probe()['dialog'] == 0
             command('respond', response=1)
             assert app.wait(timeout=10) == 0
             wait_for(lambda: not windows())
@@ -608,16 +624,16 @@ def main():
             large = fixtures / 'large.txt'
             large.write_text('hello world\n' * 900000)
             # Large files stop at a modal gate before populating the GtkSourceBuffer.
-            launch()
+            launch_blank()
             command('open', large)
-            wait_for(lambda: probe()['dialog'] == 3)
+            wait_for(lambda: probe()['dialog'] == 4)
             capture('large-file')
             command('respond', response=1)
             state = settled()
             assert state['large'] and not state['checking_enabled'] and state['chars'] > 10 * 1024 * 1024
-            close()
+            close(without_session=True)
             passed('Files above 10 MiB require consent and disable automatic spelling/highlighting')
-            launch()
+            launch_blank()
             medium = fixtures / 'one-mib.txt'
             medium.write_text('hello world\n' * 87382)
             started = time.monotonic()
@@ -675,10 +691,10 @@ def main():
             before_state = disk_state(True)
             assert not before_state['dirty'] and not before_state['large'], before_state
             command('reload')
-            wait_for(lambda: probe()['dialog'] == 3)
+            wait_for(lambda: probe()['dialog'] == 4)
             command('edit-pending-load')
             edited_state = probe()
-            assert edited_state['dialog'] == 3 and edited_state['dirty'], edited_state
+            assert edited_state['dialog'] == 4 and edited_state['dirty'], edited_state
             assert edited_state['revision'] == before_state['revision'] + 1, (before_state, edited_state)
             assert edited_state['chars'] == len(pending_text + ' plus'), edited_state
             for shortcut, modifiers in [('z', ('ctrl',)), ('z', ('ctrl', 'shift')), ('y', ('ctrl',))]:
@@ -713,9 +729,9 @@ def main():
                 disk_state(True)
                 command('reload')
                 if dirty_empty:
-                    wait_for(lambda: probe()['dialog'] == 4)
+                    wait_for(lambda: probe()['dialog'] == 5)
                     command('respond', response=1)
-                wait_for(lambda: probe()['dialog'] == 3)
+                wait_for(lambda: probe()['dialog'] == 4)
                 command('respond', response=0)
                 state = settled()
                 assert idle_state(state) == idle_state(before_state | {'external_changed': True}), (case, before_state, state)
@@ -726,7 +742,7 @@ def main():
                 # can make this Reload find the restored, smaller disk file.
                 command('reload')
                 if dirty_empty:
-                    wait_for(lambda: probe()['dialog'] == 4)
+                    wait_for(lambda: probe()['dialog'] == 5)
                     command('respond', response=1)
                 disk_state(False)
                 state = settled()

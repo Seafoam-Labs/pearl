@@ -555,9 +555,11 @@ def run(h):
             else:
                 h.command(action)
             elapsed = time.monotonic() - began
-            state = h.probe()
             assert elapsed < .250, (action, elapsed)
-            assert state['active'] and state['holds'] == 1 and state['stale'] and not state['results'], state
+            # Workspace close/swap first retains the automatic project snapshot;
+            # cancellation follows retirement, not command acknowledgement.
+            state = wait_for(lambda: p if (p := h.probe())['stale'] else None)
+            assert state['active'] and state['holds'] == 1 and not state['results'], state
             if action == 'escape':
                 assert not state['visible']
             state = h.settled()

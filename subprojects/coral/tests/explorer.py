@@ -231,8 +231,9 @@ def main():
         assert max(watch_ack) < .250
         assert probe()['watch_worker_busy'], 'Delayed worker must still own its plan/handles at cancellation'
         _, watch_cancel_ack = command('close-workspace')
-        state = probe()
-        assert watch_cancel_ack < .250 and not state['roots'] and not state['entries']
+        assert watch_cancel_ack < .250, watch_cancel_ack
+        state = wait_for(lambda: p if not (p := probe())['roots'] else None)
+        assert not state['entries'] and state['watch_worker_busy'], state
         # Replace its desired generation while the old blocking call is still in
         # flight. Old handles remain worker-owned; no GTK fd close/reuse occurs.
         command('open-workspace', race_manifest)
@@ -455,9 +456,11 @@ def main():
         command('workspace-rescan')
         wait_for(lambda: probe()['pending'] > 0)
         _, cancel_elapsed = command('close-workspace')
-        state = probe()
-        assert not state['roots'] and not state['entries'], state
         assert cancel_elapsed < .250, cancel_elapsed
+        # Project retirement durably retains the previous snapshot before the
+        # close clears roots; command acknowledgement is not completion.
+        state = wait_for(lambda: p if not (p := probe())['roots'] else None)
+        assert not state['entries'], state
         settled()
         command('open-workspace', manifest)
         settled()
@@ -473,14 +476,21 @@ def main():
         command('workspace-rescan')
         wait_for(lambda: probe()['watch_worker_busy'])
         key('q', 'ctrl')
+        refused = probe(False)
+        assert refused['notice'] == 'Quit All could not freeze project sessions: Loading. All windows kept open.', refused
+        assert refused['documents'] == protected and not refused['dialog'], refused
+        assert probe()['watch_worker_busy'] and app.proc.poll() is None
+        settled()
+        wait_for(lambda: not probe()['watch_worker_busy'])
+        key('q', 'ctrl')
         for _ in range(sum(d['dirty'] for d in protected)):
             wait_for(lambda: probe(False)['dialog'])
+            assert probe(False)['documents'] == protected
             command('respond', response=1)
         wait_for(lambda: not any(w['kind'] == 'window' for w in ipc.state()))
-        assert app.proc.poll() is None, 'App must retain the blocked watch worker hold after its window closes'
         assert app.wait(timeout=15) == 0, app.lines[-30:]
         assert not any('CRITICAL' in line or 'panic:' in line for line in app.lines), app.lines[-30:]
-        passed('Window shutdown retains the delayed watch worker hold and retires its handles before App destruction, without GTK criticals')
+        passed('Window shutdown refuses unresolved watch/model installation, preserves dirty documents through every prompt, and drains handles before App destruction')
     evidence.update(checks=checks, limits={'directory_states': 64, 'page_entries': 256,
                     'resident_pages': 8, 'resident_page_arena_bytes': 1024 * 1024,
                     'watches': 128, 'workers': 8, 'watch_workers': 1, 'queued_watch_plans': 1,

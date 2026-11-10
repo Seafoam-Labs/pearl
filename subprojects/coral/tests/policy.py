@@ -64,26 +64,37 @@ class PolicyHarness(Harness):
         self.sentinels = []
         self.launch()
 
-    def launch(self):
+    def launch(self, *paths):
         self.serial += 1
-        self.app = self.session.child(f'{self.name}-{self.serial}', [self.binary], G_DEBUG='fatal-criticals')
+        self.app = self.session.child(f'{self.name}-{self.serial}', [self.binary, *paths], G_DEBUG='fatal-criticals')
         window = wait_for(lambda: next((w for w in self.ipc.state() if w['kind'] == 'window'), None))
         self.ipc.call('command', action='window.activate', fields={'id': window['id']})
+        wait_for(lambda: self.probe('workspace')['documents'])
+        wait_for(lambda: not (p := self.probe('projects'))['busy'] and
+                 not p['suppression_pending'] and not p['restore_cleanup'], 20)
         self.settled()
 
-    def stop(self):
+    def stop(self, without_session=False):
         if self.app is not None and self.app.proc.poll() is None:
             p = self.probe()
             assert not p['dialog'], p
             assert not any(d['dirty'] for d in p['documents']), p
             self.key('q', 'ctrl')
+            if without_session:
+                wait_for(lambda: self.probe('lifecycle')['dialog'] == 'close_without_session')
+                assert self.probe()['documents'] == p['documents']
+                start = len(self.app.lines)
+                self.command_path.write_text('[Test]\naction=respond\nresponse=1\n')
+                self.key('F11')
+                wait_for(lambda: self.app.proc.poll() is not None or
+                         'CORAL_COMMAND_DONE' in self.app.lines[start:])
             assert self.app.wait(timeout=12) == 0, self.app.lines[-30:]
         if self.app is not None:
             self.no_criticals()
 
-    def restart(self):
+    def restart(self, *paths):
         self.stop()
-        self.launch()
+        self.launch(*paths)
 
     def probe(self, kind='policy'):
         p = super().probe(kind)
@@ -296,6 +307,7 @@ def settings_and_preferences(h):
     h.effective(left / 'code.zig', zig, origins, 'zig', left)
     assert h.preference_bytes() == saved
     h.command('close-workspace')
+    wait_for(lambda: not h.probe('browser')['roots'])
     h.settled()
     h.effective(left / 'code.zig', DEFAULTS, ['user'] * 4, 'zig')
     h.snapshot('preferences-reloaded-with-explicit-default-presence')
@@ -436,6 +448,13 @@ def absent_preferences(h):
     assert not any(k in config['Coral'] for k in KEYS), dict(config['Coral'])
     h.restart()
     h.open_document(h.roots[0] / 'plain.txt')
+    h.effective(h.roots[0] / 'plain.txt', dict(lines=False, wrap=False, spaces=False, indent=8),
+                ['workspace'] * 4, root=h.roots[0])
+    before = h.probe('workspace')['documents']
+    h.command('close-workspace')
+    wait_for(lambda: not h.probe('browser')['roots'])
+    h.settled()
+    assert h.probe('workspace')['documents'] == before
     h.effective(h.roots[0] / 'plain.txt', DEFAULTS, ['default'] * 4)
     assert not any(h.probe()['user_present'].values())
     h.snapshot('absent-safe-keys-survive-global-save')
@@ -596,6 +615,7 @@ def exact_scope(h):
     h.approve()
     h.restricted(h.open_workspace(h.roots[0], folder=True))
     h.command('close-workspace')
+    wait_for(lambda: not h.probe('browser')['roots'])
     h.settled()
     h.spec['roots'] = [{'path': 'right'}]
     h.write(h.manifest, json.dumps(h.spec))
@@ -756,8 +776,12 @@ def damaged_state(h):
             if damage != 'missing':
                 assert p['status'] == 'failed' and p['store_error'], p
             h.snapshot('state-' + damage)
-            h.restart()
-            p = h.restricted(h.open_workspace(h.manifest))
+            # This loop tests a fresh trust lookup, not automatic layout restore.
+            # Explicit workspace CLI also exercises startup suppression without
+            # removing any retained project or trust state.
+            h.restart('--workspace', h.manifest)
+            assert h.browser()['manifest'] == str(h.manifest)
+            p = h.restricted(h.settled())
             if damage != 'missing':
                 assert p['status'] == 'failed' and p['store_error'], p
             h.inspect_store('restart-' + damage)
@@ -795,7 +819,8 @@ def damaged_state(h):
     assert p['status'] == 'failed' and p['store_error'], p
     assert not missing.exists()
     h.snapshot('missing-state-home-cannot-persist-approval')
-    h.stop()
+    h.stop(without_session=True)
+    assert not missing.exists()
     inside = h.roots[0] / 'machine-state'
     inside.mkdir(mode=0o700)
     h.session.env['XDG_STATE_HOME'] = str(inside)

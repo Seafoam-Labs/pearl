@@ -64,7 +64,8 @@ pub const Controller = struct {
     }
     fn ready(self: *Controller, operation: Operation) !void {
         const app = self.app;
-        if (self.closed or app.closing or app.quitting) return error.Closing;
+        if (self.closed or app.editingFrozen()) return error.Closing;
+        if (app.manager) |manager| if (manager.quitting) return error.Closing;
         if (app.fileOperationBarrier() or app.workspaceOperationBusy()) return error.FileOperationBusy;
         if (app.recovery_suspended or app.dialog != null or app.closing_group != null or
             app.browser.loading or app.browser.choosing or app.browser.hasPendingFiles() or
@@ -81,6 +82,36 @@ pub const Controller = struct {
         self.state = .{ .operation = operation, .status = .running };
         self.begin(operation) catch |err| self.report(err, null);
     }
+    /// Transfers ownership only on success. Automatic sessions use precisely the
+    /// same worker verification, workspace admission and rollback as explicit ones.
+    pub fn startPrepared(self: *Controller, value: *model.Owned, context: *anyopaque, completion: *const fn (*anyopaque, bool) void) !void {
+        if (self.work != null) return error.Busy;
+        if (self.app.snapshotDocuments().len != 0) return error.ActiveDocuments;
+        try self.ready(.restore);
+        if (self.app.manager) |manager| if (manager.session_owner != null) return error.Busy;
+        const work = try a.create(Work);
+        work.* = .{ .controller = self, .operation = .restore, .request = self.app.browser.requests.capture().?, .document_token = self.app.workspace.capture().?, .value = value, .context = context, .completion = completion };
+        self.state = .{ .operation = .restore, .status = .running };
+        if (self.app.manager) |manager| manager.session_owner = self.app.window_id;
+        self.work = work;
+        self.app.hold();
+        const task = c.g_task_new(null, null, &done, work).?;
+        c.g_task_set_task_data(task, work, null);
+        c.g_task_run_in_thread(task, &worker);
+        c.g_object_unref(task);
+    }
+    pub fn capture(app: *App) !*model.Owned {
+        const snapshot = try snapshots.captureApp(app);
+        defer snapshot.deinit();
+        var roots: std.ArrayList(model.Root) = .empty;
+        defer roots.deinit(a);
+        var workspace: ?model.Workspace = null;
+        if (app.browser.model) |*current| {
+            for (current.roots) |root| try roots.append(a, .{ .path = root.lexical_path, .name = root.display_name });
+            workspace = .{ .source = if (current.manifest_path != null) .manifest else .folder, .path = current.manifest_path orelse current.roots[0].lexical_path, .roots = roots.items };
+        }
+        return model.Owned.create(.{ .snapshot = snapshot.value, .workspace = workspace, .layout = app.snapshotDockLayout() });
+    }
     fn begin(self: *Controller, operation: Operation) !void {
         try self.ready(operation);
         const work = try a.create(Work);
@@ -90,16 +121,7 @@ pub const Controller = struct {
         if (operation == .save) {
             // Flush presentation projections exactly as normal recovery does.
             self.app.checkpoint();
-            const snapshot = try snapshots.captureApp(self.app);
-            defer snapshot.deinit();
-            var roots: std.ArrayList(model.Root) = .empty;
-            defer roots.deinit(a);
-            var workspace: ?model.Workspace = null;
-            if (self.app.browser.model) |*current| {
-                for (current.roots) |root| try roots.append(a, .{ .path = root.lexical_path, .name = root.display_name });
-                workspace = .{ .source = if (current.manifest_path != null) .manifest else .folder, .path = current.manifest_path orelse current.roots[0].lexical_path, .roots = roots.items };
-            }
-            work.value = try model.Owned.create(.{ .snapshot = snapshot.value, .workspace = workspace, .layout = self.app.snapshotDockLayout() });
+            work.value = try capture(self.app);
         }
         if (self.app.manager) |manager| {
             if (manager.session_owner != null) {
@@ -127,8 +149,12 @@ pub const Controller = struct {
             std.debug.assert(manager.session_owner == self.app.window_id);
             manager.session_owner = null;
         }
+        const completion = work.completion;
+        const context = work.context;
+        const success = self.state.status == .restored;
         a.destroy(work);
         self.probe();
+        if (completion) |callback| callback(context.?, success);
         self.app.release();
     }
     fn report(self: *Controller, err: anyerror, workspace: ?model.Workspace) void {
@@ -190,7 +216,7 @@ pub const Controller = struct {
                 };
             }
             const bound = verification == .verified;
-            state.* = .{ .text = doc.text, .path = if (bound) doc.path else null, .etag = if (bound) doc.saved_etag else null, .dirty = !bound, .bom = doc.bom, .newline = switch (doc.newline) {
+            state.* = .{ .text = doc.text, .path = if (bound) doc.path else null, .etag = if (bound) doc.saved_etag else null, .dirty = if (work.completion != null and doc.path == null) doc.dirty else !bound, .bom = doc.bom, .newline = switch (doc.newline) {
                 .lf => .lf,
                 .crlf => .crlf,
                 .mixed => .mixed,
@@ -232,6 +258,8 @@ const Work = struct {
     verification: [recovery.limits.documents]Verification = @splat(.copy),
     err: ?anyerror = null,
     delay_us: u64 = 0,
+    context: ?*anyopaque = null,
+    completion: ?*const fn (*anyopaque, bool) void = null,
 };
 
 fn worker(task: ?*c.GTask, _: ?*anyopaque, data: ?*anyopaque, _: [*c]c.GCancellable) callconv(.c) void {
@@ -246,7 +274,7 @@ fn perform(work: *Work) !void {
     switch (work.operation) {
         .save => try fs.save(null, work.value.?.value),
         .restore => {
-            work.value = try fs.load(null);
+            if (work.value == null) work.value = try fs.load(null);
             const snapshot = work.value.?.value.snapshot;
             try @import("recovery_offsets.zig").validateRestore(snapshot);
             for (snapshot.documents, 0..) |doc, i| {

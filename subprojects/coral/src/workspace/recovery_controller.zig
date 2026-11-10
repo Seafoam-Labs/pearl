@@ -70,9 +70,9 @@ pub const Controller = struct {
         app.recovery_checkpoint = &changed;
         u.connect(self.application, "window-removed", &windowRemoved, self);
         self.opening = true;
-        // A later window is usable/closable immediately. Capture its latest
-        // state when the journal is ready; never read worker-owned store here.
-        self.ready(app);
+        // New project restores wait for their independent recovery journal.
+        // No worker-owned store is inspected while initialization is running.
+        app.recovery_suspended = true;
         self.hold();
         const task = c.g_task_new(null, null, &opened, self).?;
         c.g_task_set_task_data(task, self, null);
@@ -130,6 +130,7 @@ pub const Controller = struct {
                 };
                 work.* = .{ .controller = self, .id = candidate.id };
                 self.claim = work;
+
                 self.run(work, .load);
                 return;
             }
@@ -145,6 +146,9 @@ pub const Controller = struct {
     fn prompt(self: *Controller, transferred: bool) void {
         const app = self.app orelse return;
         self.transferred = transferred;
+        // Only an actual decision suppresses automatic reopening. Empty journals
+        // and failed/contended claims never reach this presentation boundary.
+        app.recovery_claimed = true;
         const dialog = c.gtk_dialog_new().?;
         _ = c.g_object_ref_sink(dialog);
         self.dialog = dialog;
@@ -400,7 +404,11 @@ fn opened(_: ?*c.GObject, result: ?*c.GAsyncResult, data: ?*anyopaque) callconv(
         self.closeStore();
     } else {
         if (self.startup_error) |err| self.report(err);
-        if (self.app) |app| app.checkpoint();
+        if (self.app) |app| {
+            app.recovery_suspended = false;
+            self.ready(app);
+            app.checkpoint();
+        }
     }
 }
 fn changed(data: ?*anyopaque, app: *App) void {
@@ -410,7 +418,9 @@ fn changed(data: ?*anyopaque, app: *App) void {
     // App emits its final synchronous observer notification before destroying
     // the window, after every canonical document was saved/discarded/closed.
     if (app.snapshotDocuments().len == 0) {
-        self.finish(true);
+        // Automatic startup may be loading a catalog or a prepared snapshot.
+        // An empty intermediate window is not a resolved recovery journal.
+        if (app.quitting or app.closing) self.finish(true);
         return;
     }
     if (self.store == null) return;

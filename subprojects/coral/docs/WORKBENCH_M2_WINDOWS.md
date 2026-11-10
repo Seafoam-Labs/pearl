@@ -1,6 +1,6 @@
 # M2: native multi-window lifecycle
 
-**Implemented:** multiple native Coral windows in one process, with independent documents/workspaces/docks and explicit, bounded lifecycle ownership. This does not add shared cross-window buffers, tab dragging, automatic window-session restoration, LSP, Git or agents. M2 remains a bounded workbench preview.
+**Implemented:** multiple native Coral windows in one process, with independent documents/workspaces/docks and explicit, bounded lifecycle ownership. Shared cross-window buffers, tab dragging, LSP, Git and agents remain unimplemented. [Automatic project/window startup](WORKBENCH_M2_PROJECTS.md) is now delivered separately. **M2 implementation is COMPLETE as a bounded workspace preview; M3 is next.** See the [acceptance audit](WORKBENCH_M2_ACCEPTANCE.md).
 
 ## Use
 
@@ -15,6 +15,8 @@
 **Behavior change:** Ctrl+Q now means **Quit All**, not just closing the current window. Use Close Window to leave siblings running. Closing the last document retains the existing behavior of closing its window.
 
 Quit All prompts one window at a time. Save/Discard resolves its documents; Cancel or a save/conflict failure stops the quit chain. Already resolved/closed windows are not reopened—this is not an atomic all-window transaction. New Window is refused while Quit All is in progress. Existing modal/startup recovery work must be finished before its window can be closed; refusal cancels aggregate quitting rather than leaving it stuck.
+
+Automatic close snapshots freeze every participating window before prompts, retain pre-prompt layout, reconcile Save and exclude Discard. Cancel/save failure thaws surviving windows. Retention failure/oversize offers an explicit close-without-automatic-session choice that still requires normal Save/Discard and durable clearing of old startup membership. See [close safety](WORKBENCH_M2_PROJECTS.md#graceful-close-save-and-discard).
 
 The limit is **16 live plus closing/draining windows**. Closed entries are reclaimed after callbacks finish, so repeated create/close cycles reuse capacity. IDs are monotonic and not reused. A slow filesystem operation can temporarily consume a closing slot; blocking mount I/O is still not forcibly interruptible.
 
@@ -66,7 +68,9 @@ Scope/key associations are retained for queued and active removals, including a 
 
 Each window gets an independent journal. Only the first window discovers interrupted sessions; creating another window never reoffers candidates already kept for later. Later journals open on workers while the window remains usable. Initialization failures remain visible, with no insecure fallback. A crash can leave multiple journals; startup retains the existing explicit restore/keep/discard sequence and restores documents as unsaved copies, not a reconstructed arrangement of windows.
 
-**Save/Restore Workspace Session still uses one explicit shared slot.** In-process admission permits one session operation at a time; another window receives `Busy`, preserving the current operation. Sequential explicit saves replace the slot. Restore acts only on the requesting window and keeps its existing documents. This is not a per-window session database or automatic startup/quit persistence. Dock/session schema v2 and crash-recovery formats are unchanged.
+**Save/Restore Workspace Session still uses one explicit shared slot.** In-process admission permits one session operation at a time; another window receives `Busy`, preserving the current operation. Sequential explicit saves replace the slot. Restore acts only on the requesting window and keeps its existing documents. This explicit slot is not the automatic per-window project database and is never overwritten by it. Dock/session schema v2 and crash-recovery formats are unchanged.
+
+Ordinary startup without explicit file/folder/workspace input now restores the automatic startup set into independent owners. Real recovery decisions or explicit CLI input suppress old membership while retaining recents; empty journals do not. Closing one window while siblings remain retains a recent snapshot without startup membership; last-window close/Quit All retains the intended startup set. **Open Recent Project (Ctrl+Alt+P)** activates a matching live owner in this process or restores another window, not isolated tab sets in the current owner. Lifetime leases reject another process's live record; generation-checked startup consumes each old member only once, including three concurrent launches. No IPC window activation, shared buffers or desktop position restoration is implied. See [automatic projects and bounds](WORKBENCH_M2_PROJECTS.md).
 
 ## Source and validation
 
@@ -99,4 +103,4 @@ Evidence: `pearl/.cache/coral-windows/results.json`, adjacent logs/screenshots, 
 
 ## Remaining roadmap
 
-Multi-window ownership and [bounded explicit file operations](WORKBENCH_M2_OPERATIONS.md) are delivered, not full IDE parity. [Final file-operation validation](WORKBENCH_M2_OPERATIONS.md#final-validation--2026-11-09) passed all 25 native scenarios together, all nine aggregate gates and a fresh hooks-disabled production build. The window gate again passed 27 native cases and executed 191 widget tests; the counts above remain historical multi-window evidence. Next focused M2 work is remaining acceptance review, automatic/per-project workspace/session management and additional pickers. Cross-window tab transfer/shared buffers also remain unimplemented. LSP/Git/terminal/agent service milestones remain later work; M9 remains removed.
+Multi-window ownership and [bounded explicit file operations](WORKBENCH_M2_OPERATIONS.md) are delivered, not full IDE parity. [Final file-operation validation](WORKBENCH_M2_OPERATIONS.md#final-validation--2026-11-09) passed all 25 native scenarios together, all nine aggregate gates and a fresh hooks-disabled production build. The window gate again passed 27 native cases and executed 191 widget tests; the counts above remain historical multi-window evidence. Automatic projects, native recents/buffer pickers and reviewed root management now complete mandatory M2 scope; [current closure evidence](WORKBENCH_M2_ACCEPTANCE.md) is separate from those historical increment results. M3 is next. Cross-window tab transfer/shared buffers also remain unimplemented. LSP/Git/terminal/agent service milestones remain later work; M9 remains removed.

@@ -132,10 +132,19 @@ def main():
                 assert app.wait() == -signal.SIGKILL
                 wait_for(lambda: not windows())
 
-            def close():
+            def close(without_session=False):
                 count = len(windows())
                 before = probe()
                 key('q', 'ctrl')
+                if without_session:
+                    def retention_prompt():
+                        lines = command('lifecycle-probe')
+                        value = json.loads(next(line.removeprefix('CORAL_LIFECYCLE ') for line in lines
+                                                if line.startswith('CORAL_LIFECYCLE ')))
+                        return value if value['dialog'] == 'close_without_session' else None
+                    wait_for(retention_prompt)
+                    assert probe()['documents'] == before['documents']
+                    command('respond', response=1)
                 for _ in range(sum(d['dirty'] for d in before['documents'])):
                     # Probe is read-only; the test hook is also installed on App dialogs.
                     wait_for(lambda: probe()['dialog'])
@@ -164,7 +173,8 @@ def main():
             launch(XDG_STATE_HOME=str(missing))
             app.expect('CORAL_RECOVERY_ERROR MissingStateHome')
             assert not missing.exists()
-            close()
+            close(without_session=True)
+            assert not missing.exists()
             passed('Missing state home is surfaced, not silently created or bypassed')
 
             root.parent.mkdir(mode=0o700)
@@ -263,8 +273,7 @@ def main():
             wait_for(lambda: probe()['dialog'])
             command('respond', response=1)
             app.expect('CORAL_RECOVERY_ERROR TooLarge', timeout=30)
-            key('q', 'ctrl')
-            assert app.wait(timeout=15) == 0, app.lines[-20:]
+            close(without_session=True)
             wait_for(lambda: not windows())
             assert not list(root.iterdir()), 'An empty rejected session is not recovery data'
             launch()

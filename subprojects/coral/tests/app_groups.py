@@ -349,10 +349,13 @@ def main():
         assert not state['dialog'] and len(state['documents']) == len(before_quit['documents']) and len(state['views']) == len(before_quit['views']), state
         key('q', 'ctrl')
         assert probe()['dialog']
-        for remaining in range(len(before_quit['documents']) - 1, 0, -1):
+        for _ in range(sum(d['dirty'] for d in before_quit['documents']) - 1):
             command('respond', response=1)
             state = probe()
-            assert state['dialog'] and len(state['documents']) == remaining, state
+            # M2 collects decisions against a frozen snapshot before destroying
+            # any document; Discard must not mutate another pending prompt.
+            assert state['dialog'] and state['documents'] == before_quit['documents'], state
+            assert len(state['views']) == len(before_quit['views']) and not state['editable'], state
         command('respond', response=1)
         assert app.wait(timeout=10) == 0, app.lines[-40:]
         assert sample.read_text() == original

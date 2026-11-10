@@ -5,6 +5,7 @@ const u = @import("c.zig");
 const c = u.c;
 const App = @import("app.zig").App;
 const Recovery = @import("workspace/recovery_controller.zig").Controller;
+const projects = @import("workspace/project_controller.zig");
 const Settings = @import("platform/settings.zig").Settings;
 const trust = @import("workspace/trust.zig");
 
@@ -25,6 +26,10 @@ pub const Manager = struct {
     quitting: bool = false,
     quit_waiting: ?u64 = null,
     source: c_uint = 0,
+    creating_project: ?projects.Target = null,
+    startup_queue: [limit]projects.Target = undefined,
+    startup_len: usize = 0,
+    startup_next: usize = 0,
     // One explicit shared session slot, not a per-window session registry.
     // Admission is serialized: the last accepted save owns the resulting slot.
     session_owner: ?u64 = null,
@@ -90,9 +95,58 @@ pub const Manager = struct {
         c.g_application_hold(u.cast(c.GApplication, self.application));
         entry.recovery = if (first) Recovery.init(u.cast(c.GApplication, self.application), self.initial) else .{ .application = u.cast(c.GApplication, self.application), .ready = &emptyWindow };
         entry.app = App.create(self.application, self.settings, self.width, self.height, self, id);
+        entry.app.projects.restore_target = self.creating_project;
         self.entries[index] = entry;
         if (first) entry.recovery.attach(entry.app) else entry.recovery.attachNew(entry.app);
         if (self.source == 0) self.source = c.g_timeout_add(10, &pump, self);
+    }
+    pub fn createProject(self: *Manager, requester: *App, target: projects.Target) void {
+        self.creating_project = target;
+        defer self.creating_project = null;
+        self.create(requester);
+    }
+    pub fn restoreStartup(self: *Manager, app: *App, records: []const projects.fs.Record) void {
+        if (self.quitting or app.closing) return;
+        if (app.snapshotDocuments().len != 0 or app.browser.model != null or app.browser.loading) {
+            app.projects.suppressStartup();
+            return;
+        }
+        self.startup_len = 0;
+        self.startup_next = 0;
+        for (records) |record| if (record.reopen and !record.live and self.startup_len < limit) {
+            self.startup_queue[self.startup_len] = .{ .id = record.id, .updated = record.updated, .reopen = true };
+            self.startup_len += 1;
+        };
+        if (self.startup_len == 0) {
+            if (app.snapshotDocuments().len == 0) _ = app.newDocument();
+            app.projects.enable();
+        } else {
+            self.startup_next = 1;
+            app.projects.restore(self.startup_queue[0]);
+        }
+    }
+    fn continueStartup(self: *Manager) void {
+        if (self.quitting or self.startup_next >= self.startup_len or self.session_owner != null or self.file_operation_owner != null) return;
+        var requester: ?*App = null;
+        var count: usize = 0;
+        for (self.entries) |entry| if (entry) |e| {
+            count += 1;
+            if (e.app.projects.restoring) return;
+            if (!e.app.closing) requester = e.app;
+        };
+        if (count >= limit) return;
+        if (requester) |app| {
+            const next = self.startup_queue[self.startup_next];
+            self.startup_next += 1;
+            self.createProject(app, next);
+        }
+    }
+    pub fn shouldReopenOnClose(self: *Manager, app: *App) bool {
+        if (self.quitting) return true;
+        for (self.entries) |entry| if (entry) |e| {
+            if (e.app != app and !e.app.closing and !e.app.quitting) return false;
+        };
+        return true;
     }
     pub fn cycle(self: *Manager, from: u64, previous: bool) void {
         var chosen: ?*App = null;
@@ -109,6 +163,27 @@ pub const Manager = struct {
     }
     pub fn quitAll(self: *Manager, requester: *App) void {
         if (self.quitting) return;
+        for (self.entries) |entry| if (entry) |e| {
+            if (e.app.quitting and !e.app.closing) {
+                requester.message("Finish the current window close before Quit All.");
+                return;
+            }
+        };
+        // Freeze every member before any prompt changes focus or any window is
+        // removed. Independent membership is preserved for the next launch.
+        for (self.entries) |entry| if (entry) |e| {
+            if (e.app.closing) continue;
+            e.app.prepareProjectClose() catch |err| {
+                // Capture failures get a per-window, explicit opt-out when that
+                // window's turn arrives. Its metadata guard still freezes it.
+                if (e.app.close_guard != null) continue;
+                for (self.entries) |other| if (other) |o| if (!o.app.closing) o.app.thawProjectClose();
+                const message = u.fmt("Quit All could not freeze project sessions: {s}. All windows kept open.", .{@errorName(err)});
+                defer u.a.free(message);
+                requester.message(message);
+                return;
+            };
+        };
         self.quitting = true;
         self.quit_waiting = requester.window_id;
         requester.quit();
@@ -117,6 +192,9 @@ pub const Manager = struct {
         if (self.quit_waiting != id) return;
         self.quitting = false;
         self.quit_waiting = null;
+        for (self.entries) |entry| if (entry) |e| {
+            if (!e.app.closing) e.app.thawProjectClose();
+        };
     }
     fn continueQuit(self: *Manager) void {
         if (!self.quitting) return;
@@ -181,7 +259,8 @@ pub const Manager = struct {
                 (app != owner and app.openDialogs())) return error.DialogPending;
             if (app.quitting or app.closing_group != null or app.recovery_suspended or e.recovery.claim != null or
                 app.pending_file_loads != 0 or app.browser.hasPendingOperations() or
-                app.session.work != null) return error.WorkspaceBusy;
+                app.session.work != null or app.projects.restoring or app.projects.restore_cleanup or app.projects.retiring or
+                app.close_guard != null or app.workspace_roots.busy()) return error.WorkspaceBusy;
             for (app.snapshotDocuments()) |doc| {
                 if (doc.busy or doc.loading or doc.pending != null) return error.WorkspaceBusy;
                 // Clean documents are just as bound as dirty ones. Never leave an
@@ -206,6 +285,31 @@ pub const Manager = struct {
                 }
             }
         };
+    }
+    /// Manifest rewrites share the mutation barrier but intentionally permit
+    /// the active manifest itself; root controller supplies copied bound paths.
+    pub fn checkManifestOperation(self: *Manager, owner: *App) !void {
+        if (owner.manager != self or self.find(owner.window_id) != owner) return error.NoManager;
+        if (self.quitting or owner.closing or owner.quitting) return error.Closing;
+        if (self.file_operation_owner != null) return error.OperationPending;
+        if (self.session_owner != null) return error.WorkspaceBusy;
+        for (self.saves) |save| if (save != null) return error.WorkspaceBusy;
+        for (self.entries) |entry| if (entry) |e| {
+            const app = e.app;
+            if (app.dialog != null or app.file_open_choosers != 0 or (app != owner and app.openDialogs())) return error.DialogPending;
+            if (app.quitting or app.closing_group != null or app.recovery_suspended or e.recovery.claim != null or
+                app.pending_file_loads != 0 or app.browser.hasPendingOperations() or app.session.work != null or
+                app.projects.restoring or app.projects.restore_cleanup or app.projects.retiring or
+                app.close_guard != null or app.workspace_operations.busy()) return error.WorkspaceBusy;
+            for (app.snapshotDocuments()) |doc| if (doc.busy or doc.loading or doc.pending != null) return error.WorkspaceBusy;
+        };
+    }
+    pub fn beginManifestOperation(self: *Manager, owner: *App) !void {
+        try self.checkManifestOperation(owner);
+        self.file_operation_owner = owner.window_id;
+    }
+    pub fn endManifestOperation(self: *Manager, owner: *App) void {
+        self.endFileOperation(owner);
     }
     pub fn beginFileOperation(self: *Manager, owner: *App, source_abs: []const u8, destination_abs: []const u8) !void {
         try self.checkFileOperation(owner, source_abs, destination_abs);
@@ -338,15 +442,19 @@ test "file operation admission covers peer and draining documents, roots, manife
         app.closing = false;
         app.quitting = false;
         app.closing_group = null;
+        app.close_guard = null;
         app.dialog = null;
         app.file_open_choosers = 0;
         app.pending_file_loads = 0;
         app.recovery_suspended = false;
         app.workspace_operations = .init(app);
+        app.workspace_roots = .init(app);
+        app.projects = .init(app);
         app.browser.model = null;
         app.browser.loading = false;
         app.browser.choosing = false;
         app.browser.pending_load = null;
+        app.browser.closing_workspace = false;
         app.browser.jobs = .empty;
         app.browser.manifest_canonical = null;
         app.session.work = null;
@@ -417,11 +525,17 @@ test "file operation admission covers peer and draining documents, roots, manife
 }
 
 fn emptyWindow(app: *App) void {
-    _ = app.newDocument();
+    if (app.projects.restore_target) |target| {
+        app.projects.restore(target);
+    } else {
+        _ = app.newDocument();
+        app.projects.enable();
+    }
 }
 fn pump(data: ?*anyopaque) callconv(.c) c_int {
     const self = u.cast(Manager, data.?);
     self.continueQuit();
+    self.continueStartup();
     var remaining: usize = 0;
     for (&self.entries) |*slot| if (slot.*) |entry| {
         if (entry.app.closing and entry.app.holds == 0 and entry.recovery.drained()) {

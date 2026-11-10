@@ -63,6 +63,7 @@ pub const Controller = struct {
     scanning: bool = false,
     error_name: ?[]const u8 = null,
     closed: bool = false,
+    closing_workspace: bool = false,
     // Isolated native tests can force a completed worker to deliver out of order.
     test_next_delay_us: c_ulong = 0,
     test_drain: bool = false,
@@ -188,7 +189,20 @@ pub const Controller = struct {
         self.app.message("Explorer state reset: directory slots released. Workspace root IDs and documents are unchanged.");
     }
     pub fn closeWorkspace(self: *Controller) void {
-        if (!self.closed and (self.app.rejectFileOperationBarrier() or self.app.workspaceOperationBusy())) return;
+        if (!self.closed and !self.closing_workspace and self.app.editingFrozen()) return;
+        if (!self.closed and (self.app.rejectFileOperationBarrier() or self.app.workspaceOperationBusy() or self.app.quitting)) return;
+        if (!self.closed and self.app.manager != null) {
+            const ready = self.app.projects.beforeWorkspaceChange(null) catch |err| {
+                self.closing_workspace = false;
+                self.fail(err);
+                return;
+            };
+            if (!ready) {
+                self.closing_workspace = true;
+                return;
+            }
+        }
+        self.closing_workspace = false;
         self.app.workspace_search.invalidate("Stale — workspace closed. Open a workspace and refresh.");
         self.requests.invalidate();
         self.cancelWaitingLoad();
@@ -212,6 +226,7 @@ pub const Controller = struct {
             self.clearRows();
             u.setLabel(self.status, "Open a folder or workspace to browse files.");
             self.app.refreshWorkspaceLabels();
+            if (self.app.manager != null) self.app.projects.workspaceChanged();
         }
     }
     pub fn shutdown(self: *Controller) void {
@@ -263,7 +278,8 @@ pub const Controller = struct {
         return true;
     }
     fn beginRequest(self: *Controller) ?identity.Token {
-        if (self.closed) return null;
+        if (self.closed or self.app.editingFrozen()) return null;
+        if (self.app.manager != null) self.app.projects.cancelWorkspaceChange();
         self.requests.invalidate();
         self.cancelWaitingLoad();
         for (self.jobs.items) |job| if (job.kind == .load) c.g_cancellable_cancel(job.cancel);
@@ -271,7 +287,9 @@ pub const Controller = struct {
         return self.requests.capture();
     }
     pub fn load(self: *Controller, source: Source, path: []const u8) void {
-        if (self.app.rejectFileOperationBarrier()) return;
+        if (self.app.editingFrozen()) return;
+        if (self.app.rejectFileOperationBarrier() or self.app.workspaceOperationBusy() or self.app.quitting) return;
+        if (self.app.manager) |manager| if (manager.quitting) return;
         if (!self.admit(path, null)) return;
         const token = self.beginRequest() orelse return;
         self.app.dock.show(.explorer);
@@ -296,7 +314,7 @@ pub const Controller = struct {
         return token;
     }
     fn loadRequest(self: *Controller, source: Source, path: []const u8, token: identity.Token) void {
-        if (self.app.rejectFileOperationBarrier()) return;
+        if (self.app.rejectFileOperationBarrier() or self.app.workspaceOperationBusy()) return;
         if (!self.requests.accepts(token)) return;
         self.app.workspace_policy.invalidate();
         self.loading = true;
@@ -593,7 +611,7 @@ pub const Controller = struct {
         if (!node.complete or node.page == null) self.appendRow(.{ .node = index, .more = true }, depth + 1, if (node.busy) "Reading…" else if (node.page == null and node.continuation != null) "Load more (previous page evicted)" else "Load more / retry");
     }
     pub fn hasPendingOperations(self: *const Controller) bool {
-        if (self.loading or self.choosing or self.pending_load != null) return true;
+        if (self.loading or self.choosing or self.pending_load != null or self.closing_workspace) return true;
         // Include stale/cancelled and delivering jobs until they are reaped.
         for (self.jobs.items) |job| if (job.kind != .scan) return true;
         return false;
@@ -610,7 +628,7 @@ pub const Controller = struct {
         return self.openFileRequest(path, root_id, activation, overlay);
     }
     fn openFileRequest(self: *Controller, path: []const u8, root_id: ?RootId, search_activation: ?SearchActivation, overlay: bool) bool {
-        if (self.closed or self.app.rejectFileOperationBarrier() or self.app.workspaceOperationBusy()) return false;
+        if (self.closed or self.app.editingFrozen() or self.app.rejectFileOperationBarrier() or self.app.workspaceOperationBusy()) return false;
         var base: ?[]const u8 = null;
         var token: ?identity.Token = null;
         if (root_id) |id| {
@@ -732,6 +750,17 @@ pub const Controller = struct {
             // it is not a successful notification-queue drain.
             const unavailable = self.watches.failed and self.watches.barrier_failed >= job.barrier;
             if (!drained and !unavailable) return;
+            if (self.app.manager != null) {
+                const ready = self.app.projects.beforeWorkspaceChange(&job.result.?) catch |err| {
+                    self.pending_load = null;
+                    self.loading = false;
+                    job.err = err;
+                    self.fail(err);
+                    self.reap(job);
+                    return;
+                };
+                if (!ready) return;
+            }
             self.pending_load = null;
             self.publishLoad(job);
             self.reap(job);
@@ -743,6 +772,7 @@ pub const Controller = struct {
             job.err = error.FileOperationBusy;
             return;
         }
+
         std.mem.swap(?[:0]u8, &self.manifest_canonical, &job.canonical);
         job.published = true;
         self.app.workspace_search.invalidate("Stale — workspace model changed. Refresh to search the current roots.");
@@ -764,6 +794,7 @@ pub const Controller = struct {
             self.policy = explorer.Policy.create(previous.exclude);
             self.invalidateLoaded();
             self.app.workspace_policy.modelChanged();
+            if (self.app.manager != null) self.app.projects.cancelWorkspaceChange();
             self.render();
             return;
         };
@@ -776,7 +807,9 @@ pub const Controller = struct {
         self.roots();
         self.app.workspace_policy.modelChanged();
         self.app.refreshWorkspaceLabels();
-        self.app.message("Workspace opened in restricted mode. Documents kept. Recovery does not restore workspace roots; reopen the manifest explicitly.");
+        if (self.app.manager != null) self.app.projects.workspaceChanged();
+        self.app.scheduleCheckpoint();
+        self.app.message("Workspace opened in restricted mode. Documents kept. Recent Projects opens independent project windows; automatic sessions retain this window's tabs and layout.");
     }
     fn acceptsModel(self: *Controller, token: identity.Token) bool {
         return if (self.model) |*m| m.scope.accepts(token) else false;
@@ -948,7 +981,7 @@ fn done(_: ?*c.GObject, result: ?*c.GAsyncResult, data: ?*anyopaque) callconv(.c
     job.delivering = true;
     _ = c.g_task_propagate_boolean(u.cast(c.GTask, result.?), null);
     if (self.closed or !self.app.workspace.accepts(job.document_token)) return;
-    if (job.kind == .file and self.app.rejectFileOperationBarrier()) return;
+    if (job.kind == .file and (self.app.editingFrozen() or self.app.rejectFileOperationBarrier())) return;
     if (job.request) |token| if (!self.requests.accepts(token)) return;
     if (job.model_token) |token| if (!self.acceptsModel(token)) return;
     if (job.kind == .scan and job.epoch != self.epoch) return;
@@ -1143,6 +1176,7 @@ fn watchDone(_: ?*c.GObject, result: ?*c.GAsyncResult, data: ?*anyopaque) callco
 }
 fn pump(data: ?*anyopaque) callconv(.c) c_int {
     const self = u.cast(Controller, data.?);
+    if (self.closing_workspace and !self.closed) self.closeWorkspace();
     if (self.closed) return 0;
     const now = c.g_get_monotonic_time();
     self.pollWatches();
