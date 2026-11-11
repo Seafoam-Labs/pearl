@@ -86,7 +86,7 @@ class WindowHarness(PolicyHarness):
         self.slot = Path(self.session.env['XDG_STATE_HOME']) / 'coral/sessions/current'
         self.load_gate = self.command_path.with_name('session-load.gate')
         self.session.env['CORAL_TEST_SESSION_LOAD_PAUSE'] = str(self.load_gate)
-        self.app = self.session.child(f'{self.name}-{self.serial}',
+        self.app = self.app_child(f'{self.name}-{self.serial}',
                                       [self.binary, '--width=900', '--height=620', *paths],
                                       G_DEBUG='fatal-criticals')
         self.first_native = wait_for(lambda: next((w['id'] for w in self.native_windows()

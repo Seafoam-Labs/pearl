@@ -40,6 +40,9 @@ pub const Config = struct {
     stdout: c_int,
     stderr: c_int,
     terminal: bool = false,
+    /// Borrowed descriptor and approved metadata; null preserves pathname exec
+    /// for existing task/PTY callers. No pathname fallback when supplied.
+    executable: ?@import("executable.zig").Verified = null,
 };
 pub const Owner = struct {
     pid: os.pid_t,
@@ -101,13 +104,17 @@ pub fn start(config: Config) error{SystemResources}!Owner {
     errdefer _ = os.close(report[0]);
     // Relocate every source above the destination range before fork, so dup2
     // cannot overwrite another source even if the host had closed fd 0/1/2.
-    var sources: [5]c_int = @splat(-1);
+    var sources: [6]c_int = @splat(-1);
     defer for (sources) |fd| {
         if (fd >= 0) _ = os.close(fd);
     };
     for ([_]c_int{ config.stdin, config.stdout, config.stderr, control[0], report[1] }, 0..) |fd, i| {
         sources[i] = os.fcntl(fd, 1030, @as(c_int, 10)); // F_DUPFD_CLOEXEC
         if (sources[i] < 0) return error.SystemResources;
+    }
+    if (config.executable) |exe| {
+        sources[5] = os.fcntl(exe.fd, 1030, @as(c_int, 10));
+        if (sources[5] < 0) return error.SystemResources;
     }
     // On Linux sigprocmask changes only this thread. Block delivery across
     // _Fork so an inherited application signal handler cannot run in the
@@ -136,19 +143,23 @@ fn sendReport(report: Report) noreturn {
 }
 
 fn execFailed(fd: c_int) noreturn {
-    const failure = os.errno();
+    execFailure(fd, os.errno());
+}
+
+fn execFailure(fd: c_int, failure: c_int) noreturn {
     const bytes = std.mem.asBytes(&failure);
     while (os.write(fd, bytes.ptr, bytes.len) < 0 and os.errno() == os.EINTR) {}
     os._exit(127);
 }
 
-fn supervise(config: Config, sources: [5]c_int) noreturn {
-    for (sources, 0..) |fd, i| {
+fn supervise(config: Config, sources: [6]c_int) noreturn {
+    const source_count: usize = if (config.executable != null) 6 else 5;
+    for (sources[0..source_count], 0..) |fd, i| {
         if (os.dup2(fd, @intCast(i)) < 0) os._exit(125);
     }
     // Linux close_range and prctl are syscall-only libc wrappers. No locks,
     // allocation, GLib, formatting, or Zig runtime work is allowed here.
-    if (os.close_range(5, std.math.maxInt(c_uint), 0) != 0) sendReport(.{ .spawn_errno = os.errno() });
+    if (os.close_range(@intCast(source_count), std.math.maxInt(c_uint), 0) != 0) sendReport(.{ .spawn_errno = os.errno() });
     var mask: [16]c_ulong = undefined;
     _ = os.sigemptyset(&mask);
     var sig: c_int = 1;
@@ -167,9 +178,26 @@ fn supervise(config: Config, sources: [5]c_int) noreturn {
         if (os.setsid() < 0) execFailed(handshake[1]);
         if (config.terminal and os.ioctl(0, os.TIOCSCTTY, @as(c_int, 0)) < 0) execFailed(handshake[1]);
         if (os.chdir(config.cwd) < 0) execFailed(handshake[1]);
-        _ = os.execve(config.argv[0].?, config.argv, config.environment);
+        if (config.executable) |exe| {
+            // dup2 cleared CLOEXEC. Native binaries need no inherited handle;
+            // scripts do: the kernel passes /dev/fd/5 to their interpreter.
+            if (os.fcntl(5, 2, @as(c_int, 1)) < 0) execFailed(handshake[1]); // F_SETFD, FD_CLOEXEC
+            if (!exe.identity.matches(5)) execFailure(handshake[1], os.ESTALE);
+            _ = os.execveat(5, "", config.argv, config.environment, 0x1000); // AT_EMPTY_PATH
+            if (os.errno() == os.ENOENT) {
+                // Linux rejects CLOEXEC script fds with ENOENT. Retry ONLY the
+                // same descriptor, retained until the interpreter closes it or
+                // exits. Missing interpreters/procfs still fail safely.
+                if (os.fcntl(5, 2, @as(c_int, 0)) < 0) execFailed(handshake[1]);
+                if (!exe.identity.matches(5)) execFailure(handshake[1], os.ESTALE);
+                _ = os.execveat(5, "", config.argv, config.environment, 0x1000);
+            }
+        } else {
+            _ = os.execve(config.argv[0].?, config.argv, config.environment);
+        }
         execFailed(handshake[1]);
     }
+    if (config.executable != null) _ = os.close(5);
     _ = os.close(handshake[1]);
     for (0..3) |fd| _ = os.close(@intCast(fd));
     var report = Report{};

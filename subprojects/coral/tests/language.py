@@ -39,6 +39,7 @@ from pearl_session import PrivateSession, fixture_prefix, wait_for
 from wayland_test_input import pointer_move, pointer_click
 from fixtures.fake_lsp import offset, text_end
 from operations import tree
+from language_pause import CASES as PAUSE_CASES
 
 FIXTURE = PROJECT / 'tests/fixtures/fake_lsp.py'
 REFERENCE = PROJECT / 'tests/fixtures/lsp-reference.json'
@@ -144,6 +145,8 @@ def replay(messages, encoding):
 
 
 class LanguageHarness(WindowHarness):
+    isolated_app_cwd = True
+
     def __init__(self, session, binary, output, evidence, name, deadline, binary_args=()):
         self.binary_args = binary_args
         self.server_processes = {}
@@ -288,26 +291,57 @@ class LanguageHarness(WindowHarness):
         p = self.policy_idle()
         if p['trust'] != 'trusted':
             confirm_scope(self)
-        assert self.language()['session_count'] == 0, 'Trust must not auto-launch a server'
 
-    def start(self, native=False, count=1):
-        self.invoke('start', palette=native)
-        p = self.result('start')
-        assert 'Nothing starts automatically' in p['popup'], p
-        if native:
-            self.click_dialog('Language: Start')
-        else:
-            self.accept()
+    def ready_language(self, count=1):
         p = self.wait_language(lambda p: p['session_count'] == count and
                                all(s['state'] == 'ready' and s['documents'] for s in p['sessions']), 25)
+        assert not p['dialog'], p
         self.remember_processes()
+        return p
+
+    def automatic_review(self):
+        # Never issue Start here: that would conceal a broken automatic trigger.
+        p = self.wait_language(lambda p: p['dialog'] and p['mode'] == 'start', 25)
+        assert 'Approval is saved for this exact configuration and executable identity' in p['popup'], p
+        assert 'Workspace trust is NOT an OS sandbox' in p['popup'], p
+        assert p['automatic']['approval_key'], p
+        return p
+
+    def start(self, native=False, count=1):
+        p = self.language()
+        if not (p['dialog'] and p['mode'] == 'start'):
+            self.invoke('start', palette=native)
+        p = self.wait_language(lambda p: (p['dialog'] and p['mode'] == 'start') or
+                               (p['session_count'] == count and all(s['state'] == 'ready' for s in p['sessions'])), 25)
+        if p['dialog']:
+            self.automatic_review()
+            if native:
+                self.click_dialog('Language: Start')
+            else:
+                self.accept()
+        return self.ready_language(count)
+
+    def stays_stopped(self, seconds=2.5, *, paused=False):
+        # Observe several production reconciliation intervals, not one lucky tick.
+        until = time.monotonic() + seconds
+        while time.monotonic() < until:
+            p = self.language()
+            assert p['session_count'] == 0 and not p['dialog'], p
+            if paused:
+                assert p['automatic']['paused'], p
+            time.sleep(.15)
         return p
 
     def setup(self, mode='default', *, text=TEXT, roots=1, options=(), real=False, native=False):
         self.configure(mode, options=options, real=real)
         self.fixture(text=text, roots=roots)
         self.trust()
-        return self.start(native=native)
+        self.automatic_review()
+        if native:
+            self.click_dialog('Language: Start')
+        else:
+            self.accept()
+        return self.ready_language()
 
     def remember_processes(self):
         for pid in descendants(self.app.proc.pid):
@@ -388,7 +422,8 @@ class LanguageHarness(WindowHarness):
         p = self.wait_language(lambda p: p['session_count'] == 0 and p['pending'] is None)
         assert not p['review'] and not p['server_review'] and not p['navigation'], p
         self.assert_reaped()
-        return p
+        return self.wait_language(lambda p: p['automatic']['paused'] and p['automatic']['pause_writes'] == 0
+                                  and p['config_check'] is None and not p['config_queued'])
 
     def evidence_snapshot(self, label):
         self.evidence.setdefault('observations', []).append(dict(
@@ -415,8 +450,7 @@ def trusted_start(h):
     assert not h.marker.exists() and not h.log_paths(), 'Restricted start spawned a process'
     h.trust()
     assert not h.marker.exists(), 'Trust confirmation auto-launched a server'
-    h.invoke('start')
-    h.result('start')
+    h.automatic_review()
     h.reject()
     assert not h.marker.exists(), 'Rejected start spawned a process'
     h.start(native=True)
@@ -429,6 +463,271 @@ def trusted_start(h):
     h.screenshot('hover-native')
     h.reject()
     h.stop_language()
+
+
+def automatic_detection(h):
+    value = h.configure()
+    python = dict(value['servers'][0], language='python3')
+    value['servers'].append(python)
+    h.config.write_text(json.dumps(value))
+    h.fixture()
+    # An active unsupported document must not hide eligible background documents.
+    unsupported = h.write(h.roots[0] / 'notes.txt', 'plain text\n')
+    h.open_document(unsupported)
+    h.trust()
+    review = h.automatic_review()
+    assert review['session_count'] == 0 and not h.log_paths() and not h.remember_processes(), review
+    h.click_dialog('Language: Start')
+    first = h.ready_language()['sessions'][0]
+    assert first['language'] == 'zig', first
+    h.focus_document(h.other)
+    h.wait_language(lambda p: len(p['sessions'][0]['documents']) == 2)
+    h.action('win.split-group')
+    h.focus_document(h.main)
+    h.wait_language(lambda p: p['sessions'][0]['id'] == first['id'] and
+                    len(p['sessions'][0]['documents']) == 2)
+    assert len(h.messages('initialize')) == 1
+    assert {m['params']['textDocument']['uri'] for m in h.traffic('textDocument/didOpen', 2)} == {
+        h.main.as_uri(), h.other.as_uri()}
+    # Detection changes must discover a new language and reuse the old session
+    # when the document returns to Zig, rather than spawn per view or focus.
+    h.command('policy-language', 'python3')
+    changed = h.automatic_review()
+    assert changed['automatic']['approval_key'] != review['automatic']['approval_key']
+    assert len(h.messages('initialize')) == 1
+    h.click_dialog('Language: Start')
+    p = h.ready_language(2)
+    assert {s['language'] for s in p['sessions']} == {'zig', 'python3'}, p
+    h.command('policy-language', 'zig')
+    p = h.wait_language(lambda p: any(s['id'] == first['id'] and len(s['documents']) == 2 for s in p['sessions']))
+    assert p['session_count'] == 2 and len(h.messages('initialize')) == 2, p
+    h.evidence_snapshot('automatic-detection-and-session-reuse')
+
+
+def automatic_decline(h):
+    h.configure()
+    h.fixture()
+    h.trust()
+    review = h.automatic_review()
+    h.click_dialog('Language: Start', approve=False)
+    h.open_document(h.other)
+    h.action('win.split-group')
+    p = h.stays_stopped()
+    assert any(c['reason'] == 'declined-or-review-owned' for c in p['automatic']['candidates']), p
+    assert not h.log_paths() and not h.remember_processes()
+    first = h.target
+    h.new_window()
+    h.workspace(h.roots[0])
+    h.open_document(h.main)
+    assert h.policy_idle()['trust'] == 'trusted'
+    h.stays_stopped()  # same declined configuration cannot nag in another window
+    h.invoke('start', palette=True)
+    assert h.automatic_review()['automatic']['approval_key'] == review['automatic']['approval_key']
+    h.click_dialog('Language: Start')
+    h.ready_language()
+
+    with h.at(first):
+        h.ready_language()
+    h.evidence_snapshot('decline-suppressed-until-explicit-start')
+
+
+def automatic_failure(h, initialize=False):
+    if initialize:
+        h.configure('timeout', options=('--target-method', 'initialize'))
+        h.fixture()
+        h.trust()
+        h.automatic_review()
+        h.click_dialog('Language: Start')
+        h.wait_language(lambda p: p['session_count'] == 1)
+        h.remember_processes()
+    else:
+        h.setup('crash')
+        h.invoke('hover')
+    h.wait_language(lambda p: p['session_count'] == 0, 35)
+    h.assert_reaped()
+    h.focus_document(h.other)
+    p = h.stays_stopped()
+    assert any(c['reason'] == 'restart-required' for c in p['automatic']['candidates']), p
+    assert len(h.log_paths()) == len(h.messages('initialize')) == 1
+    if not initialize:
+        h.invoke('restart', palette=True)
+        h.ready_language()
+        assert len(h.messages('initialize')) == 2
+    h.evidence_snapshot('initialization-timeout-suppressed' if initialize else 'crash-suppressed-and-explicit-retry')
+
+
+def automatic_restore_pause(h):
+    h.setup()
+    h.open_document(h.other)
+    h.wait_language(lambda p: len(p['sessions'][0]['documents']) == 2)
+    h.action('win.save-workspace-session')
+    wait_for(lambda: h.probe('session')['status'] == 'saved')
+    h.stop()
+    h.launch()
+    p = h.ready_language()  # neither Start nor approval: durable approval reused
+    assert {d['uri'] for d in p['sessions'][0]['documents']} == {h.main.as_uri(), h.other.as_uri()}, p
+    assert len(h.messages('initialize')) == 2
+    h.stop_language()
+    h.command('workspace-rescan')
+    h.policy_idle()
+    h.focus_document(h.other)
+    h.stays_stopped(paused=True)
+    h.stop()
+    h.launch()
+    h.policy_idle()
+    h.wait_language(lambda p: p['automatic']['paused'])
+    h.stays_stopped(paused=True)
+    assert h.document(h.main) and h.document(h.other), 'full documents must restore while paused'
+    assert len(h.messages('initialize')) == 2
+    for action in ('start', 'restart'):
+        h.invoke(action, palette=True)
+        p = h.ready_language()
+        assert not p['automatic']['paused'], p
+        h.stop_language()
+    assert len(h.messages('initialize')) == 4
+    h.evidence_snapshot('durable-approval-and-pause-across-processes')
+
+
+def automatic_windows(h):
+    h.setup()
+    first = h.target
+    second = h.new_window()
+    h.workspace(h.roots[0])
+    h.open_document(h.main)
+    assert h.policy_idle()['trust'] == 'trusted'
+    h.ready_language()
+    h.new_window()
+    alternate = h.write(h.fixtures / 'unrelated/main.zig', TEXT)
+    h.workspace(alternate.parent)
+    h.open_document(alternate)
+    assert h.policy_idle()['trust'] == 'restricted'
+    h.stays_stopped()  # exact executable approval is not workspace trust
+    assert len(h.messages('initialize')) == 2
+    h.trust()
+    independent = h.ready_language()['sessions'][0]['id']
+    with h.at(first):
+        h.invoke('stop')
+        h.wait_language(lambda p: p['session_count'] == 0 and p['automatic']['paused'] and
+                        p['automatic']['pause_writes'] == 0)
+    with h.at(second):
+        h.wait_language(lambda p: p['session_count'] == 0 and p['automatic']['paused'])
+        h.stays_stopped(paused=True)
+    assert h.language()['sessions'][0]['id'] == independent, 'Stop leaked into another workspace'
+    with h.at(second):
+        h.invoke('restart')
+        h.ready_language()
+    with h.at(first):
+        h.ready_language()
+    assert len(h.messages('initialize')) == 5
+    h.evidence_snapshot('shared-workspace-pause-and-independent-trust')
+
+
+def automatic_changed_approval(h, executable=False):
+    value = h.configure()
+    if executable:
+        binary = h.fixtures / 'fixture-python'
+        shutil.copyfile(sys.executable, binary)
+        binary.chmod(0o700)
+        value['servers'][0]['argv'][0] = str(binary)
+        h.config.write_text(json.dumps(value))
+    h.fixture()
+    h.trust()
+    old_key = h.automatic_review()['automatic']['approval_key']
+    h.click_dialog('Language: Start')
+    old_session = h.ready_language()['sessions'][0]['id']
+    processes = h.remember_processes()
+    if executable:
+        # Replace with byte-identical content: identity, not only argv/config
+        # bytes, must revoke approval. Never modify the system interpreter.
+        replacement = binary.with_suffix('.replacement')
+        shutil.copyfile(sys.executable, replacement)
+        replacement.chmod(0o700)
+        os.replace(replacement, binary)
+    else:
+        value['servers'][0]['env']['CORAL_TEST_CHANGED_CONFIG'] = '1'
+        h.config.write_text(json.dumps(value))
+    p = h.automatic_review()
+    h.wait_language(lambda p: p['session_count'] == 0)
+    h.assert_reaped(processes)
+    assert p['automatic']['approval_key'] != old_key, p
+    assert len(h.messages('initialize')) == 1, 'changed configuration executed before approval'
+    h.click_dialog('Language: Start')
+    assert h.ready_language()['sessions'][0]['id'] != old_session
+    assert len(h.messages('initialize')) == 2
+    h.evidence_snapshot('executable-identity-reapproval' if executable else 'configuration-reapproval')
+
+
+def automatic_storage_failure(h):
+    h.configure()
+    h.fixture()
+    h.trust()
+    h.automatic_review()
+    state = Path(h.session.env['XDG_STATE_HOME']) / 'coral/language'
+    state.symlink_to(h.fixtures)
+    h.click_dialog('Language: Start')
+    h.wait_language(lambda p: p['config_check'] is None and not p['dialog'])
+    h.stays_stopped()
+    assert not h.log_paths() and not h.remember_processes()
+    state.unlink()
+    h.stays_stopped(seconds=6)
+    h.start(native=True)
+    h.evidence_snapshot('unsafe-approval-storage-fails-closed-until-explicit-retry')
+
+
+def approval_location_not_cwd(h):
+    h.stop()
+    home = Path(h.session.env['HOME'])
+    state = home / '.local/state'
+    state.mkdir(parents=True, mode=0o700)
+    h.session.env['XDG_STATE_HOME'] = str(state)
+    h.store = state / 'coral/trust/store'
+    h.app_cwd = home
+    h.launch()
+    assert Path('/proc/%d/cwd' % h.app.proc.pid).resolve() == home.resolve()
+    target = state / 'coral/language'
+    assert target.is_relative_to(home), 'old cwd guard must reject this fixture layout'
+    h.setup(native=True)  # automatic review and a real approval click, no Start
+    assert (target / 'store').is_file() and h.store.is_file()
+    assert len(h.messages('initialize')) == 1
+    h.evidence_snapshot('approval-with-state-under-disposable-home-cwd')
+    h.stop()
+    h.launch()
+    assert Path('/proc/%d/cwd' % h.app.proc.pid).resolve() == home.resolve()
+    h.ready_language()  # persisted approval plus restored document, no Start/accept
+    assert len(h.messages('initialize')) == 2
+    approved = (target / 'store').read_bytes()
+
+    # The sibling trust store is outside the forbidden root/base, so trust must
+    # succeed. Only the language controller's actual-target guard can reject it.
+    assert h.store.parent.parent == target.parent
+    assert not h.store.resolve().is_relative_to(target.resolve())
+    source = h.write(target / 'main.zig', TEXT)
+    manifest = h.write(target / 'unsafe.coral-workspace', json.dumps({
+        'version': 1, 'roots': [{'path': str(h.roots[0])}]}))
+    alias = h.fixtures / 'approval-store-alias'
+    alias.symlink_to(target, target_is_directory=True)
+    for kind in ('root', 'manifest'):
+        if kind == 'root':
+            browser = h.workspace(alias)
+            assert browser['roots'][0]['canonical'] == str(target.resolve()), browser
+            h.open_document(source)
+        else:
+            h.command('open-workspace', alias / manifest.name)
+            h.browser()
+            h.open_document(h.main)
+        h.trust()
+        assert h.policy_idle()['trust'] == 'trusted'
+        p = h.wait_language(lambda p: p['session_count'] == 0 and
+                            'StateInsideWorkspace' in p['status'])
+        assert not p['dialog'] and p['config_check'] is None and not p['config_queued'], p
+        h.assert_reaped()
+        h.invoke('start')  # explicit Start cannot bypass the same admission guard
+        h.wait_language(lambda p: 'StateInsideWorkspace' in p['status'])
+        h.stays_stopped()
+        assert (target / 'store').read_bytes() == approved, 'rejected location changed approval storage'
+        assert len(h.messages('initialize')) == 2, 'server executed with approval storage inside workspace'
+        assert h.policy_idle()['trust'] == 'trusted', 'test accidentally exercised the trust-store guard'
+        h.evidence_snapshot('approval-target-rejected-as-canonical-' + kind)
 
 
 def policy_stop(h, change):
@@ -703,7 +1002,7 @@ def fault_case(h, mode):
         assert p['pending'] is None and not p['review'], p
         h.assert_reaped(processes)
         assert any(word in p['status'].lower() for word in ('reaped', 'crash', 'failed', 'language:')), p
-    # Explicit Restart must recover; a drained session first asks for Start review.
+    # Explicit Restart must recover using the existing exact approval.
     h.invoke('restart')
     p = h.language()
     if p['dialog'] and p['mode'] == 'start':
@@ -1142,8 +1441,8 @@ def config_directory_replaced(h, review, ancestor=False):
     assert h.document(h.main) == original_document, 'stale config review changed revision/dirty state'
     assert not h.messages('workspace/executeCommand'), 'stale config review dispatched a command'
     h.invoke('start')
-    p = h.language()
-    assert not p['dialog'] and p['session_count'] == 0 and 'LanguageNotConfigured' in p['status'], p
+    p = h.wait_language(lambda p: p['config_check'] is None and 'LanguageNotConfigured' in p['status'])
+    assert not p['dialog'] and p['session_count'] == 0, p
     assert h.log_paths() == log_paths, 'replacement empty configuration launched a new server'
     assert (retired / relative).read_bytes() == old_config
     h.check_disk_unchanged()
@@ -1263,8 +1562,7 @@ def default_zls_without_config(h):
     assert not h.config.exists() and not alternate_config.exists()
     h.fixture(text=REAL_TEXT)
     h.trust()
-    h.invoke('start', palette=True)
-    p = h.result('start')
+    p = h.automatic_review()
     assert 'Executable/argv: ["/usr/bin/zls"]' in p['popup'], p
     assert '/usr/bin/zls0.17.0' not in p['popup']
     h.evidence.setdefault('default_server_reviews', []).append(p)
@@ -1395,9 +1693,7 @@ def real_zls(h, kind):
         h.wait_language(lambda p: p['session_count'] == 0)
         h.assert_reaped(pids)
         h.invoke('restart', palette=True)
-        h.result('start')
-        h.accept()
-        p = h.wait_language(lambda p: p['session_count'] == 1 and p['sessions'][0]['state'] == 'ready', 25)
+        p = h.ready_language()
         assert p['sessions'][0]['id'] != old
         h.remember_processes()
         h.select_position(REAL_TEXT.index('answer, 1') + 1)
@@ -1438,6 +1734,17 @@ def optional_smoke(h, name):
 
 
 CASES = [('trusted-start', trusted_start, True)]
+CASES += PAUSE_CASES
+CASES += [('auto-detection-reuse', automatic_detection, True),
+          ('auto-decline', automatic_decline, True),
+          ('auto-crash', automatic_failure, True),
+          ('auto-initialize-timeout', functools.partial(automatic_failure, initialize=True), True),
+          ('auto-restored-documents-persistent-stop', automatic_restore_pause, True),
+          ('auto-windows-restricted-workspace', automatic_windows, True),
+          ('auto-configuration-change', automatic_changed_approval, True),
+          ('auto-executable-change', functools.partial(automatic_changed_approval, executable=True), True),
+          ('auto-storage-failure', automatic_storage_failure, True),
+          ('auto-approval-location-not-cwd', approval_location_not_cwd, True)]
 CASES += [('lifecycle-config-' + parent + '-' + review,
            functools.partial(config_directory_replaced, review=review, ancestor=parent == 'ancestor'), True)
           for parent in ('parent', 'ancestor') for review in ('idle', 'text', 'command')]
@@ -1542,7 +1849,10 @@ def main():
         data = binary.read_bytes()
         evidence['binary_sha256'] = digest(data)
         evidence['source_sha256'] = {str(path.relative_to(PROJECT)): digest(path.read_bytes())
-                                     for path in (Path(__file__).resolve(), FIXTURE, REFERENCE)}
+                                     for path in (Path(__file__).resolve(), FIXTURE, REFERENCE,
+                                                  PROJECT / 'tests/language_pause.py',
+                                                  PROJECT / 'tests/fixtures/language_pause_races.py',
+                                                  PROJECT / 'tests/fixtures/language_resume.zig')}
         assert all(marker in data for marker in (b'CORAL_LANGUAGE ', b'CORAL_WINDOWS ', b'CORAL_COMMAND_DONE')), \
             'Build a current native binary with -Dtest-hooks=true (language and windows probes required)'
         del data

@@ -1,14 +1,14 @@
 # M3: bounded native language intelligence
 
-**Bounded M3 is COMPLETE: implemented and validated on the final frozen source after the queue/synchronization fix. Next: M4 Git/review, not started.** This guide describes the native `src/language` controller and its actual capability limits, not full LSP/IDE parity. See [current status](WORKBENCH_STATUS.md) and [final validation passed](#final-validation-passed). The definitive M3 aggregate is separate from historical M2 acceptance and earlier M3 attempts.
+**Bounded M3 and detected-language automatic startup are implemented and validated within the documented limits. Next: M4 Git/review, not started.** This guide describes the native `src/language` controller and its actual capability limits, not full LSP/IDE parity. See [current status](WORKBENCH_STATUS.md), [accepted automatic-increment validation](#automatic-increment-validation--accepted) and [historical M3 validation](#final-validation-passed). The current 101/101 aggregate is separate from the historical 99/99 baseline; earlier failures remain recorded.
 
 ## Start with Zig
 
 1. Open a folder/workspace and a saved Zig file belonging to one of its available roots. Use the full document view, not an excerpt, for language requests.
-2. Open **Workspace: Settings and Trust…**, inspect the exact scope, and explicitly approve **Trust workspace…**. A valid prior exact approval may be restored, but trust alone never starts a server.
-3. Open the command palette (**Ctrl+Shift+P**) and choose **Language: Start…**. Review the executable, literal arguments, environment allowlist and root working directory, then choose **Start process**. Cancel launches nothing.
-4. Use **Language: Status** to check readiness, negotiated position encoding/synchronization, available providers and failures. Invoke the commands below explicitly.
-5. Use **Language: Stop all sessions** to stop this window's sessions, or **Language: Restart current server** for an explicit restart of the selected document's root/language session. Restart waits for the old child to be reaped and revalidates configuration/trust; it is not automatic crash recovery. If no session exists, Restart opens the Start review.
+2. Open **Workspace: Settings and Trust…**, inspect the exact scope, and explicitly approve **Trust workspace…**, or let the policy controller restore a valid exact prior workspace trust grant. Trust is necessary but is not server approval.
+3. Coral detects the language of eligible file-backed documents after opening, project/session restoration, successful Save/Save As and language changes. In a trusted, unpaused workspace it automatically starts an exactly approved configured server. A new or changed approval key instead gets one first-use review: inspect executable identity, literal arguments, effective environment and root working directory, then choose **Approve and start**. Cancel launches nothing and suppresses repeated automatic prompts for that key in this process. **Language: Start…** in the menu or **Ctrl+Shift+P** palette is still available for explicit retry.
+4. Use **Language: Status** to check readiness, negotiated position encoding/synchronization, available providers and failures. Feature commands below remain explicit; automatic startup does not add automatic completion popups or feature refresh.
+5. **Language: Stop all sessions** stops matching workspace sessions and persistently pauses automatic startup for that workspace, including later reopen/relaunch after a successful pause write. **Language: Start…** or **Language: Restart current server** resumes it with fresh trust/configuration/approval checks; an unchanged approved key needs no repeat review. Restart waits for the old child to be reaped. Declines and crashes do not trigger a prompt/restart loop; use Start/Restart deliberately. See the persistence failure limits below.
 
 The built-in Zig command is **exactly `/usr/bin/zls`**, not a version-suffixed executable or PATH lookup. The locally pinned reference is **ZLS 0.17.0**, tested with **`/usr/bin/zig` 0.17.1**; executable hashes and version commands are recorded in [`tests/fixtures/lsp-reference.json`](../tests/fixtures/lsp-reference.json). This is the tested pairing, not a claim that all Zig/ZLS versions work. Missing binaries produce a visible failure; Coral does not download or install them. Syntax highlighting, spelling and ordinary editing remain usable without a server.
 
@@ -41,9 +41,24 @@ Requirements and bounds:
 - Version **1**; at most **64 KiB**, **32 server entries**, **64-byte nonempty language IDs**, **64 argv elements** per server and **64 supplied environment entries**. Configuration strings are bounded to 8,192 bytes and reject NUL. Duplicate language entries, unknown fields and malformed JSON fail closed.
 - The file must be a readable regular file owned by the current user, not group/world writable; **0600** is an appropriate mode. Symlinked configuration files and checked HOME/`.config`/`coral` ancestors are rejected: use real directories, not symlinked config parents. FIFO/device/directory inputs are not executable configuration.
 - HOME, each existing checked configuration ancestor and the file require Linux **`STATX_BTIME`** identity, in addition to device/inode/type. Missing optional config components permit defaults, but unsupported identity/birth time does not silently weaken authorization. Workspace trust separately requires root/manifest-base birth time; see [trust requirements](WORKBENCH_M2_POLICY.md#exact-scope-identity).
-- Approval binds configuration contents **and parent/file incarnation**. Checks run on workers before launch and before accepting text edits, commands, external links or resource edits. Monitors and periodic checks detect changes; replacing a parent with identical bytes is not continued authority. Changed/unsafe config invalidates sessions and pending reviews. Review and start again after resolving the error.
+- **Approval-key domain v2** (`coral-language-approval-v2`, not configuration schema version 2) binds the selected language, exact argv, sorted effective environment (including added HOME), `cwd: "root"` policy, checked config-file/ancestor incarnation identities, and resolved executable path/identity metadata. Executable identity includes device/inode, birth time, modification/change times, size, mode and owner; descriptor numbers are not identity. Replacing the file or a checked ancestor with identical contents still changes its incarnation and requires approval of the new key. Each workspace separately needs current exact trust; the server key is reusable in independently trusted workspaces, not an approval of every root.
+- The reusable key **does not hash the whole raw configuration file**. Unrelated entries or formatting changed in place can leave a selected server's key unchanged. Separately, the raw configuration SHA-256 and incarnation binding are checked freshly on workers, including before launch and before accepting text edits, commands, external links or resource edits. Changed raw bytes invalidate stale sessions/operations even when the selected reusable key remains approved; a fresh valid launch can reuse that approval. Monitors and periodic probes supplement, not replace, those checks. Unsafe/unreadable config fails closed.
+- The loader captures a verified executable **file descriptor**, which is duplicated through transport/ownership and executed using Linux **`execveat`**, with final metadata revalidation in the child. It does not reopen the executable pathname at the execution boundary. This is descriptor-bound identity, **not immutable executable content or a sandbox**: in-place writes after validation, a mutable interpreter and mutable libraries/dependencies remain outside the guarantee.
+
+**Script launcher compatibility:** direct shebang execution receives `/dev/fd/5` as its script filename. Launchers that locate sibling files using `$0` may therefore need an explicit interpreter: for example, `"argv": ["/bin/sh", "/absolute/path/to/server-launcher", "--stdio"]`. In that configuration, approval pins the interpreter identity and literal arguments; the script and its sibling files are mutable pathname dependencies, not descriptor-verified executables. There is no automatic pathname fallback.
 
 These are bounded identity snapshots, not protection from a malicious same-UID process or every final filesystem race. There is no automatic server setup, toolchain discovery, configuration editor, arbitrary initialization-options schema or repository command fallback in this UI.
+
+## Automatic startup, approvals and persistent Stop
+
+Automatic discovery considers loaded, file-backed documents with a detected configured language and an available owning workspace root; restored pathless recovery/conflict copies stay ineligible until saved into a workspace. Unknown or unconfigured languages do not launch anything, offer installation or fall back to repository commands. Discovery is coalesced and defers launch/review while conflicting UI or workspace work is active, rather than spawning once per file/view. Workspace trust, exact prior server approval and an unpaused workspace are all required for unattended startup. A new/changed key gets a single first-use prompt, coordinated across windows; decline suppression is process-local, not a permanent denial. Failed/crashed candidates are inhibited rather than repeatedly restarted; explicit Start/Restart permits retry.
+
+Lifecycle state is separate machine state under **`$XDG_STATE_HOME/coral/language`** (normally **`~/.local/state/coral/language`**), not `languages.json`, workspace settings, saved sessions or the workspace trust store. It records server-approval keys and workspace-pause keys, never grants workspace trust. A pause key identifies the supplied manifest path, or ordered lexical root paths for a folder workspace; it is distinct from the exact trust/configuration incarnation keys. The state home and its ancestors must already exist and pass ownership/path checks; only the private `coral/language` directories are created. Before any lifecycle job, including Stop/pause, Coral rejects the actual `coral/language` target inside a configured canonical workspace root or canonical manifest base. The launch working directory is not workspace identity; launching Coral from HOME or `/` does not itself block normal state storage. Unavailable canonical location data fails closed.
+
+- Persistent store limits are **128 approved keys and 128 paused-workspace keys**, separately, with no eviction; the 129th distinct key fails with `StoreFull`. Automatic bookkeeping also caps **128 candidates per controller**, **128 review keys process-wide** and **128 workspace-pause entries process-wide**. Saturation fails closed rather than forgetting a refusal or Stop.
+- Store corruption, unsafe metadata/symlinks, missing state-home ancestors, I/O errors and durability uncertainty are errors, **not an empty or permissive snapshot**. Cached allowing decisions cannot bypass a failed fresh check. Publication uses locked read/merge and synced replacement; uncertain publication is quarantined rather than silently reset.
+- Stop immediately inhibits matching workspace owners in this process, then publishes the pause. A pending pause job and its owner hold survive window close. On lock **`Busy`**, it retains that intent and retries with exponential backoff from **50 ms capped at 1 s**; the cap is on delay, **not the number of retries**. Resume waits behind pending pause writes; stale reads cannot erase newer Stop intent. Prolonged contention can therefore delay draining/exit.
+- A nonretryable pause-write failure retains the **local inhibit and reports the error**, but **cannot promise a durable pause across process exit/relaunch**. Only successful publication provides that persistence. Start/Restart explicitly removes the workspace pause through the store before resuming; failed checks do not authorize launch. Other processes observe persisted changes through fresh checks, not instantaneous cross-process cancellation.
 
 ## Commands and presentation
 
@@ -53,9 +68,9 @@ All commands below have the `Language:` prefix:
 
 | Command | Delivered behavior / boundary |
 | --- | --- |
-| **Start…** | Review and explicitly launch the current file's root/language server after trust approval |
-| **Stop all sessions** | Stop sessions in this window; no automatic restart |
-| **Restart current server** | Explicit restart after reaping, with fresh authority/configuration checks |
+| **Start…** | Resume this workspace and start/retry the current file's root/language server; reuse exact prior approval or review a new/changed key, with fresh trust/config checks |
+| **Stop all sessions** | Stop matching workspace sessions and persistently pause this workspace's automatic startup, subject to the publication-failure limits above |
+| **Restart current server** | Resume the workspace and explicitly restart after reaping, with fresh authority/configuration/approval checks |
 | **Status** | Session/root/language, state, provider availability, encoding/sync, configuration digest, progress/status and errors |
 | **Completion…** | Select a completion, then separately review its replacement and additional text edits; no automatic insertion or save |
 | **Hover** | Plain-text documentation dialog, not rendered server HTML |
@@ -84,7 +99,7 @@ Semantic tokens support validated **full and full/delta** responses and server l
 
 ## Sessions, navigation and safe edits
 
-A window owns **one session per owning root/language pair, up to eight sessions including draining ones**. Another root or window has an independent session and buffers; servers are not pooled across windows or combined into one multi-root server. Matching open documents synchronize after readiness; opening a workspace, restoring a project/session, trusting it or opening a file never automatically launches a server.
+A window owns **one session per owning root/language pair, up to eight sessions including draining ones**. Another root or window has an independent session and buffers; servers are not pooled across windows or combined into one multi-root server. Matching open documents synchronize after readiness. Opening/restoring/saving documents and detected-language changes feed automatic discovery; startup still requires current workspace trust, exact server approval and no workspace pause. Trust alone cannot approve an unknown server key.
 
 Service requests require a recognized, configured language and a saved document owned by the workspace. Unknown/unconfigured languages, scratch/outside-workspace documents and requests from excerpt views are explicitly refused rather than simulated. Open the canonical/full view to request language positions; editable excerpts elsewhere in Coral are not evidence of excerpt-aware LSP.
 
@@ -127,6 +142,7 @@ Important limits (not promised usable maximum file sizes):
 
 | Layer | Current bound |
 | --- | --- |
+| Automatic lifecycle | 128 approved keys + 128 paused-workspace keys on disk; 128 candidates/controller, 128 review keys and 128 pause entries/process; no silent eviction |
 | Client/session | 128 lifetime document URIs; 8 MiB retained synchronized text total; closed URI identities remain until session replacement |
 | Controller document check | At most 2,097,152 GTK characters before copying text; lower transport/message limits still apply |
 | Pending protocol work | 64 outbound requests, 64 inbound requests, 64 queued events; UI has one active feature request per window |
@@ -160,9 +176,41 @@ zig build -Doptimize=safe -Dtest-hooks=false -j1 --summary all
 
 `test-m3` composes `language-unit`, native `language`, `language-lifecycle`, the **25-test fake-server self-test**, and **full `test-m2` including M1 regressions**. Visual and hooks-disabled production checks are separate. Use the [documented private runtime/launcher](WORKBENCH_M2_ACCEPTANCE.md#this-hosts-private-icu78-recovery) if needed on this host; do not install packages or change production dependencies just to reproduce it. Harness subsets (`language -- --case ...`) explicitly report `complete_suite=false` and are not full acceptance.
 
+### Automatic-increment validation — accepted
+
+On 2026-11-10, the final **`zig build test-m3 -Doptimize=safe -j1 --summary all` passed 101/101 steps, exit 0**, recorded in [`coral-auto-language-m3-retry.log`](../../../.cache/coral-auto-language-m3-retry.log). All **17 Python harness/fixture invocations ran fresh**; all **11 Zig test runners were cached from successful prior executions**, not freshly rerun. This is the accepted automatic-lifecycle increment, including persistent approvals/pause, v2 approval keys and descriptor-bound execution. It does not replace the historical baseline below or erase the first attempt's watchdog abort.
+
+| Check | Accepted evidence / freshness |
+| --- | --- |
+| Six isolated `language-unit` roots | **129 tests = 16 protocol + 28 transport + 36 client + 27 features + 3 file-operation + 19 approval**; all six runners cached in the final aggregate. The initial aggregate freshly passed the 28 transport and 19 approval tests; the other four roots were cached, with earlier direct fresh passes in the historical pure-suite log. This is not a fresh 129-test run. |
+| Main Zig root | Separate `zig build test -Doptimize=safe -j1 --summary all` retry passed **50/50 steps, 335/335 fresh main-root tests**; four other runners cached. The final aggregate reused this successful result. |
+| Native `language` | **89 mandatory passed / 0 failed / 3 optional blocked**, `complete_suite=true`, no unselected cases; includes command-driven features, capacity, lifecycle, automatic discovery/approval/pause and workspace-store-boundary checks. |
+| Real servers | Pinned **`/usr/bin/zls` 0.17.0 with `/usr/bin/zig` 0.17.1** passed default/no-config startup, navigation, completion, rename, formatting, Unicode and restart cases. **clangd, typescript-language-server and pyright-langserver were not installed: blocked, not passed or replaced by fake-server evidence.** |
+| Deterministic pause completion tests | **9/9 passed inside `pause-completion-races`**, including Busy retention/backoff/close, nonretryable local inhibition, stale snapshots, external resume and timeout/queued-Start ordering. These are nested tests, not nine extra native cases or aggregate Python invocations. |
+| `language-lifecycle` | **20/20 native groups passed** freshly; ordinary saves preserve sessions while identity/policy changes retire authority. |
+| M1/M2 regressions | **Full `test-m2`, including M1, passed** in the final aggregate, not only selected language cases. |
+| Widgets | **204/204 passed**, **41.159 s**, fresh in the final aggregate. |
+| Fake-server self-test | **25/25 passed** freshly; synthetic protocol coverage is not real language correctness evidence. |
+| Hooks-disabled production | `zig build -Doptimize=safe -Dtest-hooks=false -j1 --summary all`: **46/46 steps passed**, including fresh executable compilation (log-rounded **36 s**). |
+| Separate visuals | `zig build visual -Doptimize=safe -j1 --summary all`: **40/40 steps passed**, fresh visual harness, **16/16 native cases** and **four font-ratio checks**, each **2.0** (native/follow modes at 1024/390 px, font 11 → 22). |
+
+The automatic matrix passed detection/reuse, decline/crash/initialization-timeout inhibition, restored-document startup and persistent Stop across restart, multi-window/restricted-workspace handling, configuration/executable changes and storage failure. `auto-approval-location-not-cwd` additionally passed normal approval while launched from disposable HOME and rejection when the actual lifecycle store target lies inside a canonical workspace root or manifest base. It validates the real-workspace store boundary described above, not a blanket cwd restriction.
+
+**Retained initial failure:** [`coral-auto-language-m3.log`](../../../.cache/coral-auto-language-m3.log) ended at **86/101 steps succeeded (1 failed); 381/382 tests passed (1 crashed)**. The main root had **334 passes + 1 ABRT** in `tasks.process_test.test.capture concurrent jobs retain their submitting context`, with **`capture completion watchdog expired`**. Native language already passed **89/0/3** and lifecycle **20/20** in that attempt. The [fresh main-root retry](../../../.cache/coral-auto-language-test-retry.log) and then the final full aggregate passed; the retry is not a watchdog fix, and no unrelated watchdog code change is claimed.
+
+Current local evidence (cache reports are mutable and not bundled documentation):
+
+- [Accepted aggregate](../../../.cache/coral-auto-language-m3-retry.log), [initial failed aggregate](../../../.cache/coral-auto-language-m3.log), and [fresh main-root retry](../../../.cache/coral-auto-language-test-retry.log).
+- [Hooks-disabled production](../../../.cache/coral-auto-language-production.log) and [visual build/harness log](../../../.cache/coral-auto-language-visual.log).
+- [Complete native report](../../../.cache/coral-language/results.json) and [retained accepted run](../../../.cache/coral-language/run-8sp5ptq5/results.json), **89/0/3**; [nested 9-test pause log](../../../.cache/coral-language/run-8sp5ptq5/pause-completion-races/completion-races.log).
+- [Lifecycle report](../../../.cache/coral-workspace-lifecycle/results.json), [widget report](../../../.cache/coral-widgets/results.json), and [visual cases/ratios](../../../.cache/coral-visual/results.json).
+- [Earlier direct pure-suite passes](../../../.cache/coral-m3-complete-language-unit.log), used only for the four unchanged cached roots above; its historical **20-test transport root is superseded by the initial automatic-increment run's 28-test pass**.
+
+The native and visual reports identify the same instrumented binary SHA-256: `043646acafbd823e05a024e5998e22defcd1be2c1abf0bcfdf94e84a5793997d`. Unlike the historical visual pass below, this automatic-increment visual run used the aggregate's instrumented binary. No total aggregate wall time is recorded in these logs, so none is claimed. Counts overlap and must not be added as unique tests. Visual acceptance is headless Cairo, not physical GPU/display or pixel-identical parity; Follow Pearl cases cover offline fallback/font compatibility, **not live committed palette/font delivery**. The historical 390px footer clipping caveat and unmeasured paint-latency target are not declared fixed. Harness reaping evidence is not a campaign-wide final process/temporary-directory cleanup scan.
+
 ### Final validation passed
 
-**The final frozen-source gate after the queue/synchronization fix passed.** On 2026-11-10, `zig build test-m3 -Doptimize=safe -j1 --summary all` completed **99/99 steps**, **exit 0**, in **28m23.163s**, within a **2,400,000 ms (40-minute)** command timeout. The build summary contains **36 fresh successful steps / 63 cached**. All **17 Python harness/fixture invocations ran fresh**. Cached/reused dependencies are not additional executions, and the counts below must not be added as unique tests.
+**Historical M3 baseline only: the final frozen-source gate after the queue/synchronization fix passed before the automatic-lifecycle increment.** The counts, artifacts and hashes below are retained history, not validation of current automatic startup. On 2026-11-10, `zig build test-m3 -Doptimize=safe -j1 --summary all` completed **99/99 steps**, **exit 0**, in **28m23.163s**, within a **2,400,000 ms (40-minute)** command timeout. The build summary contains **36 fresh successful steps / 63 cached**. All **17 Python harness/fixture invocations ran fresh**. Cached/reused dependencies are not additional executions, and the counts below must not be added as unique tests.
 
 | Check | Final evidence / freshness |
 | --- | --- |
@@ -180,37 +228,39 @@ zig build -Doptimize=safe -Dtest-hooks=false -j1 --summary all
 
 The visual result is deliberately narrower than a no-clipping claim: at **390 px**, a secondary-panel footer still ellipsizes/clips. The final queue/sync-only change was validated by the aggregate and production build, not a fresh visual matrix. Native harness child/process **reaping assertions passed**; **no final baseline process/temporary-directory cleanup scan was performed**, so there is no campaign-wide zero-leak/clean-baseline claim.
 
-Final binary SHA-256:
+Historical baseline binary SHA-256 (not current automatic-increment binaries):
 
 | Artifact | SHA-256 |
 | --- | --- |
 | Hooks-disabled production | `9b3abef738a8a1929239fdee65520477ee319326402db4ea6058f780dd166252` |
 | Instrumented native test binary | `f23e868bbceddab3e7ba425ab4d9717853a637ce96d68711c63852ef54c7e119` |
 
-Local evidence (cache artifacts are not bundled documentation):
+Historical local evidence (cache artifacts are not bundled documentation; mutable report paths may be overwritten by later runs):
 
 - [Direct fresh pure-suite log](../../../.cache/coral-m3-complete-language-unit.log): `pearl/.cache/coral-m3-complete-language-unit.log`.
 - [Definitive aggregate log](../../../.cache/coral-m3-complete.log): `pearl/.cache/coral-m3-complete.log`.
 - [Final production log](../../../.cache/coral-m3-complete-production.log): `pearl/.cache/coral-m3-complete-production.log`.
 - [Separate visual pass](../../../.cache/coral-m3-final-visual.log): `pearl/.cache/coral-m3-final-visual.log`, with the source/binary timing caveat above.
-- [Latest native language report](../../../.cache/coral-language/results.json) and [retained complete run](../../../.cache/coral-language/run-r_olc__s/results.json): **75/0/3**, `complete_suite=true`; adjacent per-case protocol logs, screenshots, snapshots, fixture hashes and reaping evidence distinguish fake-server and pinned real-ZLS coverage.
+- [Mutable native report path (historical counts below)](../../../.cache/coral-language/results.json) and [retained complete run](../../../.cache/coral-language/run-r_olc__s/results.json): **75/0/3**, `complete_suite=true`; adjacent per-case protocol logs, screenshots, snapshots, fixture hashes and reaping evidence distinguish fake-server and pinned real-ZLS coverage.
 - [Lifecycle report](../../../.cache/coral-workspace-lifecycle/results.json): `pearl/.cache/coral-workspace-lifecycle/results.json`, **20/20**.
 
 ### Retained earlier attempts
 
-The current pass does not erase earlier failures or recast historical M2 results:
+That historical M3 pass does not erase earlier failures or recast historical M2 results:
 
 - [`coral-m3-full.log`](../../../.cache/coral-m3-full.log) retains the existing `unavailable_root_not_recreated` session diagnostic assertion failure (18/19 session cases). The diagnostic was corrected.
 - [`coral-m3-visual.log`](../../../.cache/coral-m3-visual.log) retains the stale menu-category assertion after adding Language; the corrected matrix passed in `coral-m3-final-visual.log`, before the final queue/sync-only change.
 - [`coral-m3-final.log`](../../../.cache/coral-m3-final.log) is a prior attempt, **not the definitive completed gate**. Lifecycle transcript cross-run contamination was fixed with a unique temporary transcript per launch; all **20 lifecycle cases passed twice on repeat** before passing again in the completed aggregate.
-- `coral-m3-accepted.log` records an earlier green run **before the capacity/queue fix**. It is superseded for current acceptance by `coral-m3-complete.log` and its 75-case language matrix.
+- `coral-m3-accepted.log` records an earlier green run **before the capacity/queue fix**. It was superseded for the historical M3 baseline by `coral-m3-complete.log` and its 75-case language matrix.
 - The pre-M3 visual process-supervisor abort and historical M2 widget timeout remain recorded in [M2 acceptance](WORKBENCH_M2_ACCEPTANCE.md). Historical M2 passes keep their original scope.
 
 ## Implementation map and remaining scope
 
 - `src/language/protocol.zig`, `positions.zig`, `uri.zig`: bounded framing/JSON, encodings and URI validation.
 - `transport.zig`, `client.zig`: explicit stdio process ownership, negotiated sync, request/session lifecycle and cancellation.
-- `config.zig`, `controller.zig`: user-owned launch configuration, trust/root/document routing and native workflows; `caps` in the controller is the advertised capability contract.
+- `config.zig`, `controller.zig`: user-owned launch configuration, v2 keys, fresh config checks, trust/root/document routing and native workflows; `caps` in the controller is the advertised capability contract.
+- `automatic.zig`, `approvals.zig`: bounded detected-language candidates/review suppression, workspace pause/retry bookkeeping and separate machine-state persistence.
+- `src/terminal/executable.zig`, `src/terminal/ownership.zig`: verified descriptor identity, final metadata checks and `execveat` execution.
 - `features.zig`, `edits.zig`, `decorations.zig`, `ui.zig`: bounded feature decoding, reviewed text plans, real GTK tags and plain native dialogs.
 - `resource_controller.zig`, `file_operations.zig`, `src/workspace/operations_controller.zig`: reviewed filesystem worker integration and static post-operation notifications.
 - `tests/language.py`, `tests/workspace/policy_lifecycle.py`, `tests/fixtures/fake_lsp.py` and `tests/fixtures/lsp-reference.json`: native, lifecycle, deterministic fault/feature fixtures and pinned real-server reference.

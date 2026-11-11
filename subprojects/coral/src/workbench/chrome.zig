@@ -69,12 +69,12 @@ pub const Chrome = struct {
         c.gtk_widget_add_css_class(trust_button, "status-trust");
         const trust_label = compactLabel("", 24);
         c.gtk_button_set_child(u.cast(c.GtkButton, trust_button), trust_label);
-        c.gtk_widget_set_tooltip_text(trust_button, i18n.dtr("coral", "Workspace settings and trust; language servers require explicit trusted start"));
+        c.gtk_widget_set_tooltip_text(trust_button, i18n.dtr("coral", "Workspace trust; automatic language servers require exact configuration approval"));
         c.gtk_actionable_set_action_name(u.cast(c.GtkActionable, trust_button), commands.Command.workspace_policy.metadata().detailed_action);
         u.append(footer, trust_button);
         const language_button = c.gtk_button_new().?;
         c.gtk_widget_add_css_class(language_button, "flat");
-        const language_label = compactLabel("Language: off", 20);
+        const language_label = compactLabel("Language: automatic", 20);
         c.gtk_button_set_child(u.cast(c.GtkButton, language_button), language_label);
         c.gtk_actionable_set_action_name(u.cast(c.GtkActionable, language_button), commands.Command.language_status.metadata().detailed_action);
         u.append(footer, language_button);

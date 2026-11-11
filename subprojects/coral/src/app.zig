@@ -61,6 +61,7 @@ pub const App = struct {
     workspace_search: WorkspaceSearch = undefined,
     workspace_policy: WorkspacePolicy = undefined,
     language: @import("language/controller.zig").Controller = undefined,
+    language_initialized: bool = false,
     session: WorkspaceSession = undefined,
     workspace_operations: WorkspaceOperations = undefined,
     workspace_roots: @import("workspace/roots_controller.zig").Controller = undefined,
@@ -239,6 +240,7 @@ pub const App = struct {
         self.workspace_search.view.setMode(.text);
         c.gtk_widget_set_visible(self.workspace_search.view.panel, 1);
         self.language = .init(self);
+        self.language_initialized = true;
         self.browser = WorkspaceController.init(self, self.dock.explorer_slot);
         self.browser.attach();
         self.dock.attach();
@@ -2901,6 +2903,7 @@ fn dialogResponse(dialog: ?*c.GtkDialog, response: c_int, data: ?*anyopaque) cal
 fn tick(data: ?*anyopaque) callconv(.c) c_int {
     const self = u.cast(App, data.?);
     self.workspace_policy.pump();
+    if (self.language_initialized) self.language.reconcile();
     const tick_start = c.g_get_monotonic_time();
     while (self.worker.take()) |job| {
         defer job.destroy();

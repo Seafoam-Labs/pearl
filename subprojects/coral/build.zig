@@ -68,7 +68,7 @@ pub fn build(b: *std.Build) void {
     test_step.dependOn(&b.addRunArtifact(tests).step);
     // Protocol/interactive-process fixtures run separately from GTK/GIO workers.
     const language_units = b.step("language-unit", "Test bounded LSP framing, Unicode, transport, lifecycle and edit planning");
-    inline for (.{ "src/language/protocol_tests.zig", "src/transport_tests.zig", "src/language_tests.zig", "src/language/features_test.zig", "src/language/file_operations.zig" }) |path| {
+    inline for (.{ "src/language/protocol_tests.zig", "src/transport_tests.zig", "src/language_tests.zig", "src/language/features_test.zig", "src/language/file_operations.zig", "src/language_approval_tests.zig" }) |path| {
         const module = b.createModule(.{ .root_source_file = b.path(path), .target = target, .optimize = optimize, .link_libc = true });
         const artifact = b.addTest(.{ .root_module = module });
         language_units.dependOn(&b.addRunArtifact(artifact).step);

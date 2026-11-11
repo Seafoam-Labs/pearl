@@ -10,10 +10,11 @@ and scratch-window snapshots, ordinary multi-window startup, native recent-proje
 and buffer pickers, and reviewed workspace-root management complete **M2 implementation**
 for the bounded workspace preview. Explicit saved checkpoints remain separate.
 Reviewed Explorer operations provide bounded create/rename/move/permanent-delete
-workflows. **Bounded M3 language intelligence is implemented and validated: COMPLETE.**
-Explicitly started local language servers provide native commands, diagnostics,
-semantic tags and reviewed edits. **Next: M4 Git/review, not started.** Agent services
-remain later work. See the [M3 language guide](docs/WORKBENCH_M3_LANGUAGE.md).
+workflows. **The bounded M3 baseline is complete; detected-language automatic
+startup is implemented and validated within its documented limits.** Approved local
+language servers start automatically in trusted, unpaused workspaces and provide
+command-driven features, diagnostics, semantic tags and reviewed edits.
+**Next: M4 Git/review, not started.** Agent services remain later work. See the [M3 language guide](docs/WORKBENCH_M3_LANGUAGE.md).
 
 ![Native Coral editor](artifacts/native/editor-dark.png)
 
@@ -173,17 +174,38 @@ recovery still restores documents/layout but not roots; automatic projects and e
 checkpoints are separate mechanisms. See [workspace usage](docs/WORKBENCH_M2_WORKSPACES.md)
 and the [M2 acceptance audit and validation checkpoint](docs/WORKBENCH_M2_ACCEPTANCE.md).
 
-## Language intelligence — bounded M3 complete and validated
+## Language intelligence — automatic startup implemented and validated
 
-Open a saved file in a workspace, explicitly approve **Workspace: Settings and
-Trust…**, then choose **Language: Start…** from the menu or **Ctrl+Shift+P** palette
-and confirm the executable/arguments/environment/root. Trust, file opening and
-project restoration **do not auto-start servers**. The default is exactly
+Open a saved file in a workspace and explicitly approve **Workspace: Settings and
+Trust…** (or restore a valid exact prior trust grant). Detected-language discovery
+runs after open, project/session restore, successful Save/Save As and language
+changes. In a trusted, unpaused workspace, an exactly approved server starts
+automatically; a new or changed approval key gets one first-use prompt to review
+its executable identity, arguments, effective environment and root cwd.
+**Language: Stop all sessions** persistently pauses the workspace after successful
+publication; **Start… / Restart current server** resumes it with fresh checks.
+Decline/crash does not cause a prompt/restart loop; use Start/Restart to retry.
+Unknown/unconfigured languages do not launch or offer installation.
+
+The default is exactly
 **`/usr/bin/zls` (tested ZLS 0.17.0 with Zig 0.17.1)**. Optional user-owned configuration
 is **`~/.config/coral/languages.json`**, not repository settings; checked config
 parents must not be symlinks and identity checks require filesystem birth time.
 A server has user-level filesystem/network permissions, **not an OS sandbox**.
 No automatic downloads or installation are provided.
+
+Approval-key **v2** binds selected argv/effective environment/root-cwd policy,
+config-file/ancestor incarnation and resolved executable identity metadata, not
+every unrelated raw config byte. The raw config digest is separately checked
+fresh. A verified fd travels through transport to **`execveat`**, with final metadata
+revalidation; this is not immutable content, and mutable interpreters/dependencies
+remain a limit. Separate machine state lives in **`$XDG_STATE_HOME/coral/language`**
+(default `~/.local/state/coral/language`), not workspace trust or session state.
+It allows **128 approved keys and 128 workspace-pause keys**, with no eviction;
+errors fail closed. Stop's `Busy` publication retries retain intent with a **1 s
+backoff cap**, not an attempt cap. Nonretryable failure reports an error and keeps
+a local inhibit, but cannot promise durability across relaunch. See the guide for
+additional 128-entry bookkeeping limits and persistence/identity boundaries.
 
 The **Language:** commands cover completion, hover, signature help,
 definition/declaration/type definition/implementation, references, document and
@@ -305,7 +327,8 @@ The [workbench expansion plan](docs/WORKBENCH_IMPLEMENTATION_PLAN.md) targets a
 VS Code-style workspace/editor with Zed-style agents and Git workflows.
 The [native foundation status](docs/WORKBENCH_STATUS.md) records implemented
 groups, excerpts, guarded undo, recovery, file monitoring and validation;
-**M2 and bounded M3 are implemented and validated. Next is M4 Git/review, not started.
+**M2 and the bounded M3 baseline have historical validation. The automatic-language
+increment passed its separate acceptance gates. M4 Git/review is not started.
 Git, production terminal and agent UI are not implemented yet**.
 Explore the separate [interactive workbench prototype](docs/mockups/workbench/index.html)
 and its [interaction guide](docs/mockups/workbench/README.md). All prototype
@@ -366,7 +389,31 @@ rerun successfully (**198 widgets** in each widget-including gate). Exact covera
 the retained widget-timeout/retry caveat and the final consolidated run's checkpoint
 are in the [M2 acceptance audit](docs/WORKBENCH_M2_ACCEPTANCE.md).
 
-**Final frozen-source M3 validation passed after the queue/sync fix:**
+### Automatic-increment validation — accepted
+
+The final [automatic-language aggregate](../../.cache/coral-auto-language-m3-retry.log)
+passed **101/101 steps, exit 0**: all **17 Python invocations fresh**, all **11 Zig
+runners cached from prior passes**. Native language passed **89 mandatory / 0 failed /
+3 optional blocked** (missing clangd, TypeScript and pyright); pinned real ZLS passed.
+Lifecycle passed **20/20**, full M1/M2 regressions passed, widgets passed **204/204 in
+41.159s**, and the fake-server fixture passed **25/25**. Nine deterministic pause tests
+passed **inside** one language case, not as extra native cases.
+
+The [initial aggregate](../../.cache/coral-auto-language-m3.log) remains a failure:
+**86/101 steps; 381/382 tests**, with **334 main-root passes + 1 ABRT** in the concurrent
+capture watchdog. The [separate retry](../../.cache/coral-auto-language-test-retry.log)
+passed **50/50 steps and 335/335 fresh main-root tests** before the final aggregate;
+this is not a watchdog fix. [Hooks-disabled production](../../.cache/coral-auto-language-production.log)
+passed **46/46 steps**; [visuals](../../.cache/coral-auto-language-visual.log) passed
+**40/40 steps, 16/16 cases and four 2.0 font ratios** on the aggregate's instrumented
+binary. See the [accepted evidence and limits](docs/WORKBENCH_M3_LANGUAGE.md#automatic-increment-validation--accepted)
+for unit-root freshness, retained reports and visual qualification boundaries.
+No aggregate wall time or new paint-latency qualification is claimed.
+
+### Historical M3 baseline validation
+
+**Historical frozen-source M3 validation passed after the queue/sync fix, before
+the automatic-lifecycle increment; these counts do not validate that increment:**
 `zig build test-m3 -Doptimize=safe -j1 --summary all` completed **99/99 steps**, exit 0,
 in **28m23.163s** within a 40-minute bound (**36 fresh successful / 63 cached steps**).
 The main Zig root passed **334 fresh tests**; nine other runners were cached,
@@ -386,11 +433,11 @@ reaping assertions passed, but no final baseline cleanup scan was done. Observed
 fake-server end-to-end samples of **67–133ms** are not paint latency or validation of
 the unmeasured **50ms** target.
 
-See [definitive M3 logs, binary hashes and retained earlier failures](docs/WORKBENCH_M3_LANGUAGE.md#final-validation-passed).
-`pearl/.cache/coral-m3-complete.log` is authoritative, not earlier `full`, `final`
-or pre-capacity `accepted` attempts. The missing-root diagnostic/menu assertions
+See [historical M3 logs, binary hashes and retained earlier failures](docs/WORKBENCH_M3_LANGUAGE.md#final-validation-passed).
+`pearl/.cache/coral-m3-complete.log` is authoritative for that historical baseline,
+not earlier `full`, `final` or pre-capacity `accepted` attempts. The missing-root diagnostic/menu assertions
 and lifecycle transcript cross-run contamination were corrected; their history
-remains documented. Latest native results now contain the complete **75/0/3** matrix,
+remains documented. At that checkpoint, native results contained the complete **75/0/3** matrix,
 with retained `run-r_olc__s` evidence. Tests use private local fixtures, no downloads
 or network-service tests.
 
@@ -406,7 +453,7 @@ leaked test-session processes were reported. See the [operations validation](doc
 [gate logs](../../.cache/coral-operations-validation-logs/),
 [production log](../../.cache/coral-operations-validation-logs/final-build.log) and
 [native results](../../.cache/coral-operations/results.json). Those counts describe that
-increment, not the current M3 validation campaign.
+increment, not validation of the automatic-language increment.
 
 The [original plan](docs/IMPLEMENTATION_PLAN.md), [interactive mockup](docs/mockups/index.html),
 and [mockup gallery](docs/mockups/README.md) remain design references. They do

@@ -1,6 +1,6 @@
 # M2: automatic projects, recent sessions and workspace roots
 
-**M2 implementation is COMPLETE for the bounded workspace preview. M3 is next.** Automatic per-project/latest per-window snapshots, scratch-window persistence, ordinary multi-window startup, native Recent Projects/Open Buffers pickers and reviewed root management complete the mandatory M2 feature scope. See the [acceptance audit](WORKBENCH_M2_ACCEPTANCE.md) for evidence and its separate final validation checkpoint. This is not a full IDE or unlimited history service.
+**M2 implementation is COMPLETE for the bounded workspace preview. M4 Git/review is next, not started.** Automatic per-project/latest per-window snapshots, scratch-window persistence, ordinary multi-window startup, native Recent Projects/Open Buffers pickers and reviewed root management complete the mandatory M2 feature scope. See the [acceptance audit](WORKBENCH_M2_ACCEPTANCE.md) for evidence and its separate final validation checkpoint. This is not a full IDE or unlimited history service.
 
 ## Three separate persistence mechanisms
 
@@ -20,7 +20,7 @@ The default state home is `~/.local/state`. Automatic writes and Forget **never 
 - Restoring creates a new ID. Atomic publication consumes the old record's startup membership while retaining its snapshot in recents. It does not overwrite the predecessor. Selecting it again while its restored owner is live activates that owner, not another clone.
 - Closing a window while siblings remain retains a recent record but removes that window from startup membership. Closing the last window, or **Quit All**, retains the intended next-launch membership, subject to the explicit close choices below.
 
-A failed/invalid source manifest is not recreated from a snapshot. Repair it and retry; saved roots are diagnostics, not a fallback manifest. Missing roots remain unavailable. Current manifests/settings are reread, and trust is revalidated separately. Restoration does not execute tools or imply trust.
+A failed/invalid source manifest is not recreated from a snapshot. Repair it and retry; saved roots are diagnostics, not a fallback manifest. Missing roots remain unavailable. Current manifests/settings are reread, and trust is revalidated separately. Restoration never implies trust. Historically M2 executed no tools; current [M3 detected-language discovery](WORKBENCH_M3_LANGUAGE.md#automatic-startup-approvals-and-persistent-stop) can automatically start servers for eligible restored file-backed documents only with independent current exact workspace trust, exact server approval and no workspace pause. New/changed keys require a first-use prompt; Stop persists a workspace pause and Start/Restart resumes with fresh checks. Pathless copies remain ineligible until saved. Language approval/pause state lives separately in `coral/language`, never in project snapshots. [Separate validation of this automatic-language increment is accepted](WORKBENCH_M3_LANGUAGE.md#automatic-increment-validation--accepted).
 
 ## Ordinary startup and precedence
 

@@ -15,16 +15,34 @@ pub const Binding = struct {
         return std.mem.eql(u8, &self.digest, &other.digest) and std.meta.eql(self.identities, other.identities);
     }
 };
-pub const Server = struct { language: []const u8, argv: []const []const u8, env: []const transport.Environment, cwd: []const u8 };
+pub const Executable = struct {
+    path: []const u8,
+    verified: transport.VerifiedExecutable,
+
+    // Descriptor numbers are process-local resources, never approval identity.
+    pub fn jsonStringify(self: Executable, writer: anytype) !void {
+        try writer.write(.{ .path = self.path, .identity = self.verified.identity });
+    }
+};
+pub const Server = struct {
+    language: []const u8,
+    argv: []const []const u8,
+    env: []const transport.Environment,
+    cwd: []const u8,
+    executable: ?Executable = null,
+    approval_key: ?Digest = null,
+    identity_error: ?anyerror = null,
+};
 pub const Config = struct {
     arena: std.heap.ArenaAllocator,
-    servers: []const Server,
+    servers: []Server,
     digest: Digest,
     identities: [4]?Identity = @splat(null),
     pub fn binding(self: *const Config) Binding {
         return .{ .digest = self.digest, .identities = self.identities };
     }
     pub fn deinit(self: *Config) void {
+        for (self.servers) |server| if (server.executable) |exe| exe.verified.close();
         self.arena.deinit();
     }
     pub fn find(self: *const Config, language: []const u8) ?Server {
@@ -44,6 +62,13 @@ pub fn load() !Config {
     const after = try captureIdentity();
     if (!std.meta.eql(before, after)) return error.LanguageConfigChangedDuringRead;
     result.identities = after;
+    for (result.servers) |*server| {
+        server.executable = captureExecutable(result.arena.allocator(), server.argv[0]) catch |err| {
+            server.identity_error = err;
+            continue;
+        };
+        server.approval_key = try approvalKey(&result, server.*);
+    }
     return result;
 }
 fn captureIdentity() ![4]?Identity {
@@ -65,6 +90,65 @@ fn captureIdentity() ![4]?Identity {
     }
     return result;
 }
+/// Resolve symlinks once on the worker, then inspect an anchored, no-follow
+/// descriptor walk. Config owns the descriptor until deinit; launch duplicates
+/// it rather than reopening either the resolved path or the original symlink.
+fn captureExecutable(allocator: std.mem.Allocator, path: []const u8) !Executable {
+    const name = try allocator.dupeSentinel(u8, path, 0);
+    var resolved_buffer: [4096]u8 = undefined;
+    const resolved = std.mem.span(std.c.realpath(name, &resolved_buffer) orelse return error.LanguageExecutableUnavailable);
+    const owned = try allocator.dupe(u8, resolved);
+    const fd = try openAnchored(owned, true);
+    errdefer _ = std.c.close(fd);
+    const identity = try transport.ExecutableIdentity.capture(fd);
+    var again_buffer: [4096]u8 = undefined;
+    const again = std.mem.span(std.c.realpath(name, &again_buffer) orelse return error.LanguageExecutableUnavailable);
+    if (!std.mem.eql(u8, owned, again)) return error.LanguageExecutableChanged;
+    return .{ .path = owned, .verified = .{ .fd = fd, .identity = identity } };
+}
+
+fn openAnchored(path: []const u8, metadata_only: bool) !c_int {
+    if (!std.fs.path.isAbsolute(path)) return error.LanguageConfigUnsafePath;
+    const directory: std.c.O = .{ .PATH = true, .DIRECTORY = true, .NOFOLLOW = true, .CLOEXEC = true };
+    var fd = std.c.open("/", directory);
+    if (fd < 0) return error.LanguageConfigUnreadable;
+    errdefer _ = std.c.close(fd);
+    var parts = std.mem.splitScalar(u8, path[1..], '/');
+    while (parts.next()) |part| {
+        if (part.len == 0 or part.len > 255 or std.mem.eql(u8, part, ".") or std.mem.eql(u8, part, "..")) return error.LanguageConfigUnsafePath;
+        var name: [256:0]u8 = @splat(0);
+        @memcpy(name[0..part.len], part);
+        const last = parts.index == null;
+        const flags: std.c.O = if (!last) directory else if (metadata_only) .{ .PATH = true, .NOFOLLOW = true, .CLOEXEC = true } else .{ .ACCMODE = .RDONLY, .NOFOLLOW = true, .NONBLOCK = true, .CLOEXEC = true };
+        const next = std.c.openat(fd, &name, flags);
+        if (next < 0) return if (std.c.errno(next) == .NOENT) error.FileNotFound else error.LanguageConfigUnsafePath;
+        _ = std.c.close(fd);
+        fd = next;
+        if (!last) {
+            var st: std.os.linux.Statx = undefined;
+            if (std.c.statx(fd, "", std.os.linux.AT.EMPTY_PATH, .{ .MODE = true, .UID = true }, &st) != 0 or !st.mask.MODE or !st.mask.UID) return error.LanguageConfigIdentityUnavailable;
+            if ((st.uid != 0 and st.uid != std.c.geteuid()) or (st.mode & 0o022 != 0 and !(st.uid == 0 and st.mode & 0o1000 != 0))) return error.LanguageConfigUnsafePath;
+        }
+    }
+    return fd;
+}
+
+fn approvalKey(cfg: *Config, server: Server) !Digest {
+    // JSON gives an unambiguous, padding-independent encoding. Environment names
+    // are sorted so object insertion order is not executable configuration.
+    const allocator = cfg.arena.allocator();
+    const env = try allocator.dupe(transport.Environment, server.env);
+    std.mem.sort(transport.Environment, env, {}, struct {
+        fn less(_: void, left: transport.Environment, right: transport.Environment) bool {
+            return std.mem.lessThan(u8, left.name, right.name);
+        }
+    }.less);
+    const bytes = try std.json.Stringify.valueAlloc(allocator, .{ .domain = "coral-language-approval-v2", .parents = cfg.identities, .language = server.language, .argv = server.argv, .env = env, .cwd = server.cwd, .executable = server.executable.? }, .{});
+    var key: Digest = undefined;
+    std.crypto.hash.sha2.Sha256.hash(bytes, &key, .{});
+    return key;
+}
+
 fn loadContents() !Config {
     const home = c.g_get_home_dir();
     if (home == null) return error.HomeUnavailable;
@@ -73,11 +157,10 @@ fn loadContents() !Config {
     defer u.a.free(path);
     // Open nonblocking before inspecting the same descriptor: a FIFO/device or
     // a raced symlink must not block the GTK thread or supply executable config.
-    const fd = std.c.open(path, .{ .ACCMODE = .RDONLY, .NOFOLLOW = true, .NONBLOCK = true, .CLOEXEC = true });
-    if (fd < 0) {
-        if (std.c.errno(fd) == .NOENT) return parse(defaults);
-        return error.LanguageConfigUnreadable;
-    }
+    const fd = openAnchored(path, false) catch |err| {
+        if (err == error.FileNotFound) return parse(defaults);
+        return err;
+    };
     defer _ = std.c.close(fd);
     var st: std.os.linux.Statx = undefined;
     if (std.c.statx(fd, "", std.os.linux.AT.EMPTY_PATH, .{ .TYPE = true, .MODE = true, .UID = true, .SIZE = true }, &st) != 0) return error.LanguageConfigStat;
@@ -181,6 +264,27 @@ test "language config approval binds both contents and parent incarnation" {
     original.identities[2] = identity;
     original.digest[0] ^= 1;
     try std.testing.expect(!before.same(original.binding()));
+}
+
+test "language executable approval excludes fd numbers and Config owns captured handles" {
+    var cfg = try parse(defaults);
+    var destroyed = false;
+    defer if (!destroyed) cfg.deinit();
+    cfg.servers[0].executable = try captureExecutable(cfg.arena.allocator(), "/bin/sh");
+    const original = cfg.servers[0].executable.?.verified;
+    const key = try approvalKey(&cfg, cfg.servers[0]);
+    const duplicate = try original.duplicate();
+    defer duplicate.close();
+    try std.testing.expect(original.fd != duplicate.fd);
+    var server = cfg.servers[0];
+    server.executable.?.verified = duplicate;
+    try std.testing.expectEqual(key, try approvalKey(&cfg, server));
+    server.executable.?.verified.identity.mode ^= 1;
+    try std.testing.expect(!std.mem.eql(u8, &key, &try approvalKey(&cfg, server)));
+    cfg.deinit();
+    destroyed = true;
+    try std.testing.expectEqual(@as(c_int, -1), std.c.fcntl(original.fd, std.c.F.GETFD));
+    try std.testing.expect(duplicate.identity.matches(duplicate.fd));
 }
 
 test "language config uses versioned absolute executable argv and root cwd" {

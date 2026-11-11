@@ -1,4 +1,5 @@
-//! Window-owned native language workflows. Trust grants execution, not a sandbox.
+//! Window-owned native language workflows. Workspace trust and exact executable
+//! configuration approval gate execution; neither is an OS sandbox.
 //! Every process holds its App until the client reports transport reap completion.
 const std = @import("std");
 const u = @import("../c.zig");
@@ -8,6 +9,8 @@ const App = @import("../app.zig").App;
 const Document = @import("../document.zig").Document;
 const client = @import("client.zig");
 const config = @import("config.zig");
+const automatic = @import("automatic.zig");
+const approvals = @import("approvals.zig");
 const f = @import("features.zig");
 const p = @import("protocol.zig");
 const positions = @import("positions.zig");
@@ -55,9 +58,12 @@ const Session = struct {
     language: []u8,
     digest: config.Digest,
     config_binding: config.Binding,
+    approval_key: automatic.Key,
+    candidate_key: automatic.Key,
     permit: trust.Permit,
     presentation_retired: bool = false,
     sync_failure: ?anyerror = null,
+    intentional_stop: bool = false,
     docs: std.ArrayList(Synced) = .empty,
     version: i32 = 0,
     cursor: usize = 0,
@@ -98,10 +104,18 @@ pub const Controller = struct {
     review_load: ?ReviewLoad = null,
     config_monitors: [4]?*c.GFileMonitor = @splat(null),
     config_monitors_dirty: bool = false,
+    executable_monitors: [64]?*c.GFileMonitor = @splat(null),
+    executable_monitor_key: ?automatic.Key = null,
+    executable_monitors_dirty: bool = false,
     config_generation: u64 = 0,
     screen_generation: u64 = 0,
     config_job: ?*ConfigJob = null,
     config_queued: ?*ConfigJob = null,
+    pause_jobs: std.ArrayList(*ConfigJob) = .empty,
+    auto: automatic.State = .{},
+    monitors_initialized: bool = false,
+    start_key: ?automatic.Key = null,
+
     next_config_poll: i64 = 0,
     approval_dispatch: bool = false,
     resource_review_shown: bool = false,
@@ -117,7 +131,7 @@ pub const Controller = struct {
     status: [:0]u8,
     progress: [:0]u8,
     pub fn init(app: *App) Controller {
-        return .{ .app = app, .ui = .{ .context = app, .respond = &answered }, .arena = std.heap.ArenaAllocator.init(a), .status = u.z("Stopped — explicit trusted Language: Start required"), .progress = u.z("") };
+        return .{ .app = app, .ui = .{ .context = app, .respond = &answered }, .arena = std.heap.ArenaAllocator.init(a), .status = u.z("Automatic language servers — workspace trust and exact configuration approval required"), .progress = u.z("") };
     }
     fn allocator(self: *Controller) std.mem.Allocator {
         return self.arena.allocator();
@@ -139,11 +153,13 @@ pub const Controller = struct {
         self.message(text);
     }
     pub fn deinit(self: *Controller) void {
-        std.debug.assert(self.resource == null and self.config_job == null and self.config_queued == null);
+        std.debug.assert(self.resource == null and self.config_job == null and self.config_queued == null and self.pause_jobs.items.len == 0);
+        self.pause_jobs.deinit(a);
         for (self.sessions) |s| std.debug.assert(s == null);
         self.clearScreen();
         self.clearNavigation();
         self.clearConfigMonitors();
+        self.clearExecutableMonitors();
         if (self.timer != 0) _ = c.g_source_remove(self.timer);
         self.arena.deinit();
         if (self.scratch) |text| a.free(text);
@@ -158,7 +174,11 @@ pub const Controller = struct {
         self.navigation = null;
     }
     fn clearScreen(self: *Controller) void {
+        automatic.release(self, false);
         self.screen_generation += 1;
+        if (self.config_job) |job| if (job.kind != .poll and job.kind != .pause) {
+            job.cancelled.store(true, .release);
+        };
         if (self.config_queued) |job| job.destroy();
         self.config_queued = null;
         if (self.resource) |request_resource| request_resource.cancel();
@@ -188,6 +208,9 @@ pub const Controller = struct {
     }
     pub fn invalidate(self: *Controller) void {
         self.config_generation += 1;
+        if (self.config_job) |job| if (job.kind != .pause) {
+            job.cancelled.store(true, .release);
+        };
         self.clearScreen();
         self.clearNavigation();
         self.pending = null;
@@ -197,6 +220,7 @@ pub const Controller = struct {
         };
     }
     fn stopSession(self: *Controller, s: *Session) void {
+        s.intentional_stop = true;
         s.pipe.stop() catch {};
         s.pipe.pipe.stop();
         self.retirePresentation(s);
@@ -222,8 +246,76 @@ pub const Controller = struct {
         for (s.docs.items) |*synced| self.clearPresentation(synced);
     }
     pub fn stop(self: *Controller) void {
+        const workspace = self.workspaceKey() orelse {
+            self.invalidate();
+            return;
+        };
+        _ = automatic.pause(workspace) catch |err| self.failure(err);
+        self.inhibitWorkspace(workspace);
+        if (self.app.manager) |manager| for (manager.entries) |entry| if (entry) |other| {
+            if (other.app != self.app) other.app.language.inhibitWorkspace(workspace);
+        };
+        self.queueConfig(.pause, null, "", null) catch |err| {
+            self.failure(err);
+            return;
+        };
+        self.message("Language sessions paused for this workspace. Start or Restart resumes automatic startup. Saving pause…");
+    }
+    fn inhibitWorkspace(self: *Controller, key: automatic.Key) void {
+        const own = self.workspaceKey() orelse return;
+        if (!automatic.same(own, key)) return;
+        self.auto.paused = true;
         self.invalidate();
-        self.message("Language sessions stopping; no automatic restart.");
+        self.message("Language: paused for this workspace — use Start or Restart to resume.");
+    }
+    fn workspaceKey(self: *Controller) ?automatic.Key {
+        return automatic.workspaceKey(&(self.app.browser.model orelse return null));
+    }
+    fn candidateKey(self: *Controller, root: RootId, lang: []const u8) !automatic.Key {
+        const m = self.app.browser.model orelse return error.NoWorkspace;
+        const folder = m.rootById(root) orelse return error.RootUnavailable;
+        return automatic.candidateKey(automatic.workspaceKey(&m), folder.lexical_path, lang);
+    }
+    fn eligible(self: *Controller, d: *Document) bool {
+        return !d.loading and d.pending == null and d.path != null and language(d) != null and (self.rootFor(d) catch null) != null;
+    }
+    fn candidateDocument(self: *Controller, root: RootId, lang: []const u8) ?*Document {
+        for (self.app.documents.entries.items) |d| if (self.eligible(d) and (self.rootFor(d) catch null) == root and std.mem.eql(u8, language(d).?, lang)) return d;
+        return null;
+    }
+    fn idleUI(self: *Controller) bool {
+        if (self.app.closing or self.app.quitting or self.app.dialog != null or self.app.popover != null or self.app.palette != null or self.app.editingFrozen() or self.app.openDialogs() or self.app.workspaceOperationBusy() or self.app.fileOperationBarrier() or self.app.pending_file_loads != 0 or self.ui.window != null or self.pending != null or self.resource != null or self.review_load != null or self.navigation != null) return false;
+        if (self.app.manager) |manager| if (manager.quitting) return false;
+        return true;
+    }
+    /// Runs from the existing App tick, after its stable owner is initialized.
+    /// Document discovery is in-memory; disk work is coalesced into one bounded
+    /// worker probe per interval, never one worker per file/view or timer tick.
+    pub fn reconcile(self: *Controller) void {
+        if (self.app.closing) return;
+        const workspace = self.workspaceKey() orelse return;
+        if (self.auto.workspace == null or !automatic.same(self.auto.workspace.?, workspace)) {
+            self.auto.workspace = workspace;
+            self.auto.paused = automatic.paused(workspace);
+            self.next_config_poll = 0;
+        }
+        if (automatic.paused(workspace) and !self.auto.paused) self.inhibitWorkspace(workspace);
+        if (self.config_job != null or self.config_queued != null or self.pause_jobs.items.len != 0) return;
+        if (c.g_get_monotonic_time() < self.next_config_poll) return;
+        if (@import("build_options").test_hooks and self.test_config_poll_disabled) return;
+        _ = self.app.workspace_policy.issue(.lsp) catch return;
+        var needed = false;
+        for (self.sessions) |slot| if (slot != null) {
+            needed = true;
+            break;
+        };
+        if (!needed) for (self.app.documents.entries.items) |d| if (self.eligible(d)) {
+            needed = true;
+            break;
+        };
+        if (!needed) return;
+        if (!self.monitors_initialized) self.rearmConfigMonitors();
+        self.queueConfig(.poll, null, "", null) catch |err| self.failure(err);
     }
     pub fn restart(self: *Controller) void {
         const s = self.selectedSession() catch |err| {
@@ -274,9 +366,41 @@ pub const Controller = struct {
             slot.* = null;
         };
     }
+    fn clearExecutableMonitors(self: *Controller) void {
+        for (&self.executable_monitors) |*slot| if (slot.*) |monitor| {
+            _ = c.g_file_monitor_cancel(monitor);
+            _ = c.g_signal_handlers_disconnect_matched(monitor, c.G_SIGNAL_MATCH_DATA, 0, 0, null, null, self);
+            c.g_object_unref(monitor);
+            slot.* = null;
+        };
+    }
+    fn watchExecutables(self: *Controller, cfg: *const config.Config) void {
+        var hash = std.crypto.hash.sha2.Sha256.init(.{});
+        hash.update(&cfg.digest);
+        for (cfg.servers) |server| if (server.approval_key) |key| hash.update(&key);
+        const key = hash.finalResult();
+        if (!self.executable_monitors_dirty and self.executable_monitor_key != null and automatic.same(key, self.executable_monitor_key.?)) return;
+        self.clearExecutableMonitors();
+        self.executable_monitor_key = key;
+        self.executable_monitors_dirty = false;
+        var index: usize = 0;
+        for (cfg.servers) |server| if (server.executable) |exe| {
+            for ([_][]const u8{ server.argv[0], exe.path }) |path| {
+                const name = u.z(path);
+                defer a.free(name);
+                const file = c.g_file_new_for_path(name).?;
+                defer c.g_object_unref(file);
+                const monitor = c.g_file_monitor_file(file, c.G_FILE_MONITOR_WATCH_MOVES, null, null);
+                self.executable_monitors[index] = monitor;
+                index += 1;
+                if (monitor) |value| u.connect(value, "changed", &executableChanged, self);
+            }
+        };
+    }
     fn rearmConfigMonitors(self: *Controller) void {
         self.clearConfigMonitors();
         self.config_monitors_dirty = false;
+        self.monitors_initialized = true;
         if (self.app.closing) return;
         const home = c.g_get_home_dir();
         if (home == null) return;
@@ -291,36 +415,165 @@ pub const Controller = struct {
             if (monitor) |value| u.connect(value, "changed", &configurationChanged, self);
         }
     }
+    fn validateApprovalLocation(self: *Controller) !void {
+        const home = if (self.app.workspace_policy.home) |*home| home else return error.LanguageStateHomeUnavailable;
+        const m = self.app.browser.model orelse return error.NoWorkspace;
+        if (m.roots.len == 0 or m.roots.len > trust.limits.roots) return error.InvalidRoots;
+        var roots: [trust.limits.roots][]const u8 = undefined;
+        for (m.roots, 0..) |folder, i| roots[i] = folder.canonical_path orelse return error.RootUnavailable;
+        const manifest_base = if (m.manifest_path) |path| blk: {
+            const dirname = std.fs.path.dirname(path) orelse return error.InvalidPath;
+            // The model preserves lexical manifest spelling. Use its captured
+            // physical parent, never resolve aliases on the owner/UI thread.
+            const identity = self.app.workspace_policy.identity orelse return error.LanguageManifestIdentityUnavailable;
+            const base = identity.manifest_base orelse return error.LanguageManifestIdentityUnavailable;
+            if (!std.mem.eql(u8, base.lexical, dirname)) return error.LanguageManifestIdentityUnavailable;
+            break :blk base.canonical;
+        } else null;
+        try approvals.validateLocation(home, roots[0..m.roots.len], manifest_base);
+    }
     fn queueConfig(self: *Controller, kind: ConfigKind, root: ?RootId, lang: []const u8, expected: ?config.Binding) !void {
         if (self.app.closing) return error.Closing;
-        if (self.config_queued != null) return error.ConfigurationCheckPending;
+        // Also guard pause before coalescing: trust's coral/trust check does not
+        // protect this sibling store, and pause does not require a trust permit.
+        self.validateApprovalLocation() catch |err| {
+            self.invalidate();
+            return err;
+        };
+        if (kind != .pause and self.config_queued != null) return error.ConfigurationCheckPending;
+        const workspace = self.workspaceKey() orelse return error.NoWorkspace;
+        self.auto.workspace = workspace;
+        if (kind == .pause) {
+            // A running write may already have published before this new Stop.
+            // Only coalesce into a write which has not begun its next attempt.
+            if (self.config_job) |active| if (active.kind == .pause and !active.started and automatic.same(active.workspace, workspace)) {
+                active.pause_revision = automatic.revision(workspace);
+                return;
+            };
+            for (self.pause_jobs.items) |pending_pause| if (automatic.same(pending_pause.workspace, workspace)) {
+                pending_pause.pause_revision = automatic.revision(workspace);
+                return;
+            };
+            if (self.pause_jobs.items.len >= automatic.limit) return error.LanguagePauseLimit;
+        }
+        const home = try approvals.Home.init(a, if (self.app.workspace_policy.home) |h| h.path else return error.LanguageStateHomeUnavailable);
+        errdefer {
+            var owned = home;
+            owned.deinit();
+        }
+        const owned_language = try a.dupe(u8, lang);
+        errdefer a.free(owned_language);
         const job = try a.create(ConfigJob);
         errdefer a.destroy(job);
-        job.* = .{ .owner = self, .kind = kind, .root = root, .language = try a.dupe(u8, lang), .expected = expected, .generation = self.config_generation, .screen = self.screen_generation, .mode = self.mode, .session = if (self.resource) |r| r.session else self.screen_session };
-        if (self.config_job != null) self.config_queued = job else self.dispatchConfig(job);
-        if (kind != .poll) self.message("Checking current language configuration…");
+        job.* = .{
+            .owner = self,
+            .kind = kind,
+            .root = root,
+            .language = owned_language,
+            .expected = expected,
+            .generation = self.config_generation,
+            .screen = self.screen_generation,
+            .mode = self.mode,
+            .session = if (self.resource) |r| r.session else self.screen_session,
+            .home = home,
+            .workspace = workspace,
+            .pause_revision = automatic.revision(workspace),
+            .permit = if (kind == .pause) null else try self.app.workspace_policy.issue(.lsp),
+            .document = if (root) |r| (self.candidateDocument(r, lang) orelse return error.DocumentClosed).id else null,
+            .expected_key = if (kind == .grant) self.start_key else null,
+        };
+        if (kind == .pause) {
+            try self.pause_jobs.append(a, job);
+            pending_pause_writes += 1;
+            self.app.hold();
+            if (self.timer == 0) self.timer = c.g_timeout_add(20, &tick, self);
+        } else if (self.config_job != null or self.pause_jobs.items.len != 0) {
+            self.config_queued = job;
+            if (self.timer == 0) self.timer = c.g_timeout_add(20, &tick, self);
+        } else self.dispatchConfig(job);
+        if (kind != .poll and kind != .pause) self.message("Checking current language configuration…");
     }
     fn dispatchConfig(self: *Controller, job: *ConfigJob) void {
         std.debug.assert(self.config_job == null);
         self.config_job = job;
-        job.deadline = c.g_get_monotonic_time() + 5_000_000;
-        self.next_config_poll = c.g_get_monotonic_time() + 500_000;
+        self.next_config_poll = c.g_get_monotonic_time() + 1_000_000;
         self.app.hold();
         if (self.timer == 0) self.timer = c.g_timeout_add(20, &tick, self);
+        self.startConfigWorker(job);
+    }
+    fn startConfigWorker(self: *Controller, job: *ConfigJob) void {
+        _ = self;
+        if (config_worker_busy or job.started or !job.pause_retry.ready(c.g_get_monotonic_time()) or (job.kind == .start and pending_pause_writes != 0 and !job.cancelled.load(.acquire))) return;
+        // Capture at actual dispatch, not enqueue: another owner's pause may
+        // have completed while this job waited for the shared worker slot.
+        job.pause_epoch = automatic.epoch(job.workspace);
+        config_worker_busy = true;
+        job.started = true;
+        job.deadline = c.g_get_monotonic_time() + 5_000_000;
         const task = c.g_task_new(null, null, &configDone, job).?;
         c.g_task_set_task_data(task, job, null);
         c.g_task_run_in_thread(task, &configWorker);
         c.g_object_unref(task);
     }
     fn configReady(self: *Controller, job: *ConfigJob) !void {
+        if (job.kind == .pause) {
+            automatic.pauseWritten(job.workspace, job.pause_revision);
+            if (!self.app.closing) if (self.workspaceKey()) |key| if (automatic.same(key, job.workspace)) self.message("Language: workspace pause saved — use Start or Restart to resume.");
+            return;
+        }
+        const workspace = self.workspaceKey() orelse return error.NoWorkspace;
+        if (!automatic.same(workspace, job.workspace) or !self.app.workspace_policy.validate(job.permit orelse return error.Restricted, .lsp)) return error.StaleLanguageApproval;
         const cfg = &job.result.?;
-        // The same binding check gates periodic checks, text edits, commands and
-        // resource approvals. Monitors are only a prompt invalidation mechanism.
-        for (self.sessions) |slot| if (slot) |s| if (!s.config_binding.same(cfg.binding())) return error.LanguageConfigChanged;
+        if (!(@import("build_options").test_hooks and self.test_config_poll_disabled)) self.watchExecutables(cfg);
+        const snapshot = &job.snapshot.?;
+        if (job.kind == .start) {
+            if (!automatic.unpause(workspace, job.pause_revision)) return error.LanguagePaused;
+        }
+        self.auto.paused = automatic.observePause(workspace, if (job.kind == .start) automatic.epoch(workspace) else job.pause_epoch, snapshot.isPaused(workspace)) orelse return;
+        if (self.auto.paused) {
+            self.invalidate();
+            self.message("Language: paused for this workspace — use Start or Restart to resume.");
+            return;
+        }
+        var stale = false;
+        if (self.mode == .start and self.start_key != null) {
+            const reviewed = cfg.find(self.start_language);
+            if (reviewed == null or reviewed.?.approval_key == null or !automatic.same(reviewed.?.approval_key.?, self.start_key.?)) stale = true;
+        }
+        for (self.sessions) |slot| if (slot) |s| {
+            const server = cfg.find(s.language);
+            if (!s.config_binding.same(cfg.binding()) or server == null or server.?.approval_key == null or !automatic.same(server.?.approval_key.?, s.approval_key) or !snapshot.isApproved(s.approval_key)) stale = true;
+        };
+        if (stale) {
+            self.invalidate();
+            self.message("Language configuration or executable changed; checking approval before starting again.");
+            return;
+        }
+        if (job.document) |id| {
+            const d = self.app.documents.get(id) orelse return error.DocumentClosed;
+            if (!self.eligible(d) or (self.rootFor(d) catch null) != job.root or !std.mem.eql(u8, language(d).?, job.language)) return error.StaleLanguageDocument;
+        }
         switch (job.kind) {
-            .poll => {},
-            .start => try self.showStart(cfg, job.root.?, job.language),
-            .launch => try self.launch(cfg, job.root.?, job.language, job.expected),
+            .pause => unreachable,
+            .poll => try self.automaticReady(cfg, snapshot),
+            .start => {
+                const server = cfg.find(job.language) orelse return error.LanguageNotConfigured;
+                const key = server.approval_key orelse return server.identity_error orelse error.LanguageExecutableIdentityUnavailable;
+                self.auto.resetFailure(try self.candidateKey(job.root.?, job.language));
+                automatic.retry(key);
+                if (snapshot.isApproved(key)) try self.launch(cfg, job.root.?, job.language, null) else try self.showStart(cfg, job.root.?, job.language, true);
+            },
+            .grant => {
+                // The durable grant is not a launch permit. Re-read both config
+                // and store in a new worker turn, with a new document/trust guard.
+                try self.queueConfig(.launch, job.root, job.language, job.expected);
+            },
+            .launch => {
+                const server = cfg.find(job.language) orelse return error.LanguageNotConfigured;
+                const key = server.approval_key orelse return server.identity_error orelse error.LanguageExecutableIdentityUnavailable;
+                if (!snapshot.isApproved(key)) return error.LanguageConfigurationNotApproved;
+                try self.launch(cfg, job.root.?, job.language, job.expected);
+            },
             .approve => {
                 const s = self.session(job.session orelse return error.StaleSession) orelse return error.StaleSession;
                 if (!self.valid(s) or self.mode != job.mode) return error.StaleLanguageApproval;
@@ -343,6 +596,43 @@ pub const Controller = struct {
             },
         }
     }
+    fn automaticReady(self: *Controller, cfg: *const config.Config, snapshot: *const approvals.Snapshot) !void {
+        if (self.config_queued != null or self.pause_jobs.items.len != 0 or !self.idleUI()) return;
+        const docs = self.app.documents.entries.items;
+        if (docs.len == 0) return;
+        var free_slot = false;
+        for (self.sessions) |slot| if (slot == null) {
+            free_slot = true;
+            break;
+        };
+        if (!free_slot) return;
+        for (0..docs.len) |_| {
+            if (self.auto.cursor >= docs.len) self.auto.cursor = 0;
+            const d = docs[self.auto.cursor];
+            self.auto.cursor += 1;
+            if (!self.eligible(d)) continue;
+            const lang = language(d).?;
+            const root = try self.rootFor(d);
+            var exists = false;
+            for (self.sessions) |slot| if (slot) |s| if (s.root == root and std.mem.eql(u8, s.language, lang)) {
+                exists = true;
+                break;
+            };
+            if (exists) continue;
+            const server = cfg.find(lang) orelse continue;
+            const key = server.approval_key orelse continue;
+            const candidate = try self.auto.candidate(try self.candidateKey(root, lang), key);
+            candidate.approved = snapshot.isApproved(key);
+            if (candidate.failed or automatic.blocked(key, self)) continue;
+            if (candidate.approved) {
+                try self.queueConfig(.launch, root, lang, cfg.binding());
+                return;
+            }
+            self.clearScreen();
+            try self.showStart(cfg, root, lang, false);
+            return;
+        }
+    }
     fn showResourceReview(self: *Controller) void {
         const request_resource = self.resource orelse return;
         if (self.resource_review_shown or request_resource.cancelled or self.app.workspace_operations.state != .confirming) return;
@@ -359,12 +649,18 @@ pub const Controller = struct {
         const d = self.app.active() orelse return error.NoDocument;
         const root = try self.rootFor(d);
         const lang = language(d) orelse return error.NoDocumentLanguage;
+        if (!self.eligible(d)) return error.DocumentNotReady;
         self.clearScreen();
         try self.queueConfig(.start, root, lang, null);
     }
-    fn showStart(self: *Controller, cfg: *const config.Config, root: RootId, lang: []const u8) !void {
+    fn showStart(self: *Controller, cfg: *const config.Config, root: RootId, lang: []const u8, explicit: bool) !void {
         _ = try self.app.workspace_policy.issue(.lsp);
         const server = cfg.find(lang) orelse return error.LanguageNotConfigured;
+        const key = server.approval_key orelse return server.identity_error orelse error.LanguageExecutableIdentityUnavailable;
+        try automatic.claim(key, self, explicit);
+        errdefer automatic.release(self, false);
+        self.start_key = key;
+
         self.bindUI();
         self.mode = .start;
         self.start_root = root;
@@ -374,8 +670,9 @@ pub const Controller = struct {
         const path = m.rootById(root).?.canonical_path orelse return error.RootUnavailable;
         const args = try std.json.Stringify.valueAlloc(self.allocator(), server.argv, .{ .escape_unicode = true });
         const environment = try std.json.Stringify.valueAlloc(self.allocator(), server.env, .{ .escape_unicode = true });
-        const text = try std.fmt.allocPrint(self.allocator(), "Start {s} for {s}?\nExecutable/argv: {s}\nEnvironment allowlist: {s}\nWorking directory: {s}\n\nThis process has your user permissions. Workspace trust is NOT an OS sandbox. It can read/write files and access the network. No installation, shell expansion, or repository executable configuration is used. Nothing starts automatically.", .{ lang, path, args, environment, path });
-        self.ui.show(self.app, "Language: Start", text, &.{}, false, "Start process");
+        const executable = try std.json.Stringify.valueAlloc(self.allocator(), server.executable.?, .{ .escape_unicode = true });
+        const text = try std.fmt.allocPrint(self.allocator(), "Start {s} for {s}?\nExecutable/argv: {s}\nEnvironment allowlist: {s}\nWorking directory: {s}\nResolved executable identity: {s}\nApproval key: {s}\n\nThis process has your user permissions. Workspace trust is NOT an OS sandbox. It can read/write files and access the network. No installation, shell expansion, or repository executable configuration is used. Approval is saved for this exact configuration and executable identity. It permits automatic startup in independently trusted workspaces. Stop all sessions pauses this workspace until Start or Restart.", .{ lang, path, args, environment, path, executable, std.fmt.bytesToHex(&key, .lower) });
+        self.ui.show(self.app, "Language: Start", text, &.{}, false, "Approve and start");
     }
     fn launch(self: *Controller, cfg: *const config.Config, root: RootId, lang: []const u8, expected: ?config.Binding) !void {
         const permit = try self.app.workspace_policy.issue(.lsp);
@@ -386,12 +683,23 @@ pub const Controller = struct {
         var target: ?*?*Session = null;
         for (&self.sessions) |*slot| {
             if (slot.*) |s| {
-                if (s.root == root and std.mem.eql(u8, s.language, lang)) return error.SessionAlreadyExists;
+                if (s.root == root and std.mem.eql(u8, s.language, lang)) return;
             } else if (target == null) {
                 target = slot;
             }
         }
         const slot = target orelse return error.SessionLimit;
+        _ = self.candidateDocument(root, lang) orelse return error.DocumentClosed;
+        const approval_key = server.approval_key orelse return error.LanguageConfigurationNotApproved;
+        const candidate_key = try self.candidateKey(root, lang);
+        const candidate = try self.auto.candidate(candidate_key, approval_key);
+        if (candidate.failed) return error.LanguageRestartRequired;
+        candidate.approved = true;
+        errdefer {
+            candidate.failed = true;
+            self.message("Language server failed to start — use Language: Restart current server to retry.");
+        }
+        const executable = server.executable orelse return error.LanguageExecutableIdentityUnavailable;
         const s = try a.create(Session);
         errdefer a.destroy(s);
         const owned_path = try a.dupe(u8, path);
@@ -399,12 +707,13 @@ pub const Controller = struct {
         const owned_language = try a.dupe(u8, lang);
         errdefer a.free(owned_language);
         if (!self.app.workspace_policy.validate(permit, .lsp)) return error.Restricted;
-        const pipe = try client.Client.init(a, .{ .root = path, .language_id = lang, .transport = .{ .authorization = .approved, .argv = server.argv, .cwd = path, .environment = server.env, .input_limit = transport_input_bytes, .output_limit = transport_output_bytes }, .additional_capabilities = caps, .unversioned_diagnostics = .surface_unverified });
-        s.* = .{ .pipe = pipe, .root = root, .path = owned_path, .language = owned_language, .digest = cfg.digest, .config_binding = cfg.binding(), .permit = permit };
+        const pipe = try client.Client.init(a, .{ .root = path, .language_id = lang, .transport = .{ .authorization = .approved, .argv = server.argv, .executable = executable.verified, .cwd = path, .environment = server.env, .input_limit = transport_input_bytes, .output_limit = transport_output_bytes }, .additional_capabilities = caps, .unversioned_diagnostics = .surface_unverified });
+        s.* = .{ .pipe = pipe, .root = root, .path = owned_path, .language = owned_language, .digest = cfg.digest, .config_binding = cfg.binding(), .permit = permit, .approval_key = approval_key, .candidate_key = candidate_key };
         slot.* = s;
         self.rearmConfigMonitors();
         self.app.hold();
         if (self.timer == 0) self.timer = c.g_timeout_add(20, &tick, self);
+        self.clearScreen();
         self.message("Language server starting…");
     }
     pub fn changed(self: *Controller, d: *Document) void {
@@ -440,6 +749,7 @@ pub const Controller = struct {
         };
     }
     fn failSync(self: *Controller, s: *Session, err: anyerror) void {
+        self.suppressSession(s);
         if (s.sync_failure == null) s.sync_failure = err;
         s.restart = false;
         self.stopSession(s);
@@ -487,19 +797,47 @@ pub const Controller = struct {
         }
         s.version = version;
     }
+    fn suppressSession(self: *Controller, s: *Session) void {
+        const entry = self.auto.candidate(s.candidate_key, s.approval_key) catch return;
+        entry.failed = true;
+    }
+    fn queuedResume(self: *Controller, job: *const ConfigJob) ?*ConfigJob {
+        if (job.kind != .poll or self.app.closing) return null;
+        const next = self.config_queued orelse return null;
+        if (next.kind == .start and next.generation == self.config_generation and next.screen == self.screen_generation and automatic.same(next.workspace, job.workspace)) return next;
+        return null;
+    }
+    fn dispatchNextConfig(self: *Controller) void {
+        if (self.config_job != null) return;
+        if (self.pause_jobs.items.len != 0) {
+            const next = self.pause_jobs.orderedRemove(0);
+            self.dispatchConfig(next);
+            self.app.release();
+        } else if (self.config_queued) |next| {
+            self.config_queued = null;
+            if (!self.app.closing and next.generation == self.config_generation and next.screen == self.screen_generation) self.dispatchConfig(next) else next.destroy();
+        }
+    }
     fn pump(self: *Controller) void {
         if (self.config_monitors_dirty) self.rearmConfigMonitors();
+        self.dispatchNextConfig();
         if (self.config_job) |job| {
-            if (!job.timed_out and c.g_get_monotonic_time() >= job.deadline) {
+            self.startConfigWorker(job);
+            if (job.started and job.kind != .pause and !job.timed_out and c.g_get_monotonic_time() >= job.deadline) {
+                // Retire the timed-out poll and all sessions, but preserve a
+                // newer explicit resume. Only this timeout's local generations
+                // are rebased; the queued document/workspace/trust guards remain.
+                const resume_job = self.queuedResume(job);
+                if (resume_job != null) self.config_queued = null;
                 job.timed_out = true;
                 self.invalidate();
+                if (resume_job) |next| {
+                    next.generation = self.config_generation;
+                    next.screen = self.screen_generation;
+                    self.config_queued = next;
+                }
                 self.failure(error.LanguageConfigCheckTimedOut);
             }
-        } else if (self.config_queued == null and !self.app.closing and !(@import("build_options").test_hooks and self.test_config_poll_disabled) and c.g_get_monotonic_time() >= self.next_config_poll) {
-            for (self.sessions) |slot| if (slot) |s| if (s.pipe.state == .ready) {
-                self.queueConfig(.poll, null, "", null) catch |err| self.failure(err);
-                break;
-            };
         }
         if (self.resource) |request_resource| if (!request_resource.cancelled and !self.resourceCurrent(request_resource)) request_resource.cancel();
         for (&self.sessions) |*slot| if (slot.*) |s| {
@@ -527,7 +865,10 @@ pub const Controller = struct {
                 }
             }
             s.pipe.tick(@intCast(@divTrunc(c.g_get_monotonic_time(), 1000))) catch |err| self.failure(err);
-            if (s.pipe.state == .crashed or s.pipe.state == .stopping or s.pipe.state == .stopped) self.retirePresentation(s);
+            if (s.pipe.state == .crashed or s.pipe.state == .stopping or s.pipe.state == .stopped) {
+                if (!s.intentional_stop) self.suppressSession(s);
+                self.retirePresentation(s);
+            }
             for (0..8) |_| {
                 var event = s.pipe.nextEvent() orelse break;
                 defer event.deinit();
@@ -538,7 +879,7 @@ pub const Controller = struct {
                 const root = s.root;
                 const lang = u.z(s.language);
                 defer a.free(lang);
-                const binding = s.config_binding;
+
                 if (self.screen_session == s.pipe.session) self.clearScreen();
                 if (self.pending) |pending| if (pending.session == s.pipe.session) {
                     self.pending = null;
@@ -551,7 +892,7 @@ pub const Controller = struct {
                 a.destroy(s);
                 slot.* = null;
                 self.app.release();
-                if (restart_requested) self.queueConfig(.launch, root, lang, binding) catch |err| self.failure(err);
+                if (restart_requested) self.queueConfig(.start, root, lang, null) catch |err| self.failure(err);
             }
         };
         self.showResourceReview();
@@ -579,7 +920,7 @@ pub const Controller = struct {
                 self.retirePresentation(s);
                 const result = e.result.?;
                 const reason: []const u8 = if (result.spawn_errno == 2) " — configured executable not found" else if (result.spawn_errno == 13) " — executable permission denied" else "";
-                const text = u.fmt("Language server {s}{s}; reaped={}; spawn errno={d}; stderr bytes discarded: {d}; synchronization failure: {s}", .{ @tagName(result.outcome), reason, result.reaped, result.spawn_errno, result.stderr.bytes, if (s.sync_failure) |err| @errorName(err) else "none" });
+                const text = u.fmt("Language server {s}{s}; reaped={}; spawn errno={d}; stderr bytes discarded: {d}; synchronization failure: {s}. Use Language: Restart current server to retry.", .{ @tagName(result.outcome), reason, result.reaped, result.spawn_errno, result.stderr.bytes, if (s.sync_failure) |err| @errorName(err) else "none" });
                 defer a.free(text);
                 self.message(text);
             },
@@ -1417,7 +1758,11 @@ pub const Controller = struct {
             .crashed => return "Language: failed",
             .stopped => {},
         };
-        return if (ready) "Language: ready" else "Language: off";
+        if (self.auto.paused) return "Language: paused";
+        if (self.mode == .start) return "Language: approval needed";
+        if (ready) return "Language: ready";
+        for (self.auto.candidates[0..self.auto.len]) |entry| if (entry.failed and entry.workspace != null and self.auto.workspace != null and automatic.same(entry.workspace.?, self.auto.workspace.?)) return "Language: restart required";
+        return "Language: automatic";
     }
     pub fn showStatus(self: *Controller) void {
         if (self.pending != null or self.ui.window != null or self.review_load != null) {
@@ -1429,7 +1774,7 @@ pub const Controller = struct {
         var body: std.ArrayList(u8) = .empty;
         const alloc = self.allocator();
         body.appendSlice(alloc, self.status) catch return;
-        body.appendSlice(alloc, "\nUser configuration: ~/.config/coral/languages.json (version 1).\nExecutables are never installed automatically. Processes have user permissions, not a sandbox. Start is always explicit.\nSingle standalone Create/Rename/Delete WorkspaceEdits use the native Explorer confirmation and asynchronous workers. No overwrite, ignore-if-exists/missing, recursive delete, mixed/multiple resource operations, or resource edits with follow-up commands. Filesystem operations have no undo.\nFile-operation didCreate/didRename/didDelete notifications follow static server filters; dynamic registration and will* requests are unsupported.\nProblems covers synchronized open documents. Semantic tokens and inlay hints refresh on explicit request.\n") catch return;
+        body.appendSlice(alloc, "\nUser configuration: ~/.config/coral/languages.json (version 1).\nExecutables are never installed automatically. Processes have user permissions, not a sandbox. Approved exact configurations start automatically only in trusted, unpaused workspaces. Changed configuration or executable identity requires approval again. Stop all sessions durably pauses this workspace; Start or Restart resumes it.\nSingle standalone Create/Rename/Delete WorkspaceEdits use the native Explorer confirmation and asynchronous workers. No overwrite, ignore-if-exists/missing, recursive delete, mixed/multiple resource operations, or resource edits with follow-up commands. Filesystem operations have no undo.\nFile-operation didCreate/didRename/didDelete notifications follow static server filters; dynamic registration and will* requests are unsupported.\nProblems covers synchronized open documents. Semantic tokens and inlay hints refresh on explicit request.\n") catch return;
         for (self.sessions) |slot| if (slot) |s| {
             const line = std.fmt.allocPrint(alloc, "\nRoot #{d}: {s} — {s}: {s}; {d} documents; configuration {s}\nPosition encoding: {s}; synchronization: {s}; trust permit valid: {}\n", .{ @backingInt(s.root), s.path, s.language, @tagName(s.pipe.state), s.docs.items.len, std.fmt.bytesToHex(&s.digest, .lower), @tagName(s.pipe.capabilities.encoding), @tagName(s.pipe.capabilities.sync), self.valid(s) }) catch return;
             body.appendSlice(alloc, line) catch return;
@@ -1445,6 +1790,7 @@ pub const Controller = struct {
     fn answered(context: *anyopaque, approved: bool, index: ?usize, input: []const u8) void {
         const self = &u.cast(App, context).language;
         if (!approved) {
+            if (self.mode == .start) automatic.release(self, true);
             self.clearScreen();
             return;
         }
@@ -1459,7 +1805,7 @@ pub const Controller = struct {
     }
     fn answer(self: *Controller, index: ?usize, input: []const u8) !void {
         switch (self.mode) {
-            .start => try self.queueConfig(.launch, self.start_root orelse return error.NoWorkspace, self.start_language, self.start_binding),
+            .start => try self.queueConfig(.grant, self.start_root orelse return error.NoWorkspace, self.start_language, self.start_binding),
             .rename, .workspace_query => {
                 const s = self.screenSession() orelse return error.StaleSession;
                 try self.checkScreen(s);
@@ -1512,12 +1858,12 @@ pub const Controller = struct {
         defer arena.deinit();
         const alloc = arena.allocator();
         const DocProbe = struct { id: u64, uri: []const u8, revision: u64, version: i32, diagnostics: usize, verified: bool, semantic_tokens: usize };
-        const SessionProbe = struct { id: u64, root: u64, path: []const u8, language: []const u8, state: []const u8, config: []const u8, documents: []const DocProbe };
+        const SessionProbe = struct { id: u64, root: u64, path: []const u8, language: []const u8, state: []const u8, config: []const u8, approval_key: []const u8, documents: []const DocProbe };
         var sessions: std.ArrayList(SessionProbe) = .empty;
         for (self.sessions) |slot| if (slot) |s| {
             const docs = alloc.alloc(DocProbe, s.docs.items.len) catch return;
             for (s.docs.items, docs) |d, *out| out.* = .{ .id = d.id, .uri = d.uri, .revision = d.revision, .version = d.version, .diagnostics = if (d.diagnostics) |diag| diag.value.items.len else 0, .verified = d.verified, .semantic_tokens = if (d.semantic_revision == d.revision) if (d.tokens) |tokens| tokens.value.tokens.len else 0 else 0 };
-            sessions.append(alloc, .{ .id = s.pipe.session, .root = @backingInt(s.root), .path = s.path, .language = s.language, .state = @tagName(s.pipe.state), .config = alloc.dupe(u8, &std.fmt.bytesToHex(&s.digest, .lower)) catch return, .documents = docs }) catch return;
+            sessions.append(alloc, .{ .id = s.pipe.session, .root = @backingInt(s.root), .path = s.path, .language = s.language, .state = @tagName(s.pipe.state), .config = alloc.dupe(u8, &std.fmt.bytesToHex(&s.digest, .lower)) catch return, .approval_key = alloc.dupe(u8, &std.fmt.bytesToHex(&s.approval_key, .lower)) catch return, .documents = docs }) catch return;
         };
         const TagProbe = struct { document: u64, view: ?u64, diagnostic_ranges: usize, semantic_ranges: usize, diagnostic_kinds: usize, semantic_kinds: usize, truncated: bool };
         var tag_probes: std.ArrayList(TagProbe) = .empty;
@@ -1533,7 +1879,14 @@ pub const Controller = struct {
         }
         const labels = alloc.alloc([]const u8, self.rows.items.len) catch return;
         for (self.rows.items, labels) |row, *label| label.* = row.label;
-        const bytes = std.json.Stringify.valueAlloc(alloc, .{ .window = self.app.window_id, .sessions = sessions.items, .session_count = count, .diagnostics = diagnostic_count, .pending = if (self.pending) |pending| @as(?[]const u8, @tagName(pending.action)) else null, .pending_kind = if (self.pending) |pending| @as(?[]const u8, @tagName(pending.kind)) else null, .config_check = if (self.config_job) |job| @as(?[]const u8, @tagName(job.kind)) else null, .config_queued = self.config_queued != null, .config_generation = self.config_generation, .decoration_buffers = tag_probes.items, .tags = tag_probes.items, .review = self.plan != null, .review_loading = self.review_load != null, .server_review = self.server_token != null or (if (self.resource) |r| r.token != null else false), .resource_review = self.resource != null, .resource_state = if (self.resource != null) @as(?[]const u8, @tagName(self.app.workspace_operations.state)) else null, .resource_kind = if (self.resource) |r| @as(?[]const u8, @tagName(r.kind)) else null, .resource_source = if (self.resource) |r| @as(?[]const u8, r.source) else null, .resource_destination = if (self.resource) |r| @as(?[]const u8, r.destination) else null, .file_notifications_queued = self.file_notifications, .navigation = self.navigation != null, .rows = labels, .mode = @tagName(self.mode), .dialog = self.ui.window != null or (self.resource != null and self.app.workspace_operations.dialog != null), .status = self.status, .progress = self.progress, .popup = if (self.ui.body) |label| std.mem.span(c.gtk_label_get_text(u.cast(c.GtkLabel, label))) else if (self.resource) |r| r.review else "" }, .{}) catch return;
+        const CandidateProbe = struct { key: []const u8, approval_key: ?[]const u8, approved: bool, suppressed: bool, reason: []const u8 };
+        var candidates: std.ArrayList(CandidateProbe) = .empty;
+        for (self.auto.candidates[0..self.auto.len]) |entry| {
+            const blocked = if (entry.configuration) |key| automatic.blocked(key, self) else false;
+            candidates.append(alloc, .{ .key = alloc.dupe(u8, &std.fmt.bytesToHex(&entry.key, .lower)) catch return, .approval_key = if (entry.configuration) |key| alloc.dupe(u8, &std.fmt.bytesToHex(&key, .lower)) catch return else null, .approved = entry.approved, .suppressed = entry.failed or blocked, .reason = if (entry.failed) "restart-required" else if (blocked) "declined-or-review-owned" else "none" }) catch return;
+        }
+        const auto_probe = .{ .paused = self.auto.paused, .runtime_inhibited = if (self.workspaceKey()) |key| automatic.paused(key) else false, .workspace_key = if (self.workspaceKey()) |key| alloc.dupe(u8, &std.fmt.bytesToHex(&key, .lower)) catch return else null, .approval_key = if (self.mode == .start) if (self.start_key) |key| alloc.dupe(u8, &std.fmt.bytesToHex(&key, .lower)) catch return else null else null, .candidates = candidates.items, .pause_writes = self.pause_jobs.items.len };
+        const bytes = std.json.Stringify.valueAlloc(alloc, .{ .window = self.app.window_id, .automatic = auto_probe, .sessions = sessions.items, .session_count = count, .diagnostics = diagnostic_count, .pending = if (self.pending) |pending| @as(?[]const u8, @tagName(pending.action)) else null, .pending_kind = if (self.pending) |pending| @as(?[]const u8, @tagName(pending.kind)) else null, .config_check = if (self.config_job) |job| @as(?[]const u8, @tagName(job.kind)) else null, .config_queued = self.config_queued != null, .config_generation = self.config_generation, .decoration_buffers = tag_probes.items, .tags = tag_probes.items, .review = self.plan != null, .review_loading = self.review_load != null, .server_review = self.server_token != null or (if (self.resource) |r| r.token != null else false), .resource_review = self.resource != null, .resource_state = if (self.resource != null) @as(?[]const u8, @tagName(self.app.workspace_operations.state)) else null, .resource_kind = if (self.resource) |r| @as(?[]const u8, @tagName(r.kind)) else null, .resource_source = if (self.resource) |r| @as(?[]const u8, r.source) else null, .resource_destination = if (self.resource) |r| @as(?[]const u8, r.destination) else null, .file_notifications_queued = self.file_notifications, .navigation = self.navigation != null, .rows = labels, .mode = @tagName(self.mode), .dialog = self.ui.window != null or (self.resource != null and self.app.workspace_operations.dialog != null), .status = self.status, .progress = self.progress, .popup = if (self.ui.body) |label| std.mem.span(c.gtk_label_get_text(u.cast(c.GtkLabel, label))) else if (self.resource) |r| r.review else "" }, .{}) catch return;
         const line = u.z(bytes);
         defer a.free(line);
         c.g_print("CORAL_LANGUAGE %s\n", line.ptr);
@@ -1542,18 +1895,24 @@ pub const Controller = struct {
         if (!@import("build_options").test_hooks) return false;
         if (std.mem.eql(u8, action, "language-config-unwatch")) {
             self.clearConfigMonitors();
+            self.clearExecutableMonitors();
             self.config_monitors_dirty = false;
             self.test_config_poll_disabled = true;
         } else if (std.mem.eql(u8, action, "language-probe")) self.probe() else if (std.mem.eql(u8, action, "language-accept")) {
             self.showResourceReview();
             self.ui.answer(true, std.fmt.parseInt(usize, value, 10) catch 0, value);
         } else if (std.mem.eql(u8, action, "language-reject")) {
+            if (self.mode == .start) automatic.release(self, true);
             self.clearScreen();
         } else return false;
         return true;
     }
 };
-const ConfigKind = enum { poll, start, launch, approve };
+// One filesystem worker across windows: bounded metadata reads and durable
+// writes never overlap or race each other's same-process state mutations.
+var config_worker_busy = false;
+var pending_pause_writes: usize = 0;
+const ConfigKind = enum { poll, start, grant, launch, approve, pause };
 const ConfigJob = struct {
     owner: *Controller,
     kind: ConfigKind,
@@ -1566,19 +1925,49 @@ const ConfigJob = struct {
     session: ?u64,
     deadline: i64 = 0,
     timed_out: bool = false,
+    started: bool = false,
+    cancelled: std.atomic.Value(bool) = .init(false),
+    home: approvals.Home,
+    workspace: automatic.Key,
+    pause_revision: u64,
+    pause_epoch: u64 = 0,
+    pause_retry: automatic.PauseRetry = .{},
+    permit: ?trust.Permit,
+    document: ?u64,
+    expected_key: ?automatic.Key,
+    snapshot: ?approvals.Snapshot = null,
     result: ?config.Config = null,
     err: ?anyerror = null,
     fn destroy(self: *ConfigJob) void {
         if (self.result) |*result| result.deinit();
+        self.home.deinit();
         a.free(self.language);
         a.destroy(self);
     }
     fn run(self: *ConfigJob) !void {
+        if (self.kind == .pause) {
+            try approvals.setPaused(a, &self.home, self.workspace, true);
+            return;
+        }
+        if (self.cancelled.load(.acquire)) return error.Cancelled;
         var first = try config.load();
         defer first.deinit();
         var second = try config.load();
         errdefer second.deinit();
         if (!first.binding().same(second.binding())) return error.LanguageConfigChangedDuringRead;
+        for (first.servers, second.servers) |before, after| {
+            if (!std.meta.eql(before.approval_key, after.approval_key)) return error.LanguageExecutableChanged;
+        }
+        if (self.cancelled.load(.acquire)) return error.Cancelled;
+        if (self.expected) |binding| if (!binding.same(second.binding())) return error.LanguageConfigChangedReviewAgain;
+        if (self.kind == .grant) {
+            const server = second.find(self.language) orelse return error.LanguageNotConfigured;
+            const key = server.approval_key orelse return server.identity_error orelse error.LanguageExecutableIdentityUnavailable;
+            if (self.expected_key == null or !automatic.same(key, self.expected_key.?)) return error.LanguageConfigChangedReviewAgain;
+            try approvals.approve(a, &self.home, key);
+        }
+        if (self.kind == .start) try approvals.setPaused(a, &self.home, self.workspace, false);
+        self.snapshot = try approvals.read(a, &self.home);
         self.result = second;
     }
 };
@@ -1591,21 +1980,42 @@ fn configWorker(task: ?*c.GTask, _: ?*anyopaque, data: ?*anyopaque, _: ?*c.GCanc
 }
 fn configDone(_: ?*c.GObject, result: ?*c.GAsyncResult, data: ?*anyopaque) callconv(.c) void {
     const job = u.cast(ConfigJob, data.?);
-    const self = job.owner;
     _ = c.g_task_propagate_boolean(u.cast(c.GTask, result.?), null);
+    finishConfigJob(job);
+}
+fn finishConfigJob(job: *ConfigJob) void {
+    const self = job.owner;
     std.debug.assert(self.config_job == job);
+    config_worker_busy = false;
+    if (job.kind == .pause and job.err != null and job.err.? == error.Busy) {
+        // Retain the job, its App hold and its place ahead of resume. Release
+        // only the worker slot so other owners can progress during the backoff.
+        job.started = false;
+        job.err = null;
+        job.pause_retry.busy(c.g_get_monotonic_time());
+        return;
+    }
     self.config_job = null;
+    if (job.kind == .pause) pending_pause_writes -= 1;
     defer {
         job.destroy();
-        if (self.config_queued) |next| {
-            self.config_queued = null;
-            if (!self.app.closing and next.generation == self.config_generation and next.screen == self.screen_generation) self.dispatchConfig(next) else next.destroy();
-        }
+        self.dispatchNextConfig();
         self.app.release();
     }
-    if (self.app.closing or job.timed_out or job.generation != self.config_generation or (job.kind != .poll and job.screen != self.screen_generation)) return;
+    if (job.kind != .pause and (self.app.closing or job.timed_out or job.cancelled.load(.acquire) or job.generation != self.config_generation or (job.kind != .poll and job.screen != self.screen_generation))) return;
+    // Start owns a newer screen/intent and performs its own fresh checks. An
+    // older poll (including a paused snapshot or read error) must not invalidate
+    // and thereby destroy that queued resume before it gets to run.
+    if (self.queuedResume(job) != null) return;
     if (job.err) |err| {
+        if (job.kind == .pause) {
+            automatic.pauseFailed(job.workspace, job.pause_revision);
+            if (self.workspaceKey()) |key| if (automatic.same(key, job.workspace)) self.failure(err);
+            return;
+        }
+        if (job.kind == .grant) automatic.release(self, true);
         self.invalidate();
+        self.next_config_poll = c.g_get_monotonic_time() + 5_000_000;
         self.failure(err);
         return;
     }
@@ -1613,6 +2023,14 @@ fn configDone(_: ?*c.GObject, result: ?*c.GAsyncResult, data: ?*anyopaque) callc
         if (err == error.LanguageConfigChanged or err == error.LanguageConfigChangedReviewAgain) self.invalidate() else self.clearScreen();
         self.failure(err);
     };
+}
+fn executableChanged(_: ?*c.GFileMonitor, _: ?*c.GFile, _: ?*c.GFile, _: c.GFileMonitorEvent, data: ?*anyopaque) callconv(.c) void {
+    const self = u.cast(Controller, data.?);
+    if (self.app.closing) return;
+    self.executable_monitors_dirty = true;
+    self.invalidate();
+    self.next_config_poll = 0;
+    self.message("Language executable changed. Sessions stopped; checking its current identity and approval.");
 }
 fn configurationChanged(monitor: ?*c.GFileMonitor, file: ?*c.GFile, other: ?*c.GFile, event: c.GFileMonitorEvent, data: ?*anyopaque) callconv(.c) void {
     const self = u.cast(Controller, data.?);
@@ -1634,7 +2052,7 @@ fn configurationChanged(monitor: ?*c.GFileMonitor, file: ?*c.GFile, other: ?*c.G
     self.config_monitors_dirty = true;
     self.invalidate();
     if (self.timer == 0) self.timer = c.g_timeout_add(20, &tick, self);
-    self.message("Language configuration changed. Sessions stopped; review and explicitly Start again.");
+    self.message("Language configuration changed. Sessions stopped; automatic startup requires approval of the current configuration.");
 }
 fn pathWithin(root: []const u8, path: []const u8) bool {
     return std.mem.eql(u8, root, path) or (std.mem.startsWith(u8, path, root) and (std.mem.eql(u8, root, "/") or (path.len > root.len and path[root.len] == '/')));
@@ -1643,7 +2061,7 @@ fn tick(data: ?*anyopaque) callconv(.c) c_int {
     const self = u.cast(Controller, data.?);
     self.pump();
     for (self.sessions) |s| if (s != null) return 1;
-    if (self.config_job != null or self.config_queued != null) return 1;
+    if (self.config_job != null or self.config_queued != null or self.pause_jobs.items.len != 0) return 1;
     self.timer = 0;
     return 0;
 }

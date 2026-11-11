@@ -1,6 +1,6 @@
 # M2: explicit workspace file operations
 
-**Implemented bounded increment; M2 implementation is now COMPLETE for the workspace preview, with M3 next.** Explorer selection now supports new file, new directory, rename, move and permanent delete through buttons, menu actions and the command palette. These are explicit local edits, available in restricted workspaces without enabling tools or granting trust. File-operation-increment final validation **passed all 25 native scenarios together, all nine then-existing aggregate gates and a fresh hooks-disabled production build**; that historical evidence is below. The [full M2 acceptance audit](WORKBENCH_M2_ACCEPTANCE.md) records subsequent project/root closure and its validation separately.
+**Implemented bounded increment; M2 implementation is now COMPLETE for the workspace preview, with M4 Git/review next, not started.** Explorer selection now supports new file, new directory, rename, move and permanent delete through buttons, menu actions and the command palette. These are explicit local edits, available in restricted workspaces without enabling tools or granting trust. File-operation-increment final validation **passed all 25 native scenarios together, all nine then-existing aggregate gates and a fresh hooks-disabled production build**; that historical evidence is below. The [full M2 acceptance audit](WORKBENCH_M2_ACCEPTANCE.md) records subsequent project/root closure and its validation separately.
 
 ## Select → input → prepare → review → confirm
 
@@ -20,7 +20,7 @@
 
 Destination parents must already exist; create does not make intermediate directories. Existing destinations are never overwritten, including on collision after review. Rename/move use Linux `renameat2` with `RENAME_NOREPLACE`; there is **no copy/delete fallback** for cross-filesystem moves or unsupported rename semantics. A directory can be renamed/moved without copying its contents, subject to the protections below. A destination equal to or inside the source is rejected. Workspace roots themselves cannot be renamed, moved or deleted.
 
-These commands do not rebind open documents in place, send LSP file-operation events, stage Git changes or run hooks/tasks/agents. New document → Save As remains the separate existing editor-content creation workflow; file opens/navigation still never create missing paths.
+These commands do not rebind open documents in place, stage Git changes or run hooks/tasks/agents. Historically M2 supplied no LSP events; [M3](WORKBENCH_M3_LANGUAGE.md) now sends static filtered did-file notifications to approved running sessions after successful operations, not will-operation commands or permission to start an unapproved server. New document → Save As remains the separate existing editor-content creation workflow; file opens/navigation still never create missing paths.
 
 ## Paths and the on-disk snapshot
 
@@ -105,4 +105,4 @@ Evidence: [operations results](../../../.cache/coral-operations/results.json), [
 
 [Automatic projects, native recents/buffer pickers and reviewed root management](WORKBENCH_M2_PROJECTS.md) now complete mandatory M2 scope. Root Add/Remove/Save Workspace As are separate reviewed **manifest edits**, not Explorer rename/delete; they keep source documents open, preserve semantic settings/excludes/names and lexical path meaning, and validate source bytes/etag. They share process-wide apply admission but have their own documented checks.
 
-**M2 implementation is COMPLETE; M3 is next.** See the [acceptance audit](WORKBENCH_M2_ACCEPTANCE.md) and [roadmap](WORKBENCH_IMPLEMENTATION_PLAN.md). Completion does not add trash, recursive delete, file-operation undo, cross-filesystem moves, open-document rebinding, LSP events or hostile-race atomicity. No later IDE milestone is claimed.
+**M2 implementation is COMPLETE; M4 Git/review is next, not started.** See the [acceptance audit](WORKBENCH_M2_ACCEPTANCE.md) and [roadmap](WORKBENCH_IMPLEMENTATION_PLAN.md). This historical M2 completion did not add trash, recursive delete, file-operation undo, cross-filesystem moves, open-document rebinding, LSP events or hostile-race atomicity. M3 now separately supplies bounded static did-file notifications and approved automatic server startup; [separate validation of the automatic increment is accepted](WORKBENCH_M3_LANGUAGE.md#automatic-increment-validation--accepted). Other listed limits remain unchanged.

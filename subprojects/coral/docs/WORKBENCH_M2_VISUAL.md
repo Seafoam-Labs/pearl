@@ -1,6 +1,6 @@
 # M2 native workbench visual alignment
 
-Implemented before starting M3, following the user's request to bring the existing native workbench closer to the [interactive design](mockups/workbench/index.html). This is alignment of the **implemented M2 surfaces**, not pixel-identical reproduction or delivery of the mockup's simulated services. M3 has not started.
+Implemented before starting M3, following the user's request to bring the existing native workbench closer to the [interactive design](mockups/workbench/index.html). This is alignment of the **implemented M2 surfaces**, not pixel-identical reproduction or delivery of the mockup's simulated services. **Historical checkpoint:** M3 had not started at this visual pass. [Current M3](WORKBENCH_M3_LANGUAGE.md) now implements bounded language services and automatic startup, with [separate accepted validation of the automatic increment](WORKBENCH_M3_LANGUAGE.md#automatic-increment-validation--accepted); M4 Git/review is not started.
 
 ## Delivered layout
 
@@ -19,7 +19,7 @@ Existing saved dock sizes are honored. The 222px sidebar applies to new/default/
 
 ## Intentional differences and limits
 
-The mockup's Git rail/status, Problems/LSP UI, terminal and agent panel remain absent until their real service milestones. No blank or simulated panels were added to fill their space. GTK window controls, native icons, actual notifications and safety notices remain visible. Command search uses the existing `Ctrl+Shift+P` palette; Quick Open remains `Ctrl+P`. The centered command control uses its natural text width rather than a fixed 470px mockup width.
+At this historical M2 checkpoint, the mockup's Git rail/status, Problems/LSP UI, terminal and agent panel were absent. M3 now has real command-driven language features and open-document Problems, not placeholder service docks; Git, production terminal and agents remain future work. No blank or simulated panels were added to fill their space. GTK window controls, native icons, actual notifications and safety notices remain visible. Command search uses the existing `Ctrl+Shift+P` palette; Quick Open remains `Ctrl+P`. The centered command control uses its natural text width rather than a fixed 470px mockup width.
 
 Editor font preferences and Native GTK/Follow Pearl semantics take precedence over literal screenshot typography. Breadcrumbs describe real paths, not LSP symbols. This is not full accessibility/IME or physical GPU/input-to-paint qualification. A pre-existing programmatic shrink from 1440px to 390px can initially settle wider and require another resize; direct 390px startup and widening/restoration were validated.
 

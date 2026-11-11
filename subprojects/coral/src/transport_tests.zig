@@ -5,4 +5,5 @@
 //! from an existing src-rooted test module linked with libc.
 test {
     _ = @import("language/transport_test.zig");
+    _ = @import("terminal/executable_test.zig");
 }

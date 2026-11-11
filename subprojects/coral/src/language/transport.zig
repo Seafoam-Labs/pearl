@@ -46,11 +46,17 @@ const ownership = @import("../terminal/ownership.zig");
 const os = ownership.os;
 const Atomic = std.atomic.Value;
 
+pub const VerifiedExecutable = @import("../terminal/executable.zig").Verified;
+pub const ExecutableIdentity = @import("../terminal/executable.zig").Identity;
+
 pub const Environment = struct { name: []const u8, value: []const u8 };
 pub const Config = struct {
     authorization: enum { denied, approved } = .denied,
     /// argv[0] is absolute; other arguments are literal, not necessarily paths.
     argv: []const []const u8,
+    /// Borrowed until start returns; duplicated synchronously for the worker.
+    /// When present argv[0] is only a name, never an execution pathname.
+    executable: ?VerifiedExecutable = null,
     cwd: []const u8,
     /// The complete child environment allowlist. Nothing is inherited.
     environment: []const Environment = &.{},
@@ -77,7 +83,7 @@ pub const Result = struct {
     stderr: Stderr = .{},
     stdout_discarded: bool = false,
 };
-pub const StartError = std.mem.Allocator.Error || std.Thread.SpawnError || error{ Unauthorized, InvalidConfig };
+pub const StartError = std.mem.Allocator.Error || std.Thread.SpawnError || error{ Unauthorized, InvalidConfig, SystemResources };
 pub const SendError = error{ Closed, MessageTooLarge, Backpressure };
 
 /// Single producer/single consumer byte ring. Power-of-two capacity also makes
@@ -125,6 +131,7 @@ pub const Transport = struct {
     argv: [:null]?[*:0]const u8,
     cwd: [:0]u8,
     environment: [:null]?[*:0]const u8,
+    executable: ?VerifiedExecutable,
     input: Ring,
     output: Ring,
     stderr_limit: usize,
@@ -209,8 +216,11 @@ pub fn start(allocator: std.mem.Allocator, config: Config) StartError!*Transport
     errdefer allocator.free(input);
     const output = try allocator.alloc(u8, config.output_limit);
     errdefer allocator.free(output);
+    const executable = if (config.executable) |exe| try exe.duplicate() else null;
+    errdefer if (executable) |exe| exe.close();
     self.* = .{
         .allocator = allocator,
+        .executable = executable,
         .argv = argv,
         .cwd = cwd,
         .environment = environment,
@@ -284,6 +294,8 @@ fn worker(self: *Transport) void {
         self.final.outcome = .spawn_failed;
         self.final.spawn_errno = os.errno();
     };
+    if (self.executable) |exe| exe.close();
+    self.executable = null;
     // The ONLY completion publication, and the last access to self. All defers
     // in run have finished, including wait/deinit. No detached child can survive
     // an early error: run has no fallible exits after obtaining its Owner.
@@ -315,6 +327,7 @@ fn run(self: *Transport) !void {
     defer stderr.deinit();
     var owner = try ownership.start(.{
         .argv = self.argv.ptr,
+        .executable = self.executable,
         .environment = self.environment.ptr,
         .cwd = self.cwd,
         .stdin = input.fds[0],
@@ -322,6 +335,10 @@ fn run(self: *Transport) !void {
         .stderr = stderr.fds[1],
     });
     defer owner.deinit();
+    // Owner has forked its own copy. Drop the worker's copy even for long-lived
+    // sessions; the child retains only the handle needed for descriptor exec.
+    if (self.executable) |exe| exe.close();
+    self.executable = null;
     input.close(0);
     output.close(1);
     stderr.close(1);

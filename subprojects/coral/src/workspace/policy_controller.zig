@@ -128,7 +128,7 @@ pub const Controller = struct {
     }
     fn refreshStatus(self: *Controller) void {
         if (self.closed or self.app.closing or self.app.browser.closed) return;
-        const text = u.fmt("Workspace: {s} · {s} · language servers require explicit trusted start", .{ @tagName(self.policy.state), @tagName(self.status) });
+        const text = u.fmt("Workspace: {s} · {s} · automatic language servers require exact configuration approval", .{ @tagName(self.policy.state), @tagName(self.status) });
         defer a.free(text);
         u.setLabel(self.app.browser.policy_status, text);
     }
@@ -194,7 +194,7 @@ pub const Controller = struct {
     /// distinguish content-only notifications from identity/policy uncertainty;
     /// a later successful recheck cannot revive an issued permit or its service.
     pub fn invalidate(self: *Controller) void {
-        self.app.language.invalidate();
+        if (self.app.language_initialized) self.app.language.invalidate();
         defer self.refreshStatus();
         self.request = std.math.add(u64, self.request, 1) catch @panic("Policy request generation exhausted");
         self.confirmation = null;
@@ -494,7 +494,7 @@ pub const Controller = struct {
     pub fn describe(self: *Controller) [:0]u8 {
         var text: std.ArrayList(u8) = .empty;
         defer text.deinit(a);
-        append(&text, "Trust: {s} ({s})\nLanguage servers can execute only after an explicit Language: Start confirmation. They run with your user permissions; workspace trust is NOT per-tool approval or an OS sandbox. Nothing is executed automatically. Executables are configured only in ~/.config/coral/languages.json, never in the repository.\n\nSafe settings apply even in restricted mode. Precedence: defaults → explicit user → workspace → folder → workspace language → folder language (GtkSource ID). Font, theme and spelling stay global. Scratch/outside-root documents use defaults and explicit user settings only.\nFolder settings require explicit Workspace: Rescan; monitoring is not recursive.\n\nState store: {s}/coral/trust\n", .{ @tagName(self.policy.state), @tagName(self.status), if (self.home) |home| home.path else "(unavailable)" });
+        append(&text, "Trust: {s} ({s})\nLanguage servers start automatically only when workspace trust is valid and the exact user configuration and executable identity were previously approved. New or changed configurations require a Language: Start review. Stop all sessions pauses this workspace durably until Start or Restart. They run with your user permissions; workspace trust is NOT per-tool approval or an OS sandbox. Executables are configured only in ~/.config/coral/languages.json, never in the repository.\n\nSafe settings apply even in restricted mode. Precedence: defaults → explicit user → workspace → folder → workspace language → folder language (GtkSource ID). Font, theme and spelling stay global. Scratch/outside-root documents use defaults and explicit user settings only.\nFolder settings require explicit Workspace: Rescan; monitoring is not recursive.\n\nState store: {s}/coral/trust\n", .{ @tagName(self.policy.state), @tagName(self.status), if (self.home) |home| home.path else "(unavailable)" });
         if (self.store_error) |err| append(&text, "Error: {s}\n", .{err});
         if (self.identity) |id| append(&text, "Exact trust fingerprint: {s}\n", .{std.fmt.bytesToHex(&id.fingerprint, .lower)});
         if (self.currentContinuity()) |continuity| {

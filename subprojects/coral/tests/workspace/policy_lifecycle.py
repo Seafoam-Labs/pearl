@@ -2,7 +2,7 @@
 """Targeted workspace permit/LSP lifecycle regression in a private native session.
 
 Build a hooks-enabled Coral, then run this with --binary PATH --aqueous-prefix /usr.
-Uses the production start/accept actions and explicit workspace trust; only the
+Uses automatic approval and the production accept action with explicit workspace trust; only the
 configured, repository-owned fake LSP executes. All config and transcripts are
 private disposable fixtures. No language/controller test bypasses are used.
 """
@@ -24,6 +24,8 @@ FAKE = TESTS / 'fixtures/fake_lsp.py'
 
 
 class LifecycleHarness(PolicyHarness):
+    isolated_app_cwd = True
+
     def launch(self, *paths):
         case_output = self.output / self.name
         case_output.mkdir(exist_ok=True)
@@ -72,9 +74,9 @@ class LifecycleHarness(PolicyHarness):
         return peers
 
     def start_server(self):
-        self.command('language-start')
-        p = self.probe('language')
-        assert p['dialog'] and p['mode'] == 'start', p
+        p = wait_for(lambda: p if (p := self.probe('language'))['dialog'] and p['mode'] == 'start' else None, 15)
+        assert p['session_count'] == 0 and not self.peers() and not self.messages(), p
+        assert p['automatic']['approval_key'] and 'Approval is saved' in p['popup'], p
         self.command('language-accept')
         p = wait_for(lambda: p if (p := self.probe('language'))['session_count'] == 1
                      and p['sessions'][0]['state'] == 'ready'
@@ -102,7 +104,7 @@ class LifecycleHarness(PolicyHarness):
         self.gate()
         return self.start_server()
 
-    def stopped(self, before, mutation):
+    def stopped(self, before, mutation, resumes=False):
         request = self.probe()['request']
         peers = self.peers()
         self.command('explorer-watch-delay', 1500)
@@ -118,14 +120,28 @@ class LifecycleHarness(PolicyHarness):
         wait_for(lambda: not (self.peers() & peers), 5)
         self.browser()
         self.settled()
-        # Stable worker completion must not revive the retired process/session.
-        for _ in range(3):
+        # A successful unchanged-policy recheck can admit a NEW automatic
+        # session. It must never revive the retired permit, session or process.
+        if resumes:
+            self.trusted()
+            live = wait_for(lambda: p if (p := self.probe('language'))['session_count'] == 1
+                            and p['sessions'][0]['state'] == 'ready' and p['sessions'][0]['documents'] else None, 15)
+            assert live['sessions'][0]['id'] != before['sessions'][0]['id'] and not live['dialog'], live
+            assert self.peers() and not (self.peers() & peers)
+        else:
+            self.restricted()
+        until = time.monotonic() + 2.5
+        while time.monotonic() < until:
+            live = self.probe('language')
+            assert live['session_count'] == int(resumes) and not live['dialog'], live
+            assert all(s['id'] != before['sessions'][0]['id'] for s in live['sessions']), live
+            assert not (self.peers() & peers)
+            assert not self.probe()['gate_valid'], 'old capability gate revived'
             time.sleep(.15)
-            assert self.probe('language')['session_count'] == 0
-        assert sum(m.get('method') == 'initialize' for m in self.messages()) == 1
+        assert sum(m.get('method') == 'initialize' for m in self.messages()) == (2 if resumes else 1)
         self.evidence.setdefault('lifecycle', []).append({
             'case': self.name, 'retired_session': before['sessions'][0]['id'],
-            'gate_cancelled': True, 'no_auto_restart': True,
+            'gate_cancelled': True, 'automatic_new_session': resumes,
         })
 
 
@@ -209,9 +225,8 @@ def policy_replacement(h, kind):
             h.command('policy-delay', 1200)
             h.command('policy-' + kind)
 
-    h.stopped(before, mutate)
-    if kind in ('root', 'manifest', 'settings', 'settings-create'):
-        h.restricted()
+    h.stopped(before, mutate, resumes=kind in ('manifest-same', 'settings-atomic', 'gitignore',
+                                              'nested-gitignore', 'security', 'overflow', 'recheck'))
 
 
 def root_chain(h, ancestry=False, during_load=False):
@@ -326,7 +341,7 @@ if __name__ == '__main__':
     policy.SCENARIOS = [('save_manifest', lambda h: saves(h, False)),
                         ('save_folder_without_settings', lambda h: saves(h, True)),
                         ('save_watched_nested_source', lambda h: saves(h, False, True))]
-    policy.SCENARIOS += [(kind + '_stops_without_restart', lambda h, kind=kind: policy_replacement(h, kind))
+    policy.SCENARIOS += [(kind + '_retires_permit', lambda h, kind=kind: policy_replacement(h, kind))
                         for kind in ('root', 'manifest', 'manifest-same', 'settings',
                                      'settings-create', 'settings-atomic', 'gitignore',
                                      'nested-gitignore', 'security', 'overflow', 'recheck',

@@ -24,7 +24,7 @@ from pathlib import Path
 # Import only the reusable input/probe/file helpers, not search.run or main.
 # search also establishes the shared scripts/integration helper import paths.
 from search import PEARL, Harness
-from pearl_session import PrivateSession, fixture_prefix, wait_for
+from pearl_session import Child, PrivateSession, fixture_prefix, wait_for
 from test_surfaces import IPC
 
 KEYS = ('lines', 'wrap', 'spaces', 'indent')
@@ -40,6 +40,30 @@ class BudgetExpired(BaseException):
 
 
 class PolicyHarness(Harness):
+    isolated_app_cwd = False
+    app_cwd = None
+
+    def app_child(self, name, argv, **overrides):
+        if not self.isolated_app_cwd:
+            return self.session.child(name, argv, **overrides)
+        # Default to a sibling cwd; targeted GUI-launch regressions may select
+        # another directory, but only inside this case's disposable fixture tree.
+        cwd = self.app_cwd if self.app_cwd is not None else self.command_path.parent / 'app-cwd'
+        assert cwd.resolve().is_relative_to(self.command_path.parent.resolve()), cwd
+        cwd.mkdir(exist_ok=True)
+        resources = self.session.base / 'resources'
+        if resources.exists():
+            shutil.copytree(resources, cwd / 'resources', dirs_exist_ok=True)
+        for key in ('HOME', 'XDG_CONFIG_HOME', 'XDG_STATE_HOME', 'XDG_CACHE_HOME', 'XDG_DATA_HOME'):
+            directory = Path(self.session.env[key])
+            assert directory.resolve().is_relative_to(self.session.base.resolve()), (key, directory)
+            if self.app_cwd is None:
+                assert not directory.is_relative_to(cwd) and not cwd.is_relative_to(directory), (key, directory, cwd)
+        child = Child(argv, dict(self.session.env, **overrides), cwd, self.session.output / (name + '.log'))
+        self.session.children.append(child)
+        self.evidence.setdefault('app_working_directories', []).append(dict(case=self.name, cwd=str(cwd)))
+        return child
+
     def __init__(self, session, binary, output, evidence, name, deadline):
         # Reuse Harness's protocol, but not its search-specific launch/fixtures.
         self.session, self.binary, self.output, self.evidence = session, binary, output, evidence
@@ -66,7 +90,7 @@ class PolicyHarness(Harness):
 
     def launch(self, *paths):
         self.serial += 1
-        self.app = self.session.child(f'{self.name}-{self.serial}', [self.binary, *paths], G_DEBUG='fatal-criticals')
+        self.app = self.app_child(f'{self.name}-{self.serial}', [self.binary, *paths], G_DEBUG='fatal-criticals')
         window = wait_for(lambda: next((w for w in self.ipc.state() if w['kind'] == 'window'), None))
         self.ipc.call('command', action='window.activate', fields={'id': window['id']})
         wait_for(lambda: self.probe('workspace')['documents'])
