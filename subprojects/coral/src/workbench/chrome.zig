@@ -238,6 +238,7 @@ const Category = enum {
     edit,
     workspace,
     language,
+    git,
     view,
     window,
 
@@ -247,6 +248,7 @@ const Category = enum {
             .edit => i18n.dtr("coral", "Edit"),
             .workspace => i18n.dtr("coral", "Workspace"),
             .language => i18n.dtr("coral", "Language"),
+            .git => i18n.dtr("coral", "Git"),
             .view => i18n.dtr("coral", "View"),
             .window => i18n.dtr("coral", "Window"),
         };
@@ -256,6 +258,7 @@ const Category = enum {
 fn category(command: commands.Command) Category {
     return switch (command) {
         .new, .open, .save, .save_as, .reload, .close => .file,
+        .git_status, .git_refresh, .git_diff, .git_staged_diff => .git,
         .language_start, .language_stop, .language_restart, .language_status, .language_completion, .language_hover, .language_signature, .language_definition, .language_declaration, .language_type_definition, .language_implementation, .language_references, .language_document_symbols, .language_workspace_symbols, .language_problems, .language_formatting, .language_range_formatting, .language_rename, .language_code_actions, .language_semantic_tokens, .language_inlay_hints, .language_code_lenses, .language_document_links => .language,
         .find, .goto_line, .spelling, .excerpt, .grouped_undo, .grouped_redo => .edit,
         .open_folder, .open_workspace, .workspace_roots, .workspace_back, .workspace_rescan, .close_workspace, .quick_open, .workspace_search, .workspace_policy, .workspace_trust, .workspace_revoke, .save_workspace_session, .restore_workspace_session, .create_workspace_file, .create_workspace_directory, .rename_workspace_entry, .move_workspace_entry, .delete_workspace_entry, .recent_projects, .forget_project_session, .add_workspace_root, .remove_workspace_root, .save_workspace_as => .workspace,
@@ -267,7 +270,7 @@ fn category(command: commands.Command) Category {
 pub fn populateMenu(menu: *c.GMenu) void {
     // The palette remains flat/searchable; menu subpages retain every stable action.
     c.g_menu_append(menu, commands.Command.command_palette.label(), commands.Command.command_palette.metadata().detailed_action);
-    for ([_]Category{ .file, .edit, .workspace, .language, .view, .window }) |section| {
+    for ([_]Category{ .file, .edit, .workspace, .language, .git, .view, .window }) |section| {
         const submenu = c.g_menu_new().?;
         defer c.g_object_unref(submenu);
         for (commands.entries) |entry| {

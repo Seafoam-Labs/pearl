@@ -14,7 +14,11 @@ workflows. **The bounded M3 baseline is complete; detected-language automatic
 startup is implemented and validated within its documented limits.** Approved local
 language servers start automatically in trusted, unpaused workspaces and provide
 command-driven features, diagnostics, semantic tags and reviewed edits.
-**Next: M4 Git/review, not started.** Agent services remain later work. See the [M3 language guide](docs/WORKBENCH_M3_LANGUAGE.md).
+**M4 Git/review is in progress:** a first read-only native Source Control window
+provides explicit status/refresh and staged/unstaged diff previews, not staging or
+completed M4 acceptance. Next is safe staging with checked index/file snapshots.
+Agent services remain later work. See the [M3 language guide](docs/WORKBENCH_M3_LANGUAGE.md)
+and [M4 Git guide](docs/WORKBENCH_M4_GIT.md).
 
 ![Native Coral editor](artifacts/native/editor-dark.png)
 
@@ -234,6 +238,49 @@ excluding snapshots, worker stacks and other storage. Versions advance only on
 successful sync; an oversized-sync failure stops once with a stable error.
 There are no placeholder service panels or full-IDE parity claims.
 
+## Git — first read-only M4 slice, in progress
+
+Use the **Git** menu or palette: **Git: Source Control…**, **Git: Refresh
+repositories**, **Git: Unstaged diff**, and **Git: Staged diff**. A **separate native
+window**, not a dock or editable Project Diff, shows repository/root selection,
+branch/status, paged paths and noneditable **index → disk / HEAD → index** previews.
+Git requires a trusted workspace **and per-window subprocess disclosure approval**;
+there is no Git execution at startup or in restricted mode.
+
+Discovery probes workspace roots and the active saved file's parent, not every
+nested directory. Repository top-levels outside their owning root are refused.
+`.git` files and existing linked worktrees are supported for reads, **not worktree
+operations**. Limits: **8 repositories, 1 MiB status / 10,000 entries, 128 rows per
+page**; diffs capture at most 1 MiB and preview at most **256 KiB / 4,000 lines /
+2,048 bytes per line**, with **15-second per-command timeouts**. Refresh is manual;
+status/diff are not atomic with external disk/index changes. Unsaved buffers are
+excluded and never saved or staged. Rename detection is disabled (add/delete),
+submodule contents excluded, unborn/detached HEAD supported, and invalid UTF-8
+status paths refused.
+
+Requires **Git 2.31+ at `/usr/bin/git`** with fixed argv/config and a replacement
+environment disabling system/global config, prompts, credential helpers, external
+diff/textconv and Git protocol access. **Not a sandbox:** repository-local clean
+filters/programs can still execute with user permissions; no guarantee of no
+arbitrary filter writes or network activity is made.
+
+No staging, editable diffs, commits, branch/worktree mutations, remotes, history,
+stashes or conflict resolver yet. **Next: safe staging/index-snapshot validation.**
+See the [Git guide](docs/WORKBENCH_M4_GIT.md) for exact policy, bounds and evidence.
+Final **`test-m4-slice` passed 105/105 steps, exit 0**, with **586/587 Zig tests
+passed / 1 expected non-root trust-test skip** (not a pass), including **27 Git,
+129 language and 340 main-root passes**. Final native Git passed **15/15**;
+language **89 passed / 0 failed / 3 optional blocked** (servers not installed),
+lifecycle **20/20**, widgets **204/204 in 36.993 s**, fixture **25/25**, and full
+M1/M2 regressions passed. The aggregate includes the Unicode display-helper fix.
+[Production](../../.cache/coral-m4-readonly-production.log) passed **46/46 steps**;
+[visuals](../../.cache/coral-m4-readonly-visual.log) passed **40/40 steps**, **16 cases
+and four 2.0 font ratios**, both exit 0. Visuals cover the existing workbench,
+**not Git-window visual parity**. See [final evidence and the retained earlier
+standalone 15-case run](docs/WORKBENCH_M4_GIT.md#final-first-slice-validation--passed).
+These are first-read-only-slice gates, **not completed M4 acceptance**; counts are
+not an additive unique-test total.
+
 ## Implemented
 
 - Editable, reorderable document tabs; new/open/save/Save As; file arguments;
@@ -328,8 +375,11 @@ VS Code-style workspace/editor with Zed-style agents and Git workflows.
 The [native foundation status](docs/WORKBENCH_STATUS.md) records implemented
 groups, excerpts, guarded undo, recovery, file monitoring and validation;
 **M2 and the bounded M3 baseline have historical validation. The automatic-language
-increment passed its separate acceptance gates. M4 Git/review is not started.
-Git, production terminal and agent UI are not implemented yet**.
+increment passed its separate acceptance gates. M4 Git/review has a first read-only
+native slice with its final aggregate, production and existing-workbench visual
+gates passed; M4 is not complete. Production terminal and agent UI remain
+unimplemented**. See the
+[M4 final first-slice validation](docs/WORKBENCH_M4_GIT.md#final-first-slice-validation--passed).
 Explore the separate [interactive workbench prototype](docs/mockups/workbench/index.html)
 and its [interaction guide](docs/mockups/workbench/README.md). All prototype
 operations stay in memory; they are not native feature evidence.
@@ -377,6 +427,9 @@ zig build language-unit -Doptimize=safe -j1
 zig build language -Doptimize=safe -j1
 zig build language-lifecycle -Doptimize=safe -j1
 zig build test-m3 -Doptimize=safe -j1
+zig build git-unit -Doptimize=safe -j1
+zig build git -Doptimize=safe -j1
+zig build test-m4-slice -Doptimize=safe -j1
 zig build widgets -Doptimize=safe -- --aqueous-prefix /usr
 ```
 

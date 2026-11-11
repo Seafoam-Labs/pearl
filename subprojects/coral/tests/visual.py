@@ -300,7 +300,7 @@ class VisualHarness(Harness):
         self.case['checks'].append('workspace selector closes and reopens real workspace')
         self.click('Editor menu')
         self.capture('overflow')
-        self.menu_item(0, 7)  # Command Palette, followed by six categories including Language.
+        self.menu_item(0, 8)  # Command Palette, followed by seven categories including Language and Git.
         wait_for(self.palette_window)
         self.text('Preferences')
         self.key('Return')

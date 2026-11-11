@@ -90,6 +90,10 @@ pub const Command = enum {
     language_inlay_hints,
     language_code_lenses,
     language_document_links,
+    git_status,
+    git_refresh,
+    git_diff,
+    git_staged_diff,
 
     pub fn metadata(self: Command) Metadata {
         return entries[@backingInt(self)];
@@ -184,6 +188,10 @@ pub const Command = enum {
             .language_inlay_hints => i18n.dtr("coral", "Language: Inlay hints…"),
             .language_code_lenses => i18n.dtr("coral", "Language: Code lenses…"),
             .language_document_links => i18n.dtr("coral", "Language: Document links…"),
+            .git_status => i18n.dtr("coral", "Git: Source Control…"),
+            .git_refresh => i18n.dtr("coral", "Git: Refresh repositories"),
+            .git_diff => i18n.dtr("coral", "Git: Unstaged diff"),
+            .git_staged_diff => i18n.dtr("coral", "Git: Staged diff"),
         };
     }
 };
@@ -284,6 +292,10 @@ pub const entries = [_]Metadata{
     .{ .command = .language_inlay_hints, .action = "language-inlay-hints", .detailed_action = "win.language-inlay-hints", .label = "Language: Inlay hints…", .shortcut = null },
     .{ .command = .language_code_lenses, .action = "language-code-lenses", .detailed_action = "win.language-code-lenses", .label = "Language: Code lenses…", .shortcut = null },
     .{ .command = .language_document_links, .action = "language-document-links", .detailed_action = "win.language-document-links", .label = "Language: Document links…", .shortcut = null },
+    .{ .command = .git_status, .action = "git-status", .detailed_action = "win.git-status", .label = "Git: Source Control…", .shortcut = null },
+    .{ .command = .git_refresh, .action = "git-refresh", .detailed_action = "win.git-refresh", .label = "Git: Refresh repositories", .shortcut = null },
+    .{ .command = .git_diff, .action = "git-diff", .detailed_action = "win.git-diff", .label = "Git: Unstaged diff", .shortcut = null },
+    .{ .command = .git_staged_diff, .action = "git-staged-diff", .detailed_action = "win.git-staged-diff", .label = "Git: Staged diff", .shortcut = null },
 };
 
 pub fn fromAction(action: []const u8) ?Command {
@@ -348,7 +360,7 @@ pub fn fromKey(key: u32, state: u32) ?Command {
 
 test "registry is exhaustive, ordered and has unique stable actions" {
     try std.testing.expectEqual(@typeInfo(Command).@"enum".field_names.len, entries.len);
-    const actions = [_][]const u8{ "new", "open", "save", "save-as", "reload", "find", "goto", "spelling", "preferences", "about", "close", "quit", "command-palette", "split-group", "focus-next-group", "focus-previous-group", "close-group", "excerpt", "grouped-undo", "grouped-redo", "open-folder", "open-workspace", "workspace-roots", "workspace-back", "workspace-rescan", "close-workspace", "quick-open", "workspace-search", "workspace-policy", "workspace-trust", "workspace-revoke", "save-workspace-session", "restore-workspace-session", "toggle-explorer", "toggle-search", "focus-explorer", "focus-search", "focus-editor", "hide-panel", "dock-left", "dock-right", "dock-bottom", "reset-docks", "dock-grow", "dock-shrink", "next-tab", "previous-tab", "new-window", "close-window", "next-window", "previous-window", "workspace-create-file", "workspace-create-directory", "workspace-rename", "workspace-move", "workspace-delete", "recent-projects", "open-buffers", "forget-project-session", "workspace-add-root", "workspace-remove-root", "save-workspace-as", "language-start", "language-stop", "language-restart", "language-status", "language-completion", "language-hover", "language-signature", "language-definition", "language-declaration", "language-type-definition", "language-implementation", "language-references", "language-document-symbols", "language-workspace-symbols", "language-problems", "language-formatting", "language-range-formatting", "language-rename", "language-code-actions", "language-semantic-tokens", "language-inlay-hints", "language-code-lenses", "language-document-links" };
+    const actions = [_][]const u8{ "new", "open", "save", "save-as", "reload", "find", "goto", "spelling", "preferences", "about", "close", "quit", "command-palette", "split-group", "focus-next-group", "focus-previous-group", "close-group", "excerpt", "grouped-undo", "grouped-redo", "open-folder", "open-workspace", "workspace-roots", "workspace-back", "workspace-rescan", "close-workspace", "quick-open", "workspace-search", "workspace-policy", "workspace-trust", "workspace-revoke", "save-workspace-session", "restore-workspace-session", "toggle-explorer", "toggle-search", "focus-explorer", "focus-search", "focus-editor", "hide-panel", "dock-left", "dock-right", "dock-bottom", "reset-docks", "dock-grow", "dock-shrink", "next-tab", "previous-tab", "new-window", "close-window", "next-window", "previous-window", "workspace-create-file", "workspace-create-directory", "workspace-rename", "workspace-move", "workspace-delete", "recent-projects", "open-buffers", "forget-project-session", "workspace-add-root", "workspace-remove-root", "save-workspace-as", "language-start", "language-stop", "language-restart", "language-status", "language-completion", "language-hover", "language-signature", "language-definition", "language-declaration", "language-type-definition", "language-implementation", "language-references", "language-document-symbols", "language-workspace-symbols", "language-problems", "language-formatting", "language-range-formatting", "language-rename", "language-code-actions", "language-semantic-tokens", "language-inlay-hints", "language-code-lenses", "language-document-links", "git-status", "git-refresh", "git-diff", "git-staged-diff" };
     for (entries, actions, 0..) |entry, action, index| {
         try std.testing.expectEqual(index, @backingInt(entry.command));
         try std.testing.expectEqualStrings(action, entry.action);

@@ -62,6 +62,8 @@ pub const App = struct {
     workspace_policy: WorkspacePolicy = undefined,
     language: @import("language/controller.zig").Controller = undefined,
     language_initialized: bool = false,
+    git: @import("git/controller.zig").Controller = undefined,
+    git_initialized: bool = false,
     session: WorkspaceSession = undefined,
     workspace_operations: WorkspaceOperations = undefined,
     workspace_roots: @import("workspace/roots_controller.zig").Controller = undefined,
@@ -241,6 +243,8 @@ pub const App = struct {
         c.gtk_widget_set_visible(self.workspace_search.view.panel, 1);
         self.language = .init(self);
         self.language_initialized = true;
+        self.git = .init(self);
+        self.git_initialized = true;
         self.browser = WorkspaceController.init(self, self.dock.explorer_slot);
         self.browser.attach();
         self.dock.attach();
@@ -344,6 +348,7 @@ pub const App = struct {
         self.workspace_policy.deinit();
         self.workspace_search.deinit();
         self.language.deinit();
+        self.git.deinit();
         self.workspace.close();
         if (self.timer != 0) _ = c.g_source_remove(self.timer);
         if (self.checkpoint_idle != 0) _ = c.g_source_remove(self.checkpoint_idle);
@@ -1416,6 +1421,7 @@ pub const App = struct {
     /// The caller must reestablish watches/loads for any retained documents.
     pub fn invalidateWorkspaceAsync(self: *App) void {
         self.language.invalidate();
+        self.git.invalidate();
         self.workspace_search.invalidate("Stale — document lifecycle changed. Refresh required.");
         self.workspace.invalidate();
         for (self.documents.entries.items) |d| {
@@ -1773,6 +1779,7 @@ pub const App = struct {
         }
         self.closing = true;
         self.language.invalidate();
+        self.git.invalidate();
         self.dock.shutdown();
         self.session.shutdown();
         self.workspace_policy.shutdown();
@@ -2008,6 +2015,10 @@ pub const App = struct {
         if (self.dialog != null or self.workspaceOperationBusy() or self.editingFrozen()) return;
         if (self.manager) |manager| if (manager.quitting) return;
         switch (command) {
+            .git_status => self.git.show(),
+            .git_refresh => self.git.refresh(),
+            .git_diff => self.git.showDiff(false),
+            .git_staged_diff => self.git.showDiff(true),
             .language_start => self.language.startDialog(),
             .language_stop => self.language.stop(),
             .language_restart => self.language.restart(),
@@ -3422,7 +3433,11 @@ fn testCommand(receiver: *App) void {
     const value = c.g_key_file_get_string(file, "Test", "value", null);
     defer c.g_free(value);
     const d = self.active();
-    if (self.language.fixture(action, if (value != null) std.mem.span(value) else "")) {
+    if (self.git.fixture(action, if (value != null) std.mem.span(value) else "")) {
+        // Git fixture dispatch is compiled out of production builds.
+    } else if (std.mem.startsWith(u8, action, "git-")) {
+        if (commands.fromAction(action)) |command| self.execute(command);
+    } else if (self.language.fixture(action, if (value != null) std.mem.span(value) else "")) {
         // Language fixture dispatch is compiled out of production builds.
     } else if (std.mem.startsWith(u8, action, "language-")) {
         if (commands.fromAction(action)) |command| self.execute(command);

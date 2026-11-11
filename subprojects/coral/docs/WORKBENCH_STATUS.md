@@ -1,8 +1,70 @@
 # Coral workbench implementation status
 
-**M0 is accepted with documented bounded-editor tradeoffs. M1 implementation and native correctness acceptance are complete. M2 implementation is COMPLETE for the bounded workspace preview. The bounded M3 baseline is complete with historical validation; detected-language automatic startup is implemented and its separate validation is accepted. Next: M4 Git/review, not started.** The final feature audit concludes all mandatory M2 features are implemented: multi-root workspaces, explorer/search, settings/trust, docks/native pickers, explicit checkpoints, automatic project/latest per-window and scratch snapshots, ordinary multi-window startup, independent ownership, reviewed root management and bounded file operations. See the [M2 acceptance audit](WORKBENCH_M2_ACCEPTANCE.md) and the separate [final validation checkpoint](#full-m2-validation-checkpoint).
+**M0 is accepted with documented bounded-editor tradeoffs. M1 implementation and native correctness acceptance are complete. M2 implementation is COMPLETE for the bounded workspace preview. The bounded M3 baseline is complete with historical validation; detected-language automatic startup is implemented and its separate validation is accepted. M4 Git/review is in progress: the first read-only native slice is implemented and its final validation passed; M4 is not complete. Next: safe staging/index-snapshot validation.** The final feature audit concludes all mandatory M2 features are implemented: multi-root workspaces, explorer/search, settings/trust, docks/native pickers, explicit checkpoints, automatic project/latest per-window and scratch snapshots, ordinary multi-window startup, independent ownership, reviewed root management and bounded file operations. See the [M2 acceptance audit](WORKBENCH_M2_ACCEPTANCE.md) and the separate [final validation checkpoint](#full-m2-validation-checkpoint).
 
-The user explicitly accepted the M0 tradeoffs and requested work on M2. This acceptance does not turn failed or unmeasured performance targets into passing measurements. This is not a full IDE or Zed parity release. M2 implementation is complete within its documented bounds; M3's current scope, accepted automatic-increment validation and historical frozen-source validation are recorded below; M4–M8 remain future milestones; M9 remains removed. The [interactive prototype](mockups/workbench/index.html) is a design fixture, not connected to native Git, LSP or agents.
+The user explicitly accepted the M0 tradeoffs and requested work on M2. This acceptance does not turn failed or unmeasured performance targets into passing measurements. This is not a full IDE or Zed parity release. M2 implementation is complete within its documented bounds; M3's current scope, accepted automatic-increment validation and historical frozen-source validation are recorded below; M4's first read-only slice and passed final gate are recorded below; the rest of M4 and M5–M8 remain roadmap work; M9 remains removed. The [interactive prototype](mockups/workbench/index.html) is a design fixture, not connected to native Git, LSP or agents.
+
+## M4 Git/review: first read-only slice, final validation passed
+
+The [M4 Git guide](WORKBENCH_M4_GIT.md) documents the actual `src/git` implementation,
+not completed M4 acceptance:
+
+- A **separate native Source Control window** through the **Git menu/palette**:
+  Source Control, Refresh repositories, Unstaged diff and Staged diff. Repository/root
+  picker, branch/HEAD/upstream status, index/worktree row codes and noneditable
+  **index → disk / HEAD → index** previews; no source-control dock or editable diffs.
+- **Trusted workspace + per-window disclosure approval**, no Git startup or
+  restricted-mode execution. Invalidation cancels/reaps work and rejects stale
+  results. Requires **Git 2.31+ at `/usr/bin/git`**, fixed argv/config and replacement
+  environment. System/global config, prompts, credential helpers, external diff/
+  textconv and Git protocols are disabled. Repository-local filters/programs can
+  still execute with user permissions: **not a sandbox or a guarantee of no
+  arbitrary helper writes/network activity**.
+- Discovery checks **workspace roots + the active saved file's parent**, not every
+  nested directory. Outside-owning-root worktree top-levels are refused. `.git`
+  files and existing linked worktrees support reads, not worktree operations.
+  **8 repositories; 1 MiB status / 10,000 entries; 128 rows/page**. Diff capture is
+  1 MiB; text previews are bounded to **256 KiB, 4,000 lines, 2,048 bytes/line**;
+  each command has a **15-second timeout**. The guide records discovery/budget bounds.
+- **Manual refresh**, no atomic snapshot with external Git/disk/index changes,
+  no saving or staging unsaved buffers. Rename detection disabled (add/delete),
+  submodule contents excluded, unborn/detached HEAD supported, invalid UTF-8
+  status paths refused. Untracked/conflict/binary/unsupported previews have explicit
+  non-text states, not fabricated editable diffs.
+- **Not delivered:** staging, editable Project Diff, commits, branches/tags,
+  worktree mutations, remotes, history/blame, stashes or a conflict resolver.
+  **Next: safe staging with checked index/file snapshots**, preserving reviewed
+  bytes and refusing external races rather than silently staging whole files.
+
+Final **[`test-m4-slice`](../../../.cache/coral-m4-readonly-gate.log) passed 105/105
+steps, exit 0; 586/587 Zig tests passed, 1 skipped**. This includes **27 Git**
+(21 parser/display + 5 command-policy/display + 1 import-root), **129 language**,
+**340 main-root**, and **90 other-root passes / 1 skip**. The skipped foreign-owner
+trust-store test requires root (`geteuid() != 0` skips it); this is expected on this
+host, **not a passing foreign-owner check**. The aggregate includes the Unicode
+display-helper fix and its tests.
+
+[Final native Git](../../../.cache/coral-git/results.json): **15 passed / 0 failed /
+0 blocked**. [Native language](../../../.cache/coral-language/results.json): **89
+passed / 0 failed / 3 optional blocked** (clangd, TypeScript language server and
+pyright not installed), including pinned real ZLS. [Lifecycle](../../../.cache/coral-workspace-lifecycle/results.json)
+**20/20**, [widgets](../../../.cache/coral-widgets/results.json) **204/204 in 36.993 s**,
+fixture **25/25**, and **full M1/M2 regressions** passed. Counts overlap across
+harnesses; they are not a unique-test total. No aggregate wall time is claimed.
+
+[Hooks-disabled production](../../../.cache/coral-m4-readonly-production.log) passed
+**46/46 steps, exit 0**. [Separate visuals](../../../.cache/coral-m4-readonly-visual.log)
+passed **40/40 steps, exit 0**, with [16 cases and four 2.0 font ratios](../../../.cache/coral-visual/results.json)
+on the aggregate's instrumented binary. This is **existing-workbench visual
+regression coverage, not Source Control-window visual parity**; headless/offline
+Follow Pearl limitations remain. The target composes Git units/native Git and
+`test-m3` including M1/M2: a **first-slice gate, not full M4 acceptance**.
+
+Earlier standalone [native results](../.cache/m4-git-native/results.json) remain
+**15 passed / 0 failed / 0 blocked**, separate from the final native report; the
+prior direct Git root also passed **27 tests**. See the [final evidence and retained
+standalone checkpoint](WORKBENCH_M4_GIT.md#final-first-slice-validation--passed).
+Historical M3/M2 evidence below is not relabelled as current M4 validation.
 
 ## Historical native visual alignment before M3
 
@@ -284,6 +346,6 @@ All native tests use private Wayland/XDG sessions and disposable files, not the 
 - **M1:** implemented/tested bounded foundation; retain the documented undo, recovery, file-size and process-ownership limits.
 - **M2:** implementation **COMPLETE** for the bounded workspace preview, including automatic projects/startup, recent/buffer pickers and reviewed root management. All mandatory feature scope is accounted for and the complete acceptance/production gates passed, as recorded above. Both 100k explorer and on-demand search fixtures are validated; no persistent index or full IDE parity is claimed.
 - **M3:** bounded baseline complete with historical validation; **automatic startup implemented and separately validated**. Existing document/workspace/trust contracts and accepted M0 engine limits remain in force; the guide records deferred capabilities rather than claiming full LSP parity.
-- **Next: M4 Git and review engine — not started.**
-- **M4–M8:** real Git workbench, production terminal/tasks, native/ACP agents, MCP, DAP/test UI, extensions and advanced editing/accessibility qualification, including interactive snippets in M8.
+- **M4 Git and review engine — in progress, not complete:** first read-only Source Control slice implemented; final first-slice aggregate, production and existing-workbench visual gates passed. Next is safe staging/index-snapshot validation, followed by the remaining editable review, commits, branches/worktrees, remotes, history and conflict/stash workflows.
+- **M5–M8:** production terminal/tasks, native/ACP agents, MCP, DAP/test UI, extensions and advanced editing/accessibility qualification, including interactive snippets in M8.
 - **M9:** removed, not silently reintroduced.

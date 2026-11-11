@@ -1,6 +1,6 @@
 # Coral workbench implementation plan
 
-Status: **M0 tradeoffs accepted; M1 complete; M2 implementation COMPLETE for the bounded workspace preview; bounded M3 baseline complete with historical validation; automatic-language increment implemented and validation accepted; next M4 Git/review, not started.** All mandatory M2 features are implemented, including automatic projects/startup, native recents/buffer pickers and reviewed workspace-root management. See the [acceptance audit and validation checkpoint](WORKBENCH_M2_ACCEPTANCE.md).
+Status: **M0 tradeoffs accepted; M1 complete; M2 implementation COMPLETE for the bounded workspace preview; bounded M3 baseline complete with historical validation; automatic-language increment implemented and validation accepted; M4 Git/review in progress with its first read-only slice implemented and final first-slice validation passed; next safe staging/index-snapshot validation.** All mandatory M2 features are implemented, including automatic projects/startup, native recents/buffer pickers and reviewed workspace-root management. See the [acceptance audit and validation checkpoint](WORKBENCH_M2_ACCEPTANCE.md).
 
 See [current implementation status and validation](WORKBENCH_STATUS.md). The requested [native M2 visual-alignment pass](WORKBENCH_M2_VISUAL.md) is implemented before M3, with screenshots and an explicit aggregate-test caveat. The [M3 language guide](WORKBENCH_M3_LANGUAGE.md) now records implemented commands, trusted/approved automatic startup, persistent workspace Stop/resume, negotiated protocol behavior and strict limits. The [automatic-increment aggregate, production and visual gates passed](WORKBENCH_M3_LANGUAGE.md#automatic-increment-validation--accepted), with the initial watchdog failure retained. The historical frozen-source aggregate and production gates passed after the queue/sync fix, before automatic startup; that baseline's separate visual evidence predates its final change. Historical M2 passes and later failures remain distinct; the roadmap below is not a claim that all milestones are complete.
 
@@ -39,7 +39,7 @@ Paths in this document are relative to `subprojects/coral/` unless stated otherw
 
 Implemented at the original baseline: reorderable tabs; async GIO file loads and replacement saves; dirty prompts; canonical-path deduplication; save snapshot/revision protection; etag conflict decisions; Unicode, syntax highlighting, find/replace, spelling and preferences. Reduced-feature mode starts above 10 MiB and reads are capped at 128 MiB. Preserve these limits until measurements justify changes.
 
-Missing at the original baseline: project/workspace model, explorer, split editors, command palette, project search, recovery, LSP, Git, terminal/tasks, debugger, agents and extension host. The command palette and the bounded M1/M2/M3 increments described below are now implemented; this baseline list is not the current delivery status. **“Coral Git” is the development-build application identity, not Git integration.** Coral runs without Pearl/Aqueous, although its build imports shared modules from the Pearl tree.
+Missing at the original baseline: project/workspace model, explorer, split editors, command palette, project search, recovery, LSP, Git, terminal/tasks, debugger, agents and extension host. The command palette, bounded M1/M2/M3 increments and first read-only M4 slice described below are now implemented; this baseline list is not the current delivery status. **“Coral Git” is the development-build application identity, not Git integration.** Coral runs without Pearl/Aqueous, although its build imports shared modules from the Pearl tree.
 
 The historical implementation plan/report contain older toolchain and appearance statements. Use current source/build/README for this expansion; do not reinterpret historical screenshots as fresh acceptance evidence. The README's historical Arch-host wording is not host detection: this environment uses Shelly. Inspect Shelly's available commands before installing native dependencies.
 
@@ -143,7 +143,7 @@ Measure UI-thread full-buffer work during load/save and syntax/decorations. If t
 
 ## 6. LSP implementation
 
-**The bounded M3 baseline is complete; automatic startup is implemented and its separate validation is accepted. Next: M4 Git/review, not started.** Negotiate the implemented LSP 3.17-compatible capability subset, not assumptions about every server. The exact default/reference is **`/usr/bin/zls` 0.17.0 with `/usr/bin/zig` 0.17.1**, pinned in `tests/fixtures/lsp-reference.json`. There is no automatic setup/download. clangd, TypeScript and Python remain separate optional smoke tracks, currently **blocked, not passed**. The [user guide](WORKBENCH_M3_LANGUAGE.md) is the current behavior/limits reference.
+**The bounded M3 baseline is complete; automatic startup is implemented and its separate validation is accepted. M4 Git/review is in progress with a first read-only slice; next is safe staging/index-snapshot validation, not full-M4 completion.** Negotiate the implemented LSP 3.17-compatible capability subset, not assumptions about every server. The exact default/reference is **`/usr/bin/zls` 0.17.0 with `/usr/bin/zig` 0.17.1**, pinned in `tests/fixtures/lsp-reference.json`. There is no automatic setup/download. clangd, TypeScript and Python remain separate optional smoke tracks, currently **blocked, not passed**. The [user guide](WORKBENCH_M3_LANGUAGE.md) is the current behavior/limits reference.
 
 ### Service contract
 
@@ -199,7 +199,34 @@ Default Coral design stages native-agent proposed edits for review before applyi
 
 ## 8. Zed-style Git integration
 
-Use the installed Git CLI first, orchestrated asynchronously from Zig: established credential/signing/filter behavior, fewer binding dependencies. Detect Git capabilities/version. Parse stable machine output (`status --porcelain=v2 -z`, NUL-delimited paths), not localized display text. Do not interpolate filenames/refs into shell strings. Bound output, cancel/reap jobs, and disable pagers for capture.
+**Current delivery: first read-only M4 slice, not completed M4.** The
+[M4 guide](WORKBENCH_M4_GIT.md) describes the separate native Source Control window
+and Git menu/palette status, explicit refresh and noneditable staged/unstaged
+previews. It requires current workspace trust plus per-window disclosure; no Git
+execution at startup or in restricted mode. Discovery probes workspace roots and
+the active saved file's parent, with owning-root containment, `.git` files and
+existing linked-worktree reads—not recursive nested discovery or worktree mutations.
+Limits are **8 repositories, 1 MiB status / 10,000 entries, 128 rows/page**; diff
+capture is 1 MiB, text previews **256 KiB / 4,000 lines / 2,048 bytes per line**,
+and commands time out after **15 seconds**. Refresh is manual; external disk/index
+changes are not atomically snapshotted, and unsaved buffers are never saved/staged.
+Renames are add/delete (detection disabled), submodule contents excluded,
+unborn/detached HEAD supported, and invalid UTF-8 status paths refused.
+
+The slice requires **Git 2.31+ at `/usr/bin/git`**, with fixed argv/config and a
+replacement environment. It disables system/global config, prompts, credential
+helpers, external diff/textconv and Git protocols, but repository-local clean
+filters/programs can still execute as the user. This is **not a sandbox or a
+guarantee against arbitrary helper writes/network access**. No staging, editable
+diffs, commits, branches, worktree mutations, remotes, history, stashes or conflict
+resolver are delivered. **Next: safe staging with checked index/file snapshots**;
+revalidate reviewed bytes before mutations and refuse races without whole-file
+fallback or implicit saving of unsaved text.
+
+The following repository/index model and operation list remain **full-M4 targets**,
+not claims about this first slice. Use the installed Git CLI, orchestrated
+asynchronously from Zig: established credential/signing/filter behavior for future
+explicitly authorized operations, fewer binding dependencies. Detect Git capabilities/version. Parse stable machine output (`status --porcelain=v2 -z`, NUL-delimited paths), not localized display text. Do not interpolate filenames/refs into shell strings. Bound output, cancel/reap jobs, and disable pagers for capture.
 
 ### Repository and index model
 
@@ -223,7 +250,7 @@ Use the installed Git CLI first, orchestrated asynchronously from Zig: establish
 
 **Intentional difference:** Zed documents a convenience workflow that can auto-stage tracked changes when committing from its panel. Coral defaults to **Commit staged only**, matching the prototype and avoiding accidental inclusion. An optional, clearly named “Stage tracked and commit” command can provide that Zed workflow. This difference must be covered by parity tests and product approval.
 
-Git config can run filters, hooks, helpers and external commands, even for apparently routine operations. Define the restricted-workspace read path with external diff/textconv disabled where applicable; do not treat arbitrary Git subprocesses as intrinsically safe.
+Git config can run filters, hooks, helpers and external commands, even for apparently routine operations. The current slice therefore refuses all restricted-workspace Git execution, in addition to its command/environment restrictions and trusted per-window disclosure. Any future restricted-workspace read path needs a separately justified execution boundary; disabling external diff/textconv alone does not make arbitrary Git subprocesses safe.
 
 ## 9. Full-editor completion tracks
 
@@ -243,7 +270,7 @@ Indicative effort is relative, not a promised calendar schedule. One small team 
 | **M1: safe editor foundation** | M0 | Registry, view/group separation, commands, transactions, file watchers and recovery / XL | Existing file-integrity/spelling/theme tests still pass; two independent views; stale/multi-file edits and interrupted saves recover safely |
 | **M2: workspaces and workbench — implementation complete** | M1 | Multi-root and reviewed root/file operations, tree/search, settings/trust, docks/native pickers, explicit and automatic sessions/multi-window / L | Real two-root W07 workflow; responsive 100k fixture; dirty crash recovery; no untrusted execution; [composed acceptance evidence](WORKBENCH_M2_ACCEPTANCE.md) |
 | **M3: bounded baseline complete; automatic increment validated** | M1, M2 | Detected-language approved automatic lifecycle; command-driven features, manual semantic tags/hint picker, reviewed text and single resources / XL | `test-m3`: language units, mandatory fake/native + pinned real ZLS, lifecycle, 25 fixture tests and full M1/M2; separate visual/production checks; [accepted automatic-increment gate and retained history](WORKBENCH_M3_LANGUAGE.md#automatic-increment-validation--accepted) |
-| **M4: Git and review engine — next, not started** | M1, M2 | Repo discovery/status, shared excerpts, staging/commits, history/worktrees/conflicts/stashes / XL | Partial-stage commit preserves unstaged bytes; external index races fail safely; conflict/worktree tests; no unrequested writes/network |
+| **M4: Git and review engine — in progress, first read-only slice** | M1, M2 | Read-only discovery/status/diff implemented; shared excerpts, staging/commits, history/worktrees/conflicts/stashes remain / XL | First-slice `test-m4-slice` passed 105/105 steps (586 Zig passes, 1 expected skip); production and existing-workbench visual gates passed, not full M4 acceptance or Git-window visual parity. Full exit gate still requires partial-stage preservation, external-index race safety and conflict/worktree tests; subprocess side effects require an explicit boundary, not a sandbox claim. |
 | **M5: terminal and tasks** | M1, M2 | PTY adapter, process supervisor, task UI/problem matchers / L | Resize/exit/cancel/restart and trust tests; stdout cannot inject UI commands; processes cleaned up on close |
 | **M6: agent core** | M3, M4, M5 | Native providers, context, threads, tools/policy, checkpoints, inline/multi-file review / XL | Real opt-in provider workflow plus deterministic CI; cancelled/stale/conflicting edits cannot overwrite user work; denial has no side effect |
 | **M7: Zed agent parity** | M6 | ACP/MCP/skills, external auth, capability negotiation, concurrent/worktree agents, terminal threads / XL | Native and at least two pinned ACP adapters pass published feature matrix; isolation/permission bypass tests and thread restoration |
@@ -289,7 +316,36 @@ The closing increments deliver **automatic project/latest per-window and scratch
 
 **Save Workspace As…** first promotes a folder-only workspace to a new manifest destination. Reviewed **Workspace: Add Folder… / Remove Selected Root…** then write the manifest immediately, preserving semantic settings/excludes/names and absolute lexical paths, without disk deletion or document loss. The last root and existing Save As destinations are refused; exact source bytes/etag and generations are revalidated. Dedicated root rename/reorder controls remain outside this UI. Targets: `project-unit`, `projects`, `roots`, `test-m2-projects`, `test-m2-roots`; **`test-m2` includes the prior nine gates plus these two aggregates**.
 
-**M2 implementation is COMPLETE; the bounded M3 baseline is complete with historical validation. Automatic startup is implemented and separately validated. Next: M4, not started.** The final feature audit maps all mandatory scope, including W07, responsive 100k traversal, no-execution and dirty crash recovery, to actual tests in the [acceptance report](WORKBENCH_M2_ACCEPTANCE.md). That report separates the final consolidated validation checkpoint from implementation completion and preserves historical increment counts. This is the bounded workspace preview—not full IDE parity, unlimited history, a persistent index or a changed M0 engine decision.
+**M2 implementation is COMPLETE; the bounded M3 baseline is complete with historical validation. Automatic startup is implemented and separately validated. M4's first read-only slice is implemented with final first-slice validation passed; next is safe staging/index-snapshot validation.** The final feature audit maps all mandatory scope, including W07, responsive 100k traversal, no-execution and dirty crash recovery, to actual tests in the [acceptance report](WORKBENCH_M2_ACCEPTANCE.md). That report separates the final consolidated validation checkpoint from implementation completion and preserves historical increment counts. This is the bounded workspace preview—not full IDE parity, unlimited history, a persistent index or a changed M0 engine decision.
+
+### First M4 slice validation — passed
+
+Final **[`test-m4-slice`](../../../.cache/coral-m4-readonly-gate.log) passed 105/105
+steps, exit 0; 586/587 Zig tests passed, 1 skipped**: **27 Git** (21 parser/display +
+5 command-policy/display + 1 import-root), **129 language**, **340 main-root** and
+**90 other-root passes / 1 skip**. The foreign-owner trust-store test skips when
+`geteuid() != 0`; expected on this non-root host, **not a pass**. The aggregate
+includes the Unicode display-helper fix and tests.
+
+[Final native Git](../../../.cache/coral-git/results.json) passed **15/15**;
+[language](../../../.cache/coral-language/results.json) **89 passed / 0 failed /
+3 optional blocked** (clangd, TypeScript language server and pyright not installed),
+[lifecycle](../../../.cache/coral-workspace-lifecycle/results.json) **20/20**,
+[widgets](../../../.cache/coral-widgets/results.json) **204/204 in 36.993 s**,
+fixture **25/25**, and **full M1/M2 regressions** passed. The target composes Git
+units/native Git with `test-m3`, including M1/M2. Counts overlap across harnesses;
+no additive unique-test total or aggregate wall time is claimed.
+
+[Hooks-disabled production](../../../.cache/coral-m4-readonly-production.log) passed
+**46/46 steps, exit 0**. [Visuals](../../../.cache/coral-m4-readonly-visual.log) passed
+**40/40 steps, exit 0**, with [16 cases and four 2.0 font ratios](../../../.cache/coral-visual/results.json)
+on the aggregate's instrumented binary. Visuals cover **the existing workbench,
+not Git-window visual parity**; headless/offline Follow Pearl limitations remain.
+These gates validate the first read-only slice, **not completed M4 acceptance** or
+future mutations. Earlier standalone [native Git results](../.cache/m4-git-native/results.json)
+remain **15 passed / 0 failed / 0 blocked**, and the prior direct Git root passed
+**27 tests**, separately from the final run. See [scope, final evidence and next
+slice](WORKBENCH_M4_GIT.md#final-first-slice-validation--passed).
 
 ### Automatic-increment validation — accepted
 
@@ -307,7 +363,7 @@ Hooks-disabled production passed **46/46 steps**, **three fresh / 43 cached**, w
 
 Definitive artifacts: `pearl/.cache/coral-m3-complete-language-unit.log`, `pearl/.cache/coral-m3-complete.log`, `pearl/.cache/coral-m3-complete-production.log` and separate `pearl/.cache/coral-m3-final-visual.log`. At that historical checkpoint, `pearl/.cache/coral-language/results.json` and retained `run-r_olc__s/results.json` contain the complete **75/0/3** matrix; lifecycle evidence is `pearl/.cache/coral-workspace-lifecycle/results.json`. See [linked logs and final binary hashes](WORKBENCH_M3_LANGUAGE.md#final-validation-passed).
 
-Earlier `coral-m3-full.log` / `coral-m3-final.log` failures remain historical: the missing-root diagnostic and stale visual menu-category assertion were fixed; lifecycle transcript cross-run contamination was fixed with unique temporary transcripts per launch, then all 20 lifecycle cases passed twice on repeat and again in the aggregate. The earlier green `coral-m3-accepted.log` predates the capacity fix; `coral-m3-complete.log` is definitive. Preserve the pre-M3 process-supervisor abort and M2 widget-timeout history too. **Next: M4 Git/review, not started**; no full LSP/IDE parity or broader API scope is implied.
+Earlier `coral-m3-full.log` / `coral-m3-final.log` failures remain historical: the missing-root diagnostic and stale visual menu-category assertion were fixed; lifecycle transcript cross-run contamination was fixed with unique temporary transcripts per launch, then all 20 lifecycle cases passed twice on repeat and again in the aggregate. The earlier green `coral-m3-accepted.log` predates the capacity fix; `coral-m3-complete.log` is definitive. Preserve the pre-M3 process-supervisor abort and M2 widget-timeout history too. At that historical checkpoint, **M4 Git/review had not started**. Current first-slice M4 scope and passed final validation are recorded separately above; no full LSP/IDE parity or broader API scope is implied.
 
 ## 11. Validation and release acceptance
 

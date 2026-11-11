@@ -13,7 +13,7 @@ pub const limits = struct {
 pub const Fingerprint = [32]u8;
 pub const PolicyDigest = [32]u8;
 pub const State = enum { restricted, trusted };
-pub const Capability = enum { lsp, tasks, debug, hooks, extensions, agent_tools };
+pub const Capability = enum { lsp, tasks, debug, hooks, extensions, agent_tools, git };
 pub const Approval = enum { user_approved };
 
 /// The settings/model owner supplies a domain-separated digest covering ALL

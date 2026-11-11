@@ -195,6 +195,7 @@ pub const Controller = struct {
     /// a later successful recheck cannot revive an issued permit or its service.
     pub fn invalidate(self: *Controller) void {
         if (self.app.language_initialized) self.app.language.invalidate();
+        if (self.app.git_initialized) self.app.git.invalidate();
         defer self.refreshStatus();
         self.request = std.math.add(u64, self.request, 1) catch @panic("Policy request generation exhausted");
         self.confirmation = null;
