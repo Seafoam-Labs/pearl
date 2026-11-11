@@ -172,7 +172,7 @@ pub const View = struct {
             if (sentinel) |value| if (unix.DesktopAppInfo.new(value)) |desktop| {
                 defer desktop.unref();
                 if (desktop.as(gio.AppInfo).getIcon()) |icon| {
-                    defer icon.unref();
+                    // Borrowed reference; the image takes its own ref.
                     const image = gtk.Image.new();
                     image.setFromGicon(icon);
                     image.setPixelSize(32);
@@ -343,7 +343,7 @@ pub const View = struct {
             const row = gtk.ListBoxRow.new();
             const box = w.row(10);
             const image = if (info.getIcon()) |icon| blk: {
-                defer icon.unref();
+                // AppInfo.getIcon is borrowed; the image takes its own ref.
                 const from_icon = gtk.Image.new();
                 from_icon.setFromGicon(icon);
                 from_icon.setPixelSize(24);
