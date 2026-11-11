@@ -30,6 +30,8 @@ pub const events: []const Event = &.{
     .{ .name = "catalog-watch", .scopes = &.{.services} },
     .{ .name = "cleanup", .scopes = &.{.pearl} },
     .{ .name = "clipboard-failed", .scopes = &.{.services} },
+    .{ .name = "clipboard-history-load", .scopes = &.{.services} },
+    .{ .name = "clipboard-history-save", .scopes = &.{.services} },
     .{ .name = "connectivity-focus", .scopes = &.{.desktop} },
     .{ .name = "control-ready", .scopes = &.{.pearl} },
     .{ .name = "css-error", .scopes = &.{.pearl} },

@@ -1,5 +1,20 @@
 # Pearl implementation progress
 
+## Text-persistent clipboard history, November 6, 2026
+
+Clipboard history now retains up to 100 entries with seven-day expiry from last
+copy/use. Text is atomically saved to `$XDG_STATE_HOME/pearl/clipboard.json` and
+restored on startup; PNGs remain memory-only. Existing byte limits still apply.
+Suspension hides retained text and discards images; normal shutdown preserves
+the file. Explicit clear persists an empty history. The existing popup and
+screenshot-copy path remain available.
+
+The private clipboard/capture suite passes all 24 checks using
+`.cache/aqueous-zig17-production`, including restart, expiry, file permissions,
+corrupt JSON, save failures, lock/unlock, PNG paste, and screenshot regressions.
+See [the implementation plan](CLIPBOARD_HISTORY_PLAN.md) and
+[clipboard documentation](CLIPBOARD_CAPTURE.md).
+
 ## Wi-Fi profiles created from the panel now persist, October 9, 2026
 
 Connecting a new access point asked NetworkManager for a volatile profile with

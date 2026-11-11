@@ -1703,7 +1703,7 @@ msgid "Copy image"
 msgstr ""
 
 #: src/desktop/clipboard_capture.zig:432
-msgid "Copy text or a PNG image to start. History is cleared when locking."
+msgid "Copy text or a PNG image to start. Text is saved; images stay in this session."
 msgstr ""
 
 #: src/settings/preferences_view.zig:272
