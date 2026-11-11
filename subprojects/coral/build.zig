@@ -77,6 +77,10 @@ pub fn build(b: *std.Build) void {
     const git_tests = b.addTest(.{ .root_module = git_module });
     const git_units = b.addRunArtifact(git_tests);
     b.step("git-unit", "Test bounded Git status parsing and read-only command policy").dependOn(&git_units.step);
+    const git_index_module = b.createModule(.{ .root_source_file = b.path("src/git_index_tests.zig"), .target = target, .optimize = optimize, .link_libc = true });
+    const git_index_tests = b.addTest(.{ .root_module = git_index_module });
+    const git_index_units = b.addRunArtifact(git_index_tests);
+    b.step("git-index-unit", "Test reviewed index transactions in disposable repositories").dependOn(&git_index_units.step);
     // Trust concurrency tests fork; isolate them from the GIO tests' worker pool.
     const trust_module = createModule(b, .{ .root_source_file = b.path("src/workspace/trust_test.zig"), .target = target, .optimize = optimize, .link_libc = true });
     const trust_tests = b.addTest(.{ .root_module = trust_module });
@@ -240,9 +244,9 @@ pub fn build(b: *std.Build) void {
     const git_native = b.addSystemCommand(&.{ native_python, "tests/git.py", "--binary" });
     git_native.addArtifactArg(ie);
     git_native.addPassthruArgs();
-    b.step("git", "Run isolated native read-only Source Control acceptance").dependOn(&git_native.step);
-    const m4_slice = b.step("test-m4-slice", "Validate first read-only M4 increment and M1/M2/M3 regressions");
-    for ([_]*std.Build.Step{ &git_units.step, &git_native.step, m3 }) |gate| m4_slice.dependOn(gate);
+    b.step("git", "Run isolated native Source Control and selected-file index acceptance").dependOn(&git_native.step);
+    const m4_slice = b.step("test-m4-slice", "Validate implemented M4 inspection/index increments and M1/M2/M3 regressions");
+    for ([_]*std.Build.Step{ &git_units.step, &git_index_units.step, &git_native.step, m3 }) |gate| m4_slice.dependOn(gate);
 
     const bm = createModule(b, .{ .root_source_file = b.path("src/benchmark_m0.zig"), .target = target, .optimize = optimize, .link_libc = true });
     for ([_][]const u8{ "gtk4", "gtksourceview-5", "enchant-2" }) |lib| bm.linkSystemLibrary(lib, .{ .use_pkg_config = .yes });

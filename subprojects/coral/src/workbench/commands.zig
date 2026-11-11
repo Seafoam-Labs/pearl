@@ -94,6 +94,8 @@ pub const Command = enum {
     git_refresh,
     git_diff,
     git_staged_diff,
+    git_stage,
+    git_unstage,
 
     pub fn metadata(self: Command) Metadata {
         return entries[@backingInt(self)];
@@ -192,6 +194,8 @@ pub const Command = enum {
             .git_refresh => i18n.dtr("coral", "Git: Refresh repositories"),
             .git_diff => i18n.dtr("coral", "Git: Unstaged diff"),
             .git_staged_diff => i18n.dtr("coral", "Git: Staged diff"),
+            .git_stage => i18n.dtr("coral", "Git: Stage selected file…"),
+            .git_unstage => i18n.dtr("coral", "Git: Unstage selected file…"),
         };
     }
 };
@@ -296,6 +300,8 @@ pub const entries = [_]Metadata{
     .{ .command = .git_refresh, .action = "git-refresh", .detailed_action = "win.git-refresh", .label = "Git: Refresh repositories", .shortcut = null },
     .{ .command = .git_diff, .action = "git-diff", .detailed_action = "win.git-diff", .label = "Git: Unstaged diff", .shortcut = null },
     .{ .command = .git_staged_diff, .action = "git-staged-diff", .detailed_action = "win.git-staged-diff", .label = "Git: Staged diff", .shortcut = null },
+    .{ .command = .git_stage, .action = "git-stage", .detailed_action = "win.git-stage", .label = "Git: Stage selected file…", .shortcut = null },
+    .{ .command = .git_unstage, .action = "git-unstage", .detailed_action = "win.git-unstage", .label = "Git: Unstage selected file…", .shortcut = null },
 };
 
 pub fn fromAction(action: []const u8) ?Command {
@@ -360,7 +366,7 @@ pub fn fromKey(key: u32, state: u32) ?Command {
 
 test "registry is exhaustive, ordered and has unique stable actions" {
     try std.testing.expectEqual(@typeInfo(Command).@"enum".field_names.len, entries.len);
-    const actions = [_][]const u8{ "new", "open", "save", "save-as", "reload", "find", "goto", "spelling", "preferences", "about", "close", "quit", "command-palette", "split-group", "focus-next-group", "focus-previous-group", "close-group", "excerpt", "grouped-undo", "grouped-redo", "open-folder", "open-workspace", "workspace-roots", "workspace-back", "workspace-rescan", "close-workspace", "quick-open", "workspace-search", "workspace-policy", "workspace-trust", "workspace-revoke", "save-workspace-session", "restore-workspace-session", "toggle-explorer", "toggle-search", "focus-explorer", "focus-search", "focus-editor", "hide-panel", "dock-left", "dock-right", "dock-bottom", "reset-docks", "dock-grow", "dock-shrink", "next-tab", "previous-tab", "new-window", "close-window", "next-window", "previous-window", "workspace-create-file", "workspace-create-directory", "workspace-rename", "workspace-move", "workspace-delete", "recent-projects", "open-buffers", "forget-project-session", "workspace-add-root", "workspace-remove-root", "save-workspace-as", "language-start", "language-stop", "language-restart", "language-status", "language-completion", "language-hover", "language-signature", "language-definition", "language-declaration", "language-type-definition", "language-implementation", "language-references", "language-document-symbols", "language-workspace-symbols", "language-problems", "language-formatting", "language-range-formatting", "language-rename", "language-code-actions", "language-semantic-tokens", "language-inlay-hints", "language-code-lenses", "language-document-links", "git-status", "git-refresh", "git-diff", "git-staged-diff" };
+    const actions = [_][]const u8{ "new", "open", "save", "save-as", "reload", "find", "goto", "spelling", "preferences", "about", "close", "quit", "command-palette", "split-group", "focus-next-group", "focus-previous-group", "close-group", "excerpt", "grouped-undo", "grouped-redo", "open-folder", "open-workspace", "workspace-roots", "workspace-back", "workspace-rescan", "close-workspace", "quick-open", "workspace-search", "workspace-policy", "workspace-trust", "workspace-revoke", "save-workspace-session", "restore-workspace-session", "toggle-explorer", "toggle-search", "focus-explorer", "focus-search", "focus-editor", "hide-panel", "dock-left", "dock-right", "dock-bottom", "reset-docks", "dock-grow", "dock-shrink", "next-tab", "previous-tab", "new-window", "close-window", "next-window", "previous-window", "workspace-create-file", "workspace-create-directory", "workspace-rename", "workspace-move", "workspace-delete", "recent-projects", "open-buffers", "forget-project-session", "workspace-add-root", "workspace-remove-root", "save-workspace-as", "language-start", "language-stop", "language-restart", "language-status", "language-completion", "language-hover", "language-signature", "language-definition", "language-declaration", "language-type-definition", "language-implementation", "language-references", "language-document-symbols", "language-workspace-symbols", "language-problems", "language-formatting", "language-range-formatting", "language-rename", "language-code-actions", "language-semantic-tokens", "language-inlay-hints", "language-code-lenses", "language-document-links", "git-status", "git-refresh", "git-diff", "git-staged-diff", "git-stage", "git-unstage" };
     for (entries, actions, 0..) |entry, action, index| {
         try std.testing.expectEqual(index, @backingInt(entry.command));
         try std.testing.expectEqualStrings(action, entry.action);

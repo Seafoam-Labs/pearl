@@ -1,6 +1,6 @@
-//! First M4 increment: explicit, read-only native Source Control, not dock parity.
-//! Parent owns App.git, .git trust capability, commands and lifecycle invalidation.
-//! No startup work, watchers, saves, index mutation, network commands or checkout.
+//! Explicit native Source Control: read-only inspection and separately reviewed
+//! selected-path index mutations. Parent owns commands and lifecycle invalidation.
+//! No startup work, watchers, saves, commits, network commands or checkout.
 const std = @import("std");
 const u = @import("../c.zig");
 const c = u.c;
@@ -10,6 +10,7 @@ const process = @import("../tasks/process.zig");
 const trust = @import("../workspace/trust.zig");
 const status = @import("status.zig");
 const command = @import("command.zig");
+const mutation_controller = @import("mutation_controller.zig");
 const UI = @import("../language/ui.zig").UI;
 const RootId = @import("../workspace/model.zig").RootId;
 pub const max_repositories = 8;
@@ -24,9 +25,11 @@ const Intent = enum { none, refresh, status, diff };
 const disclosure =
     "Source Control runs /usr/bin/git as your user, only after you continue in a trusted workspace. " ++
     "It reads repository metadata, the index and files on disk. Unsaved editor buffers are excluded and are never saved.\n\n" ++
-    "Coral requests no index writes, hooks or network access. System/global Git config, prompts, external diff and textconv are disabled. " ++
+    "Refresh and diff controls are read-only inspection, not authorization to write. Stage selected file… and Unstage selected file… require a separate full-file review of captured before/after bytes, existence and modes for one selected index path (not hunks). No commits, saves, checkout or network access. " ++
+    "System/global Git config, prompts, external diff and textconv are disabled. " ++
     "Repository-local Git configuration and clean filters can still execute programs with your user permissions. This is NOT a sandbox; such programs can have side effects.\n\n" ++
-    "First M4 increment: explicit refresh only, at most 8 repositories, 1 MiB status capture / 10,000 entries, " ++
+    "Selected-file writes reject binary/non-UTF-8 text, files over 256 KiB, filters, symlinks, conflicts and unsupported index formats. Unsaved buffers remain untouched.\n\n" ++
+    "M4: explicit refresh only, at most 8 repositories, 1 MiB status capture / 10,000 entries, " ++
     "128 visible rows per page. Discovery checks workspace roots and the active file's parent, not every nested directory. " ++
     "Repositories outside their owning root are rejected. Submodule contents are not inspected.";
 
@@ -41,6 +44,7 @@ pub const Controller = struct {
     permit: ?trust.Permit = null,
     approved: bool = false,
     approval: UI,
+    mutation: mutation_controller.Controller,
     candidates: [max_candidates]Candidate = undefined,
     candidate_count: usize = 0,
     candidate_index: usize = 0,
@@ -64,6 +68,8 @@ pub const Controller = struct {
     page_label: ?u.W = null,
     diff_label: ?u.W = null,
     diff_view: ?u.W = null,
+    stage_button: ?u.W = null,
+    unstage_button: ?u.W = null,
     rebuilding: bool = false,
     message_text: [:0]u8,
     diff_text: [:0]u8,
@@ -72,12 +78,13 @@ pub const Controller = struct {
     discarded: u64 = 0,
 
     pub fn init(app: *App) Controller {
-        return .{ .app = app, .arena = std.heap.ArenaAllocator.init(a), .approval = .{ .context = app, .respond = &answered }, .message_text = u.z("Source Control — explicit refresh only"), .diff_text = u.z("") };
+        return .{ .app = app, .arena = std.heap.ArenaAllocator.init(a), .approval = .{ .context = app, .respond = &answered }, .mutation = mutation_controller.Controller.init(app), .message_text = u.z("Source Control — explicit refresh only"), .diff_text = u.z("") };
     }
     pub fn deinit(self: *Controller) void {
         // App holds keep this controller alive until every cancelled job is reaped.
-        std.debug.assert(self.job == null and self.supervisor.isIdle());
+        std.debug.assert(self.job == null and self.supervisor.isIdle() and !self.mutation.busy());
         self.invalidate();
+        self.mutation.deinit();
         self.supervisor.shutdown();
         self.arena.deinit();
         a.free(self.message_text);
@@ -93,6 +100,7 @@ pub const Controller = struct {
         self.setDiff("none", "");
     }
     fn cancel(self: *Controller) void {
+        self.mutation.cancel();
         self.generation = std.math.add(u64, self.generation, 1) catch @panic("Git generation exhausted");
         self.pending = .none;
         if (self.job) |job| job.cancel();
@@ -177,7 +185,8 @@ pub const Controller = struct {
         self.drain();
     }
     fn drain(self: *Controller) void {
-        if (self.job != null or self.pending == .none) return;
+        defer self.updateMutationActions();
+        if (self.job != null or self.mutation.busy() or self.pending == .none) return;
         const intent = self.pending;
         self.pending = .none;
         if (!self.valid()) {
@@ -258,7 +267,7 @@ pub const Controller = struct {
     }
     fn launch(self: *Controller, phase: Phase, cwd: []const u8, args: []const []const u8, limit: usize) !void {
         if (!self.valid()) return error.Restricted;
-        if (self.job != null) return error.Busy;
+        if (self.job != null or self.mutation.busy()) return error.Busy;
         if (self.remaining_bytes == 0) return error.OutputBudgetExceeded;
         var argv: [64][]const u8 = undefined;
         if (command.prefix.len + args.len > argv.len) return error.InvalidArguments;
@@ -280,10 +289,12 @@ pub const Controller = struct {
         }, &completed, self);
         self.launches += 1;
         self.app.hold();
+        self.updateMutationActions();
     }
     fn completed(job: *process.Job, result: process.Result, data: ?*anyopaque) void {
         const self = u.cast(Controller, data.?);
         defer self.app.release();
+        defer self.updateMutationActions();
         defer job.destroy();
         std.debug.assert(self.job == job);
         self.job = null;
@@ -413,6 +424,59 @@ pub const Controller = struct {
         self.pending = .diff;
         self.drain();
     }
+    pub fn stageSelected(self: *Controller) void {
+        self.mutateSelected(.stage);
+    }
+    pub fn unstageSelected(self: *Controller) void {
+        self.mutateSelected(.unstage);
+    }
+    fn mutateSelected(self: *Controller, action: mutation_controller.Action) void {
+        if (!self.valid()) {
+            // Disclosure never queues a write, nor approves a future review.
+            self.show();
+            return;
+        }
+        if (self.job != null or self.pending != .none or self.mutation.busy()) {
+            self.message("Wait for the current Git request or cancel its review before requesting an index change.");
+            return;
+        }
+        const repository = self.repo() orelse return;
+        const snapshot = self.snapshot orelse return;
+        const selected = self.selected_file orelse {
+            self.message("Select one changed file before requesting Stage file… or Unstage file…. No whole-repository fallback is available.");
+            return;
+        };
+        const entry = snapshot.entries[selected];
+        self.mutation.request(.{ .root = repository.path, .gitdir = repository.gitdir, .commondir = repository.commondir, .path = entry.path, .action = action }, repository.root, repository.owner, self.generation);
+    }
+    /// Revalidate the actual Source Control selection, not the editor's buffer.
+    pub fn mutationSelectionMatches(self: *Controller, root: RootId, owner: []const u8, request: @import("index_transaction.zig").Request) bool {
+        const repository = self.repo() orelse return false;
+        const snapshot = self.snapshot orelse return false;
+        const selected = self.selected_file orelse return false;
+        return selected < snapshot.entries.len and selected / page_rows == self.page and
+            repository.root == root and std.mem.eql(u8, repository.owner, owner) and
+            std.mem.eql(u8, repository.path, request.root) and
+            std.mem.eql(u8, repository.gitdir, request.gitdir) and
+            std.mem.eql(u8, repository.commondir, request.commondir) and
+            std.mem.eql(u8, snapshot.entries[selected].path, request.path);
+    }
+    /// Called for every outcome, only after backend cleanup and worker delivery.
+    pub fn mutationFinished(self: *Controller, attempted: bool) void {
+        defer self.updateMutationActions();
+        if (!self.valid()) return;
+        if (attempted and self.pending != .refresh) {
+            // An attempted publication invalidates status/diff, including any
+            // queued diff against that old status. A new discovery is required.
+            self.refresh();
+        } else self.drain();
+    }
+    pub fn updateMutationActions(self: *Controller) void {
+        const enabled = self.valid() and self.selected_file != null and
+            self.job == null and self.pending == .none and !self.mutation.busy();
+        if (self.stage_button) |button| c.gtk_widget_set_sensitive(button, @intFromBool(enabled));
+        if (self.unstage_button) |button| c.gtk_widget_set_sensitive(button, @intFromBool(enabled));
+    }
     fn startDiff(self: *Controller) !void {
         const repository = self.repo() orelse return error.NoRepository;
         const snapshot = self.snapshot orelse return error.RefreshRequired;
@@ -462,16 +526,25 @@ pub const Controller = struct {
         self.message(text);
         self.updateOverlay();
     }
-    fn dirtyCount(self: *Controller) usize {
+    pub fn dirtyCount(self: *Controller) usize {
         var count: usize = 0;
-        for (self.app.documents.entries.items) |doc| if (doc.dirty()) {
-            count += 1;
-        };
+        if (self.app.manager) |manager| {
+            for (manager.entries) |entry| if (entry) |window| {
+                for (window.app.snapshotDocuments()) |doc| if (doc.dirty()) {
+                    count += 1;
+                };
+            };
+        } else {
+            for (self.app.snapshotDocuments()) |doc| if (doc.dirty()) {
+                count += 1;
+            };
+        }
         return count;
     }
     fn updateOverlay(self: *Controller) void {
+        self.updateMutationActions();
         const label = self.overlay orelse return;
-        const text = u.fmt("Unsaved editor documents: {d} (excluded; never saved). Counts update on interaction. Read-only Git snapshots are not atomic with external disk/index changes.", .{self.dirtyCount()});
+        const text = u.fmt("Unsaved editor documents: {d} across windows (excluded; never saved). Counts update on interaction. Read-only Git snapshots are not atomic with external disk/index changes.", .{self.dirtyCount()});
         defer a.free(text);
         u.setLabel(label, text);
     }
@@ -486,7 +559,7 @@ pub const Controller = struct {
         if (self.window != null) return;
         const window = c.gtk_window_new().?;
         self.window = window;
-        c.gtk_window_set_title(u.cast(c.GtkWindow, window), "Source Control — read-only · first M4 increment");
+        c.gtk_window_set_title(u.cast(c.GtkWindow, window), "Source Control — inspect and review selected index changes");
         c.gtk_window_set_transient_for(u.cast(c.GtkWindow, window), u.cast(c.GtkWindow, self.app.window));
         c.gtk_window_set_default_size(u.cast(c.GtkWindow, window), 960, 760);
         u.connect(window, "close-request", &closeRequested, self);
@@ -536,6 +609,17 @@ pub const Controller = struct {
         u.append(actions, staged);
         u.connect(unstaged, "clicked", &unstagedClicked, self);
         u.connect(staged, "clicked", &stagedClicked, self);
+        const mutations = u.box(true, 8);
+        u.append(box, mutations);
+        const stage_file = u.button("Stage selected file…");
+        const unstage_file = u.button("Unstage selected file…");
+        self.stage_button = stage_file;
+        self.unstage_button = unstage_file;
+        u.append(mutations, stage_file);
+        u.append(mutations, unstage_file);
+        u.connect(stage_file, "clicked", &stageFileClicked, self);
+        u.connect(unstage_file, "clicked", &unstageFileClicked, self);
+        u.append(mutations, u.label("Full file, not hunks · separate disk/index snapshot review"));
         const diff_label = u.label("Immutable diff — select a file and a side");
         self.diff_label = diff_label;
         u.append(box, diff_label);
@@ -563,6 +647,8 @@ pub const Controller = struct {
         self.page_label = null;
         self.diff_label = null;
         self.diff_view = null;
+        self.stage_button = null;
+        self.unstage_button = null;
         self.rebuilding = true;
         _ = c.g_signal_handlers_disconnect_matched(window, c.G_SIGNAL_MATCH_DATA, 0, 0, null, null, self);
         c.gtk_window_destroy(u.cast(c.GtkWindow, window));
@@ -585,6 +671,7 @@ pub const Controller = struct {
         c.gtk_combo_box_set_active(u.cast(c.GtkComboBox, picker), if (self.selected_repository) |index| @intCast(index) else -1);
     }
     fn renderRows(self: *Controller) void {
+        defer self.updateMutationActions();
         const list = self.list orelse return;
         self.rebuilding = true;
         defer self.rebuilding = false;
@@ -641,7 +728,13 @@ pub const Controller = struct {
     fn fileSelected(_: ?*c.GtkListBox, row: ?*c.GtkListBoxRow, data: ?*anyopaque) callconv(.c) void {
         const self = u.cast(Controller, data.?);
         if (self.rebuilding) return;
-        const index = c.gtk_list_box_row_get_index(row orelse return);
+        const selected = row orelse {
+            self.cancel();
+            self.selected_file = null;
+            self.updateMutationActions();
+            return;
+        };
+        const index = c.gtk_list_box_row_get_index(selected);
         if (index >= 0) self.selectFile(self.page * page_rows + @as(usize, @intCast(index)));
     }
     fn refreshClicked(_: ?*c.GtkButton, data: ?*anyopaque) callconv(.c) void {
@@ -653,6 +746,12 @@ pub const Controller = struct {
     fn stagedClicked(_: ?*c.GtkButton, data: ?*anyopaque) callconv(.c) void {
         u.cast(Controller, data.?).showDiff(true);
     }
+    fn stageFileClicked(_: ?*c.GtkButton, data: ?*anyopaque) callconv(.c) void {
+        u.cast(Controller, data.?).stageSelected();
+    }
+    fn unstageFileClicked(_: ?*c.GtkButton, data: ?*anyopaque) callconv(.c) void {
+        u.cast(Controller, data.?).unstageSelected();
+    }
     fn previousClicked(_: ?*c.GtkButton, data: ?*anyopaque) callconv(.c) void {
         u.cast(Controller, data.?).changePage(false);
     }
@@ -662,9 +761,11 @@ pub const Controller = struct {
 
     /// Test-only bridge. Selection values are zero-based indices; git-select also
     /// accepts "repo:N" / "file:N". Approval answers the actual disclosure dialog,
-    /// never grants trust or bypasses a permit. No fixture mutates Git state.
+    /// never grants trust or bypasses a permit. Mutation acceptance answers only
+    /// the separate, currently visible native snapshot-review dialog.
     pub fn fixture(self: *Controller, action: []const u8, value: []const u8) bool {
         if (!@import("build_options").test_hooks) return false;
+        if (self.mutation.fixture(action, value)) return true;
         if (std.mem.eql(u8, action, "git-probe")) self.probe() else if (std.mem.eql(u8, action, "git-accept")) self.approval.answer(true, null, "") else if (std.mem.eql(u8, action, "git-reject")) self.approval.answer(false, null, "") else if (std.mem.eql(u8, action, "git-close")) self.invalidate() else if (std.mem.eql(u8, action, "git-select-repo")) self.selectRepository(std.fmt.parseInt(usize, value, 10) catch return true) else if (std.mem.eql(u8, action, "git-select-file")) self.selectFile(std.fmt.parseInt(usize, value, 10) catch return true) else if (std.mem.eql(u8, action, "git-select")) {
             if (std.mem.startsWith(u8, value, "repo:")) self.selectRepository(std.fmt.parseInt(usize, value[5..], 10) catch return true) else if (std.mem.startsWith(u8, value, "file:")) self.selectFile(std.fmt.parseInt(usize, value[5..], 10) catch return true);
         } else if (std.mem.eql(u8, action, "git-page")) self.changePage(std.mem.eql(u8, value, "next")) else return false;
@@ -705,6 +806,13 @@ pub const Controller = struct {
             .diff_kind = self.diff_kind,
             .diff = self.diff_text,
             .status = self.message_text,
+            .mutation = self.mutation.probe(),
+            .mutation_state = @tagName(self.mutation.state),
+            .mutation_review = self.mutation.review,
+            .mutation_err = self.mutation.error_name,
+            .mutation_committed = self.mutation.committed,
+            .mutation_job = self.mutation.busy(),
+            .mutation_actions_enabled = if (self.stage_button) |button| c.gtk_widget_get_sensitive(button) != 0 else false,
             .outside = self.outside,
             .skipped = self.skipped,
             .discovery_failures = self.discovery_failures,

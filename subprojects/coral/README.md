@@ -14,9 +14,10 @@ workflows. **The bounded M3 baseline is complete; detected-language automatic
 startup is implemented and validated within its documented limits.** Approved local
 language servers start automatically in trusted, unpaused workspaces and provide
 command-driven features, diagnostics, semantic tags and reviewed edits.
-**M4 Git/review is in progress:** a first read-only native Source Control window
-provides explicit status/refresh and staged/unstaged diff previews, not staging or
-completed M4 acceptance. Next is safe staging with checked index/file snapshots.
+**M4 Git/review is in progress:** the native Source Control window provides
+status/refresh and diff previews plus a second increment of **selected full-file
+staging/unstaging with separate checked review**. No hunks or commits yet; next is
+hunk staging/review, then commits. Current aggregate verification remains pending.
 Agent services remain later work. See the [M3 language guide](docs/WORKBENCH_M3_LANGUAGE.md)
 and [M4 Git guide](docs/WORKBENCH_M4_GIT.md).
 
@@ -238,22 +239,48 @@ excluding snapshots, worker stacks and other storage. Versions advance only on
 successful sync; an oversized-sync failure stops once with a stable error.
 There are no placeholder service panels or full-IDE parity claims.
 
-## Git — first read-only M4 slice, in progress
+## Git — selected full-file staging/unstaging, M4 in progress
 
 Use the **Git** menu or palette: **Git: Source Control…**, **Git: Refresh
-repositories**, **Git: Unstaged diff**, and **Git: Staged diff**. A **separate native
+repositories**, **Git: Unstaged diff**, **Git: Staged diff**, **Git: Stage selected
+file…**, and **Git: Unstage selected file…**. A **separate native
 window**, not a dock or editable Project Diff, shows repository/root selection,
 branch/status, paged paths and noneditable **index → disk / HEAD → index** previews.
 Git requires a trusted workspace **and per-window subprocess disclosure approval**;
-there is no Git execution at startup or in restricted mode.
+there is no Git execution at startup or in restricted mode. The initial read-only
+disclosure does **not** authorize writes or queue a mutation. Select an actual
+Source Control status row, not an editor buffer, then request a separate **FULL FILE,
+NOT HUNKS** review. Complete escaped before/after bytes, existence, modes, byte counts
+and SHA-256 digests must be explicitly approved. Stage replaces that index path with
+captured disk bytes; unstage restores HEAD (or removes the entry when absent).
+**Dirty buffers are allowed, excluded and never saved.**
+
+Worker-only prepare performs no repository writes. Apply requires valid trust,
+generations/selection and the manager operation barrier; it rechecks the full index,
+HEAD/ref, root/Git-dir bindings and selected disk snapshot. Exclusive `index.lock`
+ownership, a verified single-path private-index proposal and stat-cache invalidation
+preserve unrelated logical entries/worktree changes. The target loose blob and its
+directories are fsynced before index publication. Foreign locks are never deleted;
+every attempt consumes approval. Post-publication cancellation is success; final
+Git-directory fsync failure means **published, durability uncertain**, not safe retry.
+Aborted apply may leave an unreachable blob, but never changes worktree files.
+
+Mutation limits: **256 KiB regular UTF-8 text**, **16 MiB index**, and per-side review
+of **256 KiB escaped display / 4,000 lines / 2,048 source bytes per line**. Refusals
+include binary/symlinks, conflicts, sparse/split/v4/extended indexes, staging conversion
+attributes (even explicit `-text`) and enabled/`input` `core.autocrlf`. Packed/alternate-only
+target blobs refuse with `ObjectDurabilityUnavailable`; this is not generic all-repo
+support. Protection assumes cooperative writers, not malicious same-UID processes,
+mount aliases or adversarial refs in the final recheck/publication window.
 
 Discovery probes workspace roots and the active saved file's parent, not every
 nested directory. Repository top-levels outside their owning root are refused.
 `.git` files and existing linked worktrees are supported for reads, **not worktree
 operations**. Limits: **8 repositories, 1 MiB status / 10,000 entries, 128 rows per
 page**; diffs capture at most 1 MiB and preview at most **256 KiB / 4,000 lines /
-2,048 bytes per line**, with **15-second per-command timeouts**. Refresh is manual;
-status/diff are not atomic with external disk/index changes. Unsaved buffers are
+2,048 bytes per line**, with **15-second per-command timeouts**. Inspection refresh
+is manual; attempted mutations invalidate/refresh status. Status/diff are not atomic
+with external disk/index changes. Unsaved buffers are
 excluded and never saved or staged. Rename detection is disabled (add/delete),
 submodule contents excluded, unborn/detached HEAD supported, and invalid UTF-8
 status paths refused.
@@ -264,10 +291,19 @@ diff/textconv and Git protocol access. **Not a sandbox:** repository-local clean
 filters/programs can still execute with user permissions; no guarantee of no
 arbitrary filter writes or network activity is made.
 
-No staging, editable diffs, commits, branch/worktree mutations, remotes, history,
-stashes or conflict resolver yet. **Next: safe staging/index-snapshot validation.**
-See the [Git guide](docs/WORKBENCH_M4_GIT.md) for exact policy, bounds and evidence.
-Final **`test-m4-slice` passed 105/105 steps, exit 0**, with **586/587 Zig tests
+No hunk/selection or batch staging, editable diffs, commits, branch/worktree mutations,
+remotes, history, stashes or conflict resolver yet. **Next: hunk staging/review, then
+commits**; supported-case expansion may be needed. See the
+[Git guide](docs/WORKBENCH_M4_GIT.md) for exact policy, refusals and evidence.
+
+**Second-increment standalone evidence:** `git-index-unit` **26 passed (~4 minutes)**,
+Git pure **27 passed**, final native `.cache/m4-index-native` **46 passed (31 mutation +
+15 prior)**. The earlier original `teardown-root` open-workspace timeout passed on
+isolated and full reruns, **without a fix or relaxed timeout**. **Current final
+aggregate verification remains pending.** `test-m4-slice` now includes the backend
+units as well as pure/native Git and M1/M2/M3 regressions; it is not full M4 acceptance.
+
+**Historical read-only gate:** `test-m4-slice` passed **105/105 steps, exit 0**, with **586/587 Zig tests
 passed / 1 expected non-root trust-test skip** (not a pass), including **27 Git,
 129 language and 340 main-root passes**. Final native Git passed **15/15**;
 language **89 passed / 0 failed / 3 optional blocked** (servers not installed),
@@ -375,11 +411,13 @@ VS Code-style workspace/editor with Zed-style agents and Git workflows.
 The [native foundation status](docs/WORKBENCH_STATUS.md) records implemented
 groups, excerpts, guarded undo, recovery, file monitoring and validation;
 **M2 and the bounded M3 baseline have historical validation. The automatic-language
-increment passed its separate acceptance gates. M4 Git/review has a first read-only
-native slice with its final aggregate, production and existing-workbench visual
-gates passed; M4 is not complete. Production terminal and agent UI remain
+increment passed its separate acceptance gates. M4 Git/review now includes selected
+full-file staging/unstaging; standalone backend/pure/native evidence is recorded,
+but current final aggregate verification remains pending. The read-only aggregate,
+production and existing-workbench visual passes are historical, not acceptance of
+this second increment. M4 is not complete. Production terminal and agent UI remain
 unimplemented**. See the
-[M4 final first-slice validation](docs/WORKBENCH_M4_GIT.md#final-first-slice-validation--passed).
+[M4 verification status](docs/WORKBENCH_M4_GIT.md#second-increment-verification--aggregate-pending).
 Explore the separate [interactive workbench prototype](docs/mockups/workbench/index.html)
 and its [interaction guide](docs/mockups/workbench/README.md). All prototype
 operations stay in memory; they are not native feature evidence.
@@ -428,6 +466,7 @@ zig build language -Doptimize=safe -j1
 zig build language-lifecycle -Doptimize=safe -j1
 zig build test-m3 -Doptimize=safe -j1
 zig build git-unit -Doptimize=safe -j1
+zig build git-index-unit -Doptimize=safe -j1
 zig build git -Doptimize=safe -j1
 zig build test-m4-slice -Doptimize=safe -j1
 zig build widgets -Doptimize=safe -- --aqueous-prefix /usr

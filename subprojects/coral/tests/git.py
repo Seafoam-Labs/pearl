@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""First M4 read-only Git acceptance, in private Wayland/D-Bus/HOME/XDG.
+"""M4 inspection and reviewed index mutation acceptance, in private Wayland/D-Bus/HOME/XDG.
 
   python3 -B tests/git.py --binary /path/to/coral-test --case diff-sides
 
@@ -89,7 +89,7 @@ class GitHarness(WindowHarness):
                             GIT_COMMITTER_NAME='Coral disposable fixture',
                             GIT_COMMITTER_EMAIL='fixture@example.invalid')
 
-    def fixture_git(self, root, *args, expected=0):
+    def fixture_git(self, root, *args, expected=0, input=None):
         # Guard every invocation, including init/commit/worktree destinations.
         root = root.resolve()
         assert root.is_relative_to(self.fixtures.resolve()), root
@@ -99,7 +99,8 @@ class GitHarness(WindowHarness):
                 '-c', 'tag.gpgSign=false', '-c', 'core.fsmonitor=false',
                 '-c', 'core.untrackedCache=false', '-c', 'core.attributesFile=/dev/null',
                 '-c', 'credential.helper=', '-c', 'protocol.allow=never', *map(str, args)]
-        result = subprocess.run(argv, cwd=root, env=self.git_env, stdin=subprocess.DEVNULL,
+        result = subprocess.run(argv, cwd=root, env=self.git_env,
+                                **({'stdin': subprocess.DEVNULL} if input is None else {'input': input}),
                                 capture_output=True, timeout=10, check=False)
         assert result.returncode == expected, (argv, result.returncode, result.stdout, result.stderr)
         self.evidence.setdefault('fixture_git', []).append(
@@ -137,6 +138,9 @@ class GitHarness(WindowHarness):
             after = (path.read_bytes(), path.stat().st_mtime_ns) if path.exists() else None
             assert after == before, ('Git modified index bytes/mtime', path)
             assert not path.with_name(path.name + '.lock').exists(), path
+        if hasattr(self, 'mutation_preservation'):
+            self.mutation_preservation.verify(retired=not self.git()['mutation']['busy']
+                                              if self.app.proc.poll() is None else True)
 
     def remove(self, path):
         path.unlink()
@@ -546,6 +550,9 @@ def pending_teardown(h, mode):
         h.no_criticals()
 
 
+from git_mutations import CASES as MUTATION_CASES
+
+
 CASES = [
     ('gates-restricted', restricted),
     ('gates-decline', decline),
@@ -560,6 +567,7 @@ CASES = [
     ('refresh-unsaved', refresh_unsaved),
     ('paging', paging),
     *[('teardown-' + mode, functools.partial(pending_teardown, mode=mode)) for mode in ('root', 'revoke', 'close')],
+    *MUTATION_CASES,
 ]
 
 
@@ -620,7 +628,9 @@ def main():
         evidence['binary_sha256'] = digest(data)
         evidence['source_sha256'] = {str(path.relative_to(PROJECT)): digest(path.read_bytes())
                                      for path in (Path(__file__).resolve(), PROJECT / 'src/git/controller.zig',
-                                                  PROJECT / 'src/git/command.zig', PROJECT / 'src/git/status.zig')}
+                                                  PROJECT / 'src/git/command.zig', PROJECT / 'src/git/status.zig',
+                                                  PROJECT / 'tests/git_mutations.py', PROJECT / 'src/git/mutation_controller.zig',
+                                                  PROJECT / 'src/git/index_transaction.zig', PROJECT / 'src/git/index_transaction_os.zig')}
         assert all(marker in data for marker in (b'CORAL_GIT ', b'CORAL_WINDOWS ', b'CORAL_COMMAND_DONE')), \
             'Parent must build the integrated src/git native target with test hooks; stale binary refused'
         del data
@@ -647,8 +657,12 @@ def main():
                     scenario(h)
                     h.stop()
                     h.verify_files()
-                    record.update(status='passed', indexes_unchanged=len(h.indexes),
+                    resets = sum(item['case'] == name for item in evidence.get('index_baseline_resets', []))
+                    record.update(status='passed', indexes_verified=len(h.indexes), index_baseline_resets=resets,
+                                  index_expectation='explicit verified mutation baseline' if resets else 'original bytes/mtime',
                                   file_hashes_verified=len(h.expected), sentinels_absent=len(h.sentinels))
+                    if not resets:
+                        record['indexes_unchanged'] = len(h.indexes)
                     print('PASS', name, flush=True)
                 except Exception as exc:
                     record.update(status='failed', error=str(exc), traceback=traceback.format_exc())

@@ -1,9 +1,11 @@
-# M4: first read-only Git slice
+# M4: read-only inspection and selected full-file index changes
 
-**M4 is in progress, not complete.** `src/git` implements explicit repository discovery,
-status and bounded, noneditable staged/unstaged diff previews in a **separate native
-Source Control window**. This is not the planned dock, editable Project Diff or full
-Git/review engine. The next slice is safe staging with checked index/file snapshots.
+**M4 is in progress, not complete.** The second increment adds **selected full-file
+staging/unstaging** to explicit discovery, status and bounded, noneditable diff
+previews in a **separate native Source Control window**. This is not hunk/selection
+staging, commits, the planned dock, editable Project Diff or the full Git/review
+engine. Next is hunk staging/review, then commits; supported-case expansion remains
+relevant because this increment deliberately refuses many repository configurations.
 See [current status](WORKBENCH_STATUS.md) and the [full M4 plan](WORKBENCH_IMPLEMENTATION_PLAN.md#8-zed-style-git-integration).
 
 ## Open Source Control
@@ -16,9 +18,16 @@ Use the **Git** menu or command palette (`Ctrl+Shift+P`):
 | **Git: Refresh repositories** | Explicitly rediscover roots and reload status; if not already approved/open, go through disclosure first. |
 | **Git: Unstaged diff** | For the selected changed file, compare **index → disk**, not the editor buffer. |
 | **Git: Staged diff** | For the selected changed file, compare **HEAD → index** (`git diff --cached`). |
+| **Git: Stage selected file…** | Prepare a separate review replacing one selected index path with its complete captured **disk** contents/mode, or removing it when absent. |
+| **Git: Unstage selected file…** | Prepare a separate review restoring one selected index path from **HEAD**, or removing it when absent from HEAD (including unborn HEAD). |
 
 First approve the workspace through **Workspace: Settings and Trust…**, then accept
 **Continue with read-only Git** in the separate disclosure. Both are required.
+That disclosure authorizes inspection, **not writes**. Invoking a mutation before
+approval only opens disclosure; it does not queue a write or approve a later review.
+Select an actual changed-path row in Source Control and invoke the command again.
+The active editor document is not the mutation target; there is no whole-repository
+fallback.
 There is **no Git execution at startup or in restricted mode**, and declining the
 disclosure launches nothing. Approval is window-local and not persisted; closing
 Source Control or invalidating its workspace/trust clears it. A peer editor window
@@ -26,7 +35,8 @@ must obtain its own approval. Root/trust changes and window shutdown cancel work
 workspace/request generations reject stale callbacks and owned processes are reaped.
 
 The window has a repository/root picker, branch/HEAD/upstream/ahead/behind summary,
-a paged changed-path list, Refresh, and Staged Diff / Unstaged Diff buttons. Each
+a paged changed-path list, Refresh, Staged Diff / Unstaged Diff and Stage file… /
+Unstage file… buttons. Each
 row shows **index status then worktree status**, rather than separate staged and
 unstaged trees. There are no default Git keyboard shortcuts. The preview is a
 read-only text view, not an editable excerpt or split/word-diff surface.
@@ -74,17 +84,103 @@ Oversized captures/previews are refused rather than displayed as complete partia
 results. A selected side with no change in the status snapshot asks for Refresh
 if disk/index state has since changed.
 
-**Refresh is manual.** There are no worktree/index/HEAD/config watchers or periodic
+**Inspection refresh is manual** apart from the explicit post-apply invalidation/
+refresh described below. There are no worktree/index/HEAD/config watchers or periodic
 Git polling. Selecting a repository reads its status; requesting a diff reads that
 side at that time. Status and subsequent diffs are **not an atomic snapshot with
 external disk/index/HEAD changes**. A frozen, noneditable preview is not proof that
 an external Git process has left the index unchanged.
 
-The window shows a count of unsaved documents in its owning editor window; that
-count updates on interaction, not continuously. **Unsaved buffers are excluded.**
-No command here saves, stages or otherwise applies editor text, and no buffer-to-index
-operation exists. Save explicitly through normal editor commands if you want disk
-state to reflect your edits, then Refresh.
+The window shows an unsaved-document count across editor windows; it updates on
+interaction, not continuously, and the review labels its count as captured at
+review creation. **Dirty buffers are allowed, excluded and never saved.** No command
+here stages editor text and no buffer-to-index operation exists. Saving is optional:
+only save explicitly if you want disk state to reflect your edits, then Refresh.
+Pending loads/saves/reloads and manager-wide operation admission can still block a
+mutation; allowing dirty buffers is not permission to race an in-flight save.
+
+## Selected full-file review and publication
+
+1. **Prepare on a worker, with no repository writes.** Capture the full index and
+   selected disk file, HEAD and resolved branch ref/packed refs, root/Git/common-dir
+   identities and `.git`/`commondir` binding witnesses. Private scratch-index writes
+   live outside the repository. HEAD, index, disk and unsaved buffers stay distinct.
+2. **Approve a separate complete review.** Scrollable, noneditable before/after
+   panes show the entire captured bytes with escaped controls/backslashes and LF
+   markers, existence, modes, byte counts and SHA-256 digests of the original bytes.
+   Empty and absent are distinct. This explicitly says **FULL FILE, NOT HUNKS**;
+   staging replaces any partial staging of this selected path with the reviewed
+   disk version, while unstaging restores HEAD. Other paths are not selected.
+   Cancel is the default. Over-budget review is refused, never truncated approval.
+3. **Revalidate before apply.** Current trust/permit, workspace/request generations,
+   root and actual repository/row/page selection must still match. A manager-wide
+   file-operation barrier is acquired for the index before dispatching worker apply
+   and held through worker cleanup/delivery. Root/trust/selection/close invalidation
+   cancels work; stale preparation cannot become approval.
+4. **Publish only the checked single-path proposal.** Acquire `index.lock` with
+   exclusive creation; never delete a foreign/replaced lock. Recheck snapshots and
+   conversion policy under the lock. Stage hashes captured bytes with `--no-filters`;
+   unstage uses the captured HEAD entry. Update a private index and verify that all
+   unrelated logical entries (paths, modes and object IDs) remain unchanged. Clear
+   filesystem stat caches both before using the private copy and before publication,
+   preventing racy-clean entries from hiding unrelated worktree changes. Subsequent
+   Git refreshes may therefore perform extra disk reads.
+5. **Durability before publication.** For a non-deletion, fsync the selected local
+   loose blob, its prefix directory and the objects directory. Write/fsync the index
+   lock, recheck full snapshots, bindings and lock ownership, then atomically rename
+   it over the index and fsync the Git directory. An unrelated external index change
+   invalidates the whole review rather than being overwritten or merged implicitly.
+
+Every apply attempt **consumes its review**, even on failure: retry requires new
+preparation and approval. Attempted applies invalidate status/diff and refresh when
+the controller remains valid. Cancellation after index publication is **success**,
+not rollback; a post-publication directory-fsync failure reports **committed, durability
+uncertain** and must not be blindly retried. Here “committed” means index publication,
+**not a Git commit**. An aborted pre-publication apply can leave an unreachable blob;
+it does not publish the index or change worktree files. Cleanup may leave an owned
+lock if its identity cannot be verified rather than risk deleting a foreign lock.
+
+This protects against **cooperative Git writers**, not malicious same-UID processes,
+mount aliases or adversarial ref changes in the final recheck-to-rename window.
+HEAD/refs are checked, not locked into a cross-ref/index transaction. Linux `/proc`
+and descriptor-based bindings are required; this is not a claim of support for all
+repositories.
+
+## Mutation support and refusals
+
+- Selected regular UTF-8 text only: modes `100644`/`100755`, including additions,
+  modifications, deletions and mode changes; absent index/unborn and detached HEAD,
+  SHA-1/SHA-256 and checked `.git` file/linked-worktree bindings are handled within
+  the other restrictions. `core.filemode=false` preserves an existing index mode
+  (new files use `100644`). No checkout or worktree-management operation occurs.
+- **256 KiB per file/blob** in the backend. Disk is captured and checked even for
+  unstage; binary (NUL), non-UTF-8, symlinks/nonregular files and oversized selected
+  disk/index/required HEAD contents are refused. Paths are bounded to 4,095 bytes
+  and 64 components, with unsafe components and `.git` components refused.
+- Review additionally requires **256 KiB escaped display per side, 4,000 lines,
+  2,048 source bytes per line**. Backend acceptance alone does not authorize an
+  incomplete UI review.
+- Staging refuses conversion attributes `filter`, `text`, `eol`,
+  `working-tree-encoding`, `ident` and `crlf` when explicitly present, **including
+  `-text` and `-filter`**. `core.autocrlf` must be absent or false; true and `input`
+  fail closed. Mutation policy retains configured `core.attributesFile` for this
+  check rather than silently suppressing it. These staging conversion checks are
+  not an unstage conversion pipeline: unstage restores raw HEAD bytes.
+- Full index bound: **16 MiB**. Only v2/v3 without unsupported flags/features:
+  sparse/split indexes, v4, assume-unchanged, extended flags (including skip-worktree
+  and intent-to-add), sparse-directory entries and unknown mandatory extensions
+  are refused. Conflicts **anywhere in the index** refuse the transaction. Selected
+  symlink/submodule/tree entries are unsupported. Non-files ref storage, symbolic
+  HEAD outside `refs/heads/`, and chained symbolic branch refs are refused.
+- Every non-deletion requires a syncable **local loose target blob**. If the blob
+  to be referenced by the new index is available only in packs or alternates,
+  apply refuses with **`ObjectDurabilityUnavailable`**, including when `hash-object`
+  reuses a packed object or unstage restores a packed-only HEAD blob. It does not
+  unpack/copy objects as a fallback. Other packed objects do not by themselves
+  imply refusal. Object fsync failures also prevent publication.
+- Stale bytes/metadata/existence/bindings, an existing or replaced index lock,
+  pending editor operations and invalid trust/generations cause refusal or
+  cancellation, not an unchecked fallback. A fresh review is required after repair.
 
 ## Bounds and process policy
 
@@ -99,6 +195,8 @@ state to reflect your edits, then Refresh.
 | Refresh capture budget | 4 MiB across discovery and initial status; repository selection or a diff request resets its budget to 1 MiB |
 | Diff capture | 1 MiB, before the stricter text-preview checks |
 | Text diff preview | 256 KiB, 4,000 lines, 2,048 bytes per line; no partial preview |
+| Mutation file/blob / full index | 256 KiB / 16 MiB |
+| Mutation review, per side | 256 KiB escaped display, 4,000 lines, 2,048 source bytes per line; no partial approval |
 | Git job | One active job per controller; 15-second timeout per command, not a whole-refresh deadline |
 
 Requires **Git 2.31+ at `/usr/bin/git`**; there is no PATH-based executable selection
@@ -117,8 +215,9 @@ supervisor, not a shell. `src/git/command.zig` defines the fixed policy:
   and `GIT_CONFIG_GLOBAL`; terminal prompts disabled, askpass/SSH executables set
   to `/bin/false`, protocols disallowed, lazy fetch and optional locks disabled.
 
-**This is not an OS sandbox or a guarantee of no writes/network access.** Coral
-requests no index mutations, hooks or network operations, and disables the named
+**This is not an OS sandbox or a guarantee of no writes/network access.** Inspection
+requests no index mutations; separately approved selected-file apply does. Neither
+requests hooks or network operations. Coral disables the named
 helper/diff mechanisms. Repository-local configuration and attributes still matter:
 clean filters or other repository-selected programs can execute with the user's
 permissions, write files or access the network independently of Git's protocol
@@ -126,23 +225,49 @@ policy. `--no-ext-diff` and `--no-textconv` do not disable clean filters. Trust 
 per-window disclosure are required precisely because “read-only Git” describes
 Coral's requested operations, not all possible subprocess side effects.
 
-## Not delivered; next safe slice
+## Not delivered; next slice
 
-No staging/unstaging (file, hunk or selection), editable or multi-file diffs, commits,
-branch/tag operations, worktree mutations, remotes/fetch/pull/push, blame/history,
-stash operations, merge/rebase controls or conflict resolver are implemented. The
-existing linked-worktree reads do not deliver those planned worktree operations.
-There is no source-control dock/layout parity or external-change atomicity claim.
+No hunk/selection or batch/all-file staging/unstaging, editable or multi-file diffs,
+commits, branch/tag operations, worktree mutations, remotes/fetch/pull/push,
+blame/history, stash operations, merge/rebase controls or conflict resolver are
+implemented. Existing linked-worktree support does not deliver worktree management.
+There is no source-control dock/layout parity or general external-change atomicity
+claim. **Next: hunk staging/review, then commits**, with supported-case expansion as
+needed. Future hunk operations must preserve partial staging and refuse races,
+never fall back to whole-file staging or silently save buffers.
 
-**Next: safe staging and index-snapshot validation**, before claiming mutation
-support. Keep HEAD, index, disk and unsaved buffer states distinct; bind the reviewed
-bytes to checked index/file identities, revalidate immediately before applying a
-scoped operation, and refresh/refuse on races. Never fall back from a failed hunk
-operation to staging the whole file, silently save an unsaved buffer, or stage bytes
-different from the reviewed snapshot. Partial-stage preservation and external-index
-race tests remain M4 acceptance work, not evidence supplied by this read-only slice.
+## Second-increment verification — aggregate pending
+
+Recorded standalone results supplied for this increment:
+
+| Evidence | Result |
+| --- | --- |
+| `git-index-unit` | **26 passed**, approximately **4 minutes**; disposable-repository transaction backend tests. |
+| `git-unit` | **27 passed**; pure parser/display/command-policy root. |
+| Final native report, `.cache/m4-index-native` | **46 passed**: **31 new mutation + 15 prior inspection** cases. |
+
+The earlier original `teardown-root` open-workspace timeout is retained as a failed
+attempt; it subsequently passed both isolated and in the full native run. **No code
+fix or relaxed timeout** is credited for those retries. Counts are not additive
+unique coverage. **Paused at the user's request: the aggregate was interrupted,
+and the user requested skipping the remaining regressions. They are not verified,
+not passing results.** No automatic rerun is planned during this pause.
+
+Before interruption, `pearl/.cache/coral-m4-index-gate.log` recorded **46/46 native
+Git cases**, **89 native language passes / 3 optional blocked**, a passing widget
+suite, **25/25 fake-server fixture tests**, and **18/18 workspace compatibility
+groups**. The last logged case was `canonical_symlink_save_reservation_alias` in
+the multi-window suite. There is no final aggregate build summary. Current
+hooks-disabled production and separate visual qualification are also not claimed.
+Do not promote the historical gate below to current-increment acceptance.
+
+Resume checkpoint: selected full-file Stage/Unstage and review are implemented;
+no hunk staging or commits are enabled. The next implementation slice is hunk
+review/staging, with this explicitly unverified regression remainder carried forward.
 
 ## Final first-slice validation — passed
+
+**Historical read-only increment only; not validation of the second increment.**
 
 **The final `test-m4-slice` passed 105/105 steps, exit 0**, with **586/587 Zig tests
 passed and 1 skipped**, in the [aggregate log](../../../.cache/coral-m4-readonly-gate.log).
@@ -198,23 +323,29 @@ From `subprojects/coral/`:
 
 ```sh
 zig build git-unit -Doptimize=safe -j1
+zig build git-index-unit -Doptimize=safe -j1
 zig build git -Doptimize=safe -j1 -- --aqueous-prefix /usr
 zig build test-m4-slice -Doptimize=safe -j1 --summary all
 ```
 
-`git-unit` uses `src/git_tests.zig`; `git` uses the private native `tests/git.py`
-harness and its instrumented binary. `/usr` is this host's installed test-tool
+`git-unit` uses `src/git_tests.zig`; `git-index-unit` uses `src/git_index_tests.zig`
+for the backend. `git` uses the private native `tests/git.py` harness, its
+`tests/git_mutations.py` cases and instrumented binary. `/usr` is this host's installed test-tool
 prefix; use a prepared fixture prefix on other hosts. The harness uses disposable
 repositories/private Wayland, D-Bus and HOME/XDG state, not the user's repository;
 fixture setup commits/stages only inside those disposable repositories. Its bounded
 clean-filter cancellation cases deliberately exercise the disclosed helper boundary,
 not a sandbox guarantee.
 
-`test-m4-slice` composes **Git units + native Git + `test-m3`**, which includes the
-M1/M2 regressions. It is the **first read-only slice's gate**, not completed M4
-acceptance and not validation of staging, commits or the other future operations.
+`test-m4-slice` now composes **Git pure units + index-transaction backend units +
+native inspection/mutation Git + `test-m3`**, including M1/M2 regressions. It covers
+the implemented inspection/index increments, **not full M4 acceptance**, hunk staging
+or commits. Its current aggregate result remains pending.
 
 Implementation map: `src/git/status.zig` (bounded parser/labels),
-`src/git/command.zig` (argv/environment/preview policy), `src/git/controller.zig`
-(window, discovery, snapshots and lifetime), with App/workspace-policy and
-menu/palette integration in their existing modules.
+`src/git/command.zig` (inspection argv/environment/preview policy),
+`src/git/controller.zig` (window, discovery, selection, snapshots and lifetime),
+`src/git/mutation_controller.zig` (review, admission/barrier and worker lifecycle),
+`src/git/index_transaction.zig` and `src/git/index_transaction_os.zig` (checked
+single-path publication and Linux descriptor boundary), with App/workspace-policy
+and menu/palette integration in their existing modules.

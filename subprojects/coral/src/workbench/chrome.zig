@@ -258,7 +258,7 @@ const Category = enum {
 fn category(command: commands.Command) Category {
     return switch (command) {
         .new, .open, .save, .save_as, .reload, .close => .file,
-        .git_status, .git_refresh, .git_diff, .git_staged_diff => .git,
+        .git_status, .git_refresh, .git_diff, .git_staged_diff, .git_stage, .git_unstage => .git,
         .language_start, .language_stop, .language_restart, .language_status, .language_completion, .language_hover, .language_signature, .language_definition, .language_declaration, .language_type_definition, .language_implementation, .language_references, .language_document_symbols, .language_workspace_symbols, .language_problems, .language_formatting, .language_range_formatting, .language_rename, .language_code_actions, .language_semantic_tokens, .language_inlay_hints, .language_code_lenses, .language_document_links => .language,
         .find, .goto_line, .spelling, .excerpt, .grouped_undo, .grouped_redo => .edit,
         .open_folder, .open_workspace, .workspace_roots, .workspace_back, .workspace_rescan, .close_workspace, .quick_open, .workspace_search, .workspace_policy, .workspace_trust, .workspace_revoke, .save_workspace_session, .restore_workspace_session, .create_workspace_file, .create_workspace_directory, .rename_workspace_entry, .move_workspace_entry, .delete_workspace_entry, .recent_projects, .forget_project_session, .add_workspace_root, .remove_workspace_root, .save_workspace_as => .workspace,
