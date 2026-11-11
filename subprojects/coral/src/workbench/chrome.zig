@@ -14,6 +14,8 @@ pub const Chrome = struct {
     workspace_status: u.W,
     trust_button: u.W,
     trust_label: u.W,
+    language_button: u.W,
+    language_label: u.W,
     open_button: ?u.W = null,
     save_button: ?u.W = null,
 
@@ -67,9 +69,15 @@ pub const Chrome = struct {
         c.gtk_widget_add_css_class(trust_button, "status-trust");
         const trust_label = compactLabel("", 24);
         c.gtk_button_set_child(u.cast(c.GtkButton, trust_button), trust_label);
-        c.gtk_widget_set_tooltip_text(trust_button, i18n.dtr("coral", "Workspace settings and trust; no executable features enabled"));
+        c.gtk_widget_set_tooltip_text(trust_button, i18n.dtr("coral", "Workspace settings and trust; language servers require explicit trusted start"));
         c.gtk_actionable_set_action_name(u.cast(c.GtkActionable, trust_button), commands.Command.workspace_policy.metadata().detailed_action);
         u.append(footer, trust_button);
+        const language_button = c.gtk_button_new().?;
+        c.gtk_widget_add_css_class(language_button, "flat");
+        const language_label = compactLabel("Language: off", 20);
+        c.gtk_button_set_child(u.cast(c.GtkButton, language_button), language_label);
+        c.gtk_actionable_set_action_name(u.cast(c.GtkActionable, language_button), commands.Command.language_status.metadata().detailed_action);
+        u.append(footer, language_button);
         return .{
             .workspace_button = workspace_button,
             .workspace_label = workspace_label,
@@ -78,6 +86,8 @@ pub const Chrome = struct {
             .workspace_status = workspace_status,
             .trust_button = trust_button,
             .trust_label = trust_label,
+            .language_button = language_button,
+            .language_label = language_label,
         };
     }
 
@@ -115,6 +125,11 @@ pub const Chrome = struct {
         };
         u.setLabel(self.trust_label, trust_text);
         c.gtk_widget_set_visible(self.trust_button, @intFromBool(app.browser.model != null));
+        u.setLabel(self.language_label, app.language.summary());
+        const language_tip = u.fmt("{s}\n{s}", .{ app.language.status, app.language.progress });
+        defer u.a.free(language_tip);
+        c.gtk_widget_set_tooltip_text(self.language_button, language_tip);
+        c.gtk_widget_set_visible(self.language_button, @intFromBool(width >= 760));
     }
 };
 
@@ -222,6 +237,7 @@ const Category = enum {
     file,
     edit,
     workspace,
+    language,
     view,
     window,
 
@@ -230,6 +246,7 @@ const Category = enum {
             .file => i18n.dtr("coral", "File"),
             .edit => i18n.dtr("coral", "Edit"),
             .workspace => i18n.dtr("coral", "Workspace"),
+            .language => i18n.dtr("coral", "Language"),
             .view => i18n.dtr("coral", "View"),
             .window => i18n.dtr("coral", "Window"),
         };
@@ -239,6 +256,7 @@ const Category = enum {
 fn category(command: commands.Command) Category {
     return switch (command) {
         .new, .open, .save, .save_as, .reload, .close => .file,
+        .language_start, .language_stop, .language_restart, .language_status, .language_completion, .language_hover, .language_signature, .language_definition, .language_declaration, .language_type_definition, .language_implementation, .language_references, .language_document_symbols, .language_workspace_symbols, .language_problems, .language_formatting, .language_range_formatting, .language_rename, .language_code_actions, .language_semantic_tokens, .language_inlay_hints, .language_code_lenses, .language_document_links => .language,
         .find, .goto_line, .spelling, .excerpt, .grouped_undo, .grouped_redo => .edit,
         .open_folder, .open_workspace, .workspace_roots, .workspace_back, .workspace_rescan, .close_workspace, .quick_open, .workspace_search, .workspace_policy, .workspace_trust, .workspace_revoke, .save_workspace_session, .restore_workspace_session, .create_workspace_file, .create_workspace_directory, .rename_workspace_entry, .move_workspace_entry, .delete_workspace_entry, .recent_projects, .forget_project_session, .add_workspace_root, .remove_workspace_root, .save_workspace_as => .workspace,
         .split_group, .focus_next_group, .focus_previous_group, .close_group, .toggle_explorer, .toggle_search, .focus_explorer, .focus_search, .focus_editor, .hide_panel, .dock_left, .dock_right, .dock_bottom, .reset_docks, .dock_grow, .dock_shrink, .next_tab, .previous_tab, .open_buffers => .view,
@@ -249,7 +267,7 @@ fn category(command: commands.Command) Category {
 pub fn populateMenu(menu: *c.GMenu) void {
     // The palette remains flat/searchable; menu subpages retain every stable action.
     c.g_menu_append(menu, commands.Command.command_palette.label(), commands.Command.command_palette.metadata().detailed_action);
-    for ([_]Category{ .file, .edit, .workspace, .view, .window }) |section| {
+    for ([_]Category{ .file, .edit, .workspace, .language, .view, .window }) |section| {
         const submenu = c.g_menu_new().?;
         defer c.g_object_unref(submenu);
         for (commands.entries) |entry| {

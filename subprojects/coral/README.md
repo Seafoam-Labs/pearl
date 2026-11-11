@@ -10,7 +10,10 @@ and scratch-window snapshots, ordinary multi-window startup, native recent-proje
 and buffer pickers, and reviewed workspace-root management complete **M2 implementation**
 for the bounded workspace preview. Explicit saved checkpoints remain separate.
 Reviewed Explorer operations provide bounded create/rename/move/permanent-delete
-workflows. **M3 is next**; LSP, Git and agent services remain later work.
+workflows. **Bounded M3 language intelligence is implemented and validated: COMPLETE.**
+Explicitly started local language servers provide native commands, diagnostics,
+semantic tags and reviewed edits. **Next: M4 Git/review, not started.** Agent services
+remain later work. See the [M3 language guide](docs/WORKBENCH_M3_LANGUAGE.md).
 
 ![Native Coral editor](artifacts/native/editor-dark.png)
 
@@ -170,6 +173,45 @@ recovery still restores documents/layout but not roots; automatic projects and e
 checkpoints are separate mechanisms. See [workspace usage](docs/WORKBENCH_M2_WORKSPACES.md)
 and the [M2 acceptance audit and validation checkpoint](docs/WORKBENCH_M2_ACCEPTANCE.md).
 
+## Language intelligence — bounded M3 complete and validated
+
+Open a saved file in a workspace, explicitly approve **Workspace: Settings and
+Trust…**, then choose **Language: Start…** from the menu or **Ctrl+Shift+P** palette
+and confirm the executable/arguments/environment/root. Trust, file opening and
+project restoration **do not auto-start servers**. The default is exactly
+**`/usr/bin/zls` (tested ZLS 0.17.0 with Zig 0.17.1)**. Optional user-owned configuration
+is **`~/.config/coral/languages.json`**, not repository settings; checked config
+parents must not be symlinks and identity checks require filesystem birth time.
+A server has user-level filesystem/network permissions, **not an OS sandbox**.
+No automatic downloads or installation are provided.
+
+The **Language:** commands cover completion, hover, signature help,
+definition/declaration/type definition/implementation, references, document and
+workspace symbols, Problems, document/selection formatting, rename and code
+actions, plus Start/Stop/Restart/Status. Semantic tokens have real full/delta native
+tags with **manual refresh**; inlay hints use a **position picker, not inline hints**.
+Code-lens/server commands and external HTTP(S) links require separate confirmation.
+Problems aggregates **synchronized open documents** across this window's sessions.
+There is one session per owning root/language, up to **eight per window**.
+
+Navigation and edits stay within the session's **same owning root**, so external
+dependency/standard-library and peer-root navigation are refused. Text changes are
+reviewed, revision-checked **grouped undo transactions with no autosave**. A single
+standalone create/rename/move/delete resource proposal instead uses the reviewed
+Explorer worker for a **real disk mutation with no undo**; mixed/batch operations,
+overwrite, ignore options and recursion are refused. Static filtered did-file
+notifications are supported, not dynamic registration or will-operation requests.
+
+**Snippet support is advertised false.** Defensive flattening of unsolicited safe
+snippet syntax is not interactive snippets; those remain M8 advanced editing.
+Unknown/unconfigured languages and excerpt-origin service requests are refused.
+See the [complete commands, configuration, lifecycle/size limits and evidence](docs/WORKBENCH_M3_LANGUAGE.md),
+including the native **8 MiB input / 4 MiB output queues per session** and separate
+4 MiB protocol-message limit. Eight sessions reserve at most **96 MiB in queues**,
+excluding snapshots, worker stacks and other storage. Versions advance only on
+successful sync; an oversized-sync failure stops once with a stable error.
+There are no placeholder service panels or full-IDE parity claims.
+
 ## Implemented
 
 - Editable, reorderable document tabs; new/open/save/Save As; file arguments;
@@ -263,7 +305,8 @@ The [workbench expansion plan](docs/WORKBENCH_IMPLEMENTATION_PLAN.md) targets a
 VS Code-style workspace/editor with Zed-style agents and Git workflows.
 The [native foundation status](docs/WORKBENCH_STATUS.md) records implemented
 groups, excerpts, guarded undo, recovery, file monitoring and validation;
-**M2 implementation is complete; M3 is next. LSP, Git, production terminal and agent UI are not implemented yet**.
+**M2 and bounded M3 are implemented and validated. Next is M4 Git/review, not started.
+Git, production terminal and agent UI are not implemented yet**.
 Explore the separate [interactive workbench prototype](docs/mockups/workbench/index.html)
 and its [interaction guide](docs/mockups/workbench/README.md). All prototype
 operations stay in memory; they are not native feature evidence.
@@ -307,17 +350,49 @@ zig build roots -Doptimize=safe -j1
 zig build test-m2-projects -Doptimize=safe -j1
 zig build test-m2-roots -Doptimize=safe -j1
 zig build test-m2 -Doptimize=safe -j1
+zig build language-unit -Doptimize=safe -j1
+zig build language -Doptimize=safe -j1
+zig build language-lifecycle -Doptimize=safe -j1
+zig build test-m3 -Doptimize=safe -j1
 zig build widgets -Doptimize=safe -- --aqueous-prefix /usr
 ```
 
 `/usr` is the installed-tool prefix used for this host's foundation validation;
 use the prepared fixture prefix on other setups. See the [status report](docs/WORKBENCH_STATUS.md#validation-completed)
 for all commands and current acceptance limits. `test-m2` composes the prior nine
-aggregate gates plus projects and roots, including M1 regressions. Current confirmed
-project/root evidence is **25/25 projects and 18/18 roots**, with the nine prior gates
+aggregate gates plus projects and roots, including M1 regressions. Confirmed
+historical M2 project/root evidence is **25/25 projects and 18/18 roots**, with the nine prior gates
 rerun successfully (**198 widgets** in each widget-including gate). Exact coverage,
 the retained widget-timeout/retry caveat and the final consolidated run's checkpoint
 are in the [M2 acceptance audit](docs/WORKBENCH_M2_ACCEPTANCE.md).
+
+**Final frozen-source M3 validation passed after the queue/sync fix:**
+`zig build test-m3 -Doptimize=safe -j1 --summary all` completed **99/99 steps**, exit 0,
+in **28m23.163s** within a 40-minute bound (**36 fresh successful / 63 cached steps**).
+The main Zig root passed **334 fresh tests**; nine other runners were cached,
+including the five pure language suites already run directly and freshly:
+**102 tests = 16 protocol + 20 transport + 36 client + 27 features + 3 file-operation**.
+All **17 Python harness/fixture invocations ran fresh**: **75 mandatory language
+cases passed / three optional blocked** (clangd, TypeScript, Python), **20 lifecycle
+groups**, **271 M1/M2 native groups**, **204 widgets in 42.099s**, and **25 fixture tests**.
+Five capacity cases cover full/incremental 128 KiB and 1 MiB Unicode synchronization
+and oversized-message stable-error handling. Counts overlap, not unique-test totals.
+
+Hooks-disabled production passed **46/46 steps** (**three fresh / 43 cached**), with
+fresh executable compilation in **30.053s**. Separate visuals passed **16 cases plus
+four font-ratio checks before the final queue/sync-only change**, not on the final
+binary; a secondary-panel footer still ellipsizes/clips at 390px. Native harness
+reaping assertions passed, but no final baseline cleanup scan was done. Observed
+fake-server end-to-end samples of **67–133ms** are not paint latency or validation of
+the unmeasured **50ms** target.
+
+See [definitive M3 logs, binary hashes and retained earlier failures](docs/WORKBENCH_M3_LANGUAGE.md#final-validation-passed).
+`pearl/.cache/coral-m3-complete.log` is authoritative, not earlier `full`, `final`
+or pre-capacity `accepted` attempts. The missing-root diagnostic/menu assertions
+and lifecycle transcript cross-run contamination were corrected; their history
+remains documented. Latest native results now contain the complete **75/0/3** matrix,
+with retained `run-r_olc__s` evidence. Tests use private local fixtures, no downloads
+or network-service tests.
 
 **Historical file-operation-increment final validation passed:**
 all **25 native scenarios together**, all **nine aggregate gates** sequentially with
@@ -331,14 +406,14 @@ leaked test-session processes were reported. See the [operations validation](doc
 [gate logs](../../.cache/coral-operations-validation-logs/),
 [production log](../../.cache/coral-operations-validation-logs/final-build.log) and
 [native results](../../.cache/coral-operations/results.json). Those counts describe that
-increment, not the current complete M2 validation campaign.
+increment, not the current M3 validation campaign.
 
 The [original plan](docs/IMPLEMENTATION_PLAN.md), [interactive mockup](docs/mockups/index.html),
 and [mockup gallery](docs/mockups/README.md) remain design references. They do
 not replace the native test evidence.
 
 Unlimited session history, cross-window tab transfer, remote files, legacy encodings,
-grammar checking, project tooling and plugins are outside this preview. The user accepted M0's
+grammar checking, general build/debug tooling and plugins are outside this preview. The user accepted M0's
 bounded-editor tradeoffs to proceed to M2. Full giant-line rendering remains
 unsupported and original input-to-paint targets remain unverified; acceptance
 does not change the recorded measurements.

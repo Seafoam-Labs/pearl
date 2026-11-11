@@ -66,6 +66,13 @@ pub fn build(b: *std.Build) void {
     const tests = b.addTest(.{ .root_module = tm });
     const test_step = b.step("test", "Test file format, revisions, Unicode tokenization and real GIO saves");
     test_step.dependOn(&b.addRunArtifact(tests).step);
+    // Protocol/interactive-process fixtures run separately from GTK/GIO workers.
+    const language_units = b.step("language-unit", "Test bounded LSP framing, Unicode, transport, lifecycle and edit planning");
+    inline for (.{ "src/language/protocol_tests.zig", "src/transport_tests.zig", "src/language_tests.zig", "src/language/features_test.zig", "src/language/file_operations.zig" }) |path| {
+        const module = b.createModule(.{ .root_source_file = b.path(path), .target = target, .optimize = optimize, .link_libc = true });
+        const artifact = b.addTest(.{ .root_module = module });
+        language_units.dependOn(&b.addRunArtifact(artifact).step);
+    }
     // Trust concurrency tests fork; isolate them from the GIO tests' worker pool.
     const trust_module = createModule(b, .{ .root_source_file = b.path("src/workspace/trust_test.zig"), .target = target, .optimize = optimize, .link_libc = true });
     const trust_tests = b.addTest(.{ .root_module = trust_module });
@@ -213,6 +220,18 @@ pub fn build(b: *std.Build) void {
     b.step("visual", "Capture and test native M2 workbench visuals in private Wayland sessions").dependOn(&visual.step);
     const m2 = b.step("test-m2", "Run complete bounded M2 acceptance, including M1 regressions");
     for ([_]*std.Build.Step{ m1, m2_slice, m2_explorer, m2_search, m2_policy, m2_sessions, m2_docks, m2_windows, m2_operations, m2_projects, m2_roots }) |gate| m2.dependOn(gate);
+
+    const language = b.addSystemCommand(&.{ native_python, "tests/language.py", "--binary" });
+    language.addArtifactArg(ie);
+    language.addPassthruArgs();
+    b.step("language", "Run private native LSP workflows and pinned real-ZLS acceptance").dependOn(&language.step);
+    const language_lifecycle = b.addSystemCommand(&.{ native_python, "tests/workspace/policy_lifecycle.py", "--binary" });
+    language_lifecycle.addArtifactArg(ie);
+    language_lifecycle.addPassthruArgs();
+    b.step("language-lifecycle", "Verify saves preserve language sessions and identity changes revoke them").dependOn(&language_lifecycle.step);
+    const language_fixture = b.addSystemCommand(&.{ native_python, "tests/fixtures/fake_lsp.py", "--self-test" });
+    const m3 = b.step("test-m3", "Run M3 protocol, native language and complete M1/M2 regression acceptance");
+    for ([_]*std.Build.Step{ language_units, &language.step, &language_lifecycle.step, &language_fixture.step, m2 }) |gate| m3.dependOn(gate);
 
     const bm = createModule(b, .{ .root_source_file = b.path("src/benchmark_m0.zig"), .target = target, .optimize = optimize, .link_libc = true });
     for ([_][]const u8{ "gtk4", "gtksourceview-5", "enchant-2" }) |lib| bm.linkSystemLibrary(lib, .{ .use_pkg_config = .yes });

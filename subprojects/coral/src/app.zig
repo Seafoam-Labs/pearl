@@ -60,6 +60,7 @@ pub const App = struct {
     browser: WorkspaceController = undefined,
     workspace_search: WorkspaceSearch = undefined,
     workspace_policy: WorkspacePolicy = undefined,
+    language: @import("language/controller.zig").Controller = undefined,
     session: WorkspaceSession = undefined,
     workspace_operations: WorkspaceOperations = undefined,
     workspace_roots: @import("workspace/roots_controller.zig").Controller = undefined,
@@ -237,6 +238,7 @@ pub const App = struct {
         self.workspace_search.mode = .text;
         self.workspace_search.view.setMode(.text);
         c.gtk_widget_set_visible(self.workspace_search.view.panel, 1);
+        self.language = .init(self);
         self.browser = WorkspaceController.init(self, self.dock.explorer_slot);
         self.browser.attach();
         self.dock.attach();
@@ -339,6 +341,7 @@ pub const App = struct {
         self.browser.deinit();
         self.workspace_policy.deinit();
         self.workspace_search.deinit();
+        self.language.deinit();
         self.workspace.close();
         if (self.timer != 0) _ = c.g_source_remove(self.timer);
         if (self.checkpoint_idle != 0) _ = c.g_source_remove(self.checkpoint_idle);
@@ -1346,6 +1349,7 @@ pub const App = struct {
     }
     pub fn acceptExisting(self: *App, canonical: []const u8) void {
         if (self.editingFrozen() or self.rejectFileOperationBarrier() or self.workspaceOperationBusy()) return;
+        self.language.acceptedOpen(canonical);
         if (self.documents.findPath(canonical)) |d| {
             self.focus(d);
             return;
@@ -1409,6 +1413,7 @@ pub const App = struct {
     /// advisory: callbacks retain their holds/resources and still finish.
     /// The caller must reestablish watches/loads for any retained documents.
     pub fn invalidateWorkspaceAsync(self: *App) void {
+        self.language.invalidate();
         self.workspace_search.invalidate("Stale — document lifecycle changed. Refresh required.");
         self.workspace.invalidate();
         for (self.documents.entries.items) |d| {
@@ -1507,6 +1512,7 @@ pub const App = struct {
         self.invalidate(d);
         self.update();
         self.workspace_search.afterLoad(d);
+        self.language.documentLoaded(d);
     }
     fn save(self: *App, d: *Document, save_as: bool, force: bool) void {
         if (self.rejectFileOperationBarrier() or self.workspaceOperationBusy()) {
@@ -1722,6 +1728,7 @@ pub const App = struct {
         self.ask(.close_without_session, null, "Close without retaining this automatic session?", detail, &.{ .{ .text = "Cancel", .id = 0 }, .{ .text = "Close without automatic session", .id = 1 } });
     }
     fn remove(self: *App, d: *Document) void {
+        self.language.closed(d);
         self.workspace_search.documentChanged(d);
         self.hidePopover();
         var excerpt_index: usize = 0;
@@ -1763,6 +1770,7 @@ pub const App = struct {
             self.workspace_operations.shutdown();
         }
         self.closing = true;
+        self.language.invalidate();
         self.dock.shutdown();
         self.session.shutdown();
         self.workspace_policy.shutdown();
@@ -1998,6 +2006,29 @@ pub const App = struct {
         if (self.dialog != null or self.workspaceOperationBusy() or self.editingFrozen()) return;
         if (self.manager) |manager| if (manager.quitting) return;
         switch (command) {
+            .language_start => self.language.startDialog(),
+            .language_stop => self.language.stop(),
+            .language_restart => self.language.restart(),
+            .language_status => self.language.showStatus(),
+            .language_problems => self.language.problems(),
+            .language_completion => self.language.request(.completion),
+            .language_hover => self.language.request(.hover),
+            .language_signature => self.language.request(.signature),
+            .language_definition => self.language.request(.definition),
+            .language_declaration => self.language.request(.declaration),
+            .language_type_definition => self.language.request(.type_definition),
+            .language_implementation => self.language.request(.implementation),
+            .language_references => self.language.request(.references),
+            .language_document_symbols => self.language.request(.document_symbols),
+            .language_workspace_symbols => self.language.request(.workspace_symbols),
+            .language_formatting => self.language.request(.formatting),
+            .language_range_formatting => self.language.request(.range_formatting),
+            .language_rename => self.language.request(.rename),
+            .language_code_actions => self.language.request(.code_actions),
+            .language_semantic_tokens => self.language.request(.semantic_tokens),
+            .language_inlay_hints => self.language.request(.inlay_hints),
+            .language_code_lenses => self.language.request(.code_lenses),
+            .language_document_links => self.language.request(.document_links),
             .recent_projects => self.projects.showProjects(false),
             .open_buffers => self.projects.showBuffers(),
             .forget_project_session => self.projects.showProjects(true),
@@ -2711,6 +2742,7 @@ fn finishSave(op: *SaveOp, ok: bool, etag: [*c]u8, err: ?*c.GError) void {
         if (d.etag) |p| a.free(p);
         d.etag = if (etag != null) u.z(std.mem.span(etag)) else null;
         d.recordSavedRevision(op.revision);
+        self.language.documentSaved(d, op.revision);
         self.watch(d);
         self.configure(d, true);
         self.update();
@@ -3013,6 +3045,7 @@ fn owner(document: *Document) *App {
 fn onChanged(_: ?*c.GtkTextBuffer, data: ?*anyopaque) callconv(.c) void {
     const d = u.cast(Document, data.?);
     d.due = c.g_get_monotonic_time() + 250000;
+    owner(d).language.changed(d);
     owner(d).workspace_search.documentChanged(d);
     owner(d).hidePopover();
     for (owner(d).excerpts.items) |pane| if (pane.document == d) {
@@ -3386,7 +3419,11 @@ fn testCommand(receiver: *App) void {
     const value = c.g_key_file_get_string(file, "Test", "value", null);
     defer c.g_free(value);
     const d = self.active();
-    if (std.mem.eql(u8, action, "project-probe") or std.mem.eql(u8, action, "projects-probe")) {
+    if (self.language.fixture(action, if (value != null) std.mem.span(value) else "")) {
+        // Language fixture dispatch is compiled out of production builds.
+    } else if (std.mem.startsWith(u8, action, "language-")) {
+        if (commands.fromAction(action)) |command| self.execute(command);
+    } else if (std.mem.eql(u8, action, "project-probe") or std.mem.eql(u8, action, "projects-probe")) {
         self.projects.probe();
     } else if (std.mem.eql(u8, action, "project-insert-canonical")) {
         // Fault injection: bypass the read-only view bridge to test the final

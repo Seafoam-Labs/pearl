@@ -128,7 +128,7 @@ pub const Controller = struct {
     }
     fn refreshStatus(self: *Controller) void {
         if (self.closed or self.app.closing or self.app.browser.closed) return;
-        const text = u.fmt("Workspace: {s} · {s} · no executable feature enabled", .{ @tagName(self.policy.state), @tagName(self.status) });
+        const text = u.fmt("Workspace: {s} · {s} · language servers require explicit trusted start", .{ @tagName(self.policy.state), @tagName(self.status) });
         defer a.free(text);
         u.setLabel(self.app.browser.policy_status, text);
     }
@@ -141,7 +141,10 @@ pub const Controller = struct {
         defer self.refreshStatus();
         self.status = .failed;
         self.clearError();
-        self.store_error = u.fmt("{s}/coral/trust: {s}. Restricted. Check state-directory ownership/permissions. Use Workspace: Rescan after root/policy changes, Recheck for store errors, or Revoke to retry removal. A failed revoke may still exist on disk.", .{ if (self.home) |home| home.path else "(XDG_STATE_HOME/HOME unavailable)", @errorName(err) });
+        self.store_error = if (err == error.WorkspaceMonitoringUnavailable)
+            u.z("WorkspaceMonitoringUnavailable: root/manifest ancestry or policy watches are incomplete. Restricted; executable permits are unavailable. Check path availability and watch limits, then use Workspace: Rescan.")
+        else
+            u.fmt("{s}/coral/trust: {s}. Restricted. Check state-directory ownership/permissions. Use Workspace: Rescan after root/policy changes, Recheck for store errors, or Revoke to retry removal. A failed revoke may still exist on disk.", .{ if (self.home) |home| home.path else "(XDG_STATE_HOME/HOME unavailable)", @errorName(err) });
         if (!self.closed and !self.app.closing) self.app.message(self.store_error.?);
     }
     fn token(self: *Controller) routing.Token {
@@ -187,7 +190,11 @@ pub const Controller = struct {
             self.fail(error.RevocationQueueFull);
         };
     }
+    /// Retire executable permits and their consumers synchronously. Callers must
+    /// distinguish content-only notifications from identity/policy uncertainty;
+    /// a later successful recheck cannot revive an issued permit or its service.
     pub fn invalidate(self: *Controller) void {
+        self.app.language.invalidate();
         defer self.refreshStatus();
         self.request = std.math.add(u64, self.request, 1) catch @panic("Policy request generation exhausted");
         self.confirmation = null;
@@ -370,7 +377,10 @@ pub const Controller = struct {
                 continuity.initial = false;
             }
             model_digest = m.policy_fingerprint;
+            // Preserve the actionable unavailable-root diagnostic before the
+            // broader monitoring gate; neither path can issue a permit.
             inputs = try inputsFor(m, self.user);
+            if (!self.app.browser.watches.policyReady()) return error.WorkspaceMonitoringUnavailable;
             scope_key = scopeKey(m);
             if (self.sharedBlocked(scope_key)) {
                 self.block(scope_key);
@@ -422,12 +432,12 @@ pub const Controller = struct {
         c.g_object_unref(task);
     }
     pub fn canConfirm(self: *Controller) bool {
-        return !self.closed and !self.block_all and self.active == null and !self.pending and self.revokes.len == 0 and self.identity != null and self.app.browser.model != null and !self.app.browser.loading and !self.app.browser.policy_pending and self.status != .failed and !self.sharedCleanupPending() and !(if (self.app.manager) |manager| manager.revocation_saturated else false);
+        return !self.closed and !self.block_all and self.active == null and !self.pending and self.revokes.len == 0 and self.identity != null and self.app.browser.model != null and !self.app.browser.loading and !self.app.browser.policy_pending and self.app.browser.watches.policyReady() and self.status != .failed and !self.sharedCleanupPending() and !(if (self.app.manager) |manager| manager.revocation_saturated else false);
     }
     /// Freeze the exact scope shown by the modal dialog. No approval occurs here.
     pub fn prepareConfirmation(self: *Controller) bool {
         if (!self.canConfirm()) {
-            self.app.message("Trust is unavailable while verification or same-scope revocation cleanup is pending or failed. All roots must be available. Recheck or Rescan, then retry.");
+            self.app.message("Trust is unavailable while verification or same-scope revocation cleanup is pending or failed. All roots must be available with complete identity/policy watches. Recheck or Rescan, then retry.");
             return false;
         }
         self.confirmation = .{ .request = self.request, .model_generation = self.model_generation, .key = self.identity.?.fingerprint };
@@ -443,15 +453,15 @@ pub const Controller = struct {
         }
         self.start(.approve, shown.key) catch |err| self.fail(err);
     }
-    /// Future services must obtain a permit and validate it at dispatch. Trust is
+    /// Executable services obtain a permit and validate it at dispatch. Trust is
     /// only a precondition: service-specific user approval is still required.
     pub fn issue(self: *Controller, capability: trust.Capability) !trust.Permit {
-        if (self.closed or self.block_all or self.revokes.len != 0 or self.active != null or self.pending or self.app.browser.loading or self.app.browser.policy_pending or self.app.browser.model == null) return error.Restricted;
+        if (self.closed or self.block_all or self.revokes.len != 0 or self.active != null or self.pending or self.app.browser.loading or self.app.browser.policy_pending or !self.app.browser.watches.policyReady() or self.app.browser.model == null) return error.Restricted;
         if (self.sharedBlocked(self.currentScope().?)) return error.Restricted;
         return self.policy.issue(capability);
     }
     pub fn validate(self: *Controller, permit: trust.Permit, capability: trust.Capability) bool {
-        return !self.closed and !self.block_all and self.revokes.len == 0 and self.active == null and !self.pending and !self.app.browser.loading and !self.app.browser.policy_pending and self.app.browser.model != null and !self.sharedBlocked(self.currentScope().?) and self.policy.validate(permit, self.token(), capability);
+        return !self.closed and !self.block_all and self.revokes.len == 0 and self.active == null and !self.pending and !self.app.browser.loading and !self.app.browser.policy_pending and self.app.browser.watches.policyReady() and self.app.browser.model != null and !self.sharedBlocked(self.currentScope().?) and self.policy.validate(permit, self.token(), capability);
     }
     /// A fixture-only pending gate, not a task runner. Revoke/recheck/switch cancels it.
     pub fn fixtureGate(self: *Controller) void {
@@ -484,7 +494,7 @@ pub const Controller = struct {
     pub fn describe(self: *Controller) [:0]u8 {
         var text: std.ArrayList(u8) = .empty;
         defer text.deinit(a);
-        append(&text, "Trust: {s} ({s})\nNo executable feature is currently enabled. Workspace trust is NOT per-tool approval or an OS sandbox. Nothing is executed automatically.\n\nSafe settings apply even in restricted mode. Precedence: defaults → explicit user → workspace → folder → workspace language → folder language (GtkSource ID). Font, theme and spelling stay global. Scratch/outside-root documents use defaults and explicit user settings only.\nFolder settings require explicit Workspace: Rescan; monitoring is not recursive.\n\nState store: {s}/coral/trust\n", .{ @tagName(self.policy.state), @tagName(self.status), if (self.home) |home| home.path else "(unavailable)" });
+        append(&text, "Trust: {s} ({s})\nLanguage servers can execute only after an explicit Language: Start confirmation. They run with your user permissions; workspace trust is NOT per-tool approval or an OS sandbox. Nothing is executed automatically. Executables are configured only in ~/.config/coral/languages.json, never in the repository.\n\nSafe settings apply even in restricted mode. Precedence: defaults → explicit user → workspace → folder → workspace language → folder language (GtkSource ID). Font, theme and spelling stay global. Scratch/outside-root documents use defaults and explicit user settings only.\nFolder settings require explicit Workspace: Rescan; monitoring is not recursive.\n\nState store: {s}/coral/trust\n", .{ @tagName(self.policy.state), @tagName(self.status), if (self.home) |home| home.path else "(unavailable)" });
         if (self.store_error) |err| append(&text, "Error: {s}\n", .{err});
         if (self.identity) |id| append(&text, "Exact trust fingerprint: {s}\n", .{std.fmt.bytesToHex(&id.fingerprint, .lower)});
         if (self.currentContinuity()) |continuity| {
@@ -807,7 +817,7 @@ fn done(_: ?*c.GObject, result: ?*c.GAsyncResult, data: ?*anyopaque) callconv(.c
         }
         return;
     }
-    const current = !self.closed and !job.cancelled.load(.acquire) and self.request == job.request and self.model_generation == job.model_generation and self.policy.accepts(job.ticket) and job.user.same(UserPolicy.capture(self.app)) and if (self.app.browser.model) |*m| m.scope.accepts(job.model_token.?) and trust.same(m.policy_fingerprint, job.model_digest) and trust.same(job.user.digest(m.policy_fingerprint), job.inputs.?.value.policy_digest) else false;
+    const current = !self.closed and self.app.browser.watches.policyReady() and !job.cancelled.load(.acquire) and self.request == job.request and self.model_generation == job.model_generation and self.policy.accepts(job.ticket) and job.user.same(UserPolicy.capture(self.app)) and if (self.app.browser.model) |*m| m.scope.accepts(job.model_token.?) and trust.same(m.policy_fingerprint, job.model_digest) and trust.same(job.user.digest(m.policy_fingerprint), job.inputs.?.value.policy_digest) else false;
     // A stale approval must be removed on DISK, not only ignored on delivery.
     if (job.kind == .approve and (!current or job.err != null)) {
         self.block(job.scope_key);

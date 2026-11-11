@@ -67,6 +67,29 @@ pub const Command = enum {
     add_workspace_root,
     remove_workspace_root,
     save_workspace_as,
+    language_start,
+    language_stop,
+    language_restart,
+    language_status,
+    language_completion,
+    language_hover,
+    language_signature,
+    language_definition,
+    language_declaration,
+    language_type_definition,
+    language_implementation,
+    language_references,
+    language_document_symbols,
+    language_workspace_symbols,
+    language_problems,
+    language_formatting,
+    language_range_formatting,
+    language_rename,
+    language_code_actions,
+    language_semantic_tokens,
+    language_inlay_hints,
+    language_code_lenses,
+    language_document_links,
 
     pub fn metadata(self: Command) Metadata {
         return entries[@backingInt(self)];
@@ -138,6 +161,29 @@ pub const Command = enum {
             .add_workspace_root => i18n.dtr("coral", "Workspace: Add Folder…"),
             .remove_workspace_root => i18n.dtr("coral", "Workspace: Remove Selected Root…"),
             .save_workspace_as => i18n.dtr("coral", "Save Workspace As…"),
+            .language_start => i18n.dtr("coral", "Language: Start…"),
+            .language_stop => i18n.dtr("coral", "Language: Stop all sessions"),
+            .language_restart => i18n.dtr("coral", "Language: Restart current server"),
+            .language_status => i18n.dtr("coral", "Language: Status"),
+            .language_completion => i18n.dtr("coral", "Language: Completion…"),
+            .language_hover => i18n.dtr("coral", "Language: Hover"),
+            .language_signature => i18n.dtr("coral", "Language: Signature help"),
+            .language_definition => i18n.dtr("coral", "Language: Definition…"),
+            .language_declaration => i18n.dtr("coral", "Language: Declaration…"),
+            .language_type_definition => i18n.dtr("coral", "Language: Type definition…"),
+            .language_implementation => i18n.dtr("coral", "Language: Implementation…"),
+            .language_references => i18n.dtr("coral", "Language: References…"),
+            .language_document_symbols => i18n.dtr("coral", "Language: Document symbols…"),
+            .language_workspace_symbols => i18n.dtr("coral", "Language: Workspace symbols…"),
+            .language_problems => i18n.dtr("coral", "Language: Problems"),
+            .language_formatting => i18n.dtr("coral", "Language: Format document…"),
+            .language_range_formatting => i18n.dtr("coral", "Language: Format selection…"),
+            .language_rename => i18n.dtr("coral", "Language: Rename…"),
+            .language_code_actions => i18n.dtr("coral", "Language: Code actions…"),
+            .language_semantic_tokens => i18n.dtr("coral", "Language: Refresh semantic tokens"),
+            .language_inlay_hints => i18n.dtr("coral", "Language: Inlay hints…"),
+            .language_code_lenses => i18n.dtr("coral", "Language: Code lenses…"),
+            .language_document_links => i18n.dtr("coral", "Language: Document links…"),
         };
     }
 };
@@ -215,6 +261,29 @@ pub const entries = [_]Metadata{
     .{ .command = .add_workspace_root, .action = "workspace-add-root", .detailed_action = "win.workspace-add-root", .label = "Workspace: Add Folder…", .shortcut = null },
     .{ .command = .remove_workspace_root, .action = "workspace-remove-root", .detailed_action = "win.workspace-remove-root", .label = "Workspace: Remove Selected Root…", .shortcut = null },
     .{ .command = .save_workspace_as, .action = "save-workspace-as", .detailed_action = "win.save-workspace-as", .label = "Save Workspace As…", .shortcut = null },
+    .{ .command = .language_start, .action = "language-start", .detailed_action = "win.language-start", .label = "Language: Start…", .shortcut = null },
+    .{ .command = .language_stop, .action = "language-stop", .detailed_action = "win.language-stop", .label = "Language: Stop all sessions", .shortcut = null },
+    .{ .command = .language_restart, .action = "language-restart", .detailed_action = "win.language-restart", .label = "Language: Restart current server", .shortcut = null },
+    .{ .command = .language_status, .action = "language-status", .detailed_action = "win.language-status", .label = "Language: Status", .shortcut = null },
+    .{ .command = .language_completion, .action = "language-completion", .detailed_action = "win.language-completion", .label = "Language: Completion…", .shortcut = null },
+    .{ .command = .language_hover, .action = "language-hover", .detailed_action = "win.language-hover", .label = "Language: Hover", .shortcut = null },
+    .{ .command = .language_signature, .action = "language-signature", .detailed_action = "win.language-signature", .label = "Language: Signature help", .shortcut = null },
+    .{ .command = .language_definition, .action = "language-definition", .detailed_action = "win.language-definition", .label = "Language: Definition…", .shortcut = null },
+    .{ .command = .language_declaration, .action = "language-declaration", .detailed_action = "win.language-declaration", .label = "Language: Declaration…", .shortcut = null },
+    .{ .command = .language_type_definition, .action = "language-type-definition", .detailed_action = "win.language-type-definition", .label = "Language: Type definition…", .shortcut = null },
+    .{ .command = .language_implementation, .action = "language-implementation", .detailed_action = "win.language-implementation", .label = "Language: Implementation…", .shortcut = null },
+    .{ .command = .language_references, .action = "language-references", .detailed_action = "win.language-references", .label = "Language: References…", .shortcut = null },
+    .{ .command = .language_document_symbols, .action = "language-document-symbols", .detailed_action = "win.language-document-symbols", .label = "Language: Document symbols…", .shortcut = null },
+    .{ .command = .language_workspace_symbols, .action = "language-workspace-symbols", .detailed_action = "win.language-workspace-symbols", .label = "Language: Workspace symbols…", .shortcut = null },
+    .{ .command = .language_problems, .action = "language-problems", .detailed_action = "win.language-problems", .label = "Language: Problems", .shortcut = null },
+    .{ .command = .language_formatting, .action = "language-formatting", .detailed_action = "win.language-formatting", .label = "Language: Format document…", .shortcut = null },
+    .{ .command = .language_range_formatting, .action = "language-range-formatting", .detailed_action = "win.language-range-formatting", .label = "Language: Format selection…", .shortcut = null },
+    .{ .command = .language_rename, .action = "language-rename", .detailed_action = "win.language-rename", .label = "Language: Rename…", .shortcut = null },
+    .{ .command = .language_code_actions, .action = "language-code-actions", .detailed_action = "win.language-code-actions", .label = "Language: Code actions…", .shortcut = null },
+    .{ .command = .language_semantic_tokens, .action = "language-semantic-tokens", .detailed_action = "win.language-semantic-tokens", .label = "Language: Refresh semantic tokens", .shortcut = null },
+    .{ .command = .language_inlay_hints, .action = "language-inlay-hints", .detailed_action = "win.language-inlay-hints", .label = "Language: Inlay hints…", .shortcut = null },
+    .{ .command = .language_code_lenses, .action = "language-code-lenses", .detailed_action = "win.language-code-lenses", .label = "Language: Code lenses…", .shortcut = null },
+    .{ .command = .language_document_links, .action = "language-document-links", .detailed_action = "win.language-document-links", .label = "Language: Document links…", .shortcut = null },
 };
 
 pub fn fromAction(action: []const u8) ?Command {
@@ -279,7 +348,7 @@ pub fn fromKey(key: u32, state: u32) ?Command {
 
 test "registry is exhaustive, ordered and has unique stable actions" {
     try std.testing.expectEqual(@typeInfo(Command).@"enum".field_names.len, entries.len);
-    const actions = [_][]const u8{ "new", "open", "save", "save-as", "reload", "find", "goto", "spelling", "preferences", "about", "close", "quit", "command-palette", "split-group", "focus-next-group", "focus-previous-group", "close-group", "excerpt", "grouped-undo", "grouped-redo", "open-folder", "open-workspace", "workspace-roots", "workspace-back", "workspace-rescan", "close-workspace", "quick-open", "workspace-search", "workspace-policy", "workspace-trust", "workspace-revoke", "save-workspace-session", "restore-workspace-session", "toggle-explorer", "toggle-search", "focus-explorer", "focus-search", "focus-editor", "hide-panel", "dock-left", "dock-right", "dock-bottom", "reset-docks", "dock-grow", "dock-shrink", "next-tab", "previous-tab", "new-window", "close-window", "next-window", "previous-window", "workspace-create-file", "workspace-create-directory", "workspace-rename", "workspace-move", "workspace-delete", "recent-projects", "open-buffers", "forget-project-session", "workspace-add-root", "workspace-remove-root", "save-workspace-as" };
+    const actions = [_][]const u8{ "new", "open", "save", "save-as", "reload", "find", "goto", "spelling", "preferences", "about", "close", "quit", "command-palette", "split-group", "focus-next-group", "focus-previous-group", "close-group", "excerpt", "grouped-undo", "grouped-redo", "open-folder", "open-workspace", "workspace-roots", "workspace-back", "workspace-rescan", "close-workspace", "quick-open", "workspace-search", "workspace-policy", "workspace-trust", "workspace-revoke", "save-workspace-session", "restore-workspace-session", "toggle-explorer", "toggle-search", "focus-explorer", "focus-search", "focus-editor", "hide-panel", "dock-left", "dock-right", "dock-bottom", "reset-docks", "dock-grow", "dock-shrink", "next-tab", "previous-tab", "new-window", "close-window", "next-window", "previous-window", "workspace-create-file", "workspace-create-directory", "workspace-rename", "workspace-move", "workspace-delete", "recent-projects", "open-buffers", "forget-project-session", "workspace-add-root", "workspace-remove-root", "save-workspace-as", "language-start", "language-stop", "language-restart", "language-status", "language-completion", "language-hover", "language-signature", "language-definition", "language-declaration", "language-type-definition", "language-implementation", "language-references", "language-document-symbols", "language-workspace-symbols", "language-problems", "language-formatting", "language-range-formatting", "language-rename", "language-code-actions", "language-semantic-tokens", "language-inlay-hints", "language-code-lenses", "language-document-links" };
     for (entries, actions, 0..) |entry, action, index| {
         try std.testing.expectEqual(index, @backingInt(entry.command));
         try std.testing.expectEqualStrings(action, entry.action);

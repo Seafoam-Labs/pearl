@@ -14,6 +14,27 @@ const hooks = @import("build_options").test_hooks;
 pub const State = enum { idle, input, preparing, confirming, applying, retiring, succeeded, cancelled, failed };
 const Phase = enum { prepare, apply, retire };
 
+/// Production callers submit root-relative paths, not Explorer selection state.
+/// Preparation is read-only; the native confirmation is always required. The
+/// owner must survive until complete, including cancellation/descriptor retirement.
+pub const Submission = struct {
+    root: model.RootId,
+    kind: fs.Kind,
+    source: []const u8 = "",
+    destination: []const u8 = "",
+    review: []const u8,
+    context: *anyopaque,
+    authorize: *const fn (*anyopaque) anyerror!void,
+    complete: *const fn (*anyopaque, Result) void,
+};
+pub const Result = struct { applied: bool, reason: ?[]const u8 };
+const Owner = struct {
+    context: *anyopaque,
+    authorize: *const fn (*anyopaque) anyerror!void,
+    complete: *const fn (*anyopaque, Result) void,
+    review: [:0]u8,
+};
+
 pub const Controller = struct {
     app: *App,
     dialog: ?u.W = null,
@@ -108,6 +129,28 @@ pub const Controller = struct {
         self.submit(destination) catch |err| self.abort(err);
     }
 
+    /// Once accepted, complete runs exactly once, possibly synchronously on a
+    /// submission error. Rename submissions use a full root-relative destination.
+    pub fn submitReviewed(self: *Controller, submission: Submission) !void {
+        try self.available();
+        try submission.authorize(submission.context);
+        if (submission.review.len > 64 * 1024) return error.ReviewTooLarge;
+        if (isCreate(submission.kind) and submission.source.len != 0) return error.InvalidRequest;
+        const snapshot = if (self.app.browser.model) |*value| value else return error.NoWorkspace;
+        const root = snapshot.rootById(submission.root) orelse return error.InvalidRoot;
+        try self.begin(if (submission.kind == .rename) .move else submission.kind, root, submission.source, true);
+        self.job.?.owner = .{ .context = submission.context, .authorize = submission.authorize, .complete = submission.complete, .review = u.z(submission.review) };
+        self.submit(submission.destination) catch |err| self.abort(err);
+    }
+
+    /// Only the submitting owner may cancel this job; it cannot cancel Explorer
+    /// work or another integration's operation. Completion still follows reap.
+    pub fn cancelSubmitted(self: *Controller, context: *anyopaque) void {
+        const job = self.job orelse return;
+        const owner = job.owner orelse return;
+        if (owner.context == context) self.cancel();
+    }
+
     fn begin(self: *Controller, kind: fs.Kind, root: *const model.Root, selected: []const u8, directory: bool) !void {
         if (root.availability != .available) return error.UnavailableRoot;
         const canonical = root.canonical_path orelse return error.UnavailableRoot;
@@ -151,6 +194,7 @@ pub const Controller = struct {
         if (!self.fresh(job)) return error.WorkspaceChanged;
         const manager = self.app.manager orelse return error.NoManager;
         try manager.checkFileOperation(self.app, job.source_abs, job.destination_abs);
+        if (job.owner) |owner| try owner.authorize(owner.context);
     }
 
     fn submit(self: *Controller, destination: []const u8) !void {
@@ -268,6 +312,16 @@ pub const Controller = struct {
         });
         defer a.free(detail);
         self.describe(box, detail);
+        if (job.owner) |owner| {
+            const scroll = c.gtk_scrolled_window_new().?;
+            c.gtk_scrolled_window_set_min_content_height(u.cast(c.GtkScrolledWindow, scroll), 140);
+            c.gtk_scrolled_window_set_max_content_height(u.cast(c.GtkScrolledWindow, scroll), 280);
+            c.gtk_scrolled_window_set_propagate_natural_height(u.cast(c.GtkScrolledWindow, scroll), 1);
+            const details = u.box(false, 8);
+            c.gtk_scrolled_window_set_child(u.cast(c.GtkScrolledWindow, scroll), details);
+            self.describe(details, owner.review);
+            u.append(box, scroll);
+        }
         self.describe(box, if (job.kind == .delete) delete_warning else "Confirm this exact operation? Existing destinations are never replaced. There is no undo. Changed paths or workspace state require a new request.");
         c.gtk_window_present(u.cast(c.GtkWindow, self.dialog.?));
     }
@@ -295,6 +349,7 @@ pub const Controller = struct {
         self.closeDialog();
         const job = self.job orelse return;
         job.outcome = .failed;
+        job.failure_reason = @errorName(err);
         c.g_cancellable_cancel(job.cancel);
         if (!job.running) self.retire();
     }
@@ -322,6 +377,7 @@ pub const Controller = struct {
         self.closeDialog();
         self.state = job.outcome;
         self.job = null;
+        if (job.owner) |owner| owner.complete(owner.context, .{ .applied = job.outcome == .succeeded, .reason = job.failure_reason orelse if (job.outcome == .cancelled) @as(?[]const u8, "Cancelled") else null });
         job.destroy();
         self.app.release();
     }
@@ -378,6 +434,8 @@ pub const Controller = struct {
             .busy = self.busy(),
             .dialog = self.dialog != null,
             .confirmation = self.state == .confirming,
+            .submitted = if (job) |j| j.owner != null else false,
+            .review = if (job) |j| if (j.owner) |owner| @as(?[]const u8, owner.review) else null else null,
             .closed = self.closed,
             .kind = if (job) |j| j.kind else @as(?fs.Kind, null),
             .root = if (job) |j| j.root else @as(?[]const u8, null),
@@ -423,10 +481,14 @@ const Job = struct {
     running: bool = false,
     barrier: bool = false,
     outcome: State = .cancelled,
+    owner: ?Owner = null,
+    failure_reason: ?[]const u8 = null,
+    directory: bool = false,
 
     fn destroy(self: *Job) void {
         std.debug.assert(self.prepared == null and !self.running and !self.barrier);
         inline for (.{ "root", "root_name", "selected", "source", "base", "destination", "source_abs", "destination_abs" }) |field| a.free(@field(self, field));
+        if (self.owner) |owner| a.free(owner.review);
         c.g_object_unref(self.cancel);
         a.destroy(self);
     }
@@ -439,7 +501,10 @@ const Job = struct {
             remaining -= slice;
         }
         switch (self.phase) {
-            .prepare => self.prepared = try fs.prepare(a, .{ .kind = self.kind, .root = self.root, .source = self.source, .destination = self.destination }, self.cancel),
+            .prepare => {
+                self.prepared = try fs.prepare(a, .{ .kind = self.kind, .root = self.root, .source = self.source, .destination = self.destination }, self.cancel);
+                self.directory = if (self.prepared.?.source_stat) |stat| stat.mode & std.c.S.IFMT == std.c.S.IFDIR else self.kind == .create_directory;
+            },
             .apply => {
                 defer self.clearPrepared();
                 try fs.apply(&self.prepared.?, self.cancel);
@@ -480,9 +545,25 @@ fn done(_: ?*c.GObject, result: ?*c.GAsyncResult, data: ?*anyopaque) callconv(.c
         if (job.err == null) {
             job.outcome = .succeeded;
             self.completed += 1;
+            if (self.app.manager) |manager| for (manager.entries) |entry| if (entry) |window| {
+                window.app.language.fileOperationCompleted(job.kind, job.source_abs, job.destination_abs, job.directory);
+            };
             if (!self.closed and !self.app.closing) {
                 self.app.workspace_search.invalidate("Stale — workspace files changed. Refresh to search again.");
-                if (self.fresh(job)) self.app.browser.rescan();
+                // Refresh accessed directory pages without replacing the workspace
+                // owner (which would kill language sessions before did* delivery).
+                // The unchanged watcher still performs root/policy verification.
+                if (self.fresh(job)) {
+                    const browser = &self.app.browser;
+                    const now = c.g_get_monotonic_time();
+                    for (browser.tree.nodes.items) |*node| {
+                        node.invalidate();
+                        node.first_event = now;
+                        node.last_event = now;
+                    }
+                    for (browser.jobs.items) |scan| if (scan.kind == .scan) c.g_cancellable_cancel(scan.cancel);
+                    browser.render_pending = true;
+                }
                 self.app.message("Workspace file operation completed. There is no undo.");
             }
             self.finish();

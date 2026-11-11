@@ -1,0 +1,228 @@
+{
+  "schema_version": 1,
+  "purpose": "Coral test-only stdio LSP fixture contract and locally verified real-tool reference. This is not a production server configuration or a claim of native integration coverage.",
+  "native_harness": {
+    "path": "tests/language.py",
+    "run": "zig build language -- --case real-zls --output .cache/language-local",
+    "standalone_build": "zig build -Dtest-hooks=true -Doptimize=safe --prefix .cache/language-hook/install",
+    "standalone_run": "python3 -B tests/language.py --binary .cache/language-hook/install/bin/coral",
+    "cli": "--case exact-name-or-prefix (repeatable), --list-cases, --output, --aqueous-prefix, --case-timeout (default 120, minimum 45 seconds), --app-arg ARG (repeatable), trailing -- ARG... passed to the native binary.",
+    "isolation": "PrivateSession creates a headless compositor and session bus, with disposable per-case HOME/XDG. Real servers receive explicit private HOME/XDG and PATH only; no host bus, display or executable config. Native UI never approves external browser launch.",
+    "native_controls": "language-probe -> CORAL_LANGUAGE JSON; language-accept takes an index, input string or no value; language-reject dismisses an active review. Probes verify owner window IDs. Features dispatch through real win.language-* actions; start, editing, saving, selection and approvals also exercise Wayland keyboard/pointer and command-palette routes.",
+    "configuration": "Version-1 servers array written mode 0600 to disposable HOME/.config/coral/languages.json, matching the controller's actual path. Real ZLS argv is exactly /usr/bin/zls. No download, install or fallback to fake for real-server cases.",
+    "mandatory": "Default selection includes every fake/native security, synchronization, lifecycle, edit, advanced-feature, resource and real-ZLS case. Missing/mismatched pinned ZLS or Zig blocks mandatory cases and makes the suite fail. Optional roadmap tracks are clangd (C/C++), typescript-language-server --stdio (TypeScript), and pyright-langserver --stdio (Python). Missing binaries are recorded as blocked, never passed. Installed optional servers must reach native ready state with a synchronized document and return actual hover content; version-only checks do not count.",
+    "evidence": "--output/results.json records the latest run; unique run-* subdirectories retain per-case protocol logs, native/compositor/bus logs, screenshots, probe snapshots, fixture hashes, process start-time/reap evidence and a copy of results.json. Failures do not prevent later independent cases from running. Reports distinguish passed, failed, blocked and explicitly unselected cases; subset runs have complete_suite=false.",
+    "lifecycle_regressions": "The lifecycle case group requires config parent and ancestor directory rename/recreation with servers:[] to reap old sessions and refuse pending text/command reviews, interior symlink root retargeting to invalidate without explicit rescan, actual GTK decoration removal after crash, and no-op accept/reject controls before UI initialization. real-zls-default-no-config separately exercises the pinned installed default with no user override.",
+    "decoration_probe_contract": "CORAL_LANGUAGE.tags enumerates canonical buffers (view:null) and editor buffers (view ID), with document ID and diagnostic_kinds/semantic_kinds counted from actual GTK tag kinds having applied ranges, not the number of ranges or cached protocol items. The crash regression requires both counts nonzero before crash and zero afterward in the canonical buffer and both split views. Entries must survive session removal while the document/view remains. Cached diagnostic/token counts or missing entries are not evidence of decoration cleanup. Missing native observation blocks the mandatory crash case.",
+    "resource_scope": "Standalone create/rename/delete use resource_review/resource_state/resource_kind probes and native reviewed Explorer workers. Tests cover no preapproval writes, exact filesystem effects, static didCreate/didRename/didDelete notifications, reject/stale/peer-revoke, server applyEdit replies, and atomic refusal of mixed/outside-root/overwrite proposals. Unsupported native API is a mandatory blocker, not success."
+  },
+  "environment_reference": {
+    "verified_on": "2026-11-10",
+    "platform": "linux",
+    "verification": "Execute each absolute path with version_args, require exit status 0 and stripped stdout equal to version, and SHA-256 hash the complete executable bytes at path. Resolved paths were also checked. No downloads or package installation.",
+    "verify_command": "python3 -B tests/fixtures/fake_lsp.py --verify-reference",
+    "tools": {
+      "zls": {
+        "path": "/usr/bin/zls",
+        "resolved_path": "/usr/bin/zls",
+        "version_args": ["--version"],
+        "version": "0.17.0",
+        "sha256": "f10f7a1a0b1c35f8b14c17713f1b90144e71efa620dc3cd17ae196961b668de5"
+      },
+      "zig": {
+        "path": "/usr/bin/zig",
+        "resolved_path": "/usr/bin/zig",
+        "version_args": ["version"],
+        "version": "0.17.1",
+        "sha256": "db6f1c5f2fbdf8f7bf5dc81e140994a57055860e4cb01a6b2375c9bf57bf2ef4"
+      }
+    },
+    "fixture_test_runtime": {
+      "path": "/usr/bin/python3",
+      "version": "3.14.9",
+      "dependencies": "Python standard library only; fixture requires Python 3.9 or newer on Linux."
+    },
+    "repository_version_note": "Coral README specifies Zig 0.17.1, but subprojects/coral/.zigversion currently contains 0.17.0. Neither was edited. Installed Zig was independently executed and verified as 0.17.1.",
+    "real_server_scope": "Only exact installed ZLS/Zig identity is verified here. The parent native harness must run real ZLS LSP scenarios separately using disposable projects. The fake server never launches ZLS or Zig during normal operation or self-tests."
+  },
+  "fixture": {
+    "path": "tests/fixtures/fake_lsp.py",
+    "contract_version": 1,
+    "server_info": {"name": "coral-fake-lsp", "version": "1.0.0"},
+    "working_directory_for_examples": "pearl/subprojects/coral",
+    "launch_argv": ["python3", "-B", "tests/fixtures/fake_lsp.py", "--mode", "default"],
+    "self_test_argv": ["python3", "-B", "tests/fixtures/fake_lsp.py", "--self-test"],
+    "transport": {
+      "kind": "stdio",
+      "jsonrpc": "2.0",
+      "framing": "Content-Length: <UTF-8 body byte count>\r\n\r\n<JSON body>",
+      "stdout": "Protocol only; fault modes deliberately violate framing/body validity. All human-readable errors and self-test output go to stderr; reference verification prints JSON to stdout in a separate non-server invocation.",
+      "input_body_limit_bytes": 8388608,
+      "input_header_limit_bytes": 8192,
+      "input": "Handles partial and coalesced frames, case-insensitive Content-Length and additional headers. Rejects missing/duplicate/invalid lengths, invalid UTF-8/JSON, batches and truncated EOF. Incoming protocol errors exit 2.",
+      "request_ids": "Echoes client string or integer IDs unchanged. Server requests use fake-server-1, fake-server-2, etc. Client IDs must be unique while pending.",
+      "determinism": "No randomness, timestamps, PIDs or filesystem-derived document contents in protocol payloads. Timed scenarios use monotonic scheduling. Pipe reads may coalesce and are not deterministic boundaries; fragmented writes are deterministic boundaries."
+    },
+    "defaults": {
+      "mode": "default",
+      "encoding": "utf-16",
+      "sync": "incremental",
+      "target_method": "textDocument/hover",
+      "delay_ms": 0,
+      "fragment_size": 7,
+      "fragment_delay_ms": 1,
+      "oversize_bytes": 67108864,
+      "log": null,
+      "outside_root_uri": null,
+      "malicious": false,
+      "log_sequence": false,
+      "resource_operation": "mixed",
+      "resource_option": null
+    },
+    "modes": {
+      "default": "All documented core and advanced features; UTF-16, incremental sync, immediate responses, text-only multi-file workspace edits. No injected faults.",
+      "full": "Only switches textDocumentSync.change to Full (1). Not a separate feature tier. Requires whole-document didChange payloads.",
+      "utf8": "Only switches positionEncoding and position calculations to utf-8.",
+      "utf16": "Explicit utf-16 position encoding; otherwise default.",
+      "utf32": "Only switches positionEncoding and position calculations to utf-32.",
+      "fragmented": "Writes every outbound frame in --fragment-size byte chunks with --fragment-delay-ms between chunks. Clients must not assume pipe reads preserve writes.",
+      "crash": "At --target-method, exits 86 without its response. Earlier initialization and unrelated requests work normally; this is abrupt protocol EOF, not an OS signal crash.",
+      "timeout": "Withholds responses to --target-method indefinitely while processing other traffic. Cancellation responds -32800; shutdown clears held requests.",
+      "late": "Delays --target-method by --delay-ms (default 150), deliberately ignores its cancellation and returns the original response ID. Does not synthesize stale document versions.",
+      "stale": "Publishes diagnostics and versioned workspace edits with current open-document version minus one. Unopened document versions remain null. No implicit delay or cancellation violation.",
+      "oversize": "At --target-method emits only a Content-Length header declaring --oversize-bytes, intentionally withholding the body. Tests early size rejection without allocating that body; distinct from invalid JSON. Harness should close the process after rejection.",
+      "malformed": "At --target-method emits Content-Length: 1 and the single byte {, a complete frame containing invalid JSON. Harness should close the process after rejection.",
+      "commands": "Code actions carry a fake.applyEdit command instead of an inline edit. executeCommand emits a server workspace/applyEdit request before its null response. No command is executed locally.",
+      "edits": "Explicit text-only multi-file edit scenario, equivalent to default edit behavior. Code actions include inline edits and rename returns versioned documentChanges.",
+      "resource": "By default adds create, rename and delete ResourceOperations after two text edits (a mixed rejection scenario). --resource-operation selects a standalone create, rename or delete instead. Advertises static workspace.fileOperations didCreate/didRename/didDelete filters for file **/*.zig. Resource URIs are synthetic siblings; nothing is created, renamed or deleted by the fixture."
+    },
+    "options": {
+      "--mode": "Exactly one mode from modes; defaults to default. Fault scenarios are not implicitly combined.",
+      "--sync": "full or incremental; explicit override of mode's sync default.",
+      "--encoding": "utf-8, utf-16 or utf-32; explicit override. Harness clients must advertise the selected encoding in initialize.capabilities.general.positionEncodings. This fixture intentionally forces the configured choice instead of negotiating.",
+      "--target-method": "Request method affected by crash/timeout/late/oversize/malformed or delay; default textDocument/hover. Set initialize to test startup failures. Use a supported request returning a response, not a notification. Method processing precedes fault injection, so use hover for side-effect-free failure tests.",
+      "--delay-ms": "Nonnegative finite response delay for target requests, including default mode (where cancellation is honored). Defaults to 150 for late, 0 otherwise. Explicit zero makes late immediate. Fault modes that withhold/corrupt/crash take precedence.",
+      "--fragment-size": "Positive integer bytes per write in fragmented mode; default 7.",
+      "--fragment-delay-ms": "Nonnegative finite delay between fragmented writes; default 1. Delays are test timings, not exact scheduler guarantees.",
+      "--oversize-bytes": "Positive declared Content-Length in oversize mode, default 64 MiB. Set above the native transport's configured body limit.",
+      "--outside-root-uri": "Optional absolute URI redirecting definition/reference locations, workspace-edit targets and resolved document links. With no value uses file:///__coral_fake_lsp_outside__/other.zig. --outsideRoot is an alias. No target is opened or modified. Choose a URI outside ALL test roots.",
+      "--malicious": "Adds inert script markup and a javascript link to hover; resolved document links use javascript:alert(1); commands from code actions/lenses become unadvertised fake.untrusted.shell with an inert shell-looking argument. Outside-root target overrides link target when both switches are used. Never renders, opens or executes any payload.",
+      "--resource-operation": "resource mode only: mixed (default), create, rename or delete. Standalone create targets created.zig; rename moves resource-source.zig to resource-renamed.zig; delete targets resource-source.zig. These are siblings of the requested document (or outside-root target). No text edits accompany standalone operations.",
+      "--resource-option": "resource mode with standalone operation only: set overwrite, ignoreIfExists, recursive or ignoreIfNotExists true for explicit unsupported/unsafe option rejection tests. Nothing is executed by the fixture.",
+      "--log": "Explicit path to a newly created JSONL transcript. Existing files, symlinks and missing parent directories are errors. No implicit log file, directory creation, append or overwrite.",
+      "--log-sequence": "Requires --log. Exclusive-creates numbered sibling files, e.g. server.0001.jsonl, server.0002.jsonl, allowing concurrent sessions and restarts with unchanged configuration. Existing files are never appended to or replaced; no directories are created. At most 10000 candidates. Opt-in only; ordinary --log keeps its original exclusive-create behavior.",
+      "--self-test": "Runs bounded subprocess and unit tests using temporary directories. Does not require or invoke installed ZLS/Zig.",
+      "--verify-reference": "Separately executes installed version commands and verifies both SHA-256 pins. No auto-download or install; mismatch or unavailable tool returns 2."
+    },
+    "safety": {
+      "workspace_io": "None. All documents come from didOpen/didChange and stay in memory. Formatting, renames, completion edits, code actions, resource operations and applyEdit are protocol proposals only.",
+      "launch_marker": {
+        "path_environment": "CORAL_FAKE_LSP_LAUNCH_MARKER",
+        "required_guard": {"CORAL_FAKE_LSP_TEST": "1"},
+        "behavior": "Optional explicit marker path, exclusively created before reading stdin. A path without the guard is an error (exit 2) and writes no marker. Existing marker files are never overwritten. Parent directories must already exist. No other environment variable triggers writes.",
+        "json": {"fixture": "coral-fake-lsp", "schema_version": 1, "mode": "<selected mode>"},
+        "purpose": "Harness can assert untrusted project configuration did NOT launch a server by checking marker absence. Self-tests strip inherited marker paths before launching their own peers."
+      },
+      "harness_requirement": "Use a disposable root, disposable second file other.zig, private log/marker directory and isolated app state. Native clients may apply proposals; fixture non-writing behavior does not make applying its edits to real user documents safe. Test rejection of outside-root/resource/unsafe commands before allowing execution. Do not shell-evaluate payloads.",
+      "transcript_privacy": "Logs include complete request parameters, document contents and responses; no automatic redaction. Never capture user buffers. Remove disposable artifacts after tests."
+    },
+    "transcript_schema": {
+      "format": "UTF-8 JSON Lines, one object per line, flushed immediately, schema version 1 in start record.",
+      "common": {"seq": "1-based monotonically increasing integer", "kind": "record type"},
+      "records": {
+        "start": {"schema_version": "1", "mode": "selected mode"},
+        "wire": {"direction": "in or out", "data_base64": "exact bytes per stdin read or stdout write, standard base64"},
+        "receive": {"message": "parsed inbound JSON-RPC object"},
+        "send": {"message": "outbound JSON-RPC object, recorded before writing its frame"},
+        "server-response": {"message": "client reply to a server workspace/applyEdit request"},
+        "fault": {"mode": "crash, oversize or malformed", "declared_bytes": "present for oversize only"},
+        "cancel-ignored": {"id": "original request ID in late mode"},
+        "invalid-params": {"detail": "rejected parameter or sync-change reason"},
+        "failure": {"detail": "fatal setup or framing error"},
+        "stop": {"exit_code": "normal run-loop return status, including deliberate crash 86"}
+      },
+      "reconstruction": "Concatenate decoded wire records separately by direction to recover exact streams, including malformed/oversize bytes. receive/send records provide structured messages. Timing and input chunk boundaries are deliberately not a golden-file contract."
+    },
+    "supported_requests": [
+      "initialize",
+      "shutdown",
+      "textDocument/hover",
+      "textDocument/signatureHelp",
+      "textDocument/completion",
+      "completionItem/resolve",
+      "textDocument/definition",
+      "textDocument/references",
+      "textDocument/documentSymbol",
+      "workspace/symbol",
+      "workspaceSymbol/resolve",
+      "textDocument/formatting",
+      "textDocument/rangeFormatting",
+      "textDocument/prepareRename",
+      "textDocument/rename",
+      "textDocument/codeAction",
+      "codeAction/resolve",
+      "workspace/executeCommand",
+      "textDocument/semanticTokens/full",
+      "textDocument/semanticTokens/full/delta",
+      "textDocument/inlayHint",
+      "inlayHint/resolve",
+      "textDocument/codeLens",
+      "codeLens/resolve",
+      "textDocument/documentLink",
+      "documentLink/resolve"
+    ],
+    "notifications": {
+      "initialized": "Accepted; no unsolicited startup requests.",
+      "textDocument/didOpen": "Stores text/version; emits one versioned warning diagnostic.",
+      "textDocument/didChange": "Applies sequential whole-document or encoding-aware ranged changes in memory; requires an open document and strictly increasing versions; emits versioned diagnostic. Full sync rejects ranged changes. Invalid changes are logged and leave prior text/version unchanged.",
+      "textDocument/didClose": "Emits empty diagnostics, then forgets document and semantic-token cache.",
+      "textDocument/didSave": "Accepted; no file I/O and no content mutation.",
+      "$/cancelRequest": "Cancels delayed/held requests with -32800, except late mode deliberately ignores cancellation. Completed or unknown IDs are ignored.",
+      "exit": "Exit 0 after shutdown, 1 otherwise.",
+      "other": "Unknown and workspace notifications ignored. No dynamic registrations, refresh requests or background threads."
+    },
+    "response_contract": {
+      "token_range": "First non-whitespace word on line 0 of the in-memory document, measured in selected position encoding; empty document yields zero-length range.",
+      "diagnostics": "One severity-2 warning, code fake-warning, source coral-fake-lsp, message Fixture diagnostic: café 😀, token_range and current document version (minus one in stale mode).",
+      "completion": "One snippet item fixtureCall with insertTextFormat 2, textEdit at document start and a non-overlapping additionalTextEdit at document end for nonempty documents. resolve adds markdown documentation.",
+      "locations": "Definition points to the same document/token_range; references additionally points to sibling other.zig at position zero (secondary.zig when the first target is already named other.zig). Outside-root switch redirects those targets.",
+      "symbols": "One fixtureSymbol; documentSymbol is hierarchical shape, workspace/symbol is WorkspaceSymbol shape with a range and opaque data. WorkspaceSymbol resolve is identity.",
+      "formatting": "Strips trailing whitespace per line, normalizes CRLF/CR to LF, ensures a final LF for a nonempty whole document. Range formatting transforms only the requested substring.",
+      "workspace_edit": "documentChanges has two TextDocumentEdits: current document/token_range and sibling other.zig insertion at (0,0), or secondary.zig when the first target is already named other.zig. Uses current version for open documents, null for unopened ones. Rename uses newName; action/applyEdit use renamed. No unversioned changes map. Resource mode appends create created.zig, rename to renamed.zig, delete renamed.zig.",
+      "apply_edit": "Only triggered by explicit workspace/executeCommand fake.applyEdit with arguments [documentUri], or first open URI if arguments omitted. Server request is emitted before null executeCommand response. Client reply (applied true/false) is recorded, never used to mutate buffers. fake.noop returns null. Other commands return -32601.",
+      "semantic_tokens": "One variable/declaration token covering token_range; empty range yields empty data. Result IDs are opaque deterministic strings. Delta with latest matching previousResultId yields either no edits or one replace-all edit in the integer data array. Unknown resultId returns full data. No range tokens.",
+      "resolvers": "inlayHint resolve adds tooltip; codeLens resolve adds fake.applyEdit command; documentLink resolve adds https://example.invalid/fixture unless adversarial flags override it. codeAction resolve is identity because edit/command is already supplied.",
+      "errors": {"not_initialized": -32002, "method_or_command_not_found": -32601, "invalid_params": -32602, "after_shutdown_or_duplicate_initialize": -32600, "cancelled": -32800},
+      "shutdown": "Returns null, clears pending responses and token scheduling; subsequent requests rejected, notifications ignored except exit/cancel. Clean EOF after shutdown exits 0; EOF without shutdown exits 1.",
+      "limitations": "Synthetic subset, not a Zig analyzer or full LSP compliance oracle. No file discovery, URI-to-path access, capability filtering, lexical analysis, completion ranking, reference query filtering, dynamic registration, pull diagnostics, partial progress or actual workspace-edit application. Use real ZLS for language correctness. Advanced-feature tests should open a nonempty document first."
+    },
+    "sample_document": {
+      "uri": "file:///fixture/main.zig",
+      "language_id": "zig",
+      "version": 1,
+      "text": "const greeting = \"aé😀z\";\nconst answer = 42;\n"
+    },
+    "unicode_probe": {
+      "text": "aé😀z\r\n",
+      "replacement": "Q",
+      "expected_after_replacing_emoji": "aéQz\r\n",
+      "emoji_ranges": {
+        "utf-8": {"start": {"line": 0, "character": 3}, "end": {"line": 0, "character": 7}},
+        "utf-16": {"start": {"line": 0, "character": 2}, "end": {"line": 0, "character": 4}},
+        "utf-32": {"start": {"line": 0, "character": 2}, "end": {"line": 0, "character": 3}}
+      }
+    },
+    "suggested_native_checks": [
+      "No server launch before workspace trust; explicit guarded marker remains absent.",
+      "Initialize and synchronize open/change/close, all three position encodings and full versus incremental sync.",
+      "Hover/signature/completion/definition/reference/symbol UI consumes the corresponding structured result.",
+      "Snippet expansion and additionalTextEdits are validated and applied atomically to disposable buffers.",
+      "Reject stale diagnostic versions and stale versioned edits; ignore late replies to cancelled or superseded requests.",
+      "Multi-file edits require review; rejected workspace/applyEdit replies preserve all buffers and files.",
+      "Resource operations, outside-root edits, dangerous links and unadvertised commands never bypass policy.",
+      "Semantic full/delta tokens, inlay hints, lenses and document links preserve encoding and resolver data.",
+      "Fragmented transport parses correctly; malformed/oversize/crash/timeout are bounded and separately classified.",
+      "Graceful shutdown/exit and cancellation do not leak server processes or pending requests."
+    ]
+  }
+}

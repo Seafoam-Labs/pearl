@@ -1,10 +1,22 @@
 # M2 closure: bounded workspace preview acceptance
 
-**Implementation disposition: COMPLETE.** The final feature audit concludes that all mandatory M2 features are implemented. **M3 language intelligence is next.** M2 closes as a bounded native workspace preview, not a full IDE, Zed parity release or a revision of the accepted M0 engine decision. The consolidated final acceptance gate and hooks-disabled production build both passed; the precise fresh/cached results are recorded below.
+**Implementation disposition: COMPLETE.** The final feature audit concludes that all mandatory M2 features are implemented. **Bounded M3 language intelligence is now implemented and validated: COMPLETE; next is M4 Git/review, not started.** M2 closes as a bounded native workspace preview, not a full IDE, Zed parity release or a revision of the accepted M0 engine decision. The historical M2 feature-closure aggregate and hooks-disabled production build both passed; the precise fresh/cached results are recorded below. Those results are not recast as current M3 acceptance. See the [M3 user guide and definitive final validation](WORKBENCH_M3_LANGUAGE.md#final-validation-passed).
 
 ## Subsequent native visual-alignment pass
 
-The requested visual pass is implemented **before M3**. See [native screenshots, scope and validation](WORKBENCH_M2_VISUAL.md): compact shell/panels/tabs/status, real per-group breadcrumbs, responsive layout and mockup-derived manual palettes, without simulated services. Final checks passed **16 visual cases, 201 widgets, 271 native groups**, and a fresh production build. The latest aggregate command failed on an unchanged process-supervisor unit-test abort; the separate main-root rerun passed **326/326**. The full aggregate success described below is the **earlier feature-closure checkpoint**, not a claim that this newer aggregate run passed.
+The requested visual pass is implemented **before M3**. See [native screenshots, scope and validation](WORKBENCH_M2_VISUAL.md): compact shell/panels/tabs/status, real per-group breadcrumbs, responsive layout and mockup-derived manual palettes, without simulated services. Final checks passed **16 visual cases, 201 widgets, 271 native groups**, and a fresh production build. That visual increment's aggregate command failed on an unchanged process-supervisor unit-test abort; the separate main-root rerun passed **326/326**. The full aggregate success described below is the **earlier feature-closure checkpoint**, not a claim that this newer aggregate run passed.
+
+## Subsequent M3 checkpoint — not M2 re-acceptance
+
+The native language implementation now includes explicitly confirmed local server startup, core language commands, manual full/delta semantic tags, position-picker hints, reviewed text transactions and single reviewed filesystem resources. It does not turn the M2 audit into full IDE acceptance. See [M3 scope and limits](WORKBENCH_M3_LANGUAGE.md).
+
+The definitive frozen-source M3 aggregate after the queue/sync fix **passed 99/99 steps**, exit 0, in **28m23.163s**, within a **2,400,000 ms** bound (**36 fresh successful / 63 cached steps**). Direct pure language suites freshly passed **102 tests: 16 protocol, 20 transport, 36 client, 27 features, three file-operation**. The aggregate freshly passed **334 main-root Zig tests**, with **nine other runners cached**, including those five directly validated pure suites. All **17 Python harness/fixture invocations ran fresh**: **75 mandatory language cases passed / three optional blocked** (clangd, TypeScript, Python), **20 lifecycle groups**, **271 M1/M2 native groups**, **204 widgets in 42.099s**, and **25 fixture self-tests**. Counts overlap; this is a new M3 regression pass, not a rewrite of historical M2 evidence.
+
+Hooks-disabled production passed **46/46 steps**, **three fresh / 43 cached**, with fresh compilation **30.053s**. Separate visuals passed **16/16 plus four font-ratio checks before the final queue/sync-only change**; no visual rerun on the latest binary or no-clipping claim is made (a secondary-panel footer ellipsizes/clips at 390px). Harness reaping assertions passed; **no final baseline cleanup scan was performed**. Performance/paint targets remain unqualified.
+
+Local evidence: `pearl/.cache/coral-m3-complete-language-unit.log`, `pearl/.cache/coral-m3-complete.log`, `pearl/.cache/coral-m3-complete-production.log`, `pearl/.cache/coral-m3-final-visual.log`; latest `pearl/.cache/coral-language/results.json` and retained `run-r_olc__s/results.json` now record the complete **75/0/3** matrix; `pearl/.cache/coral-workspace-lifecycle/results.json` records **20/20**. See [linked logs and final binary hashes](WORKBENCH_M3_LANGUAGE.md#final-validation-passed).
+
+The earlier missing-root diagnostic and stale menu-category assertions were fixed. Lifecycle transcript cross-run contamination was fixed with unique temporary transcripts per launch; all 20 cases then passed twice on repeat and again in the aggregate. Preserve `coral-m3-full.log`, `coral-m3-final.log` and the earlier visual failure as historical attempts; the earlier green `coral-m3-accepted.log` predates the capacity fix. **`coral-m3-complete.log` is definitive.** The older visual process-supervisor abort and historical M2 widget timeout below also remain recorded.
 
 ## Mandatory scope and evidence map
 
@@ -52,6 +64,8 @@ The native M2 interpretation is **A → B via Open Folder/Workspace preserves do
 Other project cases cover automatic debounce without a checkpoint hook; shortcut/menu/palette routing; CLI/recovery/empty-recovery precedence; two live processes and `three_concurrent_ordinary_startups_consume_member_once`; frozen delayed close, canonical fault rejection, cancel thaw, save failure, oversize opt-out; confirmed/live/stale Forget and 64-record refusal. The catalog-cap test uses an exact-ID test-controller action for an older item beyond the 50-row prefix; it is **not proof of unlimited native history addressability**.
 
 ## Confirmed closure evidence
+
+**Historical M2 feature-closure evidence follows.** These counts and final-pass statements retain their original checkpoint scope.
 
 Evidence paths below are local artifacts under `pearl/.cache`, not bundled release content. Earlier per-increment counts in the guides remain historical measurements and are not relabelled as current aggregate counts.
 
@@ -123,6 +137,6 @@ M2 implementation completion retains these explicit boundaries:
 - Root management has no dedicated rename/reorder controls, overwrite-existing Save Workspace As, implicit new roots, disk deletion or document closing. Semantic JSON preservation is not formatting preservation.
 - Explicit checkpoint and crash-recovery formats remain separate from automatic catalog publication. No missing-manifest fallback, unlimited backup history, cross-window shared buffers/tab transfer, or desktop window-position restoration is claimed.
 - Filesystem checks, advisory leases and process-local mutation barriers are not hostile-filesystem sandboxing. Mount calls can block; crash/fault tests are not physical power-loss certification. Normal Save/Discard remains required after automatic-retention opt-out.
-- M3–M8 still own LSP, Git/review, production terminal/tasks, native and ACP agents, MCP, DAP/test UI, extensions, advanced editing and full accessibility/IME qualification. Remote workspaces and other roadmap exclusions are unchanged. **M9 remains removed.**
+- Bounded M3 LSP is now implemented and validated; same-root navigation, manual features and reviewed edit/resource limits are documented separately. M4–M8 still own Git/review, production terminal/tasks, native and ACP agents, MCP, DAP/test UI, extensions, interactive snippets/advanced editing and full accessibility/IME qualification. Remote workspaces and other roadmap exclusions are unchanged. **M9 remains removed.**
 
-**Next: M3 language intelligence**, against the existing document/workspace/trust contracts, not more mandatory M2 feature implementation. The [implementation plan](WORKBENCH_IMPLEMENTATION_PLAN.md) remains the later-milestone roadmap.
+**Bounded M3 is complete and validated against the existing document/workspace/trust contracts. Next: M4 Git/review, not started**, not more mandatory M2 feature implementation. The [implementation plan](WORKBENCH_IMPLEMENTATION_PLAN.md) remains the later-milestone roadmap.

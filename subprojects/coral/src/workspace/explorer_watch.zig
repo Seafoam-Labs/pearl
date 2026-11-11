@@ -13,12 +13,16 @@ pub const overflow_index = std.math.maxInt(usize) - 1;
 pub const manifest_index = std.math.maxInt(usize);
 pub const Event = extern struct { wd: i32, mask: u32, cookie: u32, len: u32 };
 const Spec = struct { path: [:0]u8, node: usize, filter: ?[:0]u8, descriptor: i32 = -1 };
+const Root = struct { lexical: [:0]u8, canonical: ?[:0]u8 };
+const root_limit = @import("manifest.zig").limits.roots;
 const Plan = struct {
     items: std.ArrayList(Spec) = .empty,
+    roots: std.ArrayList(Root) = .empty,
     bytes: usize = 0,
     manifest: ?[:0]u8 = null,
     generation: u64 = 0,
     failed: bool = false,
+    policy_failed: bool = false,
     disabled: bool = false,
     delay_us: c_ulong = 0,
     fn deinit(self: *Plan) void {
@@ -27,14 +31,30 @@ const Plan = struct {
             if (item.filter) |filter| a.free(filter);
         }
         self.items.deinit(a);
+        for (self.roots.items) |root| {
+            a.free(root.lexical);
+            if (root.canonical) |path| a.free(path);
+        }
+        self.roots.deinit(a);
         if (self.manifest) |path| a.free(path);
         self.* = .{};
     }
+    fn addRoot(self: *Plan, lexical: []const u8, canonical: ?[]const u8) void {
+        const bytes = lexical.len + 1 + if (canonical) |path| path.len + 1 else @as(usize, 0);
+        if (self.roots.items.len == root_limit or lexical.len > 4095 or bytes > byte_limit - self.bytes) {
+            self.failed = true;
+            self.policy_failed = true;
+            return;
+        }
+        self.roots.append(a, .{ .lexical = u.z(lexical), .canonical = if (canonical) |path| u.z(path) else null }) catch unreachable;
+        self.bytes += bytes;
+    }
     fn add(self: *Plan, path: []const u8, node: usize, filter: ?[]const u8) ?usize {
-        for (self.items.items, 0..) |item, i| if (item.node == node and std.mem.eql(u8, item.path, path) and std.mem.eql(u8, item.filter orelse "", filter orelse "")) return i;
+        for (self.items.items, 0..) |item, i| if (item.node == node and std.mem.eql(u8, item.path, path) and (item.filter == null) == (filter == null) and std.mem.eql(u8, item.filter orelse "", filter orelse "")) return i;
         const bytes = path.len + 1 + if (filter) |f| f.len + 1 else @as(usize, 0);
         if (self.items.items.len == limit or bytes > byte_limit - self.bytes) {
             self.failed = true;
+            if (node == manifest_index) self.policy_failed = true;
             return null;
         }
         self.items.append(a, .{ .path = u.z(path), .node = node, .filter = if (filter) |f| u.z(f) else null }) catch unreachable;
@@ -77,30 +97,35 @@ const Snapshot = struct {
         self.plan.deinit();
         self.* = .{};
     }
-    fn register(self: *Snapshot, owner: *Watches, path: []const u8, node: usize, filter: ?[]const u8) void {
-        if (owner.obsolete(self.plan.generation)) return;
-        const index = self.plan.add(path, node, filter) orelse return;
+    fn register(self: *Snapshot, owner: *Watches, path: []const u8, node: usize, filter: ?[]const u8) bool {
+        if (owner.obsolete(self.plan.generation)) return false;
+        const index = self.plan.add(path, node, filter) orelse return false;
         const item = &self.plan.items.items[index];
-        if (item.descriptor >= 0 or self.fd < 0) return;
+        if (item.descriptor >= 0) return true;
+        if (self.fd < 0) return false;
         const mask = linux.IN.CREATE | linux.IN.DELETE | linux.IN.MOVE | linux.IN.MODIFY | linux.IN.CLOSE_WRITE | linux.IN.ATTRIB | linux.IN.DELETE_SELF | linux.IN.MOVE_SELF | linux.IN.ONLYDIR | linux.IN.DONT_FOLLOW;
         const result = linux.inotify_add_watch(self.fd, item.path, mask);
         if (linux.errno(result) != .SUCCESS) {
             self.plan.failed = true;
-            return;
+            if (node == manifest_index) self.plan.policy_failed = true;
+            return false;
         }
         item.descriptor = @intCast(result);
+        return true;
     }
-    fn chain(self: *Snapshot, owner: *Watches, path: []const u8) void {
+    fn chain(self: *Snapshot, owner: *Watches, path: []const u8) bool {
         var child = path;
         while (std.fs.path.dirname(child)) |parent| {
-            self.register(owner, parent, manifest_index, std.fs.path.basename(child));
+            if (!self.register(owner, parent, manifest_index, std.fs.path.basename(child))) return false;
             child = parent;
         }
+        return true;
     }
-    fn manifest(self: *Snapshot, owner: *Watches, lexical: []const u8) void {
-        self.chain(owner, lexical);
-        // Resolve each symlink, not just realpath's final target. Intermediate
-        // links and directory symlinks also need parent/name subscriptions.
+    fn identityPath(self: *Snapshot, owner: *Watches, lexical: []const u8, root: ?Root) bool {
+        if (!std.fs.path.isAbsolute(lexical) or lexical.len > 4095) return false;
+        // Walk left to right and subscribe BEFORE resolving each component. Do
+        // not register unresolved symlink parents with IN_DONT_FOLLOW, or erase
+        // '..' before the preceding links have supplied its physical meaning.
         var path = u.z(lexical);
         defer a.free(path);
         var hops: usize = 0;
@@ -112,48 +137,51 @@ const Snapshot = struct {
             }
             const prefix = u.z(path[0..end]);
             defer a.free(prefix);
+            if (std.fs.path.dirname(prefix)) |parent| {
+                if (!self.register(owner, parent, manifest_index, std.fs.path.basename(prefix))) return false;
+            }
             var target: [4096]u8 = undefined;
-            var count = std.c.readlink(prefix, &target, target.len);
+            const count = std.c.readlink(prefix, &target, target.len);
             if (count >= 0) {
-                self.chain(owner, prefix);
-                // Re-read only after this link's parent is watched: discovery
-                // itself may race a retarget before registration.
-                count = std.c.readlink(prefix, &target, target.len);
-                if (count < 0) {
-                    self.plan.failed = true;
-                    return;
-                }
                 hops += 1;
-                if (hops > 40 or count == target.len) {
-                    self.plan.failed = true;
-                    return;
-                }
+                if (hops > 40 or count == target.len) return false;
                 const link = target[0..@intCast(count)];
                 const joined = if (std.fs.path.isAbsolute(link)) u.fmt("{s}{s}", .{ link, path[end..] }) else u.fmt("{s}/{s}{s}", .{ std.fs.path.dirname(prefix).?, link, path[end..] });
                 if (joined.len > 4095) {
                     a.free(joined);
-                    self.plan.failed = true;
-                    return;
+                    return false;
                 }
                 a.free(path);
                 path = joined;
-                self.chain(owner, path);
                 end = 1;
             } else {
-                if (std.c.errno(count) != .INVAL) {
-                    self.plan.failed = true;
-                    return;
-                }
+                if (std.c.errno(count) != .INVAL) return false;
                 end += 1;
             }
         }
-        if (owner.obsolete(self.plan.generation)) return;
-        const canonical = c.realpath(path, null) orelse {
-            self.plan.failed = true;
-            return;
-        };
+        if (owner.obsolete(self.plan.generation)) return false;
+        const canonical = c.realpath(path, null) orelse return false;
         defer c.free(canonical);
-        self.chain(owner, std.mem.span(canonical));
+        const resolved = std.mem.span(canonical);
+        if (!self.chain(owner, resolved)) return false;
+        if (root) |expected| {
+            if (!std.mem.eql(u8, resolved, expected.canonical orelse return false)) return false;
+            // Empty filter accepts only self events, never source-file saves.
+            if (!self.register(owner, resolved, manifest_index, "")) return false;
+        }
+        return true;
+    }
+    fn identities(self: *Snapshot, owner: *Watches, plan: *const Plan) void {
+        var complete = !plan.policy_failed and !plan.disabled and plan.roots.items.len != 0 and self.fd >= 0;
+        if (plan.manifest) |path| if (!self.identityPath(owner, path, null)) {
+            complete = false;
+        };
+        for (plan.roots.items) |root| {
+            if (!self.identityPath(owner, root.lexical, root)) complete = false;
+            if (owner.obsolete(self.plan.generation)) break;
+        }
+        self.plan.policy_failed = !complete;
+        self.plan.failed = self.plan.failed or !complete;
     }
     fn read(self: *Snapshot) ReadResult {
         if (self.fd < 0) return .{ .state = .unavailable };
@@ -168,6 +196,7 @@ const Snapshot = struct {
         if (err != .SUCCESS or bytes.len == 0) {
             // EOF is not a drain acknowledgement for an inotify descriptor.
             self.plan.failed = true;
+            self.plan.policy_failed = true;
             return .{ .state = .unavailable, .events = .{ .overflow = true } };
         }
         var result: ReadResult = .{ .bytes = bytes.len };
@@ -204,6 +233,7 @@ pub const Watches = struct {
     context: ?*anyopaque = null,
     changed: *const fn (?*anyopaque, usize) void,
     failed: bool = false,
+    policy_failed: bool = true,
     disabled: bool = false,
     rearm: bool = false,
     count: usize = 0,
@@ -224,6 +254,7 @@ pub const Watches = struct {
     completed: u64 = 0,
     completed_count: usize = 0,
     completed_failed: bool = false,
+    completed_policy_failed: bool = true,
     event_generation: u64 = 0,
     events: Batch = .{},
     barrier_requested: u64 = 0,
@@ -245,6 +276,10 @@ pub const Watches = struct {
     pub fn add(self: *Watches, path: []const u8, node: usize, filter: ?[]const u8) void {
         _ = self.draft.add(path, node, filter);
     }
+    /// Owned, bounded lexical/expected root inputs; all resolution is worker-only.
+    pub fn addRoot(self: *Watches, lexical: []const u8, canonical: ?[]const u8) void {
+        self.draft.addRoot(lexical, canonical);
+    }
     pub fn submit(self: *Watches, manifest_path: ?[]const u8) u64 {
         self.generation += 1;
         self.ready_generation = 0;
@@ -257,7 +292,10 @@ pub const Watches = struct {
             if (path.len + 1 <= byte_limit - self.draft.bytes) {
                 self.draft.manifest = u.z(path);
                 self.draft.bytes += path.len + 1;
-            } else self.draft.failed = true;
+            } else {
+                self.draft.failed = true;
+                self.draft.policy_failed = true;
+            }
         }
         c.g_mutex_lock(&self.mutex);
         defer c.g_mutex_unlock(&self.mutex);
@@ -290,6 +328,10 @@ pub const Watches = struct {
     pub fn ready(self: *const Watches) bool {
         return self.ready_generation == self.generation;
     }
+    /// Explorer fallback is not authorization to execute with partial ancestry.
+    pub fn policyReady(self: *const Watches) bool {
+        return self.ready() and !self.policy_failed;
+    }
     pub fn barrier(self: *Watches) u64 {
         c.g_mutex_lock(&self.mutex);
         defer c.g_mutex_unlock(&self.mutex);
@@ -303,6 +345,7 @@ pub const Watches = struct {
         const completed = self.completed;
         const count = self.completed_count;
         const failed = self.completed_failed;
+        const policy_failed = self.completed_policy_failed;
         const event_generation = self.event_generation;
         const events = self.events;
         const barrier_done = self.completed_barrier;
@@ -313,6 +356,7 @@ pub const Watches = struct {
             self.ready_generation = completed;
             self.count = count;
             self.failed = failed;
+            self.policy_failed = policy_failed;
             self.barrier_done = barrier_done;
             self.barrier_failed = barrier_failed;
         }
@@ -347,6 +391,7 @@ pub const Watches = struct {
         defer c.g_mutex_unlock(&self.mutex);
         self.completed = active.plan.generation;
         self.completed_failed = active.plan.failed;
+        self.completed_policy_failed = active.plan.policy_failed;
         self.completed_count = 0;
         for (active.plan.items.items) |item| {
             if (item.descriptor >= 0) self.completed_count += 1;
@@ -383,17 +428,19 @@ pub const Watches = struct {
             if (next) |*plan| {
                 self.worker_busy.store(true, .release);
                 _ = self.builds.fetchAdd(1, .monotonic);
-                var built: Snapshot = .{ .plan = .{ .generation = plan.generation, .failed = plan.failed or plan.disabled } };
+                var built: Snapshot = .{ .plan = .{ .generation = plan.generation, .failed = plan.failed or plan.disabled, .policy_failed = true } };
 
-                if (!plan.disabled and !self.obsolete(plan.generation) and (plan.items.items.len != 0 or plan.manifest != null)) {
+                if (!plan.disabled and !self.obsolete(plan.generation) and (plan.items.items.len != 0 or plan.manifest != null or plan.roots.items.len != 0)) {
                     const fd = linux.inotify_init1(linux.IN.NONBLOCK | linux.IN.CLOEXEC);
                     if (linux.errno(fd) == .SUCCESS) built.fd = @intCast(fd) else built.plan.failed = true;
                     if (built.fd >= 0) {
                         // Test delay models a blocked registration while both
                         // the old and the building handle remain worker-owned.
                         if (plan.delay_us != 0) c.g_usleep(plan.delay_us);
-                        if (plan.manifest) |path| built.manifest(self, path);
-                        for (plan.items.items) |item| built.register(self, item.path, item.node, item.filter);
+                        // Critical identity chains get the bounded slots first.
+                        // Later Explorer overflow cannot hide a truncated root.
+                        built.identities(self, plan);
+                        for (plan.items.items) |item| _ = built.register(self, item.path, item.node, item.filter);
                     }
                 }
                 plan.deinit();
@@ -431,7 +478,7 @@ fn queuedPolicyFixture(owner: *Watches, fixture: *@import("manifest_test_support
     const fd = linux.inotify_init1(linux.IN.NONBLOCK | linux.IN.CLOEXEC);
     try std.testing.expectEqual(linux.E.SUCCESS, linux.errno(fd));
     snapshot.fd = @intCast(fd);
-    snapshot.register(owner, fixture.base, manifest_index, "policy.json");
+    _ = snapshot.register(owner, fixture.base, manifest_index, "policy.json");
     try std.testing.expect(!snapshot.plan.failed);
     // Each empty sibling generates CREATE + CLOSE_WRITE, with 48-byte records.
     // The kernel cannot split the next record to fill a 32768-byte read.
@@ -588,4 +635,143 @@ test "watch stop retires owned descriptor within 250ms without finishing pending
     try testing.expectEqual(@as(u64, 0), watches.barrier_done);
     try testing.expectEqual(@as(usize, 0), observer.policy);
     try testing.expectEqual(@as(usize, 0), watches.queued().count);
+}
+
+fn identityWatchFixture(owner: *Watches) !Snapshot {
+    owner.generation = 1;
+    owner.desired.store(1, .release);
+    const fd = linux.inotify_init1(linux.IN.NONBLOCK | linux.IN.CLOEXEC);
+    try std.testing.expectEqual(linux.E.SUCCESS, linux.errno(fd));
+    return .{ .fd = @intCast(fd), .plan = .{ .generation = 1 } };
+}
+
+fn drainIdentityWatch(owner: *Watches, snapshot: *Snapshot) !void {
+    for (0..32) |_| {
+        const result = owner.readTurn(snapshot);
+        owner.poll();
+        if (result.state == .drained) return;
+        try std.testing.expectEqual(.pending, result.state);
+    }
+    return error.WatchDidNotDrain;
+}
+
+test "root chain subscriptions retain intermediate targets and drain retarget before publication" {
+    const testing = std.testing;
+    var fixture = try @import("manifest_test_support.zig").Fixture.init();
+    defer fixture.deinit();
+    try fixture.mkdir("root0");
+    try fixture.mkdir("root1");
+    try fixture.mkdir("resolver");
+    try fixture.symlink("../root0", "resolver/middle");
+    try fixture.symlink("resolver/middle", "alias");
+    const alias = try fixture.path("alias");
+    defer testing.allocator.free(alias);
+    const middle = try fixture.path("resolver/middle");
+    defer testing.allocator.free(middle);
+    const root = try fixture.path("root0");
+    defer testing.allocator.free(root);
+    var plan: Plan = .{};
+    defer plan.deinit();
+    plan.addRoot(alias, root);
+    var observer: WatchTestObserver = .{};
+    var watches: Watches = .{ .context = &observer, .changed = &WatchTestObserver.changed };
+    watches.init();
+    defer watches.deinit();
+    var snapshot = try identityWatchFixture(&watches);
+    defer snapshot.deinit();
+    snapshot.identities(&watches, &plan);
+    try testing.expect(!snapshot.plan.failed and !snapshot.plan.policy_failed);
+    try fixture.write("root0/save.zig", "const saved = 1;\n");
+    try drainIdentityWatch(&watches, &snapshot);
+    try testing.expect(watches.policyReady());
+    try testing.expectEqual(@as(usize, 0), observer.policy);
+
+    // The lexical alias and old canonical root are untouched. Only the hidden
+    // intermediate target changes after successful watch registration.
+    try testing.expectEqual(@as(c_int, 0), std.c.unlink(middle));
+    try testing.expectEqual(@as(c_int, 0), std.c.symlink("../root1", middle));
+    const barrier = watches.barrier();
+    try testing.expectEqual(.pending, watches.readTurn(&snapshot).state);
+    watches.poll();
+    try testing.expect(observer.policy != 0);
+    try testing.expect(watches.barrier_done < barrier);
+    try drainIdentityWatch(&watches, &snapshot);
+    try testing.expectEqual(barrier, watches.barrier_done);
+
+    var raced = try identityWatchFixture(&watches);
+    defer raced.deinit();
+    raced.identities(&watches, &plan);
+    try testing.expect(raced.plan.policy_failed); // The candidate still names root0.
+    try drainIdentityWatch(&watches, &raced);
+    try testing.expect(!watches.policyReady());
+}
+
+test "root chains preserve physical dot-dot and fail closed on missing or looping links" {
+    const testing = std.testing;
+    var fixture = try @import("manifest_test_support.zig").Fixture.init();
+    defer fixture.deinit();
+    try fixture.mkdir("route");
+    try fixture.mkdir("physical");
+    try fixture.mkdir("physical/deep");
+    try fixture.mkdir("physical/root");
+    try fixture.symlink("../physical/deep", "route/middle");
+    try fixture.symlink("route/middle/../root", "alias");
+    try fixture.symlink("loop", "loop");
+    const alias = try fixture.path("alias");
+    defer testing.allocator.free(alias);
+    const root = try fixture.path("physical/root");
+    defer testing.allocator.free(root);
+    const loop = try fixture.path("loop");
+    defer testing.allocator.free(loop);
+    const missing = try fixture.path("missing");
+    defer testing.allocator.free(missing);
+    var observer: WatchTestObserver = .{};
+    var watches: Watches = .{ .context = &observer, .changed = &WatchTestObserver.changed };
+    watches.init();
+    defer watches.deinit();
+    var snapshot = try identityWatchFixture(&watches);
+    defer snapshot.deinit();
+    try testing.expect(snapshot.identityPath(&watches, alias, .{ .lexical = alias, .canonical = root }));
+    try testing.expect(!snapshot.identityPath(&watches, loop, .{ .lexical = loop, .canonical = root }));
+    try testing.expect(!snapshot.identityPath(&watches, missing, .{ .lexical = missing, .canonical = null }));
+    // Watching a resolved runtime ancestor is essential even when neither the
+    // original root spelling nor the final canonical path mentions it.
+    const route = try fixture.path("route");
+    defer testing.allocator.free(route);
+    try testing.expectEqual(@as(c_int, 0), std.c.chmod(route, 0o750));
+    try drainIdentityWatch(&watches, &snapshot);
+    try testing.expect(observer.policy != 0);
+}
+
+test "identity watch input and subscription caps cannot authorize partial root chains" {
+    const testing = std.testing;
+    var plan: Plan = .{};
+    defer plan.deinit();
+    plan.bytes = byte_limit;
+    plan.addRoot("/", "/");
+    try testing.expect(plan.policy_failed and plan.failed and plan.roots.items.len == 0);
+    plan.deinit();
+    for (0..root_limit + 1) |_| plan.addRoot("/", "/");
+    try testing.expect(plan.policy_failed and plan.roots.items.len == root_limit);
+    plan.deinit();
+    plan.addRoot("/", "/");
+    var observer: WatchTestObserver = .{};
+    var watches: Watches = .{ .context = &observer, .changed = &WatchTestObserver.changed };
+    watches.init();
+    defer watches.deinit();
+    var snapshot = try identityWatchFixture(&watches);
+    defer snapshot.deinit();
+    for (0..limit) |i| _ = snapshot.plan.add("/", i, "unrelated");
+    snapshot.identities(&watches, &plan);
+    try testing.expect(snapshot.plan.policy_failed and snapshot.plan.failed);
+    try drainIdentityWatch(&watches, &snapshot);
+    try testing.expect(!watches.policyReady());
+    try testing.expectEqual(limit, snapshot.plan.items.items.len);
+    plan.deinit();
+    // A self-only policy watch must never deduplicate with a wildcard watch.
+    try testing.expect(plan.add("/", manifest_index, null).? != plan.add("/", manifest_index, "").?);
+    plan.deinit();
+    plan.bytes = byte_limit;
+    try testing.expect(plan.add("/", 0, null) == null and !plan.policy_failed);
+    try testing.expect(plan.add("/", manifest_index, ".coral") == null and plan.policy_failed);
 }

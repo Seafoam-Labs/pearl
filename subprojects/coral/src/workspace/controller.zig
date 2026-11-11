@@ -30,6 +30,7 @@ pub const Controller = struct {
     model: ?model.Model = null,
     // Resolved on the load worker, never by synchronous GTK-thread I/O.
     manifest_canonical: ?[:0]u8 = null,
+    settings_directories: u32 = 0,
     requests: identity.Scope,
     epoch: u64 = 0,
     jobs: std.ArrayList(*Work) = .empty,
@@ -530,13 +531,13 @@ pub const Controller = struct {
         self.render_pending = true;
     }
     fn requirePolicyRefresh(self: *Controller) void {
-        if (self.model) |snapshot| if (snapshot.manifest_path != null) {
+        if (self.model != null) {
             self.policy_pending = true;
             self.app.workspace_search.invalidate("Stale — workspace policy is being refreshed.");
             const now = c.g_get_monotonic_time();
             if (self.manifest_first == 0) self.manifest_first = now;
             self.manifest_last = now;
-        };
+        }
     }
     fn rebuildWatches(self: *Controller, candidate: *const model.Model) void {
         self.invalidateLoaded();
@@ -547,16 +548,37 @@ pub const Controller = struct {
         } else {
             for (candidate.roots, 0..) |root, i| self.watchRoot(root.canonical_path orelse root.lexical_path, i);
         }
+        for (candidate.roots, 0..) |root, i| {
+            const base = root.canonical_path orelse root.lexical_path;
+            self.watchPolicy(base);
+            self.watches.add(base, watch.manifest_index, ".coral");
+            // The worker discovers every intermediate symlink target before
+            // model revalidation and the notification-drain publication barrier.
+            self.watches.addRoot(root.lexical_path, root.canonical_path);
+            if (self.settings_directories & (@as(u32, 1) << @intCast(i)) != 0) {
+                const directory = u.fmt("{s}/.coral", .{base});
+                defer a.free(directory);
+                self.watches.add(directory, watch.manifest_index, "settings.json");
+            }
+        }
         _ = self.watches.submit(candidate.manifest_path);
         self.watches_dirty = false;
     }
     fn watchRoot(self: *Controller, base: []const u8, index: usize) void {
         self.watches.add(base, index, null);
+        self.watchAncestors(base);
+    }
+    fn watchAncestors(self: *Controller, base: []const u8) void {
         var child = base;
         while (std.fs.path.dirname(child)) |parent| {
-            self.watches.add(parent, index, std.fs.path.basename(child));
+            self.watches.add(parent, watch.manifest_index, std.fs.path.basename(child));
             child = parent;
         }
+    }
+    fn watchPolicy(self: *Controller, directory: []const u8) void {
+        // The watch parser retains only node/rearm, not event names. Classify
+        // policy leaves at subscription time, before ordinary events coalesce.
+        self.watches.add(directory, watch.manifest_index, ".gitignore");
     }
     fn watchNode(self: *Controller, index: usize) void {
         const node = self.tree.nodes.items[index];
@@ -565,6 +587,7 @@ pub const Controller = struct {
         const path = std.fs.path.join(a, &.{ base, node.relative }) catch unreachable;
         defer a.free(path);
         self.watches.add(path, index, null);
+        self.watchPolicy(path);
         // Watch the ancestor chain too: an unavailable root may have multiple
         // missing parents, or an existing ancestor can be renamed/replaced.
         if (node.relative.len == 0) self.watchRoot(base, index);
@@ -574,6 +597,7 @@ pub const Controller = struct {
             const parent = std.fs.path.join(a, &.{ base, part }) catch unreachable;
             defer a.free(parent);
             self.watches.add(parent, index, null);
+            self.watchPolicy(parent);
             ancestor = std.fs.path.dirname(part);
         }
     }
@@ -734,6 +758,7 @@ pub const Controller = struct {
         job.candidate = job.result;
         job.result = null;
         job.stage = .waiting_watch;
+        self.settings_directories = job.settings_directories;
         job.test_delay_us = 0;
         self.pending_load = job;
         self.policy_pending = true;
@@ -857,7 +882,7 @@ pub const Controller = struct {
         const index = self.current();
         const node: ?explorer.Node = if (index) |i| self.tree.nodes.items[i] else null;
         const entries: []const fs.Entry = if (node) |n| if (n.page) |page| page.entries else &.{} else &.{};
-        const text = std.json.Stringify.valueAlloc(a, .{ .roots = roots_list.items, .status = std.mem.span(c.gtk_label_get_text(u.cast(c.GtkLabel, self.status))), .restricted = self.app.workspace_policy.policy.state != .trusted, .loading = self.loading, .scanning = self.scanPending(), .pending = self.jobs.items.len, .in_flight = self.inFlight(), .request_bytes = self.request_bytes, .choosing = self.choosing, .operation_limit = limits.in_flight, .request_byte_limit = limits.request_bytes, .selected = if (self.selected) |id| @as(?u64, @intCast(@backingInt(id))) else null, .relative = self.relative, .entries = entries, .truncated = false, .complete = if (node) |n| n.complete else false, .offset = if (node) |n| n.offset else 0, .visible_rows = self.tree.rows.items.len, .resident_pages = self.tree.pages(), .resident_bytes = self.tree.bytes(), .node_count = self.tree.nodes.items.len, .live_widgets = self.view.live_widgets, .peak_widgets = self.view.peak_widgets, .watches = self.watches.count, .watch_worker_limit = @as(usize, 1), .watch_queue_depth = queued_watches.count, .watch_queued_bytes = queued_watches.bytes, .watch_plan_byte_limit = watch.byte_limit, .watch_generation = self.watches.generation, .watch_ready = self.watches.ready(), .watch_worker_busy = self.watches.worker_busy.load(.acquire), .watch_builds = self.watches.builds.load(.monotonic), .watch_fallback = self.watches.failed, .selected_path = self.tree.selected_path, .loop_gap_us = self.test_max_tick_us, .draining = self.test_drain, .scans_started = self.scans_started, .resets = self.resets, .overflows = self.overflows, .directories = directories.items, .error_name = self.error_name, .manifest = if (self.model) |m| m.manifest_path else null }, .{}) catch unreachable;
+        const text = std.json.Stringify.valueAlloc(a, .{ .roots = roots_list.items, .status = std.mem.span(c.gtk_label_get_text(u.cast(c.GtkLabel, self.status))), .restricted = self.app.workspace_policy.policy.state != .trusted, .loading = self.loading, .scanning = self.scanPending(), .pending = self.jobs.items.len, .in_flight = self.inFlight(), .request_bytes = self.request_bytes, .choosing = self.choosing, .operation_limit = limits.in_flight, .request_byte_limit = limits.request_bytes, .selected = if (self.selected) |id| @as(?u64, @intCast(@backingInt(id))) else null, .relative = self.relative, .entries = entries, .truncated = false, .complete = if (node) |n| n.complete else false, .offset = if (node) |n| n.offset else 0, .visible_rows = self.tree.rows.items.len, .resident_pages = self.tree.pages(), .resident_bytes = self.tree.bytes(), .node_count = self.tree.nodes.items.len, .live_widgets = self.view.live_widgets, .peak_widgets = self.view.peak_widgets, .watches = self.watches.count, .watch_worker_limit = @as(usize, 1), .watch_queue_depth = queued_watches.count, .watch_queued_bytes = queued_watches.bytes, .watch_plan_byte_limit = watch.byte_limit, .watch_generation = self.watches.generation, .watch_ready = self.watches.ready(), .watch_worker_busy = self.watches.worker_busy.load(.acquire), .watch_builds = self.watches.builds.load(.monotonic), .watch_fallback = self.watches.failed, .policy_watch_ready = self.watches.policyReady(), .selected_path = self.tree.selected_path, .loop_gap_us = self.test_max_tick_us, .draining = self.test_drain, .scans_started = self.scans_started, .resets = self.resets, .overflows = self.overflows, .directories = directories.items, .error_name = self.error_name, .manifest = if (self.model) |m| m.manifest_path else null }, .{}) catch unreachable;
         defer a.free(text);
         const z = u.z(text);
         defer a.free(z);
@@ -913,6 +938,7 @@ const Work = struct {
     continuation: ?fs.Continuation = null,
     policy: ?*explorer.Policy = null,
     canonical: ?[:0]u8 = null,
+    settings_directories: u32 = 0,
     err: ?anyerror = null,
     test_delay_us: c_ulong = 0,
     test_search_fail: bool = false,
@@ -942,6 +968,7 @@ const Work = struct {
                     .folder => try model.Model.fromFolder(a, path),
                     .manifest => try model.Model.fromManifest(a, path),
                 };
+                self.settings_directories = try settingsDirectories(&self.result.?);
                 if (self.canonical) |previous| a.free(previous);
                 self.canonical = null;
                 if (self.source == .manifest) {
@@ -973,6 +1000,31 @@ const Work = struct {
         }
     }
 };
+// Worker-only discovery: missing optional settings directories are not failed
+// watch registrations. The root's filtered .coral watch covers later creation;
+// the load/watch/validate barrier checks discovery again before publication.
+fn settingsDirectories(snapshot: *const model.Model) !u32 {
+    var present: u32 = 0;
+    for (snapshot.roots, 0..) |root, i| {
+        const base = root.canonical_path orelse continue;
+        const path = try std.fmt.allocPrintSentinel(a, "{s}/.coral", .{base}, 0);
+        defer a.free(path);
+        while (true) {
+            const fd = std.c.open(path, .{ .PATH = true, .DIRECTORY = true, .NOFOLLOW = true, .CLOEXEC = true });
+            if (fd >= 0) {
+                _ = std.c.close(fd);
+                present |= @as(u32, 1) << @intCast(i);
+                break;
+            }
+            switch (std.c.errno(fd)) {
+                .INTR => continue,
+                .NOENT => break,
+                else => return error.UnsafeSettingsDirectory,
+            }
+        }
+    }
+    return present;
+}
 fn contained(root: []const u8, path: []const u8) bool {
     return std.mem.startsWith(u8, path, root) and (root.len == 1 or path.len == root.len or path[root.len] == '/');
 }
@@ -1045,7 +1097,7 @@ fn done(_: ?*c.GObject, result: ?*c.GAsyncResult, data: ?*anyopaque) callconv(.c
     switch (job.kind) {
         .load => {
             retained = true;
-            if (job.stage == .initial or self.watches_dirty or job.watch_generation != self.watches.generation or job.manifest_generation != self.manifest_generation or !sameWatchRoots(&job.candidate.?, &job.result.?)) {
+            if (job.stage == .initial or self.watches_dirty or job.watch_generation != self.watches.generation or job.manifest_generation != self.manifest_generation or self.settings_directories != job.settings_directories or !sameWatchRoots(&job.candidate.?, &job.result.?)) {
                 self.prepareLoadWatches(job);
             } else {
                 job.stage = .waiting_barrier;
@@ -1151,7 +1203,11 @@ fn rowActivated(_: ?*c.GtkListView, index: c_uint, data: ?*anyopaque) callconv(.
 fn directoryChanged(data: ?*anyopaque, index: usize) void {
     const self = u.cast(Controller, data.?);
     if (self.closed) return;
-    self.app.workspace_policy.recheck();
+    // Ordinary content notifications do not alter trust_fs identity (which uses
+    // birth time, not mutable directory mtime/ctime). Retire permits immediately
+    // for policy, structural/security or lost notifications, before async work.
+    if (index == watch.manifest_index or index == watch.overflow_index or self.watches.rearm)
+        self.app.workspace_policy.recheck();
     self.app.workspace_search.invalidate("Stale — workspace watch event. Refresh to search current contents.");
     if (index == watch.overflow_index) {
         self.overflows += 1;
@@ -1162,7 +1218,7 @@ fn directoryChanged(data: ?*anyopaque, index: usize) void {
             node.last_event = now;
         }
         for (self.jobs.items) |job| if (job.kind == .scan) c.g_cancellable_cancel(job.cancel);
-        if (self.model) |snapshot| if (snapshot.manifest_path != null) directoryChanged(self, std.math.maxInt(usize));
+        if (self.model != null) directoryChanged(self, watch.manifest_index);
         self.watches_dirty = true;
         self.render_pending = true;
         self.app.message("Directory event queue lost notifications. Rebuilding watches and refreshing accessed directories; unopened directories remain lazy.");
@@ -1222,7 +1278,7 @@ fn pump(data: ?*anyopaque) callconv(.c) c_int {
     }
     if (!self.app.fileOperationBarrier() and !self.app.workspaceOperationBusy() and self.watches.ready() and self.manifest_first != 0 and !self.loading and !self.choosing and self.inFlight() < limits.in_flight and (now - self.manifest_last >= 100000 or now - self.manifest_first >= 500000)) {
         self.manifest_first = 0;
-        if (self.model) |snapshot| if (snapshot.manifest_path) |path| self.load(.manifest, path);
+        self.rescan();
     }
     if (@import("build_options").test_hooks) {
         if (self.test_last_tick != 0) self.test_max_tick_us = @max(self.test_max_tick_us, now - self.test_last_tick);
