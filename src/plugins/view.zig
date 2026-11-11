@@ -142,11 +142,14 @@ pub const View = struct {
     fn paint(self: *View, item: *Item) void {
         const slot = self.slot orelse return;
         const asset = if (item.clip) |clip| clip.frames[item.frame].asset else item.node.asset;
-        for (slot.entry.package.images, slot.entry.images) |source, decoded| if (std.mem.eql(u8, source.id, asset)) {
+        for (slot.entry.package.images, slot.entry.images, 0..) |source, decoded, index| if (std.mem.eql(u8, source.id, asset)) {
+            // A user replacement keeps the approved sprite geometry, so the
+            // package's clip rectangles still address the same frames.
+            const art = if (slot.artwork) |chosen| chosen[index] orelse decoded else decoded;
             const crop = if (item.clip) |clip| blk: {
                 const f = clip.frames[item.frame];
-                break :blk decoded.newSubpixbuf(f.x, f.y, f.width, f.height);
-            } else decoded.ref();
+                break :blk art.newSubpixbuf(f.x, f.y, f.width, f.height);
+            } else art.ref();
             defer crop.unref();
             const texture = gdk.Texture.newForPixbuf(crop);
             defer texture.unref();

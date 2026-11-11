@@ -166,7 +166,7 @@ msgstr ""
 msgid "Aa"
 msgstr ""
 
-#: src/settings/plugins_view.zig:108
+#: src/settings/plugins_view.zig:112
 msgid "Aa     +1"
 msgstr ""
 
@@ -190,7 +190,7 @@ msgstr ""
 msgid "Accent button"
 msgstr ""
 
-#: src/settings/plugins_view.zig:403
+#: src/settings/plugins_view.zig:432
 msgid "Accept clicks (off: click through)"
 msgstr ""
 
@@ -375,7 +375,7 @@ msgstr ""
 msgid "All matchers must match; first matching rule wins. Globs are anchored and case sensitive. Inherit removes a field; false and zero remain explicit. Save a move before other rule operations."
 msgstr ""
 
-#: src/settings/plugins_view.zig:149
+#: src/settings/plugins_view.zig:153
 msgid "All on this page"
 msgstr ""
 
@@ -395,11 +395,11 @@ msgstr ""
 msgid "Allow an explicit empty pattern (advanced)"
 msgstr ""
 
-#: src/settings/plugins_view.zig:390
+#: src/settings/plugins_view.zig:419
 msgid "Allow desktop overlay"
 msgstr ""
 
-#: src/settings/plugins_view.zig:403
+#: src/settings/plugins_view.zig:432
 msgid "Allow keyboard and mouse activity"
 msgstr ""
 
@@ -598,7 +598,7 @@ msgstr ""
 msgid "Applying warmer colors…"
 msgstr ""
 
-#: src/settings/plugins_view.zig:546
+#: src/settings/plugins_view.zig:588
 msgid "Approval is for this exact package. Updated packages require a fresh review."
 msgstr ""
 
@@ -659,7 +659,7 @@ msgstr ""
 msgid "Assistant"
 msgstr ""
 
-#: src/settings/plugins_view.zig:116
+#: src/settings/plugins_view.zig:120
 msgid "At home in your bar. Or out on your desktop."
 msgstr ""
 
@@ -781,7 +781,7 @@ msgstr ""
 msgid "Balanced"
 msgstr ""
 
-#: src/settings/plugins_view.zig:388
+#: src/settings/plugins_view.zig:417
 msgid "Bar"
 msgstr ""
 
@@ -1402,7 +1402,7 @@ msgstr ""
 msgid "Close Pearl"
 msgstr ""
 
-#: src/settings/plugins_view.zig:405
+#: src/settings/plugins_view.zig:435
 msgid "Coarse activity only. No keys, text or pointer positions are exposed."
 msgstr ""
 
@@ -2080,7 +2080,7 @@ msgstr ""
 msgid "Desktop icons"
 msgstr ""
 
-#: src/settings/plugins_view.zig:388 src/settings/plugins_view.zig:562
+#: src/settings/plugins_view.zig:417 src/settings/plugins_view.zig:604
 msgid "Desktop overlay"
 msgstr ""
 
@@ -2167,7 +2167,7 @@ msgstr ""
 msgid "Discover runtime and GPU devices"
 msgstr ""
 
-#: src/settings/plugins_view.zig:130
+#: src/settings/plugins_view.zig:134
 msgid "Discovering plugins…"
 msgstr ""
 
@@ -2187,7 +2187,7 @@ msgstr ""
 msgid "Display"
 msgstr ""
 
-#: src/settings/plugins_view.zig:403
+#: src/settings/plugins_view.zig:432
 msgid "Display (empty: first output)"
 msgstr ""
 
@@ -2228,7 +2228,7 @@ msgstr ""
 msgid "Display policy"
 msgstr ""
 
-#: src/settings/plugins_view.zig:565
+#: src/settings/plugins_view.zig:607
 msgid "Display the plugin outside the bar. Choose its placement under Settings and placement."
 msgstr ""
 
@@ -2493,7 +2493,7 @@ msgstr ""
 msgid "Enable Night Light"
 msgstr ""
 
-#: src/settings/plugins_view.zig:119
+#: src/settings/plugins_view.zig:123
 msgid "Enable a widget, choose its place, and give it only the permissions it needs."
 msgstr ""
 
@@ -2534,7 +2534,7 @@ msgstr ""
 msgid "Enabled"
 msgstr ""
 
-#: src/settings/plugins_view.zig:149
+#: src/settings/plugins_view.zig:153
 msgid "Enabled in draft"
 msgstr ""
 
@@ -2668,7 +2668,7 @@ msgstr ""
 msgid "Filter name"
 msgstr ""
 
-#: src/settings/plugins_view.zig:150
+#: src/settings/plugins_view.zig:154
 msgid "Filter plugins on this page"
 msgstr ""
 
@@ -2680,11 +2680,11 @@ msgstr ""
 msgid "Filters paused. Rules remain saved and editable."
 msgstr ""
 
-#: src/settings/plugins_view.zig:147
+#: src/settings/plugins_view.zig:151
 msgid "Find a plugin on this page"
 msgstr ""
 
-#: src/settings/plugins_view.zig:145
+#: src/settings/plugins_view.zig:149
 msgid "Find a plugin on this page…"
 msgstr ""
 
@@ -2704,7 +2704,7 @@ msgstr ""
 msgid "Firefox"
 msgstr ""
 
-#: src/settings/plugins_view.zig:160
+#: src/settings/plugins_view.zig:164
 msgid "First page"
 msgstr ""
 
@@ -2980,7 +2980,7 @@ msgstr ""
 msgid "Hardware to compare"
 msgstr ""
 
-#: src/settings/plugins_view.zig:403
+#: src/settings/plugins_view.zig:432
 msgid "Height"
 msgstr ""
 
@@ -2994,7 +2994,7 @@ msgctxt "aqueous.layout.options.monocle.hide_others.description"
 msgid "Hide non-focused windows in monocle."
 msgstr ""
 
-#: src/settings/plugins_view.zig:403
+#: src/settings/plugins_view.zig:432
 msgid "Hide over fullscreen windows"
 msgstr ""
 
@@ -3015,7 +3015,7 @@ msgstr ""
 msgid "Horizontal (X)"
 msgstr ""
 
-#: src/settings/plugins_view.zig:403
+#: src/settings/plugins_view.zig:432
 msgid "Horizontal position"
 msgstr ""
 
@@ -3058,7 +3058,7 @@ msgstr ""
 msgid "Idle notifications unavailable"
 msgstr ""
 
-#: src/settings/plugins_view.zig:122
+#: src/settings/plugins_view.zig:126
 msgid "Illustrative layout · Experimental plugins"
 msgstr ""
 
@@ -3146,7 +3146,7 @@ msgctxt "aqueous.desktop.font.style.description"
 msgid "Installed face within the selected family. Empty uses the toolkit's automatic match."
 msgstr ""
 
-#: src/settings/plugins_view.zig:129
+#: src/settings/plugins_view.zig:133
 msgid "Installed plugins"
 msgstr ""
 
@@ -3262,7 +3262,7 @@ msgstr ""
 msgid "Keyboard"
 msgstr ""
 
-#: src/settings/plugins_view.zig:554
+#: src/settings/plugins_view.zig:596
 msgid "Keyboard and mouse activity"
 msgstr ""
 
@@ -3564,7 +3564,7 @@ msgctxt "aqueous.actions.lock_screen.label"
 msgid "Lock command"
 msgstr ""
 
-#: src/settings/plugins_view.zig:403
+#: src/settings/plugins_view.zig:432
 msgid "Lock placement"
 msgstr ""
 
@@ -3945,7 +3945,7 @@ msgstr ""
 msgid "Nearby networks"
 msgstr ""
 
-#: src/settings/plugins_view.zig:149
+#: src/settings/plugins_view.zig:153
 msgid "Needs attention"
 msgstr ""
 
@@ -4002,7 +4002,7 @@ msgstr ""
 msgid "Next month"
 msgstr ""
 
-#: src/desktop/wallpapers.zig:90 src/settings/plugins_view.zig:162
+#: src/desktop/wallpapers.zig:90 src/settings/plugins_view.zig:166
 msgid "Next page"
 msgstr ""
 
@@ -4110,7 +4110,7 @@ msgstr ""
 msgid "No matching entries"
 msgstr ""
 
-#: src/settings/plugins_view.zig:207
+#: src/settings/plugins_view.zig:211
 msgid "No matching plugins on this page. Clear your search or choose another filter or page."
 msgstr ""
 
@@ -4134,7 +4134,7 @@ msgstr ""
 msgid "No places match that search."
 msgstr ""
 
-#: src/settings/plugins_view.zig:207
+#: src/settings/plugins_view.zig:211
 msgid "No plugins on this page. Install a complete package in a plugin folder, then refresh. Use First page to return to the start."
 msgstr ""
 
@@ -4417,7 +4417,7 @@ msgstr ""
 msgid "Optional local answers with your chosen search engines."
 msgstr ""
 
-#: src/settings/plugins_view.zig:550
+#: src/settings/plugins_view.zig:592
 msgid "Optional permissions"
 msgstr ""
 
@@ -4494,6 +4494,10 @@ msgstr ""
 msgid "PNG image"
 msgstr ""
 
+#: src/settings/plugins_view.zig:474
+msgid "Package artwork"
+msgstr ""
+
 #: src/settings/palette_editor.zig:267
 msgid "Package exported."
 msgstr ""
@@ -4502,11 +4506,11 @@ msgstr ""
 msgid "Package manager unavailable. Devario requires /usr/bin/shelly; Arch requires /usr/bin/pacman and /usr/bin/sudo."
 msgstr ""
 
-#: src/settings/plugins_view.zig:301
+#: src/settings/plugins_view.zig:305
 msgid "Package missing. Preferences are retained; you can still disable it."
 msgstr ""
 
-#: src/settings/plugins_view.zig:301
+#: src/settings/plugins_view.zig:305
 msgid "Package unavailable. See diagnostics before trying again."
 msgstr ""
 
@@ -4770,7 +4774,7 @@ msgstr ""
 msgid "Place this display"
 msgstr ""
 
-#: src/settings/plugins_view.zig:389
+#: src/settings/plugins_view.zig:418
 msgid "Placement"
 msgstr ""
 
@@ -4778,7 +4782,7 @@ msgstr ""
 msgid "Placement preview · logical output geometry"
 msgstr ""
 
-#: src/settings/plugins_view.zig:406
+#: src/settings/plugins_view.zig:436
 msgid "Placement: Bar"
 msgstr ""
 
@@ -5109,7 +5113,7 @@ msgstr ""
 msgid "Rebase draft"
 msgstr ""
 
-#: src/settings/plugins_view.zig:557
+#: src/settings/plugins_view.zig:599
 msgid "Receive coarse activity notifications. No typed text, key identities or pointer positions are exposed."
 msgstr ""
 
@@ -5165,7 +5169,7 @@ msgstr ""
 msgid "Refresh layout"
 msgstr ""
 
-#: src/settings/plugins_view.zig:133
+#: src/settings/plugins_view.zig:137
 msgid "Refresh plugins"
 msgstr ""
 
@@ -5265,6 +5269,10 @@ msgstr ""
 
 #: src/settings/preferences_view.zig:286
 msgid "Replace reviewed values with saved Qt settings"
+msgstr ""
+
+#: src/settings/plugins_view.zig:479
+msgid "Replacement PNGs in your artwork folder must be"
 msgstr ""
 
 #: src/settings/live_view.zig:161
@@ -5429,7 +5437,7 @@ msgstr ""
 msgid "Review Starship installation"
 msgstr ""
 
-#: src/settings/plugins_view.zig:171
+#: src/settings/plugins_view.zig:175
 msgid "Review and approve packages before enabling them. Apply & save saves all Pearl preferences. Refresh, Retry and Preview act immediately using saved settings."
 msgstr ""
 
@@ -5445,11 +5453,11 @@ msgstr ""
 msgid "Review issue"
 msgstr ""
 
-#: src/settings/plugins_view.zig:448
+#: src/settings/plugins_view.zig:490
 msgid "Review package"
 msgstr ""
 
-#: src/settings/plugins_view.zig:301
+#: src/settings/plugins_view.zig:305
 msgid "Review permissions and approve this package before enabling it."
 msgstr ""
 
@@ -5579,7 +5587,7 @@ msgstr ""
 msgid "Sample pending state. You can keep browsing."
 msgstr ""
 
-#: src/ui/i18n.zig:43 src/settings/appearance_preview.zig:35 src/settings/plugins_view.zig:107
+#: src/ui/i18n.zig:43 src/settings/appearance_preview.zig:35 src/settings/plugins_view.zig:111
 msgid "Sample window"
 msgstr ""
 
@@ -5608,7 +5616,7 @@ msgstr ""
 msgid "Save rule"
 msgstr ""
 
-#: src/settings/plugins_view.zig:570
+#: src/settings/plugins_view.zig:612
 msgid "Save this review to the shared draft, then enable the plugin and Apply & save. Review does not enable a newly installed plugin."
 msgstr ""
 
@@ -5921,7 +5929,7 @@ msgstr ""
 msgid "Settings"
 msgstr ""
 
-#: src/settings/plugins_view.zig:620
+#: src/settings/plugins_view.zig:662
 msgid "Settings are updating. Wait for synchronization, then try again."
 msgstr ""
 
@@ -5929,7 +5937,7 @@ msgstr ""
 msgid "Settings changed elsewhere. Your changes are retained. Merge independent changes, or review Advanced to resolve a conflict."
 msgstr ""
 
-#: src/settings/plugins_view.zig:301
+#: src/settings/plugins_view.zig:305
 msgid "Settings changed. Review the package and reset incompatible settings."
 msgstr ""
 
@@ -7171,7 +7179,7 @@ msgstr ""
 msgid "This page needs a compatible Pearl session. Your settings will appear here when they are available."
 msgstr ""
 
-#: src/settings/plugins_view.zig:569
+#: src/settings/plugins_view.zig:611
 msgid "This plugin requests no optional permissions."
 msgstr ""
 
@@ -7593,7 +7601,7 @@ msgstr ""
 msgid "Vertical (Y)"
 msgstr ""
 
-#: src/settings/plugins_view.zig:403
+#: src/settings/plugins_view.zig:432
 msgid "Vertical position"
 msgstr ""
 
@@ -7776,7 +7784,7 @@ msgstr ""
 msgid "Widgets"
 msgstr ""
 
-#: src/settings/plugins_view.zig:403
+#: src/settings/plugins_view.zig:432
 msgid "Width"
 msgstr ""
 
@@ -9408,7 +9416,7 @@ msgstr ""
 msgid "▪"
 msgstr ""
 
-#: src/settings/plugins_view.zig:110
+#: src/settings/plugins_view.zig:114
 msgid "▪ ▪ ▪ ▪"
 msgstr ""
 
@@ -9416,10 +9424,10 @@ msgstr ""
 msgid "●"
 msgstr ""
 
-#: src/settings/plugins_view.zig:98
+#: src/settings/plugins_view.zig:102
 msgid "●  1  2"
 msgstr ""
 
-#: src/settings/plugins_view.zig:99
+#: src/settings/plugins_view.zig:103
 msgid "◷ 00:42"
 msgstr ""
