@@ -13,6 +13,8 @@ const hunk = @import("hunk.zig");
 
 pub const Action = enum { stage, unstage, stage_hunk, unstage_hunk };
 pub const HunkRef = hunk.HunkRef;
+pub const Selection = hunk.Selection;
+pub const LineRange = hunk.LineRange;
 /// Review summary of the selected hunk for a hunk action; null for full-file.
 pub const HunkSummary = struct {
     ordinal: usize,
@@ -25,7 +27,7 @@ pub const HunkSummary = struct {
     added: usize,
     removed: usize,
 };
-pub const Request = struct { root: []const u8, gitdir: []const u8, commondir: []const u8, path: []const u8, action: Action, hunk: ?HunkRef = null };
+pub const Request = struct { root: []const u8, gitdir: []const u8, commondir: []const u8, path: []const u8, action: Action, hunk: ?HunkRef = null, selection: ?Selection = null };
 pub const Cancel = std.atomic.Value(bool);
 pub const Outcome = struct { committed: bool, durability_uncertain: bool = false };
 pub const max_file_bytes = 256 * 1024;
@@ -280,12 +282,14 @@ pub fn prepare(allocator: std.mem.Allocator, request: Request, cancel: *Cancel) 
     var after: []const u8 = "";
     switch (request.action) {
         .stage => {
+            if (request.selection != null) return error.InvalidSelection;
             if (s.disk.id) |disk| {
                 s.source.mode = if (s.filemode) (if (disk.st_mode & 0o100 != 0) @as(u32, 0o100755) else 0o100644) else if (s.target.mode != 0) s.target.mode else 0o100644;
                 after = s.disk.bytes;
             }
         },
         .unstage => {
+            if (request.selection != null) return error.InvalidSelection;
             s.source = s.head_entry;
             after = try blob(s, cancel, s.source);
         },
@@ -323,7 +327,14 @@ pub fn prepare(allocator: std.mem.Allocator, request: Request, cancel: *Cancel) 
             if (ref.ordinal >= parsed.hunks.len) return error.HunkNotFound;
             const chosen = parsed.hunks[ref.ordinal];
             if (!std.mem.eql(u8, &hunk.digest(chosen), &ref.digest)) return error.StaleHunk;
-            after = try hunk.apply(s.a(), before, chosen, if (request.action == .stage_hunk) .forward else .reverse);
+            // A selection applies a strict sub-hunk built from the captured diff;
+            // the parent hunk digest above already rejects a stale selection.
+            var applied = chosen;
+            if (request.selection) |selection| {
+                if (selection.ordinal != ref.ordinal) return error.InvalidSelection;
+                applied = try hunk.subHunk(s.a(), chosen, selection.ranges, request.action == .unstage_hunk);
+            }
+            after = try hunk.apply(s.a(), before, applied, if (request.action == .stage_hunk) .forward else .reverse);
             try text(after);
             s.source.mode = s.target.mode;
             s.hunk_patch = diff.bytes;
@@ -331,12 +342,12 @@ pub fn prepare(allocator: std.mem.Allocator, request: Request, cancel: *Cancel) 
                 .ordinal = ref.ordinal,
                 .total = parsed.hunks.len,
                 .digest = hunk.digest(chosen),
-                .old_start = chosen.old_start,
-                .old_count = chosen.old_count,
-                .new_start = chosen.new_start,
-                .new_count = chosen.new_count,
-                .added = chosen.added(),
-                .removed = chosen.removed(),
+                .old_start = applied.old_start,
+                .old_count = applied.old_count,
+                .new_start = applied.new_start,
+                .new_count = applied.new_count,
+                .added = applied.added(),
+                .removed = applied.removed(),
             };
         },
     }

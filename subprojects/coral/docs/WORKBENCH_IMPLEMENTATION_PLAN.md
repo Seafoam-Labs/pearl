@@ -1,6 +1,6 @@
 # Coral workbench implementation plan
 
-Status: **M0 tradeoffs accepted; M1 complete; M2 implementation COMPLETE for the bounded workspace preview; bounded M3 baseline complete with historical validation; automatic-language increment implemented and validation accepted; M4 Git/review core workflows implemented and validated as the third increment (single-hunk stage/unstage, commit/uncommit, branches/lightweight tags, worktrees, stash, conflicts/continue-abort, remotes, history/blame/permalinks) on top of inspection and selected full-file staging/unstaging; final parent aggregate/production/visual accepted; UI parity remains and full Zed parity is not claimed.** All mandatory M2 features are implemented, including automatic projects/startup, native recents/buffer pickers and reviewed workspace-root management. See the [acceptance audit and validation checkpoint](WORKBENCH_M2_ACCEPTANCE.md).
+Status: **M0 tradeoffs accepted; M1 complete; M2 implementation COMPLETE for the bounded workspace preview; bounded M3 baseline complete with historical validation; automatic-language increment implemented and validation accepted; M4 Git/review core workflows implemented and validated as the third increment (single-hunk stage/unstage, commit/uncommit, branches/lightweight tags, worktrees, stash, conflicts/continue-abort, remotes, history/blame/permalinks) on top of inspection and selected full-file staging/unstaging, plus the UI-parity increment (Source Control dock panel, editable Project Diff) with targeted validation passed; the final parent aggregate/production/visual gates remain historical core-workflow evidence (full aggregate not rerun for the UI increment); remaining limits are explicit and full Zed parity is not claimed.** All mandatory M2 features are implemented, including automatic projects/startup, native recents/buffer pickers and reviewed workspace-root management. See the [acceptance audit and validation checkpoint](WORKBENCH_M2_ACCEPTANCE.md).
 
 See [current implementation status and validation](WORKBENCH_STATUS.md). The requested [native M2 visual-alignment pass](WORKBENCH_M2_VISUAL.md) is implemented before M3, with screenshots and an explicit aggregate-test caveat. The [M3 language guide](WORKBENCH_M3_LANGUAGE.md) now records implemented commands, trusted/approved automatic startup, persistent workspace Stop/resume, negotiated protocol behavior and strict limits. The [automatic-increment aggregate, production and visual gates passed](WORKBENCH_M3_LANGUAGE.md#automatic-increment-validation--accepted), with the initial watchdog failure retained. The historical frozen-source aggregate and production gates passed after the queue/sync fix, before automatic startup; that baseline's separate visual evidence predates its final change. Historical M2 passes and later failures remain distinct; the roadmap below is not a claim that all milestones are complete.
 
@@ -39,7 +39,7 @@ Paths in this document are relative to `subprojects/coral/` unless stated otherw
 
 Implemented at the original baseline: reorderable tabs; async GIO file loads and replacement saves; dirty prompts; canonical-path deduplication; save snapshot/revision protection; etag conflict decisions; Unicode, syntax highlighting, find/replace, spelling and preferences. Reduced-feature mode starts above 10 MiB and reads are capped at 128 MiB. Preserve these limits until measurements justify changes.
 
-Missing at the original baseline: project/workspace model, explorer, split editors, command palette, project search, recovery, LSP, Git, terminal/tasks, debugger, agents and extension host. The command palette, bounded M1/M2/M3 increments and M4 inspection/index/core-workflow increments described below are now implemented; this baseline list is not the current delivery status. **“Coral Git” is the development-build application identity, not Git integration.** Coral runs without Pearl/Aqueous, although its build imports shared modules from the Pearl tree.
+Missing at the original baseline: project/workspace model, explorer, split editors, command palette, project search, recovery, LSP, Git, terminal/tasks, debugger, agents and extension host. The command palette, bounded M1/M2/M3 increments and M4 inspection/index/core-workflow/UI-parity increments described below are now implemented; this baseline list is not the current delivery status. **“Coral Git” is the development-build application identity, not Git integration.** Coral runs without Pearl/Aqueous, although its build imports shared modules from the Pearl tree.
 
 The historical implementation plan/report contain older toolchain and appearance statements. Use current source/build/README for this expansion; do not reinterpret historical screenshots as fresh acceptance evidence. The README's historical Arch-host wording is not host detection: this environment uses Shelly. Inspect Shelly's available commands before installing native dependencies.
 
@@ -143,7 +143,7 @@ Measure UI-thread full-buffer work during load/save and syntax/decorations. If t
 
 ## 6. LSP implementation
 
-**The bounded M3 baseline is complete; automatic startup is implemented and its separate validation is accepted. M4 Git/review core workflows are implemented and validated; the parent aggregate, production and visual gates passed, and UI parity remains — not full-M4 completion.** Negotiate the implemented LSP 3.17-compatible capability subset, not assumptions about every server. The exact default/reference is **`/usr/bin/zls` 0.17.0 with `/usr/bin/zig` 0.17.1**, pinned in `tests/fixtures/lsp-reference.json`. There is no automatic setup/download. clangd, TypeScript and Python remain separate optional smoke tracks, currently **blocked, not passed**. The [user guide](WORKBENCH_M3_LANGUAGE.md) is the current behavior/limits reference.
+**The bounded M3 baseline is complete; automatic startup is implemented and its separate validation is accepted. M4 Git/review core workflows and UI parity are implemented; the core-workflow parent aggregate, production and visual gates passed historically and the UI-parity increment passed targeted validation — not full-M4 completion or full Zed parity.** Negotiate the implemented LSP 3.17-compatible capability subset, not assumptions about every server. The exact default/reference is **`/usr/bin/zls` 0.17.0 with `/usr/bin/zig` 0.17.1**, pinned in `tests/fixtures/lsp-reference.json`. There is no automatic setup/download. clangd, TypeScript and Python remain separate optional smoke tracks, currently **blocked, not passed**. The [user guide](WORKBENCH_M3_LANGUAGE.md) is the current behavior/limits reference.
 
 ### Service contract
 
@@ -199,21 +199,32 @@ Default Coral design stages native-agent proposed edits for review before applyi
 
 ## 8. Zed-style Git integration
 
-**Current delivery: third increment, remaining core M4 workflows, implemented and
-validated; this is not full Zed parity.** The [M4 guide](WORKBENCH_M4_GIT.md)
-describes the separate native Source Control window and Git menu/palette status,
-explicit refresh, noneditable staged/unstaged previews, **Git: Stage selected file… /
-Git: Unstage selected file…**, **single-hunk stage/unstage** with a strict
-captured-snapshot applier, and command-driven native workflow dialogs: staged-only
-commit plus explicit stage-tracked-and-commit and soft uncommit, branch
-create/switch/delete and lightweight tags, worktree list/add/remove/open, named
-stash, conflict resolution and merge/rebase/cherry-pick/revert continue/abort,
-remotes fetch/pull/push/force-with-lease, and history/blame/commit diff/host
-permalinks. It requires current workspace trust plus per-window disclosure; no Git
-execution at startup or in restricted mode. Discovery probes workspace roots and
-the active saved file's parent, with owning-root containment, `.git` files and
-existing linked-worktree reads—not recursive nested discovery; worktree
-list/add/remove/open is delivered separately by the workflow increment.
+**Current delivery: core M4 workflows plus the UI-parity increment (Source Control
+dock panel and editable Project Diff), implemented; targeted UI validation passed
+and the full aggregate was not rerun for it. This is not full Zed parity.** The
+[M4 guide](WORKBENCH_M4_GIT.md) describes the separate native Source Control window
+and Git menu/palette status, explicit refresh, noneditable staged/unstaged previews,
+**Git: Stage selected file… / Git: Unstage selected file…**, **single-hunk
+stage/unstage** with a strict captured-snapshot applier, and command-driven native
+workflow dialogs: staged-only commit plus explicit stage-tracked-and-commit and soft
+uncommit, branch create/switch/delete and lightweight tags, worktree
+list/add/remove/open, named stash, conflict resolution and
+merge/rebase/cherry-pick/revert continue/abort, remotes fetch/pull/push/force-with-lease,
+and history/blame/commit diff/host permalinks. The UI-parity increment adds the
+**Source Control dock panel** (third dock panel, persisted `layout.State`
+`source_control` fields, activity rail/tabs, grouped Staged/Unstaged/Untracked,
+tree/flat, commit entry, reviewed section/all/selected staging with barrier/CAS/
+conflict refusal) and the **Project Diff window** (multi-file unified/split/word
+modes, gutter markers, hunk navigation, original/current/both sides, editable
+current-side ExcerptEditor bound to real documents, read-only original, hunk and
+change-line-selection staging via the strict sub-hunk backend, unsaved edits
+excluded with a Save callback), exposed through `toggle-source-control`,
+`focus-source-control`, `git-project-diff` and related commands. It requires current
+workspace trust plus per-window disclosure; no Git execution at startup or in
+restricted mode. Discovery probes workspace roots and the active saved file's
+parent, with owning-root containment, `.git` files and existing linked-worktree
+reads—not recursive nested discovery; worktree list/add/remove/open is delivered
+separately by the workflow increment.
 Limits are **8 repositories, 1 MiB status / 10,000 entries, 128 rows/page**; diff
 capture is 1 MiB, text previews **256 KiB / 4,000 lines / 2,048 bytes per line**,
 and commands time out after **15 seconds**. Inspection refresh is manual; status/diff
@@ -257,16 +268,18 @@ there is no unpacking fallback. See the guide for the full refusal policy. Prote
 assumes cooperative writers, not malicious same-UID processes, mount aliases or
 adversarial ref changes in the final recheck-to-publication window.
 
-**Workflow-increment limits are explicit:** hunk operations refuse absent sides and
-mode changes; packed-only target blobs still refuse with `ObjectDurabilityUnavailable`;
-conflict resolution refuses binary/rename/delete/manual cases; worktree open messages
-the path unless a parent callback is installed; there are no annotated tags and no
-PR API. There is **no source-control dock, editable Project Diff, split/word-diff,
-tree/flat or file/section/all staging UI parity** — workflows are command-driven
-native dialogs. **Next: UI-parity work**, with supported-case expansion as needed;
-the parent aggregate gate, hooks-disabled production and separate visual
-qualification **passed**. Hunk failures must never fall back to whole-file staging
-or implicit buffer saving.
+**Remaining limits are explicit:** hunk/selection operations refuse absent sides and
+mode changes; selections are change-line indices within one hunk; packed-only target
+blobs still refuse with `ObjectDurabilityUnavailable`; conflict resolution refuses
+binary/rename/delete/manual cases; worktree open messages the path unless a parent
+callback is installed; there are no annotated tags and no PR API. **UI parity is
+delivered** (Source Control dock panel and editable Project Diff above), with
+explicit panel refresh and no watchers, current-side-only Project Diff editing
+(original read-only), and no rerun visual matrix for the new UI. **Next:
+supported-case expansion** and the remaining repository-model targets; the
+core-workflow parent aggregate gate, hooks-disabled production and separate visual
+qualification **passed historically** and were not rerun for the UI increment. Hunk
+failures must never fall back to whole-file staging or implicit buffer saving.
 
 The following repository/index model and operation list remain **full-M4 targets**,
 not claims that these increments complete them. Use the installed Git CLI, orchestrated
@@ -303,11 +316,16 @@ credential-helper disclosure and a disclosed current-local-branch push refspec
 current/incoming/both resolution (publication wins over cancellation) and
 gitdir-detected continue/abort; staged-only commit, stage-tracked with unmerged
 refusal, and soft uncommit via compare-and-swap `update-ref` with
-initial/merge/published/in-progress-operation refusal. Item 1's integrated
-panel and item 2's editable Project Diff remain **UI-parity targets**: there is no
-dock, tree/flat grouping, file/section/all staging, split/word-diff or editable
-multi-file review. Watch-based refresh and buffer-to-index staging in the repository
-model also remain undelivered; inspection refresh is manual.
+initial/merge/published/in-progress-operation refusal. **Item 1's integrated panel
+and item 2's editable Project Diff are delivered** as the Source Control dock panel
+(grouped staged/unstaged/untracked, tree/flat, commit entry, reviewed
+file/section/all staging) and the Project Diff window (editable current-side
+excerpts across files, unified/split/word modes, gutter markers, next/previous hunk,
+hunk/change-line-selection staging, original/current/both views); binary/rename/
+deleted/absent changes get explicit non-text states. Remaining gaps against the full
+targets include ancestor-context conflict editing and PR/issue links. Watch-based
+refresh and buffer-to-index staging in the repository model remain undelivered;
+inspection refresh is manual, and Project Diff's original side stays read-only.
 
 **Intentional difference:** Zed documents a convenience workflow that can auto-stage tracked changes when committing from its panel. Coral defaults to **Commit staged only**, matching the prototype and avoiding accidental inclusion. The optional, clearly named **Git: Stage tracked and commit…** command now provides that Zed workflow through a separate `git add -u` review and a fresh commit review; it never adds untracked files. The staged-only/stage-tracked native cases exercise this difference, which remains documented rather than silently called parity.
 
@@ -331,7 +349,7 @@ Indicative effort is relative, not a promised calendar schedule. One small team 
 | **M1: safe editor foundation** | M0 | Registry, view/group separation, commands, transactions, file watchers and recovery / XL | Existing file-integrity/spelling/theme tests still pass; two independent views; stale/multi-file edits and interrupted saves recover safely |
 | **M2: workspaces and workbench — implementation complete** | M1 | Multi-root and reviewed root/file operations, tree/search, settings/trust, docks/native pickers, explicit and automatic sessions/multi-window / L | Real two-root W07 workflow; responsive 100k fixture; dirty crash recovery; no untrusted execution; [composed acceptance evidence](WORKBENCH_M2_ACCEPTANCE.md) |
 | **M3: bounded baseline complete; automatic increment validated** | M1, M2 | Detected-language approved automatic lifecycle; command-driven features, manual semantic tags/hint picker, reviewed text and single resources / XL | `test-m3`: language units, mandatory fake/native + pinned real ZLS, lifecycle, 25 fixture tests and full M1/M2; separate visual/production checks; [accepted automatic-increment gate and retained history](WORKBENCH_M3_LANGUAGE.md#automatic-increment-validation--accepted) |
-| **M4: Git and review engine — core workflows implemented and validated** | M1, M2 | Discovery/status/diff, selected full-file and single-hunk staging/unstaging, commit/uncommit, branches/lightweight tags, worktrees, stash, conflicts/continue-abort, remotes and history/blame/permalinks delivered as command-driven dialogs; dock/editable Project Diff UI parity remains / XL | Final `test-m4-slice` 117/117 steps, 475/475 Zig tests (no skips reported), exit 0; pure 27, backend/hunk 40, workflow roots 25+30+18+21=94, native 46 + workflow 36; hooks-disabled production 46/46 and visual 40/40 (16 cases) accepted. Historical first-slice 105/105 aggregate and second-increment evidence remain history. Full exit still requires dock/editable-Project-Diff UI parity; supported-case/race boundaries must remain explicit. |
+| **M4: Git and review engine — core workflows and UI parity implemented** | M1, M2 | Discovery/status/diff, selected full-file and single-hunk staging/unstaging, commit/uncommit, branches/lightweight tags, worktrees, stash, conflicts/continue-abort, remotes and history/blame/permalinks delivered as command-driven dialogs; Source Control dock panel and editable Project Diff delivered (grouped tree/flat status, commit entry, reviewed section/all/selected staging; multi-file unified/split/word review, hunk/change-line-selection staging) / XL | Historical final `test-m4-slice` 117/117 steps, 475/475 Zig tests (no skips reported), exit 0; pure 27, backend/hunk 40, workflow roots 25+30+18+21=94, native 46 + workflow 36; hooks-disabled production 46/46 and visual 40/40 (16 cases) accepted for the core workflows. UI-parity increment: targeted session-unit 25, widgets 209, docks 27, git-index-unit 59, focused hunk workflows 2, build 46/46 passed; full aggregate not rerun per user request; visual matrix not rerun for the new UI. Historical first-slice 105/105 aggregate and second-increment evidence remain history. Full exit still requires supported-case expansion and the remaining repository-model targets; supported-case/race boundaries must remain explicit. |
 | **M5: terminal and tasks** | M1, M2 | PTY adapter, process supervisor, task UI/problem matchers / L | Resize/exit/cancel/restart and trust tests; stdout cannot inject UI commands; processes cleaned up on close |
 | **M6: agent core** | M3, M4, M5 | Native providers, context, threads, tools/policy, checkpoints, inline/multi-file review / XL | Real opt-in provider workflow plus deterministic CI; cancelled/stale/conflicting edits cannot overwrite user work; denial has no side effect |
 | **M7: Zed agent parity** | M6 | ACP/MCP/skills, external auth, capability negotiation, concurrent/worktree agents, terminal threads / XL | Native and at least two pinned ACP adapters pass published feature matrix; isolation/permission bypass tests and thread restoration |
@@ -377,12 +395,28 @@ The closing increments deliver **automatic project/latest per-window and scratch
 
 **Save Workspace As…** first promotes a folder-only workspace to a new manifest destination. Reviewed **Workspace: Add Folder… / Remove Selected Root…** then write the manifest immediately, preserving semantic settings/excludes/names and absolute lexical paths, without disk deletion or document loss. The last root and existing Save As destinations are refused; exact source bytes/etag and generations are revalidated. Dedicated root rename/reorder controls remain outside this UI. Targets: `project-unit`, `projects`, `roots`, `test-m2-projects`, `test-m2-roots`; **`test-m2` includes the prior nine gates plus these two aggregates**.
 
-**M2 implementation is COMPLETE; the bounded M3 baseline is complete with historical validation. Automatic startup is implemented and separately validated. M4's third increment delivers the remaining core Git workflows with accepted final aggregate/production/visual validation; UI parity remains.** The final feature audit maps all mandatory scope, including W07, responsive 100k traversal, no-execution and dirty crash recovery, to actual tests in the [acceptance report](WORKBENCH_M2_ACCEPTANCE.md). That report separates the final consolidated validation checkpoint from implementation completion and preserves historical increment counts. This is the bounded workspace preview—not full IDE parity, unlimited history, a persistent index or a changed M0 engine decision.
+**M2 implementation is COMPLETE; the bounded M3 baseline is complete with historical validation. Automatic startup is implemented and separately validated. M4's third increment delivered the remaining core Git workflows with accepted final aggregate/production/visual validation (now historical), and the UI-parity increment delivers the Source Control dock panel and editable Project Diff with targeted validation; the full aggregate was not rerun for it.** The final feature audit maps all mandatory scope, including W07, responsive 100k traversal, no-execution and dirty crash recovery, to actual tests in the [acceptance report](WORKBENCH_M2_ACCEPTANCE.md). That report separates the final consolidated validation checkpoint from implementation completion and preserves historical increment counts. This is the bounded workspace preview—not full IDE parity, unlimited history, a persistent index or a changed M0 engine decision.
+
+### M4 UI-parity increment validation — targeted
+
+**Targeted validation passed for the UI-parity increment; the full aggregate was not
+rerun per user request.** `session-unit` **25/25** (including persisted
+`source_control` layout tests), widgets **209/209 in 53.711 s**, native docks
+**27/27**, `git-index-unit` **59** (21 index-transaction + 26 hunk incl.
+sub-hunk/selection + 6 diff_render + 5 command-policy + 1 import-root), the two
+focused hunk workflow cases (`hunk-stage-preserves-other`,
+`hunk-stage-second-navigation`) and the integrated build **46/46 steps** passed
+([units log](../../../.cache/coral-m4-ui-units.log),
+[docks log](../../../.cache/coral-m4-ui-docks.log)). Counts overlap across harnesses;
+not a unique-test total. The visual matrix was **not rerun for the new UI**; the
+historical core-workflow gate below predates this increment and was not rerun for it.
+See the [M4 guide's targeted evidence](WORKBENCH_M4_GIT.md#m4-ui-parity-increment-validation--targeted).
 
 ### Final M4 core-workflow validation — accepted
 
-**The parent aggregate, hooks-disabled production and separate visual qualification
-passed.** Final [`test-m4-slice`](../../../.cache/coral-m4-final-gate.log) completed
+**Historical core-workflow gate: this evidence predates the UI-parity increment and
+was not rerun for it.** The parent aggregate, hooks-disabled production and separate
+visual qualification passed. Final [`test-m4-slice`](../../../.cache/coral-m4-final-gate.log) completed
 **117/117 steps, exit 0; 475/475 Zig tests passed, no skips reported** (94 fresh
 workflow-root tests + 381 fresh main-root tests; `git-unit`, `git-index-unit`, language
 and other headless runners cached from prior passes). Unit roots: **`git-unit` 27**,
@@ -407,7 +441,8 @@ disclosed current-local-branch push refspec with detached/unborn refusal, confli
 publication-wins, and cancelled-write warnings/refresh. `test-m4-slice` composes pure
 Git units, index-transaction/hunk backend units, the four workflow roots, both native
 Git suites and `test-m3` with M1/M2 regressions: implemented core-workflow coverage,
-**not full Zed/UI parity**. See the
+**not full Zed/UI parity**; it predates the UI-parity increment, whose targeted
+validation is recorded above. See the
 [final verification record](WORKBENCH_M4_GIT.md#final-m4-core-workflow-validation--accepted).
 
 ### Second M4 increment verification — historical standalone evidence
@@ -417,7 +452,7 @@ Recorded standalone results: **`git-index-unit` 26 passed (~4 minutes)**, **Git 
 15 prior)**. An earlier original `teardown-root` open-workspace timeout subsequently
 passed isolated and in the full run, **without a code fix or relaxed timeout**.
 That aggregate remained pending and was never accepted; the final core-workflow
-validation above supersedes it as current evidence.
+validation above superseded it as the accepted core-workflow evidence.
 
 ### Historical first M4 read-only slice validation — passed
 

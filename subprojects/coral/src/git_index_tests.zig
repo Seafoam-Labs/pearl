@@ -3,4 +3,5 @@
 test {
     _ = @import("git/index_transaction_test.zig");
     _ = @import("git/hunk_test.zig");
+    _ = @import("git/diff_render.zig");
 }

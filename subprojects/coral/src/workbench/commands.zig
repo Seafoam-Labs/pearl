@@ -40,6 +40,8 @@ pub const Command = enum {
     restore_workspace_session,
     toggle_explorer,
     toggle_search,
+    toggle_source_control,
+    focus_source_control,
     focus_explorer,
     focus_search,
     focus_editor,
@@ -133,6 +135,17 @@ pub const Command = enum {
     git_blame,
     git_commit_diff,
     git_permalink,
+    git_project_diff,
+    git_project_diff_refresh,
+    git_project_diff_next_hunk,
+    git_project_diff_previous_hunk,
+    git_project_diff_stage_hunk,
+    git_project_diff_unstage_hunk,
+    git_project_diff_stage_selection,
+    git_project_diff_unstage_selection,
+    git_project_diff_unified,
+    git_project_diff_split,
+    git_project_diff_word,
 
     pub fn metadata(self: Command) Metadata {
         return entries[@backingInt(self)];
@@ -177,6 +190,8 @@ pub const Command = enum {
             .restore_workspace_session => i18n.dtr("coral", "Restore Workspace Session"),
             .toggle_explorer => i18n.dtr("coral", "Toggle Explorer dock"),
             .toggle_search => i18n.dtr("coral", "Toggle Search dock"),
+            .toggle_source_control => i18n.dtr("coral", "Toggle Source Control dock"),
+            .focus_source_control => i18n.dtr("coral", "Focus Source Control"),
             .focus_explorer => i18n.dtr("coral", "Focus Explorer"),
             .focus_search => i18n.dtr("coral", "Focus Search"),
             .focus_editor => i18n.dtr("coral", "Focus editor"),
@@ -270,6 +285,17 @@ pub const Command = enum {
             .git_blame => i18n.dtr("coral", "Git: Blame…"),
             .git_commit_diff => i18n.dtr("coral", "Git: Commit diff…"),
             .git_permalink => i18n.dtr("coral", "Git: Open permalink…"),
+            .git_project_diff => i18n.dtr("coral", "Git: Project Diff…"),
+            .git_project_diff_refresh => i18n.dtr("coral", "Git: Refresh Project Diff"),
+            .git_project_diff_next_hunk => i18n.dtr("coral", "Git: Project Diff next hunk"),
+            .git_project_diff_previous_hunk => i18n.dtr("coral", "Git: Project Diff previous hunk"),
+            .git_project_diff_stage_hunk => i18n.dtr("coral", "Git: Project Diff stage hunk…"),
+            .git_project_diff_unstage_hunk => i18n.dtr("coral", "Git: Project Diff unstage hunk…"),
+            .git_project_diff_stage_selection => i18n.dtr("coral", "Git: Project Diff stage selection…"),
+            .git_project_diff_unstage_selection => i18n.dtr("coral", "Git: Project Diff unstage selection…"),
+            .git_project_diff_unified => i18n.dtr("coral", "Git: Project Diff unified view"),
+            .git_project_diff_split => i18n.dtr("coral", "Git: Project Diff split view"),
+            .git_project_diff_word => i18n.dtr("coral", "Git: Project Diff word view"),
         };
     }
 };
@@ -320,6 +346,8 @@ pub const entries = [_]Metadata{
     .{ .command = .restore_workspace_session, .action = "restore-workspace-session", .detailed_action = "win.restore-workspace-session", .label = "Restore Workspace Session", .shortcut = null },
     .{ .command = .toggle_explorer, .action = "toggle-explorer", .detailed_action = "win.toggle-explorer", .label = "Toggle Explorer dock", .shortcut = "Ctrl+B" },
     .{ .command = .toggle_search, .action = "toggle-search", .detailed_action = "win.toggle-search", .label = "Toggle Search dock", .shortcut = null },
+    .{ .command = .toggle_source_control, .action = "toggle-source-control", .detailed_action = "win.toggle-source-control", .label = "Toggle Source Control dock", .shortcut = null },
+    .{ .command = .focus_source_control, .action = "focus-source-control", .detailed_action = "win.focus-source-control", .label = "Focus Source Control", .shortcut = null },
     .{ .command = .focus_explorer, .action = "focus-explorer", .detailed_action = "win.focus-explorer", .label = "Focus Explorer", .shortcut = "Ctrl+Shift+E" },
     .{ .command = .focus_search, .action = "focus-search", .detailed_action = "win.focus-search", .label = "Focus Search", .shortcut = null },
     .{ .command = .focus_editor, .action = "focus-editor", .detailed_action = "win.focus-editor", .label = "Focus editor", .shortcut = "Ctrl+1" },
@@ -413,6 +441,17 @@ pub const entries = [_]Metadata{
     .{ .command = .git_blame, .action = "git-blame", .detailed_action = "win.git-blame", .label = "Git: Blame…", .shortcut = null },
     .{ .command = .git_commit_diff, .action = "git-commit-diff", .detailed_action = "win.git-commit-diff", .label = "Git: Commit diff…", .shortcut = null },
     .{ .command = .git_permalink, .action = "git-permalink", .detailed_action = "win.git-permalink", .label = "Git: Open permalink…", .shortcut = null },
+    .{ .command = .git_project_diff, .action = "git-project-diff", .detailed_action = "win.git-project-diff", .label = "Git: Project Diff…", .shortcut = null },
+    .{ .command = .git_project_diff_refresh, .action = "git-project-diff-refresh", .detailed_action = "win.git-project-diff-refresh", .label = "Git: Refresh Project Diff", .shortcut = null },
+    .{ .command = .git_project_diff_next_hunk, .action = "git-project-diff-next-hunk", .detailed_action = "win.git-project-diff-next-hunk", .label = "Git: Project Diff next hunk", .shortcut = null },
+    .{ .command = .git_project_diff_previous_hunk, .action = "git-project-diff-previous-hunk", .detailed_action = "win.git-project-diff-previous-hunk", .label = "Git: Project Diff previous hunk", .shortcut = null },
+    .{ .command = .git_project_diff_stage_hunk, .action = "git-project-diff-stage-hunk", .detailed_action = "win.git-project-diff-stage-hunk", .label = "Git: Project Diff stage hunk…", .shortcut = null },
+    .{ .command = .git_project_diff_unstage_hunk, .action = "git-project-diff-unstage-hunk", .detailed_action = "win.git-project-diff-unstage-hunk", .label = "Git: Project Diff unstage hunk…", .shortcut = null },
+    .{ .command = .git_project_diff_stage_selection, .action = "git-project-diff-stage-selection", .detailed_action = "win.git-project-diff-stage-selection", .label = "Git: Project Diff stage selection…", .shortcut = null },
+    .{ .command = .git_project_diff_unstage_selection, .action = "git-project-diff-unstage-selection", .detailed_action = "win.git-project-diff-unstage-selection", .label = "Git: Project Diff unstage selection…", .shortcut = null },
+    .{ .command = .git_project_diff_unified, .action = "git-project-diff-unified", .detailed_action = "win.git-project-diff-unified", .label = "Git: Project Diff unified view", .shortcut = null },
+    .{ .command = .git_project_diff_split, .action = "git-project-diff-split", .detailed_action = "win.git-project-diff-split", .label = "Git: Project Diff split view", .shortcut = null },
+    .{ .command = .git_project_diff_word, .action = "git-project-diff-word", .detailed_action = "win.git-project-diff-word", .label = "Git: Project Diff word view", .shortcut = null },
 };
 
 pub fn fromAction(action: []const u8) ?Command {
@@ -477,7 +516,7 @@ pub fn fromKey(key: u32, state: u32) ?Command {
 
 test "registry is exhaustive, ordered and has unique stable actions" {
     try std.testing.expectEqual(@typeInfo(Command).@"enum".field_names.len, entries.len);
-    const actions = [_][]const u8{ "new", "open", "save", "save-as", "reload", "find", "goto", "spelling", "preferences", "about", "close", "quit", "command-palette", "split-group", "focus-next-group", "focus-previous-group", "close-group", "excerpt", "grouped-undo", "grouped-redo", "open-folder", "open-workspace", "workspace-roots", "workspace-back", "workspace-rescan", "close-workspace", "quick-open", "workspace-search", "workspace-policy", "workspace-trust", "workspace-revoke", "save-workspace-session", "restore-workspace-session", "toggle-explorer", "toggle-search", "focus-explorer", "focus-search", "focus-editor", "hide-panel", "dock-left", "dock-right", "dock-bottom", "reset-docks", "dock-grow", "dock-shrink", "next-tab", "previous-tab", "new-window", "close-window", "next-window", "previous-window", "workspace-create-file", "workspace-create-directory", "workspace-rename", "workspace-move", "workspace-delete", "recent-projects", "open-buffers", "forget-project-session", "workspace-add-root", "workspace-remove-root", "save-workspace-as", "language-start", "language-stop", "language-restart", "language-status", "language-completion", "language-hover", "language-signature", "language-definition", "language-declaration", "language-type-definition", "language-implementation", "language-references", "language-document-symbols", "language-workspace-symbols", "language-problems", "language-formatting", "language-range-formatting", "language-rename", "language-code-actions", "language-semantic-tokens", "language-inlay-hints", "language-code-lenses", "language-document-links", "git-status", "git-refresh", "git-diff", "git-staged-diff", "git-stage", "git-unstage", "git-stage-hunk", "git-unstage-hunk", "git-next-hunk", "git-previous-hunk", "git-commit", "git-uncommit", "git-stage-tracked-commit", "git-branches", "git-create-branch", "git-switch-branch", "git-delete-branch", "git-tags", "git-create-tag", "git-worktrees", "git-add-worktree", "git-remove-worktree", "git-stash-push", "git-stash-list", "git-stash-apply", "git-stash-pop", "git-stash-drop", "git-conflicts", "git-resolve-current", "git-resolve-incoming", "git-resolve-both", "git-conflict-manual", "git-continue", "git-abort", "git-remotes", "git-fetch", "git-pull", "git-push", "git-force-push", "git-history", "git-blame", "git-commit-diff", "git-permalink" };
+    const actions = [_][]const u8{ "new", "open", "save", "save-as", "reload", "find", "goto", "spelling", "preferences", "about", "close", "quit", "command-palette", "split-group", "focus-next-group", "focus-previous-group", "close-group", "excerpt", "grouped-undo", "grouped-redo", "open-folder", "open-workspace", "workspace-roots", "workspace-back", "workspace-rescan", "close-workspace", "quick-open", "workspace-search", "workspace-policy", "workspace-trust", "workspace-revoke", "save-workspace-session", "restore-workspace-session", "toggle-explorer", "toggle-search", "toggle-source-control", "focus-source-control", "focus-explorer", "focus-search", "focus-editor", "hide-panel", "dock-left", "dock-right", "dock-bottom", "reset-docks", "dock-grow", "dock-shrink", "next-tab", "previous-tab", "new-window", "close-window", "next-window", "previous-window", "workspace-create-file", "workspace-create-directory", "workspace-rename", "workspace-move", "workspace-delete", "recent-projects", "open-buffers", "forget-project-session", "workspace-add-root", "workspace-remove-root", "save-workspace-as", "language-start", "language-stop", "language-restart", "language-status", "language-completion", "language-hover", "language-signature", "language-definition", "language-declaration", "language-type-definition", "language-implementation", "language-references", "language-document-symbols", "language-workspace-symbols", "language-problems", "language-formatting", "language-range-formatting", "language-rename", "language-code-actions", "language-semantic-tokens", "language-inlay-hints", "language-code-lenses", "language-document-links", "git-status", "git-refresh", "git-diff", "git-staged-diff", "git-stage", "git-unstage", "git-stage-hunk", "git-unstage-hunk", "git-next-hunk", "git-previous-hunk", "git-commit", "git-uncommit", "git-stage-tracked-commit", "git-branches", "git-create-branch", "git-switch-branch", "git-delete-branch", "git-tags", "git-create-tag", "git-worktrees", "git-add-worktree", "git-remove-worktree", "git-stash-push", "git-stash-list", "git-stash-apply", "git-stash-pop", "git-stash-drop", "git-conflicts", "git-resolve-current", "git-resolve-incoming", "git-resolve-both", "git-conflict-manual", "git-continue", "git-abort", "git-remotes", "git-fetch", "git-pull", "git-push", "git-force-push", "git-history", "git-blame", "git-commit-diff", "git-permalink", "git-project-diff", "git-project-diff-refresh", "git-project-diff-next-hunk", "git-project-diff-previous-hunk", "git-project-diff-stage-hunk", "git-project-diff-unstage-hunk", "git-project-diff-stage-selection", "git-project-diff-unstage-selection", "git-project-diff-unified", "git-project-diff-split", "git-project-diff-word" };
     for (entries, actions, 0..) |entry, action, index| {
         try std.testing.expectEqual(index, @backingInt(entry.command));
         try std.testing.expectEqualStrings(action, entry.action);

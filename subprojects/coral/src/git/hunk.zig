@@ -62,6 +62,40 @@ pub const HunkRef = struct {
 
 pub const Direction = enum { forward, reverse };
 
+/// A half-open range of change-line indices within one hunk. Change-lines are
+/// the '-' and '+' body lines in body order; context lines are not counted.
+pub const LineRange = struct { start: usize, end: usize };
+
+/// A selected subset of one hunk's change-lines. `ordinal` is the hunk's
+/// zero-based position in the single-file diff; `ranges` must be non-empty,
+/// sorted and non-overlapping (adjacent ranges are allowed). Selecting every
+/// change-line reproduces the whole hunk. The parent hunk is still identified by
+/// its `HunkRef` digest, so a changed diff invalidates the selection too.
+pub const Selection = struct {
+    ordinal: usize,
+    ranges: []const LineRange,
+};
+
+/// Number of change-lines ('-' and '+') in a hunk body.
+pub fn changeCount(h: Hunk) usize {
+    return h.added() + h.removed();
+}
+
+/// Refuse empty, out-of-bounds, unsorted or overlapping change-line ranges.
+pub fn validateSelection(h: Hunk, ranges: []const LineRange) !void {
+    const total = changeCount(h);
+    if (ranges.len == 0) return error.InvalidSelection;
+    var prev_end: usize = 0;
+    var any: usize = 0;
+    for (ranges, 0..) |r, i| {
+        if (r.start >= r.end or r.end > total) return error.InvalidSelection;
+        if (i > 0 and r.start < prev_end) return error.InvalidSelection;
+        prev_end = r.end;
+        any += r.end - r.start;
+    }
+    if (any == 0) return error.InvalidSelection;
+}
+
 /// SHA-256 over `@@ -o,oc +n,nc @@\n` (always explicit counts, no section
 /// heading) followed by each body line as `{tag}{text}\n` and, when present,
 /// `\ No newline at end of file\n`. Independent of paths and count omission.
@@ -337,4 +371,193 @@ pub fn apply(a: Allocator, base: []const u8, h: Hunk, dir: Direction) ![]u8 {
     if (out_trailing_lf and out_lines.items.len > 0) try out.append(a, '\n');
     if (out.items.len > max_file_bytes) return error.TooLarge;
     return out.toOwnedSlice(a);
+}
+
+const SubOrigin = struct { tag: u8, index: usize };
+
+/// Construct a strict sub-hunk that applies only the selected change-lines while
+/// preserving every context line and every unselected change. `reverse` chooses
+/// the construction direction:
+///   * false (stage) keeps the old side byte-identical and applies the selected
+///     deletions/additions to the new side; apply the result `.forward`.
+///   * true (unstage) keeps the new side byte-identical and reverts the selected
+///     changes on the old side; apply the result `.reverse`.
+/// Unselected deletions become context (stage) or unselected additions become
+/// context (unstage); the opposite unselected change is dropped. Counts, start
+/// lines and no-newline markers are recomputed and the body is validated exactly
+/// like a parsed hunk, so the existing strict applier accepts it unchanged.
+pub fn subHunk(a: Allocator, h: Hunk, ranges: []const LineRange, reverse: bool) !Hunk {
+    try validateSelection(h, ranges);
+    const total = changeCount(h);
+    const selected = try a.alloc(bool, total);
+    defer a.free(selected);
+    @memset(selected, false);
+    for (ranges) |r| {
+        for (r.start..r.end) |i| selected[i] = true;
+    }
+
+    var orig_old_last: ?usize = null;
+    var orig_new_last: ?usize = null;
+    var orig_old_nonl = false;
+    var orig_new_nonl = false;
+    for (h.lines, 0..) |l, i| {
+        if (l.tag == ' ' or l.tag == '-') {
+            orig_old_last = i;
+            orig_old_nonl = l.nonl;
+        }
+        if (l.tag == ' ' or l.tag == '+') {
+            orig_new_last = i;
+            orig_new_nonl = l.nonl;
+        }
+    }
+
+    var lines: std.ArrayList(Line) = .empty;
+    defer lines.deinit(a);
+    var origin: std.ArrayList(SubOrigin) = .empty;
+    defer origin.deinit(a);
+    var ci: usize = 0;
+    for (h.lines, 0..) |l, i| {
+        switch (l.tag) {
+            ' ' => {
+                try lines.append(a, .{ .tag = ' ', .text = l.text });
+                try origin.append(a, .{ .tag = ' ', .index = i });
+            },
+            '-' => {
+                const sel = selected[ci];
+                ci += 1;
+                if (reverse) {
+                    if (sel) {
+                        try lines.append(a, .{ .tag = '-', .text = l.text });
+                        try origin.append(a, .{ .tag = '-', .index = i });
+                    }
+                } else {
+                    try lines.append(a, .{ .tag = if (sel) '-' else ' ', .text = l.text });
+                    try origin.append(a, .{ .tag = '-', .index = i });
+                }
+            },
+            '+' => {
+                const sel = selected[ci];
+                ci += 1;
+                if (reverse) {
+                    try lines.append(a, .{ .tag = if (sel) '+' else ' ', .text = l.text });
+                    try origin.append(a, .{ .tag = '+', .index = i });
+                } else {
+                    if (sel) {
+                        try lines.append(a, .{ .tag = '+', .text = l.text });
+                        try origin.append(a, .{ .tag = '+', .index = i });
+                    }
+                }
+            },
+            else => return error.InvalidPatch,
+        }
+    }
+
+    var old_count: usize = 0;
+    var new_count: usize = 0;
+    var last_old: ?usize = null;
+    var last_new: ?usize = null;
+    var changes: usize = 0;
+    for (lines.items, 0..) |l, i| {
+        if (l.tag == ' ' or l.tag == '-') {
+            old_count += 1;
+            last_old = i;
+        }
+        if (l.tag == ' ' or l.tag == '+') {
+            new_count += 1;
+            last_new = i;
+        }
+        if (l.tag != ' ') changes += 1;
+    }
+    if (changes == 0) return error.InvalidSelection;
+
+    // The preserved (match) side keeps its original final-newline state. The
+    // partial side's final newline is derived from its last line's origin: a line
+    // native to that side uses that side's original final marker; a line kept
+    // from the opposite side's unselected change uses the opposite side's marker.
+    var old_final_nonl: bool = false;
+    var new_final_nonl: bool = false;
+    if (!reverse) {
+        old_final_nonl = orig_old_nonl;
+        if (last_new) |idx| {
+            const o = origin.items[idx];
+            new_final_nonl = if (o.tag == '-')
+                (orig_old_last != null and o.index == orig_old_last.?) and orig_old_nonl
+            else
+                (orig_new_last != null and o.index == orig_new_last.?) and orig_new_nonl;
+        }
+    } else {
+        new_final_nonl = orig_new_nonl;
+        if (last_old) |idx| {
+            const o = origin.items[idx];
+            old_final_nonl = if (o.tag == '+')
+                (orig_new_last != null and o.index == orig_new_last.?) and orig_new_nonl
+            else
+                (orig_old_last != null and o.index == orig_old_last.?) and orig_old_nonl;
+        }
+    }
+    if (last_old) |idx| {
+        const l = &lines.items[idx];
+        l.nonl = if (l.tag == '-') old_final_nonl else (last_new != null and idx == last_new.?) and old_final_nonl;
+    }
+    if (last_new) |idx| {
+        if (last_old == null or idx != last_old.?) {
+            const l = &lines.items[idx];
+            // A context line that is not also the old side's final line cannot
+            // carry a no-newline marker; a '+' may.
+            l.nonl = l.tag == '+' and new_final_nonl;
+        }
+    }
+
+    const result = Hunk{
+        .old_start = if (old_count == 0) 0 else if (h.old_count == 0) h.new_start else h.old_start,
+        .old_count = old_count,
+        .new_start = if (new_count == 0) 0 else if (h.new_count == 0) h.old_start else h.new_start,
+        .new_count = new_count,
+        .lines = try lines.toOwnedSlice(a),
+    };
+    try validateBody(result);
+    return result;
+}
+
+/// Mirror of the parser's per-hunk validation for a constructed sub-hunk.
+fn validateBody(h: Hunk) !void {
+    var old_seen: usize = 0;
+    var new_seen: usize = 0;
+    var changes: usize = 0;
+    var last_old: ?usize = null;
+    var last_new: ?usize = null;
+    for (h.lines, 0..) |l, i| {
+        switch (l.tag) {
+            ' ' => {
+                old_seen += 1;
+                new_seen += 1;
+                last_old = i;
+                last_new = i;
+            },
+            '-' => {
+                old_seen += 1;
+                changes += 1;
+                last_old = i;
+            },
+            '+' => {
+                new_seen += 1;
+                changes += 1;
+                last_new = i;
+            },
+            else => return error.InvalidSelection,
+        }
+    }
+    if (old_seen != h.old_count or new_seen != h.new_count) return error.InvalidSelection;
+    if (changes == 0) return error.InvalidSelection;
+    if (h.old_count > 0 and h.old_start < 1) return error.InvalidSelection;
+    if (h.new_count > 0 and h.new_start < 1) return error.InvalidSelection;
+    for (h.lines, 0..) |l, i| {
+        if (!l.nonl) continue;
+        switch (l.tag) {
+            ' ' => if (last_old == null or i != last_old.? or last_new == null or i != last_new.?) return error.InvalidSelection,
+            '-' => if (last_old == null or i != last_old.?) return error.InvalidSelection,
+            '+' => if (last_new == null or i != last_new.?) return error.InvalidSelection,
+            else => return error.InvalidSelection,
+        }
+    }
 }

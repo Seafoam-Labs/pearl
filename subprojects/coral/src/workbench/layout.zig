@@ -2,12 +2,14 @@
 //! Store desired sizes, not transient GTK allocations in a compact window.
 const std = @import("std");
 pub const Dock = enum { left, right, bottom };
-pub const Panel = enum { explorer, search };
+pub const Panel = enum { explorer, search, source_control };
 pub const State = struct {
     explorer: Dock = .left,
     search: Dock = .bottom,
+    source_control: Dock = .left,
     explorer_visible: bool = true,
     search_visible: bool = false,
+    source_control_visible: bool = false,
     active: Panel = .explorer,
     left_size: u16 = 222,
     right_size: u16 = 320,
@@ -30,8 +32,19 @@ pub fn validate(state: State) !void {
 test "dock defaults and every supported placement are valid" {
     try validate(.{});
     inline for (.{ Dock.left, Dock.right, Dock.bottom }) |side| {
-        try validate(.{ .explorer = side, .search = side, .explorer_visible = false, .search_visible = true, .active = .search });
+        try validate(.{ .explorer = side, .search = side, .source_control = side, .explorer_visible = false, .search_visible = true, .source_control_visible = true, .active = .search });
+        try validate(.{ .explorer = side, .search = side, .source_control = side, .source_control_visible = true, .active = .source_control });
     }
+}
+
+test "source control defaults keep old sessions decoding to a hidden left panel" {
+    // Session v2 descriptors written before Source Control existed omit these
+    // fields; JSON decoding fills them from these defaults. Keep them stable.
+    const default: State = .{};
+    try std.testing.expectEqual(Dock.left, default.source_control);
+    try std.testing.expectEqual(false, default.source_control_visible);
+    try std.testing.expectEqual(Panel.explorer, default.active);
+    try validate(default);
 }
 
 test "interactive sizes clamp but stored out-of-range sizes fail closed" {

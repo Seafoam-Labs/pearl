@@ -255,8 +255,12 @@ pub fn build(b: *std.Build) void {
     git_workflows_native.addArtifactArg(ie);
     git_workflows_native.addPassthruArgs();
     b.step("git-workflows", "Run isolated native M4 workflow acceptance").dependOn(&git_workflows_native.step);
+    const git_ui_native = b.addSystemCommand(&.{ native_python, "tests/git_ui.py", "--binary" });
+    git_ui_native.addArtifactArg(ie);
+    git_ui_native.addPassthruArgs();
+    b.step("git-ui", "Run isolated native M4 Source Control dock and Project Diff UI parity acceptance").dependOn(&git_ui_native.step);
     const m4_slice = b.step("test-m4-slice", "Validate implemented M4 inspection/index/workflow increments and M1/M2/M3 regressions");
-    for ([_]*std.Build.Step{ &git_units.step, &git_index_units.step, git_workflow_units, &git_native.step, &git_workflows_native.step, m3 }) |gate| m4_slice.dependOn(gate);
+    for ([_]*std.Build.Step{ &git_units.step, &git_index_units.step, git_workflow_units, &git_native.step, &git_workflows_native.step, &git_ui_native.step, m3 }) |gate| m4_slice.dependOn(gate);
 
     const bm = createModule(b, .{ .root_source_file = b.path("src/benchmark_m0.zig"), .target = target, .optimize = optimize, .link_libc = true });
     for ([_][]const u8{ "gtk4", "gtksourceview-5", "enchant-2" }) |lib| bm.linkSystemLibrary(lib, .{ .use_pkg_config = .yes });

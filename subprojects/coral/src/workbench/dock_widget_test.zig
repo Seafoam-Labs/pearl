@@ -17,6 +17,7 @@ const Fixture = struct {
     window: u.W = undefined,
     editor: u.W = undefined,
     search: u.W = undefined,
+    source_control: u.W = undefined,
     dock: Dock = undefined,
     fn init(self: *Fixture) !void {
         try t.expect(c.gtk_init_check() != 0);
@@ -27,6 +28,8 @@ const Fixture = struct {
         u.append(self.dock.explorer_slot, u.button("Real explorer slot"));
         self.search = c.gtk_entry_new().?;
         u.append(self.dock.search_slot, self.search);
+        self.source_control = c.gtk_entry_new().?;
+        u.append(self.dock.source_control_slot, self.source_control);
         c.gtk_window_set_child(u.cast(c.GtkWindow, self.window), self.dock.root);
         self.dock.attach();
         c.gtk_window_set_default_size(u.cast(c.GtkWindow, self.window), 960, 640);
@@ -155,4 +158,110 @@ test "restored sizes clamp and shutdown disconnects retained GTK controllers" {
     try t.expect(c.gtk_event_controller_get_widget(controller) == null);
     c.g_signal_emit_by_name(controller, "pressed", @as(c_int, 1), @as(f64, 100), @as(f64, 100));
     try t.expect(!f.dock.dragging[0]);
+}
+
+test "source control dock moves hides and tabs without disturbing explorer/search or editor" {
+    var f: Fixture = .{};
+    try f.init();
+    defer f.deinit();
+    // Default state keeps Source Control hidden while Explorer stays visible.
+    try t.expect(!f.dock.effective[2]);
+    try t.expect(c.gtk_widget_get_visible(f.dock.source_control_slot) == 0);
+    const parent = c.gtk_widget_get_parent(f.editor);
+    const buffer = c.gtk_text_view_get_buffer(u.cast(c.GtkTextView, f.editor));
+    f.dock.show(.source_control);
+    settle();
+    // Source Control shares the default left dock with Explorer: the active
+    // panel wins the shared dock until the panel moves elsewhere.
+    try t.expect(!f.dock.effective[0] and !f.dock.effective[1] and f.dock.effective[2]);
+    try t.expect(f.dock.state.active == .source_control);
+    for ([_]layout.Dock{ .right, .bottom, .left }) |side| {
+        f.dock.move(side);
+        settle();
+        try t.expect(c.gtk_widget_get_parent(f.dock.source_control_slot) == f.dock.hosts[@backingInt(side)]);
+        try t.expect(f.dock.effective[0] == (side != .left));
+        try t.expect(f.dock.effective[2]);
+        // The Source Control tab follows the panel; the other tabs stay put.
+        for (f.dock.tabs, 0..) |tabs, i| {
+            try t.expect(c.gtk_widget_get_visible(tabs[2]) == @intFromBool(i == @backingInt(side)));
+            try t.expect(c.gtk_widget_get_visible(tabs[0]) == @intFromBool(i == @backingInt(f.dock.state.explorer)));
+        }
+        try t.expect(c.gtk_widget_get_parent(f.editor) == parent);
+        try t.expect(c.gtk_text_view_get_buffer(u.cast(c.GtkTextView, f.editor)) == buffer);
+    }
+    f.dock.hide(.source_control);
+    settle();
+    try t.expect(!f.dock.effective[2]);
+    try t.expect(c.gtk_widget_get_visible(f.dock.source_control_slot) == 0);
+    // Explorer remains visible and becomes the active fallback.
+    try t.expect(f.dock.effective[0] and f.dock.state.active == .explorer);
+    for (f.dock.tabs) |tabs| try t.expect(c.gtk_widget_get_visible(tabs[2]) == 0);
+}
+
+test "three visible panels compact to the active one and restore desired state" {
+    var f: Fixture = .{};
+    try f.init();
+    defer f.deinit();
+    const wanted: layout.State = .{ .explorer = .left, .search = .bottom, .source_control = .right, .explorer_visible = true, .search_visible = true, .source_control_visible = true, .active = .source_control, .left_size = 300, .right_size = 310, .bottom_size = 250 };
+    f.dock.restore(wanted);
+    settle();
+    try t.expect(f.dock.effective[0] and f.dock.effective[1] and f.dock.effective[2]);
+    f.resize(650, 520);
+    try t.expect(f.dock.compact);
+    try t.expect(!f.dock.effective[0] and !f.dock.effective[1] and f.dock.effective[2]);
+    try t.expectEqualDeep(wanted, f.dock.snapshot());
+    f.dock.show(.search);
+    settle();
+    try t.expect(!f.dock.effective[0] and f.dock.effective[1] and !f.dock.effective[2]);
+    f.resize(1280, 800);
+    try t.expect(!f.dock.compact);
+    try t.expect(f.dock.effective[0] and f.dock.effective[1] and f.dock.effective[2]);
+    try t.expect(c.gtk_widget_get_width(f.editor) >= 240);
+    try t.expect(c.gtk_widget_get_height(f.editor) >= 160);
+}
+
+test "three panels sharing one dock keep the active panel and hide fallbacks" {
+    var f: Fixture = .{};
+    try f.init();
+    defer f.deinit();
+    f.dock.restore(.{ .explorer = .left, .search = .left, .source_control = .left, .explorer_visible = true, .search_visible = true, .source_control_visible = true, .active = .search });
+    settle();
+    try t.expect(!f.dock.effective[0] and f.dock.effective[1] and !f.dock.effective[2]);
+    try t.expect(c.gtk_widget_get_parent(f.dock.source_control_slot) == f.dock.hosts[0]);
+    f.dock.show(.source_control);
+    settle();
+    try t.expect(!f.dock.effective[0] and !f.dock.effective[1] and f.dock.effective[2]);
+    f.dock.hide(.source_control);
+    settle();
+    // Fallback prefers the first visible other panel in rail order.
+    try t.expect(f.dock.state.active == .explorer);
+    try t.expect(f.dock.effective[0] and !f.dock.effective[1] and !f.dock.effective[2]);
+    // Hiding Explorer falls back to the still-visible Search panel.
+    f.dock.hide(.explorer);
+    settle();
+    try t.expect(f.dock.state.active == .search);
+    try t.expect(!f.dock.effective[0] and f.dock.effective[1] and !f.dock.effective[2]);
+    // Hiding the last visible panel keeps a nominal active panel without showing it.
+    f.dock.hide(.search);
+    settle();
+    try t.expect(f.dock.state.active == .explorer);
+    for (f.dock.frames) |frame| try t.expect(c.gtk_widget_get_visible(frame) == 0);
+}
+
+test "moving focused source control keeps focus after allocation without overriding editor focus" {
+    var f: Fixture = .{};
+    try f.init();
+    defer f.deinit();
+    f.dock.show(.source_control);
+    _ = c.gtk_widget_grab_focus(f.source_control);
+    settle();
+    for ([_]layout.Dock{ .right, .left, .bottom }) |side| {
+        f.dock.move(side);
+        settle();
+        try t.expect(@import("dock.zig").inside(c.gtk_window_get_focus(u.cast(c.GtkWindow, f.window)), f.dock.source_control_slot));
+    }
+    f.dock.move(.right);
+    _ = c.gtk_widget_grab_focus(f.editor);
+    settle();
+    try t.expect(c.gtk_window_get_focus(u.cast(c.GtkWindow, f.window)) == f.editor);
 }

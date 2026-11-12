@@ -223,6 +223,138 @@ test "bounds: oversized patch, line and output are refused" {
 }
 
 // ---------------------------------------------------------------------------
+// Pure selection / sub-hunk construction
+// ---------------------------------------------------------------------------
+
+const two_change_patch =
+    \\--- a/f
+    \\+++ b/f
+    \\@@ -1,5 +1,5 @@
+    \\ a
+    \\-b
+    \\+B
+    \\ c
+    \\-d
+    \\+D
+    \\ e
+    \\
+;
+const two_change_base = "a\nb\nc\nd\ne\n";
+
+test "sub-hunk forward applies only selected change-lines and preserves the rest" {
+    var arena = std.heap.ArenaAllocator.init(t.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    const h = (try hunk.parse(a, two_change_patch)).hunks[0];
+    try t.expectEqual(@as(usize, 4), hunk.changeCount(h));
+    // First replacement pair only: change-lines 0('-b') and 1('+B').
+    const first = try hunk.subHunk(a, h, &.{.{ .start = 0, .end = 2 }}, false);
+    try t.expectEqualStrings("a\nB\nc\nd\ne\n", try hunk.apply(a, two_change_base, first, .forward));
+    try t.expectEqualStrings(two_change_base, try hunk.apply(a, "a\nB\nc\nd\ne\n", first, .reverse));
+    // Second pair only.
+    const second = try hunk.subHunk(a, h, &.{.{ .start = 2, .end = 4 }}, false);
+    try t.expectEqualStrings("a\nb\nc\nD\ne\n", try hunk.apply(a, two_change_base, second, .forward));
+    // A single addition without its deletion is a pure insertion.
+    const add_only = try hunk.subHunk(a, h, &.{.{ .start = 1, .end = 2 }}, false);
+    try t.expectEqualStrings("a\nb\nB\nc\nd\ne\n", try hunk.apply(a, two_change_base, add_only, .forward));
+    // A single deletion without its addition removes the line.
+    const del_only = try hunk.subHunk(a, h, &.{.{ .start = 0, .end = 1 }}, false);
+    try t.expectEqualStrings("a\nc\nd\ne\n", try hunk.apply(a, two_change_base, del_only, .forward));
+    // Two disjoint ranges in one sub-hunk: delete b, keep d, add D.
+    const both = try hunk.subHunk(a, h, &.{ .{ .start = 0, .end = 1 }, .{ .start = 3, .end = 4 } }, false);
+    try t.expectEqualStrings("a\nc\nd\nD\ne\n", try hunk.apply(a, two_change_base, both, .forward));
+}
+
+test "selecting every change-line reproduces the whole hunk digest" {
+    var arena = std.heap.ArenaAllocator.init(t.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    const h = (try hunk.parse(a, two_change_patch)).hunks[0];
+    const all = try hunk.subHunk(a, h, &.{.{ .start = 0, .end = 4 }}, false);
+    try t.expectEqualSlices(u8, &hunk.digest(h), &hunk.digest(all));
+    try t.expectEqualStrings("a\nB\nc\nD\ne\n", try hunk.apply(a, two_change_base, all, .forward));
+}
+
+test "sub-hunk follows diff body order when Git groups adjacent changes" {
+    var arena = std.heap.ArenaAllocator.init(t.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    // Git renders adjacent replacements as grouped deletions then additions:
+    // change-lines are 0='-b', 1='-c', 2='+B', 3='+C'. Selection is defined over
+    // that body order, so the kept old line 'c' precedes the selected '+B'.
+    const grouped = "--- a/f\n+++ b/f\n@@ -1,3 +1,3 @@\n a\n-b\n-c\n+B\n+C\n";
+    const h = (try hunk.parse(a, grouped)).hunks[0];
+    const sub = try hunk.subHunk(a, h, &.{ .{ .start = 0, .end = 1 }, .{ .start = 2, .end = 3 } }, false);
+    try t.expectEqualStrings("a\nc\nB\n", try hunk.apply(a, "a\nb\nc\n", sub, .forward));
+    // Selecting the whole grouped hunk still reproduces the full new side.
+    const all = try hunk.subHunk(a, h, &.{.{ .start = 0, .end = 4 }}, false);
+    try t.expectEqualStrings("a\nB\nC\n", try hunk.apply(a, "a\nb\nc\n", all, .forward));
+}
+
+test "sub-hunk reverse construction reverts only selected changes for unstage" {
+    var arena = std.heap.ArenaAllocator.init(t.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    // Interpret the same hunk as HEAD->index; the index is the fully changed side.
+    const h = (try hunk.parse(a, two_change_patch)).hunks[0];
+    const index = "a\nB\nc\nD\ne\n";
+    // Revert the first replacement pair (change-lines 0,1); keep the second.
+    const first = try hunk.subHunk(a, h, &.{.{ .start = 0, .end = 2 }}, true);
+    try t.expectEqualStrings("a\nb\nc\nD\ne\n", try hunk.apply(a, index, first, .reverse));
+    // Revert only the two deletions (change-lines 0,2); keep both additions.
+    const dels = try hunk.subHunk(a, h, &.{ .{ .start = 0, .end = 1 }, .{ .start = 2, .end = 3 } }, true);
+    try t.expectEqualStrings("a\nb\nB\nc\nd\nD\ne\n", try hunk.apply(a, index, dels, .reverse));
+    // Reverting every change restores HEAD exactly.
+    const all = try hunk.subHunk(a, h, &.{.{ .start = 0, .end = 4 }}, true);
+    try t.expectEqualStrings(two_change_base, try hunk.apply(a, index, all, .reverse));
+}
+
+test "sub-hunk preserves CRLF bytes exactly" {
+    var arena = std.heap.ArenaAllocator.init(t.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    const patch = "--- a/f\n+++ b/f\n@@ -1,3 +1,3 @@\n a\r\n-b\r\n+B\r\n c\r\n";
+    const h = (try hunk.parse(a, patch)).hunks[0];
+    const sub = try hunk.subHunk(a, h, &.{.{ .start = 0, .end = 2 }}, false);
+    try t.expectEqualStrings("a\r\nB\r\nc\r\n", try hunk.apply(a, "a\r\nb\r\nc\r\n", sub, .forward));
+    try t.expectEqualStrings("a\r\nb\r\nc\r\n", try hunk.apply(a, "a\r\nB\r\nc\r\n", sub, .reverse));
+}
+
+test "sub-hunk honors no-final-newline markers on either side" {
+    var arena = std.heap.ArenaAllocator.init(t.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    // Single replacement, both sides lack a final LF.
+    const patch = "--- a/f\n+++ b/f\n@@ -1,2 +1,2 @@\n a\n-b\n\\ No newline at end of file\n+B\n\\ No newline at end of file\n";
+    const h = (try hunk.parse(a, patch)).hunks[0];
+    const whole = try hunk.subHunk(a, h, &.{.{ .start = 0, .end = 2 }}, false);
+    try t.expectEqualStrings("a\nB", try hunk.apply(a, "a\nb", whole, .forward));
+    try t.expectEqualStrings("a\nb", try hunk.apply(a, "a\nB", whole, .reverse));
+    // Deletion only: the kept 'a' line retains its separator LF.
+    const del = try hunk.subHunk(a, h, &.{.{ .start = 0, .end = 1 }}, false);
+    try t.expectEqualStrings("a\n", try hunk.apply(a, "a\nb", del, .forward));
+    // Separated multi-pair hunk whose final context line carries the marker for
+    // both sides; selecting the first pair preserves the missing final LF.
+    const patch2 = "--- a/f\n+++ b/f\n@@ -1,5 +1,5 @@\n a\n-b\n+B\n c\n-d\n+D\n e\n\\ No newline at end of file\n";
+    const h2 = (try hunk.parse(a, patch2)).hunks[0];
+    const sub = try hunk.subHunk(a, h2, &.{.{ .start = 0, .end = 2 }}, false);
+    try t.expectEqualStrings("a\nB\nc\nd\ne", try hunk.apply(a, "a\nb\nc\nd\ne", sub, .forward));
+    try t.expectEqualStrings("a\nb\nc\nd\ne", try hunk.apply(a, "a\nB\nc\nd\ne", sub, .reverse));
+}
+
+test "sub-hunk refuses overlapping, unsorted, empty and out-of-bounds selections" {
+    var arena = std.heap.ArenaAllocator.init(t.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    const h = (try hunk.parse(a, two_change_patch)).hunks[0];
+    try t.expectError(error.InvalidSelection, hunk.subHunk(a, h, &.{}, false));
+    try t.expectError(error.InvalidSelection, hunk.subHunk(a, h, &.{.{ .start = 1, .end = 1 }}, false));
+    try t.expectError(error.InvalidSelection, hunk.subHunk(a, h, &.{.{ .start = 0, .end = 5 }}, false));
+    try t.expectError(error.InvalidSelection, hunk.subHunk(a, h, &.{ .{ .start = 0, .end = 2 }, .{ .start = 1, .end = 3 } }, false));
+    try t.expectError(error.InvalidSelection, hunk.subHunk(a, h, &.{ .{ .start = 2, .end = 4 }, .{ .start = 0, .end = 1 } }, false));
+}
+
+// ---------------------------------------------------------------------------
 // Disposable-fixture integration
 // ---------------------------------------------------------------------------
 
@@ -305,6 +437,9 @@ const Fixture = struct {
     }
     fn request(f: *Fixture, path: []const u8, action: tx.Action, ref: ?tx.HunkRef) tx.Request {
         return .{ .root = f.root, .gitdir = f.gitdir, .commondir = f.gitdir, .path = path, .action = action, .hunk = ref };
+    }
+    fn selectionRequest(f: *Fixture, path: []const u8, action: tx.Action, ref: tx.HunkRef, ranges: []const tx.LineRange) tx.Request {
+        return .{ .root = f.root, .gitdir = f.gitdir, .commondir = f.gitdir, .path = path, .action = action, .hunk = ref, .selection = .{ .ordinal = ref.ordinal, .ranges = ranges } };
     }
     /// Build a HunkRef from the displayed diff exactly as the UI will: parse the
     /// real index→disk (stage) or HEAD→index (unstage) diff and digest a hunk.
@@ -528,5 +663,132 @@ test "hunk apply recheck detects a late disk edit and leaves the index unchanged
     try t.expectError(error.StaleSnapshot, tx.apply(&p, &f.cancel));
     try f.expectFile(".git/index", original);
     try f.expectGit(&.{ "show", ":selected" }, fourteen);
+    try f.noLock();
+}
+
+const five = "a\nb\nc\nd\ne\n";
+const five_changed = "a\nB\nc\nD\ne\n";
+
+test "stage_selection applies only selected change-lines; other changes survive" {
+    var f = try Fixture.init();
+    defer f.deinit();
+    try f.write("selected", five);
+    try f.write("other", "other head\n");
+    try f.git(&.{ "add", "--", "selected", "other" });
+    try f.commit();
+    // One hunk with two replacement pairs (b->B and d->D).
+    try f.write("selected", five_changed);
+    try f.write("other", "other staged\n");
+    try f.git(&.{ "add", "--", "other" });
+    try f.write("other", "other unstaged\n");
+
+    const ref = try f.hunkRef("selected", false, 0);
+    // Select only the first pair (change-lines 0,1).
+    var p = try tx.prepare(t.allocator, f.selectionRequest("selected", .stage_hunk, ref, &.{.{ .start = 0, .end = 2 }}), &f.cancel);
+    defer p.deinit();
+    try t.expectEqualStrings(five, p.before);
+    try t.expectEqualStrings("a\nB\nc\nd\ne\n", p.after);
+    try t.expectEqual(@as(usize, 1), p.hunk.?.added);
+    try t.expectEqual(@as(usize, 1), p.hunk.?.removed);
+    try t.expect((try tx.apply(&p, &f.cancel)).committed);
+    try f.expectGit(&.{ "show", ":selected" }, "a\nB\nc\nd\ne\n");
+    try f.expectGit(&.{ "show", ":other" }, "other staged\n");
+    try f.expectFile("selected", five_changed);
+    try f.expectFile("other", "other unstaged\n");
+
+    // The second pair is still unstaged; a fresh diff now has one pair.
+    const ref2 = try f.hunkRef("selected", false, 0);
+    var q = try tx.prepare(t.allocator, f.selectionRequest("selected", .stage_hunk, ref2, &.{.{ .start = 0, .end = 2 }}), &f.cancel);
+    defer q.deinit();
+    try t.expectEqualStrings(five_changed, q.after);
+    try t.expect((try tx.apply(&q, &f.cancel)).committed);
+    try f.expectGit(&.{ "show", ":selected" }, five_changed);
+    try f.noLock();
+}
+
+test "unstage_selection reverts only selected change-lines; other staged changes survive" {
+    var f = try Fixture.init();
+    defer f.deinit();
+    try f.write("selected", five);
+    try f.git(&.{ "add", "--", "selected" });
+    try f.commit();
+    try f.write("selected", five_changed);
+    try f.git(&.{ "add", "--", "selected" });
+
+    const ref = try f.hunkRef("selected", true, 0);
+    // Revert only the first pair; keep d->D staged.
+    var p = try tx.prepare(t.allocator, f.selectionRequest("selected", .unstage_hunk, ref, &.{.{ .start = 0, .end = 2 }}), &f.cancel);
+    defer p.deinit();
+    try t.expectEqualStrings(five_changed, p.before);
+    try t.expectEqualStrings("a\nb\nc\nD\ne\n", p.after);
+    try t.expect((try tx.apply(&p, &f.cancel)).committed);
+    try f.expectGit(&.{ "show", ":selected" }, "a\nb\nc\nD\ne\n");
+    try f.expectFile("selected", five_changed);
+    try f.noLock();
+}
+
+test "stale selection is refused when the captured hunk body changes" {
+    var f = try Fixture.init();
+    defer f.deinit();
+    try f.write("selected", five);
+    try f.git(&.{ "add", "--", "selected" });
+    try f.commit();
+    try f.write("selected", five_changed);
+    const ref = try f.hunkRef("selected", false, 0);
+    // Change the disk after the selection was captured.
+    try f.write("selected", "a\nX\nc\nD\ne\n");
+    try t.expectError(error.StaleHunk, tx.prepare(t.allocator, f.selectionRequest("selected", .stage_hunk, ref, &.{.{ .start = 0, .end = 2 }}), &f.cancel));
+    try f.expectGit(&.{ "show", ":selected" }, five);
+    try f.noLock();
+}
+
+test "selection refuses invalid ranges, mismatched ordinal and full-file actions" {
+    var f = try Fixture.init();
+    defer f.deinit();
+    try f.write("selected", five);
+    try f.git(&.{ "add", "--", "selected" });
+    try f.commit();
+    try f.write("selected", five_changed);
+    const ref = try f.hunkRef("selected", false, 0);
+    try t.expectError(error.InvalidSelection, tx.prepare(t.allocator, f.selectionRequest("selected", .stage_hunk, ref, &.{.{ .start = 0, .end = 9 }}), &f.cancel));
+    try t.expectError(error.InvalidSelection, tx.prepare(t.allocator, f.selectionRequest("selected", .stage_hunk, ref, &.{ .{ .start = 0, .end = 2 }, .{ .start = 1, .end = 3 } }), &f.cancel));
+    // Selection ordinal must match the referenced hunk.
+    var mismatch = f.selectionRequest("selected", .stage_hunk, ref, &.{.{ .start = 0, .end = 2 }});
+    mismatch.selection.?.ordinal = 9;
+    try t.expectError(error.InvalidSelection, tx.prepare(t.allocator, mismatch, &f.cancel));
+    // A selection is meaningless for a full-file action.
+    var full = f.request("selected", .stage, null);
+    full.selection = .{ .ordinal = 0, .ranges = &.{.{ .start = 0, .end = 2 }} };
+    try t.expectError(error.InvalidSelection, tx.prepare(t.allocator, full, &f.cancel));
+    try f.expectGit(&.{ "show", ":selected" }, five);
+    try f.noLock();
+}
+
+test "selection stage/unstage preserve CRLF and no-final-newline bytes exactly" {
+    var f = try Fixture.init();
+    defer f.deinit();
+    // Separated changes so Git renders an interleaved -/+ body.
+    try f.write("selected", "a\r\nb\r\nc\r\nd\r\ne\r\n");
+    try f.git(&.{ "add", "--", "selected" });
+    try f.commit();
+    try f.write("selected", "a\r\nB\r\nc\r\nD\r\ne\r\n");
+    const ref = try f.hunkRef("selected", false, 0);
+    var p = try tx.prepare(t.allocator, f.selectionRequest("selected", .stage_hunk, ref, &.{.{ .start = 0, .end = 2 }}), &f.cancel);
+    defer p.deinit();
+    try t.expectEqualStrings("a\r\nB\r\nc\r\nd\r\ne\r\n", p.after);
+    try t.expect((try tx.apply(&p, &f.cancel)).committed);
+    try f.expectGit(&.{ "show", ":selected" }, "a\r\nB\r\nc\r\nd\r\ne\r\n");
+
+    // No final newline: select only the first replacement, keep the missing LF.
+    try f.write("selected", "a\nb\nc\nd\ne");
+    try f.git(&.{ "add", "--", "selected" });
+    try f.commit();
+    try f.write("selected", "a\nB\nc\nD\ne");
+    const nref = try f.hunkRef("selected", false, 0);
+    var n = try tx.prepare(t.allocator, f.selectionRequest("selected", .stage_hunk, nref, &.{.{ .start = 0, .end = 2 }}), &f.cancel);
+    defer n.deinit();
+    try t.expectEqualStrings("a\nB\nc\nd\ne", n.after);
+    try t.expect((try tx.apply(&n, &f.cancel)).committed);
+    try f.expectGit(&.{ "show", ":selected" }, "a\nB\nc\nd\ne");
     try f.noLock();
 }

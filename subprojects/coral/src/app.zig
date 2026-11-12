@@ -71,6 +71,8 @@ pub const App = struct {
     git_conflict: @import("git/conflict_controller.zig").Controller = undefined,
     git_remote: @import("git/remote_controller.zig").Controller = undefined,
     git_history: @import("git/history_controller.zig").Controller = undefined,
+    git_panel: @import("git/panel.zig").Controller = undefined,
+    git_project_diff: @import("git/project_diff.zig").Controller = undefined,
     session: WorkspaceSession = undefined,
     workspace_operations: WorkspaceOperations = undefined,
     workspace_roots: @import("workspace/roots_controller.zig").Controller = undefined,
@@ -259,9 +261,16 @@ pub const App = struct {
         self.git_conflict = .init(self);
         self.git_remote = .init(self);
         self.git_history = .init(self);
+        self.git_panel = .init(self);
+        self.git_project_diff = .init(self);
+        self.git_project_diff.callback_context = self;
+        self.git_project_diff.save_document = &projectDiffSave;
+        self.git_project_diff.edit_committed = &projectDiffCommitted;
+        self.git_project_diff.edit_failed = &projectDiffFailed;
         self.browser = WorkspaceController.init(self, self.dock.explorer_slot);
         self.browser.attach();
         self.dock.attach();
+        self.git_panel.attach(self.dock.source_control_slot);
         self.workspace_policy = WorkspacePolicy.init(self);
         self.session = .{ .app = self };
         self.workspace_operations = .init(self);
@@ -320,6 +329,24 @@ pub const App = struct {
         self.dock.show(.explorer);
         _ = c.gtk_widget_grab_focus(self.browser.rows);
     }
+    fn focusSourceControl(self: *App) void {
+        if (self.dock.picking) self.workspace_search.hide();
+        self.dock.show(.source_control);
+        self.git_panel.refresh();
+        if (self.git_panel.focusWidget()) |widget| _ = c.gtk_widget_grab_focus(widget);
+    }
+    fn projectDiffSave(context: ?*anyopaque, id: u64) void {
+        const self = u.cast(App, context.?);
+        if (self.documents.get(id)) |doc| self.save(doc, false, false);
+    }
+    fn projectDiffCommitted(context: ?*anyopaque) void {
+        const self = u.cast(App, context.?);
+        self.update();
+    }
+    fn projectDiffFailed(context: ?*anyopaque, err: anyerror) void {
+        const self = u.cast(App, context.?);
+        self.editFailure(err);
+    }
     fn hidePanel(self: *App, panel: dock_layout.Panel) void {
         if (panel == .search) self.workspace_search.hide() else {
             self.dock.hide(panel);
@@ -370,6 +397,8 @@ pub const App = struct {
         self.git_conflict.deinit();
         self.git_remote.deinit();
         self.git_history.deinit();
+        self.git_panel.deinit();
+        self.git_project_diff.deinit();
         self.workspace.close();
         if (self.timer != 0) _ = c.g_source_remove(self.timer);
         if (self.checkpoint_idle != 0) _ = c.g_source_remove(self.checkpoint_idle);
@@ -1450,6 +1479,8 @@ pub const App = struct {
         self.git_conflict.invalidate();
         self.git_remote.invalidate();
         self.git_history.invalidate();
+        self.git_panel.invalidate();
+        self.git_project_diff.invalidate();
         self.workspace_search.invalidate("Stale — document lifecycle changed. Refresh required.");
         self.workspace.invalidate();
         for (self.documents.entries.items) |d| {
@@ -1815,6 +1846,8 @@ pub const App = struct {
         self.git_conflict.invalidate();
         self.git_remote.invalidate();
         self.git_history.invalidate();
+        self.git_panel.invalidate();
+        self.git_project_diff.invalidate();
         self.dock.shutdown();
         self.session.shutdown();
         self.workspace_policy.shutdown();
@@ -2146,6 +2179,19 @@ pub const App = struct {
             .focus_explorer => self.focusExplorer(),
             .toggle_explorer => if (self.dock.visible(.explorer)) self.hidePanel(.explorer) else self.focusExplorer(),
             .toggle_search => if (self.dock.visible(.search)) self.hidePanel(.search) else self.workspace_search.show(.text),
+            .toggle_source_control => if (self.dock.visible(.source_control)) self.hidePanel(.source_control) else self.focusSourceControl(),
+            .focus_source_control => self.focusSourceControl(),
+            .git_project_diff => self.git_project_diff.show(),
+            .git_project_diff_refresh => self.git_project_diff.refresh(),
+            .git_project_diff_next_hunk => self.git_project_diff.nextHunk(),
+            .git_project_diff_previous_hunk => self.git_project_diff.previousHunk(),
+            .git_project_diff_stage_hunk => self.git_project_diff.stageHunk(),
+            .git_project_diff_unstage_hunk => self.git_project_diff.unstageHunk(),
+            .git_project_diff_stage_selection => self.git_project_diff.stageSelection(),
+            .git_project_diff_unstage_selection => self.git_project_diff.unstageSelection(),
+            .git_project_diff_unified => self.git_project_diff.setMode(@import("git/diff_render.zig").Mode.unified),
+            .git_project_diff_split => self.git_project_diff.setMode(@import("git/diff_render.zig").Mode.split),
+            .git_project_diff_word => self.git_project_diff.setMode(@import("git/diff_render.zig").Mode.word),
             .focus_editor => {
                 if (self.dock.picking) self.workspace_search.hide();
                 self.focusEditor();
@@ -3515,7 +3561,9 @@ fn testCommand(receiver: *App) void {
         self.git_stash.fixture(action, git_value) or
         self.git_conflict.fixture(action, git_value) or
         self.git_remote.fixture(action, git_value) or
-        self.git_history.fixture(action, git_value))
+        self.git_history.fixture(action, git_value) or
+        self.git_panel.fixture(action, git_value) or
+        self.git_project_diff.fixture(action, git_value))
     {
         // Git fixture dispatch is compiled out of production builds.
     } else if (std.mem.startsWith(u8, action, "git-")) {

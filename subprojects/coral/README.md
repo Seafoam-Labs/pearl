@@ -14,14 +14,20 @@ workflows. **The bounded M3 baseline is complete; detected-language automatic
 startup is implemented and validated within its documented limits.** Approved local
 language servers start automatically in trusted, unpaused workspaces and provide
 command-driven features, diagnostics, semantic tags and reviewed edits.
-**M4 Git/review core workflows are implemented and validated:** the native Source Control window provides
-status/refresh, diff previews, **selected full-file and single-hunk
-staging/unstaging with separate checked review**, and the remaining core workflows
-as command-driven native dialogs: staged-only commit (plus explicit stage-tracked
-and commit, and soft uncommit), branches/lightweight tags, worktrees, stash,
-conflicts with continue/abort, remotes, and history/blame/permalinks. This is not
-dock/editable-Project-Diff UI parity or full Zed parity; the parent aggregate,
-hooks-disabled production and separate visual gates passed. Agent services remain later work. See
+**M4 Git/review core workflows and UI parity are implemented:** a real Source
+Control dock panel (grouped Staged/Unstaged/Untracked, tree/flat, commit entry,
+reviewed section/all/selected staging) and an editable multi-file Project Diff
+window (unified/split/word modes, hunk and change-line-selection staging) join the
+native Source Control window's status/refresh, diff previews, **selected full-file
+and single-hunk staging/unstaging with separate checked review**, and the remaining
+core workflows as command-driven native dialogs: staged-only commit (plus explicit
+stage-tracked and commit, and soft uncommit), branches/lightweight tags, worktrees,
+stash, conflicts with continue/abort, remotes, and history/blame/permalinks.
+Targeted UI-increment validation passed; the earlier core-workflow aggregate,
+hooks-disabled production and visual gates remain historical, and the full
+aggregate was not rerun for the UI increment. This is not full Zed parity:
+remaining limits include no annotated tags/PR API, explicit panel refresh without
+watchers, and a read-only original diff side. Agent services remain later work. See
 the [M3 language guide](docs/WORKBENCH_M3_LANGUAGE.md) and
 [M4 Git guide](docs/WORKBENCH_M4_GIT.md).
 
@@ -243,14 +249,19 @@ excluding snapshots, worker stacks and other storage. Versions advance only on
 successful sync; an oversized-sync failure stops once with a stable error.
 There are no placeholder service panels or full-IDE parity claims.
 
-## Git — Source Control and core workflows, M4 core validated
+## Git — Source Control dock, Project Diff and core workflows, M4 UI parity delivered
 
 Use the **Git** menu or palette: **Git: Source Control…**, **Git: Refresh
 repositories**, **Git: Unstaged diff**, **Git: Staged diff**, **Git: Stage selected
 file…**, **Git: Unstage selected file…**, **Git: Stage selected hunk…**, **Git:
-Unstage selected hunk…** and **Next/Previous hunk**, plus the workflow commands
-below. A **separate native
-window**, not a dock or editable Project Diff, shows repository/root selection,
+Unstage selected hunk…** and **Next/Previous hunk**, plus **Toggle Source Control
+dock**, **Focus Source Control**, **Git: Project Diff…** (with Refresh Project
+Diff, next/previous hunk, stage/unstage hunk, stage/unstage selection and
+unified/split/word view commands) and the workflow commands below. Three surfaces
+share the trust/disclosure boundary: the **Source Control dock panel** (a third
+dock panel beside Explorer/Search with persisted layout), the **Project Diff
+window** (multi-file, editable current side) and the **separate native Source
+Control window** that owns repository discovery, repository/root selection,
 branch/status, paged paths and noneditable **index → disk / HEAD → index** previews.
 Git requires a trusted workspace **and per-window subprocess disclosure approval**;
 there is no Git execution at startup or in restricted mode. The initial read-only
@@ -263,6 +274,36 @@ captured disk bytes; unstage restores HEAD (or removes the entry when absent).
 Hunk applies use a strict captured-snapshot applier (exact position, byte-identical
 context, no fuzz/offset) and preserve all other hunks/paths; **absent sides and mode
 changes are refused**. **Dirty buffers are allowed, excluded and never saved.**
+
+**Source Control dock panel (UI parity).** A real third dock panel with an activity
+rail button and same-dock tabs; `layout.State` persists its dock side and visibility
+through sessions. Status is grouped into **Staged / Unstaged / Untracked** sections
+with **tree/flat** rendering, paged rows and a branch/HEAD summary. A commit-message
+entry and **Commit staged…** button delegate to the reviewed commit workflow.
+**Stage all (per section) / Unstage all / Stage selected / Unstage selected** each
+require a separate native review of the exact literal Git argv and path set, then
+the shared manager barrier and a worker that rechecks HEAD compare-and-swap, refuses
+in-progress merge/rebase/cherry-pick/revert and unmerged conflicts, and compares the
+reviewed target path set byte-for-byte before applying. Section staging uses
+`git add -u` (tracked unstaged), `git add -- <paths>` (untracked) and `git reset`
+(staged). The dock reuses the Source Control window's repository discovery,
+refreshes explicitly (no watchers), never commits or writes worktree files itself,
+and excludes unsaved buffers. Limits: 1,024 explicit paths / 128 KiB argv per write,
+256 KiB review text, 128 file rows per page.
+
+**Project Diff window (UI parity).** A multi-file diff window (up to 4,096 files,
+1 MiB capture) with **unified/split/word** modes, gutter markers and old/new line
+numbers, hunk navigation, **original/current/both** side selection and a
+staged/unstaged side picker. The **current side is an editable ExcerptEditor bound
+to the real open document** through the shared editor history; the **original side
+is always read-only**, and the current side falls back to read-only when the file
+is not open. **Stage/unstage hunk and change-line selection** reuse the strict
+sub-hunk index backend with a separate captured before/after review; selections are
+half-open **change-line index ranges within one hunk** (context lines not counted),
+and a stale hunk digest invalidates them. Staging always uses the captured
+disk/index snapshot: **unsaved edits are excluded and never saved**; the window
+warns and offers Save through a parent callback. Binary/mode/rename/absent sides
+get explicit non-text states.
 
 Worker-only prepare performs no repository writes. Apply requires valid trust,
 generations/selection and the manager operation barrier; it rechecks the full index,
@@ -339,12 +380,28 @@ guarantee of no arbitrary filter writes or network activity is made.
 Workflow writes use your Git identity/config; hooks/signing (and, for network
 operations, credential/askpass helpers) may execute — **not a sandbox**. Stash
 push/apply/pop and conflict continue/abort refuse while unsaved buffers exist under
-the repository. **UI parity limits:** no source-control dock, editable Project Diff,
-split/word-diff, tree/flat or file/section/all staging parity; packed-only target
-blobs still refuse with `ObjectDurabilityUnavailable`. See the
+the repository. **UI parity delivered:** the Source Control dock panel and editable
+Project Diff window described above. **Remaining limits:** no annotated tags or PR
+API; hunk/selection operations refuse absent sides and mode changes; selections are
+change-line indices within one hunk; the panel refreshes explicitly with no
+watchers; Project Diff edits only the current side (original read-only); packed-only
+target blobs still refuse with `ObjectDurabilityUnavailable`; the visual matrix was
+not rerun for the new UI. This is not full Zed parity. See the
 [Git guide](docs/WORKBENCH_M4_GIT.md) for exact policy, refusals and evidence.
 
-**Final M4 core-workflow evidence (accepted):** `zig build test-m4-slice
+**M4 UI-parity increment evidence (targeted):** `session-unit` **25/25**, widgets
+**209/209** (53.711 s), native docks **27/27**, `git-index-unit` **59** (21
+index-transaction + 26 hunk incl. sub-hunk/selection + 6 diff_render + 5
+command-policy + 1 import-root), the two focused hunk workflow cases
+(`hunk-stage-preserves-other`, `hunk-stage-second-navigation`) and the integrated
+build **46/46 steps** passed ([units log](../../.cache/coral-m4-ui-units.log),
+[docks log](../../.cache/coral-m4-ui-docks.log)). The **full aggregate was not
+rerun** for this increment per user request; the core-workflow final gate below
+remains historical, and the visual matrix was not rerun for the new UI. Counts
+overlap across harnesses; they are not a unique-test total.
+
+**Historical final M4 core-workflow evidence (accepted for the core-workflow
+increment):** `zig build test-m4-slice
 -Doptimize=safe -j1 --summary all` passed **117/117 steps, exit 0**, with **475/475
 Zig tests passed (no skips reported)** ([gate log](../../.cache/coral-m4-final-gate.log)).
 Unit roots: `git-unit` **27**, `git-index-unit` **40**, `git-workflow-unit` **94 across
@@ -363,8 +420,9 @@ refusal, uncommit operation guard + CAS `update-ref`, refs/worktree/remote barri
 and open-document guards, disclosed current-local-branch push refspec with
 detached/unborn refusal, conflict publication-wins, and cancelled-write
 warnings/refresh. `test-m4-slice` composes all Git unit roots, both native suites and
-M1/M2/M3 regressions; it validates the implemented core workflows, **not full Zed/UI
-parity**.
+M1/M2/M3 regressions; it validated the implemented core workflows, **not full Zed/UI
+parity**. The UI-parity increment's targeted evidence is above; this gate predates
+it and was not rerun for it.
 
 **Historical read-only gate:** `test-m4-slice` passed **105/105 steps, exit 0**, with **586/587 Zig tests
 passed / 1 expected non-root trust-test skip** (not a pass), including **27 Git,
@@ -476,10 +534,15 @@ groups, excerpts, guarded undo, recovery, file monitoring and validation;
 **M2 and the bounded M3 baseline have historical validation. The automatic-language
 increment passed its separate acceptance gates. M4 Git/review core workflows
 (hunk/full-file staging, commit/uncommit, branches/tags, worktrees, stash, conflicts,
-remotes, history/blame/permalinks) are implemented and validated: the parent
-aggregate, hooks-disabled production and separate visual gates passed. The read-only
-aggregate and second-increment evidence remain historical. Explicit UI-parity limits
-remain and full Zed/UI parity is not claimed.
+remotes, history/blame/permalinks) and UI parity (Source Control dock panel,
+editable Project Diff) are implemented: the core-workflow parent aggregate,
+hooks-disabled production and separate visual gates passed historically, and the
+UI-parity increment passed targeted validation (session-unit 25, widgets 209, docks
+27, git-index-unit 59, focused hunk workflows 2, build 46/46). The full aggregate
+was not rerun for the UI increment; the read-only aggregate and second-increment
+evidence remain historical. Remaining limits are explicit (no annotated tags/PR
+API, no watchers, read-only original diff side, visual matrix not rerun for the new
+UI) and full Zed/UI parity is not claimed.
 Production terminal and agent UI remain unimplemented**. See the
 [M4 verification status](docs/WORKBENCH_M4_GIT.md#final-m4-core-workflow-validation--accepted).
 Explore the separate [interactive workbench prototype](docs/mockups/workbench/index.html)

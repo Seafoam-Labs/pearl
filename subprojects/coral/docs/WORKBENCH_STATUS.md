@@ -1,13 +1,14 @@
 # Coral workbench implementation status
 
-**M0 is accepted with documented bounded-editor tradeoffs. M1 implementation and native correctness acceptance are complete. M2 implementation is COMPLETE for the bounded workspace preview. The bounded M3 baseline is complete with historical validation; detected-language automatic startup is implemented and its separate validation is accepted. M4 Git/review core workflows are implemented and validated: the third increment delivers the remaining core workflows — single-hunk stage/unstage, commit/uncommit, branches/lightweight tags, worktrees, stash, conflicts and continue/abort, remotes, and history/blame/permalinks — on top of inspection and selected full-file staging/unstaging. The parent aggregate, hooks-disabled production and separate visual gates passed. Explicit UI-parity limits remain; full Zed/UI parity is not claimed.** The final feature audit concludes all mandatory M2 features are implemented: multi-root workspaces, explorer/search, settings/trust, docks/native pickers, explicit checkpoints, automatic project/latest per-window and scratch snapshots, ordinary multi-window startup, independent ownership, reviewed root management and bounded file operations. See the [M2 acceptance audit](WORKBENCH_M2_ACCEPTANCE.md) and the separate [final validation checkpoint](#full-m2-validation-checkpoint).
+**M0 is accepted with documented bounded-editor tradeoffs. M1 implementation and native correctness acceptance are complete. M2 implementation is COMPLETE for the bounded workspace preview. The bounded M3 baseline is complete with historical validation; detected-language automatic startup is implemented and its separate validation is accepted. M4 Git/review core workflows and UI parity are implemented: the third increment delivered the remaining core workflows — single-hunk stage/unstage, commit/uncommit, branches/lightweight tags, worktrees, stash, conflicts and continue/abort, remotes, and history/blame/permalinks — on top of inspection and selected full-file staging/unstaging, and the UI-parity increment adds the Source Control dock panel and editable Project Diff window. The UI increment passed targeted validation (session-unit 25, widgets 209, docks 27, git-index-unit 59, focused hunk workflows 2, build 46/46); the full aggregate was not rerun per user request, so the parent aggregate, hooks-disabled production and separate visual gates remain historical core-workflow evidence. Explicit remaining limits (no annotated tags/PR API, no watchers, change-line-index selections, read-only original diff side, visual matrix not rerun for the new UI); full Zed/UI parity is not claimed.** The final feature audit concludes all mandatory M2 features are implemented: multi-root workspaces, explorer/search, settings/trust, docks/native pickers, explicit checkpoints, automatic project/latest per-window and scratch snapshots, ordinary multi-window startup, independent ownership, reviewed root management and bounded file operations. See the [M2 acceptance audit](WORKBENCH_M2_ACCEPTANCE.md) and the separate [final validation checkpoint](#full-m2-validation-checkpoint).
 
-The user explicitly accepted the M0 tradeoffs and requested work on M2. This acceptance does not turn failed or unmeasured performance targets into passing measurements. This is not a full IDE or Zed parity release. M2 implementation is complete within its documented bounds; M3's current scope, accepted automatic-increment validation and historical frozen-source validation are recorded below; M4's accepted final core-workflow validation is recorded below, with the passed first read-only gate and second-increment evidence retained as history; the rest of M4 (UI parity) and M5–M8 remain roadmap work; M9 remains removed. The [interactive prototype](mockups/workbench/index.html) is a design fixture, not connected to native Git, LSP or agents.
+The user explicitly accepted the M0 tradeoffs and requested work on M2. This acceptance does not turn failed or unmeasured performance targets into passing measurements. This is not a full IDE or Zed parity release. M2 implementation is complete within its documented bounds; M3's current scope, accepted automatic-increment validation and historical frozen-source validation are recorded below; M4's targeted UI-parity validation and historical final core-workflow validation are recorded below, with the passed first read-only gate and second-increment evidence retained as history; M4's remaining scope (supported-case expansion, watch-based refresh and other recorded limits) and M5–M8 remain roadmap work; M9 remains removed. The [interactive prototype](mockups/workbench/index.html) is a design fixture, not connected to native Git, LSP or agents.
 
-## M4 Git/review: core workflows implemented and validated
+## M4 Git/review: core workflows and UI parity implemented
 
-The [M4 Git guide](WORKBENCH_M4_GIT.md) documents the actual `src/git` implementation
-and its accepted final validation, not full Zed parity:
+The [M4 Git guide](WORKBENCH_M4_GIT.md) documents the actual `src/git` implementation,
+its targeted UI-parity validation and historical final core-workflow validation, not
+full Zed parity:
 
 - A **separate native Source Control window** through the **Git menu/palette**:
   Source Control, Refresh repositories, Unstaged diff, Staged diff, **Stage/Unstage
@@ -15,7 +16,31 @@ and its accepted final validation, not full Zed parity:
   command-driven workflow dialogs for commit, branches/tags, worktrees, stash,
   conflicts, remotes and history/blame/permalinks. Repository/root
   picker, branch/HEAD/upstream status, index/worktree row codes and noneditable
-  **index → disk / HEAD → index** previews; no source-control dock or editable diffs.
+  **index → disk / HEAD → index** previews. The window owns repository discovery;
+  the dock panel and Project Diff below reuse it.
+- **Source Control dock panel delivered (UI parity):** a real third dock panel with
+  activity rail/tabs and persisted `layout.State` `source_control` side/visibility;
+  grouped **Staged/Unstaged/Untracked** sections, **tree/flat** rendering, paged rows,
+  branch/HEAD summary and a commit-message entry whose **Commit staged…** button
+  delegates to the reviewed commit workflow. **Stage all (per section)/Unstage all/
+  Stage selected/Unstage selected** require a separate native review of the exact
+  literal argv/path set, the manager barrier, HEAD compare-and-swap recheck,
+  in-progress-operation and unmerged-conflict refusal, and a byte-for-byte reviewed
+  path-set recheck. Section writes use `add -u`/`add -- <paths>`/`reset`. Explicit
+  refresh only (no watchers); reuses the window's discovery; own dock disclosure;
+  dirty buffers excluded; no commit/worktree write from the dock. Limits: 1,024
+  paths/128 KiB argv per write, 256 KiB review, 128 file rows/page.
+- **Project Diff window delivered (UI parity):** multi-file (4,096 files, 1 MiB
+  capture) **unified/split/word** rendering with gutter markers, old/new line numbers,
+  hunk navigation, **original/current/both** sides and a staged/unstaged picker. The
+  **current side is an editable ExcerptEditor bound to the real open document** via
+  the shared editor history; the **original side is always read-only** (current side
+  read-only when the file is not open). **Hunk and change-line-selection
+  stage/unstage** reuse the strict sub-hunk index backend with a separate captured
+  before/after review; selections are half-open change-line index ranges within one
+  hunk, invalidated by a stale hunk digest. **Unsaved edits are excluded and never
+  saved**; Save is offered through a parent callback. Inherits Source Control
+  trust/disclosure; no worktree write, commit, watchers or startup work.
 - **Trusted workspace + per-window disclosure approval**, no Git startup or
   restricted-mode execution. Invalidation cancels/reaps work and rejects stale
   results. Requires **Git 2.31+ at `/usr/bin/git`**, fixed argv/config and replacement
@@ -62,8 +87,9 @@ and its accepted final validation, not full Zed parity:
 - **Single-hunk stage/unstage delivered** with a strict captured-snapshot applier:
   exact recorded position, byte-identical context, no fuzz/offset; CRLF and missing
   final newline preserved; other hunks/paths preserved through the same checked
-  single-path publication. **Absent sides and mode changes are refused.** No
-  selection/batch staging and no whole-file fallback.
+  single-path publication. **Absent sides and mode changes are refused.**
+  Change-line-selection staging is delivered through Project Diff's strict sub-hunk
+  backend and section/all staging through the dock panel; no whole-file fallback.
 - **Commit/uncommit delivered:** default **Commit staged…** (`commit -F -`, typed
   message, no `-a`/`--allow-empty`, empty staged set refused); explicit **Stage
   tracked and commit…** (`add -u`, never untracked, unmerged conflicts refused
@@ -106,15 +132,35 @@ and its accepted final validation, not full Zed parity:
   validated and **user-opened** after external-link confirmation. **No PR API.**
 - All workflows require Source Control trust/disclosure plus per-operation native
   confirmations; writes use the user's Git identity/config and hooks/signing may
-  execute — **not a sandbox**. **UI parity limits are explicit:** command-driven
-  native dialogs, not a dock, editable Project Diff, split/word-diff, tree/flat or
-  section/all staging parity. **Next: UI-parity work (dock, editable Project Diff,
-  supported-case expansion).**
+  execute — **not a sandbox**. **UI parity is delivered** (dock panel and Project
+  Diff above); **remaining limits are explicit:** no annotated tags/PR API, hunk
+  absent-side/mode refusals, change-line-index selections, explicit panel refresh
+  without watchers, current-side-only Project Diff editing (original read-only), and
+  no rerun visual matrix for the new UI. **Next: supported-case expansion and the
+  remaining repository-model targets (watch-based refresh, buffer-to-index staging).**
+
+### M4 UI-parity increment validation — targeted
+
+**Targeted validation passed for the UI-parity increment; the full aggregate was not
+rerun per user request.** `session-unit` **25/25** (including the persisted
+`source_control` layout roundtrip/partial/refusal tests), widgets **209/209 in
+53.711 s**, native docks **27/27**, `git-index-unit` **59** (21 index-transaction +
+26 hunk incl. sub-hunk/selection + 6 diff_render + 5 command-policy + 1 import-root),
+the two focused hunk workflow cases (`hunk-stage-preserves-other`,
+`hunk-stage-second-navigation`) and the integrated build **46/46 steps** passed
+([units log](../../../.cache/coral-m4-ui-units.log),
+[docks log](../../../.cache/coral-m4-ui-docks.log),
+[widgets results](../../../.cache/coral-widgets/results.json),
+[docks results](../../../.cache/coral-docks/results.json)). Counts overlap across
+harnesses; they are not a unique-test total. The **visual matrix was not rerun for
+the new UI**, and no dock/Project-Diff visual parity is claimed. The historical
+core-workflow gate below predates this increment and was not rerun for it.
 
 ### Final M4 core-workflow validation — accepted
 
-**The parent aggregate, hooks-disabled production and separate visual qualification
-passed.** Final **[`test-m4-slice`](../../../.cache/coral-m4-final-gate.log) passed
+**Historical core-workflow gate: this evidence predates the UI-parity increment and
+was not rerun for it.** The parent aggregate, hooks-disabled production and separate
+visual qualification passed. Final **[`test-m4-slice`](../../../.cache/coral-m4-final-gate.log) passed
 117/117 steps, exit 0; 475/475 Zig tests passed, no skips reported** — 94 fresh
 workflow-root tests plus 381 fresh main-root tests; `git-unit`, `git-index-unit`, the
 language unit roots and the trust/session/project/appearance runners were cached from
@@ -155,7 +201,8 @@ cancelled writes warn and refresh. Counts overlap across harnesses; they are not
 unique-test total, and no aggregate wall time is claimed. `test-m4-slice` composes
 pure units, backend/hunk units, the four workflow roots, both native Git suites and
 `test-m3` with M1/M2 regressions: implemented core-workflow coverage, **not full
-Zed/UI parity**. See the [final evidence and limits](WORKBENCH_M4_GIT.md#final-m4-core-workflow-validation--accepted).
+Zed/UI parity**; this gate predates the UI-parity increment, whose targeted
+validation is recorded above. See the [final evidence and limits](WORKBENCH_M4_GIT.md#final-m4-core-workflow-validation--accepted).
 
 ### Second-increment verification — historical standalone evidence
 
@@ -164,7 +211,8 @@ pure passed**, and final native **46 passed: 31 new mutation + 15 prior** in the
 reported `.cache/m4-index-native` artifacts. The earlier original `teardown-root`
 open-workspace timeout passed isolated and in the full rerun; **no code fix or
 relaxed timeout** is claimed. That aggregate remained pending and was never
-accepted; the final core-workflow validation above supersedes it as current evidence.
+accepted; the final core-workflow validation above superseded it as the accepted
+core-workflow evidence.
 
 ### Historical first read-only slice — final validation passed
 
@@ -480,6 +528,6 @@ All native tests use private Wayland/XDG sessions and disposable files, not the 
 - **M1:** implemented/tested bounded foundation; retain the documented undo, recovery, file-size and process-ownership limits.
 - **M2:** implementation **COMPLETE** for the bounded workspace preview, including automatic projects/startup, recent/buffer pickers and reviewed root management. All mandatory feature scope is accounted for and the complete acceptance/production gates passed, as recorded above. Both 100k explorer and on-demand search fixtures are validated; no persistent index or full IDE parity is claimed.
 - **M3:** bounded baseline complete with historical validation; **automatic startup implemented and separately validated**. Existing document/workspace/trust contracts and accepted M0 engine limits remain in force; the guide records deferred capabilities rather than claiming full LSP parity.
-- **M4 Git and review engine — core workflows implemented and validated:** inspection, selected full-file and single-hunk staging/unstaging, commit/uncommit, branches/lightweight tags, worktrees, stash, conflicts/continue-abort, remotes and history/blame/permalinks delivered as command-driven dialogs; pure 27, backend/hunk 40, workflow roots 94 (25+30+18+21) and native 46 + 36 passes; final parent aggregate 117/117 steps / 475/475 Zig tests, hooks-disabled production 46/46 and visual 40/40 (16 cases) accepted. First-slice and second-increment evidence remains historical. Next is dock/editable-Project-Diff UI parity and supported-case expansion; full Zed parity is not claimed.
+- **M4 Git and review engine — core workflows and UI parity implemented:** inspection, selected full-file and single-hunk staging/unstaging, commit/uncommit, branches/lightweight tags, worktrees, stash, conflicts/continue-abort, remotes and history/blame/permalinks delivered as command-driven dialogs, plus the Source Control dock panel and editable Project Diff window (grouped tree/flat status, commit entry, reviewed section/all/selected staging; multi-file unified/split/word review, hunk/change-line-selection staging). Historical core-workflow evidence: pure 27, backend/hunk 40, workflow roots 94 (25+30+18+21) and native 46 + 36 passes; final parent aggregate 117/117 steps / 475/475 Zig tests, hooks-disabled production 46/46 and visual 40/40 (16 cases) accepted. UI-parity increment: targeted session-unit 25, widgets 209, docks 27, git-index-unit 59, focused hunk workflows 2 and build 46/46 passed; the full aggregate was not rerun per user request and the visual matrix was not rerun for the new UI. First-slice and second-increment evidence remains historical. Next is supported-case expansion and the remaining repository-model targets (watch-based refresh, buffer-to-index staging); remaining limits (no annotated tags/PR API, change-line-index selections, explicit refresh without watchers, read-only original diff side) stay explicit; full Zed parity is not claimed.
 - **M5–M8:** production terminal/tasks, native/ACP agents, MCP, DAP/test UI, extensions and advanced editing/accessibility qualification, including interactive snippets in M8.
 - **M9:** removed, not silently reintroduced.

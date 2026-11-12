@@ -14,24 +14,25 @@ pub const Controller = struct {
     overlay: u.W,
     editor: u.W,
     rail: u.W,
-    activities: [2]u.W,
+    activities: [3]u.W,
     picker: u.W,
     explorer_slot: u.W,
     search_slot: u.W,
+    source_control_slot: u.W,
     hosts: [3]u.W,
     frames: [3]u.W,
     search_placeholder: u.W,
     dragging: [3]bool = @splat(false),
-    tabs: [3][2]u.W,
+    tabs: [3][3]u.W,
     paneds: [3]*c.GtkPaned,
     state: layout.State = .{},
-    effective: [2]bool = .{ true, false },
+    effective: [3]bool = .{ true, false, false },
     compact: bool = false,
     picking: bool = false,
     closed: bool = false,
     applying: bool = false,
     tick_id: c_uint = 0,
-    controllers: [9]*c.GtkEventController = undefined,
+    controllers: [10]*c.GtkEventController = undefined,
     controller_count: usize = 0,
     pending_focus: c.GWeakRef = undefined,
     pending_focus_frames: u8 = 0,
@@ -52,7 +53,7 @@ pub const Controller = struct {
         u.append(root, overlay);
         var hosts: [3]u.W = undefined;
         var frames: [3]u.W = undefined;
-        var tabs: [3][2]u.W = undefined;
+        var tabs: [3][3]u.W = undefined;
         var paneds: [3]*c.GtkPaned = undefined;
         for (docks, 0..) |dock, i| {
             const host = u.box(false, 0);
@@ -60,7 +61,7 @@ pub const Controller = struct {
             const bar = u.box(true, 0);
             c.gtk_widget_add_css_class(bar, "dock-header");
             u.append(host, bar);
-            tabs[i] = .{ actionButton("Explorer", "win.focus-explorer"), actionButton("Search", "win.focus-search") };
+            tabs[i] = .{ actionButton("Explorer", "win.focus-explorer"), actionButton("Search", "win.focus-search"), actionButton("Source Control", "win.focus-source-control") };
             for (tabs[i]) |tab| {
                 c.gtk_widget_add_css_class(tab, "dock-tab");
                 u.append(bar, tab);
@@ -109,8 +110,10 @@ pub const Controller = struct {
         c.gtk_overlay_set_child(u.cast(c.GtkOverlay, overlay), u.cast(c.GtkWidget, paneds[0]));
         const explorer_slot = u.box(false, 0);
         const search_slot = u.box(false, 0);
-        for ([_]u.W{ explorer_slot, search_slot }) |slot| c.gtk_widget_set_vexpand(slot, 1);
+        const source_control_slot = u.box(false, 0);
+        for ([_]u.W{ explorer_slot, search_slot, source_control_slot }) |slot| c.gtk_widget_set_vexpand(slot, 1);
         u.append(hosts[0], explorer_slot);
+        u.append(hosts[0], source_control_slot);
         u.append(hosts[2], search_slot);
         const search_placeholder = u.label("Quick Open is using the shared search query and results.");
         c.gtk_label_set_wrap(u.cast(c.GtkLabel, search_placeholder), 1);
@@ -126,20 +129,20 @@ pub const Controller = struct {
         c.gtk_overlay_set_measure_overlay(u.cast(c.GtkOverlay, overlay), picker, 0);
         c.gtk_overlay_set_clip_overlay(u.cast(c.GtkOverlay, overlay), picker, 1);
         c.gtk_widget_set_visible(picker, 0);
-        var activities: [2]u.W = undefined;
-        inline for (.{ .{ "system-file-manager-symbolic", "Explorer · Ctrl+Shift+E", "win.toggle-explorer" }, .{ "edit-find-symbolic", "Workspace search · Ctrl+Shift+F", "win.toggle-search" }, .{ "input-keyboard-symbolic", "Focus editor · Ctrl+1", "win.focus-editor" }, .{ "view-refresh-symbolic", "Reset dock layout", "win.reset-docks" } }, 0..) |item, i| {
-            if (i == 2) {
+        var activities: [3]u.W = undefined;
+        inline for (.{ .{ "system-file-manager-symbolic", "Explorer · Ctrl+Shift+E", "win.toggle-explorer" }, .{ "edit-find-symbolic", "Workspace search · Ctrl+Shift+F", "win.toggle-search" }, .{ "vcs-symbolic", "Source Control", "win.toggle-source-control" }, .{ "input-keyboard-symbolic", "Focus editor · Ctrl+1", "win.focus-editor" }, .{ "view-refresh-symbolic", "Reset dock layout", "win.reset-docks" } }, 0..) |item, i| {
+            if (i == 3) {
                 const spacer = u.box(false, 0);
                 c.gtk_widget_set_vexpand(spacer, 1);
                 u.append(rail, spacer);
             }
             const button = u.icon(item[0], item[1]);
             c.gtk_widget_add_css_class(button, "activity");
-            if (i < 2) activities[i] = button;
+            if (i < 3) activities[i] = button;
             c.gtk_actionable_set_action_name(u.cast(c.GtkActionable, button), item[2]);
             u.append(rail, button);
         }
-        return .{ .root = root, .overlay = overlay, .editor = editor, .rail = rail, .activities = activities, .picker = picker, .explorer_slot = explorer_slot, .search_slot = search_slot, .hosts = hosts, .frames = frames, .search_placeholder = search_placeholder, .tabs = tabs, .paneds = paneds };
+        return .{ .root = root, .overlay = overlay, .editor = editor, .rail = rail, .activities = activities, .picker = picker, .explorer_slot = explorer_slot, .search_slot = search_slot, .source_control_slot = source_control_slot, .hosts = hosts, .frames = frames, .search_placeholder = search_placeholder, .tabs = tabs, .paneds = paneds };
     }
 
     /// Call only once the controller is at its stable address.
@@ -158,9 +161,13 @@ pub const Controller = struct {
             u.connect(focus, "enter", &hostFocused, self);
             self.addController(host, focus);
         }
-        for ([_]u.W{ self.explorer_slot, self.search_slot }, 0..) |slot, i| {
+        for ([_]u.W{ self.explorer_slot, self.search_slot, self.source_control_slot }, 0..) |slot, i| {
             const focus = c.gtk_event_controller_focus_new().?;
-            u.connect(focus, "enter", if (i == 0) &explorerFocused else &searchFocused, self);
+            u.connect(focus, "enter", switch (i) {
+                0 => &explorerFocused,
+                1 => &searchFocused,
+                else => &sourceControlFocused,
+            }, self);
             self.addController(slot, focus);
         }
         // The Paned's own gesture claims the drag, cancelling observers. Watch
@@ -201,28 +208,32 @@ pub const Controller = struct {
         self.state = layout.normalized(state);
         self.apply();
     }
-    pub fn visible(self: *Controller, panel: Panel) bool {
-        return if (panel == .explorer) self.state.explorer_visible else self.state.search_visible;
+    pub fn visible(self: *const Controller, panel: Panel) bool {
+        return switch (panel) {
+            .explorer => self.state.explorer_visible,
+            .search => self.state.search_visible,
+            .source_control => self.state.source_control_visible,
+        };
     }
     pub fn show(self: *Controller, panel: Panel) void {
         if (self.closed) return;
-        if (panel == .explorer) self.state.explorer_visible = true else self.state.search_visible = true;
+        visibleField(&self.state, panel).* = true;
         self.state.active = panel;
         self.apply();
     }
     pub fn hide(self: *Controller, panel: Panel) void {
         if (self.closed) return;
-        if (panel == .explorer) self.state.explorer_visible = false else self.state.search_visible = false;
-        if (self.state.active == panel) self.state.active = if (panel == .explorer) .search else .explorer;
+        visibleField(&self.state, panel).* = false;
+        if (self.state.active == panel) self.state.active = self.fallbackPanel(panel);
         self.apply();
     }
     pub fn move(self: *Controller, dock: Dock) void {
         if (self.closed) return;
-        if (self.state.active == .explorer) self.state.explorer = dock else self.state.search = dock;
+        dockField(&self.state, self.state.active).* = dock;
         self.apply();
     }
     pub fn grow(self: *Controller, larger: bool) void {
-        const side = self.presentationDock(if (self.state.active == .explorer) self.state.explorer else self.state.search);
+        const side = self.presentationDock(dockField(&self.state, self.state.active).*);
         const size = switch (side) {
             .left => self.state.left_size,
             .right => self.state.right_size,
@@ -256,12 +267,27 @@ pub const Controller = struct {
     fn presentationDock(self: *const Controller, dock: Dock) Dock {
         return if (self.width > 0 and self.width < 520) .bottom else dock;
     }
+    /// Hiding the active panel falls back to another visible panel, or to the
+    /// first other panel in rail order when none is visible. Explorer/Search
+    /// keep their historical mutual fallback while Source Control is hidden.
+    fn fallbackPanel(self: *const Controller, hidden: Panel) Panel {
+        inline for (.{ Panel.explorer, Panel.search, Panel.source_control }) |panel| {
+            if (panel != hidden and self.visible(panel)) return panel;
+        }
+        return switch (hidden) {
+            .explorer => .search,
+            .search => .explorer,
+            .source_control => .explorer,
+        };
+    }
     fn apply(self: *Controller) void {
         if (self.closed) return;
         self.applying = true;
         defer self.applying = false;
         const explorer_dock = self.presentationDock(self.state.explorer);
         const search_dock = self.presentationDock(self.state.search);
+        const source_control_dock = self.presentationDock(self.state.source_control);
+        const panel_docks = [3]Dock{ explorer_dock, search_dock, source_control_dock };
         const root = c.gtk_widget_get_root(self.root);
         const focused = if (root) |r| c.gtk_root_get_focus(r) else null;
 
@@ -269,7 +295,8 @@ pub const Controller = struct {
             _ = c.g_object_ref(widget);
             const search_parent = if (self.picking) self.picker else self.hosts[index(search_dock)];
             const moving_focus = (inside(widget, self.search_slot) and c.gtk_widget_get_parent(self.search_slot) != search_parent) or
-                (inside(widget, self.explorer_slot) and c.gtk_widget_get_parent(self.explorer_slot) != self.hosts[index(explorer_dock)]);
+                (inside(widget, self.explorer_slot) and c.gtk_widget_get_parent(self.explorer_slot) != self.hosts[index(explorer_dock)]) or
+                (inside(widget, self.source_control_slot) and c.gtk_widget_get_parent(self.source_control_slot) != self.hosts[index(source_control_dock)]);
             if (moving_focus) {
                 c.g_weak_ref_set(&self.pending_focus, @ptrCast(widget));
                 self.pending_focus_frames = 4;
@@ -286,25 +313,56 @@ pub const Controller = struct {
             }
             c.g_object_unref(widget);
         };
-        var shown = [2]bool{ self.state.explorer_visible, self.state.search_visible };
-        if (shown[0] and shown[1] and (self.compact or self.state.explorer == self.state.search)) {
-            shown[if (self.state.active == .explorer) @as(usize, 1) else 0] = false;
+        var shown = [3]bool{ self.state.explorer_visible, self.state.search_visible, self.state.source_control_visible };
+        // Compact windows present one panel at a time. Otherwise panels sharing
+        // a dock collapse to the active one, or to the first visible panel in
+        // rail order when the active panel is hidden or lives on another dock.
+        if (self.compact) {
+            var keep: ?usize = null;
+            for (shown, 0..) |flag, i| {
+                if (flag and self.state.active == @as(Panel, @fromBackingInt(@intCast(i)))) keep = i;
+            }
+            if (keep == null) for (shown, 0..) |flag, i| {
+                if (flag and keep == null) keep = i;
+            };
+            for (&shown, 0..) |*flag, i| flag.* = keep != null and keep.? == i;
+        } else {
+            for (docks) |dock| {
+                var count: usize = 0;
+                var first: usize = 0;
+                var keep: ?usize = null;
+                for (panel_docks, 0..) |panel_dock, i| {
+                    if (!shown[i] or panel_dock != dock) continue;
+                    if (count == 0) first = i;
+                    count += 1;
+                    if (self.state.active == @as(Panel, @fromBackingInt(@intCast(i)))) keep = i;
+                }
+                if (count > 1) {
+                    const chosen = keep orelse first;
+                    for (panel_docks, 0..) |panel_dock, i| {
+                        if (panel_dock == dock and i != chosen) shown[i] = false;
+                    }
+                }
+            }
         }
         self.effective = shown;
         reparent(self.explorer_slot, self.hosts[index(explorer_dock)]);
         reparent(self.search_slot, if (self.picking) self.picker else self.hosts[index(search_dock)]);
+        reparent(self.source_control_slot, self.hosts[index(source_control_dock)]);
         reparent(self.search_placeholder, self.hosts[index(search_dock)]);
         c.gtk_widget_set_visible(self.search_placeholder, @intFromBool(self.picking and shown[1]));
         c.gtk_widget_set_visible(self.explorer_slot, @intFromBool(shown[0]));
         c.gtk_widget_set_visible(self.search_slot, @intFromBool(shown[1] or self.picking));
+        c.gtk_widget_set_visible(self.source_control_slot, @intFromBool(shown[2]));
         c.gtk_widget_set_visible(self.picker, @intFromBool(self.picking));
+        const desired = [3]bool{ self.state.explorer_visible, self.state.search_visible, self.state.source_control_visible };
         for (docks, 0..) |dock, i| {
-            const explorer_here = explorer_dock == dock;
-            const search_here = search_dock == dock;
-            c.gtk_widget_set_visible(self.frames[i], @intFromBool((shown[0] and explorer_here) or (shown[1] and search_here)));
-            c.gtk_widget_set_visible(self.tabs[i][0], @intFromBool(explorer_here and self.state.explorer_visible));
-            c.gtk_widget_set_visible(self.tabs[i][1], @intFromBool(search_here and self.state.search_visible));
-            for (self.tabs[i], 0..) |tab, panel| setActive(tab, shown[panel]);
+            const here = [3]bool{ explorer_dock == dock, search_dock == dock, source_control_dock == dock };
+            c.gtk_widget_set_visible(self.frames[i], @intFromBool((shown[0] and here[0]) or (shown[1] and here[1]) or (shown[2] and here[2])));
+            for (self.tabs[i], 0..) |tab, panel| {
+                c.gtk_widget_set_visible(tab, @intFromBool(here[panel] and desired[panel]));
+                setActive(tab, shown[panel]);
+            }
         }
         for (self.activities, 0..) |activity, panel| setActive(activity, shown[panel]);
         self.setPositions();
@@ -384,6 +442,7 @@ pub const Controller = struct {
             .compact = self.compact,
             .explorer_visible = self.effective[0],
             .search_visible = self.effective[1],
+            .source_control_visible = self.effective[2],
             .picker_visible = self.picking,
             .shared_search = true,
             .left_visible = c.gtk_widget_get_visible(self.frames[0]) != 0,
@@ -397,7 +456,7 @@ pub const Controller = struct {
             .editor_group_bounds = group_bounds.items,
             .editor_width = c.gtk_widget_get_width(self.editor),
             .editor_height = c.gtk_widget_get_height(self.editor),
-            .focus = if (inside(focus, self.picker)) "picker" else if (inside(focus, self.explorer_slot)) "explorer" else if (inside(focus, self.search_slot)) "search" else if (inside(focus, self.editor)) "editor" else "other",
+            .focus = if (inside(focus, self.picker)) "picker" else if (inside(focus, self.explorer_slot)) "explorer" else if (inside(focus, self.search_slot)) "search" else if (inside(focus, self.source_control_slot)) "source_control" else if (inside(focus, self.editor)) "editor" else "other",
         }, .{}) catch unreachable;
         defer u.a.free(text);
         const z = u.z(text);
@@ -456,6 +515,20 @@ fn index(dock: Dock) usize {
         .left => 0,
         .right => 1,
         .bottom => 2,
+    };
+}
+fn dockField(state: *layout.State, panel: Panel) *Dock {
+    return switch (panel) {
+        .explorer => &state.explorer,
+        .search => &state.search,
+        .source_control => &state.source_control,
+    };
+}
+fn visibleField(state: *layout.State, panel: Panel) *bool {
+    return switch (panel) {
+        .explorer => &state.explorer_visible,
+        .search => &state.search_visible,
+        .source_control => &state.source_control_visible,
     };
 }
 fn reparent(widget: u.W, parent: u.W) void {
@@ -531,7 +604,13 @@ fn hostFocused(controller: ?*c.GtkEventControllerFocus, data: ?*anyopaque) callc
     if (self.closed or self.applying) return;
     const widget = c.gtk_event_controller_get_widget(u.cast(c.GtkEventController, controller.?));
     for (self.hosts, 0..) |host, i| if (host == widget) {
-        self.state.active = if (self.effective[0] and index(self.presentationDock(self.state.explorer)) == i) .explorer else .search;
+        const panel_docks = [3]Dock{ self.presentationDock(self.state.explorer), self.presentationDock(self.state.search), self.presentationDock(self.state.source_control) };
+        for (panel_docks, 0..) |panel_dock, panel| {
+            if (self.effective[panel] and index(panel_dock) == i) {
+                self.state.active = @fromBackingInt(@intCast(panel));
+                break;
+            }
+        }
     };
 }
 fn explorerFocused(_: ?*c.GtkEventControllerFocus, data: ?*anyopaque) callconv(.c) void {
@@ -541,4 +620,8 @@ fn explorerFocused(_: ?*c.GtkEventControllerFocus, data: ?*anyopaque) callconv(.
 fn searchFocused(_: ?*c.GtkEventControllerFocus, data: ?*anyopaque) callconv(.c) void {
     const self = u.cast(Controller, data.?);
     if (!self.closed and !self.applying and !self.picking) self.state.active = .search;
+}
+fn sourceControlFocused(_: ?*c.GtkEventControllerFocus, data: ?*anyopaque) callconv(.c) void {
+    const self = u.cast(Controller, data.?);
+    if (!self.closed and !self.applying) self.state.active = .source_control;
 }

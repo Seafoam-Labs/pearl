@@ -204,6 +204,8 @@ pub const Controller = struct {
             self.app.git_conflict.invalidate();
             self.app.git_remote.invalidate();
             self.app.git_history.invalidate();
+            self.app.git_panel.invalidate();
+            self.app.git_project_diff.invalidate();
         }
         defer self.refreshStatus();
         self.request = std.math.add(u64, self.request, 1) catch @panic("Policy request generation exhausted");

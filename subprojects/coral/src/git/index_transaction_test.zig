@@ -1,5 +1,6 @@
 const std = @import("std");
 const tx = @import("index_transaction.zig");
+const hunk = @import("hunk.zig");
 const t = std.testing;
 const c = @import("index_transaction_os.zig");
 const Fixture = struct {
@@ -676,4 +677,38 @@ test "replacement refs never substitute bytes for the captured index or HEAD obj
     try t.expectEqualStrings("head\n", p.after);
     try t.expect((try tx.apply(&p, &f.cancel)).committed);
     try f.expectGit(&.{ "show", ":selected" }, "head\n");
+}
+
+test "selection publication applies a strict sub-hunk and preserves unrelated staging" {
+    var f = try Fixture.init();
+    defer f.deinit();
+    try f.write("selected", "a\nb\nc\nd\ne\n");
+    try f.write("other", "other head\n");
+    try f.git(&.{ "add", "--", "selected", "other" });
+    try f.git(&.{ "-c", "commit.gpgsign=false", "commit", "-q", "--no-gpg-sign", "-m", "fixture baseline" });
+    try f.write("selected", "a\nB\nc\nD\ne\n");
+    try f.write("other", "other staged\n");
+    try f.git(&.{ "add", "--", "other" });
+    try f.write("other", "other unstaged\n");
+
+    // Capture the displayed index->disk diff and digest its single hunk.
+    const out = try f.output(&.{ "diff", "--no-ext-diff", "--no-textconv", "--no-color", "--no-renames", "--", "selected" });
+    defer t.allocator.free(out);
+    var arena = std.heap.ArenaAllocator.init(t.allocator);
+    defer arena.deinit();
+    const parsed = try hunk.parse(arena.allocator(), out);
+    try t.expectEqual(@as(usize, 1), parsed.hunks.len);
+    const ref = tx.HunkRef{ .ordinal = 0, .digest = hunk.digest(parsed.hunks[0]) };
+    const request = tx.Request{ .root = f.root, .gitdir = f.gitdir, .commondir = f.gitdir, .path = "selected", .action = .stage_hunk, .hunk = ref, .selection = .{ .ordinal = 0, .ranges = &.{.{ .start = 0, .end = 2 }} } };
+    var p = try tx.prepare(t.allocator, request, &f.cancel);
+    defer p.deinit();
+    try t.expectEqualStrings("a\nb\nc\nd\ne\n", p.before);
+    try t.expectEqualStrings("a\nB\nc\nd\ne\n", p.after);
+    try t.expect(p.patch.len > 0);
+    try t.expect((try tx.apply(&p, &f.cancel)).committed);
+    try f.expectGit(&.{ "show", ":selected" }, "a\nB\nc\nd\ne\n");
+    try f.expectGit(&.{ "show", ":other" }, "other staged\n");
+    try f.expectFile("selected", "a\nB\nc\nD\ne\n");
+    try f.expectFile("other", "other unstaged\n");
+    try f.noLock();
 }
