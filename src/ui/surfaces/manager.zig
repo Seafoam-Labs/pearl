@@ -169,6 +169,8 @@ pub const Manager = struct {
     network: @import("../../services/network.zig").Network = undefined,
     bluetooth: @import("../../services/bluetooth.zig").Bluetooth = undefined,
     session_services: @import("../../services/session.zig").Session = undefined,
+    autostart: @import("../../services/autostart.zig").Service = undefined,
+    autostart_launched: bool = false,
     clipboard: @import("../../services/clipboard.zig").Clipboard = undefined,
     capture: @import("../../services/capture.zig").Capture = undefined,
     capture_hide: bool = false,
@@ -277,6 +279,8 @@ pub const Manager = struct {
         self.network.start();
         self.bluetooth.start();
         try self.session_services.start(if (self.preferences.live != null) self.preferences.prefs().notifications else null);
+        self.autostart = .{ .app = self.app.as(gio.Application), .context = self, .changed = autostartChanged };
+        self.autostart.start() catch |err| log.warn("event=autostart-unavailable error={s}", .{@errorName(err)});
         try self.clipboard.start();
         try self.capture.start();
         self.plugins = try @import("../../plugins/manager.zig").Manager.create(self.app.as(gio.Application), self, pluginsChanged);
@@ -333,6 +337,7 @@ pub const Manager = struct {
             self.clipboard.stop();
             self.capture.stop();
             self.session_services.stop();
+            self.autostart.stop();
             self.services_started = false;
         }
         if (self.osd_flush != 0) _ = glib.Source.remove(self.osd_flush);
@@ -754,6 +759,10 @@ pub const Manager = struct {
         const self: *Manager = @ptrCast(@alignCast(context));
         self.servicesChanged();
     }
+    fn autostartChanged(_: *anyopaque) void {
+        // The shell only launches entries once per session; Settings keeps
+        // its own service instance and does not observe this copy.
+    }
     fn servicesChanged(self: *Manager) void {
         if (!self.running) return;
         if (self.settings_observer) |notify| notify(self.settings_observer_context.?);
@@ -1140,6 +1149,16 @@ pub const Manager = struct {
         if (!std.mem.eql(u8, &identity, self.client.model.session)) {
             self.clear();
             return error.SessionDisplayMismatch;
+        }
+        // Autostart runs once per shell lifetime, after the compositor session
+        // is verified and unlocked; a session that starts locked defers to
+        // the first unlocked sync.
+        if (!self.autostart_launched) {
+            const locked = if (self.client.model.get(.session, "session")) |session| session.locked else true;
+            if (!locked) {
+                self.autostart_launched = true;
+                self.autostart.launch(self.display);
+            }
         }
         try self.tasks.update(&self.client.model, &self.index, self.preferences.prefs().application_launchers, self.preferences.prefs().pinned_apps);
         for (self.outputs.items) |o| o.seen = false;

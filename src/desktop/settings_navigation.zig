@@ -12,6 +12,7 @@ pub const Route = enum {
     bar,
     notifications,
     system,
+    startup,
     aqueous,
     advanced,
     plugins,
@@ -32,6 +33,7 @@ pub const Route = enum {
             .bar => @import("i18n").mark("Bar & dock"),
             .notifications => @import("i18n").mark("Notifications"),
             .system => @import("i18n").mark("System"),
+            .startup => @import("i18n").mark("Startup applications"),
             .aqueous => @import("i18n").mark("Aqueous"),
             .advanced => @import("i18n").mark("Advanced"),
             .plugins => @import("i18n").mark("Plugins"),
@@ -41,7 +43,7 @@ pub const Route = enum {
     pub fn isCompact(self: Route) bool {
         return switch (self) {
             .overview, .network, .bluetooth, .sound, .power => true,
-            .appearance, .assistant, .bar, .notifications, .system, .aqueous, .advanced, .plugins => false,
+            .appearance, .assistant, .bar, .notifications, .system, .startup, .aqueous, .advanced, .plugins => false,
         };
     }
 };
