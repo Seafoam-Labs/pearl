@@ -33,7 +33,7 @@ import time
 import traceback
 from urllib.parse import unquote, urlsplit
 
-from windows import WindowHarness, stage_styles, confirm_scope
+from windows import WindowHarness, stage_styles
 from search import PROJECT, PEARL
 from pearl_session import PrivateSession, fixture_prefix, wait_for
 from wayland_test_input import pointer_move, pointer_click
@@ -288,9 +288,11 @@ class LanguageHarness(WindowHarness):
         return self.main
 
     def trust(self):
+        # Always trusted: no consent dialog exists. Keep the historical helper
+        # as a no-consent assertion so callers cannot silently skip the check.
         p = self.policy_idle()
-        if p['trust'] != 'trusted':
-            confirm_scope(self)
+        assert p['trust'] == 'trusted' and all(p['permits']), p
+        assert not p['approval_required'] and not p['confirmation'], p
 
     def ready_language(self, count=1):
         p = self.wait_language(lambda p: p['session_count'] == count and
@@ -443,16 +445,16 @@ class LanguageHarness(WindowHarness):
 def trusted_start(h):
     h.configure(marker=True)
     h.fixture()
-    h.invoke('start', palette=True)
-    p = h.language()
-    assert p['session_count'] == 0 and not p['dialog'], p
-    assert 'Restricted' in p['status'] or 'Trust' in p['status'], p
-    assert not h.marker.exists() and not h.log_paths(), 'Restricted start spawned a process'
-    h.trust()
-    assert not h.marker.exists(), 'Trust confirmation auto-launched a server'
-    h.automatic_review()
+    # Always trusted: no workspace refusal exists. The exact-configuration
+    # review is the only start gate, and nothing executes before approval.
+    p = h.automatic_review()
+    assert p['session_count'] == 0, p
+    assert not h.marker.exists() and not h.log_paths(), 'Review spawned a process before approval'
     h.reject()
     assert not h.marker.exists(), 'Rejected start spawned a process'
+    h.invoke('start', palette=True)  # explicit Start re-opens the same review
+    p = h.automatic_review()
+    assert p['session_count'] == 0 and not h.marker.exists(), p
     h.start(native=True)
     assert json.loads(h.marker.read_text())['fixture'] == 'coral-fake-lsp'
     initialization = h.traffic('initialize')[0]
@@ -600,11 +602,11 @@ def automatic_windows(h):
     alternate = h.write(h.fixtures / 'unrelated/main.zig', TEXT)
     h.workspace(alternate.parent)
     h.open_document(alternate)
-    assert h.policy_idle()['trust'] == 'restricted'
-    h.stays_stopped()  # exact executable approval is not workspace trust
-    assert len(h.messages('initialize')) == 2
-    h.trust()
+    assert h.policy_idle()['trust'] == 'trusted'
+    # Always trusted: the durable exact-configuration approval permits automatic
+    # startup in an independent workspace without a new review.
     independent = h.ready_language()['sessions'][0]['id']
+    assert len(h.messages('initialize')) == 3
     with h.at(first):
         h.invoke('stop')
         h.wait_language(lambda p: p['session_count'] == 0 and p['automatic']['paused'] and
@@ -619,7 +621,7 @@ def automatic_windows(h):
     with h.at(first):
         h.ready_language()
     assert len(h.messages('initialize')) == 5
-    h.evidence_snapshot('shared-workspace-pause-and-independent-trust')
+    h.evidence_snapshot('shared-workspace-pause-and-independent-approval')
 
 
 def automatic_changed_approval(h, executable=False):
@@ -687,7 +689,8 @@ def approval_location_not_cwd(h):
     target = state / 'coral/language'
     assert target.is_relative_to(home), 'old cwd guard must reject this fixture layout'
     h.setup(native=True)  # automatic review and a real approval click, no Start
-    assert (target / 'store').is_file() and h.store.is_file()
+    assert (target / 'store').is_file(), 'language approval store must exist'
+    assert not h.store.exists(), 'workspace consent state must never be written'
     assert len(h.messages('initialize')) == 1
     h.evidence_snapshot('approval-with-state-under-disposable-home-cwd')
     h.stop()
@@ -697,8 +700,9 @@ def approval_location_not_cwd(h):
     assert len(h.messages('initialize')) == 2
     approved = (target / 'store').read_bytes()
 
-    # The sibling trust store is outside the forbidden root/base, so trust must
-    # succeed. Only the language controller's actual-target guard can reject it.
+    # The sibling trust path is outside the forbidden root/base and is never
+    # written anyway. Only the language controller's actual-target guard can
+    # reject the approval store inside the workspace.
     assert h.store.parent.parent == target.parent
     assert not h.store.resolve().is_relative_to(target.resolve())
     source = h.write(target / 'main.zig', TEXT)
@@ -726,7 +730,7 @@ def approval_location_not_cwd(h):
         h.stays_stopped()
         assert (target / 'store').read_bytes() == approved, 'rejected location changed approval storage'
         assert len(h.messages('initialize')) == 2, 'server executed with approval storage inside workspace'
-        assert h.policy_idle()['trust'] == 'trusted', 'test accidentally exercised the trust-store guard'
+        assert h.policy_idle()['trust'] == 'trusted', 'refusal must come from the language guard, not workspace trust'
         h.evidence_snapshot('approval-target-rejected-as-canonical-' + kind)
 
 
@@ -1230,6 +1234,7 @@ def roots_and_windows(h, shared=False):
     h.setup(roots=1 if shared else 2)
     first = h.target
     initial = h.language()['sessions'][0]['id']
+    first_processes = h.remember_processes()  # only the first owner's server exists yet
     if not shared:
         h.focus_document(h.roots[1] / 'main.zig')
         h.start(count=2)
@@ -1241,10 +1246,9 @@ def roots_and_windows(h, shared=False):
     second = h.new_window(keyboard=True)
     h.workspace(h.roots[0])
     h.open_document(h.main)
-    if not shared:
-        confirm_scope(h)  # folder scope differs from the first window's manifest
-    else:
-        assert h.policy_idle()['trust'] == 'trusted'
+    # Always trusted: the folder scope needs no consent, and the durable
+    # exact-configuration approval starts the server without a new review.
+    h.trust()
     h.start()
     second_session = h.language()['sessions'][0]['id']
     assert second_session != initial
@@ -1257,12 +1261,19 @@ def roots_and_windows(h, shared=False):
         assert h.canonical_text() == TEXT, 'canonical documents leaked across windows'
         assert h.language()['sessions'][0]['id'] == initial
     if shared:
+        # Revocation is local: it retires the target owner's stale work but
+        # never broadcasts into a same-scope sibling.
         h.action('win.workspace-revoke', first)
-        h.wait_language(lambda p: p['session_count'] == 0)
         with h.at(first):
             h.wait_language(lambda p: p['session_count'] == 0)
-        assert h.probe('policy')['trust'] == 'restricted'
-        h.assert_reaped()
+            assert h.probe('policy')['trust'] == 'trusted'
+        h.assert_reaped(first_processes)
+        h.wait_language(lambda p: p['session_count'] == 1)
+        assert h.probe('policy')['trust'] == 'trusted'
+        assert h.language()['sessions'][0]['id'] == second_session
+        with h.at(first):
+            resumed = h.wait_language(lambda p: p['session_count'] == 1, 15)
+            assert resumed['sessions'][0]['id'] != initial, 'retired session revived'
     else:
         h.invoke('stop')
         h.wait_language(lambda p: p['session_count'] == 0)
@@ -1352,10 +1363,11 @@ def resource_operations(h, kind):
     if kind in ('reject', 'server-reject'):
         h.command('language-reject')
     elif kind == 'revoke':
-        # The resource owner's modal intentionally blocks ordinary actions.
-        # Revoke from a live peer of the same scope to test synchronous policy
-        # invalidation while the other window owns an outstanding review.
-        h.action('win.workspace-revoke', peer)
+        # The resource owner's modal intentionally blocks ordinary GActions.
+        # The fixture command bridge reaches the owner's policy owner directly:
+        # local revocation retires its permits and cancels the outstanding
+        # review. The same-scope peer is never broadcast into.
+        h.command('policy-revoke')
     elif kind == 'stale':
         h.select_position(0)
         h.command('insert', '// invalidate resource origin\n')
@@ -1480,12 +1492,18 @@ def chained_root_retarget(h):
     assert p['pending'] is None and not p['review'] and not p['dialog'], p
     h.assert_reaped(processes)
     policy = h.policy_idle()
-    assert policy['trust'] == 'restricted' and not any(policy['permits']), policy
+    assert policy['trust'] == 'trusted' and all(policy['permits']), policy
     assert h.document(h.main) == document_before, 'retarget changed the old canonical document'
+    # Always trusted: the refusal is no longer a trust gate. The watch-driven
+    # refresh retargets the canonical root, so the old document now sits outside
+    # the workspace and Start cannot launch a server for it. The retired
+    # session/process are never revived and no replacement is auto-launched.
+    assert h.browser()['roots'][0]['canonical'] == str(root1), h.browser()
     h.invoke('start')
-    p = h.language()
+    p = h.wait_language(lambda p: 'DocumentOutsideWorkspace' in p['status'])
     assert not p['dialog'] and p['session_count'] == 0, p
-    assert len(h.log_paths()) == 1, 'retarget automatically launched a replacement server'
+    assert len(h.log_paths()) == 1, 'retarget launched a replacement server'
+    h.assert_reaped(processes)
     h.check_disk_unchanged()
     h.evidence_snapshot('interior-symlink-retarget-without-rescan')
 
@@ -1740,7 +1758,7 @@ CASES += [('auto-detection-reuse', automatic_detection, True),
           ('auto-crash', automatic_failure, True),
           ('auto-initialize-timeout', functools.partial(automatic_failure, initialize=True), True),
           ('auto-restored-documents-persistent-stop', automatic_restore_pause, True),
-          ('auto-windows-restricted-workspace', automatic_windows, True),
+          ('auto-windows-independent-workspace', automatic_windows, True),
           ('auto-configuration-change', automatic_changed_approval, True),
           ('auto-executable-change', functools.partial(automatic_changed_approval, executable=True), True),
           ('auto-storage-failure', automatic_storage_failure, True),

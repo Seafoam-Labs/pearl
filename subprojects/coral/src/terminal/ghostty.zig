@@ -19,6 +19,9 @@ pub const MouseEvent = opaque {};
 pub const Formatter = opaque {};
 pub const SelectionGesture = opaque {};
 pub const SelectionGestureEvent = opaque {};
+pub const ImageIterator = opaque {};
+pub const KittyGraphics = opaque {};
+pub const KittyGraphicsImage = opaque {};
 
 // ---- Result codes (GhosttyResult) ----
 pub const SUCCESS: c_int = 0;
@@ -138,6 +141,7 @@ pub const TerminalOption = enum(c_int) {
     semantic_prompt = 43,
     xt_checksum_report = 45,
     resize_window = 48,
+    apc_max_bytes_kitty = 21,
 };
 
 // ---- Terminal data (GhosttyTerminalData) ----
@@ -159,6 +163,11 @@ pub const TerminalData = enum(c_int) {
     selection = 31,
     viewport_active = 32,
     mouse_shape = 41,
+    kitty_image_storage_limit = 26,
+    kitty_image_medium_file = 27,
+    kitty_image_medium_temp_file = 28,
+    kitty_image_medium_shared_mem = 29,
+    kitty_graphics = 30,
 };
 
 pub const Scrollbar = extern struct { total: u64, offset: u64, len: u64 };
@@ -185,10 +194,50 @@ pub const RenderData = enum(c_int) {
     cursor_visible = 11,
     cursor = 18,
     colors = 19,
+    image_iterator = 22,
+    image_placements_generation = 23,
 };
 pub const RenderOption = enum(c_int) { dirty = 1, overscan = 2 };
 pub const Dirty = enum(c_int) { false = 0, partial = 1, full = 2 };
 pub const RowData = enum(c_int) { dirty = 1, cells = 3, selection = 4, viewport_y = 6, id = 7 };
+
+/// Opaque identity of a row across render-state updates. Two ids are equal
+/// only when both words match; a zero id is never valid. Used to detect rows
+/// that moved or were replaced even when they are not marked dirty.
+pub const RowId = extern struct { bits: [2]u64 };
+pub fn rowIdEql(a: RowId, b: RowId) bool {
+    return a.bits[0] == b.bits[0] and a.bits[1] == b.bits[1];
+}
+
+/// Image protocols reported by the render-state image iterator.
+pub const ImageProtocol = enum(c_int) { kitty = 0 };
+/// Draw order relative to terminal text (see GhosttyImageLayer).
+pub const ImageLayer = enum(c_int) { below_background = 0, below_text = 1, above_text = 2 };
+/// Kind of a Kitty placement in the render-state image list.
+pub const KittyPlacementKind = enum(c_int) { virtual = 0, relative = 1, fixed = 2 };
+
+/// Per-placement data readable from the render-state image iterator.
+pub const ImageData = enum(c_int) {
+    protocol = 1,
+    image_id = 2,
+    image_generation = 3,
+    layer = 4,
+    z = 5,
+    viewport_col = 6,
+    viewport_row = 7,
+    grid_cols = 8,
+    grid_rows = 9,
+    cell_offset_x = 10,
+    cell_offset_y = 11,
+    pixel_width = 12,
+    pixel_height = 13,
+    source_x = 14,
+    source_y = 15,
+    source_width = 16,
+    source_height = 17,
+    kitty_placement_id = 18,
+    kitty_kind = 19,
+};
 pub const RowCellsData = enum(c_int) {
     raw = 1,
     style = 2,
@@ -414,6 +463,23 @@ pub const ClipboardReadFn = *const fn (?*Terminal, ?*anyopaque, *const Clipboard
 pub const FormatterFormat = enum(c_int) { plain = 0, vt = 1, html = 2 };
 pub const FormatterOption = enum(c_int) { emit = 1, unwrap = 2, trim = 3, selection = 4, extras = 5 };
 
+// ---- Kitty graphics images ----
+/// Stored pixel formats. PNG/zlib payloads are decoded before storage, so
+/// ghostty_kitty_graphics_image_get() never reports PNG or compressed data.
+pub const KittyImageFormat = enum(c_int) { rgb = 0, rgba = 1, png = 2, gray_alpha = 3, gray = 4 };
+pub const KittyImageData = enum(c_int) {
+    id = 1,
+    number = 2,
+    width = 3,
+    height = 4,
+    format = 5,
+    compression = 6,
+    pixels = 7,
+    expected_len = 8,
+    generation = 9,
+};
+pub const KittyGraphicsData = enum(c_int) { placement_iterator = 1, generation = 2 };
+
 // ---- Selection gesture ----
 pub const GestureEventType = enum(c_int) { press = 0, release = 1, drag = 2, autoscroll_tick = 3, deep_press = 4 };
 pub const GestureEventOption = enum(c_int) { ref = 1, position = 2, repeat_distance = 3, time_ns = 4, repeat_interval_ns = 5, word_boundary_codepoints = 6, behaviors = 7, rectangle = 8, geometry = 9, viewport = 10 };
@@ -449,6 +515,11 @@ pub extern "c" fn ghostty_render_state_row_cells_free(cells: ?*RowCells) void;
 pub extern "c" fn ghostty_render_state_row_cells_next(cells: ?*RowCells) bool;
 pub extern "c" fn ghostty_render_state_row_cells_select(cells: ?*RowCells, x: u16) c_int;
 pub extern "c" fn ghostty_render_state_row_cells_get(cells: ?*RowCells, data: RowCellsData, out: ?*anyopaque) c_int;
+pub extern "c" fn ghostty_render_state_row_iterator_next_dirty(iterator: ?*RowIterator, out_y: *u16) bool;
+pub extern "c" fn ghostty_render_state_image_iterator_new(allocator: ?*const anyopaque, out: *?*ImageIterator) c_int;
+pub extern "c" fn ghostty_render_state_image_iterator_free(iterator: ?*ImageIterator) void;
+pub extern "c" fn ghostty_render_state_image_iterator_next(iterator: ?*ImageIterator) bool;
+pub extern "c" fn ghostty_render_state_image_get(iterator: ?*ImageIterator, data: ImageData, out: ?*anyopaque) c_int;
 
 // ---- Key encoder / event ----
 pub extern "c" fn ghostty_key_encoder_new(allocator: ?*const anyopaque, encoder: *?*KeyEncoder) c_int;
@@ -490,6 +561,12 @@ pub extern "c" fn ghostty_formatter_free(formatter: ?*Formatter) void;
 pub extern "c" fn ghostty_formatter_set(formatter: ?*Formatter, option: FormatterOption, value: ?*const anyopaque) c_int;
 pub extern "c" fn ghostty_formatter_format_buf(formatter: ?*Formatter, buf: ?[*]u8, buf_len: usize, out_written: *usize) c_int;
 
+// ---- Kitty graphics ----
+pub extern "c" fn ghostty_kitty_graphics_image(graphics: ?*KittyGraphics, image_id: u32) ?*KittyGraphicsImage;
+pub extern "c" fn ghostty_kitty_graphics_get(graphics: ?*KittyGraphics, data: KittyGraphicsData, out: ?*anyopaque) c_int;
+pub extern "c" fn ghostty_kitty_graphics_image_get(image: ?*KittyGraphicsImage, data: KittyImageData, out: ?*anyopaque) c_int;
+pub extern "c" fn ghostty_kitty_graphics_animation_tick(graphics: ?*KittyGraphics, now_ms: u64, next_ms: *u64) c_int;
+
 // ---- Colors ----
 pub extern "c" fn ghostty_color_palette_default(out: [*]ColorRgb) void;
 
@@ -499,6 +576,7 @@ test "sized struct layouts match the C ABI" {
     try std.testing.expectEqual(@as(usize, 40), @sizeOf(Selection));
     try std.testing.expectEqual(@as(usize, 64), @sizeOf(ClipboardWrite));
     try std.testing.expectEqual(@as(usize, 16), @sizeOf(GridRef));
+    try std.testing.expectEqual(@as(usize, 16), @sizeOf(RowId));
     try std.testing.expectEqual(@as(usize, 3), @sizeOf(ColorRgb));
     try std.testing.expectEqual(@as(usize, 4), @sizeOf(StyleColor));
 }

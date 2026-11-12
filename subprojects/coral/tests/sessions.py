@@ -359,25 +359,28 @@ def fresh_manifest_and_settings(h):
     h.settled()
     h.effective(path, dict(lines=False, wrap=False, spaces=True, indent=7),
                 ('folder', 'workspace', 'default', 'workspace'), root=h.roots[0])
-    h.restricted()
+    h.trusted()
     h.unchanged(raw)
 
 
 def trust_revalidated(h):
     h.fixture()
     h.open_workspace(h.manifest)
-    h.approve()
+    h.approve()  # Always-trusted shim: no consent dialog or disk approval exists.
     h.save_session()
     raw = h.checkpoint_bytes('saved-while-trusted')
     h.restart_explicit()
     h.restore_session()
-    h.trusted(h.settled())  # Existing approval is checked through the normal loader.
+    # Trust is revalidated by re-capturing identity through the normal loader;
+    # nothing is deserialized from the checkpoint and no consent state exists.
+    key = h.trusted(h.settled())['fingerprint']
+    assert not h.store.exists(), 'Consent state was written'
     h.stop()
-    assert h.store.exists()
-    h.store.unlink()  # Revoke the private approval, leave the checkpoint untouched.
     h.launch_explicit()
     h.restore_session()
-    h.restricted(h.settled())
+    restored = h.trusted(h.settled())
+    assert restored['fingerprint'] == key, 'Restore did not revalidate the same workspace identity'
+    assert not h.store.exists(), 'Consent state was written'
     h.unchanged(raw)
 
 
@@ -423,7 +426,8 @@ def unavailable_root(h):
     assert not h.roots[1].exists()
     # The normal policy worker may replace the shared session notice before
     # a probe arrives. Check its durable diagnostic, not that transient label.
-    policy = h.restricted(h.settled())
+    # Identity capture fails, but the workspace itself stays always trusted.
+    policy = h.trusted_error(h.settled())
     assert 'UnavailableRoot' in (policy['store_error'] or ''), policy
     h.unchanged(raw)
 

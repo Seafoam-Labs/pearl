@@ -21,8 +21,46 @@ pub const Hooks = struct {
     bell: ?*const fn (ctx: *anyopaque) void = null,
 };
 
-const font_family = "Monospace";
-const font_size_pt: c_int = 11;
+/// The terminal follows the application editor font: the editor renders with
+/// the monospace family and the user's editor text size (Settings.font, px).
+/// The controller pushes the live family/size via setFont; these are only the
+/// stand-alone defaults used before the first settings push.
+pub const editor_font_family = "monospace";
+const default_font_size_px: c_int = 14;
+
+/// Bounded Kitty image storage (bytes). Zero would disable the protocol; a
+/// finite cap keeps a hostile program from exhausting memory. File/temp/shm
+/// mediums stay disabled so images can only arrive inline over the PTY.
+const kitty_storage_limit: u64 = 16 * 1024 * 1024;
+/// Cap the APC buffer for a single Kitty transmission so an unfinished image
+/// cannot accumulate unbounded bytes before the storage limit applies.
+const kitty_apc_max_bytes: usize = 8 * 1024 * 1024;
+
+/// Upper bound on Kitty placements composited per frame. Keeps the placement
+/// list (and thus per-frame work) bounded even for image-heavy output.
+const max_placements: usize = 1024;
+
+/// One render-state image placement, resolved to Kitty storage coordinates.
+const Placement = struct {
+    image_id: u32 = 0,
+    generation: u64 = 0,
+    layer: g.ImageLayer = .below_text,
+    z: i32 = 0,
+    col: i32 = 0,
+    row: i32 = 0,
+    offset_x: u32 = 0,
+    offset_y: u32 = 0,
+    pixel_width: u32 = 0,
+    pixel_height: u32 = 0,
+    source_x: u32 = 0,
+    source_y: u32 = 0,
+    source_width: u32 = 0,
+    source_height: u32 = 0,
+};
+
+/// Which part of a cell to draw. Split passes let images composite between
+/// cell backgrounds and text; `.both` is the single-pass text-only fast path.
+const CellPass = enum { both, bg, text };
 
 /// Heap context for an async clipboard paste. It is owned by the GCancellable
 /// (via g_object_set_data_full) and kept alive during the callback by an extra
@@ -59,6 +97,11 @@ pub const Surface = struct {
     font_bold: *c.PangoFontDescription,
     font_italic: *c.PangoFontDescription,
     font_bold_italic: *c.PangoFontDescription,
+    // Live editor font settings (family/size) driving the Pango descriptions
+    // and cell metrics. Recomputed on settings change via setFont.
+    font_family: [64]u8 = @as([64]u8, @splat(0)),
+    font_family_len: usize = 0,
+    font_size_px: c_int = default_font_size_px,
     tick_id: c_uint = 0,
     last_alloc_width: c_int = -1,
     last_alloc_height: c_int = -1,
@@ -76,6 +119,34 @@ pub const Surface = struct {
     // that outlives the Surface, so pasteReady never dereferences freed storage.
     paste_cancel: ?*c.GCancellable = null,
     paste_pending: bool = false,
+    // Block/rectangular selection: toggled mode or Alt+drag. When set, drags
+    // produce a rectangle selection instead of a linear one.
+    block_mode: bool = false,
+    // Whether the in-progress drag is rectangular (captured at press time).
+    drag_rectangle: bool = false,
+    // Incremental render bookkeeping. force_full is raised by font/selection
+    // changes and anything that invalidates retained pixels; the render state's
+    // own dirty flag drives the common partial path.
+    image_iter: ?*g.ImageIterator = null,
+    placements: std.ArrayList(Placement) = .empty,
+    // Persistent offscreen backing store. GTK does not retain drawing-area
+    // pixels between draws, so incremental rendering composites into this
+    // surface (which we own) and blits the whole thing to the widget each frame.
+    backing: ?*c.cairo_surface_t = null,
+    row_ids: []g.RowId = &.{},
+    drawn_cols: u16 = 0,
+    drawn_rows: u16 = 0,
+    drawn_width: c_int = -1,
+    drawn_height: c_int = -1,
+    drawn_cell_width: u32 = 0,
+    drawn_cell_height: u32 = 0,
+    force_full: bool = true,
+    last_cursor_x: u16 = 0,
+    last_cursor_y: u16 = 0,
+    last_cursor_visible: bool = false,
+    last_cursor_style: g.CursorStyle = .block,
+    last_cursor_had_value: bool = false,
+    last_image_generation: u64 = 0,
 
     pub fn init(hooks: Hooks, cols: u16, rows: u16) !Surface {
         var terminal: ?*g.Terminal = null;
@@ -102,6 +173,9 @@ pub const Surface = struct {
         var mouse_event: ?*g.MouseEvent = null;
         if (!g.ok(g.ghostty_mouse_event_new(null, &mouse_event))) return error.MouseEventCreate;
         errdefer g.ghostty_mouse_event_free(mouse_event);
+        var image_iter: ?*g.ImageIterator = null;
+        if (!g.ok(g.ghostty_render_state_image_iterator_new(null, &image_iter))) return error.ImageIteratorCreate;
+        errdefer g.ghostty_render_state_image_iterator_free(image_iter);
 
         const widget = c.gtk_drawing_area_new().?;
         _ = c.g_object_ref_sink(widget);
@@ -121,6 +195,7 @@ pub const Surface = struct {
             .key_event = key_event.?,
             .mouse_encoder = mouse_encoder.?,
             .mouse_event = mouse_event.?,
+            .image_iter = image_iter.?,
             .hooks = hooks,
             .cell_width = 8,
             .cell_height = 16,
@@ -131,6 +206,7 @@ pub const Surface = struct {
             .font_italic = undefined,
             .font_bold_italic = undefined,
         };
+        self.setFontFamily(editor_font_family);
         self.buildFonts();
         self.measure();
         _ = g.ghostty_key_encoder_set_from_terminal(self.key_encoder, self.terminal);
@@ -142,9 +218,11 @@ pub const Surface = struct {
     }
 
     /// Safe OSC/effect policy. Clipboard read/write are denied by default;
-    /// title/checksum reports, Kitty graphics storage, glyph protocol, desktop
-    /// notifications and window-resize requests are disabled. Semantic metadata
-    /// (title/pwd) may update labels but is never connected to action dispatch.
+    /// title/checksum reports, the glyph protocol, desktop notifications and
+    /// window-resize requests are disabled. Kitty graphics are enabled with a
+    /// bounded inline-only storage budget (file/temp/shm mediums off). Semantic
+    /// metadata (title/pwd) may update labels but is never connected to action
+    /// dispatch.
     fn configurePolicy(self: *Surface) void {
         const t = self.terminal;
         _ = g.ghostty_terminal_set(t, .userdata, @ptrCast(self));
@@ -164,10 +242,15 @@ pub const Surface = struct {
         _ = g.ghostty_terminal_set(t, .title_report, &off);
         _ = g.ghostty_terminal_set(t, .xt_checksum_report, &off);
         _ = g.ghostty_terminal_set(t, .glyph_protocol, &off);
-        const storage: u64 = 0;
+        // Bounded Kitty image storage: inline pixels only, capped so a program
+        // cannot exhaust memory. File/temp-file/shared-memory mediums stay off.
+        const storage: u64 = kitty_storage_limit;
         _ = g.ghostty_terminal_set(t, .kitty_image_storage_limit, &storage);
         _ = g.ghostty_terminal_set(t, .kitty_image_medium_file, &off);
+        _ = g.ghostty_terminal_set(t, .kitty_image_medium_temp_file, null);
         _ = g.ghostty_terminal_set(t, .kitty_image_medium_shared_mem, &off);
+        const apc_kitty: usize = kitty_apc_max_bytes;
+        _ = g.ghostty_terminal_set(t, .apc_max_bytes_kitty, &apc_kitty);
         // NULL callbacks ignore desktop notifications and window-resize requests.
         _ = g.ghostty_terminal_set(t, .desktop_notification, null);
         _ = g.ghostty_terminal_set(t, .resize_window, null);
@@ -178,10 +261,46 @@ pub const Surface = struct {
         _ = g.ghostty_terminal_set(t, .scrollback_max_lines, &lines);
     }
 
+    fn setFontFamily(self: *Surface, family: []const u8) void {
+        const n = @min(family.len, self.font_family.len - 1);
+        @memcpy(self.font_family[0..n], family[0..n]);
+        @memset(self.font_family[n..], 0);
+        self.font_family_len = n;
+    }
+
+    /// Apply the application editor font (family + pixel size). Rebuilds the
+    /// Pango descriptions, re-measures cell metrics and re-derives the grid from
+    /// the current allocation, then forces a full redraw. Called at spawn and on
+    /// every editor-font settings change.
+    pub fn setFont(self: *Surface, family: []const u8, size_px: c_int) void {
+        if (self.closed) return;
+        const size = std.math.clamp(size_px, 6, 96);
+        if (self.font_family_len > 0 and self.font_size_px == size and
+            std.mem.eql(u8, self.font_family[0..self.font_family_len], family)) return;
+        self.setFontFamily(family);
+        self.font_size_px = size;
+        c.pango_font_description_free(self.font);
+        c.pango_font_description_free(self.font_bold);
+        c.pango_font_description_free(self.font_italic);
+        c.pango_font_description_free(self.font_bold_italic);
+        self.buildFonts();
+        self.measure();
+        self.force_full = true;
+        // Re-derive the grid for the new cell metrics using the last allocation.
+        if (self.last_alloc_width > 0 and self.last_alloc_height > 0) {
+            self.resizeToPixels(self.last_alloc_width, self.last_alloc_height);
+        } else {
+            _ = g.ghostty_terminal_resize(self.terminal, self.cols, self.rows_count, self.cell_width, self.cell_height);
+        }
+        self.queueDraw();
+    }
+
     fn buildFonts(self: *Surface) void {
         self.font = c.pango_font_description_new().?;
-        c.pango_font_description_set_family(self.font, font_family);
-        c.pango_font_description_set_size(self.font, font_size_pt * c.PANGO_SCALE);
+        c.pango_font_description_set_family(self.font, @ptrCast(&self.font_family));
+        // Editor text size is a pixel size; use an absolute Pango size so the
+        // terminal tracks the editor font exactly rather than a fixed point size.
+        c.pango_font_description_set_absolute_size(self.font, @as(f64, @floatFromInt(self.font_size_px)) * c.PANGO_SCALE);
         self.font_bold = c.pango_font_description_copy(self.font).?;
         c.pango_font_description_set_weight(self.font_bold, c.PANGO_WEIGHT_BOLD);
         self.font_italic = c.pango_font_description_copy(self.font).?;
@@ -325,13 +444,53 @@ pub const Surface = struct {
         var selection: g.Selection = undefined;
         if (g.ok(g.ghostty_terminal_select_all(self.terminal, &selection))) {
             _ = g.ghostty_terminal_set(self.terminal, .selection, &selection);
+            self.force_full = true;
             self.queueDraw();
         }
     }
 
     pub fn clearSelection(self: *Surface) void {
         _ = g.ghostty_terminal_set(self.terminal, .selection, null);
+        self.force_full = true;
         self.queueDraw();
+    }
+
+    /// Toggle persistent rectangular-selection mode. When on, every drag selects
+    /// a block; Alt+drag also selects a block regardless of this mode.
+    pub fn setBlockMode(self: *Surface, enabled: bool) void {
+        self.block_mode = enabled;
+    }
+
+    /// Select a rectangular block between two viewport cells (inclusive). Used
+    /// by the block-selection mode and by test fixtures; copySelection then
+    /// formats it as block text through the ghostty formatter.
+    pub fn selectRectangle(self: *Surface, x0: u16, y0: u16, x1: u16, y1: u16) void {
+        if (self.closed) return;
+        const start = self.refAt(@as(f64, @floatFromInt(x0)) * @as(f64, @floatFromInt(self.cell_width)), @as(f64, @floatFromInt(y0)) * @as(f64, @floatFromInt(self.cell_height)));
+        const end = self.refAt(@as(f64, @floatFromInt(x1)) * @as(f64, @floatFromInt(self.cell_width)), @as(f64, @floatFromInt(y1)) * @as(f64, @floatFromInt(self.cell_height)));
+        var selection = g.Selection{ .start = start, .end = end, .rectangle = true };
+        _ = g.ghostty_terminal_set(self.terminal, .selection, &selection);
+        self.force_full = true;
+        self.queueDraw();
+    }
+
+    /// Read-only Kitty graphics policy/storage snapshot for probes and tests.
+    pub const KittyInfo = struct {
+        storage_limit: u64 = 0,
+        generation: u64 = 0,
+        file_medium: bool = false,
+        shm_medium: bool = false,
+    };
+    pub fn kittyInfo(self: *Surface) KittyInfo {
+        var info: KittyInfo = .{};
+        _ = g.ghostty_terminal_get(self.terminal, .kitty_image_storage_limit, &info.storage_limit);
+        _ = g.ghostty_terminal_get(self.terminal, .kitty_image_medium_file, &info.file_medium);
+        _ = g.ghostty_terminal_get(self.terminal, .kitty_image_medium_shared_mem, &info.shm_medium);
+        var graphics: ?*g.KittyGraphics = null;
+        if (g.ok(g.ghostty_terminal_get(self.terminal, .kitty_graphics, @ptrCast(&graphics)))) {
+            if (graphics) |gg| _ = g.ghostty_kitty_graphics_get(gg, .generation, &info.generation);
+        }
+        return info;
     }
 
     /// Resize to a pixel allocation; mirrors the grid onto the PTY.
@@ -385,6 +544,13 @@ pub const Surface = struct {
         g.ghostty_key_encoder_free(self.key_encoder);
         g.ghostty_render_state_row_cells_free(self.cells);
         g.ghostty_render_state_row_iterator_free(self.rows);
+        if (self.image_iter) |it| g.ghostty_render_state_image_iterator_free(it);
+        self.image_iter = null;
+        if (self.row_ids.len > 0) a.free(self.row_ids);
+        self.row_ids = &.{};
+        self.placements.deinit(a);
+        if (self.backing) |b| c.cairo_surface_destroy(b);
+        self.backing = null;
         g.ghostty_render_state_free(self.render);
         g.ghostty_terminal_free(self.terminal);
         c.pango_font_description_free(self.font);
@@ -447,6 +613,18 @@ pub const Surface = struct {
     }
 
     fn renderFrame(self: *Surface, cr: *c.cairo_t, width: c_int, height: c_int) void {
+        if (width <= 0 or height <= 0) return;
+        // GTK does not retain drawing-area pixels between draws, so composite
+        // into a persistent backing surface we own and blit it every frame.
+        // Recreate (and force a full redraw) when the allocation changes.
+        if (self.backing == null or width != self.drawn_width or height != self.drawn_height) {
+            if (self.backing) |b| c.cairo_surface_destroy(b);
+            self.backing = c.cairo_image_surface_create(c.CAIRO_FORMAT_ARGB32, width, height);
+            self.force_full = true;
+        }
+        const backing = self.backing orelse return;
+        defer self.blitBacking(cr);
+
         if (!g.ok(g.ghostty_render_state_update(self.render, self.terminal))) return;
         defer _ = g.ghostty_render_state_clean(self.render);
         var colors: g.RenderColors = undefined;
@@ -459,34 +637,146 @@ pub const Surface = struct {
         var rows: u16 = 0;
         _ = g.ghostty_render_state_get(self.render, .cols, &cols);
         _ = g.ghostty_render_state_get(self.render, .rows, &rows);
+        var dirty: g.Dirty = .false;
+        _ = g.ghostty_render_state_get(self.render, .dirty, &dirty);
         const cw: f64 = @floatFromInt(self.cell_width);
         const ch: f64 = @floatFromInt(self.cell_height);
 
-        // Default background fills the whole allocation (including padding).
-        setColor(cr, colors.background, 1.0);
-        c.cairo_rectangle(cr, 0, 0, @floatFromInt(width), @floatFromInt(height));
-        c.cairo_fill(cr);
+        // Collect Kitty image placements (bounded). Any visible image forces a
+        // full layered redraw so text/image compositing stays correct.
+        const placement_count = self.collectPlacements();
+        var image_gen: u64 = 0;
+        _ = g.ghostty_render_state_get(self.render, .image_placements_generation, &image_gen);
+        const has_images = placement_count > 0;
 
-        const layout = c.pango_cairo_create_layout(cr).?;
+        const geometry_changed = cols != self.drawn_cols or rows != self.drawn_rows or
+            width != self.drawn_width or height != self.drawn_height or
+            self.cell_width != self.drawn_cell_width or self.cell_height != self.drawn_cell_height;
+        const cursor_changed = cursor.viewport_has_value != self.last_cursor_had_value or
+            (cursor.viewport_has_value and (cursor.viewport_x != self.last_cursor_x or
+                cursor.viewport_y != self.last_cursor_y)) or
+            cursor.visible != self.last_cursor_visible or cursor.visual_style != self.last_cursor_style;
+        const full = self.force_full or dirty == .full or geometry_changed or
+            has_images or image_gen != self.last_image_generation or self.row_ids.len != rows;
+
+        // Nothing changed: the backing surface already holds the correct pixels,
+        // so skip re-rendering it (the deferred blit still paints it).
+        if (!full and dirty == .false and !cursor_changed) {
+            self.last_image_generation = image_gen;
+            return;
+        }
+
+        // Keep a per-viewport-row identity cache sized to the current grid.
+        if (self.row_ids.len != rows) {
+            if (self.row_ids.len > 0) a.free(self.row_ids);
+            self.row_ids = a.alloc(g.RowId, rows) catch &.{};
+            @memset(self.row_ids, .{ .bits = .{ 0, 0 } });
+        }
+
+        const bcr = c.cairo_create(backing) orelse return;
+        defer c.cairo_destroy(bcr);
+        const layout = c.pango_cairo_create_layout(bcr).?;
         defer c.g_object_unref(layout);
-
         const cursor_block = cursor.visible and cursor.viewport_has_value and cursor.visual_style == .block;
+
+        if (full) {
+            // Default background fills the whole allocation (including padding).
+            setColor(bcr, colors.background, 1.0);
+            c.cairo_rectangle(bcr, 0, 0, @floatFromInt(width), @floatFromInt(height));
+            c.cairo_fill(bcr);
+            if (has_images) {
+                // Layered composite: below-background images, cell backgrounds,
+                // below-text images, text, then above-text images.
+                self.drawPlacements(bcr, .below_background, cw, ch);
+                self.drawAllRows(bcr, layout, &colors, &cursor, cursor_block, cols, rows, cw, ch, .bg);
+                self.drawPlacements(bcr, .below_text, cw, ch);
+                self.drawAllRows(bcr, layout, &colors, &cursor, cursor_block, cols, rows, cw, ch, .text);
+                self.drawPlacements(bcr, .above_text, cw, ch);
+            } else {
+                self.drawAllRows(bcr, layout, &colors, &cursor, cursor_block, cols, rows, cw, ch, .both);
+            }
+        } else {
+            self.renderPartial(bcr, layout, &colors, &cursor, cursor_block, cols, rows, cw, ch, width);
+        }
+        self.drawCursor(bcr, &colors, &cursor, cw, ch);
+
+        // Record what was drawn so the next frame can be incremental.
+        self.drawn_cols = cols;
+        self.drawn_rows = rows;
+        self.drawn_width = width;
+        self.drawn_height = height;
+        self.drawn_cell_width = self.cell_width;
+        self.drawn_cell_height = self.cell_height;
+        self.last_cursor_had_value = cursor.viewport_has_value;
+        self.last_cursor_x = cursor.viewport_x;
+        self.last_cursor_y = cursor.viewport_y;
+        self.last_cursor_visible = cursor.visible;
+        self.last_cursor_style = cursor.visual_style;
+        self.last_image_generation = image_gen;
+        self.force_full = false;
+    }
+
+    fn blitBacking(self: *Surface, cr: *c.cairo_t) void {
+        if (self.backing) |b| {
+            c.cairo_set_source_surface(cr, b, 0, 0);
+            c.cairo_paint(cr);
+        }
+    }
+
+    /// Redraw only rows that are dirty, whose identity changed, or that hold the
+    /// previous/current cursor. The backing surface retains its pixels, so every
+    /// other row is left untouched. Ghostty reports a full dirty state whenever
+    /// the viewport scrolls, so partial frames never move rows underneath us.
+    fn renderPartial(self: *Surface, cr: *c.cairo_t, layout: *c.PangoLayout, colors: *const g.RenderColors, cursor: *const g.RenderCursor, cursor_block: bool, cols: u16, rows: u16, cw: f64, ch: f64, width: c_int) void {
         var y: u16 = 0;
-        if (g.ok(g.ghostty_render_state_get(self.render, .row_iterator, self.rows))) {
+        if (g.ok(g.ghostty_render_state_get(self.render, .row_iterator, @ptrCast(&self.rows)))) {
             while (g.ghostty_render_state_row_iterator_next(self.rows)) : (y += 1) {
                 if (y >= rows) break;
-                if (!g.ok(g.ghostty_render_state_row_get(self.rows, .cells, self.cells))) continue;
+                var row_dirty = false;
+                _ = g.ghostty_render_state_row_get(self.rows, .dirty, &row_dirty);
+                var id: g.RowId = .{ .bits = .{ 0, 0 } };
+                _ = g.ghostty_render_state_row_get(self.rows, .id, &id);
+                const id_changed = y < self.row_ids.len and !g.rowIdEql(id, self.row_ids[y]);
+                if (y < self.row_ids.len) self.row_ids[y] = id;
+                const cursor_row = (cursor.viewport_has_value and cursor.viewport_y == y) or
+                    (self.last_cursor_had_value and self.last_cursor_y == y);
+                if (!row_dirty and !id_changed and !cursor_row) continue;
+                setColor(cr, colors.background, 1.0);
+                c.cairo_rectangle(cr, 0, @as(f64, @floatFromInt(y)) * ch, @floatFromInt(width), ch);
+                c.cairo_fill(cr);
+                if (!g.ok(g.ghostty_render_state_row_get(self.rows, .cells, @ptrCast(&self.cells)))) continue;
                 var x: u16 = 0;
                 while (g.ghostty_render_state_row_cells_next(self.cells)) : (x += 1) {
                     if (x >= cols) break;
-                    self.drawCell(cr, layout, &colors, &cursor, cursor_block, x, y, cw, ch);
+                    self.drawCell(cr, layout, colors, cursor, cursor_block, x, y, cw, ch, .both);
                 }
             }
         }
-        self.drawCursor(cr, &colors, &cursor, cw, ch);
     }
 
-    fn drawCell(self: *Surface, cr: *c.cairo_t, layout: *c.PangoLayout, colors: *const g.RenderColors, cursor: *const g.RenderCursor, cursor_block: bool, x: u16, y: u16, cw: f64, ch: f64) void {
+    fn drawAllRows(self: *Surface, cr: *c.cairo_t, layout: *c.PangoLayout, colors: *const g.RenderColors, cursor: *const g.RenderCursor, cursor_block: bool, cols: u16, rows: u16, cw: f64, ch: f64, pass: CellPass) void {
+        var y: u16 = 0;
+        if (g.ok(g.ghostty_render_state_get(self.render, .row_iterator, @ptrCast(&self.rows)))) {
+            while (g.ghostty_render_state_row_iterator_next(self.rows)) : (y += 1) {
+                if (y >= rows) break;
+                self.cacheRowId(y);
+                if (!g.ok(g.ghostty_render_state_row_get(self.rows, .cells, @ptrCast(&self.cells)))) continue;
+                var x: u16 = 0;
+                while (g.ghostty_render_state_row_cells_next(self.cells)) : (x += 1) {
+                    if (x >= cols) break;
+                    self.drawCell(cr, layout, colors, cursor, cursor_block, x, y, cw, ch, pass);
+                }
+            }
+        }
+    }
+
+    fn cacheRowId(self: *Surface, y: u16) void {
+        var id: g.RowId = .{ .bits = .{ 0, 0 } };
+        _ = g.ghostty_render_state_row_get(self.rows, .id, &id);
+        if (y < self.row_ids.len) self.row_ids[y] = id;
+    }
+
+    fn drawCell(self: *Surface, cr: *c.cairo_t, layout: *c.PangoLayout, colors: *const g.RenderColors, cursor: *const g.RenderCursor, cursor_block: bool, x: u16, y: u16, cw: f64, ch: f64, pass: CellPass) void {
         var style: g.Style = undefined;
         _ = g.ghostty_render_state_row_cells_get(self.cells, .style, &style);
         var bg: g.ColorRgb = colors.background;
@@ -510,11 +800,14 @@ pub const Surface = struct {
         }
         const px: f64 = @as(f64, @floatFromInt(x)) * cw;
         const py: f64 = @as(f64, @floatFromInt(y)) * ch;
-        if (bg.r != colors.background.r or bg.g != colors.background.g or bg.b != colors.background.b) {
-            setColor(cr, bg, 1.0);
-            c.cairo_rectangle(cr, px, py, cw, ch);
-            c.cairo_fill(cr);
+        if (pass != .text) {
+            if (bg.r != colors.background.r or bg.g != colors.background.g or bg.b != colors.background.b) {
+                setColor(cr, bg, 1.0);
+                c.cairo_rectangle(cr, px, py, cw, ch);
+                c.cairo_fill(cr);
+            }
         }
+        if (pass == .bg) return;
         var text_buf: [64]u8 = undefined;
         var buf = g.Buffer{ .ptr = &text_buf, .cap = text_buf.len, .len = 0 };
         const gr = g.ghostty_render_state_row_cells_get(self.cells, .graphemes_utf8, &buf);
@@ -564,6 +857,148 @@ pub const Surface = struct {
             .block => return,
         }
         c.cairo_fill(cr);
+    }
+
+    // ---- Kitty graphics ----
+    fn collectPlacements(self: *Surface) usize {
+        self.placements.clearRetainingCapacity();
+        const iter = self.image_iter orelse return 0;
+        if (!g.ok(g.ghostty_render_state_get(self.render, .image_iterator, @ptrCast(&self.image_iter)))) return 0;
+        while (g.ghostty_render_state_image_iterator_next(iter)) {
+            if (self.placements.items.len >= max_placements) break;
+            var protocol: g.ImageProtocol = .kitty;
+            if (!g.ok(g.ghostty_render_state_image_get(iter, .protocol, &protocol))) continue;
+            if (protocol != .kitty) continue;
+            var p: Placement = .{};
+            if (!g.ok(g.ghostty_render_state_image_get(iter, .image_id, &p.image_id))) continue;
+            _ = g.ghostty_render_state_image_get(iter, .image_generation, &p.generation);
+            _ = g.ghostty_render_state_image_get(iter, .layer, &p.layer);
+            _ = g.ghostty_render_state_image_get(iter, .z, &p.z);
+            _ = g.ghostty_render_state_image_get(iter, .viewport_col, &p.col);
+            _ = g.ghostty_render_state_image_get(iter, .viewport_row, &p.row);
+            _ = g.ghostty_render_state_image_get(iter, .cell_offset_x, &p.offset_x);
+            _ = g.ghostty_render_state_image_get(iter, .cell_offset_y, &p.offset_y);
+            _ = g.ghostty_render_state_image_get(iter, .pixel_width, &p.pixel_width);
+            _ = g.ghostty_render_state_image_get(iter, .pixel_height, &p.pixel_height);
+            _ = g.ghostty_render_state_image_get(iter, .source_x, &p.source_x);
+            _ = g.ghostty_render_state_image_get(iter, .source_y, &p.source_y);
+            _ = g.ghostty_render_state_image_get(iter, .source_width, &p.source_width);
+            _ = g.ghostty_render_state_image_get(iter, .source_height, &p.source_height);
+            if (p.pixel_width == 0 or p.pixel_height == 0 or p.source_width == 0 or p.source_height == 0) continue;
+            self.placements.append(a, p) catch break;
+        }
+        std.mem.sort(Placement, self.placements.items, {}, placementLessThan);
+        return self.placements.items.len;
+    }
+
+    fn placementLessThan(_: void, lhs: Placement, rhs: Placement) bool {
+        const ll: c_int = @backingInt(lhs.layer);
+        const rl: c_int = @backingInt(rhs.layer);
+        if (ll != rl) return ll < rl;
+        return lhs.z < rhs.z;
+    }
+
+    fn drawPlacements(self: *Surface, cr: *c.cairo_t, layer: g.ImageLayer, cw: f64, ch: f64) void {
+        if (self.placements.items.len == 0) return;
+        var graphics: ?*g.KittyGraphics = null;
+        if (!g.ok(g.ghostty_terminal_get(self.terminal, .kitty_graphics, @ptrCast(&graphics)))) return;
+        const gg = graphics orelse return;
+        for (self.placements.items) |p| {
+            if (p.layer != layer) continue;
+            self.drawPlacement(cr, gg, p, cw, ch);
+        }
+    }
+
+    fn drawPlacement(self: *Surface, cr: *c.cairo_t, graphics: *g.KittyGraphics, p: Placement, cw: f64, ch: f64) void {
+        const surface = self.kittySurface(graphics, p.image_id) orelse return;
+        defer c.cairo_surface_destroy(surface);
+        const dest_x = @as(f64, @floatFromInt(p.col)) * cw + @as(f64, @floatFromInt(p.offset_x));
+        const dest_y = @as(f64, @floatFromInt(p.row)) * ch + @as(f64, @floatFromInt(p.offset_y));
+        const sw: f64 = @floatFromInt(p.source_width);
+        const sh: f64 = @floatFromInt(p.source_height);
+        const dw: f64 = @floatFromInt(p.pixel_width);
+        const dh: f64 = @floatFromInt(p.pixel_height);
+        c.cairo_save(cr);
+        c.cairo_translate(cr, dest_x, dest_y);
+        c.cairo_scale(cr, dw / sw, dh / sh);
+        c.cairo_set_source_surface(cr, surface, -@as(f64, @floatFromInt(p.source_x)), -@as(f64, @floatFromInt(p.source_y)));
+        c.cairo_pattern_set_filter(c.cairo_get_source(cr), c.CAIRO_FILTER_BILINEAR);
+        c.cairo_rectangle(cr, 0, 0, sw, sh);
+        c.cairo_clip(cr);
+        c.cairo_paint(cr);
+        c.cairo_restore(cr);
+    }
+
+    /// Build a Cairo ARGB32 surface from a stored Kitty image's decoded pixels.
+    /// The pixel buffer is borrowed from the terminal and only valid until the
+    /// next mutation, so it is copied into Cairo-owned memory here.
+    fn kittySurface(self: *Surface, graphics: *g.KittyGraphics, image_id: u32) ?*c.cairo_surface_t {
+        _ = self;
+        const image = g.ghostty_kitty_graphics_image(graphics, image_id) orelse return null;
+        var width: u32 = 0;
+        var height: u32 = 0;
+        if (!g.ok(g.ghostty_kitty_graphics_image_get(image, .width, &width))) return null;
+        if (!g.ok(g.ghostty_kitty_graphics_image_get(image, .height, &height))) return null;
+        if (width == 0 or height == 0 or width > 16384 or height > 16384) return null;
+        var format: g.KittyImageFormat = .rgba;
+        if (!g.ok(g.ghostty_kitty_graphics_image_get(image, .format, &format))) return null;
+        var pixels: g.String = .{ .ptr = undefined, .len = 0 };
+        if (!g.ok(g.ghostty_kitty_graphics_image_get(image, .pixels, &pixels))) return null;
+        const bpp: usize = switch (format) {
+            .rgb => 3,
+            .rgba => 4,
+            .gray_alpha => 2,
+            .gray => 1,
+            .png => return null,
+        };
+        const expected = @as(usize, width) * @as(usize, height) * bpp;
+        if (pixels.len < expected) return null;
+        const surface = c.cairo_image_surface_create(c.CAIRO_FORMAT_ARGB32, @intCast(width), @intCast(height)) orelse return null;
+        const stride: usize = @intCast(c.cairo_image_surface_get_stride(surface));
+        const data = c.cairo_image_surface_get_data(surface);
+        var sy: u32 = 0;
+        while (sy < height) : (sy += 1) {
+            var sx: u32 = 0;
+            while (sx < width) : (sx += 1) {
+                const si = (@as(usize, sy) * width + sx) * bpp;
+                var r: u8 = 0;
+                var gr: u8 = 0;
+                var b: u8 = 0;
+                var al: u8 = 255;
+                switch (format) {
+                    .rgb => {
+                        r = pixels.ptr[si];
+                        gr = pixels.ptr[si + 1];
+                        b = pixels.ptr[si + 2];
+                    },
+                    .rgba => {
+                        r = pixels.ptr[si];
+                        gr = pixels.ptr[si + 1];
+                        b = pixels.ptr[si + 2];
+                        al = pixels.ptr[si + 3];
+                    },
+                    .gray => {
+                        r = pixels.ptr[si];
+                        gr = r;
+                        b = r;
+                    },
+                    .gray_alpha => {
+                        r = pixels.ptr[si];
+                        gr = r;
+                        b = r;
+                        al = pixels.ptr[si + 1];
+                    },
+                    .png => unreachable,
+                }
+                const di = @as(usize, sy) * stride + @as(usize, sx) * 4;
+                data[di + 0] = @intCast((@as(u16, b) * @as(u16, al)) / 255);
+                data[di + 1] = @intCast((@as(u16, gr) * @as(u16, al)) / 255);
+                data[di + 2] = @intCast((@as(u16, r) * @as(u16, al)) / 255);
+                data[di + 3] = al;
+            }
+        }
+        c.cairo_surface_mark_dirty(surface);
+        return surface;
     }
 
     fn pickFont(self: *Surface, style: g.Style) *c.PangoFontDescription {
@@ -718,6 +1153,8 @@ pub const Surface = struct {
                 self.select_anchor = self.refAt(x, y);
                 self.selecting = true;
                 self.dragged = false;
+                // Alt+drag or persistent block mode selects a rectangle.
+                self.drag_rectangle = self.block_mode or (state & c.GDK_ALT_MASK != 0);
             }
         } else if (button == 2) {
             // Middle click pastes the primary selection in classic terminals;
@@ -759,11 +1196,14 @@ pub const Surface = struct {
         if (!self.selecting) {
             self.select_anchor = self.refAt(sx, sy);
             self.selecting = true;
+            const state = c.gtk_event_controller_get_current_event_state(u.cast(c.GtkEventController, controller));
+            self.drag_rectangle = self.block_mode or (state & c.GDK_ALT_MASK != 0);
         }
         self.dragged = true;
         const end = self.refAt(x, y);
-        var selection = g.Selection{ .start = self.select_anchor, .end = end, .rectangle = false };
+        var selection = g.Selection{ .start = self.select_anchor, .end = end, .rectangle = self.drag_rectangle };
         _ = g.ghostty_terminal_set(self.terminal, .selection, &selection);
+        self.force_full = true;
         self.queueDraw();
     }
 
@@ -856,6 +1296,7 @@ pub const Surface = struct {
         var selection: g.Selection = undefined;
         if (g.ok(g.ghostty_terminal_select_word(self.terminal, &opts, &selection))) {
             _ = g.ghostty_terminal_set(self.terminal, .selection, &selection);
+            self.force_full = true;
             self.queueDraw();
         }
     }
@@ -870,6 +1311,7 @@ pub const Surface = struct {
         var selection: g.Selection = undefined;
         if (g.ok(g.ghostty_terminal_select_line(self.terminal, &opts, &selection))) {
             _ = g.ghostty_terminal_set(self.terminal, .selection, &selection);
+            self.force_full = true;
             self.queueDraw();
         }
     }

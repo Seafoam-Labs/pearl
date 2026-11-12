@@ -7,11 +7,12 @@ stage/unstage — in a private Wayland/D-Bus/HOME/XDG session.
 
 Every fixture repository, remote and worktree lives under the disposable session
 tree; no host repository is touched and no network is used (remotes are local
-bare paths). Trust and the Source Control disclosure are exercised through the
-real policy commands; each workflow is requested through the controller's
-documented fixture bridge, which drives the *actual* public entry points and
-answers the *actual* visible native dialogs (it never grants trust or bypasses a
-permit). Read-only inspection uses the existing win.git-* GActions.
+bare paths). The workspace is always trusted (no consent or restricted mode);
+the Source Control disclosure and every workflow review are exercised through
+the real policy commands and the controller's documented fixture bridge, which
+drives the *actual* public entry points and answers the *actual* visible native
+dialogs (it never bypasses a permit or a tool's own approval). Read-only
+inspection uses the existing win.git-* GActions.
 
 The runner mirrors tests/git.py: per-case disposable HOME/XDG/repos, bounded
 case/suite budgets, and failure evidence (logs, probes, screenshots) that survives
@@ -218,7 +219,7 @@ def commit_fixture(h, root, message='Disposable fixture commit'):
 
 
 def begin(h, roots, active=None):
-    """Trust + Source Control disclosure through the real policy commands."""
+    """Always-trusted workspace + Source Control disclosure through the real commands."""
     for root in roots:
         h.identity(root)
     return h.start(roots, active=active)

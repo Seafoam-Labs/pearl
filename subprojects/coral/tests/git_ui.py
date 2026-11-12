@@ -607,16 +607,16 @@ def panel_gates(h):
     h.watch_indexes()
     h.workspace_roots([root])
     Preservation(h)
-    # Without trust the dock cannot launch Git or manufacture approval.
+    # Always-trusted workspace: the panel's own disclosure is the gate, not
+    # workspace consent. Before accepting it, no Git work may launch.
     h.command('focus-source-control')
     p = h.panel()
-    assert not p['approved'] and not p['disclosure'] and p['launches'] == 0, p
-    h.command('panel-accept')
+    assert not p['approved'] and p['disclosure'] and p['launches'] == 0, p
     h.command('panel-stage-all')
     p = h.panel()
     assert not p['approved'] and p['launches'] == 0 and p['jobs_started'] == 0, p
-    h.restricted(h.policy_idle())
-    # Trust + disclosure, then a dirty buffer is excluded and never saved.
+    h.trusted(h.policy_idle())
+    # Disclosure, then a dirty buffer is excluded and never saved.
     h.trust()
     h.disclosure()
     h.command('git-accept')
@@ -847,8 +847,8 @@ def pd_gates(h):
     h.watch_indexes()
     h.workspace_roots([root])
     Preservation(h)
-    # Project Diff never grants trust or runs Git independently: without a valid
-    # Source Control it defers to the Source Control window.
+    # Project Diff never grants Source Control approval or runs Git independently:
+    # without a valid Source Control it defers to the Source Control window.
     h.command('project-diff-show')
     p = h.pd()
     assert not p['visible'] and not p['git_valid'], p
@@ -856,7 +856,7 @@ def pd_gates(h):
     assert not g['approved'], g
     h.command('project-diff-stage-hunk')
     assert not h.pd()['visible'] and h.git()['launches'] == 0, 'Project Diff bypassed disclosure'
-    h.restricted(h.policy_idle())
+    h.trusted(h.policy_idle())
     h.verify_files()
 
 

@@ -3,15 +3,16 @@
 //! the bounded `.coral/tasks.json` under one workspace root; callers must run it
 //! off the GTK thread (the controller dispatches a worker).
 //!
-//! Executable workspace content is NOT trusted by default. A definition only
-//! becomes runnable after the workspace trust gate AND an explicit per-run
-//! review of the exact argv/cwd/environment. This module enforces the shape:
+//! The workspace is always trusted for tasks (trust is owned elsewhere) and a
+//! run executes directly on the user's explicit command; there is no per-run
+//! review dialog. This module enforces the shape:
 //!   * argv[0] must be an absolute path (no PATH lookup, no shell, no expansion);
 //!   * cwd is root-relative and resolved lexically inside the workspace root;
 //!   * env is a COMPLETE allowlist — nothing is inherited, not even PATH/HOME.
-//! Neither this policy nor the supervisor is an OS sandbox: a reviewed command
-//! runs with the user's permissions and can have side effects. Symlink escape by
-//! a reviewed cwd/argv is not contained; the review must show the resolved path.
+//! Neither this policy nor the supervisor is an OS sandbox: a task command runs
+//! with the user's permissions and can have side effects. Symlink escape by a
+//! cwd/argv is not contained. The controller holds the manager file-operation
+//! barrier for the run and guards open documents/nested roots/manifests.
 const std = @import("std");
 const matcher = @import("matcher.zig");
 
@@ -125,7 +126,8 @@ fn safeEnvName(text: []const u8) !void {
 
 /// Resolve a root-relative cwd lexically inside `root`. Absolute or escaping
 /// paths fail closed. The result is always `root` or a descendant of it. This is
-/// a lexical containment check, not a symlink walk; the run review shows it.
+/// a lexical containment check, not a symlink walk; the controller guards the
+/// owning root before running.
 pub fn resolveCwd(arena: std.mem.Allocator, root: []const u8, rel: []const u8) ![]const u8 {
     if (root.len == 0 or root[0] != '/') return error.InvalidRoot;
     if (std.mem.indexOfScalar(u8, rel, 0) != null) return error.InvalidTaskString;

@@ -82,13 +82,12 @@ fn chmod(path: [:0]const u8, mode: std.c.mode_t) !void {
     try equal(@as(c_int, 0), std.c.fchmod(fd, mode));
 }
 
-test "restricted default, capability specificity, revoke and stale completion invalidation" {
+test "always-trusted default, capability specificity, and stale completion invalidation" {
     var scope = routing.Scope.init();
     var other = routing.Scope.init();
     var policy = trust.Policy.init(scope.capture().?);
-    try expectError(error.Restricted, policy.issue(.tasks));
-    const first = try policy.begin(scope.capture().?);
-    try expect(policy.complete(first, key(1), key(1)));
+    try equal(trust.State.trusted, policy.state);
+    // No consent: every capability issues immediately, without any approval.
     inline for (std.meta.tags(trust.Capability)) |capability| {
         const permit = try policy.issue(capability);
         try expect(policy.validate(permit, scope.capture().?, capability));
@@ -96,28 +95,27 @@ test "restricted default, capability specificity, revoke and stale completion in
     }
     const task = try policy.issue(.tasks);
     try expect(!policy.validate(task, scope.capture().?, .agent_tools));
-    const pending = try policy.begin(scope.capture().?);
+    // begin() retires earlier permits for stale-work invalidation, not trust.
+    const first = try policy.begin(scope.capture().?);
     try expect(!policy.validate(task, scope.capture().?, .tasks));
-    policy.revoke();
-    try expect(!policy.complete(pending, key(1), key(1)));
-    try expectError(error.Restricted, policy.issue(.tasks));
-    const mismatch = try policy.beginApproval(scope.capture().?, .user_approved);
-    try expect(!policy.complete(mismatch, key(2), key(1)));
-    try expect(!policy.complete(mismatch, key(1), key(1))); // consumed
-    const failed = try policy.beginApproval(scope.capture().?, .user_approved);
-    try expect(!policy.complete(failed, key(1), null));
-    const reload = try policy.begin(scope.capture().?);
-    try expect(!policy.complete(reload, key(1), key(1)));
-    const success = try policy.beginApproval(scope.capture().?, .user_approved);
-    try expect(policy.complete(success, key(1), key(1)));
+    try expect(policy.complete(first));
+    try expect(!policy.complete(first)); // consumed
+    const pending = try policy.begin(scope.capture().?);
+    const current = try policy.issue(.tasks);
+    try expect(policy.validate(current, scope.capture().?, .tasks));
+    try expect(policy.complete(pending));
+    try expect(!policy.validate(current, scope.capture().?, .tasks)); // completion retires prior permits
+    try expect(!policy.complete(first)); // stale ticket never completes
     const permit = try policy.issue(.lsp);
     scope.invalidate();
     try expect(!policy.validate(permit, scope.capture().?, .lsp));
     _ = try policy.begin(scope.capture().?);
     try expect(!policy.validate(permit, scope.capture().?, .lsp));
+    const fresh = try policy.issue(.lsp);
+    try expect(policy.validate(fresh, scope.capture().?, .lsp));
     policy.generation = std.math.maxInt(u64);
     try expectError(error.GenerationExhausted, policy.begin(scope.capture().?));
-    try expectError(error.Restricted, policy.issue(.lsp));
+    try expectError(error.GenerationExhausted, policy.issue(.lsp));
 }
 
 test "strict store roundtrip, checksum, version, lengths, duplicate keys and caps" {
@@ -639,7 +637,7 @@ test "independent simultaneous writer processes re-read and merge without lost a
     }
 }
 
-test "approval failures never grant, uncertain commit quarantines future loads" {
+test "approval failures stay trusted, uncertain commit quarantines future loads" {
     for ([_]fs.Fault{ .during_write, .before_rename, .after_rename, .after_marker_remove }) |fault| {
         var h = try Home.init();
         defer h.deinit();
@@ -651,8 +649,10 @@ test "approval failures never grant, uncertain commit quarantines future loads" 
         const ticket = try policy.begin(scope.capture().?);
         const err = if (fault == .during_write or fault == .before_rename) error.InjectedFailure else error.DurabilityUncertain;
         try expectError(err, fs.approveWithHooks(a, &h.home, &input, initial.fingerprint, .user_approved, .{ .fault = fault }));
-        try expect(!policy.complete(ticket, initial.fingerprint, null));
-        try expectError(error.Restricted, policy.issue(.extensions));
+        // Workspace trust no longer depends on approval persistence: the ticket
+        // completes and permits keep issuing even after a failed store write.
+        try expect(policy.complete(ticket));
+        _ = try policy.issue(.extensions);
         if (err == error.DurabilityUncertain) {
             try expectError(error.DurabilityUncertain, fs.load(a, &h.home, &input));
             try expectError(error.DurabilityUncertain, fs.approve(a, &h.home, &input, initial.fingerprint, .user_approved));
@@ -663,30 +663,30 @@ test "approval failures never grant, uncertain commit quarantines future loads" 
     }
 }
 
-test "failed persistent revocation stays locally restricted and invalidates all pending authority" {
+test "failed persistent revocation surfaces errors without restricting the workspace" {
     var h = try Home.init();
     defer h.deinit();
     var input = try h.inputs(1);
     defer input.deinit();
     const initial = try fs.load(a, &h.home, &input);
     const approved = try fs.approve(a, &h.home, &input, initial.fingerprint, .user_approved);
+    try equal(.trusted, approved.state);
     var scope = routing.Scope.init();
     var policy = trust.Policy.init(scope.capture().?);
-    const ticket = try policy.begin(scope.capture().?);
-    try expect(policy.complete(ticket, approved.fingerprint, approved.approvedKey()));
     const permit = try policy.issue(.debug);
-    policy.revoke();
+    const ticket = try policy.begin(scope.capture().?);
+    try expect(!policy.validate(permit, scope.capture().?, .debug)); // begin retires stale permits
     try expectError(error.InjectedFailure, fs.revokeWithHooks(a, &h.home, initial.fingerprint, .{ .fault = .before_rename }));
-    try expect(!policy.validate(permit, scope.capture().?, .debug));
-    try expect(!policy.complete(ticket, approved.fingerprint, approved.approvedKey()));
-    try expectError(error.Restricted, policy.issue(.debug));
-    // Failed pre-commit revocation is not falsely reported as persistent success,
-    // but even a NEW background reload cannot undo local explicit revocation.
+    try expect(policy.complete(ticket));
+    // Store failures never restrict: a new permit issues and validates, and a
+    // background reload cannot change that either.
+    const fresh = try policy.issue(.debug);
+    try expect(policy.validate(fresh, scope.capture().?, .debug));
     const reloaded = try fs.load(a, &h.home, &input);
     try equal(.trusted, reloaded.state);
     const reload = try policy.begin(scope.capture().?);
-    try expect(!policy.complete(reload, reloaded.fingerprint, reloaded.approvedKey()));
-    try expectError(error.Restricted, policy.issue(.debug));
+    try expect(policy.complete(reload));
+    _ = try policy.issue(.debug);
     try fs.revoke(a, &h.home, initial.fingerprint);
     try equal(.restricted, (try fs.load(a, &h.home, &input)).state);
 }

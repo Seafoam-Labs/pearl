@@ -1,10 +1,10 @@
-# M2: safe settings, provenance and workspace trust
+# M2: safe settings, provenance and always-trusted workspaces
 
-**Historical M2 policy increment: implemented and validated; M2 implementation is COMPLETE for the bounded workspace preview.** See the [acceptance audit](WORKBENCH_M2_ACCEPTANCE.md). This increment follows workspace discovery/search in the standard plan. Its no-executable-consumer statements describe M2, not current M3: [bounded language services](WORKBENCH_M3_LANGUAGE.md) now implement detected-language automatic startup after open/restore/save/language changes, requiring current exact workspace trust **plus exact prior server approval** in an unpaused workspace. A new/changed key gets one first-use prompt; trust does not itself grant server approval. Stop persists a workspace pause; Start/Restart resumes with fresh checks. The [historical M3 gate](WORKBENCH_M3_LANGUAGE.md#final-validation-passed) passed after the queue/sync fix, before this increment; [automatic-increment validation is separately accepted](WORKBENCH_M3_LANGUAGE.md#automatic-increment-validation--accepted); **next is M4 Git/review, not started**.
+**Historical M2 policy increment: implemented and validated; M2 implementation is COMPLETE for the bounded workspace preview. By explicit user request the workspace consent boundary was later removed: workspaces are ALWAYS trusted, with no confirmation or revocation prompts and no consent state. Stale-generation invalidation remains; this is NOT an OS sandbox.** See the [acceptance audit](WORKBENCH_M2_ACCEPTANCE.md). This increment follows workspace discovery/search in the standard plan. Its no-executable-consumer statements describe M2, not the current workbench: [bounded language services](WORKBENCH_M3_LANGUAGE.md) implement detected-language automatic startup after open/restore/save/language changes, requiring **exact prior server approval** in an unpaused workspace (workspace trust is automatic). A new/changed key gets one first-use prompt; automatic trust does not itself grant server approval. Stop persists a workspace pause; Start/Restart resumes with fresh checks. Git keeps its per-window subprocess disclosure and destructive-mutation reviews. The [historical M3 gate](WORKBENCH_M3_LANGUAGE.md#final-validation-passed) passed after the queue/sync fix, before the automatic increment; [automatic-increment validation is separately accepted](WORKBENCH_M3_LANGUAGE.md#automatic-increment-validation--accepted). M4 Git/review and M5 terminal/tasks are implemented; the trust-boundary removal increment passed targeted policy validation (17/17 native groups), with docks/session/widgets/production/visual pending the parent aggregate.
 
 ## Safe repository settings
 
-Four editor settings are supported in restricted and trusted workspaces:
+Four editor settings are supported in all workspaces (workspaces are always trusted):
 
 | Key | Type / range | Built-in default |
 | --- | --- | --- |
@@ -66,43 +66,115 @@ Scratch documents and files outside the workspace use only defaults/user prefere
 
 Opening a workspace reads settings on workers. **Workspace: Rescan** refreshes the manifest and all root settings; this also works for a folder-only workspace. Recheck in the trust dialog validates the current policy snapshot but does **not** adopt changed settings—use Rescan for that.
 
-A failed candidate keeps the previous workspace, settings and dirty documents while restricting trust and reporting the error. Missing `.coral`/`settings.json` means no folder override. Malformed, unreadable, symlinked or nonregular settings do not silently become defaults. Permission/I/O-denied roots reject the candidate when their folder policy cannot be classified safely; missing/non-directory roots remain explicit unavailable entries.
+A failed candidate keeps the previous workspace, settings and dirty documents and reports the error. Identity-capture health may show `failed`, but the workspace stays trusted; stale permits/results are still invalidated. Missing `.coral`/`settings.json` means no folder override. Malformed, unreadable, symlinked or nonregular settings do not silently become defaults. Permission/I/O-denied roots reject the candidate when their folder policy cannot be classified safely; missing/non-directory roots remain explicit unavailable entries.
 
 Folder settings have **64 KiB/source**, **32 language entries**, and **64-byte language IDs**; at most 32 roots means 2 MiB aggregate folder source. The manifest retains its 1 MiB document limit. Unknown/executable keys, decoded duplicate fields, unsupported versions, explicit nulls and invalid UTF-8/NUL fail closed. Traversal is descriptor-relative without following symlinks; execute-only ancestors are supported, while the final settings file must be readable. File checks/read consistency are snapshots, not atomic filesystem isolation.
 
-No new recursive settings watcher is installed. Existing explorer/manifest notifications invalidate authority; explicit Rescan remains the adoption mechanism for folder changes outside watch coverage. Trust workers reread policy before persistence/restoration and after store access, rejecting a mismatch with the published model.
+No new recursive settings watcher is installed. Existing explorer/manifest notifications invalidate authority; explicit Rescan remains the adoption mechanism for folder changes outside watch coverage. Policy workers reread policy and recapture identity, rejecting a mismatch with the published model (stale-generation invalidation); no consent state is persisted or restored.
 
-## Persistent, explicit trust
+## Always-trusted workspaces (consent boundary removed)
 
-Unfamiliar workspaces start **restricted**. Reading, browsing, searching, editing and explicit saves remain available without trust. The delivered [Explorer file operations](WORKBENCH_M2_OPERATIONS.md) are also permitted as explicit local edits: input → worker preparation → review confirmation for every kind, including creation, with no writes before confirmation. They do not launch hooks, tools, LSP or agents, promote trust, or grant reusable execution permission. M3 may send static filtered did-file notifications to already approved, running language sessions after successful operations; that is not server startup or a will-operation command.
+**By explicit user request, restricted mode and the workspace consent boundary
+were removed. Workspaces are always trusted:** there is no trust confirmation
+dialog, no revocation prompt, no restricted-mode gate and no consent state read
+or written. Opening a workspace immediately enables the executable surfaces
+(terminal, tasks, approved language servers, disclosed Git) with the user's
+permissions.
 
-Explorer file-operation admission independently refuses all affected open documents (clean or dirty across live/draining windows), pending loads/choosers/saves/sessions/recovery, and changes affecting peer/nested roots or active manifests. **Any unavailable root or lexical `..` in any open process workspace's root/manifest blocks all mutations with `WorkspaceBusy`**, even outside that workspace. Close the affected workspace or reopen verified available normalized/canonical paths; do not blindly collapse `..`. Trust approval cannot bypass these checks. Reviewed root-list/Save As manifest edits are a separate operation with [their own source-byte/etag and open-manifest checks](WORKBENCH_M2_PROJECTS.md#reviewed-workspace-root-management); unlike Explorer mutations, they preserve supported lexical `..`/unavailable roots without deleting or moving those paths. Descriptor/metadata revalidation remains best-effort against final external rename/source races, not a sandbox, content hash or fsync guarantee.
+**Security tradeoff (explicit):** a malicious or unfamiliar repository no longer
+has a per-workspace consent gate before its task definitions can be run or its
+configured language servers can start. Repository-supplied `.coral/tasks.json`
+commands execute when the user runs them; approved servers have user
+filesystem/network access. The remaining protections — stale-generation
+invalidation, manager-wide file barriers, guardTree, bounded supervised capture,
+the safe terminal OSC policy, Git's subprocess disclosure and mutation reviews,
+and language's exact server approval — are application-level admission controls,
+**not an OS sandbox**. The user requested and accepted this tradeoff.
 
-- **Trust workspace…** opens a real confirmation dialog listing the exact scope. Cancel changes nothing. A repository cannot approve itself.
-- Successful approval persists only after worker-side scope/policy revalidation and a durable store write.
-- **Workspace: Revoke trust** immediately restricts the current policy and invalidates its permits/pending gate, then serializes persistent removal.
-- **Recheck** validates current identity and the machine store. Failed initial restoration requires fresh explicit approval after the failure is resolved.
+What the commands do now:
 
-**Trust is a precondition, not permission for every action.** This historical M2 increment enabled no LSP, task runner, debugger, hook executor, extension host or agent tool; its tests exercised a pending permit, never a real command. **M3 now consumes generation-checked LSP permits**, with separate exact server approval (one first-use review for a new/changed key), user-owned executable configuration, fresh checks before launch/approval and cancellation when authority changes. Unchanged approved servers may start automatically in trusted, unpaused workspaces. Lifecycle approval/pause keys live in separate machine state under `coral/language`, not this trust store; storage errors fail closed. Stop persistence retries `Busy` with a capped delay and retains intent, but nonretryable failure can only retain/report a local inhibit, not promise durability. The server has user permissions, not an OS sandbox; same-root navigation/review checks do not confine its filesystem or network access. Other executable services remain future work. See [M3 startup/configuration and limits](WORKBENCH_M3_LANGUAGE.md).
+- **Trust workspace…** reports “Workspaces are always trusted; no approval is
+  required.” and opens no dialog.
+- **Workspace: Revoke trust** retires outstanding permits so stale work cannot
+  continue, and reports that revocation is unavailable. It cannot untrust a
+  workspace and writes no removal state.
+- **Workspace: Settings and Trust…** still shows effective settings, per-key
+  provenance and identity diagnostics; its trust button stays insensitive.
+  **Recheck** still invalidates and recaptures current identity.
+
+Reading, browsing, searching, editing and explicit saves were always available;
+they remain so. The delivered [Explorer file operations](WORKBENCH_M2_OPERATIONS.md)
+remain explicit local edits: input → worker preparation → review confirmation for
+every kind, including creation, with no writes before confirmation. They do not
+launch hooks, tools, LSP or agents. Automatic workspace trust does not bypass
+their review or admission checks. M3 may send static filtered did-file
+notifications to already approved, running language sessions after successful
+operations; that is not server startup or a will-operation command.
+
+Explorer file-operation admission independently refuses all affected open
+documents (clean or dirty across live/draining windows), pending
+loads/choosers/saves/sessions/recovery, and changes affecting peer/nested roots or
+active manifests. **Any unavailable root or lexical `..` in any open process
+workspace's root/manifest blocks all mutations with `WorkspaceBusy`**, even
+outside that workspace. Close the affected workspace or reopen verified available
+normalized/canonical paths; do not blindly collapse `..`. Reviewed root-list/Save
+As manifest edits are a separate operation with [their own source-byte/etag and
+open-manifest checks](WORKBENCH_M2_PROJECTS.md#reviewed-workspace-root-management);
+unlike Explorer mutations, they preserve supported lexical `..`/unavailable roots
+without deleting or moving those paths. Descriptor/metadata revalidation remains
+best-effort against final external rename/source races, not a sandbox, content
+hash or fsync guarantee.
+
+**Trust is a precondition, not permission for every action.** Executable services
+still obtain generation-checked capability permits; only stale scope/generation
+can refuse them now. **M3 consumes generation-checked LSP permits** with separate
+exact server approval (one first-use review for a new/changed key), user-owned
+executable configuration, fresh checks before launch/approval and cancellation
+when authority changes. Unchanged approved servers may start automatically in
+unpaused workspaces. Lifecycle approval/pause keys live in separate machine state
+under `coral/language`; storage errors fail closed. Stop persistence retries
+`Busy` with a capped delay and retains intent, but nonretryable failure can only
+retain/report a local inhibit, not promise durability. The server has user
+permissions, not an OS sandbox; same-root navigation/review checks do not confine
+its filesystem or network access. **Git keeps its per-window subprocess
+disclosure and per-operation destructive-mutation reviews; M5 terminal sessions
+spawn on user action with no disclosure, and task runs are explicit user commands
+holding the manager-wide file barrier with guardTree.** See
+[M3 startup/configuration and limits](WORKBENCH_M3_LANGUAGE.md) and the
+[M5 guide](WORKBENCH_M5_TERMINAL.md).
 
 ### Exact scope identity
 
-Approval binds:
+Identity capture is retained for **stale-generation invalidation and
+diagnostics, not consent**. It binds:
 
 - Ordered roots and their lexical/canonical paths.
 - The supplied manifest base, preserving relative-root semantics through symlinks.
 - Directory device/inode **and birth time** for roots and manifest base.
 - A versioned digest of repository settings/excludes/paths, safe user values and actual key presence, built-in defaults and precedence semantics.
 
-There are no recursive parent grants. Unavailable roots cannot be approved. Root replacement, root-list changes or effective-policy changes do not inherit current authority. Safe user preference changes conservatively invalidate trust even if a repository override masks the value.
+There are no recursive parent grants. Root replacement, root-list changes or
+effective-policy changes invalidate outstanding permits and stale results even
+though the workspace stays trusted. Safe user preference changes conservatively
+invalidate permits even if a repository override masks the value.
 
-Birth time is required via Linux `STATX_BTIME`. Filesystems that cannot provide it report **UnsupportedBirthTime** and remain restricted; there is no weaker inode-only fallback. Fingerprint domain v2 rejects prior inode-only approvals. Birth time closes ordinary inode-reuse mistakes but is still filesystem-reported snapshot identity, not an inode lease or protection against a malicious same-UID actor.
+Birth time is required via Linux `STATX_BTIME`. Filesystems that cannot provide it report **UnsupportedBirthTime**: identity capture fails visibly (status `failed`), but the workspace stays trusted and permits still issue; there is no weaker inode-only fallback. Fingerprint domain v2 rejects prior inode-only approvals. Birth time closes ordinary inode-reuse mistakes but is still filesystem-reported snapshot identity, not an inode lease or protection against a malicious same-UID actor.
 
-A new application instance may restore a valid exact approval. During an instance's lifetime, continuity anchors survive Rescan and close/reopen: encountering a different fingerprint requires fresh approval even if that alternate identity already has a stored approval. An old confirmation or worker completion cannot grant against a newer model/user/settings generation. Stale approvals that reached disk are queued for serialized removal.
+Identity capture runs on open, Rescan and close/reopen. Encountering a different
+fingerprint invalidates outstanding permits and stale results; there is no
+approval to restore or refresh. An old worker completion cannot apply against a
+newer model/user/settings generation. No consent state is queued for removal
+because none is written.
 
-### Machine store and failures
+### Machine store and failures (historical consent machinery)
 
-The store is **`$XDG_STATE_HOME/coral/trust/store`**, normally `~/.local/state/coral/trust/store`. It is a bounded versioned/checksummed binary record store, not editable workspace JSON.
+**The consent store is no longer read or written for trust decisions.** The state
+home **`$XDG_STATE_HOME/coral/trust`** (normally `~/.local/state/coral/trust`)
+now serves identity diagnostics only; the settings dialog states this explicitly.
+The bounded versioned/checksummed binary record store below is the removed
+consent machinery, retained as history:
+
+The historical store was **`$XDG_STATE_HOME/coral/trust/store`**, a bounded versioned/checksummed binary record store, not editable workspace JSON. It enforced:
 
 - Maximum **256 records / 1 MiB input**.
 - `coral` and `trust` directories must be owner-private **0700**; store files must be owner-owned, singly linked regular files with **0600** permissions.
@@ -112,15 +184,26 @@ The store is **`$XDG_STATE_HOME/coral/trust/store`**, normally `~/.local/state/c
 - Replacement uses private temporary storage, file fsync, rename and directory fsync. Uncertain durability quarantines the store with an `uncertain` marker; it does not silently restore trust.
 - Missing records mean restricted. Corruption, unsafe files/modes, unsupported identity, lock errors and write failures remain restricted with visible errors.
 
-A failed revoke remains sticky locally across same-scope model replacements/rechecks; it is not silently cleared by an old disk approval. **If persistence fails, an old approval can still exist on disk and another process/restart may see it.** Resolve the reported storage issue and retry Revoke. Do not treat closing the dialog as successful durable revocation. Other running instances observe removal only when they revalidate; cross-process instantaneous cancellation is not implemented. Quarantine repair is explicit machine-state maintenance, not an automatic deletion of uncertain data.
+None of these consent-state rules gate execution anymore: identity-capture
+errors are reported visibly while the workspace stays trusted, and no approval,
+quarantine or removal state is created.
 
-With [multi-window support](WORKBENCH_M2_WINDOWS.md), explicit revoke synchronously restricts every matching lexical workspace scope in this process before persistence. Up to 256 non-evicted generation markers prevent newly opened windows from reviving an old approval after pending/failed removal, even after the original owner closes; saturation fails closed. Fresh approval acknowledges the generation only for its owner. Scope/key associations for queued removals survive owner closure, and approval waits for matching cleanup to drain so delayed removal cannot erase a fresh grant. This does not provide cross-process revocation notification or enable executable features.
+Historically, a failed revoke remained sticky locally across same-scope model replacements/rechecks; it was not silently cleared by an old disk approval. If persistence failed, an old approval could still exist on disk and another process/restart could see it. Other running instances observed removal only when they revalidated; cross-process instantaneous cancellation was not implemented. Quarantine repair was explicit machine-state maintenance, not an automatic deletion of uncertain data.
+
+With [multi-window support](WORKBENCH_M2_WINDOWS.md), the manager protocol
+remains (scope generations, invalidate-on-revoke), but there is no consent state
+to remove: cleanup is never pending and queued/failed revokes are always zero.
+**Workspace: Revoke trust** retires permits in every matching window
+synchronously; it cannot untrust a workspace. The historical 256 non-evicted
+generation markers, queued-removal draining and fresh-approval rules applied to
+the removed consent store; stale-generation checks still prevent a new window
+from using retired permits.
 
 ## Ownership and bounds
 
-One policy worker runs at a time, with one coalesced recheck. Revocation queues, local scope restrictions, known approvals and continuity records are each capped at 256; saturation fails closed. Inputs and safe-user snapshots are owned/immutable. Model/request/policy generations guard callbacks. Pending revocations are serialized behind an in-flight approval, and worker holds remain until cleanup after window close.
+One policy (identity-capture) worker runs at a time, with one coalesced recheck. Inputs and safe-user snapshots are owned/immutable. Model/request/policy generations guard callbacks and retire stale permits/results. Worker holds remain until cleanup after window close. The historical 256-entry revocation/approval/continuity caps applied to the removed consent machinery; no consent queues exist now.
 
-Filesystem calls can still block on an unresponsive mount. Cancellation invalidates authority immediately but cannot forcibly interrupt every syscall. These controls protect against stale application operations and unsafe configuration; they are not an OS sandbox or universal tool approval.
+Filesystem calls can still block on an unresponsive mount. Cancellation invalidates permits immediately but cannot forcibly interrupt every syscall. These controls protect against stale application operations and unsafe configuration; they are not an OS sandbox or universal tool approval.
 
 ## Source and validation
 
@@ -155,6 +238,18 @@ Latest delayed-shutdown fixture acknowledged input in about **25 ms** and closed
 
 Evidence: `pearl/.cache/coral-policy/results.json`, adjacent screenshots/session logs, and `pearl/.cache/coral-policy-validation-logs/`. All native fixtures use private Wayland, HOME and XDG state. No user workspace was trusted, no packages installed, and no commits created by this work.
 
+**Trust-boundary removal increment (targeted):** native policy **17/17 groups
+passed** with the consent boundary removed, including `always_trusted_no_consent`
+(no consent dialog opens, no consent state is written, revoke retires stale
+permits without untrusting, Recheck remains available) and the stale
+worker/delivery invalidation cases. Evidence:
+[log](../../../.cache/coral-m5b-policy.log),
+[results](../.cache/m5b-policy/results.json). Docks, session-unit, widgets,
+hooks-disabled production and visual were **not rerun** for this increment and
+are pending the parent aggregate; the terminal/tasks surfaces of the same
+increment passed 12/12 and 7/7 (see the [M5 guide](WORKBENCH_M5_TERMINAL.md)).
+The historical counts above remain M2 evidence.
+
 ## M2 closure and remaining boundaries
 
-[Explicit workspace sessions](WORKBENCH_M2_SESSIONS.md), [native dock/picker integration](WORKBENCH_M2_DOCKS.md), [multi-window lifecycle](WORKBENCH_M2_WINDOWS.md) and [bounded explicit file operations](WORKBENCH_M2_OPERATIONS.md) were implemented in M2 without enabling executable consumers. [Final file-operation validation](WORKBENCH_M2_OPERATIONS.md#final-validation--2026-11-09) passed all 25 native scenarios together, all nine aggregate gates and a fresh hooks-disabled production build. The policy gate again passed 17 native groups and executed 191 widget tests; the policy validation above remains historical evidence. [Automatic projects, native recents/buffer pickers and reviewed root management](WORKBENCH_M2_PROJECTS.md) now complete mandatory M2 scope. Automatic restoration rereads current settings and independently revalidates trust; it never imports an approval from saved text. Reviewed root edits preserve semantic settings/language overrides/excludes, then reload through the normal policy pipeline; root/policy changes do not confer authority. Those passes remain historical M2 evidence. The bounded M3 baseline has historical validation; automatic startup is now implemented with separately accepted validation. **Next is M4 Git/review, not started**; agents remain later milestones. The [M3 validation report](WORKBENCH_M3_LANGUAGE.md#automatic-increment-validation--accepted) separates accepted automatic-increment results from the historical frozen-source aggregate/production pass, earlier failures and pre-queue-fix visual evidence, and claims harness reaping assertions rather than an unperformed final baseline cleanup scan. M3 text edits are reviewed grouped undo without autosave; single reviewed resource operations mutate disk with no undo. This does not weaken the M2 trust/storage boundaries above.
+[Explicit workspace sessions](WORKBENCH_M2_SESSIONS.md), [native dock/picker integration](WORKBENCH_M2_DOCKS.md), [multi-window lifecycle](WORKBENCH_M2_WINDOWS.md) and [bounded explicit file operations](WORKBENCH_M2_OPERATIONS.md) were implemented in M2 without enabling executable consumers. [Final file-operation validation](WORKBENCH_M2_OPERATIONS.md#final-validation--2026-11-09) passed all 25 native scenarios together, all nine aggregate gates and a fresh hooks-disabled production build. The policy gate again passed 17 native groups and executed 191 widget tests; the policy validation above remains historical evidence. [Automatic projects, native recents/buffer pickers and reviewed root management](WORKBENCH_M2_PROJECTS.md) now complete mandatory M2 scope. Automatic restoration rereads current settings and recaptures identity; it never imports consent state from saved text (none exists). Reviewed root edits preserve semantic settings/language overrides/excludes, then reload through the normal policy pipeline; root/policy changes invalidate stale permits but do not untrust the workspace. Those passes remain historical M2 evidence. The bounded M3 baseline has historical validation; automatic startup is implemented with separately accepted validation. M4 Git/review and M5 terminal/tasks are implemented; agents remain later milestones. The [M3 validation report](WORKBENCH_M3_LANGUAGE.md#automatic-increment-validation--accepted) separates accepted automatic-increment results from the historical frozen-source aggregate/production pass, earlier failures and pre-queue-fix visual evidence, and claims harness reaping assertions rather than an unperformed final baseline cleanup scan. M3 text edits are reviewed grouped undo without autosave; single reviewed resource operations mutate disk with no undo. The later consent-boundary removal is a separate, user-requested change recorded above; the settings/provenance and file-operation admission boundaries remain.

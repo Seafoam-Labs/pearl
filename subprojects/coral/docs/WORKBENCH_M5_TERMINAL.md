@@ -5,26 +5,37 @@
 **Coral-owned GTK4 Cairo/Pango renderer** driven entirely by ghostty render
 state. `src/terminal/pty.zig` spawns and owns the process group; a worker Job is
 the **only waitpid reaper**; the GTK main thread reads the PTY master through a
-**GIO read watch**. Sessions require **workspace trust plus an explicit
-disclosure**, are bounded to **eight per window**, and support
-new/close/restart/cancel, resize, scrollback, selection and paste under a **safe
-OSC policy** (clipboard denied, title/checksum reports off, Kitty graphics/glyph
-disabled, notifications/window-resize ignored). The Terminal dock is the **fourth
-dock panel** beside Explorer/Search/Source Control with persisted layout.
-Workspace **tasks** load bounded `.coral/tasks.json` definitions (absolute argv,
-no shell), require trust plus a **per-run review**, run under the supervised
-capture boundary with cancellation/reaping, and classify output with
-**zig/gcc/clang/python/generic problem matchers** into an Output/Problems UI with
-a navigation callback.
+**GIO read watch**. Workspaces are **always trusted by user request**: sessions
+spawn directly on user action with **no disclosure prompt** (the capability
+permit is still re-validated at spawn), are bounded to **eight per window**, and
+support new/close/restart/cancel, resize, scrollback, selection and paste under a
+**safe OSC policy** (clipboard denied, title/checksum reports off, bounded
+inline-only Kitty graphics with file/temp/shm mediums and the glyph protocol
+disabled, notifications/window-resize ignored). The terminal follows the **app
+editor font**, renders **dirty rows incrementally** and supports **rectangular
+block selection**. The Terminal dock is the **fourth dock panel** beside
+Explorer/Search/Source Control with persisted layout. Workspace **tasks** load
+bounded `.coral/tasks.json` definitions (absolute argv, no shell) and run as
+**explicit user commands** — the per-run trust/review was removed with the
+workspace consent boundary — holding the **manager-wide file barrier with
+guardTree** protection under the supervised capture boundary with
+cancellation/reaping, and classify output with **zig/gcc/clang/python/generic
+problem matchers** into an Output/Problems UI with a navigation callback.
 
-Targeted validation passed: **task-unit 16, terminal native 9, tasks native 9,
-docks 27, session-unit 27, widgets 213, hooks-disabled production 46/46 and
-visual 16/16**. Final safety review fixes landed and re-passed **terminal native
-9/9, surface integration 8/8 and production 46/46**. The **full aggregate was
-not rerun per user request**; M1–M4 aggregates remain historical evidence. Explicit limits remain: no rectangular
-block selection, fixed Monospace 11pt (not the app font), full-frame rendering
-without dirty-row incremental updates, Kitty graphics disabled, tasks without the
-manager file barrier, and task navigation that opens files in production but
+The trust-boundary removal / terminal polish increment passed targeted
+validation: **terminal native 12/12, tasks native 7/7 and policy native 17/17**;
+**docks, session-unit, widgets, hooks-disabled production and visual are pending
+the parent aggregate** and were not rerun for it. The earlier targeted counts
+(task-unit 16, terminal native 9, tasks native 9, docks 27, session-unit 27,
+widgets 213, production 46/46, visual 16/16) and the final safety review re-passes
+(terminal native 9/9, surface integration 8/8, production 46/46) remain
+historical for the prior increment; M1–M4 aggregates remain historical evidence.
+**Security tradeoff (explicit):** workspaces are always trusted, so opening one
+immediately enables terminal/task execution with user permissions;
+stale-generation invalidation, the manager barrier, bounded capture and the safe
+OSC policy are application-level protections, **not an OS sandbox**. Remaining
+limits: no hyperlink activation, bounded inline-only Kitty graphics (no
+file/temp/shm mediums), and task navigation that opens files in production but
 records intent in the instrumented test binary. **M6 agent core is next.** This
 is not full Zed/VS Code terminal parity.
 
@@ -74,13 +85,13 @@ supply the prefix for builds and tests that link the terminal.
 | --- | --- |
 | `src/terminal/ghostty.zig` | Direct libghostty-vt 1.0.1 C ABI bindings; no C bridge, no VTE |
 | `src/terminal/surface.zig` | GtkDrawingArea + Cairo/Pango renderer from ghostty render state; key/mouse/paste/selection input through ghostty encoders; safe OSC/effect policy |
-| `src/terminal/terminal_controller.zig` | Bounded sessions/tabs, trust + disclosure gate, the **only waitpid reaper** (via the worker Job), GIO read watch, status labels |
+| `src/terminal/terminal_controller.zig` | Bounded sessions/tabs, always-trusted spawn with permit re-validation (no disclosure), the **only waitpid reaper** (via the worker Job), GIO read watch, status labels |
 | `src/terminal/pty.zig` | PTY spawn/read/write/resize/cancel/wait; authorization; complete environment allowlist; process-group ownership through `ownership.zig` |
 | `src/terminal/ownership.zig` | Private non-execing subreaper supervisor; PID pinning; TERM → 150 ms grace → KILL; reaping |
 | `src/tasks/task.zig` | Bounded `.coral/tasks.json` parsing and argv/cwd/env policy (pure std, no GTK, no execution) |
 | `src/tasks/matcher.zig` | Bounded problem matchers (pure std, no I/O, no execution) |
 | `src/tasks/process.zig` | Supervised bounded command capture with owned process-group lifecycle (not a PTY) |
-| `src/tasks/tasks_controller.zig` | Task picker, trust + per-run review, run/stop/restart, Output/Problems UI, navigation callback |
+| `src/tasks/tasks_controller.zig` | Task picker, explicit user runs with manager-wide file barrier + guardTree, run/stop/restart, Output/Problems UI, navigation callback |
 
 **Thread boundary.** A worker thread starts the PTY and is the **sole waiter**;
 Coral owns only `waitpid` for its jobs (through the private supervisor). The GTK
@@ -103,21 +114,23 @@ application-wide subreaper, `SIGCHLD` handler or `waitpid(-1)`. A descendant tha
 deliberately escapes with `setsid`/`setpgid` is **not contained**, signaled or
 awaited; orphan reaping belongs to init. This is **not an OS sandbox**.
 
-## Trust, disclosure and session lifecycle
+## Always-trusted sessions and lifecycle
 
-- A new session requires a current **workspace trust permit** (the `.tasks`
-  capability, shared with tasks) **and an explicit per-window disclosure
-  acceptance**. Restricted workspaces refuse with `Restricted`; there is no
-  terminal execution at startup or in restricted mode.
-- The first request shows the disclosure: commands run with your user
-  permissions; workspace trust is **not an OS sandbox** and does not approve
-  individual commands; terminal output cannot control the workbench (titles,
-  links and escape sequences never trigger actions); clipboard access from
-  programs is denied by default. Rejecting records an error and spawns nothing.
-- **Restart, disclosure acceptance and spawn re-validate trust.** Acceptance
-  re-issues the permit because trust may have been revoked since the disclosure
-  was requested; a stale permit never spawns. A workspace change cancels/reaps
-  every session and resets the disclosure; trust revocation invalidates permits.
+**The workspace consent boundary and the terminal disclosure were removed by
+explicit user request.** Workspaces are always trusted; there is no restricted
+mode and no per-window disclosure acceptance.
+
+- A new session is spawned **directly by the user action**. The `.tasks`
+  capability permit (shared with tasks) is still issued and **re-validated at
+  the spawn boundary** (new and restart paths): only stale scope/generation can
+  refuse, never a consent state. There is no terminal execution at startup.
+- Commands run with your user permissions; workspace trust is **not an OS
+  sandbox** and does not approve individual commands; terminal output cannot
+  control the workbench (titles, links and escape sequences never trigger
+  actions); clipboard access from programs is denied by default.
+- A workspace change cancels/reaps every session; scope/generation invalidation
+  retires stale permits and results. **Stale-generation invalidation remains**
+  even though consent/revocation no longer exist.
 - Sessions are bounded to **eight per window** (`SessionLimit` beyond that).
   Defaults are **80×24**. The shell is `$SHELL` when it is an absolute path,
   otherwise `/bin/sh`; the cwd is the first workspace root. The environment is a
@@ -125,11 +138,11 @@ awaited; orphan reaping belongs to init. This is **not an OS sandbox**.
   `LOGNAME`, `SHELL`, `DISPLAY`, `WAYLAND_DISPLAY`, `XDG_RUNTIME_DIR`,
   `XDG_CONFIG_HOME`, `XDG_STATE_HOME`, `XDG_CACHE_HOME`, `XDG_DATA_HOME`, `TZ` —
   not the full inherited environment.
-- **New / Close / Restart / Cancel:** New gates then spawns; Close cancels and
+- **New / Close / Restart / Cancel:** New spawns directly; Close cancels and
   reaps a running session before destroying it (already-exited sessions are
-  destroyed immediately); Restart rechecks trust, cancels the old session and
-  spawns a fresh one; **Cancel stops the running command and reaps/removes the
-  session**. Exit code or signal is shown in the status line
+  destroyed immediately); Restart re-validates the permit, cancels the old
+  session and spawns a fresh one; **Cancel stops the running command and
+  reaps/removes the session**. Exit code or signal is shown in the status line
   (`Terminal N · state · exit/signal · COLSxROWS`). Tab titles follow the OSC
   title as **labels only**.
 
@@ -137,19 +150,26 @@ awaited; orphan reaping belongs to init. This is **not an OS sandbox**.
 
 - The surface is a **GtkDrawingArea drawn with Cairo/Pango** from ghostty render
   state (rows, cells, styles, colors, cursor, selection). Rendering is
-  **full-frame**; there is no dirty-row incremental path yet.
-- The terminal font is fixed **Monospace 11pt** (with bold/italic variants), not
-  the application font. Cell metrics are measured from Pango; allocation changes
-  resize the grid and mirror it onto the PTY (`TIOCSWINSZ`).
+  **dirty-row incremental**: ghostty's render-state dirty flag (full/partial/none)
+  selects the path, and only rows reported dirty, whose identity changed, or that
+  hold the cursor/selection are redrawn. Font, geometry and selection changes
+  force a full redraw; a clean frame with no cursor change draws nothing.
+- The terminal follows the **application editor font**: the monospace family and
+  the user's editor text size (`Settings.font`, px), pushed live by the controller
+  on every settings change (bold/italic variants included). Cell metrics are
+  measured from Pango; allocation changes resize the grid and mirror it onto the
+  PTY (`TIOCSWINSZ`).
 - Keyboard and mouse input are translated through ghostty key/mouse encoders
   (Alt sends an ESC prefix). Terminal focus is excluded from palette/global
   shortcut interception; terminal input and composition are not globally
   intercepted.
 - **Scrollback** is bounded to **10 MiB / 10,000 lines**; discrete vertical
   scrolling moves the viewport, with scroll-to-bottom.
-- **Selection** is mouse-drag (viewport cell coordinates) plus select-all;
-  **Copy** writes the selection to the system clipboard as plain text through
-  the ghostty formatter. **There is no rectangular/block selection.**
+- **Selection** is mouse-drag (viewport cell coordinates) plus select-all, with
+  **rectangular block selection**: Alt+drag selects a block, and a persistent
+  block mode makes every drag rectangular. **Copy** writes the selection to the
+  system clipboard as plain text through the ghostty formatter (block text for
+  rectangular selections).
 - **Paste** goes through the ghostty paste path: **bracketed paste per mode
   2004** and unsafe-paste rejection; clipboard text is read through GDK.
 - There is no hyperlink activation. Title/pwd/bell metadata may update labels or
@@ -165,15 +185,16 @@ so programs cannot drive the workbench or the clipboard:
 | Clipboard read / write (OSC 52) | **Denied by default** |
 | Title report | **Off** |
 | XT checksum report | **Off** |
-| Kitty graphics storage | **0 bytes**; file and shared-memory mediums **off** |
+| Kitty graphics storage | **16 MiB cap**, inline pixels only; file, temp-file and shared-memory mediums **off**; 8 MiB APC cap per transmission; ≤1,024 placements per frame |
 | Kitty glyph protocol | **Disabled** |
 | Desktop notifications | **Ignored** (NULL callback) |
 | Window-resize requests | **Ignored** (NULL callback) |
 | Progress reports | **Ignored** (NULL callback) |
 | Title / pwd semantic metadata | Labels only; never dispatch actions |
 
-The native `osc-clipboard-denied` and `no-stdout-injection` cases exercise this
-boundary: stdout cannot inject UI commands.
+The native `osc-clipboard-denied`, `no-stdout-injection` and `kitty-graphics`
+cases exercise this boundary: stdout cannot inject UI commands, and image
+storage/mediums stay bounded.
 
 ## Terminal dock — fourth panel, persisted layout
 
@@ -207,7 +228,9 @@ All M5 commands are palette/menu-driven; **none has a default keybinding**.
 
 Definitions come from **`.coral/tasks.json` in each available workspace root**,
 loaded off the GTK thread and aggregated under a **total 64-task limit**.
-Executable workspace content is **not trusted by default**.
+Workspaces are **always trusted by user request**, so these repository-supplied
+definitions load without a consent gate; running one is an explicit user action
+(see the security tradeoff below).
 
 ```json
 {
@@ -244,13 +267,21 @@ entries, 128-byte names, 8,192-byte strings, 4,095-byte paths**. UTF-8 and
 structural depth are checked before DOM allocation; control characters are
 refused.
 
-**Trust plus per-run review.** A run requires the workspace trust permit
-(`.tasks`) **and an explicit per-run review of the exact argv, working directory,
-environment allowlist and matcher** before anything executes. Neither gate is an
-OS sandbox: a reviewed command runs with the user's permissions and can read/write
-files and access the network. **Tasks do not take the manager file barrier** —
-they are not assumed to mutate workspace files — but the trust boundary still
-applies.
+**Explicit user command runs.** The per-run trust gate and the argv/cwd/env
+review were removed with the workspace consent boundary: choosing **Run**
+executes the selected definition directly with the user's permissions. A run can
+read/write files and access the network; this is **not an OS sandbox**.
+**Security tradeoff (explicit):** task definitions are repository content, and
+running one executes repository-supplied commands without a per-run review; the
+user requested and accepted this. What remains is application-level admission:
+every run holds the **manager-wide file-operation barrier**
+(`beginFileOperation`/`endFileOperation`) from launch until the job is reaped,
+and **guardTree** refuses the run while any open document (clean or dirty, in any
+window), nested workspace root or manifest lies under the task root. The barrier
+source is the narrow `<root>/.coral/tasks.json` path so a task root that is itself
+a workspace root does not false-positive as a root mutation. The barrier protects
+open documents/roots/manifests from concurrent file operations; it does not
+confine what the command itself does.
 
 ## Tasks: supervised capture and problem matchers
 
@@ -260,8 +291,9 @@ Runs use the `tasks/process.zig` supervised capture boundary (**not a PTY**):
   timeout**. Outcomes are `success`, `nonzero`, `signaled`, `spawn_failed`,
   `cancelled`, `timed_out`, `output_limit` and `io_failed`.
 - **Stop cancels and reaps the process group** (TERM → 150 ms grace → KILL);
-  Restart re-reviews the exact command after the previous run completes.
-  Generation/workspace tokens discard stale results without skipping cleanup.
+  Restart cancels the current run and re-runs the same definition after it
+  completes (no re-review). Generation/workspace tokens discard stale results
+  without skipping cleanup.
 - The environment passed to the child is the complete reviewed allowlist.
 
 `matcher.zig` classifies only text the supervisor already captured; it never
@@ -293,27 +325,64 @@ boundary, not a production limitation.
 
 ## Limits and intentional differences
 
-- **No rectangular/block selection**; selection is drag/select-all plain text.
-- **Fixed Monospace 11pt**, not the application font; no terminal font preference.
-- **Full-frame renderer**; no dirty-row incremental rendering yet.
-- **Kitty graphics and the glyph protocol are disabled**; no image display.
+- **Selection is drag/select-all plus rectangular block selection** (Alt+drag /
+  persistent block mode); copy is plain text.
+- **App editor font** (monospace family + user editor text size, live); no
+  separate terminal font preference.
+- **Dirty-row incremental renderer**; font/geometry/selection changes force full
+  redraws.
+- **Kitty graphics are bounded inline-only** (16 MiB storage, 8 MiB APC per
+  transmission, ≤1,024 placements/frame); file/temp-file/shared-memory mediums
+  and the glyph protocol remain disabled.
 - No hyperlink activation; title/pwd are labels only; no shell integration
   beyond semantic metadata.
 - **Eight sessions per window**; no cross-window terminal transfer.
-- **Tasks take no manager file barrier** (trust boundary); they are bounded
-  reviewed commands, not a general build system, and have no task dependencies,
-  parallel task runs or problem-matchers beyond the five kinds.
+- **Tasks hold the manager-wide file barrier + guardTree**, but have no per-run
+  review; they are bounded explicit user commands from repository definitions,
+  not a general build system, and have no task dependencies, parallel task runs
+  or problem-matchers beyond the five kinds.
 - **Task navigation opens files in production; the test binary records intent.**
 - Process-group ownership is **not containment**: deliberate `setsid`/`setpgid`
-  escapees are not signaled or awaited; reviewed commands run with user
-  permissions. **Not a sandbox.**
+  escapees are not signaled or awaited; commands run with user permissions.
+  **Not a sandbox.**
 - The visual gate is existing-workbench regression coverage, **not
-  terminal-window visual parity**.
+  terminal-window visual parity**, and is pending rerun for the trust-boundary
+  increment.
 
 ## Targeted validation
 
-**Targeted validation passed; the full aggregate was not rerun per user
-request.** M1–M4 parent aggregates, production and visual gates remain
+### Trust-boundary removal and terminal polish — targeted
+
+**Targeted validation passed for the trust-boundary removal / terminal polish
+increment.** Workspaces are always trusted (no consent prompts; stale-generation
+invalidation remains; not an OS sandbox); the terminal disclosure and per-run
+task review were removed; tasks hold the manager-wide file barrier + guardTree;
+the terminal gained the app editor font, dirty-row incremental rendering,
+rectangular block selection and bounded inline-only Kitty graphics.
+
+| Target | Result | Evidence |
+| --- | --- | --- |
+| `terminal` (native) | **12/12** | [log](../../../.cache/coral-m5b-terminal.log), [results](../.cache/m5b-terminal/results.json) |
+| `tasks` (native) | **7/7** | [log](../../../.cache/coral-m5b-tasks.log), [results](../.cache/m5b-tasks/results.json) |
+| `policy` (native) | **17/17** | [log](../../../.cache/coral-m5b-policy.log), [results](../.cache/m5b-policy/results.json) |
+
+Native terminal cases: `trust-direct`, `output-render`, `resize`, `exit-restart`,
+`cancel-reap`, `close-sessions`, `session-limit`, `osc-clipboard-denied`,
+`no-stdout-injection`, `editor-font`, `block-selection`, `kitty-graphics`. Native
+tasks cases: `always-trusted`, `load-and-select`, `run-and-match`,
+`navigate-problem`, `stop-and-reap`, `restart-reruns`, `bounded-problems`. The
+policy suite includes `always_trusted_no_consent` (no consent dialog, no consent
+state written, revoke retires stale permits without untrusting) plus the stale
+worker/delivery invalidation cases.
+
+**Pending parent:** docks, session-unit, widgets, hooks-disabled production and
+visual were **not rerun** for this increment and await the parent aggregate.
+Counts overlap across harnesses; they are not a unique-test total.
+
+### Prior M5 increment — historical targeted evidence
+
+**These counts describe the prior M5 increment; the full aggregate was not rerun
+per user request.** M1–M4 parent aggregates, production and visual gates remain
 historical evidence and are not relabelled as M5 validation.
 
 | Target | Result | Evidence |
@@ -367,7 +436,8 @@ within the same targeted framing (the full aggregate was not rerun):
   busy retry**.
 - **Disclosure/spawn trust re-validation.** Disclosure acceptance and spawn
   re-issue the `.tasks` permit, so a permit revoked after the disclosure was
-  requested refuses the spawn.
+  requested refuses the spawn. (Historical: the disclosure half was later removed
+  with the workspace consent boundary; spawn-time permit re-validation remains.)
 
 **Re-pass evidence:** terminal native **9/9**
 ([safety-fix results](../.cache/m5-terminal-fix/results.json), 20.267 s), surface
@@ -394,9 +464,11 @@ zig build visual -Doptimize=safe -j1 -Dghostty-prefix=../../.cache/libghostty/pr
 
 ## Next
 
-**M6 agent core is next.** M7 terminal threads will reuse this PTY service with
-the same execution disclosure. Remaining M5 polish (incremental rendering, app
-font integration, block selection, richer shell integration) is documented
-future work, not a delivered or promised capability. See the
+**M6 agent core is next.** M7 terminal threads will reuse this PTY service;
+agent execution permissions remain M6/M7 policy work (the terminal disclosure no
+longer exists). Incremental rendering, app font integration, block selection and
+bounded inline-only Kitty graphics are now delivered; richer shell integration
+and hyperlink activation remain documented future work, not a delivered or
+promised capability. See the
 [implementation plan](WORKBENCH_IMPLEMENTATION_PLAN.md) and
 [current status](WORKBENCH_STATUS.md).

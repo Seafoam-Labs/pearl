@@ -504,7 +504,7 @@ def isolation(h):
         doc = next(d for d in policy['documents'] if d['path'] == str(path))
         assert doc['effective']['values']['indent'] == indent, doc
         assert doc['effective']['origins']['indent'] == 'folder', doc
-        assert policy['trust'] == 'restricted' and not any(policy['permits']), policy
+        assert policy['trust'] == 'trusted' and all(policy['permits']), policy
     h.select(first)
     h.action('win.split-group')
     h.command('focus-explorer')
@@ -516,13 +516,13 @@ def isolation(h):
     assert len(left['groups']) == 2
     assert h.probe('dock')['desired']['explorer'] == 'right'
     h.command('policy-trust-confirm')
-    assert h.probe('policy')['confirmation']
-    h.command('respond', response=1)
+    p = h.probe('policy')
+    assert not p['dialog'] and not p['confirmation'], p
     assert h.policy_idle()['trust'] == 'trusted'
     h.select(second)
     assert len(h.state()['groups']) == 1
     assert h.probe('dock')['desired']['explorer'] == 'left'
-    assert h.policy_idle()['trust'] == 'restricted'
+    assert h.policy_idle()['trust'] == 'trusted'
     assert h.probe('search')['query'] != 'left unsaved-token'
     h.exact(h.query('left unsaved-token'), 0)
     h.exact(h.query('right unsaved-token'), 1, ['same.txt'])
@@ -1038,21 +1038,23 @@ def native_font_broadcast(h):
     h.evidence['native_fonts'] = observed
 
 
-def assert_permits(p, trusted):
-    assert p['permits'] == [trusted] * 6, p
-    assert p['trust'] == ('trusted' if trusted else 'restricted'), p
-    if not trusted:
-        assert not p['gate_valid'] and not p['retired_permit_valid'], p
+def assert_permits(p):
+    # Always trusted: every capability permit issues and validates, even while
+    # identity verification is pending or has failed. Consent concepts are gone.
+    assert p['permits'] == [True] * 6, p
+    assert p['trust'] == 'trusted', p
+    assert not p['approval_required'] and not p['confirmation'], p
+    assert not p['shared_revocation_blocked'] and not p['shared_cleanup_pending'], p
 
 
 def confirm_scope(h):
+    # Consent was removed: the trust action must not open a dialog. Kept as a
+    # no-consent assertion for callers that historically approved a scope.
     h.action('win.workspace-trust')
-    p = wait_for(lambda: p if (p := h.probe('policy'))['confirmation'] else None)
-    assert p['dialog'] and not p['shared_cleanup_pending'], p
-    h.command('respond', response=1)
+    p = h.probe('policy')
+    assert not p['dialog'] and not p['confirmation'], p
     p = h.policy_idle()
-    assert_permits(p, True)
-    assert not p['shared_revocation_blocked'], p
+    assert_permits(p)
     return p
 
 
@@ -1065,10 +1067,13 @@ def shared_revoke(h, fail_write=False):
     h.select(first, focus=True)
     h.workspace(root)
     a = confirm_scope(h)
+    h.command('policy-gate')
+    a = h.probe('policy')
+    assert a['gate_pending'] and a['gate_valid'], a
     h.select(second, focus=True)
     h.workspace(root)
     b = h.policy_idle()
-    assert_permits(b, True)  # Initial same-scope disk approval, before revoke.
+    assert_permits(b)  # Same scope is trusted in every owner; no disk approval exists.
     assert a['scope_key'] == b['scope_key'] and a['fingerprint'] == b['fingerprint'], (a, b)
     h.command('policy-gate')
     b = h.probe('policy')
@@ -1078,167 +1083,158 @@ def shared_revoke(h, fail_write=False):
     c = confirm_scope(h)
     assert c['scope_key'] != a['scope_key'], (a, c)
     h.command('policy-gate')
-    disk = h.store.read_bytes()
+    c = h.probe('policy')
+    assert not h.store.exists(), 'Consent state was written'
     for identity, delay in ((first, 3000), (second, 4500)):
         h.select(identity)
-        # Keep both removals pending for the immediate probes, but stagger
-        # successful writes: the store intentionally has a nonblocking lock.
+        # Keep the post-revoke recheck in flight so synchronous retirement is
+        # observable before the delayed identity capture delivers.
         h.command('policy-delay', delay)
         if fail_write:
             h.command('policy-fail-write')
     h.select(second, focus=True)
     h.action('win.workspace-revoke', first)
-    # No settling/recheck between revoke and B's observation. Both removals
-    # are delayed, so the permits must be invalid before disk publication.
-    b = h.probe('policy')
-    assert_permits(b, False)
-    assert b['gate_cancelled'] and not b['gate_pending'], b
-    assert b['shared_revocation_blocked'] and b['shared_cleanup_pending'], b
-    assert b['shared_revocation_generation'] > 0 and b['active'] == 'revoke', b
-    generation = b['shared_revocation_generation']
-    assert h.store.read_bytes() == disk, 'Removal committed before synchronous invalidation was observed'
+    # Revocation is local: FIRST retires its stale gate synchronously while its
+    # delayed recheck is still in flight. No consent removal is queued or
+    # written, and the same-scope sibling is never broadcast into.
     with h.at(first):
         a = h.probe('policy')
-        assert_permits(a, False)
-        assert a['shared_revocation_generation'] == generation and a['shared_cleanup_pending'], a
+        assert_permits(a)
+        assert a['gate_cancelled'] and not a['gate_pending'], a
+        assert a['queued_revokes'] == a['failed_revokes'] == 0, a
+        a = wait_for(lambda: p if (p := h.probe('policy'))['active'] == 'recheck' else None)
+    b_after = h.probe('policy')
+    assert_permits(b_after)
+    assert b_after['gate_valid'] and not b_after['gate_cancelled'], 'Local revoke broadcast into a same-scope sibling'
+    assert b_after['policy_generation'] == b['policy_generation'], b_after
     with h.at(unrelated):
-        c = h.probe('policy')
-        assert_permits(c, True)
-        assert c['gate_valid'] and c['shared_revocation_generation'] == 0 and not c['shared_revocation_blocked'], c
+        u = h.probe('policy')
+        assert_permits(u)
+        assert u['gate_valid'] and u['policy_generation'] == c['policy_generation'], u
     registry = h.windows()
-    assert registry['revoked_scopes'] == 1 and not registry['revocation_saturated'], registry
+    assert registry['revoked_scopes'] == 0 and not registry['revocation_saturated'], registry
     h.evidence.setdefault('shared_revocations', []).append(
-        dict(case=h.name, stage='synchronous-before-disk', first=a, second=b, unrelated=c, registry=registry))
+        dict(case=h.name, stage='local-synchronous-retirement', first=a, second=b_after, unrelated=u, registry=registry))
     fresh = h.new_window(wait_ready=False)
     h.workspace(root)
     p = h.policy_idle()
-    assert_permits(p, False)
-    assert p['scope_key'] == b['scope_key'] and p['shared_revocation_blocked'] and p['shared_cleanup_pending'], p
+    assert_permits(p)
+    assert p['scope_key'] == b['scope_key'] and p['shared_revocation_generation'] == 0, p
     h.action('win.workspace-trust')
     p = h.probe('policy')
     assert not p['confirmation'] and not p['dialog'], p
+    assert not h.store.exists(), 'Consent state was written'
+    # Let both delayed rechecks deliver. An injected identity failure degrades
+    # diagnostics only; trust and permits must survive it.
+    h.select(second)
+    h.command('policy-recheck')
     h.drained(4)
     for identity in (first, second):
         with h.at(identity):
             p = h.policy_idle()
-            assert_permits(p, False)
-            assert bool(p['failed_revokes']) == fail_write, p
             if fail_write:
+                h.trusted_error(p)
                 assert 'TestWriteFailed' in (p['store_error'] or ''), p
-    assert (h.store.read_bytes() == disk) == fail_write
-    # Remove every owner that saw the original approval/revocation. Only the
-    # unrelated trusted window and Manager's scope tombstone remain.
+            else:
+                h.trusted(p)
+            assert p['queued_revokes'] == p['failed_revokes'] == 0, p
+    assert not h.store.exists(), 'Revocation wrote consent state'
+    # Remove every owner that observed the revocation. Only the unrelated
+    # trusted window remains; no manager tombstone or disk grant exists.
     for identity in (first, second, fresh):
         h.close_window(identity, unrelated)
     newest = h.new_window()
     h.workspace(root)
     p = h.policy_idle()
-    assert_permits(p, False)
-    assert p['shared_revocation_generation'] == generation and p['shared_revocation_blocked'], p
-    assert not p['shared_cleanup_pending'], p
-    if fail_write:
-        assert h.store.read_bytes() == disk, 'Test must leave a real old disk approval for the new owner to reject'
+    assert_permits(p)
+    assert p['scope_key'] == b['scope_key'] and p['fingerprint'] == b['fingerprint'], p
+    assert p['shared_revocation_generation'] == 0 and not p['shared_revocation_blocked'], p
+    assert not h.store.exists()
     h.evidence.setdefault('shared_revocations', []).append(dict(case=h.name, stage='source-owners-gone', policy=p))
-    # An explicit retry removes any failed old grant, then a new confirmation
-    # acknowledges the current generation in this owner only.
-    h.action('win.workspace-revoke')
-    h.drained(2)
+    # An explicit recheck still retires outstanding stale work in this owner.
+    h.command('policy-gate')
+    before = h.probe('policy')
+    assert before['gate_pending'] and before['gate_valid'], before
+    h.command('policy-recheck')
+    p = h.probe('policy')
+    assert p['gate_cancelled'] and p['policy_generation'] > before['policy_generation'], p
     p = h.policy_idle()
-    assert not p['failed_revokes'] and not p['shared_cleanup_pending'], p
-    assert p['shared_revocation_generation'] > generation and p['shared_revocation_blocked'], p
-    approved = confirm_scope(h)
+    h.trusted(p)
+    assert p['fingerprint'] == b['fingerprint'], p
+    h.evidence.setdefault('shared_revocations', []).append(dict(case=h.name, stage='fresh-recheck', policy=p))
     with h.at(unrelated):
         p = h.policy_idle()
-        assert_permits(p, True)
+        assert_permits(p)
         assert p['gate_valid'] and p['scope_key'] == c['scope_key'], p
     h.select(newest)
-    h.evidence.setdefault('shared_revocations', []).append(dict(case=h.name, stage='fresh-confirmation', policy=approved))
     h.verify_files()
 
 
-def trust_records(path):
-    if not path.exists():
-        return []
-    raw = path.read_bytes()
-    magic = b'CORAL-TRUST\x00'
-    assert raw.startswith(magic), path
-    version = int.from_bytes(raw[len(magic):len(magic) + 4], 'little')
-    count = int.from_bytes(raw[len(magic) + 4:len(magic) + 8], 'little')
-    offset = len(magic) + 8
-    assert version == 1 and count <= 256 and len(raw) == offset + count * 32 + 32, path
-    assert bytes.fromhex(digest(raw[:-32])) == raw[-32:], 'Trust-store checksum mismatch'
-    return [raw[offset + i * 32:offset + (i + 1) * 32].hex() for i in range(count)]
-
-
-def restricted_revoke_owner_closes(h):
+def delayed_revoke_owner_closes(h):
     first, second = pair(h)
-    root = h.fixtures / 'never-approved'
-    h.write(root / 'safe.txt', 'This scope has never been trusted.\n')
+    root = h.fixtures / 'shared-scope'
+    h.write(root / 'safe.txt', 'Always trusted; no consent state exists.\n')
     before = {}
     for identity in (first, second):
         h.select(identity, focus=True)
         h.workspace(root)
         p = h.policy_idle()
-        assert_permits(p, False)
+        assert_permits(p)
         assert p['fingerprint'] and p['scope_key'] and p['shared_revocation_generation'] == 0, p
         before[identity] = p
     assert before[first]['scope_key'] == before[second]['scope_key'], before
     assert before[first]['fingerprint'] == before[second]['fingerprint'], before
-    assert trust_records(h.store) == [], 'A must never have an approval/known grant'
+    assert not h.store.exists(), 'Consent state was written'
     h.select(first)
+    h.command('policy-gate')
     h.command('policy-delay', 5000)
     h.action('win.workspace-revoke')
     p = h.probe('policy')
-    assert p['active'] == 'revoke' and p['shared_cleanup_pending'], p
-    assert_permits(p, False)
+    assert p['gate_cancelled'] and not p['gate_pending'], p
+    assert_permits(p)
     h.action('win.close-window')
     h.select(second, focus=True)
-    # B's own quick removal has finished. Only A's held job can account for
-    # shared cleanup, even though closing A has cleared its workspace model.
+    # The delayed recheck keeps closing FIRST alive. SECOND shares the scope
+    # but is untouched by the local revoke and needs no approval protocol.
     b = h.policy_idle()
     registry = h.windows()
     a = next((w for w in registry['windows'] if w['id'] == first), None)
     assert a and a['closing'] and a['holds'] > 0, ('Delayed owner already drained', registry)
     evidence = dict(case=h.name, initial=before, closing_registry=registry, sibling=b)
-    h.evidence['restricted_owner_cleanup'] = evidence
-    assert_permits(b, False)
-    assert b['shared_revocation_blocked'] and b['shared_cleanup_pending'], (
-        'Closing never-approved A lost its removal scope/key; B can approve before A deletes the grant', registry, b)
+    h.evidence['delayed_owner_cleanup'] = evidence
+    assert_permits(b)
     assert not b['pending'] and b['active'] is None, b
-    assert trust_records(h.store) == []
+    assert not h.store.exists()
     jobs = b['jobs_started']
     h.action('win.workspace-trust')
-    denied = h.probe('policy')
-    assert_permits(denied, False)
-    assert denied['shared_cleanup_pending'] and not denied['confirmation'] and not denied['dialog'], denied
-    assert denied['jobs_started'] == jobs, ('Early approval started during retired-owner cleanup', denied)
-    assert trust_records(h.store) == [], 'Early confirmation wrote a new disk approval'
+    no_dialog = h.probe('policy')
+    assert_permits(no_dialog)
+    assert not no_dialog['confirmation'] and not no_dialog['dialog'], no_dialog
+    assert no_dialog['jobs_started'] == jobs, 'Trust action started an identity job'
+    assert not h.store.exists(), 'Trust action wrote consent state'
     still_closing = h.windows()
     assert any(w['id'] == first and w['closing'] and w['holds'] > 0 for w in still_closing['windows']), still_closing
-    evidence['denied_while_owner_held'] = denied
+    evidence['no_consent_while_owner_held'] = no_dialog
     h.gone(first)
     h.drained(1)
     b = h.policy_idle()
-    assert not b['shared_cleanup_pending'], b
-    assert_permits(b, False)
-    approved = confirm_scope(h)
-    key = approved['fingerprint']
-    assert trust_records(h.store) == [key], (approved, trust_records(h.store))
-    saved = h.store.read_bytes()
-    # Revalidation actually consults disk; it must not merely retain an in-memory
-    # permit after the retired owner deletes the newly approved fingerprint.
+    assert_permits(b)
+    key = b['fingerprint']
+    assert key == before[second]['fingerprint'], (b, before)
+    # Revalidation re-captures identity from the filesystem; no consent record
+    # is consulted, and the retired owner's departure changes nothing.
     h.command('policy-recheck')
     revalidated = h.policy_idle()
-    assert_permits(revalidated, True)
-    assert revalidated['fingerprint'] == key and h.store.read_bytes() == saved, revalidated
-    evidence.update(approved=approved, revalidated=revalidated, store_sha256=digest(saved))
+    assert_permits(revalidated)
+    assert revalidated['fingerprint'] == key and not h.store.exists(), revalidated
+    evidence.update(revalidated=revalidated)
     h.stop()
-    assert h.store.read_bytes() == saved
+    assert not h.store.exists()
     h.launch()
     h.workspace(root)
     restored = h.policy_idle()
-    assert_permits(restored, True)
-    assert restored['fingerprint'] == key and h.store.read_bytes() == saved, restored
+    assert_permits(restored)
+    assert restored['fingerprint'] == key and not h.store.exists(), restored
     evidence['restored_after_restart'] = restored
     h.verify_files()
 
@@ -1411,13 +1407,13 @@ SCENARIOS = [
     ('external_quit_all_clean_sibling_palette_repeated', external_quit_palette),
     ('explorer_real_button_click_chooser_ownership', explorer_button_owners),
     ('native_gtk_resolved_font_broadcast_12_24', native_font_broadcast),
-    ('same_scope_revoke_synchronous_cleanup_and_reconfirm', shared_revoke),
-    ('failed_revoke_tombstone_survives_source_close', lambda h: shared_revoke(h, fail_write=True)),
+    ('same_scope_revoke_retires_local_permits_only', shared_revoke),
+    ('failed_recheck_after_revoke_stays_trusted', lambda h: shared_revoke(h, fail_write=True)),
     ('overlapping_save_save_as_force_reservations', save_overlap),
     ('canonical_symlink_save_reservation_alias', lambda h: save_overlap(h, alias=True)),
     ('cancelled_save_releases_reservation_retry', save_cancel_release),
     ('failed_save_releases_reservation_retry', save_failure_release),
-    ('restricted_revoke_owner_close_blocks_fresh_approval', restricted_revoke_owner_closes),
+    ('delayed_revoke_owner_close_drains_sibling_trusted', delayed_revoke_owner_closes),
 ]
 
 

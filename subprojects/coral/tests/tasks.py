@@ -7,16 +7,20 @@ Every fixture workspace, task script and source file lives under the disposable
 session tree; no host file is read or written and no host repository is touched.
 Task definitions are real `.coral/tasks.json` files; the controller reads them
 through its documented fixture bridge, which drives the *actual* public entry
-points and answers the *actual* visible native dialogs. It never grants trust or
-bypasses a permit: trust is exercised through the real policy commands, and each
-run is reviewed through the real per-run disclosure.
+points. The workspace is always trusted for tasks: there is no disclosure or
+per-run review dialog to accept, and a run executes directly on the explicit
+Run/Restart command. Trust is still exercised through the real policy commands to
+prove tasks run even while the workspace is restricted.
 
 Executables are /bin/sh running fixed, disposable fixture scripts (literal argv,
 no shell interpolation by the runner). Diagnostic tasks only print; the slow task
-only sleeps; nothing writes. Cancellation cases assert the supervised process
-group is reaped (no lingering descendants). Matcher parsing, trust refusal,
-cancellation/reap and the 1000-problem bound are all asserted against the live
-CORAL_TASKS probe.
+only sleeps; nothing writes. Every run holds the manager-wide file-operation
+barrier until the job is reaped; cases assert it is engaged while running
+(manager file_operation_owner == this window) and released on every delivery path,
+including cancellation. Cancellation cases assert the supervised process group is
+reaped (no lingering descendants). Matcher parsing, the always-trusted gate,
+barrier engagement, cancellation/reap and the 1000-problem bound are all asserted
+against the live CORAL_TASKS probe.
 
 Integration gate: the binary must contain the CORAL_TASKS probe marker. A stale
 binary that predates the parent's controller/command wiring is refused up front
@@ -24,12 +28,11 @@ rather than producing misleading per-case failures.
 
 Fixture/probe API (src/tasks/tasks_controller.zig):
   actions: tasks-show tasks-run tasks-stop tasks-restart tasks-reload
-           tasks-accept tasks-reject tasks-select tasks-navigate tasks-close
-           tasks-probe
-  probe:   CORAL_TASKS {window,visible,approved,generation,busy,loading,phase,
-           launches,discarded,tasks,task_count,selected,run_index,problems,
+           tasks-select tasks-navigate tasks-close tasks-probe
+  probe:   CORAL_TASKS {window,visible,trusted,barrier,generation,busy,loading,
+           phase,launches,discarded,tasks,task_count,selected,run_index,problems,
            problem_count,problems_truncated,selected_problem,output_kind,
-           output_bytes,dialog,restart_pending,navigate_path,navigate_line,
+           output_bytes,restart_pending,navigate_path,navigate_line,
            navigate_column,status}
 """
 import argparse
@@ -150,19 +153,22 @@ class TasksHarness(WindowHarness):
         return self.probe()
 
     def open_tasks(self):
+        # Always trusted: no disclosure dialog to accept. The picker opens and
+        # loads definitions directly.
         self.command('tasks-show')
-        assert self.tp()['dialog'] == 'trust', self.tp()
-        self.command('tasks-accept')
-        return self.wait_tasks(lambda p: p['visible'] and not p['loading'] and not p['busy'])
+        p = self.wait_tasks(lambda p: p['visible'] and not p['loading'] and not p['busy'])
+        assert p['trusted'], p
+        return p
 
     def run_selected(self, index):
+        # No per-run review dialog: Run launches directly.
         self.command('tasks-select', value=index)
         assert self.tp()['selected'] == index
-        self.command('tasks-run')
-        assert self.tp()['dialog'] == 'run', self.tp()
         before = self.tp()['launches']
-        self.command('tasks-accept')
-        return self.wait_tasks(lambda p: p['launches'] > before and not p['busy'] and not p['loading'])
+        self.command('tasks-run')
+        p = self.wait_tasks(lambda p: p['launches'] > before and not p['busy'] and not p['loading'])
+        assert not p['barrier'], p
+        return p
 
     def close_tasks(self):
         self.command('tasks-close')
@@ -170,35 +176,28 @@ class TasksHarness(WindowHarness):
 
 # --- scenarios ---------------------------------------------------------------
 
-def trust_refusal(h):
+def always_trusted(h):
+    # The workspace is always trusted for tasks (the trust owner removed consent):
+    # even without invoking the trivial approval shim, the picker opens and a run
+    # executes directly with no disclosure or review dialog.
     h.setup(trust=False)
-    h.restricted()
-    h.command('tasks-show')
-    p = h.tp()
-    assert not p['approved'] and not p['visible'] and p['dialog'] is None, p
-    assert p['launches'] == 0 and p['task_count'] == 0, p
-    # A run request without trust must not launch anything.
-    h.command('tasks-run')
-    p = h.tp()
-    assert p['launches'] == 0 and not p['busy'], p
-    h.snapshot('restricted-tasks-refused')
-
-
-def disclosure_reject(h):
-    h.setup()
-    h.command('tasks-show')
-    assert h.tp()['dialog'] == 'trust'
-    h.command('tasks-reject')
-    p = h.tp()
-    assert not p['approved'] and not p['visible'], p
-    assert p['launches'] == 0, p
-    h.snapshot('trust-disclosure-rejected')
+    assert h.probe()['trust'] == 'trusted', h.probe()
+    p = h.open_tasks()
+    assert p['trusted'] and p['visible'], p
+    assert p['task_count'] == 4, p
+    p = h.run_selected(2)  # 'ok' task
+    assert p['output_kind'] == 'success', p
+    assert p['launches'] == 1, p
+    assert p['trusted'] and not p['barrier'], p
+    assert h.windows()['file_operation_owner'] is None, h.windows()
+    h.snapshot('always-trusted-runs-without-consent')
+    h.close_tasks()
 
 
 def load_and_select(h):
     h.setup()
     p = h.open_tasks()
-    assert p['approved'] and p['visible'], p
+    assert p['trusted'] and p['visible'], p
     assert p['task_count'] == 4, p
     assert p['tasks'] == ['diagnostics', 'slow', 'ok', 'many'], p
     h.command('tasks-select', value=0)
@@ -208,19 +207,6 @@ def load_and_select(h):
     h.snapshot('tasks-loaded-and-selected')
     h.close_tasks()
     assert not h.tp()['visible']
-
-
-def run_review_reject(h):
-    h.setup()
-    h.open_tasks()
-    h.command('tasks-select', value=0)
-    h.command('tasks-run')
-    assert h.tp()['dialog'] == 'run'
-    h.command('tasks-reject')
-    p = h.idle_tasks()
-    assert p['launches'] == 0 and p['problem_count'] == 0, p
-    h.snapshot('run-review-rejected')
-    h.close_tasks()
 
 
 def run_and_match(h):
@@ -258,11 +244,13 @@ def stop_and_reap(h):
     h.setup()
     h.open_tasks()
     h.command('tasks-select', value=1)
+    before = h.tp()['launches']
     h.command('tasks-run')
-    assert h.tp()['dialog'] == 'run'
-    h.command('tasks-accept')
-    running = h.wait_tasks(lambda p: p['busy'] and p['phase'] == 'running')
+    running = h.wait_tasks(lambda p: p['busy'] and p['phase'] == 'running' and p['launches'] > before)
     assert running['launches'] >= 1
+    # The manager-wide barrier is engaged for the whole run, not just a local flag.
+    assert running['barrier'], running
+    assert h.windows()['file_operation_owner'] == h.target, h.windows()
     # The slow task's process group must be alive while running.
     assert any('slow.sh' in line or 'sleep' in line for line in descendant_cmdlines(h.app.proc.pid)), \
         descendant_cmdlines(h.app.proc.pid)
@@ -270,6 +258,9 @@ def stop_and_reap(h):
     p = h.idle_tasks()
     assert p['output_kind'] == 'cancelled', p
     assert not p['busy'], p
+    # Released on the cancellation delivery path.
+    assert not p['barrier'], p
+    assert h.windows()['file_operation_owner'] is None, h.windows()
     # Supervised cancellation reaps the whole group: no lingering descendants.
     def reaped():
         lingering = [line for line in descendant_cmdlines(h.app.proc.pid)
@@ -287,12 +278,12 @@ def restart_reruns(h):
     assert first['output_kind'] == 'success', first
     assert first['problem_count'] == 0, first
     launches = first['launches']
+    # Restart re-runs directly; there is no review dialog to accept.
     h.command('tasks-restart')
-    assert h.tp()['dialog'] == 'run', h.tp()
-    h.command('tasks-accept')
     p = h.wait_tasks(lambda q: q['launches'] > launches and not q['busy'] and not q['loading'])
     assert p['output_kind'] == 'success', p
     assert p['launches'] == launches + 1, p
+    assert not p['barrier'], p
     h.snapshot('task-restarted')
     h.close_tasks()
 
@@ -310,10 +301,8 @@ def bounded_problems(h):
 
 
 SCENARIOS = [
-    ('trust-refusal', trust_refusal),
-    ('disclosure-reject', disclosure_reject),
+    ('always-trusted', always_trusted),
     ('load-and-select', load_and_select),
-    ('run-review-reject', run_review_reject),
     ('run-and-match', run_and_match),
     ('navigate-problem', navigate_problem),
     ('stop-and-reap', stop_and_reap),

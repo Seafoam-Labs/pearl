@@ -6,13 +6,21 @@ Run via the parent-wired coral-test binary (build with -Dtest-hooks=true and
 parent wires app/commands: terminal-probe -> Controller.probe(), the
 terminal-* fixtures -> Controller.fixture(), and focus-terminal shows the dock
 panel. All input goes to a private headless Wayland session; HOME/XDG state and
-workspace fixtures are disposable. Terminal output has no action authority:
-titles/links/OSC never dispatch workbench actions, and OSC clipboard is denied.
+workspace fixtures are disposable.
+
+The workspace is ALWAYS trusted (the consent boundary was removed), so a user
+action spawns a terminal directly with no disclosure prompt; the capability
+permit is still re-validated at the spawn boundary. Terminal output has no
+action authority: titles/links/OSC never dispatch workbench actions, and OSC
+clipboard is denied. The terminal follows the application editor font, renders
+incrementally by dirty row, supports rectangular/block selection, and enables
+bounded inline-only Kitty graphics.
 
 Evidence (including partial failures, probes and screenshots) goes to
 .cache/coral-terminal. A 400-second whole-suite alarm leaves cleanup headroom.
 """
 import argparse
+import base64
 import json
 import signal
 import sys
@@ -28,18 +36,19 @@ SENTINEL = 'CORAL-TERMINAL-CLIPBOARD-SENTINEL'
 
 
 class TerminalHarness(PolicyHarness):
-    # Inherit PolicyHarness.probe (default kind='policy') and .settled so the
-    # trust/dialog/permits helpers read CORAL_POLICY. probe('terminal') reads
-    # CORAL_TERMINAL without policy assertions.
+    # The workspace is always trusted, so the policy-suite invariants (restricted
+    # mode, consent, permit gating while pending) no longer apply. Read probes
+    # without those assertions; terminal acceptance only asserts terminal state.
+    def probe(self, kind='policy'):
+        return Harness.probe(self, kind)
 
-    def setup(self, approve=True):
+    def setup(self):
         self.command('window-resize', width=1200, height=800)
         root = self.fixtures / 'root'
         self.write(root / 'readme.txt', 'terminal workspace fixture\n')
         self.root = root
         self.open_workspace(root, folder=True)
-        if approve:
-            self.approve()
+        # No approval/disclosure step: the workspace is always trusted.
         return self.terminal('setup')
 
     def terminal(self, label=None):
@@ -68,11 +77,13 @@ class TerminalHarness(PolicyHarness):
         self.command('dock-resize', 'bottom', size=420)
 
     def open_terminal(self):
-        """Trust is accepted in setup; accept disclosure, spawn and show."""
+        """Trust is implicit; a user action spawns directly, then show the dock."""
         self.term('terminal-new')
-        self.term('terminal-accept')
         self.show()
         return self.wait_session(lambda p: p['count'] >= 1 and self.active(p)['phase'] == 'running')
+
+    def clipboard(self):
+        return self.session.run(['wl-paste', '--no-newline'], check=False).stdout
 
 
 def wait_text(h, needle, timeout=10):
@@ -84,33 +95,22 @@ def wait_text(h, needle, timeout=10):
 
 # ---- Scenarios ----
 
-def trust_gate(h):
-    h.setup(approve=False)
-    h.restricted()
-    # Restricted workspace: a terminal must not spawn.
+def trust_direct(h):
+    h.setup()
+    p = h.terminal('trusted-setup')
+    assert p['trust'] == 'trusted', p
+    # A user action spawns directly: no disclosure prompt and no accept step.
     h.term('terminal-new')
-    p = h.terminal('restricted-new')
-    assert p['count'] == 0 and p['trust'] == 'restricted', p
-    assert p['last_error'] == 'restricted', p
-    assert not any(s['phase'] == 'running' for s in p['sessions']), p
-    # Trust alone is not enough: explicit disclosure is still required.
-    h.approve()
-    h.trusted()
-    h.term('terminal-new')
-    p = h.terminal('trusted-pending-disclosure')
-    assert p['count'] == 0 and p['disclosure_pending'] and not p['disclosure_accepted'], p
-    assert p['last_error'] == 'disclosure', p
-    # Rejecting disclosure leaves no session.
-    h.term('terminal-reject')
-    p = h.terminal('disclosure-rejected')
-    assert p['count'] == 0 and not p['disclosure_pending'], p
-    # Accepting disclosure spawns exactly one running session.
-    h.term('terminal-new')
-    h.term('terminal-accept')
     h.show()
     p = h.wait_session(lambda p: p['count'] == 1 and h.active(p)['phase'] == 'running')
-    assert p['disclosure_accepted'] and not p['disclosure_pending'], p
     assert p['spawned'] == 1, p
+    assert p['last_error'] is None, p
+    # Restart re-validates the trust permit at the spawn boundary and spawns fresh.
+    first = h.active(p)['id']
+    h.term('terminal-restart')
+    p = h.wait_session(lambda p: (s := h.active(p)) is not None and s['phase'] == 'running' and s['id'] != first)
+    assert p['spawned'] >= 2, p
+    h.screenshot('trust-direct')
 
 
 def output_render(h):
@@ -211,12 +211,12 @@ def osc_clipboard_denied(h):
     wait_text(h, 'CORAL_CLIP_SENTINEL')
     h.term('terminal-select-all')
     h.term('terminal-copy')
-    wait_for(lambda: 'CORAL_CLIP_SENTINEL' in h.session.run(['wl-paste', '--no-newline'], check=False).stdout, 6)
+    wait_for(lambda: 'CORAL_CLIP_SENTINEL' in h.clipboard(), 6)
     # OSC 52 write (base64 "coral-attack") and read are both denied by policy.
     h.term('terminal-write', 'printf "\\033]52;c;Y29yYWwtYXR0YWNr\\007"\r')
     h.term('terminal-write', 'printf "\\033]52;c;?\\007"\r')
     time.sleep(0.5)
-    clip = h.session.run(['wl-paste', '--no-newline'], check=False).stdout
+    clip = h.clipboard()
     assert 'CORAL_CLIP_SENTINEL' in clip and 'coral-attack' not in clip, clip
     h.screenshot('osc-clipboard-denied')
 
@@ -241,8 +241,105 @@ def no_stdout_injection(h):
     h.screenshot('no-stdout-injection')
 
 
+def editor_font(h):
+    h.setup()
+    h.open_terminal()
+    s = h.active()
+    settings = h.probe('workspace')['settings']
+    # The terminal follows the application editor font family and size.
+    assert s['font_family'] == 'monospace', s
+    assert s['font_size'] == settings['font'], (s, settings)
+    base_cell = s['cell_height']
+    assert base_cell > 0 and s['cell_width'] > 0, s
+    # Enlarge the editor font; the reaper pushes it and cell metrics recompute.
+    h.command('settings', theme=settings['theme'], font=24)
+    p = h.wait_session(lambda p: (x := h.active(p)) is not None and x['font_size'] == 24)
+    s = h.active(p)
+    assert s['cell_height'] > base_cell, (base_cell, s)
+    h.screenshot('editor-font-24')
+    # Shrink it again; metrics follow back down (no fixed Monospace 11).
+    h.command('settings', theme=settings['theme'], font=10)
+    p = h.wait_session(lambda p: (x := h.active(p)) is not None and x['font_size'] == 10)
+    s = h.active(p)
+    assert s['cell_height'] < base_cell, (base_cell, s)
+    h.screenshot('editor-font-10')
+
+
+def block_selection(h):
+    h.setup()
+    h.open_terminal()
+    # Lay down a deterministic grid of identical rows.
+    h.term('terminal-write', 'printf "0123456789\\n0123456789\\n0123456789\\n"\r')
+    s = wait_text(h, '0123456789')
+    lines = s['text'].split('\n')
+    rows = [i for i, ln in enumerate(lines) if ln.strip() == '0123456789']
+    assert len(rows) >= 3 and rows[1] == rows[0] + 1 and rows[2] == rows[0] + 2, (rows, s['text'])
+    r0 = rows[0]
+    # An input serial is required for Wayland clipboard ownership.
+    h.key('Shift_L')
+    h.term('terminal-focus')
+    # Select columns 2..5 across the three marker rows -> a "2345" block.
+    h.term('terminal-select-block', f'2,{r0},5,{r0 + 2}')
+    h.term('terminal-copy')
+    clip = wait_for(lambda: t if '2345' in (t := h.clipboard()) else None, 6)
+    block_lines = [ln for ln in clip.split('\n') if ln != '']
+    assert block_lines == ['2345', '2345', '2345'], (clip, block_lines)
+    h.screenshot('block-selection')
+    # Linear select-all still copies the full row text (contrast with the block).
+    h.term('terminal-select-all')
+    h.term('terminal-copy')
+    full = wait_for(lambda: t if '6789' in (t := h.clipboard()) else None, 6)
+    assert '0123456789' in full, full
+    # Persistent block mode is reflected in the probe (Alt+drag uses the same path).
+    h.term('terminal-block-mode', '1')
+    p = h.terminal('block-mode-on')
+    assert h.active(p)['block_mode'] is True, p
+    h.term('terminal-block-mode', '0')
+    p = h.terminal('block-mode-off')
+    assert h.active(p)['block_mode'] is False, p
+
+
+def kitty_graphics(h):
+    h.setup()
+    h.open_terminal()
+    s = h.active()
+    # Bounded inline-only storage: enabled, file/shared-memory mediums disabled.
+    assert s['kitty_storage_limit'] > 0, s
+    assert s['kitty_file_medium'] is False and s['kitty_shm_medium'] is False, s
+    gen0 = s['kitty_generation']
+    # Transmit a 24x24 inline RGB image (four colored quadrants) through the
+    # shell (printf -> terminal). Natural pixel size keeps it visible.
+    size = 24
+    pixels = bytearray()
+    for y in range(size):
+        for x in range(size):
+            if y < size // 2:
+                px = (255, 0, 0) if x < size // 2 else (0, 255, 0)
+            else:
+                px = (0, 0, 255) if x < size // 2 else (255, 255, 0)
+            pixels.extend(px)
+    b64 = base64.b64encode(bytes(pixels)).decode()
+    # Hide the long command echo so the screenshot shows the rendered image.
+    h.term('terminal-write', 'stty -echo; clear\r')
+    time.sleep(0.2)
+    h.term('terminal-write', "printf '\\033_Ga=T,f=24,s=24,v=24,i=1,q=2,c=12,r=6;" + b64 + "\\033\\\\'\r")
+    p = h.wait_session(lambda p: (x := h.active(p)) is not None and x['kitty_generation'] != gen0)
+    s = h.active(p)
+    assert s['phase'] == 'running', s
+    h.screenshot('kitty-image')
+    h.term('terminal-write', 'stty echo\r')
+    # A file-medium image must be rejected (medium disabled): generation unchanged.
+    gen1 = s['kitty_generation']
+    h.term('terminal-write', "printf '\\033_Ga=T,f=24,s=2,v=2,i=2,t=f,q=2;/tmp/coral-nope\\033\\\\'\r")
+    time.sleep(0.5)
+    s = h.active()
+    assert s['kitty_generation'] == gen1, s
+    assert s['phase'] == 'running', s
+    h.screenshot('kitty-file-medium-denied')
+
+
 SCENARIOS = [
-    ('trust-gate', trust_gate),
+    ('trust-direct', trust_direct),
     ('output-render', output_render),
     ('resize', resize),
     ('exit-restart', exit_restart),
@@ -251,6 +348,9 @@ SCENARIOS = [
     ('session-limit', session_limit),
     ('osc-clipboard-denied', osc_clipboard_denied),
     ('no-stdout-injection', no_stdout_injection),
+    ('editor-font', editor_font),
+    ('block-selection', block_selection),
+    ('kitty-graphics', kitty_graphics),
 ]
 
 
@@ -269,7 +369,7 @@ def main():
     evidence = {'status': 'running', 'checks': [], 'invocation': [sys.executable, *sys.argv],
                 'binary': str(args.binary.resolve()), 'runtime_budget_seconds': 400,
                 'selected_cases': [n for n, _ in scenarios], 'total_available_cases': len(SCENARIOS),
-                'scope': 'Native M5 libghostty-vt terminal: trust/disclosure gate, rendering, resize, lifecycle, OSC policy.',
+                'scope': 'Native M5 libghostty-vt terminal: always-trusted direct spawn, editor font, dirty-row rendering, block selection, bounded Kitty graphics, lifecycle, OSC policy.',
                 'isolation': 'Private headless compositor/D-Bus; independent per-case HOME/XDG and fixtures.'}
 
     def expired(_signal, _frame):

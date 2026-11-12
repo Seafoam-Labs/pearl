@@ -1,8 +1,10 @@
 //! M5 production terminal controller. Owns bounded terminal sessions (tabs),
-//! the workspace-trust + explicit-disclosure gate, and the ONLY waitpid reaper
-//! (via the worker Job). libghostty-vt holds VT state; surface.zig draws and
-//! translates input; pty.zig spawns and owns the process group. Terminal output
-//! has no action authority: title/pwd metadata only updates labels.
+//! the workspace-trust permit revalidation, and the ONLY waitpid reaper
+//! (via the worker Job). The workspace is always trusted, so a user action
+//! spawns a session directly with no disclosure prompt. libghostty-vt holds VT
+//! state; surface.zig draws and translates input; pty.zig spawns and owns the
+//! process group. Terminal output has no action authority: title/pwd metadata
+//! only updates labels.
 //!
 //! Thread boundary: the worker starts and waits on the PTY; the GTK main thread
 //! reads the master through a GIO watch and feeds ghostty_terminal_vt_write.
@@ -232,20 +234,19 @@ pub const Controller = struct {
     root: u.W,
     tab_bar: u.W,
     stack: u.W,
-    disclosure: u.W,
-    disclosure_label: u.W,
     status: u.W,
     slot: ?u.W = null,
     sessions: [max_sessions]?*Session = @splat(null),
     active: ?usize = null,
     next_id: u64 = 1,
-    disclosure_accepted: bool = false,
-    disclosure_pending: bool = false,
     closed: bool = false,
     timeout_id: c_uint = 0,
     last_error: ?[]const u8 = null,
     spawned: u64 = 0,
     reaped: u64 = 0,
+    // Last editor font size pushed to session surfaces; the reaper tick compares
+    // it against the live app setting so font changes recompute cell metrics.
+    applied_font: c_int = 0,
 
     pub fn init(app: *App) Controller {
         const root = u.box(false, 0);
@@ -267,34 +268,13 @@ pub const Controller = struct {
         c.gtk_widget_add_css_class(status, "terminal-status");
         u.append(root, status);
 
-        const disclosure = u.box(false, 8);
-        c.gtk_widget_add_css_class(disclosure, "terminal-disclosure");
-        u.margin(disclosure, 16);
-        const disclosure_label = u.label("");
-        c.gtk_label_set_wrap(u.cast(c.GtkLabel, disclosure_label), 1);
-        u.append(disclosure, disclosure_label);
-        const buttons = u.box(true, 8);
-        const accept = u.button("Accept and open terminal");
-        c.gtk_widget_add_css_class(accept, "suggested-action");
-        const reject = u.button("Cancel");
-        u.append(buttons, accept);
-        u.append(buttons, reject);
-        u.append(disclosure, buttons);
-        u.append(root, disclosure);
-        c.gtk_widget_set_visible(disclosure, 0);
-
-        var self: Controller = .{
+        return .{
             .app = app,
             .root = root,
             .tab_bar = tab_bar,
             .stack = stack,
-            .disclosure = disclosure,
-            .disclosure_label = disclosure_label,
             .status = status,
         };
-        u.connect(accept, "clicked", &acceptClicked, &self);
-        u.connect(reject, "clicked", &rejectClicked, &self);
-        return self;
     }
 
     /// Attach the controller widget into the dock's terminal slot and start the
@@ -328,8 +308,9 @@ pub const Controller = struct {
         return null;
     }
 
-    /// Request a new session. Requires workspace trust AND explicit disclosure.
-    /// Returns an error and records last_error when gated; never spawns silently.
+    /// Request a new session. The workspace is always trusted, so a user action
+    /// spawns directly with no disclosure prompt. The capability permit is still
+    /// re-validated at the spawn boundary. Records last_error when gated.
     pub fn newSession(self: *Controller) !void {
         if (self.closed) return error.Closed;
         if (self.count() >= max_sessions) {
@@ -337,24 +318,12 @@ pub const Controller = struct {
             self.refresh();
             return error.SessionLimit;
         }
-        _ = self.app.workspace_policy.issue(.tasks) catch {
-            self.last_error = "restricted";
-            self.refresh();
-            return error.Restricted;
-        };
-        if (!self.disclosure_accepted) {
-            self.disclosure_pending = true;
-            self.last_error = "disclosure";
-            self.showDisclosure();
-            return error.DisclosureRequired;
-        }
         try self.spawn();
     }
 
     fn spawn(self: *Controller) !void {
-        // Re-validate the capability at the actual spawn boundary (covers new,
-        // restart and disclosure-accept paths); trust is a precondition, not a
-        // per-command approval.
+        // Re-validate the capability at the actual spawn boundary (covers new
+        // and restart paths); trust is a precondition, not a per-command approval.
         _ = self.app.workspace_policy.issue(.tasks) catch {
             self.last_error = "restricted";
             self.refresh();
@@ -388,6 +357,8 @@ pub const Controller = struct {
 
         session.surface = Surface.init(session.hooks(), default_cols, default_rows) catch |err| return err;
         errdefer session.surface.deinit();
+        // Follow the application editor font (family + size) from the start.
+        session.surface.setFont(surface_mod.editor_font_family, self.app.settings.font);
         session.surface.attach();
 
         session.job = .{ .config = .{
@@ -403,58 +374,11 @@ pub const Controller = struct {
         self.sessions[index] = session;
         self.active = index;
         self.spawned += 1;
+        self.applied_font = self.app.settings.font;
         _ = c.gtk_stack_add_named(u.cast(c.GtkStack, self.stack), session.surface.widget, session.stack_name);
         c.gtk_stack_set_visible_child_name(u.cast(c.GtkStack, self.stack), session.stack_name);
-        self.hideDisclosure();
         self.refresh();
         session.surface.focus();
-    }
-
-    fn showDisclosure(self: *Controller) void {
-        u.setLabel(self.disclosure_label, "Open a terminal in this workspace?\n\nCommands run with your user permissions. Workspace trust is NOT an OS sandbox and does not approve individual commands. Terminal output cannot control the workbench: titles, links and escape sequences never trigger actions. Clipboard access from programs is denied by default.");
-        c.gtk_widget_set_visible(self.disclosure, 1);
-        c.gtk_widget_set_visible(self.stack, 0);
-    }
-    fn hideDisclosure(self: *Controller) void {
-        self.disclosure_pending = false;
-        c.gtk_widget_set_visible(self.disclosure, 0);
-        c.gtk_widget_set_visible(self.stack, 1);
-    }
-
-    fn acceptClicked(_: *c.GtkButton, data: ?*anyopaque) callconv(.c) void {
-        const self: *Controller = @ptrCast(@alignCast(data.?));
-        self.acceptDisclosure();
-    }
-    fn rejectClicked(_: *c.GtkButton, data: ?*anyopaque) callconv(.c) void {
-        const self: *Controller = @ptrCast(@alignCast(data.?));
-        self.rejectDisclosure();
-    }
-
-    pub fn acceptDisclosure(self: *Controller) void {
-        if (self.closed) return;
-        // Re-validate trust at acceptance time: it may have been revoked since
-        // the disclosure was first requested. Never spawn on a stale permit.
-        _ = self.app.workspace_policy.issue(.tasks) catch {
-            self.disclosure_pending = false;
-            self.last_error = "restricted";
-            self.hideDisclosure();
-            self.refresh();
-            return;
-        };
-        self.disclosure_accepted = true;
-        self.disclosure_pending = false;
-        self.last_error = null;
-        self.hideDisclosure();
-        self.spawn() catch |err| {
-            self.last_error = @errorName(err);
-            self.refresh();
-        };
-    }
-    pub fn rejectDisclosure(self: *Controller) void {
-        self.disclosure_pending = false;
-        self.last_error = "rejected";
-        self.hideDisclosure();
-        self.refresh();
     }
 
     pub fn closeActive(self: *Controller) void {
@@ -614,9 +538,23 @@ pub const Controller = struct {
 
     /// Bounded reaper: finalize sessions whose worker has completed. Never waits
     /// on a live command; the worker has already published its completed wait.
+    /// Push the live application editor font to every session surface. The
+    /// reaper tick calls this so an editor font-size change recomputes terminal
+    /// cell metrics (and the grid) without reopening the session.
+    fn syncEditorFont(self: *Controller) void {
+        const size = self.app.settings.font;
+        if (size == self.applied_font) return;
+        self.applied_font = size;
+        for (self.sessions) |slot| {
+            const session = slot orelse continue;
+            session.surface.setFont(surface_mod.editor_font_family, size);
+        }
+    }
+
     fn reapTick(data: ?*anyopaque) callconv(.c) c_int {
         const self: *Controller = @ptrCast(@alignCast(data.?));
         if (self.closed) return 0;
+        self.syncEditorFont();
         for (self.sessions, 0..) |slot, i| {
             const session = slot orelse continue;
             if (session.phase == .starting and session.job.ready()) {
@@ -690,12 +628,9 @@ pub const Controller = struct {
         self.refresh();
     }
 
-    /// Workspace changed: cancel/reap every session and reset disclosure. The
-    /// reaper timeout completes cleanup asynchronously; deinit drains synchronously.
+    /// Workspace changed: cancel/reap every session. The reaper timeout
+    /// completes cleanup asynchronously; deinit drains synchronously.
     pub fn invalidate(self: *Controller) void {
-        self.disclosure_accepted = false;
-        self.disclosure_pending = false;
-        self.hideDisclosure();
         for (self.sessions, 0..) |slot, i| {
             const session = slot orelse continue;
             if (session.finalized) {
@@ -742,6 +677,15 @@ pub const Controller = struct {
             mapped: bool,
             width: c_int,
             height: c_int,
+            font_family: []const u8,
+            font_size: c_int,
+            cell_width: u32,
+            cell_height: u32,
+            block_mode: bool,
+            kitty_storage_limit: u64,
+            kitty_generation: u64,
+            kitty_file_medium: bool,
+            kitty_shm_medium: bool,
             text: []const u8,
         };
         var views: std.ArrayList(SessionView) = .empty;
@@ -750,6 +694,7 @@ pub const Controller = struct {
             const session = slot orelse continue;
             // Ownership transfers to views; freed after serialization below.
             const text = self.screenText(session);
+            const kinfo = session.surface.kittyInfo();
             views.append(a, .{
                 .id = session.id,
                 .phase = @tagName(session.phase),
@@ -763,6 +708,15 @@ pub const Controller = struct {
                 .mapped = c.gtk_widget_get_mapped(session.surface.widget) != 0,
                 .width = c.gtk_widget_get_width(session.surface.widget),
                 .height = c.gtk_widget_get_height(session.surface.widget),
+                .font_family = session.surface.font_family[0..session.surface.font_family_len],
+                .font_size = session.surface.font_size_px,
+                .cell_width = session.surface.cell_width,
+                .cell_height = session.surface.cell_height,
+                .block_mode = session.surface.block_mode,
+                .kitty_storage_limit = kinfo.storage_limit,
+                .kitty_generation = kinfo.generation,
+                .kitty_file_medium = kinfo.file_medium,
+                .kitty_shm_medium = kinfo.shm_medium,
                 .text = text,
             }) catch unreachable;
         }
@@ -772,8 +726,7 @@ pub const Controller = struct {
             .active = if (self.active) |i| self.sessions[i].?.id else null,
             .limit = @as(usize, max_sessions),
             .trust = @tagName(self.app.workspace_policy.policy.state),
-            .disclosure_accepted = self.disclosure_accepted,
-            .disclosure_pending = self.disclosure_pending,
+            .editor_font = self.app.settings.font,
             .last_error = self.last_error,
             .spawned = self.spawned,
             .reaped = self.reaped,
@@ -812,10 +765,17 @@ pub const Controller = struct {
         if (!test_hooks) return false;
         if (std.mem.eql(u8, action, "terminal-probe")) {
             self.probe();
-        } else if (std.mem.eql(u8, action, "terminal-accept")) {
-            self.acceptDisclosure();
-        } else if (std.mem.eql(u8, action, "terminal-reject")) {
-            self.rejectDisclosure();
+        } else if (std.mem.eql(u8, action, "terminal-block-mode")) {
+            if (self.activeSession()) |session| session.surface.setBlockMode(std.mem.eql(u8, value, "1"));
+        } else if (std.mem.eql(u8, action, "terminal-select-block")) {
+            var it = std.mem.splitScalar(u8, value, ',');
+            const x0 = std.fmt.parseInt(u16, it.next() orelse "0", 10) catch 0;
+            const y0 = std.fmt.parseInt(u16, it.next() orelse "0", 10) catch 0;
+            const x1 = std.fmt.parseInt(u16, it.next() orelse "0", 10) catch 0;
+            const y1 = std.fmt.parseInt(u16, it.next() orelse "0", 10) catch 0;
+            if (self.activeSession()) |session| session.surface.selectRectangle(x0, y0, x1, y1);
+        } else if (std.mem.eql(u8, action, "terminal-clear-selection")) {
+            if (self.activeSession()) |session| session.surface.clearSelection();
         } else if (std.mem.eql(u8, action, "terminal-new")) {
             self.newSession() catch {};
         } else if (std.mem.eql(u8, action, "terminal-close")) {

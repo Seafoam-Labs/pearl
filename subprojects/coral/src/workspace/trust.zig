@@ -1,6 +1,8 @@
-//! Machine-owned trust precondition, not general tool approval or an OS sandbox.
-//! No executable service is attached. Workspace data cannot grant trust. Filesystem
-//! capture and persistence live in trust_fs.zig and must run on workers, without GTK.
+//! Workspace identity and stale-work invalidation, not an OS sandbox. By user
+//! request the workspace consent boundary was removed: Policy is ALWAYS trusted
+//! and never refuses a capability. Scope/generation tokens still retire stale
+//! work. Filesystem capture and persistence live in trust_fs.zig and must run
+//! on workers, without GTK; the stored approvals there no longer gate anything.
 const std = @import("std");
 const routing = @import("identity.zig");
 
@@ -85,8 +87,8 @@ pub const Directory = struct {
 };
 
 /// Move-only capture. No process-local workspace token is persisted or hashed.
-/// Retain this to show precisely what the user is approving; fingerprint alone
-/// is not a substitute for showing the scope and effective policy in the UI.
+/// Retain this to detect scope/policy changes and retire stale work; the
+/// fingerprint identifies the exact workspace incarnation, not a consent grant.
 pub const Identity = struct {
     arena: std.heap.ArenaAllocator,
     manifest_base: ?Directory,
@@ -150,36 +152,25 @@ pub const Permit = struct {
 /// code from fabricating a value. The caller must also check its live Scope.
 /// Use exactly one Policy per scope token; recreating it requires a fresh token.
 ///
-/// begin()/beginApproval() invalidate permits before dispatching worker work.
-/// Complete only with a worker result for that ticket AND a freshly checked key.
-/// A changed settings/model generation must immediately call begin(),
-/// not wait for an outstanding worker. Filesystem changes require revalidation;
-/// this is a snapshot, not a recursive watcher or per-syscall authorization.
+/// ALWAYS trusted: there is no restricted state, consent, or revocation. issue()
+/// succeeds for every capability; validate() only checks scope/generation and
+/// capability. begin() invalidates earlier permits before dispatching worker
+/// work, and complete() consumes a ticket, so stale results stay rejected. A
+/// changed settings/model generation must immediately call begin(), not wait
+/// for an outstanding worker. This is a snapshot, not a recursive watcher or
+/// per-syscall authorization.
 pub const Policy = struct {
     scope: routing.Token,
     generation: u64 = 1,
-    state: State = .restricted,
-    key: ?Fingerprint = null,
+    /// Kept for UI/diagnostic readers; never assigned anything but .trusted.
+    state: State = .trusted,
     exhausted: bool = false,
-    locally_revoked: bool = false,
-    approval_pending: bool = false,
 
     pub fn init(scope: routing.Token) Policy {
         return .{ .scope = scope };
     }
 
-    /// Sticky for this Policy's lifetime, including after failed persistence:
-    /// background reloads cannot resurrect the old on-disk approval. Only a new
-    /// explicit, successful approval can clear this local restriction.
-    pub fn revoke(self: *Policy) void {
-        self.locally_revoked = true;
-        self.invalidate();
-    }
-
     fn invalidate(self: *Policy) void {
-        self.state = .restricted;
-        self.key = null;
-        self.approval_pending = false;
         self.generation = std.math.add(u64, self.generation, 1) catch {
             self.exhausted = true;
             return;
@@ -193,44 +184,26 @@ pub const Policy = struct {
         return .{ .scope = scope, .generation = self.generation };
     }
 
-    /// Use only for explicit user approval, never for automatic restore/recheck.
-    pub fn beginApproval(self: *Policy, scope: routing.Token, _: Approval) !Ticket {
-        const ticket = try self.begin(scope);
-        self.approval_pending = true;
-        return ticket;
-    }
-
     pub fn accepts(self: *const Policy, ticket: Ticket) bool {
         return !self.exhausted and self.generation == ticket.generation and sameScope(self.scope, ticket.scope);
     }
 
-    /// Complete with null after ANY worker error. Only a durable approval or a
-    /// successful load/revalidate may supply approved_key. UI must independently
-    /// reject results from old model/settings generations before this call.
-    pub fn complete(self: *Policy, ticket: Ticket, current_key: Fingerprint, approved_key: ?Fingerprint) bool {
+    /// Consume a worker ticket. Returns whether it was current; either way it
+    /// is retired, so duplicate or late completions cannot apply stale work.
+    /// Trust is never a condition: the workspace is always trusted.
+    pub fn complete(self: *Policy, ticket: Ticket) bool {
         if (!self.accepts(ticket)) return false;
-        // Consume the ticket, including on failure: duplicate completions cannot
-        // grant after a newer failed completion of the same request.
-        const may_grant = !self.locally_revoked or self.approval_pending;
         self.invalidate();
-        if (self.exhausted or !may_grant) return false;
-        if (approved_key) |key| {
-            if (same(key, current_key)) {
-                self.locally_revoked = false;
-                self.key = key;
-                self.state = .trusted;
-            }
-        }
-        return self.state == .trusted;
+        return !self.exhausted;
     }
 
     pub fn issue(self: *const Policy, capability: Capability) !Permit {
-        if (self.exhausted or self.state != .trusted) return error.Restricted;
+        if (self.exhausted) return error.GenerationExhausted;
         return .{ .ticket = .{ .scope = self.scope, .generation = self.generation }, .capability = capability };
     }
 
     pub fn validate(self: *const Policy, permit: Permit, scope: routing.Token, capability: Capability) bool {
-        return self.state == .trusted and sameScope(scope, self.scope) and permit.capability == capability and self.accepts(permit.ticket);
+        return sameScope(scope, self.scope) and permit.capability == capability and self.accepts(permit.ticket);
     }
 };
 fn sameScope(a: routing.Token, b: routing.Token) bool {

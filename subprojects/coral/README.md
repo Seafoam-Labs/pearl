@@ -5,15 +5,17 @@ GtkSourceView editing and offline Enchant spell checking. Its native foundation
 includes independent editor groups, editable source excerpts and crash recovery,
 with Pearl appearance. Multi-root workspaces include a bounded virtualized explorer,
 Quick Open, streaming text search, movable native Explorer/Search docks, safe
-settings with provenance, and explicit persistent workspace trust. Automatic project
+settings with provenance, and always-trusted workspaces (the consent boundary was
+removed by user request; no trust prompts). Automatic project
 and scratch-window snapshots, ordinary multi-window startup, native recent-project
 and buffer pickers, and reviewed workspace-root management complete **M2 implementation**
 for the bounded workspace preview. Explicit saved checkpoints remain separate.
 Reviewed Explorer operations provide bounded create/rename/move/permanent-delete
 workflows. **The bounded M3 baseline is complete; detected-language automatic
 startup is implemented and validated within its documented limits.** Approved local
-language servers start automatically in trusted, unpaused workspaces and provide
-command-driven features, diagnostics, semantic tags and reviewed edits.
+language servers start automatically in unpaused workspaces (workspaces are always
+trusted; exact server approval is still required) and provide command-driven
+features, diagnostics, semantic tags and reviewed edits.
 **M4 Git/review core workflows and UI parity are implemented:** a real Source
 Control dock panel (grouped Staged/Unstaged/Untracked, tree/flat, commit entry,
 reviewed section/all/selected staging) and an editable multi-file Project Diff
@@ -31,16 +33,23 @@ watchers, and a read-only original diff side. **M5 terminal and tasks are
 implemented and validated (targeted):** a production Terminal dock (fourth panel,
 persisted layout) renders **libghostty-vt 1.0.1 — not VTE** through a Coral-owned
 GTK4 Cairo/Pango renderer, with Coral-owned PTY process ownership and the only
-waitpid reaper, a GIO read watch, trust plus explicit disclosure, bounded eight
-sessions, new/close/restart/cancel, resize/scrollback/selection/paste and a safe
-OSC policy (clipboard denied, title/checksum reports off, Kitty graphics/glyph
-disabled, notifications/window-resize ignored). Workspace tasks run reviewed
-absolute-argv commands (no shell) from bounded `.coral/tasks.json` definitions
-under supervised capture with zig/gcc/clang/python/generic problem matchers and an
-Output/Problems UI. Targeted gates passed; the full aggregate was not rerun.
-Remaining limits include no rectangular block selection, a fixed Monospace 11pt
-terminal font, full-frame rendering and disabled Kitty graphics. Agent services
-remain later work; **M6 agent core is next**. See the
+waitpid reaper, a GIO read watch, always-trusted spawn with no disclosure prompt,
+bounded eight sessions, new/close/restart/cancel, resize/scrollback/selection/paste
+and a safe OSC policy (clipboard denied, title/checksum reports off, bounded
+inline-only Kitty graphics with file/temp/shm mediums and the glyph protocol
+disabled, notifications/window-resize ignored). The terminal follows the **app
+editor font**, renders **dirty rows incrementally** and supports **rectangular
+block selection**. Workspace tasks run **explicit user commands** (absolute argv,
+no shell) from bounded `.coral/tasks.json` definitions under supervised capture
+with zig/gcc/clang/python/generic problem matchers and an Output/Problems UI; each
+run holds the **manager-wide file barrier with guardTree** open-document/root
+protection. By user request the workspace consent boundary, terminal disclosure
+and per-run task review were removed. **Security tradeoff:** opening a workspace
+immediately enables these executable surfaces with your user permissions;
+stale-generation invalidation, barriers, bounded capture and the remaining
+Git/language approvals are **not an OS sandbox**. Latest targeted gates: terminal
+12/12, tasks 7/7, policy 17/17; docks/session/widgets/production/visual are pending
+the parent aggregate. Agent services remain later work; **M6 agent core is next**. See the
 [M3 language guide](docs/WORKBENCH_M3_LANGUAGE.md),
 [M4 Git guide](docs/WORKBENCH_M4_GIT.md) and
 [M5 terminal/tasks guide](docs/WORKBENCH_M5_TERMINAL.md).
@@ -140,12 +149,19 @@ user → workspace → folder → language overrides. **Workspace: Settings and 
 shows effective values and their origins. **Rescan** adopts updated folder settings;
 repository values never overwrite user preferences.
 
-Workspaces start **restricted**. **Trust workspace…** requires confirmation and
-persists an exact machine-owned approval; **Workspace: Revoke trust** invalidates
-permits for matching workspace scopes across this process immediately and removes
-the approval asynchronously. Trust is not
-blanket tool permission and starts no services. See the [settings/trust guide](docs/WORKBENCH_M2_POLICY.md)
-for filesystem identity requirements, storage errors and revocation limits.
+**Workspaces are always trusted, by explicit user request.** Restricted mode and
+the workspace consent boundary were removed: there are no trust confirmation or
+revocation prompts, and no consent state is read or written. **Trust workspace…**
+only reports that no approval is required; **Workspace: Revoke trust** retires
+outstanding permits so stale work cannot continue, but cannot untrust a workspace.
+**Workspace: Settings and Trust…** still shows settings provenance and identity
+diagnostics, and Recheck still revalidates identity. **Stale-generation
+invalidation remains:** root/policy/identity changes retire stale permits and
+results. Trust is not blanket tool permission — language servers still need exact
+server approval and Git still needs subprocess disclosure — and it is **not an OS
+sandbox**: services run with your user permissions. See the
+[settings/trust guide](docs/WORKBENCH_M2_POLICY.md) for the removed consent
+boundary, retained identity invalidation and the explicit security tradeoff.
 
 **Save Workspace Session** / **Restore Workspace Session** in the palette persist
 one explicit checkpoint of roots, tabs, groups, excerpts, view state and dock layout. Clean files
@@ -198,7 +214,8 @@ for **New file… / New directory… / Rename… / Move… / Delete permanently�
 and worker preparation do not write: **all five kinds require explicit review confirmation**.
 Creates are exclusive and do not auto-open; moves stay within one root/filesystem;
 delete is permanent, regular-file/empty-directory only, with no trash, undo or recursion.
-Restricted workspaces permit these explicit edits without running tools. All affected
+These explicit edits never run tools, and automatic workspace trust does not bypass
+their review or admission checks. All affected
 open documents, **clean or dirty in any window**, must be resolved and closed first.
 Any unavailable root or root/manifest lexical `..` in any open process workspace blocks
 all mutations with `WorkspaceBusy`; close that workspace or reopen verified available,
@@ -213,10 +230,10 @@ and the [M2 acceptance audit and validation checkpoint](docs/WORKBENCH_M2_ACCEPT
 
 ## Language intelligence — automatic startup implemented and validated
 
-Open a saved file in a workspace and explicitly approve **Workspace: Settings and
-Trust…** (or restore a valid exact prior trust grant). Detected-language discovery
-runs after open, project/session restore, successful Save/Save As and language
-changes. In a trusted, unpaused workspace, an exactly approved server starts
+Open a saved file in a workspace. Workspaces are always trusted, so there is no
+workspace approval step; **exact server approval remains required**. Detected-language
+discovery runs after open, project/session restore, successful Save/Save As and
+language changes. In an unpaused workspace, an exactly approved server starts
 automatically; a new or changed approval key gets one first-use prompt to review
 its executable identity, arguments, effective environment and root cwd.
 **Language: Stop all sessions** persistently pauses the workspace after successful
@@ -280,14 +297,15 @@ Unstage selected hunk…** and **Next/Previous hunk**, plus **Toggle Source Cont
 dock**, **Focus Source Control**, **Git: Project Diff…** (with Refresh Project
 Diff, next/previous hunk, stage/unstage hunk, stage/unstage selection and
 unified/split/word view commands) and the workflow commands below. Three surfaces
-share the trust/disclosure boundary: the **Source Control dock panel** (a third
+share the subprocess-disclosure boundary (workspace trust is automatic): the **Source Control dock panel** (a third
 dock panel beside Explorer/Search with persisted layout), the **Project Diff
 window** (multi-file, editable current side) and the **separate native Source
 Control window** that owns repository discovery, repository/root selection,
 branch/status, paged paths and noneditable **index → disk / HEAD → index** previews.
-Git requires a trusted workspace **and per-window subprocess disclosure approval**;
-there is no Git execution at startup or in restricted mode. The initial read-only
-disclosure does **not** authorize writes or queue a mutation. Select an actual
+Workspaces are always trusted, but Git still requires **per-window subprocess
+disclosure approval**; there is no Git execution at startup, and declining the
+disclosure launches nothing. The initial read-only disclosure does **not** authorize
+writes or queue a mutation; destructive mutations keep their separate reviews. Select an actual
 Source Control status row, not an editor buffer, then request a separate **FULL FILE,
 NOT HUNKS** review — or a **ONE HUNK, NOT THE WHOLE FILE** review for the selected
 hunk. Complete escaped before/after bytes, existence, modes, byte counts
@@ -327,7 +345,7 @@ disk/index snapshot: **unsaved edits are excluded and never saved**; the window
 warns and offers Save through a parent callback. Binary/mode/rename/absent sides
 get explicit non-text states.
 
-Worker-only prepare performs no repository writes. Apply requires valid trust,
+Worker-only prepare performs no repository writes. Apply requires valid permits,
 generations/selection and the manager operation barrier; it rechecks the full index,
 HEAD/ref, root/Git-dir bindings and selected disk snapshot. Exclusive `index.lock`
 ownership, a verified single-path private-index proposal and stat-cache invalidation
@@ -465,46 +483,63 @@ not an additive unique-test total.
 Open the **Terminal** dock from the activity rail or palette (**Toggle Terminal
 dock**, **Focus Terminal**). It is the fourth dock panel beside Explorer/Search/
 Source Control, moves left/right/bottom, resizes, hides and persists its layout;
-old sessions decode to a hidden bottom panel. **Terminal: New session** requires
-a trusted workspace **and an explicit disclosure** (commands run with your user
-permissions; trust is not a sandbox; output cannot control the workbench;
-program clipboard access is denied). Sessions are bounded to **eight per window**
-(80×24 default, `$SHELL` or `/bin/sh`, first-root cwd, fixed environment
-allowlist) with **New / Close / Restart / Cancel**; Cancel stops the command and
-reaps/removes the session. A worker owns the PTY process group and is the only
-waitpid reaper (TERM → 150 ms grace → KILL); the main thread reads through a GIO
-watch. The Coral-owned Cairo/Pango renderer draws libghostty-vt render state with
-resize, **10 MiB / 10,000-line scrollback**, drag/select-all selection, plain-text
-copy and bracketed paste. The safe OSC policy denies clipboard read/write, turns
-off title/checksum reports, disables Kitty graphics/glyph, and ignores
-notifications/window-resize; title/pwd only update labels. Limits: no rectangular
-block selection, fixed **Monospace 11pt** (not the app font), full-frame rendering
-(no dirty-row incremental), no hyperlink activation, and no containment of
-deliberate `setsid`/`setpgid` escapees.
+old sessions decode to a hidden bottom panel. **Terminal: New session** spawns
+directly on the user action: workspaces are always trusted and the terminal
+disclosure was removed. The capability permit is still re-validated at spawn, so
+stale scope/generation cannot launch; commands run with your user permissions,
+output cannot control the workbench, and program clipboard access is denied.
+Sessions are bounded to **eight per window** (80×24 default, `$SHELL` or
+`/bin/sh`, first-root cwd, fixed environment allowlist) with **New / Close /
+Restart / Cancel**; Cancel stops the command and reaps/removes the session. A
+worker owns the PTY process group and is the only waitpid reaper (TERM → 150 ms
+grace → KILL); the main thread reads through a GIO watch. The Coral-owned
+Cairo/Pango renderer draws libghostty-vt render state with resize, **10 MiB /
+10,000-line scrollback**, **dirty-row incremental rendering**, drag/select-all
+plus **rectangular block selection (Alt+drag)**, plain-text copy and bracketed
+paste, and follows the **app editor font** (monospace family and the user's
+editor text size, updated live). The safe OSC policy denies clipboard read/write,
+turns off title/checksum reports, ignores notifications/window-resize, and allows
+**bounded inline-only Kitty graphics** (16 MiB storage, 8 MiB per-transmission
+APC cap, 1,024 placements per frame; file/temp-file/shared-memory mediums and the
+glyph protocol disabled); title/pwd only update labels. Limits: no hyperlink
+activation, and no containment of deliberate `setsid`/`setpgid` escapees — this
+is not an OS sandbox.
 
 **Tasks: Run task…** loads bounded **`.coral/tasks.json`** definitions from each
 workspace root (version 1; 64 tasks total, 64 KiB/file, depth 8, 64 argv/env,
 128-byte names, 8,192-byte strings, 4,095-byte paths). `argv[0]` must be
 **absolute**; argv is literal with **no shell/PATH lookup/expansion**; cwd is
 root-relative inside the root; env is a **complete allowlist** (nothing
-inherited). Each run requires trust **and a per-run review of the exact
-argv/cwd/env/matcher**. Runs use the supervised capture boundary (1 MiB combined
+inherited). Runs are **explicit user commands**: the per-run trust gate and
+argv/cwd/env review were removed with the workspace consent boundary, so choosing
+Run executes the repository-supplied definition directly with your user
+permissions. Every run holds the **manager-wide file-operation barrier** from
+launch until the process is reaped, and **guardTree** refuses runs while any open
+document (clean or dirty, in any window), nested workspace root or manifest lies
+under the task root. Runs use the supervised capture boundary (1 MiB combined
 output, 30 s timeout) with Stop cancelling/reaping the process group and Restart
-re-reviewing; tasks take **no manager file barrier** (trust boundary). Output is
-classified by **zig/gcc/clang/python/generic** matchers into at most 1,000
-problems (256 visible) with a truncated flag; the Output/Problems dialog navigates
+cancelling then re-running the same definition. Output is classified by
+**zig/gcc/clang/python/generic** matchers into at most 1,000 problems (256
+visible) with a truncated flag; the Output/Problems dialog navigates
 through a parent callback — production opens the file, the instrumented test
 binary records intent. Commands: `tasks-show`, `tasks-run`, `tasks-stop`,
 `tasks-restart` (no default keybindings).
 
-**M5 targeted evidence:** `task-unit` **16/16**, native terminal **9/9**, native
-tasks **9/9**, docks **27/27**, `session-unit` **27/27**, widgets **213/213**
-(48.284 s), hooks-disabled production **46/46 steps** and visual **16/16 cases**
-passed ([guide](docs/WORKBENCH_M5_TERMINAL.md#targeted-validation)). The **full
-aggregate was not rerun** per user request; M1–M4 gates remain historical.
-Earlier failed attempts (a tasks `navigate-problem` timeout and a docks run) are
-retained in the guide. `test-m5-slice` composes only the changed M5 surfaces.
-This is not full Zed/VS Code terminal parity; **M6 agent core is next**.
+**Trust-boundary removal / terminal polish targeted evidence:** native terminal
+**12/12** (including `trust-direct`, `editor-font`, `block-selection`,
+`kitty-graphics`), native tasks **7/7** (including `always-trusted`) and native
+policy **17/17** (including `always_trusted_no_consent`) passed
+([terminal log](../../.cache/coral-m5b-terminal.log),
+[tasks log](../../.cache/coral-m5b-tasks.log),
+[policy log](../../.cache/coral-m5b-policy.log)). **Docks, session-unit, widgets,
+hooks-disabled production and visual are pending the parent aggregate** and were
+not rerun for this increment. The earlier M5 targeted counts (`task-unit` 16/16,
+terminal 9/9, tasks 9/9, docks 27/27, `session-unit` 27/27, widgets 213/213,
+production 46/46, visual 16/16) remain historical for the prior increment
+([guide](docs/WORKBENCH_M5_TERMINAL.md#targeted-validation)); M1–M4 gates remain
+historical, and earlier failed attempts are retained in the guide.
+`test-m5-slice` composes only the changed M5 surfaces. This is not full Zed/VS
+Code terminal parity; **M6 agent core is next**.
 
 ## Implemented
 
@@ -611,10 +646,14 @@ was not rerun for the UI increment; the read-only aggregate and second-increment
 evidence remain historical. Remaining limits are explicit (no annotated tags/PR
 API, no watchers, read-only original diff side, visual matrix not rerun for the new
 UI) and full Zed/UI parity is not claimed.
-M5 terminal and tasks are implemented and passed targeted validation (task-unit
-16, terminal native 9, tasks native 9, docks 27, session-unit 27, widgets 213,
-production 46/46, visual 16/16); the full aggregate was not rerun per user
-request. Agent UI remains unimplemented; M6 agent core is next**. See the
+M5 terminal and tasks are implemented; the trust-boundary removal and terminal
+polish increment passed targeted validation (terminal native 12, tasks native 7,
+policy native 17), with docks/session/widgets/production/visual pending the parent
+aggregate. Earlier targeted counts (task-unit 16, terminal 9, tasks 9, docks 27,
+session-unit 27, widgets 213, production 46/46, visual 16/16) remain historical.
+Workspaces are always trusted by user request (no consent prompts; stale-generation
+invalidation remains; not an OS sandbox); Git subprocess disclosure and language
+server approval remain. Agent UI remains unimplemented; M6 agent core is next**. See the
 [M4 verification status](docs/WORKBENCH_M4_GIT.md#final-m4-core-workflow-validation--accepted)
 and [M5 terminal/tasks guide](docs/WORKBENCH_M5_TERMINAL.md).
 Explore the separate [interactive workbench prototype](docs/mockups/workbench/index.html)

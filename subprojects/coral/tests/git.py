@@ -151,14 +151,21 @@ class GitHarness(WindowHarness):
         manifest = self.write(self.fixtures / 'fixture.coral-workspace', json.dumps(
             {'version': 1, 'roots': [{'path': str(root)} for root in roots]}))
         self.open_workspace(manifest)
-        self.restricted(self.policy_idle())
+        self.trusted(self.policy_idle())
 
     def trust(self):
+        # Always trusted: the legacy confirm command must not open a consent
+        # dialog. Source Control keeps its own subprocess disclosure below.
         self.command('policy-trust-confirm')
         p = self.probe('policy')
-        assert p['dialog'] and p['confirmation'], p
-        self.command('respond', response=1)
+        assert not p['dialog'] and not p['confirmation'], p
         self.trusted(self.policy_idle())
+
+    def restricted(self, p=None):
+        # Compatibility shim for the git_mutations/git_ui helpers: restricted
+        # mode was removed. Revocation only retires stale permits, so the
+        # post-revoke observation is the always-trusted state.
+        return self.trusted(p)
 
     def git(self):
         p = self.probe('git')
@@ -272,20 +279,26 @@ class GitHarness(WindowHarness):
         self.reaped()
 
 
-def restricted(h):
+def disclosure_gate(h):
     root = h.repo()
     h.write(root / 'same.txt', 'DISK\n')
     h.watch_indexes()
     h.workspace_roots([root])
     before = h.git()
+    # Always trusted: Git's own subprocess disclosure is the only remaining
+    # gate. Every inspection action presents it and never launches Git.
     for action in ('status', 'refresh', 'diff', 'staged-diff'):
         h.invoke(action)
         p = h.idle()
-        assert not p['disclosure'] and not p['approved'] and not p['visible'], p
+        assert p['disclosure'] and not p['approved'] and not p['visible'], p
         assert p['launches'] == 0 and not p['repositories'], p
-    h.command('git-accept')  # answering no disclosure cannot manufacture trust
+    h.command('git-reject')  # declining the disclosure keeps Git stopped
     h.unchanged(before)
-    h.restricted(h.policy_idle())
+    h.trusted(h.policy_idle())
+    h.disclosure()
+    h.command('git-accept')  # the tool's own approval suffices; no workspace consent exists
+    p = h.idle()
+    assert p['approved'] and p['visible'] and p['launches'] > 0 and p['repositories'], p
 
 
 def decline(h):
@@ -524,7 +537,7 @@ def pending_teardown(h, mode):
         h.workspace_roots([other])
     elif mode == 'revoke':
         h.command('policy-revoke')
-        h.restricted(h.policy_idle())
+        h.trusted(h.policy_idle())
     else:
         h.command('git-close')
     p = h.idle()
@@ -535,8 +548,9 @@ def pending_teardown(h, mode):
     h.drained(1)
     h.unchanged(p)
     if mode == 'close':
-        # Closing the surface invalidates consent. Re-open, block another real
-        # job, then quit the application itself without pre-closing Git.
+        # Closing the surface invalidates the Source Control approval. Re-open,
+        # block another real job, then quit the application itself without
+        # pre-closing Git.
         marker.unlink()
         h.disclosure()
         h.command('git-accept')
@@ -554,7 +568,7 @@ from git_mutations import CASES as MUTATION_CASES
 
 
 CASES = [
-    ('gates-restricted', restricted),
+    ('gates-disclosure', disclosure_gate),
     ('gates-decline', decline),
     ('diff-sides', diff_sides),
     ('status-kinds', status_kinds),

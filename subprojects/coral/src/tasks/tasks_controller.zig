@@ -3,13 +3,21 @@
 //! workspace `.coral/tasks.json` (task.zig); output is captured by the supervised
 //! tasks/process.zig boundary (not a PTY) and classified by matcher.zig.
 //!
-//! Executable workspace content is gated twice: the workspace trust permit
-//! (.tasks) AND an explicit per-run review of the exact argv/cwd/environment.
-//! Neither is an OS sandbox; a reviewed command runs with the user's permissions.
+//! The workspace is always trusted for tasks (trust is owned elsewhere); there is
+//! no per-run disclosure or review dialog. A run executes directly on the user's
+//! explicit Run/Restart command. This is NOT an OS sandbox: the command runs with
+//! the user's permissions and can read/write files and access the network.
 //! Async jobs use App.hold/release, generation/workspace tokens and the process
-//! supervisor's cancellation/reaping. Tasks do not take the manager file barrier:
-//! they are not assumed to mutate workspace files, but the trust gate still
-//! applies. Navigation is delegated to a parent-supplied callback (open file/line).
+//! supervisor's cancellation/reaping.
+//!
+//! Every run holds the manager-wide file-operation barrier from launch until the
+//! job is reaped (completion or cancellation), matching git/refs_controller.zig:
+//! manager-wide save/load/modal admission plus protection of open documents,
+//! nested roots and manifests across peer windows. The barrier source is a narrow
+//! definition-file path (the index-path pattern) so a workspace root that IS the
+//! task root does not false-positive as RootMutation; an explicit guardTree
+//! supplies the affected-tree protection. The barrier is released on every
+//! delivery path. Navigation is delegated to a parent-supplied callback.
 const std = @import("std");
 const u = @import("../c.zig");
 const c = u.c;
@@ -18,9 +26,7 @@ const App = @import("../app.zig").App;
 const process = @import("process.zig");
 const task = @import("task.zig");
 const matcher = @import("matcher.zig");
-const trust = @import("../workspace/trust.zig");
 const identity = @import("../workspace/identity.zig");
-const UI = @import("../language/ui.zig").UI;
 const hooks = @import("build_options").test_hooks;
 
 pub const capture_bytes = task.limits.output_bytes;
@@ -29,15 +35,6 @@ pub const max_tasks = task.limits.tasks;
 pub const max_visible_problems = 256;
 
 const Phase = enum { idle, loading, running };
-const DialogAction = enum { trust, run };
-
-const disclosure =
-    "Tasks run workspace-defined commands as your user, only in a trusted workspace and only after you review the exact command. " ++
-    "Definitions are read from .coral/tasks.json in each workspace root: an absolute executable, literal argv (no shell), a root-relative working directory and a complete environment allowlist. " ++
-    "Each run shows the exact argv, working directory and environment for approval before anything executes. " ++
-    "A task can read/write files and access the network with your permissions; workspace trust is NOT an OS sandbox and does not contain a reviewed command. " ++
-    "Output is captured (bounded 1 MiB) and matched into at most 1000 problems; nothing is executed to produce problems. " ++
-    "Stop cancels and reaps the process group. At most 64 tasks are loaded.";
 
 /// Parent-supplied navigation: open `path` at 1-based `line`/`column` (column 0
 /// when unknown). The controller resolves relative problem paths against the
@@ -52,10 +49,7 @@ pub const Controller = struct {
     load_job: ?*LoadJob = null,
     generation: u64 = 1,
     phase: Phase = .idle,
-    permit: ?trust.Permit = null,
-    approved: bool = false,
-    dialog: UI,
-    dialog_action: ?DialogAction = null,
+    barrier: bool = false,
     definitions: ?task.Definitions = null,
     selected: ?usize = null,
     run_index: ?usize = null,
@@ -87,14 +81,13 @@ pub const Controller = struct {
         return .{
             .app = app,
             .arena = std.heap.ArenaAllocator.init(a),
-            .dialog = .{ .context = app, .respond = &answered },
             .output_text = u.z(""),
-            .message_text = u.z("Tasks — trust and per-run review required"),
+            .message_text = u.z("Tasks — run workspace commands"),
         };
     }
     pub fn deinit(self: *Controller) void {
         // App holds keep this controller alive until every cancelled job is reaped.
-        std.debug.assert(self.job == null and self.load_job == null and self.supervisor.isIdle());
+        std.debug.assert(self.job == null and self.load_job == null and self.supervisor.isIdle() and !self.barrier);
         self.invalidate();
         self.supervisor.shutdown();
         self.clearDefinitions();
@@ -107,10 +100,8 @@ pub const Controller = struct {
     }
     pub fn invalidate(self: *Controller) void {
         self.cancel();
-        self.approved = false;
-        self.permit = null;
-        self.dialog_action = null;
-        self.dialog.close();
+        // The barrier is NOT released here: a cancelled child may still be
+        // writing. It is held until the job is reaped (completed callback).
         self.closeWindow();
         self.clearDefinitions();
         self.clearProblems();
@@ -120,9 +111,10 @@ pub const Controller = struct {
     pub fn busy(self: *const Controller) bool {
         return self.job != null or self.load_job != null;
     }
+    /// The workspace is always trusted for tasks; the only gates are a live app
+    /// and an open tasks window. Trust permits and per-run review were removed.
     pub fn valid(self: *Controller) bool {
-        return !self.app.closing and self.approved and self.window != null and
-            (if (self.permit) |permit| self.app.workspace_policy.validate(permit, .tasks) else false);
+        return !self.app.closing and self.window != null;
     }
     fn cancel(self: *Controller) void {
         self.generation = std.math.add(u64, self.generation, 1) catch @panic("tasks generation exhausted");
@@ -180,41 +172,10 @@ pub const Controller = struct {
                 return;
             }
         }
-        self.permit = self.app.workspace_policy.issue(.tasks) catch {
-            self.app.message("Tasks are restricted. Trust the workspace before running tasks.");
-            return;
-        };
-        self.dialog_action = .trust;
-        self.dialog.context = self;
-        self.dialog.show(self.app, "Tasks — subprocess disclosure", disclosure, &.{}, false, "Continue to tasks");
-    }
-    fn answered(context: *anyopaque, accepted: bool, _: ?usize, _: []const u8) void {
-        const self = u.cast(Controller, context);
-        const action = self.dialog_action orelse return;
-        self.dialog_action = null;
-        if (self.app.closing) return;
-        switch (action) {
-            .trust => {
-                if (!accepted) return;
-                const permit = self.permit orelse return;
-                if (!self.app.workspace_policy.validate(permit, .tasks)) {
-                    self.app.message("Workspace trust changed. Invoke Tasks again.");
-                    return;
-                }
-                self.approved = true;
-                self.createWindow();
-                self.loadDefinitions();
-            },
-            .run => {
-                const index = self.run_index orelse return;
-                if (!accepted) return;
-                if (!self.valid()) {
-                    self.app.message("Workspace trust changed. Invoke Tasks again.");
-                    return;
-                }
-                self.launch(index);
-            },
-        }
+        // Always trusted: open the picker and load definitions directly, with no
+        // disclosure dialog or trust permit.
+        self.createWindow();
+        self.loadDefinitions();
     }
 
     pub fn run(self: *Controller) void {
@@ -230,7 +191,7 @@ pub const Controller = struct {
             self.message("Select a task to run.");
             return;
         };
-        self.showRunReview(index);
+        self.launch(index);
     }
     pub fn stop(self: *Controller) void {
         if (self.job) |job| {
@@ -259,25 +220,7 @@ pub const Controller = struct {
             self.message("Wait for the task list to finish loading.");
             return;
         }
-        self.showRunReview(index);
-    }
-    fn showRunReview(self: *Controller, index: usize) void {
-        const defs = &(self.definitions orelse return);
-        if (index >= defs.tasks.len) return;
-        const def = defs.tasks[index];
-        self.run_index = index;
-        const argv_json = std.json.Stringify.valueAlloc(a, def.argv, .{}) catch return;
-        defer a.free(argv_json);
-        const env_json = std.json.Stringify.valueAlloc(a, def.env, .{}) catch return;
-        defer a.free(env_json);
-        const matcher_name = if (def.matcher) |kind| matcher.kindName(kind) else "none";
-        const body = std.fmt.allocPrintSentinel(a, "Run task \"{s}\" as your user?\n\nExecutable/argv: {s}\nWorking directory: {s}\nEnvironment allowlist: {s}\nProblem matcher: {s}\n\n" ++
-            "This is the exact command that will execute. It has your user permissions and can read/write files and access the network. " ++
-            "Workspace trust is NOT an OS sandbox. No shell is used; argv elements are literal. Stop cancels and reaps the process group.", .{ def.name, argv_json, def.cwd, env_json, matcher_name }, 0) catch return;
-        defer a.free(body);
-        self.dialog_action = .run;
-        self.dialog.context = self;
-        self.dialog.show(self.app, "Tasks — review exact command", body, &.{}, false, "Run task");
+        self.launch(index);
     }
 
     // --- definition loading (worker) -----------------------------------------
@@ -289,7 +232,6 @@ pub const Controller = struct {
             return;
         };
         const token = self.app.workspace.capture() orelse return;
-        const permit = self.permit orelse return;
         const job = a.create(LoadJob) catch return;
         var arena = std.heap.ArenaAllocator.init(a);
         const alloc = arena.allocator();
@@ -316,7 +258,6 @@ pub const Controller = struct {
             .owner = self,
             .generation = self.generation,
             .workspace = token,
-            .permit = permit,
             .arena = arena,
             .roots = root_slice,
         };
@@ -340,7 +281,7 @@ pub const Controller = struct {
         self.clearDefinitions();
         self.definitions = defs;
         self.renderTasks();
-        const text = u.fmt("{d} task(s) loaded. Select a task, then Run to review the exact command.", .{defs.tasks.len});
+        const text = u.fmt("{d} task(s) loaded. Select a task, then Run.", .{defs.tasks.len});
         defer a.free(text);
         self.message(text);
     }
@@ -353,8 +294,26 @@ pub const Controller = struct {
         if (index >= defs.tasks.len) return;
         const def = defs.tasks[index];
         const token = self.app.workspace.capture() orelse return;
+        // Manager-wide file-operation barrier, held until the job is reaped.
+        // guardTree protects open documents/nested roots/manifests across peer
+        // windows; the narrow definition-file source avoids a RootMutation false
+        // positive when the task root IS a workspace root (the index-path pattern
+        // from git/refs_controller.zig).
+        self.guardTree(def.root) catch |err| {
+            self.blocked(err);
+            return;
+        };
+        const source = u.fmt("{s}/.coral/tasks.json", .{def.root});
+        defer a.free(source);
+        self.acquireBarrier(source, "") catch |err| {
+            self.blocked(err);
+            return;
+        };
         var environment: [task.limits.env]process.Environment = undefined;
-        if (def.env.len > environment.len) return;
+        if (def.env.len > environment.len) {
+            self.releaseBarrier();
+            return;
+        }
         for (def.env, environment[0..def.env.len]) |entry, *out| out.* = .{ .name = entry.name, .value = entry.value };
         self.clearProblems();
         self.setOutput("running", "");
@@ -372,6 +331,7 @@ pub const Controller = struct {
             .output_limit = capture_bytes,
             .timeout_ms = task.limits.timeout_ms,
         }, &completed, self) catch |err| {
+            self.releaseBarrier();
             self.phase = .idle;
             self.failure(err);
             self.updateButtons();
@@ -390,6 +350,11 @@ pub const Controller = struct {
         defer job.destroy();
         std.debug.assert(self.job == job);
         self.job = null;
+        // The job is reaped before this callback fires, so the barrier has been
+        // held through completion/cancellation. Release it on every delivery path
+        // (including discards) before any restart re-launch in afterRun, which
+        // must acquire a fresh barrier. releaseBarrier is idempotent.
+        self.releaseBarrier();
         if (result.identity.generation != self.generation) {
             self.discarded += 1;
             self.afterRun();
@@ -443,9 +408,58 @@ pub const Controller = struct {
         if (self.restart_pending) {
             self.restart_pending = false;
             if (self.valid()) {
-                if (self.run_index) |index| self.showRunReview(index);
+                if (self.run_index) |index| self.launch(index);
             }
         }
+    }
+
+    // --- manager file-operation barrier --------------------------------------
+
+    fn acquireBarrier(self: *Controller, source: []const u8, destination: []const u8) !void {
+        const manager = self.app.manager orelse return error.NoManager;
+        try manager.beginFileOperation(self.app, source, destination);
+        self.barrier = true;
+    }
+    fn releaseBarrier(self: *Controller) void {
+        if (!self.barrier) return;
+        self.barrier = false;
+        if (self.app.manager) |manager| manager.endFileOperation(self.app);
+    }
+    fn blocked(self: *Controller, err: anyerror) void {
+        const text = u.fmt("Tasks: run blocked ({s}). Finish pending workspace activity or close open documents, then Run again.", .{@errorName(err)});
+        defer a.free(text);
+        self.message(text);
+    }
+    /// Affected-tree protection across every window (git/refs_controller.zig
+    /// pattern): an open document bound under the tree refuses the run (clean
+    /// documents are bound too), a nested workspace root or a manifest inside the
+    /// tree refuses it. The tree root itself survives a content-only run, so
+    /// equality is allowed; manager-wide admission is enforced by the barrier.
+    fn guardTree(self: *Controller, tree: []const u8) !void {
+        const manager = self.app.manager orelse return error.NoManager;
+        for (manager.entries) |entry| {
+            const window = entry orelse continue;
+            const app = window.app;
+            for (app.snapshotDocuments()) |doc| {
+                if (doc.path) |path| if (contains(tree, path)) return error.OpenDocument;
+            }
+            if (app.browser.model) |snapshot| {
+                for (snapshot.roots) |root| {
+                    if (!std.mem.eql(u8, root.lexical_path, tree) and contains(tree, root.lexical_path)) return error.RootMutation;
+                    if (root.canonical_path) |canonical| {
+                        if (!std.mem.eql(u8, canonical, tree) and contains(tree, canonical)) return error.RootMutation;
+                    }
+                }
+                if (snapshot.manifest_path) |manifest| if (contains(tree, manifest)) return error.ProtectedManifest;
+            }
+            if (app.browser.manifest_canonical) |manifest| if (contains(tree, manifest)) return error.ProtectedManifest;
+        }
+    }
+    /// Component-boundary containment: `tree` contains `path` when equal or a
+    /// directory ancestor. Mirrors git/command.zig contains without coupling the
+    /// tasks subsystem to git.
+    fn contains(tree: []const u8, path: []const u8) bool {
+        return std.mem.eql(u8, tree, path) or (std.mem.startsWith(u8, path, tree) and (std.mem.eql(u8, tree, "/") or (path.len > tree.len and path[tree.len] == '/')));
     }
 
     // --- presentation --------------------------------------------------------
@@ -681,10 +695,6 @@ pub const Controller = struct {
             self.restart();
         } else if (std.mem.eql(u8, action, "tasks-reload")) {
             reloadClicked(null, self);
-        } else if (std.mem.eql(u8, action, "tasks-accept")) {
-            self.dialog.answer(true, null, value);
-        } else if (std.mem.eql(u8, action, "tasks-reject")) {
-            self.dialog.answer(false, null, "");
         } else if (std.mem.eql(u8, action, "tasks-select")) {
             self.selectTask(std.fmt.parseInt(usize, value, 10) catch return true);
         } else if (std.mem.eql(u8, action, "tasks-navigate")) {
@@ -717,7 +727,8 @@ pub const Controller = struct {
         const bytes = std.json.Stringify.valueAlloc(a, .{
             .window = self.app.window_id,
             .visible = self.window != null,
-            .approved = self.approved,
+            .trusted = true,
+            .barrier = self.barrier,
             .generation = self.generation,
             .busy = self.busy(),
             .loading = self.load_job != null,
@@ -734,7 +745,6 @@ pub const Controller = struct {
             .selected_problem = self.selected_problem,
             .output_kind = self.output_kind,
             .output_bytes = self.output_text.len,
-            .dialog = if (self.dialog_action) |action| @as(?[]const u8, @tagName(action)) else null,
             .restart_pending = self.restart_pending,
             .navigate_path = self.navigate_path,
             .navigate_line = self.navigate_line,
@@ -754,7 +764,6 @@ const LoadJob = struct {
     owner: *Controller,
     generation: u64,
     workspace: identity.Token,
-    permit: trust.Permit,
     arena: std.heap.ArenaAllocator,
     roots: []const []const u8,
     result: ?task.Definitions = null,
@@ -789,7 +798,7 @@ fn loadDone(_: ?*c.GObject, res: ?*c.GAsyncResult, data: ?*anyopaque) callconv(.
         self.app.release();
     }
     if (self.app.closing or job.generation != self.generation or
-        !self.app.workspace.accepts(job.workspace) or !self.app.workspace_policy.validate(job.permit, .tasks))
+        !self.app.workspace.accepts(job.workspace))
     {
         self.discarded += 1;
         self.phase = .idle;

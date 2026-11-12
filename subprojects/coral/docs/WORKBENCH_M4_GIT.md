@@ -23,6 +23,9 @@ hunk absent-side/mode refusals, change-line-index selections, explicit panel ref
 without watchers, a read-only original diff side, and no rerun visual matrix for the
 new UI. Supported-case expansion remains relevant because these increments
 deliberately refuse many repository configurations.
+**Workspace trust is now automatic (always trusted by user request), but Git's
+per-window subprocess disclosure and per-operation destructive-mutation reviews
+remain required.**
 See [current status](WORKBENCH_STATUS.md) and the [full M4 plan](WORKBENCH_IMPLEMENTATION_PLAN.md#8-zed-style-git-integration).
 
 ## Open Source Control
@@ -41,7 +44,7 @@ Use the **Git** menu or command palette (`Ctrl+Shift+P`):
 | **Git: Next hunk / Previous hunk** | Move the selected hunk within the current diff preview. |
 | **Toggle Source Control dock** (`toggle-source-control`) | Hide the Source Control dock panel when visible; otherwise show/focus it and refresh its status through the dock disclosure. |
 | **Focus Source Control** (`focus-source-control`) | Show/focus the dock panel and refresh its status. |
-| **Git: Project Diff…** | Open the multi-file Project Diff window for the discovered repository; inherits Source Control trust/disclosure. |
+| **Git: Project Diff…** | Open the multi-file Project Diff window for the discovered repository; inherits Source Control disclosure. |
 | **Git: Refresh Project Diff** | Explicitly recapture the multi-file diff; unsaved buffers stay excluded. |
 | **Git: Project Diff next hunk / previous hunk** | Move the selected hunk within the current file's diff. |
 | **Git: Project Diff stage hunk… / unstage hunk…** | Prepare a separate captured before/after review applying one hunk through the strict index backend. |
@@ -60,20 +63,22 @@ Use the **Git** menu or command palette (`Ctrl+Shift+P`):
 | **Git: Remotes… / Fetch… / Pull… / Push… / Force push with lease…** | Remote listing and network operations after a separate credential-helper disclosure; pull ff-only by default. |
 | **Git: File history… / Blame… / Commit diff… / Open permalink…** | Bounded read-only history/blame/commit diff and user-opened GitHub/GitLab/Codeberg https permalinks. |
 
-First approve the workspace through **Workspace: Settings and Trust…**, then accept
-**Continue with read-only Git** in the separate disclosure. Both are required.
-That disclosure authorizes inspection, **not writes**. Invoking a mutation before
-approval only opens disclosure; it does not queue a write or approve a later review.
+Workspaces are always trusted by user request, so there is no workspace approval
+step; accept **Continue with read-only Git** in the separate per-window subprocess
+disclosure. That disclosure authorizes inspection, **not writes**. Invoking a
+mutation before approval only opens disclosure; it does not queue a write or
+approve a later review.
 Select an actual changed-path row in Source Control and invoke the command again.
 The active editor document is not the mutation target; there is no whole-repository
 fallback.
-There is **no Git execution at startup or in restricted mode**, and declining the
+There is **no Git execution at startup**, and declining the
 disclosure launches nothing. Approval is window-local and not persisted; closing
-Source Control or invalidating its workspace/trust clears it. A peer editor window
-must obtain its own approval. Root/trust changes and window shutdown cancel work;
+Source Control or invalidating its workspace/generation clears it. A peer editor window
+must obtain its own approval. Root/identity changes and window shutdown cancel work;
 workspace/request generations reject stale callbacks and owned processes are reaped.
 Workflow writes additionally consume a **separate per-operation native confirmation
-or review**; fetch/pull/push require a further **credential-helper disclosure**. See
+or review** (destructive-mutation reviews remain); fetch/pull/push require a further
+**credential-helper disclosure**. See
 [Core Git workflows](#core-git-workflows).
 
 The window has a repository/root picker, branch/HEAD/upstream/ahead/behind summary,
@@ -161,10 +166,10 @@ mutation; allowing dirty buffers is not permission to race an in-flight save.
    staging replaces any partial staging of this selected path with the reviewed
    disk version, while unstaging restores HEAD. Other paths are not selected.
    Cancel is the default. Over-budget review is refused, never truncated approval.
-3. **Revalidate before apply.** Current trust/permit, workspace/request generations,
+3. **Revalidate before apply.** Current permit, workspace/request generations,
    root and actual repository/row/page selection must still match. A manager-wide
    file-operation barrier is acquired for the index before dispatching worker apply
-   and held through worker cleanup/delivery. Root/trust/selection/close invalidation
+   and held through worker cleanup/delivery. Root/permit/selection/close invalidation
    cancels work; stale preparation cannot become approval.
 4. **Publish only the checked single-path proposal.** Acquire `index.lock` with
    exclusive creation; never delete a foreign/replaced lock. Recheck snapshots and
@@ -265,15 +270,15 @@ window's strict sub-hunk backend; selections share every refusal above. See
   unpack/copy objects as a fallback. Other packed objects do not by themselves
   imply refusal. Object fsync failures also prevent publication.
 - Stale bytes/metadata/existence/bindings, an existing or replaced index lock,
-  pending editor operations and invalid trust/generations cause refusal or
+  pending editor operations and invalid permits/generations cause refusal or
   cancellation, not an unchecked fallback. A fresh review is required after repair.
 - Hunk operations share every refusal above and additionally refuse absent sides
   and mode changes; see [Single-hunk review and publication](#single-hunk-review-and-publication).
 
 ## Core Git workflows
 
-Every workflow below requires the trusted workspace, the per-window Source Control
-disclosure and a selected repository. Read-only preparation uses the locked-down
+Every workflow below requires the per-window Source Control
+disclosure and a selected repository (workspace trust is automatic). Read-only preparation uses the locked-down
 inspection policy; **repository writes use a separate write policy**
 (`src/git/env.zig`): the user's Git configuration and identity apply, and configured
 hooks/signing can execute programs with the user's permissions. **This is not a
@@ -281,7 +286,7 @@ sandbox.** Each write consumes its own explicit native confirmation or review; t
 read-only disclosure never authorizes a write. Writes hold the manager
 file-operation barrier (commit, refs, worktree, stash, conflict and remote writes
 alike), run in supervised workers with cancellation/reaping, and are invalidated by
-root/trust/selection/close changes. Unsaved buffers are never saved; stash
+root/permit/selection/close changes. Unsaved buffers are never saved; stash
 push/apply/pop and conflict continue/abort additionally refuse while unsaved buffers
 exist under the repository. Branch switch/delete guard open documents (`guardTree`),
 and stash/conflict worktree-affecting writes refuse while any editor document is
@@ -452,7 +457,7 @@ decode with defaults and invalid values are refused.
   argv per write; 256 KiB review text; 15-second process timeouts.
 - **Limits:** the dock reuses the Source Control window's repository discovery (open
   **Git: Source Control…** and Refresh there first); it has its own per-window dock
-  disclosure (“Continue with read-only Git”) on top of workspace trust. **Explicit
+  disclosure (“Continue with read-only Git”); workspace trust is automatic. **Explicit
   refresh only — no watchers, no startup work, no automatic refresh.** Dirty buffers
   are excluded and never saved; no worktree write, checkout, commit or network access
   from the dock. Submodule contents are never inspected; gitlink changes stage like
@@ -463,7 +468,7 @@ decode with defaults and invalid values are refused.
 
 `src/git/project_diff.zig` with the pure parser/renderer `src/git/diff_render.zig`
 opens a **multi-file** diff window (up to **4,096 files**, **1 MiB** diff capture,
-15-second inspection timeout). It inherits discovery and trust/disclosure from the
+15-second inspection timeout). It inherits discovery and disclosure from the
 parent Source Control controller (`app.git`); it never runs Git on its own authority
 and never bypasses the disclosure.
 
@@ -543,9 +548,10 @@ requests hooks or network operations. Coral disables the named
 helper/diff mechanisms. Repository-local configuration and attributes still matter:
 clean filters or other repository-selected programs can execute with the user's
 permissions, write files or access the network independently of Git's protocol
-policy. `--no-ext-diff` and `--no-textconv` do not disable clean filters. Trust and
-per-window disclosure are required precisely because “read-only Git” describes
-Coral's requested operations, not all possible subprocess side effects.
+policy. `--no-ext-diff` and `--no-textconv` do not disable clean filters. The
+per-window disclosure is required precisely because “read-only Git” describes
+Coral's requested operations, not all possible subprocess side effects; automatic
+workspace trust is not a substitute for it.
 
 ## UI parity delivered; remaining scope and limits
 
