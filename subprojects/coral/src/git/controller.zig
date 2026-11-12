@@ -11,6 +11,7 @@ const trust = @import("../workspace/trust.zig");
 const status = @import("status.zig");
 const command = @import("command.zig");
 const mutation_controller = @import("mutation_controller.zig");
+const hunk = @import("hunk.zig");
 const UI = @import("../language/ui.zig").UI;
 const RootId = @import("../workspace/model.zig").RootId;
 pub const max_repositories = 8;
@@ -19,13 +20,13 @@ pub const capture_bytes = 1024 * 1024;
 pub const page_rows = 128;
 const max_candidates = trust.limits.roots + 1;
 const Candidate = struct { root: RootId, owner: []const u8, cwd: []const u8 };
-const Repository = struct { root: RootId, owner: []const u8, path: []const u8, gitdir: []const u8 = "", commondir: []const u8 = "" };
+pub const Repository = struct { root: RootId, owner: []const u8, path: []const u8, gitdir: []const u8 = "", commondir: []const u8 = "" };
 const Phase = enum { version, root, gitdir, commondir, status, diff };
 const Intent = enum { none, refresh, status, diff };
 const disclosure =
     "Source Control runs /usr/bin/git as your user, only after you continue in a trusted workspace. " ++
     "It reads repository metadata, the index and files on disk. Unsaved editor buffers are excluded and are never saved.\n\n" ++
-    "Refresh and diff controls are read-only inspection, not authorization to write. Stage selected file… and Unstage selected file… require a separate full-file review of captured before/after bytes, existence and modes for one selected index path (not hunks). No commits, saves, checkout or network access. " ++
+    "Refresh and diff controls are read-only inspection, not authorization to write. Stage/Unstage selected file… and selected hunk… require separate reviews of captured before/after bytes, existence and modes for one selected index path. Hunk actions change only the reviewed hunk; full-file actions replace the whole selected path. No commits, saves, checkout or network access. " ++
     "System/global Git config, prompts, external diff and textconv are disabled. " ++
     "Repository-local Git configuration and clean filters can still execute programs with your user permissions. This is NOT a sandbox; such programs can have side effects.\n\n" ++
     "Selected-file writes reject binary/non-UTF-8 text, files over 256 KiB, filters, symlinks, conflicts and unsupported index formats. Unsaved buffers remain untouched.\n\n" ++
@@ -70,6 +71,11 @@ pub const Controller = struct {
     diff_view: ?u.W = null,
     stage_button: ?u.W = null,
     unstage_button: ?u.W = null,
+    stage_hunk_button: ?u.W = null,
+    unstage_hunk_button: ?u.W = null,
+    hunk_label: ?u.W = null,
+    hunk_refs: std.ArrayList(hunk.HunkRef) = .empty,
+    selected_hunk: ?usize = null,
     rebuilding: bool = false,
     message_text: [:0]u8,
     diff_text: [:0]u8,
@@ -87,6 +93,7 @@ pub const Controller = struct {
         self.mutation.deinit();
         self.supervisor.shutdown();
         self.arena.deinit();
+        self.hunk_refs.deinit(a);
         a.free(self.message_text);
         a.free(self.diff_text);
     }
@@ -108,9 +115,12 @@ pub const Controller = struct {
     fn clearSnapshot(self: *Controller) void {
         self.selected_file = null;
         self.page = 0;
+        self.selected_hunk = null;
+        self.hunk_refs.clearRetainingCapacity();
         if (self.snapshot) |*snapshot| snapshot.deinit();
         self.snapshot = null;
         self.renderRows();
+        self.updateHunkLabel();
     }
     fn clearModel(self: *Controller) void {
         self.clearSnapshot();
@@ -133,7 +143,7 @@ pub const Controller = struct {
         defer a.free(text);
         self.message(text);
     }
-    fn valid(self: *Controller) bool {
+    pub fn valid(self: *Controller) bool {
         return !self.app.closing and self.approved and self.window != null and
             (if (self.permit) |permit| self.app.workspace_policy.validate(permit, .git) else false);
     }
@@ -255,7 +265,7 @@ pub const Controller = struct {
         self.candidate_index += 1;
         try self.discoverNext();
     }
-    fn repo(self: *Controller) ?*const Repository {
+    pub fn repo(self: *Controller) ?*const Repository {
         const index = self.selected_repository orelse return null;
         if (index >= self.repository_count) return null;
         return &self.repositories[index];
@@ -380,7 +390,10 @@ pub const Controller = struct {
                     .binary => self.setDiff("binary", "Binary change — no editable or textual diff is available in this first increment."),
                     .non_utf8 => self.setDiff("non-utf8", "Non-UTF-8 change — text preview is unavailable; no file has been edited."),
                     .too_large => self.setDiff("limited", "Diff exceeds native preview limits (256 KiB, 4,000 lines or 2,048 bytes per line). No partial diff is shown."),
-                    .text => self.setDiff("text", if (result.stdout.len == 0) "No differences for this side. Status may have changed on disk; Refresh to update it." else result.stdout),
+                    .text => {
+                        self.setDiff("text", if (result.stdout.len == 0) "No differences for this side. Status may have changed on disk; Refresh to update it." else result.stdout);
+                        self.refreshHunks(result.stdout);
+                    },
                 }
                 self.updateSummary();
             },
@@ -430,6 +443,73 @@ pub const Controller = struct {
     pub fn unstageSelected(self: *Controller) void {
         self.mutateSelected(.unstage);
     }
+    pub fn stageHunk(self: *Controller) void {
+        self.mutateHunk(.stage_hunk);
+    }
+    pub fn unstageHunk(self: *Controller) void {
+        self.mutateHunk(.unstage_hunk);
+    }
+    pub fn nextHunk(self: *Controller) void {
+        if (self.hunk_refs.items.len == 0) return;
+        const current = self.selected_hunk orelse 0;
+        self.selected_hunk = @min(current + 1, self.hunk_refs.items.len - 1);
+        self.updateHunkLabel();
+        self.updateMutationActions();
+    }
+    pub fn previousHunk(self: *Controller) void {
+        if (self.hunk_refs.items.len == 0) return;
+        const current = self.selected_hunk orelse 0;
+        self.selected_hunk = if (current == 0) 0 else current - 1;
+        self.updateHunkLabel();
+        self.updateMutationActions();
+    }
+    fn refreshHunks(self: *Controller, patch: []const u8) void {
+        self.hunk_refs.clearRetainingCapacity();
+        self.selected_hunk = null;
+        const parsed = hunk.parse(a, patch) catch {
+            self.updateHunkLabel();
+            self.updateMutationActions();
+            return;
+        };
+        for (parsed.hunks, 0..) |h, i| {
+            self.hunk_refs.append(a, .{ .ordinal = i, .digest = hunk.digest(h) }) catch break;
+        }
+        if (self.hunk_refs.items.len != 0) self.selected_hunk = 0;
+        self.updateHunkLabel();
+        self.updateMutationActions();
+    }
+    fn updateHunkLabel(self: *Controller) void {
+        const label = self.hunk_label orelse return;
+        const text = if (self.selected_hunk) |index|
+            u.fmt("Hunk {d}/{d}", .{ index + 1, self.hunk_refs.items.len })
+        else
+            u.fmt("No hunks ({d})", .{self.hunk_refs.items.len});
+        defer a.free(text);
+        u.setLabel(label, text);
+    }
+    fn mutateHunk(self: *Controller, action: mutation_controller.Action) void {
+        if (!self.valid()) {
+            self.show();
+            return;
+        }
+        if (self.job != null or self.pending != .none or self.mutation.busy()) {
+            self.message("Wait for the current Git request or cancel its review before requesting a hunk change.");
+            return;
+        }
+        const repository = self.repo() orelse return;
+        const snapshot = self.snapshot orelse return;
+        const selected = self.selected_file orelse {
+            self.message("Select one changed file and hunk before requesting a hunk change.");
+            return;
+        };
+        const hunk_index = self.selected_hunk orelse {
+            self.message("Select a hunk in the current diff before requesting a hunk change.");
+            return;
+        };
+        if (hunk_index >= self.hunk_refs.items.len) return;
+        const entry = snapshot.entries[selected];
+        self.mutation.request(.{ .root = repository.path, .gitdir = repository.gitdir, .commondir = repository.commondir, .path = entry.path, .action = action, .hunk = self.hunk_refs.items[hunk_index] }, repository.root, repository.owner, self.generation);
+    }
     fn mutateSelected(self: *Controller, action: mutation_controller.Action) void {
         if (!self.valid()) {
             // Disclosure never queues a write, nor approves a future review.
@@ -459,7 +539,13 @@ pub const Controller = struct {
             std.mem.eql(u8, repository.path, request.root) and
             std.mem.eql(u8, repository.gitdir, request.gitdir) and
             std.mem.eql(u8, repository.commondir, request.commondir) and
-            std.mem.eql(u8, snapshot.entries[selected].path, request.path);
+            std.mem.eql(u8, snapshot.entries[selected].path, request.path) and
+            (if (request.hunk) |requested| blk: {
+                const index = self.selected_hunk orelse break :blk false;
+                if (index >= self.hunk_refs.items.len) break :blk false;
+                const current = self.hunk_refs.items[index];
+                break :blk current.ordinal == requested.ordinal and std.mem.eql(u8, &current.digest, &requested.digest);
+            } else true);
     }
     /// Called for every outcome, only after backend cleanup and worker delivery.
     pub fn mutationFinished(self: *Controller, attempted: bool) void {
@@ -476,6 +562,9 @@ pub const Controller = struct {
             self.job == null and self.pending == .none and !self.mutation.busy();
         if (self.stage_button) |button| c.gtk_widget_set_sensitive(button, @intFromBool(enabled));
         if (self.unstage_button) |button| c.gtk_widget_set_sensitive(button, @intFromBool(enabled));
+        const hunk_enabled = enabled and self.selected_hunk != null and std.mem.eql(u8, self.diff_kind, "text");
+        if (self.stage_hunk_button) |button| c.gtk_widget_set_sensitive(button, @intFromBool(hunk_enabled));
+        if (self.unstage_hunk_button) |button| c.gtk_widget_set_sensitive(button, @intFromBool(hunk_enabled));
     }
     fn startDiff(self: *Controller) !void {
         const repository = self.repo() orelse return error.NoRepository;
@@ -619,7 +708,25 @@ pub const Controller = struct {
         u.append(mutations, unstage_file);
         u.connect(stage_file, "clicked", &stageFileClicked, self);
         u.connect(unstage_file, "clicked", &unstageFileClicked, self);
-        u.append(mutations, u.label("Full file, not hunks · separate disk/index snapshot review"));
+        u.append(mutations, u.label("Full file or selected hunk · separate disk/index snapshot review"));
+        const hunk_bar = u.box(true, 8);
+        u.append(box, hunk_bar);
+        const prev_hunk = u.button("Previous hunk");
+        const next_hunk = u.button("Next hunk");
+        u.append(hunk_bar, prev_hunk);
+        u.append(hunk_bar, next_hunk);
+        u.connect(prev_hunk, "clicked", &previousHunkClicked, self);
+        u.connect(next_hunk, "clicked", &nextHunkClicked, self);
+        self.hunk_label = u.label("No hunks");
+        u.append(hunk_bar, self.hunk_label.?);
+        const stage_hunk = u.button("Stage selected hunk…");
+        const unstage_hunk = u.button("Unstage selected hunk…");
+        self.stage_hunk_button = stage_hunk;
+        self.unstage_hunk_button = unstage_hunk;
+        u.append(hunk_bar, stage_hunk);
+        u.append(hunk_bar, unstage_hunk);
+        u.connect(stage_hunk, "clicked", &stageHunkClicked, self);
+        u.connect(unstage_hunk, "clicked", &unstageHunkClicked, self);
         const diff_label = u.label("Immutable diff — select a file and a side");
         self.diff_label = diff_label;
         u.append(box, diff_label);
@@ -649,6 +756,9 @@ pub const Controller = struct {
         self.diff_view = null;
         self.stage_button = null;
         self.unstage_button = null;
+        self.stage_hunk_button = null;
+        self.unstage_hunk_button = null;
+        self.hunk_label = null;
         self.rebuilding = true;
         _ = c.g_signal_handlers_disconnect_matched(window, c.G_SIGNAL_MATCH_DATA, 0, 0, null, null, self);
         c.gtk_window_destroy(u.cast(c.GtkWindow, window));
@@ -752,6 +862,18 @@ pub const Controller = struct {
     fn unstageFileClicked(_: ?*c.GtkButton, data: ?*anyopaque) callconv(.c) void {
         u.cast(Controller, data.?).unstageSelected();
     }
+    fn previousHunkClicked(_: ?*c.GtkButton, data: ?*anyopaque) callconv(.c) void {
+        u.cast(Controller, data.?).previousHunk();
+    }
+    fn nextHunkClicked(_: ?*c.GtkButton, data: ?*anyopaque) callconv(.c) void {
+        u.cast(Controller, data.?).nextHunk();
+    }
+    fn stageHunkClicked(_: ?*c.GtkButton, data: ?*anyopaque) callconv(.c) void {
+        u.cast(Controller, data.?).stageHunk();
+    }
+    fn unstageHunkClicked(_: ?*c.GtkButton, data: ?*anyopaque) callconv(.c) void {
+        u.cast(Controller, data.?).unstageHunk();
+    }
     fn previousClicked(_: ?*c.GtkButton, data: ?*anyopaque) callconv(.c) void {
         u.cast(Controller, data.?).changePage(false);
     }
@@ -798,6 +920,8 @@ pub const Controller = struct {
             .visible_rows = end - begin,
             .page = self.page,
             .selected_file = self.selected_file,
+            .hunk_count = self.hunk_refs.items.len,
+            .selected_hunk = self.selected_hunk,
             .head = if (self.snapshot) |snapshot| snapshot.head else null,
             .branch = if (self.snapshot) |snapshot| snapshot.branch else null,
             .upstream = if (self.snapshot) |snapshot| snapshot.upstream else null,

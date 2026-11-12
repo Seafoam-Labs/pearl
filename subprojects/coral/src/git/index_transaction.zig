@@ -9,9 +9,23 @@ const builtin = @import("builtin");
 const transport = @import("../language/transport.zig");
 const command = @import("command.zig");
 const c = @import("index_transaction_os.zig");
+const hunk = @import("hunk.zig");
 
-pub const Action = enum { stage, unstage };
-pub const Request = struct { root: []const u8, gitdir: []const u8, commondir: []const u8, path: []const u8, action: Action };
+pub const Action = enum { stage, unstage, stage_hunk, unstage_hunk };
+pub const HunkRef = hunk.HunkRef;
+/// Review summary of the selected hunk for a hunk action; null for full-file.
+pub const HunkSummary = struct {
+    ordinal: usize,
+    total: usize,
+    digest: [32]u8,
+    old_start: usize,
+    old_count: usize,
+    new_start: usize,
+    new_count: usize,
+    added: usize,
+    removed: usize,
+};
+pub const Request = struct { root: []const u8, gitdir: []const u8, commondir: []const u8, path: []const u8, action: Action, hunk: ?HunkRef = null };
 pub const Cancel = std.atomic.Value(bool);
 pub const Outcome = struct { committed: bool, durability_uncertain: bool = false };
 pub const max_file_bytes = 256 * 1024;
@@ -25,6 +39,10 @@ pub const Prepared = struct {
     after_exists: bool,
     before_mode: u32,
     after_mode: u32,
+    /// Regenerated single-file patch (before↔target) for a hunk action; "" otherwise.
+    patch: []const u8 = "",
+    /// Selected-hunk summary for a hunk action; null for full-file actions.
+    hunk: ?HunkSummary = null,
     state: *State,
 
     /// Worker-only; also required after apply fails. All attempts consume approval.
@@ -71,6 +89,8 @@ const State = struct {
     filemode: bool = true,
     hash_bytes: usize = 20,
     used: bool = false,
+    hunk_patch: []const u8 = "",
+    hunk_summary: ?HunkSummary = null,
 
     fn a(s: *State) std.mem.Allocator {
         return s.arena.allocator();
@@ -79,6 +99,8 @@ const State = struct {
         if (s.temp) |tmp| {
             _ = c.unlinkat(tmp.fd, "index", 0);
             _ = c.unlinkat(tmp.fd, "index.lock", 0);
+            _ = c.unlinkat(tmp.fd, "src", 0);
+            _ = c.unlinkat(tmp.fd, "dst", 0);
             // Only a private mkdtemp directory and its known scratch names.
             _ = c.unlinkat(tmp.parent.?.fd, tmp.name, c.AT_REMOVEDIR);
         }
@@ -189,7 +211,7 @@ const State = struct {
         try cancelled(cancel);
         // Subprocess checks precede the last descriptor/content checks: no Git
         // process may introduce a long window after validating the disk/index.
-        if (try s.policy(cancel, p.path, p.action == .stage) != s.filemode) return error.StaleSnapshot;
+        if (try s.policy(cancel, p.path, p.action == .stage or p.action == .stage_hunk) != s.filemode) return error.StaleSnapshot;
         if (!std.mem.eql(u8, s.head, try s.headOid(cancel))) return error.StaleSnapshot;
         try checkDirs(s.dirs.items);
         for (s.snapshots.items) |snap| {
@@ -226,7 +248,7 @@ pub fn prepare(allocator: std.mem.Allocator, request: Request, cancel: *Cancel) 
         const scratch_index = try withoutStatCache(s.a(), s.index.bytes, s.hash_bytes);
         try writePrivate(s.temp.?, scratch_index, id);
     }
-    s.filemode = try s.policy(cancel, request.path, request.action == .stage);
+    s.filemode = try s.policy(cancel, request.path, request.action == .stage or request.action == .stage_hunk);
     s.listing = (try s.git(cancel, &.{ "ls-files", "--stage", "-z" }, "", max_index_bytes, false)).bytes;
     s.target = try selected(s.listing, request.path, s.hash_bytes);
     const before = try blob(s, cancel, s.target);
@@ -256,14 +278,67 @@ pub fn prepare(allocator: std.mem.Allocator, request: Request, cancel: *Cancel) 
         }
     }
     var after: []const u8 = "";
-    if (request.action == .stage) {
-        if (s.disk.id) |disk| {
-            s.source.mode = if (s.filemode) (if (disk.st_mode & 0o100 != 0) @as(u32, 0o100755) else 0o100644) else if (s.target.mode != 0) s.target.mode else 0o100644;
-            after = s.disk.bytes;
-        }
-    } else {
-        s.source = s.head_entry;
-        after = try blob(s, cancel, s.source);
+    switch (request.action) {
+        .stage => {
+            if (s.disk.id) |disk| {
+                s.source.mode = if (s.filemode) (if (disk.st_mode & 0o100 != 0) @as(u32, 0o100755) else 0o100644) else if (s.target.mode != 0) s.target.mode else 0o100644;
+                after = s.disk.bytes;
+            }
+        },
+        .unstage => {
+            s.source = s.head_entry;
+            after = try blob(s, cancel, s.source);
+        },
+        .stage_hunk, .unstage_hunk => {
+            const ref = request.hunk orelse return error.MissingHunk;
+            // Both sides must exist; a hunk never creates or deletes the path.
+            if (s.target.mode == 0) return error.AbsentSide;
+            var target_bytes: []const u8 = undefined;
+            var target_mode: u32 = undefined;
+            if (request.action == .stage_hunk) {
+                const disk = s.disk.id orelse return error.AbsentSide;
+                target_bytes = s.disk.bytes;
+                target_mode = if (s.filemode) (if (disk.st_mode & 0o100 != 0) @as(u32, 0o100755) else 0o100644) else s.target.mode;
+            } else {
+                if (s.head_entry.mode == 0) return error.AbsentSide;
+                target_bytes = try blob(s, cancel, s.head_entry);
+                target_mode = s.head_entry.mode;
+            }
+            if (target_mode != s.target.mode) return error.ModeChangeUnsupported;
+            // Regenerate the diff from the captured before/target bytes in the
+            // displayed direction (stage: index→disk, unstage: HEAD→index), never
+            // from a live displayed diff. Private temp copies are the only input.
+            const src = if (request.action == .stage_hunk) before else target_bytes;
+            const dst = if (request.action == .stage_hunk) target_bytes else before;
+            try writeTempCopy(s.temp.?, "src", src);
+            try writeTempCopy(s.temp.?, "dst", dst);
+            _ = try s.snapshot(s.temp.?, "src", max_file_bytes);
+            _ = try s.snapshot(s.temp.?, "dst", max_file_bytes);
+            const tmp_proc = try s.proc(s.temp.?);
+            const src_path = try std.fmt.allocPrint(s.a(), "{s}/src", .{tmp_proc});
+            const dst_path = try std.fmt.allocPrint(s.a(), "{s}/dst", .{tmp_proc});
+            const diff = try s.git(cancel, &.{ "diff", "--no-index", "--no-ext-diff", "--no-textconv", "--no-color", "--no-renames", "--src-prefix=a/", "--dst-prefix=b/", "--", src_path, dst_path }, "", hunk.max_patch_bytes, true);
+            if (diff.code != 0 and diff.code != 1) return error.InvalidGitOutput;
+            const parsed = try hunk.parse(s.a(), diff.bytes);
+            if (ref.ordinal >= parsed.hunks.len) return error.HunkNotFound;
+            const chosen = parsed.hunks[ref.ordinal];
+            if (!std.mem.eql(u8, &hunk.digest(chosen), &ref.digest)) return error.StaleHunk;
+            after = try hunk.apply(s.a(), before, chosen, if (request.action == .stage_hunk) .forward else .reverse);
+            try text(after);
+            s.source.mode = s.target.mode;
+            s.hunk_patch = diff.bytes;
+            s.hunk_summary = .{
+                .ordinal = ref.ordinal,
+                .total = parsed.hunks.len,
+                .digest = hunk.digest(chosen),
+                .old_start = chosen.old_start,
+                .old_count = chosen.old_count,
+                .new_start = chosen.new_start,
+                .new_count = chosen.new_count,
+                .added = chosen.added(),
+                .removed = chosen.removed(),
+            };
+        },
     }
     const p = Prepared{
         .before = before,
@@ -274,6 +349,8 @@ pub fn prepare(allocator: std.mem.Allocator, request: Request, cancel: *Cancel) 
         .after_exists = s.source.mode != 0,
         .before_mode = s.target.mode,
         .after_mode = s.source.mode,
+        .patch = s.hunk_patch,
+        .hunk = s.hunk_summary,
         .state = s,
     };
     try s.recheck(&p, cancel);
@@ -306,7 +383,7 @@ pub fn apply(p: *Prepared, cancel: *Cancel) !Outcome {
     lock_id = try statFd(lock);
     try s.recheck(p, cancel);
     var oid = s.source.oid;
-    if (p.action == .stage and p.after_exists) {
+    if (p.action != .unstage and p.after_exists) {
         oid = try oidLine((try s.git(cancel, &.{ "hash-object", "-w", "--no-filters", "--stdin" }, p.after, 1024, false)).bytes, s.hash_bytes);
     }
     // hash-object may reuse an existing object without syncing anything. Sync
@@ -457,6 +534,15 @@ fn writeAll(fd: c_int, bytes: []const u8) !void {
         if (n <= 0) return error.WriteFailed;
         used += @intCast(n);
     }
+}
+/// Private 0600 copy of captured bytes used only as a `git diff --no-index`
+/// input. Created O_EXCL inside the held scratch directory; never a worktree write.
+fn writeTempCopy(dir: *Dir, name: [:0]const u8, bytes: []const u8) !void {
+    const fd = c.openat(dir.fd, name, c.O_WRONLY | c.O_CREAT | c.O_EXCL | c.O_NOFOLLOW | c.O_CLOEXEC, @as(c_uint, 0o600));
+    if (fd < 0) return error.TempFailed;
+    defer _ = c.close(fd);
+    try writeAll(fd, bytes);
+    if (c.fsync(fd) != 0) return error.TempFailed;
 }
 fn writePrivate(dir: *Dir, bytes: []const u8, original: Stat) !void {
     const fd = c.openat(dir.fd, "index", c.O_WRONLY | c.O_CREAT | c.O_EXCL | c.O_NOFOLLOW | c.O_CLOEXEC, @as(c_uint, 0o600));

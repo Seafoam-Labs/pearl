@@ -64,6 +64,13 @@ pub const App = struct {
     language_initialized: bool = false,
     git: @import("git/controller.zig").Controller = undefined,
     git_initialized: bool = false,
+    git_commit: @import("git/commit_controller.zig").Controller = undefined,
+    git_refs: @import("git/refs_controller.zig").Controller = undefined,
+    git_worktree: @import("git/worktree_controller.zig").Controller = undefined,
+    git_stash: @import("git/stash_controller.zig").Controller = undefined,
+    git_conflict: @import("git/conflict_controller.zig").Controller = undefined,
+    git_remote: @import("git/remote_controller.zig").Controller = undefined,
+    git_history: @import("git/history_controller.zig").Controller = undefined,
     session: WorkspaceSession = undefined,
     workspace_operations: WorkspaceOperations = undefined,
     workspace_roots: @import("workspace/roots_controller.zig").Controller = undefined,
@@ -245,6 +252,13 @@ pub const App = struct {
         self.language_initialized = true;
         self.git = .init(self);
         self.git_initialized = true;
+        self.git_commit = .init(self);
+        self.git_refs = .init(self);
+        self.git_worktree = .init(self);
+        self.git_stash = .init(self);
+        self.git_conflict = .init(self);
+        self.git_remote = .init(self);
+        self.git_history = .init(self);
         self.browser = WorkspaceController.init(self, self.dock.explorer_slot);
         self.browser.attach();
         self.dock.attach();
@@ -349,6 +363,13 @@ pub const App = struct {
         self.workspace_search.deinit();
         self.language.deinit();
         self.git.deinit();
+        self.git_commit.deinit();
+        self.git_refs.deinit();
+        self.git_worktree.deinit();
+        self.git_stash.deinit();
+        self.git_conflict.deinit();
+        self.git_remote.deinit();
+        self.git_history.deinit();
         self.workspace.close();
         if (self.timer != 0) _ = c.g_source_remove(self.timer);
         if (self.checkpoint_idle != 0) _ = c.g_source_remove(self.checkpoint_idle);
@@ -1422,6 +1443,13 @@ pub const App = struct {
     pub fn invalidateWorkspaceAsync(self: *App) void {
         self.language.invalidate();
         self.git.invalidate();
+        self.git_commit.invalidate();
+        self.git_refs.invalidate();
+        self.git_worktree.invalidate();
+        self.git_stash.invalidate();
+        self.git_conflict.invalidate();
+        self.git_remote.invalidate();
+        self.git_history.invalidate();
         self.workspace_search.invalidate("Stale — document lifecycle changed. Refresh required.");
         self.workspace.invalidate();
         for (self.documents.entries.items) |d| {
@@ -1780,6 +1808,13 @@ pub const App = struct {
         self.closing = true;
         self.language.invalidate();
         self.git.invalidate();
+        self.git_commit.invalidate();
+        self.git_refs.invalidate();
+        self.git_worktree.invalidate();
+        self.git_stash.invalidate();
+        self.git_conflict.invalidate();
+        self.git_remote.invalidate();
+        self.git_history.invalidate();
         self.dock.shutdown();
         self.session.shutdown();
         self.workspace_policy.shutdown();
@@ -2021,6 +2056,43 @@ pub const App = struct {
             .git_staged_diff => self.git.showDiff(true),
             .git_stage => self.git.stageSelected(),
             .git_unstage => self.git.unstageSelected(),
+            .git_stage_hunk => self.git.stageHunk(),
+            .git_unstage_hunk => self.git.unstageHunk(),
+            .git_next_hunk => self.git.nextHunk(),
+            .git_previous_hunk => self.git.previousHunk(),
+            .git_commit => self.git_commit.showCommit(),
+            .git_uncommit => self.git_commit.showUncommit(),
+            .git_stage_tracked_commit => self.git_commit.showStageTrackedCommit(),
+            .git_branches => self.git_refs.showBranches(),
+            .git_create_branch => self.git_refs.showCreateBranch(),
+            .git_switch_branch => self.git_refs.showSwitchBranch(),
+            .git_delete_branch => self.git_refs.showDeleteBranch(),
+            .git_tags => self.git_refs.showTags(),
+            .git_create_tag => self.git_refs.showCreateTag(),
+            .git_worktrees => self.git_worktree.showWorktrees(),
+            .git_add_worktree => self.git_worktree.showAddWorktree(),
+            .git_remove_worktree => self.git_worktree.showRemoveWorktree(),
+            .git_stash_push => self.git_stash.showStashPush(),
+            .git_stash_list => self.git_stash.showStashList(),
+            .git_stash_apply => self.git_stash.showStashApply(),
+            .git_stash_pop => self.git_stash.showStashPop(),
+            .git_stash_drop => self.git_stash.showStashDrop(),
+            .git_conflicts => self.git_conflict.showConflicts(),
+            .git_resolve_current => self.git_conflict.showResolve(.current),
+            .git_resolve_incoming => self.git_conflict.showResolve(.incoming),
+            .git_resolve_both => self.git_conflict.showResolve(.both),
+            .git_conflict_manual => self.git_conflict.showManual(),
+            .git_continue => self.git_conflict.showContinue(),
+            .git_abort => self.git_conflict.showAbort(),
+            .git_remotes => self.git_remote.showRemotes(),
+            .git_fetch => self.git_remote.showFetch(),
+            .git_pull => self.git_remote.showPull(),
+            .git_push => self.git_remote.showPush(),
+            .git_force_push => self.git_remote.showForcePush(),
+            .git_history => self.git_history.showHistory(),
+            .git_blame => self.git_history.showBlame(),
+            .git_commit_diff => self.git_history.showCommitDiff(),
+            .git_permalink => self.git_history.showPermalink(),
             .language_start => self.language.startDialog(),
             .language_stop => self.language.stop(),
             .language_restart => self.language.restart(),
@@ -3435,7 +3507,16 @@ fn testCommand(receiver: *App) void {
     const value = c.g_key_file_get_string(file, "Test", "value", null);
     defer c.g_free(value);
     const d = self.active();
-    if (self.git.fixture(action, if (value != null) std.mem.span(value) else "")) {
+    const git_value = if (value != null) std.mem.span(value) else "";
+    if (self.git.fixture(action, git_value) or
+        self.git_commit.fixture(action, git_value) or
+        self.git_refs.fixture(action, git_value) or
+        self.git_worktree.fixture(action, git_value) or
+        self.git_stash.fixture(action, git_value) or
+        self.git_conflict.fixture(action, git_value) or
+        self.git_remote.fixture(action, git_value) or
+        self.git_history.fixture(action, git_value))
+    {
         // Git fixture dispatch is compiled out of production builds.
     } else if (std.mem.startsWith(u8, action, "git-")) {
         if (commands.fromAction(action)) |command| self.execute(command);

@@ -264,6 +264,7 @@ fn category(command: commands.Command) Category {
         .open_folder, .open_workspace, .workspace_roots, .workspace_back, .workspace_rescan, .close_workspace, .quick_open, .workspace_search, .workspace_policy, .workspace_trust, .workspace_revoke, .save_workspace_session, .restore_workspace_session, .create_workspace_file, .create_workspace_directory, .rename_workspace_entry, .move_workspace_entry, .delete_workspace_entry, .recent_projects, .forget_project_session, .add_workspace_root, .remove_workspace_root, .save_workspace_as => .workspace,
         .split_group, .focus_next_group, .focus_previous_group, .close_group, .toggle_explorer, .toggle_search, .focus_explorer, .focus_search, .focus_editor, .hide_panel, .dock_left, .dock_right, .dock_bottom, .reset_docks, .dock_grow, .dock_shrink, .next_tab, .previous_tab, .open_buffers => .view,
         .new_window, .close_window, .next_window, .previous_window, .quit, .preferences, .about, .command_palette => .window,
+        else => .git,
     };
 }
 

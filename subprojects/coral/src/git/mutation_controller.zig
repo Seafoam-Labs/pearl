@@ -99,6 +99,7 @@ pub const Controller = struct {
             .owner = u.z(owner),
             .root_id = root_id,
             .action = req.action,
+            .hunk = req.hunk,
             .generation = generation,
             .token = token,
             .request_token = request_token,
@@ -184,7 +185,11 @@ pub const Controller = struct {
         defer a.free(before);
         const after = try preview(p.after);
         defer a.free(after);
-        const heading = u.fmt("{s} selected file: {s}\nRepository: {s}\nFULL FILE, NOT HUNKS. Unsaved editor documents across windows: {d} (at review creation). Dirty buffers are allowed, excluded and NEVER saved. Stage uses only the captured disk snapshot; Unstage restores the HEAD snapshot to the index.\nThis approval changes only this path in the index; no commit or worktree write.\nComplete captured bytes below (scroll each pane). Backslashes and controls are escaped; each \\n marks an actual LF. Empty and absent files differ. SHA-256 digests identify the original, unescaped bytes.", .{ if (p.action == .stage) "Stage" else "Unstage", path, root, self.app.git.dirtyCount() });
+        const is_hunk = p.action == .stage_hunk or p.action == .unstage_hunk;
+        const heading = if (is_hunk)
+            u.fmt("{s} selected hunk: {s}\nRepository: {s}\nONE HUNK, NOT THE WHOLE FILE. Unsaved editor documents across windows: {d} (at review creation). Dirty buffers are allowed, excluded and NEVER saved. The selected hunk is applied to the captured index snapshot; all other hunks and paths are preserved.\nThis approval changes only this path in the index; no commit or worktree write.\nComplete captured before/after bytes and the regenerated hunk patch are below (scroll each pane). Backslashes and controls are escaped; each \\n marks an actual LF. SHA-256 digests identify the original, unescaped bytes.", .{ if (p.action == .stage_hunk) "Stage" else "Unstage", path, root, self.app.git.dirtyCount() })
+        else
+            u.fmt("{s} selected file: {s}\nRepository: {s}\nFULL FILE, NOT HUNKS. Unsaved editor documents across windows: {d} (at review creation). Dirty buffers are allowed, excluded and NEVER saved. Stage uses only the captured disk snapshot; Unstage restores the HEAD snapshot to the index.\nThis approval changes only this path in the index; no commit or worktree write.\nComplete captured bytes below (scroll each pane). Backslashes and controls are escaped; each \\n marks an actual LF. Empty and absent files differ. SHA-256 digests identify the original, unescaped bytes.", .{ if (p.action == .stage) "Stage" else "Unstage", path, root, self.app.git.dirtyCount() });
         defer a.free(heading);
         var before_digest: [32]u8 = undefined;
         var after_digest: [32]u8 = undefined;
@@ -194,7 +199,7 @@ pub const Controller = struct {
         const after_hash = std.fmt.bytesToHex(after_digest, .lower);
         const before_label = u.fmt("BEFORE — INDEX · exists: {s} · mode: {o} · {d} bytes\nSHA-256: {s}", .{ if (p.before_exists) "yes" else "no", p.before_mode, p.before.len, before_hash });
         defer a.free(before_label);
-        const after_label = u.fmt("AFTER — INDEX FROM {s} · exists: {s} · mode: {o} · {d} bytes\nSHA-256: {s}", .{ if (p.action == .stage) "DISK" else "HEAD", if (p.after_exists) "yes" else "no", p.after_mode, p.after.len, after_hash });
+        const after_label = u.fmt("AFTER — INDEX FROM {s} · exists: {s} · mode: {o} · {d} bytes\nSHA-256: {s}", .{ if (p.action == .stage or p.action == .stage_hunk) "DISK" else "HEAD", if (p.after_exists) "yes" else "no", p.after_mode, p.after.len, after_hash });
         defer a.free(after_label);
         a.free(self.review);
         self.review = u.fmt("{s}\n\n{s}\n{s}\n\n{s}\n{s}", .{ heading, before_label, before, after_label, after });
@@ -204,18 +209,25 @@ pub const Controller = struct {
         const dialog = c.gtk_dialog_new().?;
         self.dialog = dialog;
         self.state = .confirming;
-        c.gtk_window_set_title(u.cast(c.GtkWindow, dialog), "Review full-file index change — not hunks");
+        c.gtk_window_set_title(u.cast(c.GtkWindow, dialog), if (is_hunk) "Review selected-hunk index change" else "Review full-file index change — not hunks");
         c.gtk_window_set_transient_for(u.cast(c.GtkWindow, dialog), u.cast(c.GtkWindow, self.app.git.window.?));
         c.gtk_window_set_modal(u.cast(c.GtkWindow, dialog), 1);
         c.gtk_window_set_default_size(u.cast(c.GtkWindow, dialog), 900, 760);
         _ = c.gtk_dialog_add_button(u.cast(c.GtkDialog, dialog), "_Cancel", c.GTK_RESPONSE_CANCEL);
-        _ = c.gtk_dialog_add_button(u.cast(c.GtkDialog, dialog), if (p.action == .stage) "_Stage reviewed file" else "_Unstage reviewed file", c.GTK_RESPONSE_ACCEPT);
+        _ = c.gtk_dialog_add_button(u.cast(c.GtkDialog, dialog), if (p.action == .stage or p.action == .stage_hunk) "_Stage reviewed change" else "_Unstage reviewed change", c.GTK_RESPONSE_ACCEPT);
         c.gtk_dialog_set_default_response(u.cast(c.GtkDialog, dialog), c.GTK_RESPONSE_CANCEL);
         const box = u.cast(c.GtkWidget, c.gtk_dialog_get_content_area(u.cast(c.GtkDialog, dialog)).?);
         u.margin(box, 12);
         // Paths can be thousands of escaped bytes too. Keep the full scope
         // disclosure scrollable instead of letting it push approval off-screen.
         addPane(box, "Selected path and scope — complete disclosure", heading);
+        if (is_hunk) {
+            const patch = try preview(p.patch);
+            defer a.free(patch);
+            const hunk_label = if (p.hunk) |h| u.fmt("Selected hunk {d}/{d} · @@ -{d},{d} +{d},{d} @@ · +{d}/-{d}", .{ h.ordinal + 1, h.total, h.old_start, h.old_count, h.new_start, h.new_count, h.added, h.removed }) else u.fmt("Selected hunk", .{});
+            defer a.free(hunk_label);
+            addPane(box, hunk_label, patch);
+        }
         addPane(box, before_label, before);
         addPane(box, after_label, after);
         u.connect(dialog, "response", &response, self);
@@ -336,6 +348,7 @@ const Job = struct {
     owner: [:0]u8,
     root_id: model.RootId,
     action: Action,
+    hunk: ?backend.HunkRef = null,
     generation: u64,
     token: identity.Token,
     request_token: identity.Token,
@@ -365,7 +378,7 @@ const Job = struct {
             remaining -= slice;
         }
         switch (self.phase) {
-            .prepare => self.prepared = try backend.prepare(a, .{ .root = self.root, .gitdir = self.gitdir, .commondir = self.commondir, .path = self.path, .action = self.action }, &self.cancel),
+            .prepare => self.prepared = try backend.prepare(a, .{ .root = self.root, .gitdir = self.gitdir, .commondir = self.commondir, .path = self.path, .action = self.action, .hunk = self.hunk }, &self.cancel),
             .apply => {
                 defer self.clearPrepared();
                 self.result = try backend.apply(&self.prepared.?, &self.cancel);

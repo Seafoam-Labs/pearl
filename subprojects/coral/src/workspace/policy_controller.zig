@@ -196,6 +196,15 @@ pub const Controller = struct {
     pub fn invalidate(self: *Controller) void {
         if (self.app.language_initialized) self.app.language.invalidate();
         if (self.app.git_initialized) self.app.git.invalidate();
+        if (self.app.git_initialized) {
+            self.app.git_commit.invalidate();
+            self.app.git_refs.invalidate();
+            self.app.git_worktree.invalidate();
+            self.app.git_stash.invalidate();
+            self.app.git_conflict.invalidate();
+            self.app.git_remote.invalidate();
+            self.app.git_history.invalidate();
+        }
         defer self.refreshStatus();
         self.request = std.math.add(u64, self.request, 1) catch @panic("Policy request generation exhausted");
         self.confirmation = null;

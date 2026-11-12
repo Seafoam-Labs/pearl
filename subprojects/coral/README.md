@@ -14,12 +14,16 @@ workflows. **The bounded M3 baseline is complete; detected-language automatic
 startup is implemented and validated within its documented limits.** Approved local
 language servers start automatically in trusted, unpaused workspaces and provide
 command-driven features, diagnostics, semantic tags and reviewed edits.
-**M4 Git/review is in progress:** the native Source Control window provides
-status/refresh and diff previews plus a second increment of **selected full-file
-staging/unstaging with separate checked review**. No hunks or commits yet; next is
-hunk staging/review, then commits. Current aggregate verification remains pending.
-Agent services remain later work. See the [M3 language guide](docs/WORKBENCH_M3_LANGUAGE.md)
-and [M4 Git guide](docs/WORKBENCH_M4_GIT.md).
+**M4 Git/review core workflows are implemented and validated:** the native Source Control window provides
+status/refresh, diff previews, **selected full-file and single-hunk
+staging/unstaging with separate checked review**, and the remaining core workflows
+as command-driven native dialogs: staged-only commit (plus explicit stage-tracked
+and commit, and soft uncommit), branches/lightweight tags, worktrees, stash,
+conflicts with continue/abort, remotes, and history/blame/permalinks. This is not
+dock/editable-Project-Diff UI parity or full Zed parity; the parent aggregate,
+hooks-disabled production and separate visual gates passed. Agent services remain later work. See
+the [M3 language guide](docs/WORKBENCH_M3_LANGUAGE.md) and
+[M4 Git guide](docs/WORKBENCH_M4_GIT.md).
 
 ![Native Coral editor](artifacts/native/editor-dark.png)
 
@@ -239,21 +243,26 @@ excluding snapshots, worker stacks and other storage. Versions advance only on
 successful sync; an oversized-sync failure stops once with a stable error.
 There are no placeholder service panels or full-IDE parity claims.
 
-## Git — selected full-file staging/unstaging, M4 in progress
+## Git — Source Control and core workflows, M4 core validated
 
 Use the **Git** menu or palette: **Git: Source Control…**, **Git: Refresh
 repositories**, **Git: Unstaged diff**, **Git: Staged diff**, **Git: Stage selected
-file…**, and **Git: Unstage selected file…**. A **separate native
+file…**, **Git: Unstage selected file…**, **Git: Stage selected hunk…**, **Git:
+Unstage selected hunk…** and **Next/Previous hunk**, plus the workflow commands
+below. A **separate native
 window**, not a dock or editable Project Diff, shows repository/root selection,
 branch/status, paged paths and noneditable **index → disk / HEAD → index** previews.
 Git requires a trusted workspace **and per-window subprocess disclosure approval**;
 there is no Git execution at startup or in restricted mode. The initial read-only
 disclosure does **not** authorize writes or queue a mutation. Select an actual
 Source Control status row, not an editor buffer, then request a separate **FULL FILE,
-NOT HUNKS** review. Complete escaped before/after bytes, existence, modes, byte counts
+NOT HUNKS** review — or a **ONE HUNK, NOT THE WHOLE FILE** review for the selected
+hunk. Complete escaped before/after bytes, existence, modes, byte counts
 and SHA-256 digests must be explicitly approved. Stage replaces that index path with
 captured disk bytes; unstage restores HEAD (or removes the entry when absent).
-**Dirty buffers are allowed, excluded and never saved.**
+Hunk applies use a strict captured-snapshot applier (exact position, byte-identical
+context, no fuzz/offset) and preserve all other hunks/paths; **absent sides and mode
+changes are refused**. **Dirty buffers are allowed, excluded and never saved.**
 
 Worker-only prepare performs no repository writes. Apply requires valid trust,
 generations/selection and the manager operation barrier; it rechecks the full index,
@@ -285,23 +294,77 @@ excluded and never saved or staged. Rename detection is disabled (add/delete),
 submodule contents excluded, unborn/detached HEAD supported, and invalid UTF-8
 status paths refused.
 
-Requires **Git 2.31+ at `/usr/bin/git`** with fixed argv/config and a replacement
-environment disabling system/global config, prompts, credential helpers, external
-diff/textconv and Git protocol access. **Not a sandbox:** repository-local clean
-filters/programs can still execute with user permissions; no guarantee of no
-arbitrary filter writes or network activity is made.
+Requires **Git 2.31+ at `/usr/bin/git`**. Inspection uses fixed argv/config and a
+replacement environment disabling system/global config, prompts, credential helpers,
+external diff/textconv and Git protocol access; workflow writes and network
+operations use the separate disclosed policies described below. **Not a sandbox:**
+repository-local clean filters/programs can still execute with user permissions; no
+guarantee of no arbitrary filter writes or network activity is made.
 
-No hunk/selection or batch staging, editable diffs, commits, branch/worktree mutations,
-remotes, history, stashes or conflict resolver yet. **Next: hunk staging/review, then
-commits**; supported-case expansion may be needed. See the
+**Core workflows (third increment), all command-driven native dialogs:**
+
+- **Commit staged…** commits only the reviewed staged index with a typed message
+  (`commit -F -`; no `-a`/`--allow-empty`; empty staged set refused). **Stage tracked
+  and commit…** explicitly reviews `git add -u` (never untracked files; unmerged
+  conflicts refused before staging), then the resulting staged set. **Uncommit
+  last…** is a soft reset via compare-and-swap `update-ref HEAD` keeping
+  index/worktree; **initial, merge, published HEAD and in-progress operations are
+  refused**.
+- **Branches… / Create branch… / Switch branch… / Delete branch…**: switch never
+  forces; delete verifies merged, and unmerged force-delete requires typing the exact
+  branch name in a separate confirmation; dirty worktrees block switch/delete with an
+  explicit cancel-or-stash choice. **Tags…** lists read-only; **Create lightweight
+  tag…** creates at HEAD (no annotated tags, signing or deletion).
+- **Worktrees… / Add worktree… / Remove worktree…**: add validates paths inside the
+  owning root and one worktree per branch; remove is clean-only (never `--force`);
+  Open hands off to a parent callback or messages the path when none is installed.
+- **Stash push… / list… / apply… / pop… / drop…**: named tracked/staged/all push
+  (staged needs Git ≥ 2.35; ignored files never stashed); apply preserves the entry;
+  pop drops only after a successful apply plus separate confirmation; a failed apply
+  preserves the entry; drop is confirmed.
+- **Conflicts…** lists unmerged paths and base/ours/theirs stages; **Resolve conflict
+  using current/incoming/both…** writes reviewed bytes to the worktree then stages;
+  publication wins over cancellation, and a write cancelled before publication warns
+  and refreshes. **Manual, binary and rename/delete conflicts are refused.**
+  **Continue/Abort merge/rebase…** act on gitdir-detected merge/rebase/cherry-pick/revert
+  state, never marker guesses.
+- **Remotes… / Fetch… / Pull… / Push… / Force push with lease…** run only after a
+  separate **credential-helper disclosure**; pull defaults to ff-only (merge/rebase
+  explicit); push targets the disclosed current local branch refspec
+  (`refs/heads/<branch>`) and refuses detached/unborn HEAD; push is never backgrounded.
+- **File history… / Blame… / Commit diff… / Open permalink…**: bounded read-only
+  inspection; GitHub/GitLab/Codeberg https permalinks are strictly validated and
+  opened in the user's browser only after external-link confirmation. **No PR API.**
+
+Workflow writes use your Git identity/config; hooks/signing (and, for network
+operations, credential/askpass helpers) may execute — **not a sandbox**. Stash
+push/apply/pop and conflict continue/abort refuse while unsaved buffers exist under
+the repository. **UI parity limits:** no source-control dock, editable Project Diff,
+split/word-diff, tree/flat or file/section/all staging parity; packed-only target
+blobs still refuse with `ObjectDurabilityUnavailable`. See the
 [Git guide](docs/WORKBENCH_M4_GIT.md) for exact policy, refusals and evidence.
 
-**Second-increment standalone evidence:** `git-index-unit` **26 passed (~4 minutes)**,
-Git pure **27 passed**, final native `.cache/m4-index-native` **46 passed (31 mutation +
-15 prior)**. The earlier original `teardown-root` open-workspace timeout passed on
-isolated and full reruns, **without a fix or relaxed timeout**. **Current final
-aggregate verification remains pending.** `test-m4-slice` now includes the backend
-units as well as pure/native Git and M1/M2/M3 regressions; it is not full M4 acceptance.
+**Final M4 core-workflow evidence (accepted):** `zig build test-m4-slice
+-Doptimize=safe -j1 --summary all` passed **117/117 steps, exit 0**, with **475/475
+Zig tests passed (no skips reported)** ([gate log](../../.cache/coral-m4-final-gate.log)).
+Unit roots: `git-unit` **27**, `git-index-unit` **40**, `git-workflow-unit` **94 across
+four roots (commit 25 + refs 30 + stash 18 + remote 21)**, superseding the earlier 81.
+Native `git` **46 / 0 / 0** ([results](../../.cache/coral-git/results.json)) and native
+`git-workflows` **36 / 0 / 0** ([results](../../.cache/coral-git-workflows/results.json)),
+both `complete_suite: true`; language **89 / 0 / 3 optional blocked**, lifecycle
+**20/20**, widgets **204/204 in 47.928 s**, fixture **25/25**, and full M1/M2
+regressions passed. [Hooks-disabled production](../../.cache/coral-m4-final-production.log)
+passed **46/46 steps**; [visuals](../../.cache/coral-m4-final-visual.log) passed
+**40/40 steps, 16 cases and four 2.0 font ratios** on the aggregate's instrumented
+binary (existing-workbench coverage, not Git-window visual parity). Workflow fixtures
+use local bare remotes over the file protocol (no network) and construct/decline
+permalinks without launching a browser. Safety fixes included: stage-tracked unmerged
+refusal, uncommit operation guard + CAS `update-ref`, refs/worktree/remote barriers
+and open-document guards, disclosed current-local-branch push refspec with
+detached/unborn refusal, conflict publication-wins, and cancelled-write
+warnings/refresh. `test-m4-slice` composes all Git unit roots, both native suites and
+M1/M2/M3 regressions; it validates the implemented core workflows, **not full Zed/UI
+parity**.
 
 **Historical read-only gate:** `test-m4-slice` passed **105/105 steps, exit 0**, with **586/587 Zig tests
 passed / 1 expected non-root trust-test skip** (not a pass), including **27 Git,
@@ -411,13 +474,14 @@ VS Code-style workspace/editor with Zed-style agents and Git workflows.
 The [native foundation status](docs/WORKBENCH_STATUS.md) records implemented
 groups, excerpts, guarded undo, recovery, file monitoring and validation;
 **M2 and the bounded M3 baseline have historical validation. The automatic-language
-increment passed its separate acceptance gates. M4 Git/review now includes selected
-full-file staging/unstaging; standalone backend/pure/native evidence is recorded,
-but current final aggregate verification remains pending. The read-only aggregate,
-production and existing-workbench visual passes are historical, not acceptance of
-this second increment. M4 is not complete. Production terminal and agent UI remain
-unimplemented**. See the
-[M4 verification status](docs/WORKBENCH_M4_GIT.md#second-increment-verification--aggregate-pending).
+increment passed its separate acceptance gates. M4 Git/review core workflows
+(hunk/full-file staging, commit/uncommit, branches/tags, worktrees, stash, conflicts,
+remotes, history/blame/permalinks) are implemented and validated: the parent
+aggregate, hooks-disabled production and separate visual gates passed. The read-only
+aggregate and second-increment evidence remain historical. Explicit UI-parity limits
+remain and full Zed/UI parity is not claimed.
+Production terminal and agent UI remain unimplemented**. See the
+[M4 verification status](docs/WORKBENCH_M4_GIT.md#final-m4-core-workflow-validation--accepted).
 Explore the separate [interactive workbench prototype](docs/mockups/workbench/index.html)
 and its [interaction guide](docs/mockups/workbench/README.md). All prototype
 operations stay in memory; they are not native feature evidence.
@@ -467,7 +531,9 @@ zig build language-lifecycle -Doptimize=safe -j1
 zig build test-m3 -Doptimize=safe -j1
 zig build git-unit -Doptimize=safe -j1
 zig build git-index-unit -Doptimize=safe -j1
+zig build git-workflow-unit -Doptimize=safe -j1
 zig build git -Doptimize=safe -j1
+zig build git-workflows -Doptimize=safe -j1
 zig build test-m4-slice -Doptimize=safe -j1
 zig build widgets -Doptimize=safe -- --aqueous-prefix /usr
 ```

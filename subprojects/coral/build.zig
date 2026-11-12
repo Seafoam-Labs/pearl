@@ -81,6 +81,12 @@ pub fn build(b: *std.Build) void {
     const git_index_tests = b.addTest(.{ .root_module = git_index_module });
     const git_index_units = b.addRunArtifact(git_index_tests);
     b.step("git-index-unit", "Test reviewed index transactions in disposable repositories").dependOn(&git_index_units.step);
+    const git_workflow_units = b.step("git-workflow-unit", "Test M4 commit/refs/stash/conflict/remote/history workflows in disposable repositories");
+    inline for (.{ "src/git_commit_tests.zig", "src/git/refs_test.zig", "src/git/stash_test.zig", "src/git/remote_test.zig" }) |path| {
+        const module = b.createModule(.{ .root_source_file = b.path(path), .target = target, .optimize = optimize, .link_libc = true });
+        const artifact = b.addTest(.{ .root_module = module });
+        git_workflow_units.dependOn(&b.addRunArtifact(artifact).step);
+    }
     // Trust concurrency tests fork; isolate them from the GIO tests' worker pool.
     const trust_module = createModule(b, .{ .root_source_file = b.path("src/workspace/trust_test.zig"), .target = target, .optimize = optimize, .link_libc = true });
     const trust_tests = b.addTest(.{ .root_module = trust_module });
@@ -245,8 +251,12 @@ pub fn build(b: *std.Build) void {
     git_native.addArtifactArg(ie);
     git_native.addPassthruArgs();
     b.step("git", "Run isolated native Source Control and selected-file index acceptance").dependOn(&git_native.step);
-    const m4_slice = b.step("test-m4-slice", "Validate implemented M4 inspection/index increments and M1/M2/M3 regressions");
-    for ([_]*std.Build.Step{ &git_units.step, &git_index_units.step, &git_native.step, m3 }) |gate| m4_slice.dependOn(gate);
+    const git_workflows_native = b.addSystemCommand(&.{ native_python, "tests/git_workflows.py", "--binary" });
+    git_workflows_native.addArtifactArg(ie);
+    git_workflows_native.addPassthruArgs();
+    b.step("git-workflows", "Run isolated native M4 workflow acceptance").dependOn(&git_workflows_native.step);
+    const m4_slice = b.step("test-m4-slice", "Validate implemented M4 inspection/index/workflow increments and M1/M2/M3 regressions");
+    for ([_]*std.Build.Step{ &git_units.step, &git_index_units.step, git_workflow_units, &git_native.step, &git_workflows_native.step, m3 }) |gate| m4_slice.dependOn(gate);
 
     const bm = createModule(b, .{ .root_source_file = b.path("src/benchmark_m0.zig"), .target = target, .optimize = optimize, .link_libc = true });
     for ([_][]const u8{ "gtk4", "gtksourceview-5", "enchant-2" }) |lib| bm.linkSystemLibrary(lib, .{ .use_pkg_config = .yes });
