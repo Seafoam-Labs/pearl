@@ -73,6 +73,8 @@ pub const App = struct {
     git_history: @import("git/history_controller.zig").Controller = undefined,
     git_panel: @import("git/panel.zig").Controller = undefined,
     git_project_diff: @import("git/project_diff.zig").Controller = undefined,
+    terminal: @import("terminal/terminal_controller.zig").Controller = undefined,
+    tasks: @import("tasks/tasks_controller.zig").Controller = undefined,
     session: WorkspaceSession = undefined,
     workspace_operations: WorkspaceOperations = undefined,
     workspace_roots: @import("workspace/roots_controller.zig").Controller = undefined,
@@ -267,10 +269,15 @@ pub const App = struct {
         self.git_project_diff.save_document = &projectDiffSave;
         self.git_project_diff.edit_committed = &projectDiffCommitted;
         self.git_project_diff.edit_failed = &projectDiffFailed;
+        self.terminal = .init(self);
+        self.tasks = .init(self);
+        self.tasks.navigate = &tasksNavigate;
+        self.tasks.navigate_context = self;
         self.browser = WorkspaceController.init(self, self.dock.explorer_slot);
         self.browser.attach();
         self.dock.attach();
         self.git_panel.attach(self.dock.source_control_slot);
+        self.terminal.attach(self.dock.terminal_slot);
         self.workspace_policy = WorkspacePolicy.init(self);
         self.session = .{ .app = self };
         self.workspace_operations = .init(self);
@@ -335,6 +342,11 @@ pub const App = struct {
         self.git_panel.refresh();
         if (self.git_panel.focusWidget()) |widget| _ = c.gtk_widget_grab_focus(widget);
     }
+    fn focusTerminal(self: *App) void {
+        if (self.dock.picking) self.workspace_search.hide();
+        self.dock.show(.terminal);
+        self.terminal.focusWidget();
+    }
     fn projectDiffSave(context: ?*anyopaque, id: u64) void {
         const self = u.cast(App, context.?);
         if (self.documents.get(id)) |doc| self.save(doc, false, false);
@@ -346,6 +358,15 @@ pub const App = struct {
     fn projectDiffFailed(context: ?*anyopaque, err: anyerror) void {
         const self = u.cast(App, context.?);
         self.editFailure(err);
+    }
+    fn tasksNavigate(context: ?*anyopaque, path: []const u8, line: u32, column: u32) void {
+        _ = line;
+        _ = column;
+        const self = u.cast(App, context.?);
+        // Native acceptance asserts the recorded navigation intent; opening a
+        // document here would race the harness teardown. Production opens it.
+        if (@import("build_options").test_hooks) return;
+        self.openExisting(path, null);
     }
     fn hidePanel(self: *App, panel: dock_layout.Panel) void {
         if (panel == .search) self.workspace_search.hide() else {
@@ -383,6 +404,8 @@ pub const App = struct {
             if (c.g_action_map_lookup_action(u.cast(c.GActionMap, self.window), entry.action)) |action| self.disconnectObject(action);
             c.g_action_map_remove_action(u.cast(c.GActionMap, self.window), entry.action);
         }
+        self.git_panel.deinit();
+        self.terminal.deinit();
         self.dock.shutdown();
         self.session.deinit();
         self.browser.deinit();
@@ -397,8 +420,8 @@ pub const App = struct {
         self.git_conflict.deinit();
         self.git_remote.deinit();
         self.git_history.deinit();
-        self.git_panel.deinit();
         self.git_project_diff.deinit();
+        self.tasks.deinit();
         self.workspace.close();
         if (self.timer != 0) _ = c.g_source_remove(self.timer);
         if (self.checkpoint_idle != 0) _ = c.g_source_remove(self.checkpoint_idle);
@@ -1481,6 +1504,8 @@ pub const App = struct {
         self.git_history.invalidate();
         self.git_panel.invalidate();
         self.git_project_diff.invalidate();
+        self.terminal.invalidate();
+        self.tasks.invalidate();
         self.workspace_search.invalidate("Stale — document lifecycle changed. Refresh required.");
         self.workspace.invalidate();
         for (self.documents.entries.items) |d| {
@@ -1848,6 +1873,8 @@ pub const App = struct {
         self.git_history.invalidate();
         self.git_panel.invalidate();
         self.git_project_diff.invalidate();
+        self.terminal.invalidate();
+        self.tasks.invalidate();
         self.dock.shutdown();
         self.session.shutdown();
         self.workspace_policy.shutdown();
@@ -2192,6 +2219,16 @@ pub const App = struct {
             .git_project_diff_unified => self.git_project_diff.setMode(@import("git/diff_render.zig").Mode.unified),
             .git_project_diff_split => self.git_project_diff.setMode(@import("git/diff_render.zig").Mode.split),
             .git_project_diff_word => self.git_project_diff.setMode(@import("git/diff_render.zig").Mode.word),
+            .toggle_terminal => if (self.dock.visible(.terminal)) self.hidePanel(.terminal) else self.focusTerminal(),
+            .focus_terminal => self.focusTerminal(),
+            .terminal_new => self.terminal.newSession() catch {},
+            .terminal_close => self.terminal.closeActive(),
+            .terminal_restart => self.terminal.restartActive(),
+            .terminal_cancel => self.terminal.cancelActive(),
+            .tasks_show => self.tasks.show(),
+            .tasks_run => self.tasks.run(),
+            .tasks_stop => self.tasks.stop(),
+            .tasks_restart => self.tasks.restart(),
             .focus_editor => {
                 if (self.dock.picking) self.workspace_search.hide();
                 self.focusEditor();
@@ -3563,7 +3600,9 @@ fn testCommand(receiver: *App) void {
         self.git_remote.fixture(action, git_value) or
         self.git_history.fixture(action, git_value) or
         self.git_panel.fixture(action, git_value) or
-        self.git_project_diff.fixture(action, git_value))
+        self.git_project_diff.fixture(action, git_value) or
+        self.terminal.fixture(action, git_value) or
+        self.tasks.fixture(action, git_value))
     {
         // Git fixture dispatch is compiled out of production builds.
     } else if (std.mem.startsWith(u8, action, "git-")) {

@@ -33,7 +33,8 @@ SIDES = ('left', 'right', 'bottom')
 DEFAULT = dict(explorer='left', search='bottom', explorer_visible=True,
                search_visible=False, active='explorer', left_size=222,
                right_size=320, bottom_size=240,
-               source_control='left', source_control_visible=False)
+               source_control='left', source_control_visible=False,
+               terminal='bottom', terminal_visible=False)
 
 
 def contents(state):

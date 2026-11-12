@@ -146,6 +146,16 @@ pub const Command = enum {
     git_project_diff_unified,
     git_project_diff_split,
     git_project_diff_word,
+    toggle_terminal,
+    focus_terminal,
+    terminal_new,
+    terminal_close,
+    terminal_restart,
+    terminal_cancel,
+    tasks_show,
+    tasks_run,
+    tasks_stop,
+    tasks_restart,
 
     pub fn metadata(self: Command) Metadata {
         return entries[@backingInt(self)];
@@ -296,6 +306,16 @@ pub const Command = enum {
             .git_project_diff_unified => i18n.dtr("coral", "Git: Project Diff unified view"),
             .git_project_diff_split => i18n.dtr("coral", "Git: Project Diff split view"),
             .git_project_diff_word => i18n.dtr("coral", "Git: Project Diff word view"),
+            .toggle_terminal => i18n.dtr("coral", "Toggle Terminal dock"),
+            .focus_terminal => i18n.dtr("coral", "Focus Terminal"),
+            .terminal_new => i18n.dtr("coral", "Terminal: New session"),
+            .terminal_close => i18n.dtr("coral", "Terminal: Close session"),
+            .terminal_restart => i18n.dtr("coral", "Terminal: Restart session"),
+            .terminal_cancel => i18n.dtr("coral", "Terminal: Cancel running command"),
+            .tasks_show => i18n.dtr("coral", "Tasks: Run task…"),
+            .tasks_run => i18n.dtr("coral", "Tasks: Run selected task"),
+            .tasks_stop => i18n.dtr("coral", "Tasks: Stop task"),
+            .tasks_restart => i18n.dtr("coral", "Tasks: Restart task"),
         };
     }
 };
@@ -452,6 +472,16 @@ pub const entries = [_]Metadata{
     .{ .command = .git_project_diff_unified, .action = "git-project-diff-unified", .detailed_action = "win.git-project-diff-unified", .label = "Git: Project Diff unified view", .shortcut = null },
     .{ .command = .git_project_diff_split, .action = "git-project-diff-split", .detailed_action = "win.git-project-diff-split", .label = "Git: Project Diff split view", .shortcut = null },
     .{ .command = .git_project_diff_word, .action = "git-project-diff-word", .detailed_action = "win.git-project-diff-word", .label = "Git: Project Diff word view", .shortcut = null },
+    .{ .command = .toggle_terminal, .action = "toggle-terminal", .detailed_action = "win.toggle-terminal", .label = "Toggle Terminal dock", .shortcut = null },
+    .{ .command = .focus_terminal, .action = "focus-terminal", .detailed_action = "win.focus-terminal", .label = "Focus Terminal", .shortcut = null },
+    .{ .command = .terminal_new, .action = "terminal-new", .detailed_action = "win.terminal-new", .label = "Terminal: New session", .shortcut = null },
+    .{ .command = .terminal_close, .action = "terminal-close", .detailed_action = "win.terminal-close", .label = "Terminal: Close session", .shortcut = null },
+    .{ .command = .terminal_restart, .action = "terminal-restart", .detailed_action = "win.terminal-restart", .label = "Terminal: Restart session", .shortcut = null },
+    .{ .command = .terminal_cancel, .action = "terminal-cancel", .detailed_action = "win.terminal-cancel", .label = "Terminal: Cancel running command", .shortcut = null },
+    .{ .command = .tasks_show, .action = "tasks-show", .detailed_action = "win.tasks-show", .label = "Tasks: Run task…", .shortcut = null },
+    .{ .command = .tasks_run, .action = "tasks-run", .detailed_action = "win.tasks-run", .label = "Tasks: Run selected task", .shortcut = null },
+    .{ .command = .tasks_stop, .action = "tasks-stop", .detailed_action = "win.tasks-stop", .label = "Tasks: Stop task", .shortcut = null },
+    .{ .command = .tasks_restart, .action = "tasks-restart", .detailed_action = "win.tasks-restart", .label = "Tasks: Restart task", .shortcut = null },
 };
 
 pub fn fromAction(action: []const u8) ?Command {
@@ -516,7 +546,7 @@ pub fn fromKey(key: u32, state: u32) ?Command {
 
 test "registry is exhaustive, ordered and has unique stable actions" {
     try std.testing.expectEqual(@typeInfo(Command).@"enum".field_names.len, entries.len);
-    const actions = [_][]const u8{ "new", "open", "save", "save-as", "reload", "find", "goto", "spelling", "preferences", "about", "close", "quit", "command-palette", "split-group", "focus-next-group", "focus-previous-group", "close-group", "excerpt", "grouped-undo", "grouped-redo", "open-folder", "open-workspace", "workspace-roots", "workspace-back", "workspace-rescan", "close-workspace", "quick-open", "workspace-search", "workspace-policy", "workspace-trust", "workspace-revoke", "save-workspace-session", "restore-workspace-session", "toggle-explorer", "toggle-search", "toggle-source-control", "focus-source-control", "focus-explorer", "focus-search", "focus-editor", "hide-panel", "dock-left", "dock-right", "dock-bottom", "reset-docks", "dock-grow", "dock-shrink", "next-tab", "previous-tab", "new-window", "close-window", "next-window", "previous-window", "workspace-create-file", "workspace-create-directory", "workspace-rename", "workspace-move", "workspace-delete", "recent-projects", "open-buffers", "forget-project-session", "workspace-add-root", "workspace-remove-root", "save-workspace-as", "language-start", "language-stop", "language-restart", "language-status", "language-completion", "language-hover", "language-signature", "language-definition", "language-declaration", "language-type-definition", "language-implementation", "language-references", "language-document-symbols", "language-workspace-symbols", "language-problems", "language-formatting", "language-range-formatting", "language-rename", "language-code-actions", "language-semantic-tokens", "language-inlay-hints", "language-code-lenses", "language-document-links", "git-status", "git-refresh", "git-diff", "git-staged-diff", "git-stage", "git-unstage", "git-stage-hunk", "git-unstage-hunk", "git-next-hunk", "git-previous-hunk", "git-commit", "git-uncommit", "git-stage-tracked-commit", "git-branches", "git-create-branch", "git-switch-branch", "git-delete-branch", "git-tags", "git-create-tag", "git-worktrees", "git-add-worktree", "git-remove-worktree", "git-stash-push", "git-stash-list", "git-stash-apply", "git-stash-pop", "git-stash-drop", "git-conflicts", "git-resolve-current", "git-resolve-incoming", "git-resolve-both", "git-conflict-manual", "git-continue", "git-abort", "git-remotes", "git-fetch", "git-pull", "git-push", "git-force-push", "git-history", "git-blame", "git-commit-diff", "git-permalink", "git-project-diff", "git-project-diff-refresh", "git-project-diff-next-hunk", "git-project-diff-previous-hunk", "git-project-diff-stage-hunk", "git-project-diff-unstage-hunk", "git-project-diff-stage-selection", "git-project-diff-unstage-selection", "git-project-diff-unified", "git-project-diff-split", "git-project-diff-word" };
+    const actions = [_][]const u8{ "new", "open", "save", "save-as", "reload", "find", "goto", "spelling", "preferences", "about", "close", "quit", "command-palette", "split-group", "focus-next-group", "focus-previous-group", "close-group", "excerpt", "grouped-undo", "grouped-redo", "open-folder", "open-workspace", "workspace-roots", "workspace-back", "workspace-rescan", "close-workspace", "quick-open", "workspace-search", "workspace-policy", "workspace-trust", "workspace-revoke", "save-workspace-session", "restore-workspace-session", "toggle-explorer", "toggle-search", "toggle-source-control", "focus-source-control", "focus-explorer", "focus-search", "focus-editor", "hide-panel", "dock-left", "dock-right", "dock-bottom", "reset-docks", "dock-grow", "dock-shrink", "next-tab", "previous-tab", "new-window", "close-window", "next-window", "previous-window", "workspace-create-file", "workspace-create-directory", "workspace-rename", "workspace-move", "workspace-delete", "recent-projects", "open-buffers", "forget-project-session", "workspace-add-root", "workspace-remove-root", "save-workspace-as", "language-start", "language-stop", "language-restart", "language-status", "language-completion", "language-hover", "language-signature", "language-definition", "language-declaration", "language-type-definition", "language-implementation", "language-references", "language-document-symbols", "language-workspace-symbols", "language-problems", "language-formatting", "language-range-formatting", "language-rename", "language-code-actions", "language-semantic-tokens", "language-inlay-hints", "language-code-lenses", "language-document-links", "git-status", "git-refresh", "git-diff", "git-staged-diff", "git-stage", "git-unstage", "git-stage-hunk", "git-unstage-hunk", "git-next-hunk", "git-previous-hunk", "git-commit", "git-uncommit", "git-stage-tracked-commit", "git-branches", "git-create-branch", "git-switch-branch", "git-delete-branch", "git-tags", "git-create-tag", "git-worktrees", "git-add-worktree", "git-remove-worktree", "git-stash-push", "git-stash-list", "git-stash-apply", "git-stash-pop", "git-stash-drop", "git-conflicts", "git-resolve-current", "git-resolve-incoming", "git-resolve-both", "git-conflict-manual", "git-continue", "git-abort", "git-remotes", "git-fetch", "git-pull", "git-push", "git-force-push", "git-history", "git-blame", "git-commit-diff", "git-permalink", "git-project-diff", "git-project-diff-refresh", "git-project-diff-next-hunk", "git-project-diff-previous-hunk", "git-project-diff-stage-hunk", "git-project-diff-unstage-hunk", "git-project-diff-stage-selection", "git-project-diff-unstage-selection", "git-project-diff-unified", "git-project-diff-split", "git-project-diff-word", "toggle-terminal", "focus-terminal", "terminal-new", "terminal-close", "terminal-restart", "terminal-cancel", "tasks-show", "tasks-run", "tasks-stop", "tasks-restart" };
     for (entries, actions, 0..) |entry, action, index| {
         try std.testing.expectEqual(index, @backingInt(entry.command));
         try std.testing.expectEqualStrings(action, entry.action);

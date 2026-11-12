@@ -27,9 +27,23 @@ Targeted UI-increment validation passed; the earlier core-workflow aggregate,
 hooks-disabled production and visual gates remain historical, and the full
 aggregate was not rerun for the UI increment. This is not full Zed parity:
 remaining limits include no annotated tags/PR API, explicit panel refresh without
-watchers, and a read-only original diff side. Agent services remain later work. See
-the [M3 language guide](docs/WORKBENCH_M3_LANGUAGE.md) and
-[M4 Git guide](docs/WORKBENCH_M4_GIT.md).
+watchers, and a read-only original diff side. **M5 terminal and tasks are
+implemented and validated (targeted):** a production Terminal dock (fourth panel,
+persisted layout) renders **libghostty-vt 1.0.1 — not VTE** through a Coral-owned
+GTK4 Cairo/Pango renderer, with Coral-owned PTY process ownership and the only
+waitpid reaper, a GIO read watch, trust plus explicit disclosure, bounded eight
+sessions, new/close/restart/cancel, resize/scrollback/selection/paste and a safe
+OSC policy (clipboard denied, title/checksum reports off, Kitty graphics/glyph
+disabled, notifications/window-resize ignored). Workspace tasks run reviewed
+absolute-argv commands (no shell) from bounded `.coral/tasks.json` definitions
+under supervised capture with zig/gcc/clang/python/generic problem matchers and an
+Output/Problems UI. Targeted gates passed; the full aggregate was not rerun.
+Remaining limits include no rectangular block selection, a fixed Monospace 11pt
+terminal font, full-frame rendering and disabled Kitty graphics. Agent services
+remain later work; **M6 agent core is next**. See the
+[M3 language guide](docs/WORKBENCH_M3_LANGUAGE.md),
+[M4 Git guide](docs/WORKBENCH_M4_GIT.md) and
+[M5 terminal/tasks guide](docs/WORKBENCH_M5_TERMINAL.md).
 
 ![Native Coral editor](artifacts/native/editor-dark.png)
 
@@ -40,11 +54,19 @@ Enchant **2**, and their development headers. GTK 4.24.1, GtkSourceView 5.22.0,
 and Enchant 2.8.21 are the current tested versions. Older supported API baselines have
 not been tested in a separate distribution image.
 
+The M5 terminal additionally requires **libghostty-vt 1.0.1** from a private
+prefix (**not VTE**, not a host package). Pass **`-Dghostty-prefix=PREFIX`** where
+`PREFIX` contains `include/` and `lib/`; the build links `ghostty-vt` directly
+(no pkg-config) and adds a **runtime rpath to `PREFIX/lib`**. This host's private
+prefix is `pearl/.cache/libghostty/prefix`, built from the upstream 1.0.1 tarball;
+nothing was installed on the host. Supply the prefix for builds and tests that
+link the terminal.
+
 ```sh
 cd subprojects/coral
-zig build -Doptimize=safe
-zig build run -- /path/to/notes.txt
-zig build test
+zig build -Doptimize=safe -Dghostty-prefix=../../.cache/libghostty/prefix
+zig build run -Dghostty-prefix=../../.cache/libghostty/prefix -- /path/to/notes.txt
+zig build test -Dghostty-prefix=../../.cache/libghostty/prefix
 ```
 
 The executable is `zig-out/bin/coral`. The build stages its desktop entry, icon,
@@ -438,6 +460,52 @@ standalone 15-case run](docs/WORKBENCH_M4_GIT.md#final-first-slice-validation--p
 These are first-read-only-slice gates, **not completed M4 acceptance**; counts are
 not an additive unique-test total.
 
+## Terminal and tasks — M5 implemented, targeted validation
+
+Open the **Terminal** dock from the activity rail or palette (**Toggle Terminal
+dock**, **Focus Terminal**). It is the fourth dock panel beside Explorer/Search/
+Source Control, moves left/right/bottom, resizes, hides and persists its layout;
+old sessions decode to a hidden bottom panel. **Terminal: New session** requires
+a trusted workspace **and an explicit disclosure** (commands run with your user
+permissions; trust is not a sandbox; output cannot control the workbench;
+program clipboard access is denied). Sessions are bounded to **eight per window**
+(80×24 default, `$SHELL` or `/bin/sh`, first-root cwd, fixed environment
+allowlist) with **New / Close / Restart / Cancel**; Cancel stops the command and
+reaps/removes the session. A worker owns the PTY process group and is the only
+waitpid reaper (TERM → 150 ms grace → KILL); the main thread reads through a GIO
+watch. The Coral-owned Cairo/Pango renderer draws libghostty-vt render state with
+resize, **10 MiB / 10,000-line scrollback**, drag/select-all selection, plain-text
+copy and bracketed paste. The safe OSC policy denies clipboard read/write, turns
+off title/checksum reports, disables Kitty graphics/glyph, and ignores
+notifications/window-resize; title/pwd only update labels. Limits: no rectangular
+block selection, fixed **Monospace 11pt** (not the app font), full-frame rendering
+(no dirty-row incremental), no hyperlink activation, and no containment of
+deliberate `setsid`/`setpgid` escapees.
+
+**Tasks: Run task…** loads bounded **`.coral/tasks.json`** definitions from each
+workspace root (version 1; 64 tasks total, 64 KiB/file, depth 8, 64 argv/env,
+128-byte names, 8,192-byte strings, 4,095-byte paths). `argv[0]` must be
+**absolute**; argv is literal with **no shell/PATH lookup/expansion**; cwd is
+root-relative inside the root; env is a **complete allowlist** (nothing
+inherited). Each run requires trust **and a per-run review of the exact
+argv/cwd/env/matcher**. Runs use the supervised capture boundary (1 MiB combined
+output, 30 s timeout) with Stop cancelling/reaping the process group and Restart
+re-reviewing; tasks take **no manager file barrier** (trust boundary). Output is
+classified by **zig/gcc/clang/python/generic** matchers into at most 1,000
+problems (256 visible) with a truncated flag; the Output/Problems dialog navigates
+through a parent callback — production opens the file, the instrumented test
+binary records intent. Commands: `tasks-show`, `tasks-run`, `tasks-stop`,
+`tasks-restart` (no default keybindings).
+
+**M5 targeted evidence:** `task-unit` **16/16**, native terminal **9/9**, native
+tasks **9/9**, docks **27/27**, `session-unit` **27/27**, widgets **213/213**
+(48.284 s), hooks-disabled production **46/46 steps** and visual **16/16 cases**
+passed ([guide](docs/WORKBENCH_M5_TERMINAL.md#targeted-validation)). The **full
+aggregate was not rerun** per user request; M1–M4 gates remain historical.
+Earlier failed attempts (a tasks `navigate-problem` timeout and a docks run) are
+retained in the guide. `test-m5-slice` composes only the changed M5 surfaces.
+This is not full Zed/VS Code terminal parity; **M6 agent core is next**.
+
 ## Implemented
 
 - Editable, reorderable document tabs; new/open/save/Save As; file arguments;
@@ -543,8 +611,12 @@ was not rerun for the UI increment; the read-only aggregate and second-increment
 evidence remain historical. Remaining limits are explicit (no annotated tags/PR
 API, no watchers, read-only original diff side, visual matrix not rerun for the new
 UI) and full Zed/UI parity is not claimed.
-Production terminal and agent UI remain unimplemented**. See the
-[M4 verification status](docs/WORKBENCH_M4_GIT.md#final-m4-core-workflow-validation--accepted).
+M5 terminal and tasks are implemented and passed targeted validation (task-unit
+16, terminal native 9, tasks native 9, docks 27, session-unit 27, widgets 213,
+production 46/46, visual 16/16); the full aggregate was not rerun per user
+request. Agent UI remains unimplemented; M6 agent core is next**. See the
+[M4 verification status](docs/WORKBENCH_M4_GIT.md#final-m4-core-workflow-validation--accepted)
+and [M5 terminal/tasks guide](docs/WORKBENCH_M5_TERMINAL.md).
 Explore the separate [interactive workbench prototype](docs/mockups/workbench/index.html)
 and its [interaction guide](docs/mockups/workbench/README.md). All prototype
 operations stay in memory; they are not native feature evidence.
@@ -598,8 +670,17 @@ zig build git-workflow-unit -Doptimize=safe -j1
 zig build git -Doptimize=safe -j1
 zig build git-workflows -Doptimize=safe -j1
 zig build test-m4-slice -Doptimize=safe -j1
+zig build task-unit -Doptimize=safe -j1
+zig build terminal -Doptimize=safe -j1
+zig build tasks -Doptimize=safe -j1
+zig build test-m5-slice -Doptimize=safe -j1
+zig build session-unit -Doptimize=safe -j1
 zig build widgets -Doptimize=safe -- --aqueous-prefix /usr
 ```
+
+Pass `-Dghostty-prefix=PREFIX` to these commands for the M5 terminal; the M5
+targets (`task-unit`, `terminal`, `tasks`, `test-m5-slice`) require it.
+`test-m5-slice` composes only the changed M5 surfaces, not M1–M4 regressions.
 
 `/usr` is the installed-tool prefix used for this host's foundation validation;
 use the prepared fixture prefix on other setups. See the [status report](docs/WORKBENCH_STATUS.md#validation-completed)
@@ -681,7 +762,8 @@ and [mockup gallery](docs/mockups/README.md) remain design references. They do
 not replace the native test evidence.
 
 Unlimited session history, cross-window tab transfer, remote files, legacy encodings,
-grammar checking, general build/debug tooling and plugins are outside this preview. The user accepted M0's
+grammar checking, debugger/DAP tooling and plugins are outside this preview; M5
+tasks are bounded reviewed commands, not a general build system. The user accepted M0's
 bounded-editor tradeoffs to proceed to M2. Full giant-line rendering remains
 unsupported and original input-to-paint targets remain unverified; acceptance
 does not change the recorded measurements.

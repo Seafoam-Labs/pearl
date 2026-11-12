@@ -1,8 +1,8 @@
 # Coral workbench implementation plan
 
-Status: **M0 tradeoffs accepted; M1 complete; M2 implementation COMPLETE for the bounded workspace preview; bounded M3 baseline complete with historical validation; automatic-language increment implemented and validation accepted; M4 Git/review core workflows implemented and validated as the third increment (single-hunk stage/unstage, commit/uncommit, branches/lightweight tags, worktrees, stash, conflicts/continue-abort, remotes, history/blame/permalinks) on top of inspection and selected full-file staging/unstaging, plus the UI-parity increment (Source Control dock panel, editable Project Diff) with targeted validation passed; the final parent aggregate/production/visual gates remain historical core-workflow evidence (full aggregate not rerun for the UI increment); remaining limits are explicit and full Zed parity is not claimed.** All mandatory M2 features are implemented, including automatic projects/startup, native recents/buffer pickers and reviewed workspace-root management. See the [acceptance audit and validation checkpoint](WORKBENCH_M2_ACCEPTANCE.md).
+Status: **M0 tradeoffs accepted; M1 complete; M2 implementation COMPLETE for the bounded workspace preview; bounded M3 baseline complete with historical validation; automatic-language increment implemented and validation accepted; M4 Git/review core workflows implemented and validated as the third increment (single-hunk stage/unstage, commit/uncommit, branches/lightweight tags, worktrees, stash, conflicts/continue-abort, remotes, history/blame/permalinks) on top of inspection and selected full-file staging/unstaging, plus the UI-parity increment (Source Control dock panel, editable Project Diff) with targeted validation passed; the final parent aggregate/production/visual gates remain historical core-workflow evidence (full aggregate not rerun for the UI increment); M5 terminal/tasks implemented with targeted validation passed (libghostty-vt 1.0.1, not VTE; full aggregate not rerun per user request); remaining limits are explicit and full Zed parity is not claimed; M6 agent core is next.** All mandatory M2 features are implemented, including automatic projects/startup, native recents/buffer pickers and reviewed workspace-root management. See the [acceptance audit and validation checkpoint](WORKBENCH_M2_ACCEPTANCE.md).
 
-See [current implementation status and validation](WORKBENCH_STATUS.md). The requested [native M2 visual-alignment pass](WORKBENCH_M2_VISUAL.md) is implemented before M3, with screenshots and an explicit aggregate-test caveat. The [M3 language guide](WORKBENCH_M3_LANGUAGE.md) now records implemented commands, trusted/approved automatic startup, persistent workspace Stop/resume, negotiated protocol behavior and strict limits. The [automatic-increment aggregate, production and visual gates passed](WORKBENCH_M3_LANGUAGE.md#automatic-increment-validation--accepted), with the initial watchdog failure retained. The historical frozen-source aggregate and production gates passed after the queue/sync fix, before automatic startup; that baseline's separate visual evidence predates its final change. Historical M2 passes and later failures remain distinct; the roadmap below is not a claim that all milestones are complete.
+See [current implementation status and validation](WORKBENCH_STATUS.md). The [M5 terminal/tasks guide](WORKBENCH_M5_TERMINAL.md) records the implemented libghostty-vt terminal, reviewed workspace tasks and their targeted validation. The requested [native M2 visual-alignment pass](WORKBENCH_M2_VISUAL.md) is implemented before M3, with screenshots and an explicit aggregate-test caveat. The [M3 language guide](WORKBENCH_M3_LANGUAGE.md) now records implemented commands, trusted/approved automatic startup, persistent workspace Stop/resume, negotiated protocol behavior and strict limits. The [automatic-increment aggregate, production and visual gates passed](WORKBENCH_M3_LANGUAGE.md#automatic-increment-validation--accepted), with the initial watchdog failure retained. The historical frozen-source aggregate and production gates passed after the queue/sync fix, before automatic startup; that baseline's separate visual evidence predates its final change. Historical M2 passes and later failures remain distinct; the roadmap below is not a claim that all milestones are complete.
 
 ## 1. Product direction
 
@@ -79,7 +79,7 @@ Rows below describe the **target capabilities**; some foundational portions are 
 
 Retain GTK4 and GtkSourceView provisionally; **do not replace the editor engine just to resemble another product**. Implement new application logic, protocols, orchestration and tooling in Zig. C ABI bindings to required native libraries are integration boundaries, not a new application-language layer. HTML/CSS/JS are only for the prototype; Python is allowed for test harnesses.
 
-Target source layout (workbench/editor/workspace/language portions now exist; later service directories remain planned):
+Target source layout (workbench/editor/workspace/language/git/tasks/terminal portions now exist; agent/debug/extensions directories remain planned):
 
 ```text
 src/
@@ -333,7 +333,7 @@ Git config can run filters, hooks, helpers and external commands, even for appar
 
 ## 9. Full-editor completion tracks
 
-- **Terminal/tasks:** evaluate GTK4 VTE through Zig bindings versus existing compatible Pearl/Dome terminal infrastructure. Reuse only after checking embeddability/licensing; do not assume an executable is a reusable widget. PTY resize, Unicode, scrollback, links, process ownership, shell integration and safe OSC handling. Tasks have root/cwd/env, cancellation, output routing and diagnostic matchers. Task definitions are executable workspace content.
+- **Terminal/tasks — delivered (M5):** the production terminal uses **libghostty-vt 1.0.1 (not VTE)** from a private prefix (`-Dghostty-prefix`, runtime rpath) with a **Coral-owned GTK4 Cairo/Pango renderer**, PTY process ownership/only waitpid, a GIO read watch, trust + explicit disclosure, bounded eight sessions, resize/scrollback/selection/paste and a safe OSC policy; the Terminal dock is the fourth persisted panel. Tasks load bounded `.coral/tasks.json` definitions (absolute argv, no shell, complete env allowlist), require trust + per-run review, run under supervised capture with cancellation/reaping, and match zig/gcc/clang/python/generic problems into an Output/Problems UI with a navigation callback. See the [M5 guide](WORKBENCH_M5_TERMINAL.md). Remaining limits stay explicit (no block selection, fixed Monospace 11pt, full-frame rendering, Kitty graphics disabled, tasks without the manager barrier); hyperlink activation, shell integration beyond labels and incremental rendering remain future work.
 - **Debugging:** independent DAP client/supervisor; initial Zig/C/C++ adapter spike, launch/attach, breakpoints, conditional/log points, stepping, stack/scopes/watches, debug console and task dependencies. Validate adapter/toolchain compatibility, protocol framing and shutdown behavior.
 - **Testing:** pluggable discovery and run/debug actions, structured result tree, rerun failed, output navigation and coverage adapters. Do not present command exit status as individual test results without a parser.
 - **Extensions:** start with declarative language/server/task/theme/snippet/keymap packages. Later add a versioned, isolated execution boundary (evaluate Pearl's existing WASM facilities rather than blindly embedding them). Signed/checksummed packages, compatibility metadata, permissions, updates/rollback, cancellation and resource limits. No arbitrary in-process native plugins by default.
@@ -350,7 +350,7 @@ Indicative effort is relative, not a promised calendar schedule. One small team 
 | **M2: workspaces and workbench — implementation complete** | M1 | Multi-root and reviewed root/file operations, tree/search, settings/trust, docks/native pickers, explicit and automatic sessions/multi-window / L | Real two-root W07 workflow; responsive 100k fixture; dirty crash recovery; no untrusted execution; [composed acceptance evidence](WORKBENCH_M2_ACCEPTANCE.md) |
 | **M3: bounded baseline complete; automatic increment validated** | M1, M2 | Detected-language approved automatic lifecycle; command-driven features, manual semantic tags/hint picker, reviewed text and single resources / XL | `test-m3`: language units, mandatory fake/native + pinned real ZLS, lifecycle, 25 fixture tests and full M1/M2; separate visual/production checks; [accepted automatic-increment gate and retained history](WORKBENCH_M3_LANGUAGE.md#automatic-increment-validation--accepted) |
 | **M4: Git and review engine — core workflows and UI parity implemented** | M1, M2 | Discovery/status/diff, selected full-file and single-hunk staging/unstaging, commit/uncommit, branches/lightweight tags, worktrees, stash, conflicts/continue-abort, remotes and history/blame/permalinks delivered as command-driven dialogs; Source Control dock panel and editable Project Diff delivered (grouped tree/flat status, commit entry, reviewed section/all/selected staging; multi-file unified/split/word review, hunk/change-line-selection staging) / XL | Historical final `test-m4-slice` 117/117 steps, 475/475 Zig tests (no skips reported), exit 0; pure 27, backend/hunk 40, workflow roots 25+30+18+21=94, native 46 + workflow 36; hooks-disabled production 46/46 and visual 40/40 (16 cases) accepted for the core workflows. UI-parity increment: targeted session-unit 25, widgets 209, docks 27, git-index-unit 59, focused hunk workflows 2, build 46/46 passed; full aggregate not rerun per user request; visual matrix not rerun for the new UI. Historical first-slice 105/105 aggregate and second-increment evidence remain history. Full exit still requires supported-case expansion and the remaining repository-model targets; supported-case/race boundaries must remain explicit. |
-| **M5: terminal and tasks** | M1, M2 | PTY adapter, process supervisor, task UI/problem matchers / L | Resize/exit/cancel/restart and trust tests; stdout cannot inject UI commands; processes cleaned up on close |
+| **M5: terminal and tasks — implemented, validated (targeted)** | M1, M2 | libghostty-vt 1.0.1 (not VTE) private-prefix terminal with Coral-owned Cairo/Pango renderer, PTY ownership/only waitpid, GIO read watch, trust + disclosure, eight sessions, safe OSC policy, fourth persisted dock panel; bounded reviewed tasks with supervised capture and zig/gcc/clang/python/generic matchers / L | Targeted task-unit 16, terminal native 9, tasks native 9, docks 27, session-unit 27, widgets 213, production 46/46 and visual 16/16 passed (resize/exit/cancel/restart, trust, no stdout injection, process cleanup); full aggregate not rerun per user request; [M5 guide](WORKBENCH_M5_TERMINAL.md). Limits remain explicit (no block selection, fixed Monospace 11pt, full-frame rendering, Kitty graphics disabled, tasks without manager barrier); M6 is next |
 | **M6: agent core** | M3, M4, M5 | Native providers, context, threads, tools/policy, checkpoints, inline/multi-file review / XL | Real opt-in provider workflow plus deterministic CI; cancelled/stale/conflicting edits cannot overwrite user work; denial has no side effect |
 | **M7: Zed agent parity** | M6 | ACP/MCP/skills, external auth, capability negotiation, concurrent/worktree agents, terminal threads / XL | Native and at least two pinned ACP adapters pass published feature matrix; isolation/permission bypass tests and thread restoration |
 | **M8: complete local IDE** | M3, M5; M4/M7 for release | DAP/test runner, advanced editing including interactive snippets, extension packages, keymap/accessibility polish / XL | Edit → build → debug → test → agent review → partial commit workflow passes natively without external editor |
@@ -503,6 +503,37 @@ Definitive artifacts: `pearl/.cache/coral-m3-complete-language-unit.log`, `pearl
 
 Earlier `coral-m3-full.log` / `coral-m3-final.log` failures remain historical: the missing-root diagnostic and stale visual menu-category assertion were fixed; lifecycle transcript cross-run contamination was fixed with unique temporary transcripts per launch, then all 20 lifecycle cases passed twice on repeat and again in the aggregate. The earlier green `coral-m3-accepted.log` predates the capacity fix; `coral-m3-complete.log` is definitive. Preserve the pre-M3 process-supervisor abort and M2 widget-timeout history too. At that historical checkpoint, **M4 Git/review had not started**. Current first-slice M4 scope and passed final validation are recorded separately above; no full LSP/IDE parity or broader API scope is implied.
 
+### M5 terminal and tasks increment
+
+`src/terminal` and `src/tasks` implement the M5 contract: a libghostty-vt 1.0.1
+(not VTE) terminal rendered by Coral-owned GTK4 Cairo/Pango from ghostty render
+state, with `pty.zig` process ownership and the only waitpid reaper, a GIO read
+watch, workspace trust plus explicit disclosure, bounded eight sessions
+(new/close/restart/cancel), resize/scrollback/selection/paste and a safe OSC
+policy (clipboard denied, title/checksum reports off, Kitty graphics/glyph
+disabled, notifications/window-resize ignored). The Terminal dock is the fourth
+panel with persisted layout. Tasks load bounded `.coral/tasks.json` definitions
+(absolute argv, no shell, root-relative cwd, complete env allowlist), gate on
+trust plus a per-run review, run under the supervised capture boundary
+(1 MiB / 30 s) with cancellation/reaping and no manager file barrier, and match
+zig/gcc/clang/python/generic problems into an Output/Problems UI whose navigation
+callback opens files in production and records intent in the test binary. The
+private prefix build uses `-Dghostty-prefix` with a runtime rpath; nothing was
+installed on the host.
+
+**Targeted validation passed:** task-unit 16, terminal native 9, tasks native 9,
+docks 27, session-unit 27, widgets 213 (48.284 s), hooks-disabled production
+46/46 and visual 16/16 (40/40 steps). `test-m5-slice` composes only the changed
+M5 surfaces. The **full aggregate was not rerun per user request**; M1–M4
+aggregates remain historical. Earlier failed attempts (a tasks `navigate-problem`
+timeout and a docks run) are retained as history. Limits remain explicit: no
+rectangular block selection, fixed Monospace 11pt (not the app font), full-frame
+rendering without dirty-row incremental updates, Kitty graphics disabled, tasks
+without the manager barrier, and no containment of deliberate setsid/setpgid
+escapees. See the [M5 guide](WORKBENCH_M5_TERMINAL.md#targeted-validation).
+**M6 agent core is next**; M7 terminal threads reuse this PTY service with the
+same execution disclosure.
+
 ## 11. Validation and release acceptance
 
 ### Automated layers
@@ -552,7 +583,7 @@ Track cold/warm startup, memory for 1/20/100 tabs, very long lines, 10 MiB reduc
 | “Exactly Zed” grows indefinitely | Freeze reference release and behavior fixtures; log intentional deviations |
 | External agents bypass permission callbacks | OS isolation or truthful full-process-access disclosure; never equate ACP with sandboxing |
 | Git index races or agent rejection lose work | Checked snapshots, shared transactions, conflict review and recoverable records |
-| Terminal/extension library suitability | Embedding, maintenance and license review before dependency adoption |
+| Terminal/extension library suitability | M5 adopted libghostty-vt 1.0.1 after private-prefix embedding review (the VTE spike remains historical feasibility evidence); the extension execution boundary still requires review before adoption |
 | Provider costs/data leakage | Explicit opt-in, credentials boundary, context preview, budgets and redaction |
 | Multiple agents compete for shared files | Worktree isolation by default for parallel writers; stable thread bindings |
 | Overpromising “full editor” | Explicit local IDE and extension acceptance gates; remote workspaces and other exclusions remain outside scope |

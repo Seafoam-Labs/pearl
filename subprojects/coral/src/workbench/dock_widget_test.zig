@@ -18,6 +18,7 @@ const Fixture = struct {
     editor: u.W = undefined,
     search: u.W = undefined,
     source_control: u.W = undefined,
+    terminal: u.W = undefined,
     dock: Dock = undefined,
     fn init(self: *Fixture) !void {
         try t.expect(c.gtk_init_check() != 0);
@@ -30,6 +31,8 @@ const Fixture = struct {
         u.append(self.dock.search_slot, self.search);
         self.source_control = c.gtk_entry_new().?;
         u.append(self.dock.source_control_slot, self.source_control);
+        self.terminal = c.gtk_entry_new().?;
+        u.append(self.dock.terminal_slot, self.terminal);
         c.gtk_window_set_child(u.cast(c.GtkWindow, self.window), self.dock.root);
         self.dock.attach();
         c.gtk_window_set_default_size(u.cast(c.GtkWindow, self.window), 960, 640);
@@ -264,4 +267,65 @@ test "moving focused source control keeps focus after allocation without overrid
     _ = c.gtk_widget_grab_focus(f.editor);
     settle();
     try t.expect(c.gtk_window_get_focus(u.cast(c.GtkWindow, f.window)) == f.editor);
+}
+
+test "terminal defaults to a hidden bottom panel and preserves old sessions" {
+    var f: Fixture = .{};
+    try f.init();
+    defer f.deinit();
+    try t.expect(f.dock.state.terminal == .bottom);
+    try t.expect(!f.dock.state.terminal_visible);
+    try t.expect(!f.dock.effective[3]);
+    try t.expect(c.gtk_widget_get_visible(f.dock.terminal_slot) == 0);
+    // Explorer keeps its historical default while Terminal stays hidden.
+    try t.expect(f.dock.effective[0]);
+    try t.expect(f.dock.state.active == .explorer);
+}
+
+test "terminal dock moves hides and tabs without disturbing explorer/search/source control" {
+    var f: Fixture = .{};
+    try f.init();
+    defer f.deinit();
+    const parent = c.gtk_widget_get_parent(f.editor);
+    const buffer = c.gtk_text_view_get_buffer(u.cast(c.GtkTextView, f.editor));
+    f.dock.show(.terminal);
+    settle();
+    // Terminal shares the default bottom dock with Search (hidden): Terminal wins.
+    try t.expect(f.dock.effective[3]);
+    try t.expect(f.dock.state.active == .terminal);
+    try t.expect(c.gtk_widget_get_visible(f.dock.terminal_slot) != 0);
+    for ([_]layout.Dock{ .right, .bottom, .left }) |side| {
+        f.dock.move(side);
+        settle();
+        try t.expect(c.gtk_widget_get_parent(f.dock.terminal_slot) == f.dock.hosts[@backingInt(side)]);
+        try t.expect(f.dock.effective[3]);
+        // The Terminal tab follows the panel; the other tabs stay put.
+        for (f.dock.tabs, 0..) |tabs, i| {
+            try t.expect(c.gtk_widget_get_visible(tabs[3]) == @intFromBool(i == @backingInt(side)));
+            try t.expect(c.gtk_widget_get_visible(tabs[0]) == @intFromBool(i == @backingInt(f.dock.state.explorer)));
+        }
+        try t.expect(c.gtk_widget_get_parent(f.editor) == parent);
+        try t.expect(c.gtk_text_view_get_buffer(u.cast(c.GtkTextView, f.editor)) == buffer);
+    }
+    f.dock.hide(.terminal);
+    settle();
+    try t.expect(!f.dock.effective[3]);
+    try t.expect(c.gtk_widget_get_visible(f.dock.terminal_slot) == 0);
+    // Explorer remains visible and becomes the active fallback.
+    try t.expect(f.dock.effective[0] and f.dock.state.active == .explorer);
+    for (f.dock.tabs) |tabs| try t.expect(c.gtk_widget_get_visible(tabs[3]) == 0);
+}
+
+test "terminal and search share the bottom dock keeping the active panel" {
+    var f: Fixture = .{};
+    try f.init();
+    defer f.deinit();
+    f.dock.restore(.{ .search = .bottom, .terminal = .bottom, .search_visible = true, .terminal_visible = true, .active = .terminal });
+    settle();
+    try t.expect(!f.dock.effective[1] and f.dock.effective[3]);
+    f.dock.show(.search);
+    settle();
+    try t.expect(f.dock.effective[1] and !f.dock.effective[3]);
+    // Desired state survives the shared-dock presentation collapse.
+    try t.expect(f.dock.state.search_visible and f.dock.state.terminal_visible);
 }

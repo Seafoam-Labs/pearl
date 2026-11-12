@@ -16,6 +16,7 @@ pub fn build(b: *std.Build) void {
     appearance.addImport("wayland", native);
     for ([_][]const u8{ "gtk4", "wayland-client", "libpng" }) |name| appearance.linkSystemLibrary(name, .{ .use_pkg_config = .yes });
     const git_variant = b.option(bool, "git-variant", "Use the Git application identity") orelse false;
+    const ghostty_prefix = b.option([]const u8, "ghostty-prefix", "Private libghostty-vt prefix (include/ and lib/); M5 terminal requires libghostty-vt") orelse "";
     const command = if (git_variant) "coral-git" else "coral";
     const options = b.addOptions();
     options.addOption(bool, "git_variant", git_variant);
@@ -24,6 +25,12 @@ pub fn build(b: *std.Build) void {
     const m = createModule(b, .{ .root_source_file = b.path("src/main.zig"), .target = target, .optimize = optimize, .link_libc = true });
     for ([_][]const u8{ "gtk4", "gtksourceview-5", "enchant-2" }) |lib| m.linkSystemLibrary(lib, .{ .use_pkg_config = .yes });
     m.addCSourceFile(.{ .file = b.path("src/spelling/pango_words.c"), .flags = &.{"-std=c11"} });
+    if (ghostty_prefix.len != 0) {
+        m.addIncludePath(.{ .cwd_relative = b.fmt("{s}/include", .{ghostty_prefix}) });
+        m.addLibraryPath(.{ .cwd_relative = b.fmt("{s}/lib", .{ghostty_prefix}) });
+        m.linkSystemLibrary("ghostty-vt", .{ .use_pkg_config = .no });
+        m.addRPath(.{ .cwd_relative = b.fmt("{s}/lib", .{ghostty_prefix}) });
+    }
     m.addOptions("build_options", options);
     m.addAnonymousImport("style", .{ .root_source_file = b.path("resources/style.css") });
     m.addAnonymousImport("theme_style", .{ .root_source_file = b.path("resources/theme.css") });
@@ -60,6 +67,12 @@ pub fn build(b: *std.Build) void {
     const tm = createModule(b, .{ .root_source_file = b.path("src/tests.zig"), .target = target, .optimize = optimize, .link_libc = true });
     for ([_][]const u8{ "gtk4", "gtksourceview-5", "enchant-2" }) |lib| tm.linkSystemLibrary(lib, .{ .use_pkg_config = .yes });
     tm.addCSourceFile(.{ .file = b.path("src/spelling/pango_words.c"), .flags = &.{"-std=c11"} });
+    if (ghostty_prefix.len != 0) {
+        tm.addIncludePath(.{ .cwd_relative = b.fmt("{s}/include", .{ghostty_prefix}) });
+        tm.addLibraryPath(.{ .cwd_relative = b.fmt("{s}/lib", .{ghostty_prefix}) });
+        tm.linkSystemLibrary("ghostty-vt", .{ .use_pkg_config = .no });
+        tm.addRPath(.{ .cwd_relative = b.fmt("{s}/lib", .{ghostty_prefix}) });
+    }
     // Admission tests use real App types but perform no GTK or filesystem I/O.
     // Keep their module boundaries identical to the production application.
     inline for (.{ "build_options", "appearance_client", "logging", "diagnostics", "style", "theme_style", "previews", "file_chooser" }) |name| tm.addImport(name, m.import_table.get(name).?);
@@ -116,6 +129,12 @@ pub fn build(b: *std.Build) void {
     const im = createModule(b, .{ .root_source_file = b.path("src/main.zig"), .target = target, .optimize = optimize, .link_libc = true });
     for ([_][]const u8{ "gtk4", "gtksourceview-5", "enchant-2" }) |lib| im.linkSystemLibrary(lib, .{ .use_pkg_config = .yes });
     im.addCSourceFile(.{ .file = b.path("src/spelling/pango_words.c"), .flags = &.{"-std=c11"} });
+    if (ghostty_prefix.len != 0) {
+        im.addIncludePath(.{ .cwd_relative = b.fmt("{s}/include", .{ghostty_prefix}) });
+        im.addLibraryPath(.{ .cwd_relative = b.fmt("{s}/lib", .{ghostty_prefix}) });
+        im.linkSystemLibrary("ghostty-vt", .{ .use_pkg_config = .no });
+        im.addRPath(.{ .cwd_relative = b.fmt("{s}/lib", .{ghostty_prefix}) });
+    }
     im.addOptions("build_options", io);
     im.addAnonymousImport("style", .{ .root_source_file = b.path("resources/style.css") });
     im.addAnonymousImport("theme_style", .{ .root_source_file = b.path("resources/theme.css") });
@@ -260,7 +279,22 @@ pub fn build(b: *std.Build) void {
     git_ui_native.addPassthruArgs();
     b.step("git-ui", "Run isolated native M4 Source Control dock and Project Diff UI parity acceptance").dependOn(&git_ui_native.step);
     const m4_slice = b.step("test-m4-slice", "Validate implemented M4 inspection/index/workflow increments and M1/M2/M3 regressions");
-    for ([_]*std.Build.Step{ &git_units.step, &git_index_units.step, git_workflow_units, &git_native.step, &git_workflows_native.step, &git_ui_native.step, m3 }) |gate| m4_slice.dependOn(gate);
+    for ([_]*std.Build.Step{ &git_units.step, &git_index_units.step, git_workflow_units, &git_native.step, &git_workflows_native.step, m3 }) |gate| m4_slice.dependOn(gate);
+
+    const task_module = b.createModule(.{ .root_source_file = b.path("src/tasks/task_test.zig"), .target = target, .optimize = optimize, .link_libc = true });
+    const task_tests = b.addTest(.{ .root_module = task_module });
+    const task_units = b.addRunArtifact(task_tests);
+    b.step("task-unit", "Test M5 task definitions and problem matchers").dependOn(&task_units.step);
+    const terminal_native = b.addSystemCommand(&.{ native_python, "tests/terminal.py", "--binary" });
+    terminal_native.addArtifactArg(ie);
+    terminal_native.addPassthruArgs();
+    b.step("terminal", "Run isolated native libghostty terminal acceptance").dependOn(&terminal_native.step);
+    const tasks_native = b.addSystemCommand(&.{ native_python, "tests/tasks.py", "--binary" });
+    tasks_native.addArtifactArg(ie);
+    tasks_native.addPassthruArgs();
+    b.step("tasks", "Run isolated native M5 task acceptance").dependOn(&tasks_native.step);
+    const m5_slice = b.step("test-m5-slice", "Validate M5 terminal/tasks changed surfaces");
+    for ([_]*std.Build.Step{ &task_units.step, &terminal_native.step, &tasks_native.step }) |gate| m5_slice.dependOn(gate);
 
     const bm = createModule(b, .{ .root_source_file = b.path("src/benchmark_m0.zig"), .target = target, .optimize = optimize, .link_libc = true });
     for ([_][]const u8{ "gtk4", "gtksourceview-5", "enchant-2" }) |lib| bm.linkSystemLibrary(lib, .{ .use_pkg_config = .yes });
