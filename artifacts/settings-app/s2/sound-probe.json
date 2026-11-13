@@ -1,111 +1,258 @@
 {
+  "plugins": null,
+  "assistant_state": null,
+  "window_rules": null,
+  "notification_filters": null,
+  "launcher_icon_picker": false,
+  "bar_groups": [
+    "",
+    "",
+    ""
+  ],
   "links": [
     {
       "page": "overview",
+      "section": null,
+      "visible": true,
+      "focused": false,
       "active": false,
       "bounds": {
         "x": 12,
-        "y": 89,
+        "y": 77,
         "width": 195,
         "height": 46
       }
     },
     {
       "page": "network",
+      "section": null,
+      "visible": true,
+      "focused": false,
       "active": false,
       "bounds": {
         "x": 12,
-        "y": 169,
+        "y": 156,
         "width": 195,
         "height": 46
       }
     },
     {
       "page": "bluetooth",
+      "section": null,
+      "visible": true,
+      "focused": false,
       "active": false,
       "bounds": {
         "x": 12,
-        "y": 217,
+        "y": 204,
         "width": 195,
         "height": 46
       }
     },
     {
       "page": "sound",
+      "section": null,
+      "visible": true,
+      "focused": false,
       "active": true,
       "bounds": {
         "x": 12,
-        "y": 297,
+        "y": 283,
         "width": 195,
         "height": 46
       }
     },
     {
       "page": "power",
+      "section": null,
+      "visible": true,
+      "focused": false,
       "active": false,
       "bounds": {
         "x": 12,
-        "y": 345,
-        "width": 195,
-        "height": 46
-      }
-    },
-    {
-      "page": "appearance",
-      "active": false,
-      "bounds": {
-        "x": 12,
-        "y": 425,
-        "width": 195,
-        "height": 46
-      }
-    },
-    {
-      "page": "bar",
-      "active": false,
-      "bounds": {
-        "x": 12,
-        "y": 473,
-        "width": 195,
-        "height": 46
-      }
-    },
-    {
-      "page": "notifications",
-      "active": false,
-      "bounds": {
-        "x": 12,
-        "y": 521,
-        "width": 195,
-        "height": 46
-      }
-    },
-    {
-      "page": "session",
-      "active": false,
-      "bounds": {
-        "x": 12,
-        "y": 601,
+        "y": 331,
         "width": 195,
         "height": 46
       }
     },
     {
       "page": "aqueous",
+      "section": "displays",
+      "visible": true,
+      "focused": false,
       "active": false,
       "bounds": {
         "x": 12,
-        "y": 649,
+        "y": 379,
+        "width": 195,
+        "height": 46
+      }
+    },
+    {
+      "page": "aqueous",
+      "section": "input",
+      "visible": true,
+      "focused": false,
+      "active": false,
+      "bounds": {
+        "x": 12,
+        "y": 427,
+        "width": 195,
+        "height": 46
+      }
+    },
+    {
+      "page": "aqueous",
+      "section": "keybinds",
+      "visible": true,
+      "focused": false,
+      "active": false,
+      "bounds": {
+        "x": 12,
+        "y": 475,
+        "width": 195,
+        "height": 46
+      }
+    },
+    {
+      "page": "appearance",
+      "section": null,
+      "visible": true,
+      "focused": false,
+      "active": false,
+      "bounds": {
+        "x": 12,
+        "y": 554,
+        "width": 195,
+        "height": 46
+      }
+    },
+    {
+      "page": "aqueous",
+      "section": "appearance",
+      "visible": true,
+      "focused": false,
+      "active": false,
+      "bounds": {
+        "x": 12,
+        "y": 602,
+        "width": 195,
+        "height": 46
+      }
+    },
+    {
+      "page": "aqueous",
+      "section": "layouts",
+      "visible": true,
+      "focused": false,
+      "active": false,
+      "bounds": {
+        "x": 12,
+        "y": 650,
+        "width": 195,
+        "height": 46
+      }
+    },
+    {
+      "page": "aqueous",
+      "section": "rules",
+      "visible": true,
+      "focused": false,
+      "active": false,
+      "bounds": {
+        "x": 12,
+        "y": 698,
+        "width": 195,
+        "height": 46
+      }
+    },
+    {
+      "page": "assistant",
+      "section": null,
+      "visible": true,
+      "focused": false,
+      "active": false,
+      "bounds": {
+        "x": 12,
+        "y": 746,
+        "width": 195,
+        "height": 46
+      }
+    },
+    {
+      "page": "bar",
+      "section": null,
+      "visible": true,
+      "focused": false,
+      "active": false,
+      "bounds": {
+        "x": 12,
+        "y": 794,
+        "width": 195,
+        "height": 46
+      }
+    },
+    {
+      "page": "notifications",
+      "section": null,
+      "visible": true,
+      "focused": false,
+      "active": false,
+      "bounds": {
+        "x": 12,
+        "y": 842,
+        "width": 195,
+        "height": 46
+      }
+    },
+    {
+      "page": "system",
+      "section": null,
+      "visible": true,
+      "focused": false,
+      "active": false,
+      "bounds": {
+        "x": 12,
+        "y": 921,
+        "width": 195,
+        "height": 46
+      }
+    },
+    {
+      "page": "startup",
+      "section": null,
+      "visible": true,
+      "focused": false,
+      "active": false,
+      "bounds": {
+        "x": 12,
+        "y": 969,
         "width": 195,
         "height": 46
       }
     },
     {
       "page": "advanced",
+      "section": null,
+      "visible": true,
+      "focused": false,
       "active": false,
       "bounds": {
         "x": 12,
-        "y": 697,
+        "y": 1017,
+        "width": 195,
+        "height": 46
+      }
+    },
+    {
+      "page": "plugins",
+      "section": null,
+      "visible": true,
+      "focused": false,
+      "active": false,
+      "bounds": {
+        "x": 12,
+        "y": 1065,
         "width": 195,
         "height": 46
       }
@@ -117,9 +264,9 @@
     "online": true,
     "recovery": false,
     "state": {
-      "revision": 0,
+      "revision": 1,
       "draft_revision": 0,
-      "base_revision": 0,
+      "base_revision": 1,
       "dirty": false,
       "valid": true,
       "conflict": false,
@@ -132,14 +279,17 @@
     "error_code": "",
     "validation": "",
     "export_error": "",
-    "bytes": 744,
-    "sha256": "7654f0da45c1afad51a2812d2c5976580e9a8c4c464863e86eba11d0f892bb03",
+    "bytes": 3093,
+    "sha256": "1888e73cd15356d6492930e6e5b9ef4aa5f9765efc7b6ca8ad085e87c2f7c504",
     "picker": false,
+    "folder_picker": false,
     "preview": false,
     "close_dialog": false,
     "can_apply": false,
     "can_edit": true
   },
+  "theme_busy": false,
+  "theme_status": "",
   "service_prompt": false,
   "aqueous": {
     "online": false,
@@ -154,10 +304,17 @@
     "busy": true,
     "receipt_pending": false,
     "recording": false,
+    "shared_focus": "",
+    "shared_review": false,
+    "display_changes": 0,
+    "display_blocked": false,
     "fields": 0,
     "err": null,
     "detail": ""
   },
+  "greeter_sync_status": "",
+  "footer_text": "Preview only \u00b7 Sample devices",
+  "widget_focus": "GtkBox",
   "focus": "heading",
   "active": false,
   "key_events": 0,
@@ -165,19 +322,19 @@
     "x": 250,
     "y": 75,
     "width": 760,
-    "height": 39
+    "height": 34
   },
   "footer_bounds": {
     "x": 220,
-    "y": 718,
+    "y": 720,
     "width": 820,
-    "height": 42
+    "height": 40
   },
   "body_bounds": {
     "x": 220,
-    "y": 159,
+    "y": 152,
     "width": 820,
-    "height": 559
+    "height": 568
   },
   "retry_bounds": {
     "x": 203,
@@ -185,13 +342,19 @@
     "width": 34,
     "height": 20
   },
+  "navigation_bounds": {
+    "x": 0,
+    "y": 51,
+    "width": 220,
+    "height": 709
+  },
   "sections_bounds": {
     "x": 895,
     "y": 0,
     "width": 0,
     "height": 0
   },
-  "pid": 894819,
+  "pid": 500112,
   "page": "sound",
   "section": null,
   "connected": true,
@@ -202,7 +365,7 @@
   "visible": true,
   "scroll": 0,
   "heading": "Sound",
-  "status": "Connected to Pearl. Settings pages are not available in this version yet.",
+  "status": "Connected to Pearl.",
   "style": "dark",
   "appearance_updates": 3,
   "activation_contexts": 0,

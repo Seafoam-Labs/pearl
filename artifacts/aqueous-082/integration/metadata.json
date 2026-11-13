@@ -1,12 +1,22 @@
 {
   "status": "passed",
   "checks": {
+    "helper-and-config-bound-to-compositor-despite-conflicting-pearl-environment": true,
     "matching-toolchain-negotiation": true,
+    "scrolling-placement-five-options-roundtrip": true,
     "typed-cli-action-and-stale-target-rejection": true,
+    "save-leaves-other-instance-config-untouched": true,
     "structured-runtime-save-and-review": true,
     "durable-pending-record-resolved": true,
+    "standalone-cross-page-edits-and-remote-error-recovery": true,
+    "personal-overrides-authorized-for-validation-save-and-retained-mixed-drafts": true,
+    "executable-upgrade-preserves-refresh-validate-apply-and-instance-paths": true,
+    "missing-upgraded-helper-does-not-fall-back-to-path": true,
+    "transient-admission-contention-retries-without-uncertain-save": true,
+    "persistent-and-legacy-admission-contention-preserves-draft-and-allows-retry": true,
     "comments-only-candidate-persists-through-structured-apply": true,
     "native-preview-revert-no-persistence": true,
+    "display-admission-contention-reverts-without-retrying-expired-lease": true,
     "native-keep-durable-receipt": true,
     "incomplete-impact-blocks-raw-save": true,
     "hardware-only-color-change-gated": true,
@@ -22,37 +32,45 @@
     "display-mutations-require-fresh-negotiated-capability": true,
     "changed-reviewed-digest-requires-explicit-second-apply": true,
     "collection-rebase-only-for-untouched-source": true,
-    "owner-crash-rolls-back-without-persistence": true
+    "owner-crash-rolls-back-without-persistence": true,
+    "lost-admission-reply-and-old-absent-receipt-never-replay": true
   },
-  "pearl_sha256": "bb7243fd865f9a6849a5528215430f5f78c3e6f457e0e5bb62a53fe16816d88f",
+  "pearl_sha256": "d028ea3dda1b8631d1d75249ac713b6feaba1ed9793f11ef41dca3c6879ea0a6",
   "baseline": {
-    "revision": "b3d486920c42e24d45bed0a79e68915fe11c4815",
+    "revision": "e32ab7fc8f6510b393780b811ef92fe1bac6438e",
+    "input_activity_testing": false,
+    "bootstrap_testing": false,
     "status": "passed",
     "commands": {
       "compositor": [
         "zig",
         "build",
         "--prefix",
-        "/home/zoey/Pearl/.cache/aqueous-082",
+        "/home/zoey/Projects/pearl/.cache/aqueous-zig17-e32ab7f",
         "-Dvulkan-effects=true",
+        "-Dinput-activity-testing=false",
+        "-Dxwayland=false",
+        "-Dinstance-name=aqueous",
         "-Dman-pages=false",
-        "-Doptimize=ReleaseSafe",
-        "-Dllvm"
+        "-Doptimize=safe",
+        "-Dllvm",
+        "-j4"
       ],
       "settingsApplication": [
         "zig",
         "build",
         "config",
         "--prefix",
-        "/home/zoey/Pearl/.cache/aqueous-082",
-        "-Doptimize=ReleaseSafe"
+        "/home/zoey/Projects/pearl/.cache/aqueous-zig17-e32ab7f",
+        "-Doptimize=safe",
+        "-j4"
       ]
     },
-    "patched_wlroots_pkgconfig": "/home/zoey/Pearl/.cache/aqueous-082/source/compositor/.deps/wlroots-render-hook/lib/pkgconfig",
+    "patched_wlroots_pkgconfig": "/home/zoey/Projects/pearl/.cache/aqueous-zig17-e32ab7f/source/compositor/.deps/wlroots-render-hook/lib/pkgconfig",
     "binary_sha256": {
-      "aqueous": "2fdb523934e9d4f8683ef69294482414a8a4b0119f24407a82cdc751c46253e2",
-      "aqueousctl": "b03e8518d1772ca883dc4d074d7b439e49c15b224a344fcc73ab682092339bb6",
-      "aqueous-config": "db2ba3218e46541ab8a9a00af6e7c9f7d4b8d6a920e0e30deccba825c3ef9158"
+      "aqueous": "f1d9161cc669bd9ede45e4ed028a2364bfd26f8d4b3dd8be44d91ba296af437b",
+      "aqueousctl": "3d2cae780dcf5fb0e7470bc9e610c71783529fa14185be428146fa75910cc4ee",
+      "aqueous-config": "a342f399775984edec9c8e8e3daf23d1396a6f226f5df96ab990a5541d43ab4b"
     },
     "wlroots_patch_sha256": {
       "0001-aqueous-vulkan-render-hook.patch": "054e6e1b2f3195acc28a647f227561e4e4489b36d62dd409fee305cdc0224de4",
@@ -62,27 +80,51 @@
       "0005-drm-expose-edid-hdr-static-metadata.patch": "f7a3e8cb132cb8e92542d006ba30558a66d73b6ad00520c361bab30abab7f512",
       "0006-color-management-v1-windows-hdr.patch": "7ff1b16dad2f5ed5a20bf65538cef2cc92c384395d92d8f15cd814cbf17a6e05",
       "0007-scene-precise-position.patch": "847fd2495759988943810bd04a8c878ac929e5c4ad60ee0f890bf098278739d1",
-      "0008-xwayland-native-scaling.patch": "114952393122278ad19c3eb55f0c48969dfed4446404b7b421cc8113f3932e23",
+      "0008-xwayland-native-scaling.patch": "2152831d4f28ec27535dfd6bd90491ab583482d7ecb282c7e4bd502a6251c991",
       "0009-surface-preferred-scale-override.patch": "2eace9b5f91733c3956452bc890ce4bf610dee2871c2a9920cd35100b4761e73",
-      "0010-output-layer-sync-and-test.patch": "333220807852a5bb180c22bcc551ebf1f68dd0d212e7a758d136df760e604101",
-      "0011-scene-output-layer-promotion.patch": "210a027951637230c7c90fd196f5b376012fda985e1b50586e556ba71193b34a",
+      "0010-output-layer-sync-and-test.patch": "da129e51b99a1640ac63bfc90d53d640f79b3d663345a25c02f1c74574eb620e",
+      "0011-scene-output-layer-promotion.patch": "68c29fc1525f1a0dbe8dd2915343da5d38a3f1b5813723515f76705f25a6af99",
       "0012-syncobj-release-on-buffer-detach.patch": "388a65ad593254962f79c4e1f186f8c14eb47c34dc69304fffab1142cc73c22f",
       "0013-fifo-v1.patch": "e8f598d228ea84a9778653b6df8bfefa8a74e01612baa1dc7865b88b5f6ce47e",
       "0014-screencopy-10bit-sdr-shm.patch": "b7e250ec8ccf676aed25e82e2fc5ceb16bcfeaae4b1310530b34f4ea47fd8bd8",
-      "0015-ext-capture-formats-and-color.patch": "d75c243c0c237ccd9d19d4e35af5251e564af0e959293480b1cbd87e6dd40c0a",
+      "0015-ext-capture-formats-and-color.patch": "410be8464c72ec573cafcd690d42d0452d0710045b152e79e4ca19cd80a34eb6",
       "0016-toplevel-icon-lifetime.patch": "95b55249e78a2be603b4c955c30c9cfc54e6890d7ebfefccd5578088ed2f6832",
       "0017-xdg-toplevel-drag-v1.patch": "d23361f4bdcee892c378ce14685e285810027995531026174f89dcf5492bfd97",
       "0018-pointer-constraint-initial-region.patch": "fa548441eb1e4c4daf5f3f605e8358a7425df29d0fc4c8d7bebf2b28753aa8d9",
       "0019-overlay-backend-recovery.patch": "b7b16ab8c56aeebe4fb67014125e9677fa1c3109e41ab3de06002e87a16ed1de",
-      "0020-vulkan-sync-failure-handling.patch": "3b30c3c0b8e7ca10a0b2afb89620f53f72c6de9d949939f97fe0196a07e3b532",
+      "0020-vulkan-submit-dependencies.patch": "5d56438f9d91fa89b81994535c03fa1591c9d8d4e2f356e23444c97ca9c97244",
+      "0020-vulkan-sync-failure-handling.patch": "c83ebcc6d2f4e94d2136b788499b3fff276aded30749710cea8b4f613ffe6f33",
       "0021-drm-lease-lifetime.patch": "073e4485a07a27a3e6f9b523e3b39e9752a2879fc4b41aed5ca8c007fd886e27",
       "0022-pointer-enter-serial-validation.patch": "b98199e30c129427f116adc19e6fa0c05a4c6d9fead3cc8b3fbf730b5e29becd",
-      "0023-commit-timing-v1.patch": "71edb8370f10b0711b1272f8a01a3aa5e53e9fbc85b1a9d6312040f4534389a7"
+      "0023-commit-timing-v1.patch": "71edb8370f10b0711b1272f8a01a3aa5e53e9fbc85b1a9d6312040f4534389a7",
+      "0024-protocol-versions.patch": "ec228e6d770b70841a354843d1346f1f1203df6718c7635b880e25b9a361fc71",
+      "0025-drm-color-pipeline.patch": "e0dd981eab372a0e3dc9631ec12161a569b2475470f18d8d3fac99c158aadcdc",
+      "0026-scene-color-pipeline.patch": "e32f706123b31b0d273ddb3659eb6633a184499d38759ac08659eb2c05a9cbd4",
+      "0027-xwayland-size-hints.patch": "6afa86c25adccfdf513535653024476db5e822f128d1a724ca2b006b7fe72f7d",
+      "0028-output-color-guard.patch": "3cb2568e189293f6dd1522f52a932da73b4e79f0bf3d5ee079c130b5844f4b17",
+      "0029-screencopy-sdr-gamma-lookup.patch": "2914d00779c04c481e7e878c9d2525b4861973a4d99d7d6bda99d45aaa19d2ad",
+      "0030-vulkan-presentation-copy.patch": "daf152a045a30d5a861d6a1e2a31b687c7bc50035ab8a8461d07115a123e9ba4",
+      "0031-vulkan-device-selection.patch": "c64727ad7418bece8df5c58c787502f33d117a36fbc0c7dfe13d90b7e3241817",
+      "0032-scene-empty-buffer-damage.patch": "d9c7e5d498565e6abb30b8ae391de5eafdf7309b3476a8a2a5211d0c46719ed7",
+      "0033-scene-effect-single-pixel.patch": "026a0f9797dfcb260a7e7d639d9354f697018f148718c0a6616e9a194207f8ef",
+      "0034-dmabuf-import-diagnostics.patch": "bebfcdceb1e779db06df4a52eb83c2fc4b61a62a9c354fb21a32775369e06c32",
+      "0035-drm-prepare-resource-ownership.patch": "1ed5b729378c4511aee9e0f351dd310a06fcee204b22dd4f85478d6c989dd7d7",
+      "0036-syncobj-waiter-allocation-cleanup.patch": "917fedcf5b685c5d62b3eb076e67c9b1a6fefe5ae3f42f74adf67325a7337140",
+      "0037-syncobj-merger-error-handling.patch": "b75733fdb9d9d6d364f78bc3dc851194abe6d0191a00548f35f850a0ae1df5cd",
+      "0038-vulkan-device-loss-recovery.patch": "cc51390b46c3c24b3c3d93f3596c7cb23031b3a43f4ba3c07abf6c82e613e29f",
+      "0039-output-copy-fallback-policy.patch": "ba9462ef9a179f9a9edd31cbca2e60bbf6b4953ba79154b42006f47f82cf7e3c",
+      "0040-hidden-fifo-pacing.patch": "25584c73e8cc4f17a7cd0d4efa2437a6c150ea955b665c798908424d4ea9f0fb",
+      "0041-vulkan-semaphore-import-lifecycle.patch": "69597f2a1ffe8cac7fb3bea940b11a84c858888b4ea3980f7941c703a684b0da",
+      "0042-vulkan-pass-requirements.patch": "a4edca62faf51b378e10139fde8a54d29b7a2dbcf7b8399baf6b28207f82ae86",
+      "0043-scene-buffer-windows-scrgb.patch": "79bd51ff8b11a35d266abb5a15a7d99aa4594a30f21259b0b52629cb8be14ad1",
+      "0044-color-management-extended-target-volume.patch": "c2fcfd479f508a7b32f616d5eeb991ab6bfac2ddd5697c6fb75a87dcd1bc3e19",
+      "0045-scene-live-snapshot.patch": "bab9dfd635d853d87dc8493fdb4db75751818a2a5f0fe73dc11b6d6b0daa7e1a"
     },
+    "activity_launcher_sha256": "1bbe6d4503578c662a6e27277bf22bd3185c98fa7901133661161308a21188c6",
     "helper": {
       "ok": true,
       "protocol": 1,
-      "version": "0.8.2",
+      "version": "1.0.18",
       "capabilities": [
         "schema_fields",
         "validate",
@@ -112,11 +154,12 @@
         "display_preview_commit_v1",
         "collection_schema_v1",
         "collection_preconditions_v1",
+        "display_preview_feature_policy_v1",
         "protected_collection_apply_v1",
         "collection_preconditions_v2",
         "display_declaration_mutations_v1"
       ]
     },
-    "wlroots_sha256": "bfcc691acfea1ebdb7374e20196b399feb4d0373ee1ed56e2d02309d46221b45"
+    "wlroots_sha256": "652a75ae4dd56b08a596e3c6dce6d5edcb38e80e94622382d6b236c7fdc3dd46"
   }
 }

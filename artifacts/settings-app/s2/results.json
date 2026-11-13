@@ -1,10 +1,12 @@
 {
   "status": "passed",
+  "report_only": true,
   "checks": {
     "direct-launch-without-shell-normal-window": true,
     "production-excludes-samples-and-shell-agent-dependencies": true,
     "second-launch-selects-page-and-retains-one-window": true,
     "generic-launch-strict-validation-and-aqueous-sections": true,
+    "aqueous-flattened-navigation-merged-advanced-and-external-default": true,
     "concurrent-launches-single-owner": true,
     "gio-launcher-token-forwards-and-restores-minimized-window": true,
     "ordinary-minimize-maximize-reactivation-and-escape": true,
@@ -13,6 +15,7 @@
     "internal-body-focus-and-page-scroll-restoration": true,
     "committed-material-light-dark-native-gtk": true,
     "narrow-navigation-fixed-footer-and-escape": true,
+    "narrow-flattened-sections-select-and-escape-retains-section": true,
     "large-text-reduced-motion-no-window-width-growth": true,
     "backend-loss-and-explicit-retry-without-shell-start": true,
     "ctrl-w-closes-only-frontend-and-removes-instance-endpoint": true,
@@ -22,9 +25,9 @@
     "frontend-crash-stale-instance-recovery": true
   },
   "binaries": {
-    "settings": "3ab33401722f9f0c52e405861c9fbe6596f9a716ff0acff922434cf1ab6200bf",
-    "production": "1fd59783ef9b60003cda11aa2a4ec92894d2ff55267c664efe294ee1645bae34",
-    "pearl": "c32242f862ad465b9af3535abc574c8cec4d9ecb4c678bca5e33d5e6ce67c512",
-    "ctl": "53d9d995437020a159e4b482fb3f8a93c02799472f59b9e1e5841546bdb762de"
+    "settings": "9c0f3058f9092baf84340f932c8ca373039d9db707e2ec17e1a232f59b5a84c7",
+    "production": "59b48b14422b0c83f62590bcf53aff34ebf24defac971b3162498a32d6056968",
+    "pearl": "d028ea3dda1b8631d1d75249ac713b6feaba1ed9793f11ef41dca3c6879ea0a6",
+    "ctl": "5a0286ba0e70033e8931425dd091e506cfe91b4c657bcc1ec7148a06bef22ebc"
   }
 }

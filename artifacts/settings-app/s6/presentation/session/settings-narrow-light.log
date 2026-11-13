@@ -1,0 +1,24 @@
+ts=2026-11-13T22:13:27Z pid=370258 info(settings): event=settings-launch activation_context=false
+ts=2026-11-13T22:13:27Z pid=370258 info(settings): event=settings-instance-ready session_hash=ba73b205496aace2
+ts=2026-11-13T22:13:27Z pid=370258 info(services): event=sched-profile-systemd result=polling
+ts=2026-11-13T22:13:27Z pid=370258 info(settings): event=settings-page page=overview
+ts=2026-11-13T22:13:27Z pid=370258 info(settings): event=settings-page page=aqueous
+ts=2026-11-13T22:13:27Z pid=370258 info(settings): event=settings-window-created app_id=org.aqueous.Pearl.Settings
+ts=2026-11-13T22:13:27Z pid=370258 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to get properties: Process org.freedesktop.systemd1 exited with status 1"
+ts=2026-11-13T22:13:27Z pid=370258 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-13T22:13:27Z pid=370258 info(settings): event=settings-page page=aqueous
+ts=2026-11-13T22:13:28Z pid=370258 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T22:13:28Z pid=370258 info(settings): event=settings-page page=appearance
+ts=2026-11-13T22:13:28Z pid=370258 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T22:13:28Z pid=370258 info(settings): event=settings-page page=network
+ts=2026-11-13T22:13:29Z pid=370258 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to get properties: Process org.freedesktop.systemd1 exited with status 1"
+ts=2026-11-13T22:13:29Z pid=370258 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T22:13:29Z pid=370258 info(settings): event=settings-page page=bluetooth
+ts=2026-11-13T22:13:30Z pid=370258 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T22:13:30Z pid=370258 info(settings): event=settings-page page=sound
+ts=2026-11-13T22:13:31Z pid=370258 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to get properties: Process org.freedesktop.systemd1 exited with status 1"
+ts=2026-11-13T22:13:31Z pid=370258 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T22:13:31Z pid=370258 info(settings): event=settings-page page=power
+ts=2026-11-13T22:13:32Z pid=370258 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T22:13:32Z pid=370258 info(settings): event=settings-page page=aqueous
+ts=2026-11-13T22:13:33Z pid=370258 warning(services): event=sched-profile-systemd step=unit result=failed

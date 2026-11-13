@@ -1,0 +1,34 @@
+ts=2026-11-13T22:23:09Z pid=462151 info(platform): event=background-effect-owner owner=gtk gtk=4.24.1
+ts=2026-11-13T22:23:09Z pid=462151 info(desktop): event=steam-library-sync games=0 created=0 removed=0
+ts=2026-11-13T22:23:09Z pid=462151 info(platform): event=blur-capability available=false
+ts=2026-11-13T22:23:09Z pid=462151 info(services): event=sched-profile-systemd result=polling
+ts=2026-11-13T22:23:09Z pid=462151 info(pearl): event=aqueous-availability state=connecting
+ts=2026-11-13T22:23:09Z pid=462151 info(pearl): event=ready mode=session
+ts=2026-11-13T22:23:09Z pid=462151 info(desktop): event=app-index-ready entries=75 truncated=false
+ts=2026-11-13T22:23:09Z pid=462151 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-13T22:23:09Z pid=462151 debug(aqueous): event=ipc-request op=hello
+ts=2026-11-13T22:23:09Z pid=462151 debug(aqueous): event=ipc-request op=hello
+ts=2026-11-13T22:23:09Z pid=462151 debug(aqueous): event=ipc-response op=hello
+ts=2026-11-13T22:23:09Z pid=462151 debug(aqueous): event=ipc-response op=hello
+ts=2026-11-13T22:23:09Z pid=462151 info(pearl): event=aqueous-availability state=subscribing
+ts=2026-11-13T22:23:09Z pid=462151 debug(aqueous): event=ipc-request op=subscribe
+ts=2026-11-13T22:23:09Z pid=462151 debug(aqueous): event=ipc-response op=subscribe
+ts=2026-11-13T22:23:09Z pid=462151 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T22:23:09Z pid=462151 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"
+ts=2026-11-13T22:23:09Z pid=462151 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T22:23:09Z pid=462151 info(pearl): event=aqueous-availability state=ready
+ts=2026-11-13T22:23:09Z pid=462151 info(services): event=autostart-launched file=/etc/xdg/autostart/xdg-user-dirs.desktop
+ts=2026-11-13T22:23:09Z pid=462151 info(services): event=autostart-run entries=4 launched=1
+No default user directories
+ts=2026-11-13T22:23:09Z pid=462151 info(ui): event=output-mapped id=1 connector=HEADLESS-2 scale=1 renderer=GskCairoRenderer gpu_agreement=unverified session_hash=f8e28142348ec083
+ts=2026-11-13T22:23:09Z pid=462151 info(ui): event=output-mapped id=2 connector=HEADLESS-1 scale=1 renderer=GskCairoRenderer gpu_agreement=unverified session_hash=f8e28142348ec083
+ts=2026-11-13T22:23:09Z pid=462151 info(pearl): event=settings-backend-ready session_hash=f8e28142348ec083
+ts=2026-11-13T22:23:09Z pid=462151 info(pearl): event=control-ready session_hash=f8e28142348ec083
+ts=2026-11-13T22:23:09Z pid=462151 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T22:23:09Z pid=462151 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T22:23:09Z pid=462151 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T22:23:09Z pid=462151 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T22:23:09Z pid=462151 info(pearl): event=stopping reason=control-quit pending=false
+ts=2026-11-13T22:23:09Z pid=462151 info(pearl): event=aqueous-availability state=stopped
+ts=2026-11-13T22:23:09Z pid=462151 info(pearl): event=cleanup pending=false watched_objects=0
+ts=2026-11-13T22:23:09Z pid=462151 info(pearl): event=stopped

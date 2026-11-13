@@ -45,6 +45,9 @@ pub fn ViewFor(comptime ClientType: type) type {
         announced_status: [1000:0]u8 = @splat(0),
         rules_view: ?*@import("../settings/window_rules_view.zig").For(Self) = null,
         host: *gtk.Box,
+        /// The normal settings window hosts the former Aqueous Advanced section
+        /// on its shared Advanced page; the compact popup keeps its own tab.
+        advanced_host: ?*gtk.Box = null,
         client: *ClientType,
         arena: std.heap.ArenaAllocator,
         content: *gtk.Box,
@@ -100,9 +103,9 @@ pub fn ViewFor(comptime ClientType: type) type {
         root_signals: Signals = .{},
         form_signals: Signals = .{},
         pub fn create(host: *gtk.Box, client: *ClientType, window: *gtk.Window) !*Self {
-            return createIn(host, client, window, host);
+            return createIn(host, client, window, host, null);
         }
-        pub fn createIn(host: *gtk.Box, client: *ClientType, window: *gtk.Window, footer: *gtk.Box) !*Self {
+        pub fn createIn(host: *gtk.Box, client: *ClientType, window: *gtk.Window, footer: *gtk.Box, advanced_host: ?*gtk.Box) !*Self {
             const self = try a.create(Self);
             if (!@hasDecl(ClientType, "standalone")) {
                 host.append(w.label(@import("i18n").dtr("pearl", "Aqueous settings"), "pearl-title").as(gtk.Widget));
@@ -140,7 +143,7 @@ pub fn ViewFor(comptime ClientType: type) type {
             preview_actions.insert(reload.as(gtk.Widget), -1);
             preview_actions.insert(keep.as(gtk.Widget), -1);
             preview_actions.insert(revert.as(gtk.Widget), -1);
-            self.* = .{ .issue_button = issue, .host = host, .client = client, .arena = .init(a), .content = content, .message = message, .actions = actions, .footer_line = footer_line, .buttons = .{ refresh, validate, apply }, .draft_buttons = .{ discard, rebase }, .preview_buttons = .{ keep, revert }, .preview_actions = preview_actions, .reload_button = reload, .window = window };
+            self.* = .{ .issue_button = issue, .host = host, .advanced_host = advanced_host, .client = client, .arena = .init(a), .content = content, .message = message, .actions = actions, .footer_line = footer_line, .buttons = .{ refresh, validate, apply }, .draft_buttons = .{ discard, rebase }, .preview_buttons = .{ keep, revert }, .preview_actions = preview_actions, .reload_button = reload, .window = window };
             self.root_signals.add(refresh.as(object.Object), gtk.Button.signals.clicked.connect(refresh, *Self, refreshed, self, .{}));
             self.root_signals.add(issue.as(object.Object), gtk.Button.signals.clicked.connect(issue, *Self, issueClicked, self, .{}));
             self.root_signals.add(discard.as(object.Object), gtk.Button.signals.clicked.connect(discard, *Self, discarded, self, .{}));
@@ -179,6 +182,7 @@ pub fn ViewFor(comptime ClientType: type) type {
             if (self.client.previewing()) self.client.choose(false) catch {};
             self.filling = true;
             while (self.host.as(gtk.Widget).getFirstChild()) |c| self.host.remove(c);
+            if (self.advanced_host) |host| while (host.as(gtk.Widget).getFirstChild()) |c| host.remove(c);
             self.arena.deinit();
             a.destroy(self);
         }
@@ -229,6 +233,7 @@ pub fn ViewFor(comptime ClientType: type) type {
             self.page_count = 0;
             self.page_widgets = @splat(null);
             while (self.content.as(gtk.Widget).getFirstChild()) |c| self.content.remove(c);
+            if (self.advanced_host) |host| while (host.as(gtk.Widget).getFirstChild()) |c| host.remove(c);
             _ = self.arena.reset(.retain_capacity);
             self.editors = .empty;
             self.display_controls = .empty;
@@ -261,7 +266,7 @@ pub fn ViewFor(comptime ClientType: type) type {
                 const box = self.page(notebook, title);
                 try Layout.render(self, box, snapshot, draft, category);
             }
-            const advanced = self.page(notebook, @import("i18n").dtr("pearl", "Advanced"));
+            const advanced = self.advanced_host orelse self.page(notebook, @import("i18n").dtr("pearl", "Advanced"));
             try Layout.status(self, advanced);
             const receipts = try Layout.group(self, advanced, .receipts);
             if (self.client.preview_report) |report| {
@@ -890,6 +895,8 @@ pub fn ViewFor(comptime ClientType: type) type {
             if (self.issue_focus[0] != 0) self.revealIssue();
             const names = @import("settings_navigation.zig").aqueous_sections;
             for (names, 0..) |v, index| if (std.mem.eql(u8, v, name)) {
+                // The shared Advanced page owns the former Advanced section.
+                if (@hasDecl(ClientType, "standalone") and self.notebook != null and index >= self.page_count) return error.UnknownPage;
                 self.page_index = @intCast(index);
                 if (self.notebook) |notebook| {
                     self.selectPage(@intCast(index));

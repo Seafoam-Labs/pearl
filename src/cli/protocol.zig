@@ -47,7 +47,7 @@ pub const Request = struct {
     layout: ?[]const u8 = null,
 
     pub fn settingsTarget(self: Request) settings_navigation.Target {
-        return .{ .page = if (self.op == .aqueous_show) .aqueous else self.page orelse .overview, .section = if (self.op == .aqueous_show) self.section orelse self.text else self.section };
+        return settings_navigation.normalize(.{ .page = if (self.op == .aqueous_show) .aqueous else self.page orelse .overview, .section = if (self.op == .aqueous_show) self.section orelse self.text else self.section });
     }
     pub fn compactPage(self: Request) settings_navigation.Route {
         return self.page orelse .overview;

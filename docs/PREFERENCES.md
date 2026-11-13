@@ -178,7 +178,10 @@ overrides, so a display override never re-enables a hidden bar.
 
 The Zig `pearl-settings --page appearance` application edits the same session-owned
 Pearl draft as the shell preference popup. Advanced exposes the full JSON,
-including output overrides, pinned applications and export templates. Use **Apply & save** to save all
+including output overrides, pinned applications and export templates. The same
+Advanced page also hosts the Aqueous configuration status, receipts, raw TOML
+files and draft request below the Pearl document; those edits belong to the
+separate Aqueous draft and use its own footer actions. Use **Apply & save** to save all
 Pearl changes, or **Discard** to discard the shared draft. Navigation and normal
 close/reopen retain acknowledged drafts while the backend stays running; they
 never save implicitly. Invalid JSON stays available in Advanced for repair.
@@ -212,7 +215,7 @@ normal borders use `outline`, and urgent borders use `error`. Dynamic themes use
 the current matugen palette, including seed, wallpaper, and dark/light changes.
 The setting defaults off (`theme.sync_borders` in preferences JSON). GTK mode
 pauses synchronization; disabling it keeps the last colors for manual editing in
-**Aqueous → Appearance**. Border width is unaffected.
+**Window appearance**. Border width is unaffected.
 
 Synchronization waits for pending Aqueous drafts and active operations, then
 refreshes and saves only changed border colors through the normal Aqueous

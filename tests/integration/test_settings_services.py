@@ -61,7 +61,8 @@ def navigate(s,ipc,page,section=None):
     params=dict(page=page)
     if section:params['section']=section
     assert request(s,ipc,**params)['ok']
-    try:wait_for(lambda:probe(s,ipc)['page']==page)
+    expected='advanced' if page=='aqueous' and section=='advanced' else page
+    try:wait_for(lambda:probe(s,ipc)['page']==expected)
     except Exception:print('navigation failed',probe(s,ipc),flush=True);raise
     time.sleep(.3)
 def connect_network(s, ipc, peer):
@@ -113,7 +114,7 @@ def main():
         peer=Peer(s,ipc);other=Peer(s,ipc);ready(s,ipc);aq_ready(s,ipc,peer)
         assert windows(ipc)[0]['backend']=='xdg'
         checks['normal-window-real-schema-221-fields']=True
-        for page in ('network','bluetooth','sound','power','bar','session','notifications','overview'):
+        for page in ('network','bluetooth','sound','power','bar','notifications','overview'):
             navigate(s,ipc,page);ready(s,ipc);capture(s,page,output['name'])
             assert peer.enter(page)['available']
         checks['complete-sidebar-real-data-or-unavailable']=True
@@ -202,7 +203,7 @@ def main():
         assert any(c['id']=='layout.gaps_outer' and c['value']==19 for c in peer.aq_document('draft')['changes'])
         choose_navigation(s,ipc,'sound')
         assert peer.aqueous()['draft']
-        v=choose_navigation(s,ipc,'aqueous');assert v['section']=='input'
+        v=choose_navigation(s,ipc,'aqueous','input');assert v['section']=='input'
         choose_navigation(s,ipc,'aqueous','layouts')
         click(s,ipc,'layout.gaps_outer')
         body=probe(s,ipc)['body_bounds'];win=windows(ipc)[0]['geometry']

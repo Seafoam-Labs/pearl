@@ -7,12 +7,13 @@
     "competing-draft-keeps-modal-input-and-rejects-stale-save": true,
     "move-projects-order-and-blocks-cross-page-mutations": true,
     "canonical-validate-apply-receipt-and-preference-isolation": true,
+    "matching-timing-native-edit-save-and-reopen": true,
     "390-and-560-pixel-dialogs-with-reachable-actions": true,
     "unsupported-authoritative-tester-explains-requirement": true
   },
   "binaries": {
-    "settings": "47fd1c19defdbb00ac4cab162288488fccc556bd80d618afa034736613d90521",
-    "pearl": "bd1354df4e68e24718ae5dc5229529342187e12282ef38af77b3736d8b882004",
-    "ctl": "cfc0f3bc496d2deba0fb4db5700a79b58e51288d61000d71e64ea786f43e0970"
+    "settings": "85522f1a74a0219769885b0f3d28ea1d380e41902ce211d7862f9ee3bc2f0e26",
+    "pearl": "398d6e97d7bd37193f2af8bcebaa4b098ed07e4049b7f74a07ffd20390303f98",
+    "ctl": "5a0286ba0e70033e8931425dd091e506cfe91b4c657bcc1ec7148a06bef22ebc"
   }
 }

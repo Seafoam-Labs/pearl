@@ -55,11 +55,75 @@ pub fn parse(id: []const u8) !Route {
 }
 
 /// Preserve the existing Aqueous editor's section IDs and notebook order.
+/// "advanced" remains parseable for compatibility but normalizes to the shared
+/// Advanced page; the Aqueous editor itself only hosts the first six sections.
 pub const aqueous_sections = [_][]const u8{ "appearance", "layouts", "input", "keybinds", "rules", "displays", "advanced" };
+pub const aqueous_page_sections = aqueous_sections[0..6];
 
 pub fn aqueousSectionIndex(id: []const u8) !usize {
     for (aqueous_sections, 0..) |name, index| if (std.mem.eql(u8, id, name)) return index;
     return error.UnknownPage;
+}
+
+/// The retired Aqueous parent category is flattened: every editor section is a
+/// permanent top-level destination in its subject group. Internal routing keeps
+/// the stable aqueous page/section IDs for CLI and wire compatibility.
+pub const Group = enum { general, connections, devices, desktop, system };
+
+pub fn groupTitle(group: Group) [:0]const u8 {
+    return switch (group) {
+        .general => @import("i18n").mark("GENERAL"),
+        .connections => @import("i18n").mark("CONNECTIONS"),
+        .devices => @import("i18n").mark("DEVICES"),
+        .desktop => @import("i18n").mark("DESKTOP"),
+        .system => @import("i18n").mark("SYSTEM"),
+    };
+}
+
+pub const Entry = struct { target: Target, group: Group };
+
+pub const entries = [_]Entry{
+    .{ .target = .{ .page = .overview }, .group = .general },
+    .{ .target = .{ .page = .network }, .group = .connections },
+    .{ .target = .{ .page = .bluetooth }, .group = .connections },
+    .{ .target = .{ .page = .sound }, .group = .devices },
+    .{ .target = .{ .page = .power }, .group = .devices },
+    .{ .target = .{ .page = .aqueous, .section = "displays" }, .group = .devices },
+    .{ .target = .{ .page = .aqueous, .section = "input" }, .group = .devices },
+    .{ .target = .{ .page = .aqueous, .section = "keybinds" }, .group = .devices },
+    .{ .target = .{ .page = .appearance }, .group = .desktop },
+    .{ .target = .{ .page = .aqueous, .section = "appearance" }, .group = .desktop },
+    .{ .target = .{ .page = .aqueous, .section = "layouts" }, .group = .desktop },
+    .{ .target = .{ .page = .aqueous, .section = "rules" }, .group = .desktop },
+    .{ .target = .{ .page = .assistant }, .group = .desktop },
+    .{ .target = .{ .page = .bar }, .group = .desktop },
+    .{ .target = .{ .page = .notifications }, .group = .desktop },
+    .{ .target = .{ .page = .system }, .group = .system },
+    .{ .target = .{ .page = .startup }, .group = .system },
+    .{ .target = .{ .page = .advanced }, .group = .system },
+    .{ .target = .{ .page = .plugins }, .group = .system },
+};
+
+pub fn entryIndex(target: Target) ?usize {
+    const normalized = normalize(target);
+    for (entries, 0..) |entry, index| {
+        if (entry.target.page != normalized.page) continue;
+        const a = entry.target.section orelse "";
+        const b = normalized.section orelse "";
+        if (std.mem.eql(u8, a, b)) return index;
+    }
+    return null;
+}
+
+/// The merged Advanced page owns the former Aqueous Advanced section. Legacy
+/// destinations normalize before validation decisions, storage and rendering.
+pub fn normalize(target: Target) Target {
+    if (target.page == .aqueous) {
+        if (target.section) |section| {
+            if (std.mem.eql(u8, section, "advanced")) return .{ .page = .advanced };
+        }
+    }
+    return target;
 }
 
 pub const Target = struct {
@@ -82,6 +146,44 @@ test "application targets reuse routes and preserve Aqueous sections" {
     }
     try (Target{}).validate();
     try std.testing.expectError(error.UnknownPage, (Target{ .page = .aqueous, .section = "unknown" }).validate());
+}
+
+test "flattened entries cover every route and Aqueous editor section exactly once" {
+    const t = std.testing;
+    for (entries) |entry| try entry.target.validate();
+    for (std.enums.values(Route)) |route| {
+        if (route == .aqueous) continue;
+        const index = entryIndex(.{ .page = route }) orelse return error.MissingEntry;
+        try t.expectEqual(route, entries[index].target.page);
+        try t.expect(entries[index].target.section == null);
+    }
+    for (aqueous_page_sections) |section| {
+        const index = entryIndex(.{ .page = .aqueous, .section = section }) orelse return error.MissingEntry;
+        try t.expectEqualStrings(section, entries[index].target.section.?);
+    }
+    // The retired parent and the merged Advanced section have no own entry.
+    try t.expect(entryIndex(.{ .page = .aqueous }) == null);
+    try t.expectEqual(entryIndex(.{ .page = .advanced }), entryIndex(.{ .page = .aqueous, .section = "advanced" }));
+    var groups: usize = 0;
+    var previous: ?Group = null;
+    for (entries) |entry| {
+        if (previous == null or previous.? != entry.group) groups += 1;
+        previous = entry.group;
+    }
+    try t.expectEqual(@as(usize, 5), groups);
+}
+
+test "normalize merges the Aqueous Advanced section into the shared Advanced page" {
+    const t = std.testing;
+    const merged = normalize(.{ .page = .aqueous, .section = "advanced" });
+    try t.expectEqual(Route.advanced, merged.page);
+    try t.expect(merged.section == null);
+    const kept = normalize(.{ .page = .aqueous, .section = "displays" });
+    try t.expectEqual(Route.aqueous, kept.page);
+    try t.expectEqualStrings("displays", kept.section.?);
+    const plain = normalize(.{ .page = .appearance });
+    try t.expectEqual(Route.appearance, plain.page);
+    try t.expect(plain.section == null);
 }
 
 pub const compact_routes = blk: {

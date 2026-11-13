@@ -1,82 +1,93 @@
-info: event=settings-launch activation_context=false
-info: event=settings-instance-ready session=f9c2686dc67940392ca2b4e8f48cac98
-info: event=settings-page page=overview
-info: event=settings-page page=appearance
-info: event=settings-window-created app_id=org.aqueous.Pearl.Settings
-info: event=settings-page page=appearance
-info: event=settings-activation activation_context=false
-info: event=settings-page page=appearance
-info: event=settings-activation activation_context=false
-info: event=settings-page page=sound
-info: event=settings-activation activation_context=false
-info: event=settings-page page=network
-info: event=settings-activation activation_context=false
-info: event=settings-page page=bluetooth
-info: event=settings-activation activation_context=false
-info: event=settings-page page=power
-info: event=settings-activation activation_context=false
-info: event=settings-page page=overview
-info: event=settings-activation activation_context=false
-info: event=settings-page page=overview
-info: event=settings-activation activation_context=false
-info: event=settings-page page=aqueous
-info: event=settings-activation activation_context=false
-info: event=settings-page page=sound
-info: event=settings-activation activation_context=false
-info: event=settings-page page=sound
-info: event=settings-activation activation_context=false
-info: event=settings-page page=sound
-info: event=settings-activation activation_context=false
-info: event=settings-page page=sound
-info: event=settings-activation activation_context=false
-info: event=settings-page page=sound
-info: event=settings-activation activation_context=false
-info: event=settings-page page=sound
-info: event=settings-activation activation_context=false
-info: event=settings-page page=network
-info: event=settings-activation activation_context=true
-info: event=settings-page page=network
-info: event=settings-activation activation_context=false
-info: event=settings-page page=appearance
-info: event=settings-page page=sound
-info: event=settings-activation activation_context=false
-info: event=settings-page page=appearance
-info: event=settings-page page=network
-info: event=settings-activation activation_context=false
-info: event=settings-page page=appearance
-info: event=settings-page page=sound
-info: event=settings-page page=appearance
-info: event=settings-page page=sound
-info: event=settings-page page=appearance
-info: event=settings-activation activation_context=false
-info: event=settings-page page=appearance
-info: event=settings-activation activation_context=false
-info: event=settings-page page=appearance
-info: event=settings-activation activation_context=false
-info: event=settings-page page=network
-info: event=settings-activation activation_context=false
-info: event=settings-page page=bluetooth
-info: event=settings-activation activation_context=false
-info: event=settings-page page=sound
-info: event=settings-activation activation_context=false
-info: event=settings-page page=power
-info: event=settings-activation activation_context=false
-info: event=settings-page page=appearance
-info: event=settings-activation activation_context=false
-info: event=settings-page page=network
-info: event=settings-activation activation_context=false
-info: event=settings-page page=bluetooth
-info: event=settings-activation activation_context=false
-info: event=settings-page page=sound
-info: event=settings-activation activation_context=false
-info: event=settings-page page=power
-info: event=settings-activation activation_context=false
-info: event=settings-page page=appearance
-info: event=settings-activation activation_context=false
-info: event=settings-page page=network
-info: event=settings-activation activation_context=false
-info: event=settings-page page=bluetooth
-info: event=settings-activation activation_context=false
-info: event=settings-page page=sound
-info: event=settings-activation activation_context=false
-info: event=settings-page page=power
+ts=2026-11-13T22:30:31Z pid=500112 info(settings): event=settings-launch activation_context=false
+ts=2026-11-13T22:30:31Z pid=500112 info(settings): event=settings-instance-ready session_hash=315de34458671560
+ts=2026-11-13T22:30:31Z pid=500112 info(settings): event=settings-page page=overview
+ts=2026-11-13T22:30:31Z pid=500112 info(settings): event=settings-page page=appearance
+ts=2026-11-13T22:30:31Z pid=500112 info(settings): event=settings-window-created app_id=org.aqueous.Pearl.Settings
+ts=2026-11-13T22:30:31Z pid=500112 info(settings): event=settings-page page=appearance
+ts=2026-11-13T22:30:31Z pid=500112 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T22:30:31Z pid=500112 info(settings): event=settings-page page=appearance
+ts=2026-11-13T22:30:32Z pid=500112 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T22:30:32Z pid=500112 info(settings): event=settings-page page=sound
+ts=2026-11-13T22:30:32Z pid=500112 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T22:30:32Z pid=500112 info(settings): event=settings-page page=network
+ts=2026-11-13T22:30:33Z pid=500112 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T22:30:33Z pid=500112 info(settings): event=settings-page page=bluetooth
+ts=2026-11-13T22:30:33Z pid=500112 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T22:30:33Z pid=500112 info(settings): event=settings-page page=power
+ts=2026-11-13T22:30:33Z pid=500112 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T22:30:33Z pid=500112 info(settings): event=settings-page page=overview
+ts=2026-11-13T22:30:34Z pid=500112 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T22:30:34Z pid=500112 info(settings): event=settings-page page=overview
+ts=2026-11-13T22:30:34Z pid=500112 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T22:30:34Z pid=500112 info(settings): event=settings-page page=aqueous
+ts=2026-11-13T22:30:34Z pid=500112 info(settings): event=settings-page page=aqueous
+ts=2026-11-13T22:30:35Z pid=500112 info(settings): event=settings-page page=aqueous
+ts=2026-11-13T22:30:35Z pid=500112 info(settings): event=settings-page page=aqueous
+ts=2026-11-13T22:30:36Z pid=500112 info(settings): event=settings-page page=aqueous
+ts=2026-11-13T22:30:37Z pid=500112 info(settings): event=settings-page page=aqueous
+ts=2026-11-13T22:30:37Z pid=500112 info(settings): event=settings-page page=aqueous
+ts=2026-11-13T22:30:38Z pid=500112 info(settings): event=settings-page page=advanced
+ts=2026-11-13T22:30:38Z pid=500112 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T22:30:38Z pid=500112 info(settings): event=settings-page page=advanced
+ts=2026-11-13T22:30:38Z pid=500112 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T22:30:38Z pid=500112 info(settings): event=settings-page page=aqueous
+ts=2026-11-13T22:30:38Z pid=500112 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T22:30:38Z pid=500112 info(settings): event=settings-page page=sound
+ts=2026-11-13T22:30:38Z pid=500112 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T22:30:38Z pid=500112 info(settings): event=settings-page page=sound
+ts=2026-11-13T22:30:38Z pid=500112 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T22:30:38Z pid=500112 info(settings): event=settings-page page=sound
+ts=2026-11-13T22:30:38Z pid=500112 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T22:30:38Z pid=500112 info(settings): event=settings-page page=sound
+ts=2026-11-13T22:30:38Z pid=500112 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T22:30:38Z pid=500112 info(settings): event=settings-page page=sound
+ts=2026-11-13T22:30:38Z pid=500112 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T22:30:38Z pid=500112 info(settings): event=settings-page page=sound
+ts=2026-11-13T22:30:38Z pid=500112 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T22:30:38Z pid=500112 info(settings): event=settings-page page=network
+ts=2026-11-13T22:30:38Z pid=500112 info(settings): event=settings-activation activation_context=true
+ts=2026-11-13T22:30:38Z pid=500112 info(settings): event=settings-page page=network
+ts=2026-11-13T22:30:39Z pid=500112 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T22:30:39Z pid=500112 info(settings): event=settings-page page=appearance
+ts=2026-11-13T22:30:39Z pid=500112 info(settings): event=settings-page page=sound
+ts=2026-11-13T22:30:39Z pid=500112 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T22:30:39Z pid=500112 info(settings): event=settings-page page=appearance
+ts=2026-11-13T22:30:40Z pid=500112 info(settings): event=settings-page page=network
+ts=2026-11-13T22:30:40Z pid=500112 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T22:30:40Z pid=500112 info(settings): event=settings-page page=appearance
+ts=2026-11-13T22:30:41Z pid=500112 info(settings): event=settings-page page=sound
+ts=2026-11-13T22:30:41Z pid=500112 info(settings): event=settings-page page=appearance
+ts=2026-11-13T22:30:41Z pid=500112 info(settings): event=settings-page page=sound
+ts=2026-11-13T22:30:42Z pid=500112 info(settings): event=settings-page page=appearance
+ts=2026-11-13T22:30:42Z pid=500112 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T22:30:42Z pid=500112 info(settings): event=settings-page page=appearance
+ts=2026-11-13T22:30:42Z pid=500112 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T22:30:42Z pid=500112 info(settings): event=settings-page page=appearance
+ts=2026-11-13T22:30:43Z pid=500112 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T22:30:43Z pid=500112 info(settings): event=settings-page page=network
+ts=2026-11-13T22:30:43Z pid=500112 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T22:30:43Z pid=500112 info(settings): event=settings-page page=bluetooth
+ts=2026-11-13T22:30:43Z pid=500112 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T22:30:43Z pid=500112 info(settings): event=settings-page page=sound
+ts=2026-11-13T22:30:44Z pid=500112 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T22:30:44Z pid=500112 info(settings): event=settings-page page=power
+ts=2026-11-13T22:30:44Z pid=500112 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T22:30:44Z pid=500112 info(settings): event=settings-page page=appearance
+ts=2026-11-13T22:30:44Z pid=500112 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T22:30:44Z pid=500112 info(settings): event=settings-page page=network
+ts=2026-11-13T22:30:45Z pid=500112 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T22:30:45Z pid=500112 info(settings): event=settings-page page=bluetooth
+ts=2026-11-13T22:30:45Z pid=500112 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T22:30:45Z pid=500112 info(settings): event=settings-page page=sound
+ts=2026-11-13T22:30:45Z pid=500112 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T22:30:45Z pid=500112 info(settings): event=settings-page page=power
+ts=2026-11-13T22:30:46Z pid=500112 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T22:30:46Z pid=500112 info(settings): event=settings-page page=appearance
+ts=2026-11-13T22:30:46Z pid=500112 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T22:30:46Z pid=500112 info(settings): event=settings-page page=network
+ts=2026-11-13T22:30:47Z pid=500112 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T22:30:47Z pid=500112 info(settings): event=settings-page page=bluetooth
+ts=2026-11-13T22:30:47Z pid=500112 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T22:30:47Z pid=500112 info(settings): event=settings-page page=sound
+ts=2026-11-13T22:30:47Z pid=500112 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T22:30:47Z pid=500112 info(settings): event=settings-page page=power

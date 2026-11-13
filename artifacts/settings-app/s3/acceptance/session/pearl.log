@@ -1,15 +1,141 @@
-info(pearl): event=aqueous-availability state=connecting
-info(pearl): event=ready mode=session
-info: event=blur-capability available=false
-info(pearl): event=aqueous-availability state=subscribing
-info(pearl): event=aqueous-availability state=ready
-info: event=output-mapped id=1 connector=HEADLESS-2 scale=1
-info: event=output-mapped id=2 connector=HEADLESS-1 scale=1
-info(pearl): event=settings-backend-ready session=2c15ee6f0795fdfbad85f2923556acf7
-info(pearl): event=control-ready session=2c15ee6f0795fdfbad85f2923556acf7
-info: event=app-index-ready entries=160 truncated=false
-info: event=preferences-applied revision=0 mode=static cache=false
-info(pearl): event=stopping reason=signal pending=false
-info(pearl): event=aqueous-availability state=stopped
-info(pearl): event=cleanup pending=false watched_objects=0
-info(pearl): event=stopped
+ts=2026-11-13T22:25:04Z pid=477780 info(platform): event=background-effect-owner owner=gtk gtk=4.24.1
+ts=2026-11-13T22:25:04Z pid=477780 info(desktop): event=steam-library-sync games=0 created=0 removed=0
+ts=2026-11-13T22:25:04Z pid=477780 info(platform): event=blur-capability available=false
+ts=2026-11-13T22:25:04Z pid=477780 info(services): event=sched-profile-systemd result=polling
+ts=2026-11-13T22:25:04Z pid=477780 info(pearl): event=aqueous-availability state=connecting
+ts=2026-11-13T22:25:04Z pid=477780 info(pearl): event=ready mode=session
+ts=2026-11-13T22:25:04Z pid=477780 info(desktop): event=app-index-ready entries=75 truncated=false
+ts=2026-11-13T22:25:04Z pid=477780 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-13T22:25:04Z pid=477780 debug(aqueous): event=ipc-request op=hello
+ts=2026-11-13T22:25:04Z pid=477780 debug(aqueous): event=ipc-request op=hello
+ts=2026-11-13T22:25:04Z pid=477780 debug(aqueous): event=ipc-response op=hello
+ts=2026-11-13T22:25:04Z pid=477780 debug(aqueous): event=ipc-response op=hello
+ts=2026-11-13T22:25:04Z pid=477780 info(pearl): event=aqueous-availability state=subscribing
+ts=2026-11-13T22:25:04Z pid=477780 debug(aqueous): event=ipc-request op=subscribe
+ts=2026-11-13T22:25:04Z pid=477780 debug(aqueous): event=ipc-response op=subscribe
+ts=2026-11-13T22:25:04Z pid=477780 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T22:25:04Z pid=477780 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"
+ts=2026-11-13T22:25:04Z pid=477780 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T22:25:04Z pid=477780 info(pearl): event=aqueous-availability state=ready
+ts=2026-11-13T22:25:04Z pid=477780 info(services): event=autostart-launched file=/etc/xdg/autostart/xdg-user-dirs.desktop
+ts=2026-11-13T22:25:04Z pid=477780 info(services): event=autostart-run entries=4 launched=1
+No default user directories
+ts=2026-11-13T22:25:04Z pid=477780 info(ui): event=output-mapped id=1 connector=HEADLESS-2 scale=1 renderer=GskCairoRenderer gpu_agreement=unverified session_hash=5665cee306c430cc
+ts=2026-11-13T22:25:04Z pid=477780 info(ui): event=output-mapped id=2 connector=HEADLESS-1 scale=1 renderer=GskCairoRenderer gpu_agreement=unverified session_hash=5665cee306c430cc
+ts=2026-11-13T22:25:04Z pid=477780 info(pearl): event=settings-backend-ready session_hash=5665cee306c430cc
+ts=2026-11-13T22:25:04Z pid=477780 info(pearl): event=control-ready session_hash=5665cee306c430cc
+ts=2026-11-13T22:25:04Z pid=477780 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T22:25:04Z pid=477780 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T22:25:04Z pid=477780 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T22:25:04Z pid=477780 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T22:25:04Z pid=477780 info(config): event=preferences-applied revision=0 mode=static cache=false
+ts=2026-11-13T22:25:04Z pid=477780 info(desktop): event=app-index-ready entries=75 truncated=false
+ts=2026-11-13T22:25:05Z pid=477780 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T22:25:05Z pid=477780 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T22:25:05Z pid=477780 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T22:25:05Z pid=477780 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T22:25:06Z pid=477780 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"
+ts=2026-11-13T22:25:08Z pid=477780 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"
+ts=2026-11-13T22:25:10Z pid=477780 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-13T22:25:12Z pid=477780 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"
+ts=2026-11-13T22:25:15Z pid=477780 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-13T22:25:18Z pid=477780 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T22:25:18Z pid=477780 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T22:25:18Z pid=477780 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T22:25:18Z pid=477780 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T22:25:19Z pid=477780 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T22:25:19Z pid=477780 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T22:25:20Z pid=477780 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-13T22:25:20Z pid=477780 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"
+ts=2026-11-13T22:25:20Z pid=477780 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T22:25:20Z pid=477780 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T22:25:20Z pid=477780 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T22:25:20Z pid=477780 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T22:25:20Z pid=477780 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T22:25:21Z pid=477780 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T22:25:21Z pid=477780 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T22:25:21Z pid=477780 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T22:25:21Z pid=477780 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T22:25:21Z pid=477780 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T22:25:22Z pid=477780 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T22:25:22Z pid=477780 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T22:25:22Z pid=477780 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T22:25:22Z pid=477780 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T22:25:25Z pid=477780 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-13T22:25:27Z pid=477780 info(config): event=preferences-applied revision=1 mode=dynamic cache=false
+ts=2026-11-13T22:25:27Z pid=477780 info(config): event=wallpaper-applications-applied generation=3 elapsed_us=142645 success=true
+ts=2026-11-13T22:25:28Z pid=477780 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T22:25:28Z pid=477780 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T22:25:28Z pid=477780 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T22:25:28Z pid=477780 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T22:25:28Z pid=477780 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T22:25:28Z pid=477780 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T22:25:28Z pid=477780 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T22:25:28Z pid=477780 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T22:25:28Z pid=477780 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T22:25:28Z pid=477780 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T22:25:28Z pid=477780 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T22:25:28Z pid=477780 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T22:25:29Z pid=477780 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T22:25:29Z pid=477780 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T22:25:29Z pid=477780 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T22:25:29Z pid=477780 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T22:25:29Z pid=477780 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T22:25:29Z pid=477780 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T22:25:29Z pid=477780 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T22:25:29Z pid=477780 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T22:25:29Z pid=477780 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T22:25:29Z pid=477780 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T22:25:29Z pid=477780 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T22:25:29Z pid=477780 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T22:25:30Z pid=477780 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-13T22:25:30Z pid=477780 info(config): event=preferences-applied revision=2 mode=dynamic cache=true
+ts=2026-11-13T22:25:30Z pid=477780 info(config): event=wallpaper-applications-applied generation=5 elapsed_us=98660 success=true
+ts=2026-11-13T22:25:30Z pid=477780 info(config): event=preferences-error detail=InvalidImage
+ts=2026-11-13T22:25:30Z pid=477780 info(config): event=preferences-error detail=GtkThemeNotInstalled
+ts=2026-11-13T22:25:30Z pid=477780 error(theme): event=theme-command-failed action=preview_render target= error=GeneratorCancelled
+ts=2026-11-13T22:25:31Z pid=477780 info(config): event=preferences-error detail=SaveFailed
+ts=2026-11-13T22:25:31Z pid=477780 info(desktop): event=app-index-ready entries=75 truncated=false
+ts=2026-11-13T22:25:31Z pid=477780 info(config): event=preferences-applied revision=3 mode=dynamic cache=true
+ts=2026-11-13T22:25:31Z pid=477780 info(config): event=wallpaper-applications-applied generation=10 elapsed_us=101854 success=true
+ts=2026-11-13T22:25:31Z pid=477780 info(desktop): event=app-index-ready entries=75 truncated=false
+ts=2026-11-13T22:25:32Z pid=477780 info(config): event=preferences-applied revision=4 mode=dynamic cache=true
+ts=2026-11-13T22:25:32Z pid=477780 info(config): event=wallpaper-applications-applied generation=12 elapsed_us=60677 success=true
+ts=2026-11-13T22:25:32Z pid=477780 info(config): event=preferences-applied revision=5 mode=dynamic cache=true
+ts=2026-11-13T22:25:32Z pid=477780 info(config): event=wallpaper-applications-applied generation=14 elapsed_us=61411 success=true
+ts=2026-11-13T22:25:32Z pid=477780 info(config): event=preferences-applied revision=6 mode=dynamic cache=true
+ts=2026-11-13T22:25:32Z pid=477780 info(config): event=wallpaper-applications-applied generation=16 elapsed_us=76198 success=true
+ts=2026-11-13T22:25:33Z pid=477780 info(config): event=preferences-applied revision=7 mode=dynamic cache=true
+ts=2026-11-13T22:25:33Z pid=477780 info(config): event=wallpaper-applications-applied generation=18 elapsed_us=68852 success=true
+ts=2026-11-13T22:25:33Z pid=477780 info(config): event=preferences-applied revision=8 mode=dynamic cache=true
+ts=2026-11-13T22:25:33Z pid=477780 info(config): event=wallpaper-applications-applied generation=20 elapsed_us=82076 success=true
+ts=2026-11-13T22:25:35Z pid=477780 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-13T22:25:36Z pid=477780 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"
+ts=2026-11-13T22:25:40Z pid=477780 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-13T22:25:43Z pid=477780 info(config): event=preferences-applied revision=9 mode=dynamic cache=false
+ts=2026-11-13T22:25:43Z pid=477780 info(config): event=wallpaper-applications-applied generation=22 elapsed_us=10131204 success=true
+ts=2026-11-13T22:25:44Z pid=477780 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T22:25:44Z pid=477780 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T22:25:44Z pid=477780 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T22:25:44Z pid=477780 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T22:25:44Z pid=477780 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-11-13T22:25:44Z pid=477780 info(ui): event=popup-close-reason reason=locked
+ts=2026-11-13T22:25:44Z pid=477780 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-11-13T22:25:44Z pid=477780 info(ui): event=popup-close-reason reason=locked
+ts=2026-11-13T22:25:44Z pid=477780 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T22:25:44Z pid=477780 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-11-13T22:25:44Z pid=477780 info(ui): event=popup-close-reason reason=locked
+ts=2026-11-13T22:25:44Z pid=477780 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T22:25:44Z pid=477780 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T22:25:44Z pid=477780 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-11-13T22:25:44Z pid=477780 info(ui): event=popup-close-reason reason=locked
+ts=2026-11-13T22:25:44Z pid=477780 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T22:25:44Z pid=477780 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T22:25:44Z pid=477780 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T22:25:44Z pid=477780 info(config): event=wallpaper-applications-applied generation=24 elapsed_us=850 success=true
+ts=2026-11-13T22:25:44Z pid=477780 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T22:25:44Z pid=477780 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T22:25:44Z pid=477780 info(pearl): event=stopping reason=signal pending=false
+ts=2026-11-13T22:25:44Z pid=477780 info(pearl): event=aqueous-availability state=stopped
+ts=2026-11-13T22:25:44Z pid=477780 info(pearl): event=cleanup pending=false watched_objects=0
+ts=2026-11-13T22:25:44Z pid=477780 info(pearl): event=stopped

@@ -1,57 +1,30 @@
-info: event=settings-launch activation_context=false
-info: event=settings-instance-ready session=02309359663f2769ff3d4955f201c009
-info: event=settings-page page=overview
-info: event=settings-page page=network
-info: event=settings-window-created app_id=org.aqueous.Pearl.Settings
-info: event=settings-page page=network
-info: event=settings-activation activation_context=false
-info: event=settings-page page=network
-info: event=settings-activation activation_context=false
-info: event=settings-page page=bluetooth
-info: event=settings-activation activation_context=false
-info: event=settings-page page=sound
-info: event=settings-activation activation_context=false
-info: event=settings-page page=power
-info: event=settings-activation activation_context=false
-info: event=settings-page page=bar
-info: event=settings-activation activation_context=false
-info: event=settings-page page=session
-info: event=settings-activation activation_context=false
-info: event=settings-page page=notifications
-info: event=settings-activation activation_context=false
-info: event=settings-page page=overview
-info: event=settings-activation activation_context=false
-info: event=settings-page page=network
-info: event=settings-activation activation_context=false
-info: event=settings-page page=network
-info: event=settings-activation activation_context=false
-info: event=settings-page page=bar
-info: event=settings-activation activation_context=false
-info: event=settings-page page=sound
-info: event=settings-activation activation_context=false
-info: event=settings-page page=aqueous
-info: event=settings-aqueous-action action=validate pending=false
-info: event=settings-aqueous-action action=apply pending=false
-info: event=settings-activation activation_context=false
-info: event=settings-page page=aqueous
-info: event=settings-activation activation_context=false
-info: event=settings-page page=aqueous
-info: event=settings-activation activation_context=false
-info: event=settings-page page=aqueous
-info: event=settings-activation activation_context=false
-info: event=settings-page page=aqueous
-info: event=settings-activation activation_context=false
-info: event=settings-page page=aqueous
-info: event=settings-activation activation_context=false
-info: event=settings-page page=aqueous
-info: event=settings-activation activation_context=false
-info: event=settings-page page=aqueous
-info: event=settings-activation activation_context=false
-info: event=settings-page page=aqueous
-info: event=settings-activation activation_context=false
-info: event=settings-page page=sound
-info: event=settings-activation activation_context=false
-info: event=settings-page page=aqueous
-info: event=settings-aqueous-action action=apply pending=false
-info: event=settings-activation activation_context=false
-info: event=settings-page page=sound
+ts=2026-11-13T22:05:34Z pid=302193 info(settings): event=settings-launch activation_context=false
+ts=2026-11-13T22:05:34Z pid=302193 info(settings): event=settings-instance-ready session_hash=09adf85e0c15ce89
+ts=2026-11-13T22:05:34Z pid=302193 info(services): event=sched-profile-systemd result=polling
+ts=2026-11-13T22:05:34Z pid=302193 info(settings): event=settings-page page=overview
+ts=2026-11-13T22:05:34Z pid=302193 info(settings): event=settings-page page=network
+ts=2026-11-13T22:05:34Z pid=302193 info(settings): event=settings-window-created app_id=org.aqueous.Pearl.Settings
+ts=2026-11-13T22:05:34Z pid=302193 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to get properties: Process org.freedesktop.systemd1 exited with status 1"
+ts=2026-11-13T22:05:34Z pid=302193 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-13T22:05:34Z pid=302193 info(settings): event=settings-page page=network
+ts=2026-11-13T22:05:35Z pid=302193 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T22:05:35Z pid=302193 info(settings): event=settings-page page=network
+ts=2026-11-13T22:05:35Z pid=302193 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T22:05:35Z pid=302193 info(settings): event=settings-page page=bluetooth
+ts=2026-11-13T22:05:36Z pid=302193 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to get properties: Process org.freedesktop.systemd1 exited with status 1"
+ts=2026-11-13T22:05:36Z pid=302193 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T22:05:36Z pid=302193 info(settings): event=settings-page page=sound
+ts=2026-11-13T22:05:36Z pid=302193 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T22:05:36Z pid=302193 info(settings): event=settings-page page=power
+ts=2026-11-13T22:05:37Z pid=302193 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T22:05:37Z pid=302193 info(settings): event=settings-page page=bar
+ts=2026-11-13T22:05:37Z pid=302193 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T22:05:37Z pid=302193 info(settings): event=settings-page page=notifications
+ts=2026-11-13T22:05:38Z pid=302193 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T22:05:38Z pid=302193 info(settings): event=settings-page page=overview
+ts=2026-11-13T22:05:38Z pid=302193 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to get properties: Process org.freedesktop.systemd1 exited with status 1"
+ts=2026-11-13T22:05:38Z pid=302193 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T22:05:38Z pid=302193 info(settings): event=settings-page page=network
+ts=2026-11-13T22:05:40Z pid=302193 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-13T22:05:40Z pid=302193 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T22:05:40Z pid=302193 info(settings): event=settings-page page=network

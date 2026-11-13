@@ -69,6 +69,10 @@ def click(s, ipc, field, fraction_x=.5):
             v = probe(s, ipc); rect = control(s, ipc, field); body = v['body_bounds']
             if rect['y'] >= body['y'] and rect['y'] + rect['height'] <= body['y'] + body['height']:
                 break
+            # Full-file raw editors can be taller than the viewport; they can
+            # never fit entirely, so bring their top edge into view instead.
+            if rect['height'] > body['height'] and body['y'] <= rect['y'] <= body['y'] + body['height'] - 60:
+                break
             win = windows(ipc)[0]['geometry']
             pointer_move(s, win['x'] + body['x'] + body['width']/2, win['y'] + body['y'] + body['height']/2)
             # Small viewports can oscillate past a partly clipped control with a
@@ -80,7 +84,12 @@ def click(s, ipc, field, fraction_x=.5):
             time.sleep(.1)
         else:
             raise AssertionError(('control not reachable', field, rect, body))
-    click_widget(s, ipc, control(s, ipc, field), fraction_x=fraction_x)
+    rect = control(s, ipc, field)
+    body = probe(s, ipc)['body_bounds']
+    if rect['height'] > body['height']:
+        # Click the visible top of a taller-than-viewport editor, not its center.
+        rect = dict(rect, height=60)
+    click_widget(s, ipc, rect, fraction_x=fraction_x)
 
 
 def type_text(s, text):

@@ -1,2 +1,2 @@
-info: event=settings-launch activation_context=false
-info: event=settings-forward activation_context=false
+ts=2026-11-13T22:30:38Z pid=502318 info(settings): event=settings-launch activation_context=false
+ts=2026-11-13T22:30:38Z pid=502318 info(settings): event=settings-forward activation_context=false

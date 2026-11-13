@@ -1,0 +1,27 @@
+ts=2026-11-13T22:25:21Z pid=479840 info(settings): event=settings-launch activation_context=false
+ts=2026-11-13T22:25:21Z pid=479840 info(settings): event=settings-instance-ready session_hash=5665cee306c430cc
+ts=2026-11-13T22:25:21Z pid=479840 info(services): event=sched-profile-systemd result=polling
+ts=2026-11-13T22:25:21Z pid=479840 info(settings): event=settings-page page=overview
+ts=2026-11-13T22:25:21Z pid=479840 info(settings): event=settings-page page=advanced
+ts=2026-11-13T22:25:21Z pid=479840 info(settings): event=settings-window-created app_id=org.aqueous.Pearl.Settings
+ts=2026-11-13T22:25:21Z pid=479840 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-13T22:25:21Z pid=479840 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"
+ts=2026-11-13T22:25:21Z pid=479840 info(settings): event=settings-page page=advanced
+ts=2026-11-13T22:25:21Z pid=479840 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T22:25:21Z pid=479840 info(settings): event=settings-page page=advanced
+ts=2026-11-13T22:25:23Z pid=479840 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"
+ts=2026-11-13T22:25:25Z pid=479840 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"
+ts=2026-11-13T22:25:26Z pid=479840 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-13T22:25:27Z pid=479840 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T22:25:27Z pid=479840 info(settings): event=settings-page page=appearance
+invoking IsSupported() failed for remote volume monitor with dbus name org.gtk.vfs.UDisks2VolumeMonitor:: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.gtk.vfs.UDisks2VolumeMonitor was not provided by any .service files (g-dbus-error-quark, 2)
+ts=2026-11-13T22:25:29Z pid=479840 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"
+ts=2026-11-13T22:25:31Z pid=479840 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-13T22:25:33Z pid=479840 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T22:25:33Z pid=479840 info(settings): event=settings-page page=advanced
+ts=2026-11-13T22:25:36Z pid=479840 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-13T22:25:37Z pid=479840 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"
+ts=2026-11-13T22:25:41Z pid=479840 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-13T22:25:44Z pid=479840 info(settings): event=settings-activation activation_context=false
+
+(pearl-settings-test:479840): Gdk-WARNING **: 17:25:44.564: (../gtk/gdk/gdkframetimings.c:443):gdk_frame_timings_throttling_hint: runtime check failed: (self->result != GDK_FRAME_PREPARING)

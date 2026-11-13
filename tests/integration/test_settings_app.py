@@ -15,6 +15,9 @@ from pearl_session import fixture_prefix, fixture_source
 from wayland_test_input import configure_output, pointer_move, pointer_click, pointer_scroll, press_keys
 from test_surfaces import IPC, ctl, status, capture, clean
 APP_ID = 'org.aqueous.Pearl.Settings'
+FRAME_WARNINGS = ('gdk_frame_timings_discarded() called on already presented frame',
+                  'gdk_frame_timings_throttling_hint: runtime check failed',
+                  'Duplicate call to gdk_frame_timings_presented() with different values')
 
 
 def endpoint(s, ipc): return s.runtime / 'pearl' / ipc.session / 'settings-app.sock'
@@ -59,6 +62,10 @@ def choose_navigation(s, ipc, page, section=None, pointer=True):
             click_widget(s, ipc, v['sections_bounds'])
             wait_for(lambda: probe(s, ipc)['sections_open'])
     if pointer:
+        # The first click on an inactive window activates it without delivering
+        # the button press; focus the page header before selecting a row.
+        if not v['narrow']:
+            click_widget(s, ipc, v['header_bounds'])
         for _ in range(40):
             v = probe(s, ipc)
             row = next(link for link in v['links'] if link['page'] == page and link['section'] == section)
@@ -169,21 +176,20 @@ def main():
             assert not request(s, ipc, page='sound', section='displays')['ok']
             assert probe(s, ipc)['page'] == 'aqueous'
             checks['generic-launch-strict-validation-and-aqueous-sections'] = True
-            for section, title in [('appearance', 'Appearance'), ('layouts', 'Layouts'), ('input', 'Input'), ('keybinds', 'Shortcuts'), ('rules', 'Rules'), ('displays', 'Displays'), ('advanced', 'Advanced')]:
+            for section, title in [('appearance', 'Window appearance'), ('layouts', 'Layouts'), ('input', 'Input'), ('keybinds', 'Shortcuts'), ('rules', 'Rules'), ('displays', 'Displays')]:
                 v = choose_navigation(s, ipc, 'aqueous', section, pointer=section != 'keybinds')
                 assert v['heading'] == title, v
                 assert [link['section'] for link in v['links'] if link['active']] == [section]
                 assert all(link['visible'] for link in v['links'] if link['section'])
-            capture(s, 'aqueous-sublist-wide', output['name'])
+            capture(s, 'aqueous-flattened-wide', output['name'])
+            # The former Aqueous Advanced section is merged into the shared Advanced page.
             v = choose_navigation(s, ipc, 'advanced')
-            assert not any(link['visible'] for link in v['links'] if link['section'])
-            v = choose_navigation(s, ipc, 'aqueous')
-            assert v['section'] == 'advanced'
-            v = choose_navigation(s, ipc, 'aqueous')
-            assert v['section'] == 'advanced'
+            assert v['heading'] == 'Advanced' and v['section'] is None, v
+            assert s.run([args.production, '--page', 'aqueous', '--section', 'advanced'], check=False).returncode == 0
+            wait_for(lambda: probe(s, ipc)['page'] == 'advanced')
             assert s.run([args.production, '--page', 'aqueous'], check=False).returncode == 0
             wait_for(lambda: probe(s, ipc)['section'] == 'appearance')
-            checks['aqueous-sublist-pointer-keyboard-parent-return-and-external-default'] = True
+            checks['aqueous-flattened-navigation-merged-advanced-and-external-default'] = True
             # Parallel launches all complete through one owner.
             launches = [s.child('concurrent-' + str(i), [args.production, '--page', 'sound']) for i in range(6)]
             for child in launches: clean(child)
@@ -275,7 +281,9 @@ def main():
             # Placement rules set initial geometry; this compositor preserves a
             # window's geometry after explicit maximize/restore.
             app.stop(); clean(app)
-            app = s.child('settings-narrow', [args.settings, '--page', 'appearance'], G_DEBUG='fatal-warnings', PEARL_SETTINGS_FIXTURE='1')
+            # This machine's compositor emits benign gdk_frame_timings warnings
+            # (docs/PROGRESS.md); keep criticals fatal and record the warnings.
+            app = s.child('settings-narrow', [args.settings, '--page', 'appearance'], G_DEBUG='fatal-criticals', PEARL_SETTINGS_FIXTURE='1')
             app.expect('event=settings-window-created')
             wait_for(lambda: (v := probe(s, ipc))['narrow'] and 0 < v['width'] <= 500)
             request(s, ipc, page='appearance'); time.sleep(.2)
@@ -289,9 +297,9 @@ def main():
             keys(s, 'Escape'); wait_for(lambda: not probe(s, ipc)['sections_open'])
             assert app.proc.poll() is None
             checks['narrow-navigation-fixed-footer-and-escape'] = True
-            v = choose_navigation(s, ipc, 'aqueous', pointer=False)
-            assert v['sections_open'] and v['section'] == 'appearance', v
-            capture(s, 'aqueous-sublist-narrow', output['name'])
+            v = choose_navigation(s, ipc, 'aqueous', 'appearance', pointer=False)
+            assert not v['sections_open'] and v['section'] == 'appearance', v
+            capture(s, 'aqueous-flattened-narrow', output['name'])
             v = choose_navigation(s, ipc, 'aqueous', 'displays', pointer=False)
             assert not v['sections_open'] and v['heading'] == 'Displays', v
             click_widget(s, ipc, v['sections_bounds'])
@@ -307,7 +315,7 @@ def main():
             ipc.call('command', action='window.maximized', fields=dict(id=win_id, value=False))
             wait_for(lambda: probe(s, ipc)['narrow'])
             assert probe(s, ipc)['section'] == 'displays'
-            checks['narrow-aqueous-parent-expands-child-selects-and-escape-retains-section'] = True
+            checks['narrow-flattened-sections-select-and-escape-retains-section'] = True
             request(s, ipc, page='appearance')
             apply_preferences(s, args.ctl, font_size=24, reduced_motion=True)
             time.sleep(1.4); capture(s, 'appearance-large-text', output['name'])
@@ -321,7 +329,7 @@ def main():
             pearl = s.child('pearl-restarted', [args.pearl], G_DEBUG='fatal-warnings'); pearl.expect('event=control-ready')
             # Fixture hides status chrome; reopen without fixture for Retry checks.
             assert status(s, args.ctl)['popup'] is None
-            app.stop(); clean(app)
+            app.stop(); clean(app, allowed_warnings=FRAME_WARNINGS)
             assert pearl.proc.poll() is None
             normal = s.child('settings-real-state', [args.settings, '--page', 'appearance'], G_DEBUG='fatal-warnings')
             normal.expect('event=settings-window-created'); wait_for(lambda: probe(s, ipc)['connected'])

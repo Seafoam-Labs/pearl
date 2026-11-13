@@ -9,7 +9,7 @@ from test_settings_services import navigate, aq_ready, Peer
 from test_connectivity import FIX as CONNECTIVITY
 from test_services import FIX
 
-PAGES=('overview','appearance','network','bluetooth','sound','power','bar','notifications','system','session','aqueous','advanced')
+PAGES=('overview','appearance','network','bluetooth','sound','power','bar','notifications','system','aqueous','advanced')
 REFERENCE_PAGES=('appearance','network','bluetooth','sound','power')
 
 def main():
@@ -69,7 +69,7 @@ def main():
             assert body['y']+body['height']<=footer['y']+1 and footer['y']+footer['height']<=v['height']+1,(case,page,v)
             assert sum(link['active'] for link in v['links'])==1
             children=[link for link in v['links'] if link['section']]
-            assert len(children)==7 and all(link['visible']==(page=='aqueous') for link in children)
+            assert len(children)==6 and all(link['visible'] for link in children)
             if page=='aqueous':
                 assert v['heading']=='Displays'
                 assert [link['section'] for link in children if link['active']]==['displays']

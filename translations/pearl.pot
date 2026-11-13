@@ -87,7 +87,7 @@ msgstr ""
 msgid "15 minutes"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:416
+#: src/desktop/aqueous_settings.zig:421
 msgid "180"
 msgstr ""
 
@@ -95,7 +95,7 @@ msgstr ""
 msgid "24-hour time"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:416
+#: src/desktop/aqueous_settings.zig:421
 msgid "270"
 msgstr ""
 
@@ -111,7 +111,7 @@ msgstr ""
 msgid "7-day forecast"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:416
+#: src/desktop/aqueous_settings.zig:421
 msgid "90"
 msgstr ""
 
@@ -127,7 +127,7 @@ msgstr ""
 msgid "A place for your day"
 msgstr ""
 
-#: src/settings/window.zig:866
+#: src/settings/window.zig:874
 msgid "A profile applies immediately and stays selected after a restart."
 msgstr ""
 
@@ -210,11 +210,11 @@ msgstr ""
 msgid "Actions & recovery"
 msgstr ""
 
-#: src/settings/editor.zig:822 src/settings/editor.zig:831
+#: src/settings/editor.zig:823 src/settings/editor.zig:832
 msgid "Active"
 msgstr ""
 
-#: src/settings/editor.zig:823
+#: src/settings/editor.zig:824
 msgid "Active on some displays"
 msgstr ""
 
@@ -335,7 +335,7 @@ msgstr ""
 msgid "Additional setup required"
 msgstr ""
 
-#: src/config/aqueous_presentation.zig:148 src/desktop/aqueous_settings.zig:264 src/desktop/settings.zig:66 src/desktop/settings_navigation.zig:38 src/settings/window.zig:447
+#: src/config/aqueous_presentation.zig:148 src/desktop/aqueous_settings.zig:269 src/desktop/settings.zig:66 src/desktop/settings_navigation.zig:38 src/settings/window.zig:454
 msgid "Advanced"
 msgstr ""
 
@@ -367,7 +367,7 @@ msgstr ""
 msgid "Align edges"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:570
+#: src/desktop/aqueous_settings.zig:575
 msgid "All Aqueous settings saved"
 msgstr ""
 
@@ -379,7 +379,7 @@ msgstr ""
 msgid "All caught up"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:600
+#: src/desktop/aqueous_settings.zig:605
 msgid "All display settings saved.\nChanges take effect only when you apply them."
 msgstr ""
 
@@ -458,7 +458,7 @@ msgctxt "aqueous.workspace_transition.rate.label"
 msgid "Animation rate"
 msgstr ""
 
-#: src/settings/editor.zig:831
+#: src/settings/editor.zig:832
 msgid "Another color service is active"
 msgstr ""
 
@@ -470,7 +470,7 @@ msgstr ""
 msgid "Another profile is being applied."
 msgstr ""
 
-#: src/config/aqueous_presentation.zig:148 src/desktop/settings.zig:64 src/desktop/settings_navigation.zig:31 src/settings/window.zig:447
+#: src/config/aqueous_presentation.zig:148 src/desktop/settings.zig:64 src/desktop/settings_navigation.zig:31
 msgid "Appearance"
 msgstr ""
 
@@ -502,7 +502,7 @@ msgstr ""
 msgid "Application discovery unavailable"
 msgstr ""
 
-#: src/settings/editor.zig:825 src/settings/editor.zig:831
+#: src/settings/editor.zig:826 src/settings/editor.zig:832
 msgid "Application failed"
 msgstr ""
 
@@ -546,15 +546,15 @@ msgstr ""
 msgid "Applications dock"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:129 src/desktop/settings.zig:143 src/settings/window.zig:194
+#: src/desktop/aqueous_settings.zig:132 src/desktop/settings.zig:143 src/settings/window.zig:186
 msgid "Apply & save"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:771
+#: src/desktop/aqueous_settings.zig:776
 msgid "Apply all Aqueous changes"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:594
+#: src/desktop/aqueous_settings.zig:599
 msgid "Apply changes"
 msgstr ""
 
@@ -582,15 +582,15 @@ msgctxt "aqueous.display.apply_on_reload.label"
 msgid "Apply displays on reload"
 msgstr ""
 
-#: src/settings/window.zig:866
+#: src/settings/window.zig:874
 msgid "Apply saves all Pearl preferences. Filters affect future arrivals; DND and history actions are immediate."
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:769
+#: src/desktop/aqueous_settings.zig:774
 msgid "Apply validates the candidate. Display effects require a protected preview before saving."
 msgstr ""
 
-#: src/settings/editor.zig:821 src/settings/editor.zig:831
+#: src/settings/editor.zig:822 src/settings/editor.zig:832
 msgid "Applying"
 msgstr ""
 
@@ -618,7 +618,7 @@ msgstr ""
 msgid "April"
 msgstr ""
 
-#: src/desktop/settings_navigation.zig:37 src/settings/window.zig:153
+#: src/desktop/settings_navigation.zig:37
 msgid "Aqueous"
 msgstr ""
 
@@ -626,7 +626,7 @@ msgstr ""
 msgid "Aqueous owns the preview deadline and rollback. Keep authorizes one durable save. Preview availability is reported per output and feature below."
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:108 src/desktop/panels.zig:282
+#: src/desktop/aqueous_settings.zig:111 src/desktop/panels.zig:282
 msgid "Aqueous settings"
 msgstr ""
 
@@ -642,11 +642,11 @@ msgstr ""
 msgid "Arrange side by side"
 msgstr ""
 
-#: src/settings/window.zig:724
+#: src/settings/window.zig:458
 msgid "Arrange windows and shape your workspace."
 msgstr ""
 
-#: src/settings/window.zig:422
+#: src/settings/window.zig:429
 msgid "Arrange your desktop bar and dock."
 msgstr ""
 
@@ -739,7 +739,7 @@ msgstr ""
 msgid "Automatic installation supports Devario and Arch-based systems. Install llama.cpp with your distribution's package manager, then discover the runtime."
 msgstr ""
 
-#: src/settings/window.zig:672
+#: src/settings/window.zig:681
 msgid "Automatic locking and sleep"
 msgstr ""
 
@@ -751,7 +751,7 @@ msgstr ""
 msgid "Automatic · Name"
 msgstr ""
 
-#: src/ui/i18n.zig:20 src/settings/editor.zig:831 src/ui/components/network.zig:491
+#: src/ui/i18n.zig:20 src/settings/editor.zig:832 src/ui/components/network.zig:491
 msgid "Available"
 msgstr ""
 
@@ -781,11 +781,11 @@ msgstr ""
 msgid "Background opacity slider (%)"
 msgstr ""
 
-#: src/settings/window.zig:670
+#: src/settings/window.zig:679
 msgid "Balance performance and energy use"
 msgstr ""
 
-#: src/settings/window.zig:421
+#: src/settings/window.zig:428
 msgid "Balance performance, battery life, sleep and locking."
 msgstr ""
 
@@ -1031,7 +1031,7 @@ msgstr ""
 msgid "Browsers"
 msgstr ""
 
-#: src/settings/window.zig:650
+#: src/settings/window.zig:659
 msgid "Built-in adapter · Available"
 msgstr ""
 
@@ -1039,15 +1039,15 @@ msgstr ""
 msgid "Built-in colors"
 msgstr ""
 
-#: src/settings/window.zig:671
+#: src/settings/window.zig:680
 msgid "Built-in display"
 msgstr ""
 
-#: src/settings/window.zig:629
+#: src/settings/window.zig:638
 msgid "Built-in microphone · Default device"
 msgstr ""
 
-#: src/settings/window.zig:622
+#: src/settings/window.zig:631
 msgid "Built-in speakers · Default device"
 msgstr ""
 
@@ -1055,7 +1055,7 @@ msgstr ""
 msgid "COMPONENT GALLERY · SAMPLE CONTENT"
 msgstr ""
 
-#: src/settings/window.zig:477
+#: src/desktop/settings_navigation.zig:76
 msgid "CONNECTIONS"
 msgstr ""
 
@@ -1071,7 +1071,7 @@ msgstr ""
 msgid "Calculation · Enter to copy · = to continue"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:770 src/desktop/clipboard_capture.zig:146 src/desktop/connectivity.zig:117 src/desktop/services.zig:296 src/desktop/wallpaper_crop.zig:226 src/services/polkit.zig:315 src/settings/autostart_view.zig:266 src/settings/bar_view.zig:1144 src/settings/notification_filters_view.zig:437 src/settings/scheduler_view.zig:385 src/settings/scheduler_view.zig:438
+#: src/desktop/aqueous_settings.zig:775 src/desktop/clipboard_capture.zig:146 src/desktop/connectivity.zig:117 src/desktop/services.zig:296 src/desktop/wallpaper_crop.zig:226 src/services/polkit.zig:315 src/settings/autostart_view.zig:266 src/settings/bar_view.zig:1144 src/settings/notification_filters_view.zig:437 src/settings/scheduler_view.zig:385 src/settings/scheduler_view.zig:438
 msgid "Cancel"
 msgstr ""
 
@@ -1205,7 +1205,7 @@ msgstr ""
 msgid "Changes apply to the selected display"
 msgstr ""
 
-#: src/settings/window.zig:866
+#: src/settings/window.zig:874
 msgid "Changes on this page take effect immediately."
 msgstr ""
 
@@ -1226,7 +1226,7 @@ msgstr ""
 msgid "Charging"
 msgstr ""
 
-#: src/settings/window.zig:669
+#: src/settings/window.zig:678
 msgid "Charging · About 35 minutes until full"
 msgstr ""
 
@@ -1258,7 +1258,7 @@ msgstr ""
 msgid "Checking installed runtimes… If installation is needed, complete the package manager prompts in the terminal. Setup continues until the terminal exits."
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:594
+#: src/desktop/aqueous_settings.zig:599
 msgid "Checking settings…"
 msgstr ""
 
@@ -1286,7 +1286,7 @@ msgstr ""
 msgid "Choose a network below to connect."
 msgstr ""
 
-#: src/settings/window.zig:642
+#: src/settings/window.zig:651
 msgid "Choose a network to connect"
 msgstr ""
 
@@ -1330,11 +1330,11 @@ msgstr ""
 msgid "Choose folder…"
 msgstr ""
 
-#: src/settings/window.zig:598
+#: src/settings/window.zig:607
 msgid "Choose how Pearl is styled"
 msgstr ""
 
-#: src/settings/window.zig:724
+#: src/settings/window.zig:458
 msgid "Choose how matching windows behave."
 msgstr ""
 
@@ -1370,11 +1370,11 @@ msgstr ""
 msgid "Choose wallpaper image"
 msgstr ""
 
-#: src/settings/window.zig:420
+#: src/settings/window.zig:427
 msgid "Choose where sound plays and how you are heard."
 msgstr ""
 
-#: src/settings/window.zig:425
+#: src/settings/window.zig:432
 msgid "Choose which applications start when you log in."
 msgstr ""
 
@@ -1406,7 +1406,7 @@ msgstr ""
 msgid "Clock saved to draft. Apply & save to update the bar."
 msgstr ""
 
-#: src/settings/window.zig:1043
+#: src/settings/window.zig:1054
 msgid "Close"
 msgstr ""
 
@@ -1564,7 +1564,7 @@ msgstr ""
 msgid "Configuration status"
 msgstr ""
 
-#: src/settings/window.zig:724
+#: src/settings/window.zig:458
 msgid "Configuration status, sources and recovery."
 msgstr ""
 
@@ -1581,7 +1581,7 @@ msgctxt "desktop.settings.description"
 msgid "Configure the Pearl desktop shell"
 msgstr ""
 
-#: src/settings/window.zig:426
+#: src/settings/window.zig:433
 msgid "Configure your compositor by section."
 msgstr ""
 
@@ -1609,7 +1609,7 @@ msgstr ""
 msgid "Connect a microphone to record sound."
 msgstr ""
 
-#: src/settings/window.zig:419
+#: src/settings/window.zig:426
 msgid "Connect and manage your wireless devices."
 msgstr ""
 
@@ -1641,7 +1641,7 @@ msgstr ""
 msgid "Connected and offline output declarations"
 msgstr ""
 
-#: src/settings/window.zig:835
+#: src/settings/window.zig:843
 msgid "Connected to Pearl."
 msgstr ""
 
@@ -1649,15 +1649,15 @@ msgstr ""
 msgid "Connected to a network, but internet access may be restricted."
 msgstr ""
 
-#: src/settings/window.zig:640
+#: src/settings/window.zig:649
 msgid "Connected · Strong signal"
 msgstr ""
 
-#: src/settings/window.zig:652
+#: src/settings/window.zig:661
 msgid "Connected · Trusted"
 msgstr ""
 
-#: src/settings/window.zig:835
+#: src/settings/window.zig:843
 msgid "Connecting to your Pearl session…"
 msgstr ""
 
@@ -1858,7 +1858,7 @@ msgstr ""
 msgid "Current location"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:424
+#: src/desktop/aqueous_settings.zig:429
 msgid "Current mode, or 1920x1080@60"
 msgstr ""
 
@@ -1952,11 +1952,11 @@ msgstr ""
 msgid "DEMO · SAMPLE CONTENT"
 msgstr ""
 
-#: src/settings/window.zig:479
+#: src/desktop/settings_navigation.zig:78
 msgid "DESKTOP"
 msgstr ""
 
-#: src/settings/window.zig:478
+#: src/desktop/settings_navigation.zig:77
 msgid "DEVICES"
 msgstr ""
 
@@ -2139,19 +2139,19 @@ msgstr ""
 msgid "Disabled button"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:593 src/settings/window.zig:193
+#: src/desktop/aqueous_settings.zig:598 src/settings/window.zig:185
 msgid "Discard"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:771
+#: src/desktop/aqueous_settings.zig:776
 msgid "Discard all Aqueous changes"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:751
+#: src/desktop/aqueous_settings.zig:756
 msgid "Discard all Aqueous changes?"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:123 src/desktop/settings.zig:138
+#: src/desktop/aqueous_settings.zig:126 src/desktop/settings.zig:138
 msgid "Discard draft"
 msgstr ""
 
@@ -2159,7 +2159,7 @@ msgstr ""
 msgid "Discard palette edits"
 msgstr ""
 
-#: src/settings/window.zig:982
+#: src/settings/window.zig:993
 msgid "Discard untransferred changes and close"
 msgstr ""
 
@@ -2171,7 +2171,7 @@ msgstr ""
 msgid "Disconnected"
 msgstr ""
 
-#: src/settings/window.zig:645
+#: src/settings/window.zig:654
 msgid "Disconnected · enp3s0"
 msgstr ""
 
@@ -2187,7 +2187,7 @@ msgstr ""
 msgid "Discovering plugins…"
 msgstr ""
 
-#: src/settings/window.zig:654
+#: src/settings/window.zig:663
 msgid "Discovery starts when you choose Find devices."
 msgstr ""
 
@@ -2211,7 +2211,7 @@ msgstr ""
 msgid "Display brightness"
 msgstr ""
 
-#: src/settings/editor.zig:831
+#: src/settings/editor.zig:832
 msgid "Display color support unavailable"
 msgstr ""
 
@@ -2252,7 +2252,7 @@ msgstr ""
 msgid "Display unavailable"
 msgstr ""
 
-#: src/config/aqueous_presentation.zig:148 src/settings/window.zig:447
+#: src/config/aqueous_presentation.zig:148 src/settings/window.zig:454
 msgid "Displays"
 msgstr ""
 
@@ -2704,7 +2704,7 @@ msgstr ""
 msgid "Find a plugin on this page…"
 msgstr ""
 
-#: src/settings/window.zig:724
+#: src/settings/window.zig:458
 msgid "Find actions and customize their shortcuts."
 msgstr ""
 
@@ -2716,7 +2716,7 @@ msgstr ""
 msgid "Finish or cancel this connection first."
 msgstr ""
 
-#: src/settings/window.zig:632
+#: src/settings/window.zig:641
 msgid "Firefox"
 msgstr ""
 
@@ -2849,7 +2849,7 @@ msgstr ""
 msgid "Full draft request"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:292
+#: src/desktop/aqueous_settings.zig:297
 msgid "Full draft request (JSON). Collection editors: monitor_changes, custom_keybind_changes, window_rule_changes, snap_zone_changes, snap_layouts and default_snap_layout. See docs/AQUEOUS_SETTINGS.md for exact examples. Apply saves personal copies of changed system defaults."
 msgstr ""
 
@@ -2882,7 +2882,7 @@ msgstr ""
 msgid "Further fields supplied by this Aqueous helper"
 msgstr ""
 
-#: src/settings/window.zig:476
+#: src/desktop/settings_navigation.zig:75
 msgid "GENERAL"
 msgstr ""
 
@@ -3115,7 +3115,7 @@ msgctxt "aqueous.layout.gaps_inner.label"
 msgid "Inner gaps"
 msgstr ""
 
-#: src/config/aqueous_presentation.zig:148 src/desktop/services.zig:115 src/desktop/services.zig:120 src/settings/sound_view.zig:240 src/settings/window.zig:447
+#: src/config/aqueous_presentation.zig:148 src/desktop/services.zig:115 src/desktop/services.zig:120 src/settings/sound_view.zig:240 src/settings/window.zig:454
 msgid "Input"
 msgstr ""
 
@@ -3124,7 +3124,7 @@ msgctxt "aqueous.layout.options.float.snap_gap.description"
 msgid "Inset around committed snap regions."
 msgstr ""
 
-#: src/settings/window.zig:939
+#: src/settings/window.zig:950
 msgid "Install Network Connections (nm-connection-editor) to change advanced settings."
 msgstr ""
 
@@ -3230,7 +3230,7 @@ msgstr ""
 msgid "Keep at least one condition."
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:595 src/desktop/aqueous_settings.zig:646
+#: src/desktop/aqueous_settings.zig:600 src/desktop/aqueous_settings.zig:651
 msgid "Keep changes"
 msgstr ""
 
@@ -3238,7 +3238,7 @@ msgstr ""
 msgid "Keep current / omitted"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:137 src/desktop/aqueous_settings.zig:595
+#: src/desktop/aqueous_settings.zig:140 src/desktop/aqueous_settings.zig:600
 msgid "Keep displays"
 msgstr ""
 
@@ -3254,7 +3254,7 @@ msgstr ""
 msgid "Keep notifications quiet while you focus."
 msgstr ""
 
-#: src/settings/window.zig:981
+#: src/settings/window.zig:992
 msgid "Keep open"
 msgstr ""
 
@@ -3262,15 +3262,15 @@ msgstr ""
 msgid "Keep the PNG at its selected location. Display overrides remain in Advanced."
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:633 src/desktop/aqueous_settings.zig:639
+#: src/desktop/aqueous_settings.zig:638 src/desktop/aqueous_settings.zig:644
 msgid "Keep these display settings?"
 msgstr ""
 
-#: src/settings/window.zig:618
+#: src/settings/window.zig:627
 msgid "Keep transitions quiet"
 msgstr ""
 
-#: src/settings/window.zig:971
+#: src/settings/window.zig:982
 msgid "Keep your changes"
 msgstr ""
 
@@ -3323,11 +3323,11 @@ msgstr ""
 msgid "Last {0} minutes · this session"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:269
+#: src/desktop/aqueous_settings.zig:274
 msgid "Latest native preview and rollback status"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:273
+#: src/desktop/aqueous_settings.zig:278
 msgid "Latest operation receipt and recovery details"
 msgstr ""
 
@@ -3356,7 +3356,7 @@ msgstr ""
 msgid "Launcher search"
 msgstr ""
 
-#: src/settings/window.zig:614
+#: src/settings/window.zig:623
 msgid "Lavender gradient"
 msgstr ""
 
@@ -3431,11 +3431,11 @@ msgctxt "aqueous.layout.default.description"
 msgid "Layout used without a more specific mapping."
 msgstr ""
 
-#: src/config/aqueous_presentation.zig:148 src/settings/window.zig:447
+#: src/config/aqueous_presentation.zig:148 src/settings/window.zig:454
 msgid "Layouts"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:109
+#: src/desktop/aqueous_settings.zig:112
 msgid "Layouts, windows, input and your desktop appearance"
 msgstr ""
 
@@ -3523,7 +3523,7 @@ msgstr ""
 msgid "Loading Desktop…"
 msgstr ""
 
-#: src/settings/window.zig:868
+#: src/settings/window.zig:876
 msgid "Loading Pearl preferences…"
 msgstr ""
 
@@ -3531,7 +3531,7 @@ msgstr ""
 msgid "Loading applications…"
 msgstr ""
 
-#: src/settings/window.zig:878
+#: src/settings/window.zig:886
 msgid "Loading displays…"
 msgstr ""
 
@@ -3547,7 +3547,7 @@ msgstr ""
 msgid "Loading service state…"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:114
+#: src/desktop/aqueous_settings.zig:117
 msgid "Loading settings…"
 msgstr ""
 
@@ -3555,11 +3555,11 @@ msgstr ""
 msgid "Loading wallpaper preview…"
 msgstr ""
 
-#: src/settings/window.zig:910
+#: src/settings/window.zig:921
 msgid "Local Aqueous draft — recovery"
 msgstr ""
 
-#: src/settings/window.zig:866
+#: src/settings/window.zig:874
 msgid "Local changes need review. Merge them or discard only the local copy."
 msgstr ""
 
@@ -3616,15 +3616,15 @@ msgstr ""
 msgid "Mainly clear"
 msgstr ""
 
-#: src/settings/window.zig:416
+#: src/settings/window.zig:423
 msgid "Make Pearl feel at home on your desktop."
 msgstr ""
 
-#: src/settings/window.zig:724
+#: src/settings/window.zig:458
 msgid "Make your keyboard and pointer feel right."
 msgstr ""
 
-#: src/settings/window.zig:724
+#: src/settings/window.zig:458
 msgid "Make your screens match your workspace."
 msgstr ""
 
@@ -3637,11 +3637,11 @@ msgctxt "aqueous.desktop.cursor.managed.label"
 msgid "Manage cursor settings"
 msgstr ""
 
-#: src/settings/window.zig:427
+#: src/settings/window.zig:434
 msgid "Manage installed plugins, permissions and placement."
 msgstr ""
 
-#: src/settings/window.zig:423
+#: src/settings/window.zig:430
 msgid "Manage interruptions and notification history."
 msgstr ""
 
@@ -3649,11 +3649,11 @@ msgstr ""
 msgid "Manage plugins"
 msgstr ""
 
-#: src/settings/window.zig:424
+#: src/settings/window.zig:431
 msgid "Manage system performance and CPU scheduling."
 msgstr ""
 
-#: src/settings/window.zig:418
+#: src/settings/window.zig:425
 msgid "Manage your connections and nearby networks."
 msgstr ""
 
@@ -3783,7 +3783,7 @@ msgstr ""
 msgid "Media controls"
 msgstr ""
 
-#: src/settings/window.zig:196
+#: src/settings/window.zig:188
 msgid "Merge changes"
 msgstr ""
 
@@ -3815,11 +3815,11 @@ msgstr ""
 msgid "Minimized"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:434
+#: src/desktop/aqueous_settings.zig:439
 msgid "Mirror of (empty for independent)"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:436
+#: src/desktop/aqueous_settings.zig:441
 msgid "Mirror target connector"
 msgstr ""
 
@@ -4264,7 +4264,7 @@ msgstr ""
 msgid "October"
 msgstr ""
 
-#: src/ui/i18n.zig:22 src/desktop/bar.zig:751 src/settings/editor.zig:818 src/settings/power_view.zig:125 src/settings/power_view.zig:196 src/settings/preferences_view.zig:494
+#: src/ui/i18n.zig:22 src/desktop/bar.zig:751 src/settings/editor.zig:819 src/settings/power_view.zig:125 src/settings/power_view.zig:196 src/settings/preferences_view.zig:494
 msgid "Off"
 msgstr ""
 
@@ -4304,7 +4304,7 @@ msgstr ""
 msgid "On · Open with Super + Space"
 msgstr ""
 
-#: src/settings/window.zig:639 src/ui/components/network.zig:228
+#: src/settings/window.zig:648 src/ui/components/network.zig:228
 msgid "On · Wireless connections"
 msgstr ""
 
@@ -4391,7 +4391,7 @@ msgstr ""
 msgid "Open network"
 msgstr ""
 
-#: src/settings/window.zig:644
+#: src/settings/window.zig:653
 msgid "Open network · Good signal"
 msgstr ""
 
@@ -4437,7 +4437,7 @@ msgstr ""
 msgid "Operation details"
 msgstr ""
 
-#: src/settings/window.zig:417
+#: src/settings/window.zig:424
 msgid "Optional local answers with your chosen search engines."
 msgstr ""
 
@@ -4542,7 +4542,7 @@ msgstr ""
 msgid "Padding"
 msgstr ""
 
-#: src/settings/window.zig:677
+#: src/settings/window.zig:686
 msgid "Page composition preview"
 msgstr ""
 
@@ -4550,7 +4550,7 @@ msgstr ""
 msgid "Page ranges"
 msgstr ""
 
-#: src/settings/window.zig:653
+#: src/settings/window.zig:662
 msgid "Paired · Not connected"
 msgstr ""
 
@@ -4634,7 +4634,7 @@ msgctxt "desktop.settings.git.name"
 msgid "Pearl Git Settings"
 msgstr ""
 
-#: src/settings/window.zig:115 src/settings/window.zig:218
+#: src/settings/window.zig:109 src/settings/window.zig:210
 msgid "Pearl Settings"
 msgstr ""
 
@@ -4655,11 +4655,11 @@ msgstr ""
 msgid "Pearl dock reveal"
 msgstr ""
 
-#: src/settings/window.zig:616
+#: src/settings/window.zig:625
 msgid "Pearl interface text"
 msgstr ""
 
-#: src/settings/window.zig:938
+#: src/settings/window.zig:949
 msgid "Pearl is busy. Your changes are retained; try again when the current work completes."
 msgstr ""
 
@@ -4671,31 +4671,35 @@ msgstr ""
 msgid "Pearl plugin"
 msgstr ""
 
-#: src/settings/window.zig:744
+#: src/settings/window.zig:263
+msgid "Pearl preferences"
+msgstr ""
+
+#: src/settings/window.zig:747
 msgid "Pearl preferences are managed by your session."
 msgstr ""
 
-#: src/settings/window.zig:866
+#: src/settings/window.zig:874
 msgid "Pearl preferences · All changes are applied explicitly."
 msgstr ""
 
-#: src/settings/window.zig:866
+#: src/settings/window.zig:874
 msgid "Pearl preferences · Draft retained in this session. Apply saves all Pearl changes."
 msgstr ""
 
-#: src/settings/window.zig:866
+#: src/settings/window.zig:874
 msgid "Pearl preferences · Preparing settings…"
 msgstr ""
 
-#: src/settings/window.zig:744
+#: src/settings/window.zig:747
 msgid "Pearl preferences · Preview only"
 msgstr ""
 
-#: src/settings/window.zig:866
+#: src/settings/window.zig:874
 msgid "Pearl preferences · Retaining draft…"
 msgstr ""
 
-#: src/settings/window.zig:835
+#: src/settings/window.zig:843
 msgid "Pearl session unavailable. Start Pearl, then choose Retry."
 msgstr ""
 
@@ -4822,7 +4826,7 @@ msgstr ""
 msgid "Playback position"
 msgstr ""
 
-#: src/settings/window.zig:633
+#: src/settings/window.zig:642
 msgid "Playing audio"
 msgstr ""
 
@@ -4942,11 +4946,11 @@ msgstr ""
 msgid "Power saver"
 msgstr ""
 
-#: src/settings/window.zig:936
+#: src/settings/window.zig:947
 msgid "Power settings are still saving. Wait for completion, then try again."
 msgstr ""
 
-#: src/settings/window.zig:935
+#: src/settings/window.zig:946
 msgid "Power settings changed in another editor. Review the retained draft in Advanced, then try again."
 msgstr ""
 
@@ -4964,19 +4968,19 @@ msgstr ""
 msgid "Preferences changed. Reopen the picker to review the current choice."
 msgstr ""
 
-#: src/settings/window.zig:947
+#: src/settings/window.zig:958
 msgid "Preferences could not be saved. Your draft and working settings are retained."
 msgstr ""
 
-#: src/settings/window.zig:868
+#: src/settings/window.zig:876
 msgid "Preferences were saved. An export needs attention; your changes remain applied."
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:354
+#: src/desktop/aqueous_settings.zig:359
 msgid "Preserved value"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:991
+#: src/desktop/aqueous_settings.zig:998
 msgid "Press a shortcut. Escape cancels; recording ends after 30 seconds."
 msgstr ""
 
@@ -4988,7 +4992,7 @@ msgstr ""
 msgid "Preview current draft"
 msgstr ""
 
-#: src/settings/window.zig:744
+#: src/settings/window.zig:747
 msgid "Preview only · Sample devices"
 msgstr ""
 
@@ -5117,7 +5121,7 @@ msgstr ""
 msgid "Raw configuration"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:280
+#: src/desktop/aqueous_settings.zig:285
 msgid "Raw edits are retained as you type, including invalid TOML. A file cannot have both raw and structured edits; resolve overlaps in the request below."
 msgstr ""
 
@@ -5125,7 +5129,7 @@ msgstr ""
 msgid "Read search result pages"
 msgstr ""
 
-#: src/settings/window.zig:1028
+#: src/settings/window.zig:1039
 msgid "Read-only saved settings. Your draft stays in Advanced. Copy values from here to resolve overlapping changes, or discard the draft to start from the saved settings."
 msgstr ""
 
@@ -5133,7 +5137,7 @@ msgstr ""
 msgid "Reading printer capabilities…"
 msgstr ""
 
-#: src/desktop/aqueous_layout.zig:247 src/desktop/aqueous_settings.zig:125
+#: src/desktop/aqueous_layout.zig:247 src/desktop/aqueous_settings.zig:128
 msgid "Rebase draft"
 msgstr ""
 
@@ -5141,11 +5145,11 @@ msgstr ""
 msgid "Receive coarse activity notifications. No typed text, key identities or pointer positions are exposed."
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:865
+#: src/desktop/aqueous_settings.zig:870
 msgid "Record custom shortcut"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:384
+#: src/desktop/aqueous_settings.zig:389
 msgid "Record shortcut"
 msgstr ""
 
@@ -5177,7 +5181,7 @@ msgstr ""
 msgid "Refine your search for more results"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:121 src/ui/components/network.zig:116 src/ui/components/network.zig:383
+#: src/desktop/aqueous_settings.zig:124 src/ui/components/network.zig:116 src/ui/components/network.zig:383
 msgid "Refresh"
 msgstr ""
 
@@ -5367,7 +5371,7 @@ msgstr ""
 msgid "Restore display"
 msgstr ""
 
-#: src/settings/editor.zig:824 src/settings/editor.zig:831
+#: src/settings/editor.zig:825 src/settings/editor.zig:832
 msgid "Restoring colors"
 msgstr ""
 
@@ -5391,7 +5395,7 @@ msgstr ""
 msgid "Resume saved policy"
 msgstr ""
 
-#: src/desktop/icons/view.zig:462 src/settings/bar_view.zig:1244 src/settings/window.zig:174
+#: src/desktop/icons/view.zig:462 src/settings/bar_view.zig:1244 src/settings/window.zig:166
 msgid "Retry"
 msgstr ""
 
@@ -5399,7 +5403,7 @@ msgstr ""
 msgid "Retry committed application themes"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:139
+#: src/desktop/aqueous_settings.zig:142
 msgid "Retry compositor reload"
 msgstr ""
 
@@ -5437,19 +5441,19 @@ msgctxt "aqueous.layout.options.reverse-dwindle.single_window_aspect_ratio.label
 msgid "Reverse-Dwindle: Single window aspect ratio"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:596 src/desktop/aqueous_settings.zig:645
+#: src/desktop/aqueous_settings.zig:601 src/desktop/aqueous_settings.zig:650
 msgid "Revert"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:138 src/desktop/aqueous_settings.zig:596
+#: src/desktop/aqueous_settings.zig:141 src/desktop/aqueous_settings.zig:601
 msgid "Revert displays"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:594
+#: src/desktop/aqueous_settings.zig:599
 msgid "Review & apply"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:751
+#: src/desktop/aqueous_settings.zig:756
 msgid "Review Aqueous changes"
 msgstr ""
 
@@ -5461,7 +5465,7 @@ msgstr ""
 msgid "Review and approve packages before enabling them. Apply & save saves all Pearl preferences. Refresh, Retry and Preview act immediately using saved settings."
 msgstr ""
 
-#: src/settings/window.zig:192
+#: src/settings/window.zig:184
 msgid "Review drafts"
 msgstr ""
 
@@ -5469,7 +5473,7 @@ msgstr ""
 msgid "Review external Qt changes"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:131
+#: src/desktop/aqueous_settings.zig:134
 msgid "Review issue"
 msgstr ""
 
@@ -5481,7 +5485,7 @@ msgstr ""
 msgid "Review permissions and approve this package before enabling it."
 msgstr ""
 
-#: src/settings/window.zig:428
+#: src/settings/window.zig:435
 msgid "Review the complete Pearl preferences document."
 msgstr ""
 
@@ -5529,11 +5533,11 @@ msgctxt "aqueous.layout.options.rows.single_window_aspect_ratio.label"
 msgid "Rows: Single window aspect ratio"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:570
+#: src/desktop/aqueous_settings.zig:575
 msgid "Rule order changed. Review & apply or Discard before making other Aqueous edits."
 msgstr ""
 
-#: src/config/aqueous_presentation.zig:148 src/settings/window.zig:447
+#: src/config/aqueous_presentation.zig:148 src/settings/window.zig:454
 msgid "Rules"
 msgstr ""
 
@@ -5587,7 +5591,7 @@ msgstr ""
 msgid "SU"
 msgstr ""
 
-#: src/settings/window.zig:480
+#: src/desktop/settings_navigation.zig:79
 msgid "SYSTEM"
 msgstr ""
 
@@ -5652,7 +5656,7 @@ msgstr ""
 msgid "Save, reload, synchronization and recovery"
 msgstr ""
 
-#: src/settings/window.zig:1023
+#: src/settings/window.zig:1034
 msgid "Saved Pearl preferences"
 msgstr ""
 
@@ -5704,7 +5708,7 @@ msgstr ""
 msgid "Schedule"
 msgstr ""
 
-#: src/settings/editor.zig:819
+#: src/settings/editor.zig:820
 msgid "Scheduled"
 msgstr ""
 
@@ -5824,7 +5828,7 @@ msgctxt "aqueous.layout.slots.secondary.label"
 msgid "Secondary slot"
 msgstr ""
 
-#: src/settings/window.zig:124
+#: src/settings/window.zig:118
 msgid "Sections"
 msgstr ""
 
@@ -5832,7 +5836,7 @@ msgstr ""
 msgid "Secured"
 msgstr ""
 
-#: src/settings/window.zig:643
+#: src/settings/window.zig:652
 msgid "Secured · Strong signal"
 msgstr ""
 
@@ -5844,7 +5848,7 @@ msgstr ""
 msgid "Select Show samples to inspect answers, settings and telemetry. GPU memory and separate reasoning throughput are unavailable unless reported; RAM is sampled process-tree RSS plus OS high-water information, which may miss brief child peaks."
 msgstr ""
 
-#: src/settings/window.zig:866
+#: src/settings/window.zig:874
 msgid "Select a scheduler and mode, then use Apply scheduler. Boot defaults are unchanged."
 msgstr ""
 
@@ -5893,7 +5897,7 @@ msgstr ""
 msgid "Sequential"
 msgstr ""
 
-#: src/settings/window.zig:866
+#: src/settings/window.zig:874
 msgid "Service controls take effect immediately. Pearl preference draft retained."
 msgstr ""
 
@@ -5909,7 +5913,7 @@ msgstr ""
 msgid "Session actions"
 msgstr ""
 
-#: src/settings/window.zig:835
+#: src/settings/window.zig:843
 msgid "Session mismatch. Open Settings from the matching Aqueous session."
 msgstr ""
 
@@ -5921,7 +5925,7 @@ msgstr ""
 msgid "Set a wallpaper folder in Settings → Appearance → Slideshow."
 msgstr ""
 
-#: src/settings/window.zig:933
+#: src/settings/window.zig:944
 msgid "Set an automatic lock time earlier than suspend in Session & lock. This change was not saved."
 msgstr ""
 
@@ -5953,7 +5957,7 @@ msgstr ""
 msgid "Settings are updating. Wait for synchronization, then try again."
 msgstr ""
 
-#: src/settings/window.zig:868
+#: src/settings/window.zig:876
 msgid "Settings changed elsewhere. Your changes are retained. Merge independent changes, or review Advanced to resolve a conflict."
 msgstr ""
 
@@ -5969,7 +5973,7 @@ msgstr ""
 msgid "Settings is not installed."
 msgstr ""
 
-#: src/settings/window.zig:473
+#: src/settings/window.zig:497
 msgid "Settings sections"
 msgstr ""
 
@@ -6567,15 +6571,15 @@ msgctxt "aqueous.window_switcher_previous.description"
 msgid "Shortcut for this built-in action."
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:986
+#: src/desktop/aqueous_settings.zig:993
 msgid "Shortcut inhibition was revoked."
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:977 src/desktop/aqueous_settings.zig:999
+#: src/desktop/aqueous_settings.zig:984 src/desktop/aqueous_settings.zig:1006
 msgid "Shortcut recording cancelled."
 msgstr ""
 
-#: src/config/aqueous_presentation.zig:148 src/settings/window.zig:447
+#: src/config/aqueous_presentation.zig:148 src/settings/window.zig:454
 msgid "Shortcuts"
 msgstr ""
 
@@ -6711,7 +6715,7 @@ msgstr ""
 msgid "Solid color"
 msgstr ""
 
-#: src/settings/window.zig:980
+#: src/settings/window.zig:991
 msgid "Some changes have not reached Pearl. Keep this window open to recover them, or close and discard only those untransferred changes. Drafts already retained by Pearl remain in the session."
 msgstr ""
 
@@ -6735,7 +6739,7 @@ msgstr ""
 msgid "Spacing"
 msgstr ""
 
-#: src/settings/window.zig:617
+#: src/settings/window.zig:626
 msgid "Spacing between controls"
 msgstr ""
 
@@ -7014,11 +7018,11 @@ msgstr ""
 msgid "The application could not be added."
 msgstr ""
 
-#: src/settings/window.zig:948
+#: src/settings/window.zig:959
 msgid "The change could not be completed. Your draft is retained. Review Advanced and try again."
 msgstr ""
 
-#: src/settings/window.zig:868
+#: src/settings/window.zig:876
 msgid "The connection ended during an operation. Review the current settings before applying again."
 msgstr ""
 
@@ -7038,11 +7042,11 @@ msgstr ""
 msgid "The draft cannot be edited as declarations. Open Aqueous Advanced to correct the draft JSON."
 msgstr ""
 
-#: src/settings/window.zig:868
+#: src/settings/window.zig:876
 msgid "The draft is invalid. Correct the fields or review the JSON in Advanced before applying."
 msgstr ""
 
-#: src/settings/window.zig:944
+#: src/settings/window.zig:955
 msgid "The draft is limited to 64 KiB. The previous text is retained."
 msgstr ""
 
@@ -7111,7 +7115,7 @@ msgstr ""
 msgid "The same field changed in both versions. Draft retained; review Advanced before discarding or resolving it."
 msgstr ""
 
-#: src/settings/window.zig:945
+#: src/settings/window.zig:956
 msgid "The same field changed in both versions. Review Advanced before resolving or discarding the draft."
 msgstr ""
 
@@ -7119,7 +7123,7 @@ msgstr ""
 msgid "The sample could not be tested. Wait for the draft to sync, then try again."
 msgstr ""
 
-#: src/settings/window.zig:941
+#: src/settings/window.zig:952
 msgid "The scheduler action could not be completed. Review its status and refresh before retrying."
 msgstr ""
 
@@ -7131,7 +7135,7 @@ msgstr ""
 msgid "The scheduler catalog was changed elsewhere meanwhile. Nothing was saved; review the profiles and save again."
 msgstr ""
 
-#: src/settings/window.zig:934
+#: src/settings/window.zig:945
 msgid "The screen must turn off before or at the suspend timeout. This change was not saved."
 msgstr ""
 
@@ -7151,7 +7155,7 @@ msgstr ""
 msgid "The tested draft has changed. Check the new selection before use."
 msgstr ""
 
-#: src/settings/window.zig:946
+#: src/settings/window.zig:957
 msgid "The wallpaper image could not be used. Choose a readable PNG or JPEG, then apply again."
 msgstr ""
 
@@ -7179,11 +7183,11 @@ msgstr ""
 msgid "These applications start when you log in. Changes apply at the next login."
 msgstr ""
 
-#: src/settings/window.zig:835
+#: src/settings/window.zig:843
 msgid "This Pearl session uses an incompatible Settings version."
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:765
+#: src/desktop/aqueous_settings.zig:770
 msgid "This action includes the complete Aqueous draft. Pearl preferences are separate."
 msgstr ""
 
@@ -7215,7 +7219,7 @@ msgstr ""
 msgid "This list is incomplete. The service reported more networks than it can expose."
 msgstr ""
 
-#: src/settings/window.zig:922
+#: src/settings/window.zig:933
 msgid "This local copy has not been resubmitted. Copy it before discarding, or use Rebase to reconcile independent changes."
 msgstr ""
 
@@ -7223,7 +7227,7 @@ msgstr ""
 msgid "This network will be saved after you connect."
 msgstr ""
 
-#: src/settings/window.zig:562
+#: src/settings/window.zig:571
 msgid "This page needs a compatible Pearl session. Your settings will appear here when they are available."
 msgstr ""
 
@@ -7424,7 +7428,7 @@ msgstr ""
 msgid "Unable to open this section. Choose another section to retry."
 msgstr ""
 
-#: src/desktop/resource_view.zig:79 src/settings/editor.zig:820
+#: src/desktop/resource_view.zig:79 src/settings/editor.zig:821
 msgid "Unavailable"
 msgstr ""
 
@@ -7449,15 +7453,15 @@ msgstr ""
 msgid "Unmute"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:576
+#: src/desktop/aqueous_settings.zig:581
 msgid "Unsaved Aqueous changes"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:570
+#: src/desktop/aqueous_settings.zig:575
 msgid "Unsaved Aqueous changes · Review includes every section."
 msgstr ""
 
-#: src/settings/window.zig:205
+#: src/settings/window.zig:197
 msgid "Unsaved changes"
 msgstr ""
 
@@ -7483,11 +7487,11 @@ msgid "Usage: pearl [--demo] [--help] [--version] [--check-environment] [--log-l
 msgstr ""
 
 #: src/settings/options.zig:28
-msgid "Usage: pearl-settings [--page PAGE] [--section AQUEOUS_SECTION]\n\nPages: overview, network, bluetooth, sound, power, appearance, bar,\n       notifications, system, session, aqueous, advanced, plugins\nAqueous sections: appearance, layouts, input, keybinds, rules, displays, advanced\n\nA generic launch opens Overview. Repeated launches activate the existing\nwindow in this Aqueous session. Editing requires a running Pearl session.\n"
+msgid "Usage: pearl-settings [--page PAGE] [--section AQUEOUS_SECTION]\n\nPages: overview, network, bluetooth, sound, power, appearance, bar,\n       notifications, system, session, aqueous, advanced, plugins\nAqueous sections: appearance, layouts, input, keybinds, rules, displays\n                  (advanced opens the shared Advanced page)\n\nA generic launch opens Overview. Repeated launches activate the existing\nwindow in this Aqueous session. Editing requires a running Pearl session.\n"
 msgstr ""
 
 #: src/cli/options.zig:181
-msgid "Usage: pearlctl status | report | quit | lock\n       pearlctl assistant status|show|stop|clear|release|cancel\n       pearlctl night-light status|on|off|toggle|resume|retry\n       pearlctl clipboard status|show|toggle|clear\n       pearlctl clipboard select|delete --generation ENTRY_ID\n       pearlctl migrate dms --input SETTINGS [--session-file SESSION] [--base PEARL_JSON] [--bundle NEW_DIRECTORY]\n       pearlctl preferences apply --revision N --file PREFERENCES_JSON\n       pearlctl dock show|hide [--output ID]\n       pearlctl dock pin|unpin --text DESKTOP_ID [--output ID]\n       pearlctl capture status|show|cancel\n       pearlctl wm action --text ACTION_JSON\n       pearlctl capture windows [--offset N]\n       pearlctl capture window --text TOPLEVEL_ID\n       pearlctl capture output [--output ID]\n       pearlctl capture region --text X,Y,WIDTH,HEIGHT [--output ID]\n       pearlctl capture copy --generation N\n       pearlctl capture save --generation N [--path /absolute/new.png]\n       pearlctl lifecycle status\n       pearlctl lifecycle action --text lock|suspend|hibernate|logout|cancel|inhibit|uninhibit\n       pearlctl lifecycle action --text confirm --generation N\n       pearlctl aqueous show [--section SECTION] (legacy --text SECTION accepted)\n       pearlctl aqueous status|refresh|validate|apply|discard|rebase|reload\n       pearlctl aqueous keep|revert\n       pearlctl aqueous record --text FIELD_ID\n       pearlctl aqueous draft --text JSON\n       pearlctl settings show [--page PAGE] [--section AQUEOUS_SECTION] [--output ID]\n       Settings pages: overview, appearance, network, bluetooth, sound, power,\n                       bar, notifications, session, aqueous, advanced\n       Aqueous sections: appearance, layouts, input, keybinds, rules, displays, advanced\n       Repeated settings launches activate the window; they never toggle it closed.\n       pearlctl plugins refresh\n       pearlctl plugins list [--offset N]\n       pearlctl plugins inspect|reload --path ID\n       pearlctl plugins enable --path ID --text PACKAGE_SHA256 --revision N\n       pearlctl plugins disable --path ID --revision N\n       pearlctl preferences status|reload\n       pearlctl preferences apply --revision N --text JSON\n       pearlctl popup show|toggle [--output ID]\n       pearlctl popup hide\n       pearlctl bar set --output ID --edge top|right|bottom|left --size 32..160\n       pearlctl frame set --output ID --edge EDGE --size 0..160\n       pearlctl osd show --text TEXT [--output ID] [--duration 100..10000]\n\n       pearlctl launcher show|hide|toggle [--output ID]\n       pearlctl control-center show|toggle [--output ID] [--page PAGE]\n       PAGE: overview (default), sound, network, bluetooth, power\n       Opens the compact flyout. Toggle closes the same page or switches to another.\n       Status popup.page reports its route; invalid pages leave the flyout unchanged.\n       pearlctl window-switcher next|previous|dismiss [--output ID]\n         Cycle all workspaces/displays on updated Aqueous; output anchors the switcher.\n       pearlctl running-apps show [--output ID]\n       pearlctl desktop focus [--output ID]\n       pearlctl calendar toggle [--output ID]\n       pearlctl overview toggle [--output ID]\n       pearlctl layout get|set --output ID [--layout NAME]\n       pearlctl bar groups --output ID --left ITEMS --center ITEMS --right ITEMS\n       ITEMS: comma-separated launcher,workspaces,title,clock,keyboard,overview,control,audio,battery,network,bluetooth,notifications,media,tray,clipboard\n       Also clock:ID for instances defined in the output's effective bar.clocks preferences.\n\n       pearlctl notifications|media|tray toggle [--output ID]\n       pearlctl session status [--offset N]\n       pearlctl session action --command COMMAND [--generation N] [--notification ID]\n                               [--position MICROSECONDS] [--menu-id ID --revision N] [--text ACTION_KEY]\n       See docs/SESSION_SERVICES.md for commands and identity fields.\n\n       pearlctl connectivity status [--offset N]\n       pearlctl connectivity action --service network|bluetooth --action ACTION --generation N [--path PATH]\n       pearlctl services status [--offset N]\n       pearlctl audio set --kind sink|source|playback|recording [--generation N --device ID]\n                          [--volume 0..100] [--mute true|false] [--default true] [--target ID]\n       pearlctl brightness set --percent 0..100 [--output NAME_OR_DEVICE_ID]\n       pearlctl brightness adjust --delta -100..100 [--output NAME_OR_DEVICE_ID]\n       pearlctl profile set --profile power-saver|balanced|performance\n\n       pearlctl report: write a bounded support report (environment, status,\n       recent journal lines) to ~/.local/state/pearl/report-*.log and print\n       its path. Contents and retention: docs/LOGGING.md.\n\nUses the current AQUEOUS_SOCKET, WAYLAND_DISPLAY and XDG_RUNTIME_DIR.\nOutput IDs come from `pearlctl status`. Replies are Pearl control v1 JSON.\n\nAny command also accepts --log-level error|warning|info|debug and\n--log-scopes LIST (all, or comma-separated scopes; ~scope excludes one).\n"
+msgid "Usage: pearlctl status | report | quit | lock\n       pearlctl assistant status|show|stop|clear|release|cancel\n       pearlctl night-light status|on|off|toggle|resume|retry\n       pearlctl clipboard status|show|toggle|clear\n       pearlctl clipboard select|delete --generation ENTRY_ID\n       pearlctl migrate dms --input SETTINGS [--session-file SESSION] [--base PEARL_JSON] [--bundle NEW_DIRECTORY]\n       pearlctl preferences apply --revision N --file PREFERENCES_JSON\n       pearlctl dock show|hide [--output ID]\n       pearlctl dock pin|unpin --text DESKTOP_ID [--output ID]\n       pearlctl capture status|show|cancel\n       pearlctl wm action --text ACTION_JSON\n       pearlctl capture windows [--offset N]\n       pearlctl capture window --text TOPLEVEL_ID\n       pearlctl capture output [--output ID]\n       pearlctl capture region --text X,Y,WIDTH,HEIGHT [--output ID]\n       pearlctl capture copy --generation N\n       pearlctl capture save --generation N [--path /absolute/new.png]\n       pearlctl lifecycle status\n       pearlctl lifecycle action --text lock|suspend|hibernate|logout|cancel|inhibit|uninhibit\n       pearlctl lifecycle action --text confirm --generation N\n       pearlctl aqueous show [--section SECTION] (legacy --text SECTION accepted)\n       pearlctl aqueous status|refresh|validate|apply|discard|rebase|reload\n       pearlctl aqueous keep|revert\n       pearlctl aqueous record --text FIELD_ID\n       pearlctl aqueous draft --text JSON\n       pearlctl settings show [--page PAGE] [--section AQUEOUS_SECTION] [--output ID]\n       Settings pages: overview, appearance, network, bluetooth, sound, power,\n                       bar, notifications, session, aqueous, advanced\n       Aqueous sections: appearance, layouts, input, keybinds, rules, displays\n                       (advanced opens the shared Advanced page)\n       Repeated settings launches activate the window; they never toggle it closed.\n       pearlctl plugins refresh\n       pearlctl plugins list [--offset N]\n       pearlctl plugins inspect|reload --path ID\n       pearlctl plugins enable --path ID --text PACKAGE_SHA256 --revision N\n       pearlctl plugins disable --path ID --revision N\n       pearlctl preferences status|reload\n       pearlctl preferences apply --revision N --text JSON\n       pearlctl popup show|toggle [--output ID]\n       pearlctl popup hide\n       pearlctl bar set --output ID --edge top|right|bottom|left --size 32..160\n       pearlctl frame set --output ID --edge EDGE --size 0..160\n       pearlctl osd show --text TEXT [--output ID] [--duration 100..10000]\n\n       pearlctl launcher show|hide|toggle [--output ID]\n       pearlctl control-center show|toggle [--output ID] [--page PAGE]\n       PAGE: overview (default), sound, network, bluetooth, power\n       Opens the compact flyout. Toggle closes the same page or switches to another.\n       Status popup.page reports its route; invalid pages leave the flyout unchanged.\n       pearlctl window-switcher next|previous|dismiss [--output ID]\n         Cycle all workspaces/displays on updated Aqueous; output anchors the switcher.\n       pearlctl running-apps show [--output ID]\n       pearlctl desktop focus [--output ID]\n       pearlctl calendar toggle [--output ID]\n       pearlctl overview toggle [--output ID]\n       pearlctl layout get|set --output ID [--layout NAME]\n       pearlctl bar groups --output ID --left ITEMS --center ITEMS --right ITEMS\n       ITEMS: comma-separated launcher,workspaces,title,clock,keyboard,overview,control,audio,battery,network,bluetooth,notifications,media,tray,clipboard\n       Also clock:ID for instances defined in the output's effective bar.clocks preferences.\n\n       pearlctl notifications|media|tray toggle [--output ID]\n       pearlctl session status [--offset N]\n       pearlctl session action --command COMMAND [--generation N] [--notification ID]\n                               [--position MICROSECONDS] [--menu-id ID --revision N] [--text ACTION_KEY]\n       See docs/SESSION_SERVICES.md for commands and identity fields.\n\n       pearlctl connectivity status [--offset N]\n       pearlctl connectivity action --service network|bluetooth --action ACTION --generation N [--path PATH]\n       pearlctl services status [--offset N]\n       pearlctl audio set --kind sink|source|playback|recording [--generation N --device ID]\n                          [--volume 0..100] [--mute true|false] [--default true] [--target ID]\n       pearlctl brightness set --percent 0..100 [--output NAME_OR_DEVICE_ID]\n       pearlctl brightness adjust --delta -100..100 [--output NAME_OR_DEVICE_ID]\n       pearlctl profile set --profile power-saver|balanced|performance\n\n       pearlctl report: write a bounded support report (environment, status,\n       recent journal lines) to ~/.local/state/pearl/report-*.log and print\n       its path. Contents and retention: docs/LOGGING.md.\n\nUses the current AQUEOUS_SOCKET, WAYLAND_DISPLAY and XDG_RUNTIME_DIR.\nOutput IDs come from `pearlctl status`. Replies are Pearl control v1 JSON.\n\nAny command also accepts --log-level error|warning|info|debug and\n--log-scopes LIST (all, or comma-separated scopes; ~scope excludes one).\n"
 msgstr ""
 
 #: src/settings/assistant_view.zig:164
@@ -7597,7 +7601,7 @@ msgstr ""
 msgid "Use this launcher for all windows of this application."
 msgstr ""
 
-#: src/settings/window.zig:608
+#: src/settings/window.zig:617
 msgid "Used for selected controls and highlights"
 msgstr ""
 
@@ -7609,7 +7613,7 @@ msgstr ""
 msgid "Uses automatic settings."
 msgstr ""
 
-#: src/settings/window.zig:647
+#: src/settings/window.zig:656
 msgid "VPN, hidden networks, IP & DNS"
 msgstr ""
 
@@ -7621,7 +7625,7 @@ msgstr ""
 msgid "Valid palette · preview only until Save palette."
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:127
+#: src/desktop/aqueous_settings.zig:130
 msgid "Validate"
 msgstr ""
 
@@ -7637,7 +7641,7 @@ msgstr ""
 msgid "Validated candidate arrangement"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:277
+#: src/desktop/aqueous_settings.zig:282
 msgid "Validated candidate effects"
 msgstr ""
 
@@ -7661,11 +7665,11 @@ msgstr ""
 msgid "View all nearby networks"
 msgstr ""
 
-#: src/settings/window.zig:166
+#: src/settings/window.zig:158
 msgid "View saved JSON"
 msgstr ""
 
-#: src/settings/window.zig:646
+#: src/settings/window.zig:655
 msgid "View saved connections"
 msgstr ""
 
@@ -7695,7 +7699,7 @@ msgstr ""
 msgid "Wait until the profile being applied or saved is done."
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:961
+#: src/desktop/aqueous_settings.zig:968
 msgid "Waiting for Aqueous to inhibit shortcuts… Escape cancels."
 msgstr ""
 
@@ -7707,7 +7711,7 @@ msgstr ""
 msgid "Waiting for a reply"
 msgstr ""
 
-#: src/settings/window.zig:561
+#: src/settings/window.zig:570
 msgid "Waiting for settings"
 msgstr ""
 
@@ -7840,7 +7844,7 @@ msgstr ""
 msgid "Width"
 msgstr ""
 
-#: src/config/aqueous_presentation.zig:47
+#: src/config/aqueous_presentation.zig:47 src/settings/window.zig:454
 msgid "Window appearance"
 msgstr ""
 
@@ -7857,7 +7861,7 @@ msgstr ""
 msgid "Window borders follow Pearl theme"
 msgstr ""
 
-#: src/settings/window.zig:724
+#: src/settings/window.zig:458
 msgid "Window borders, effects and desktop details."
 msgstr ""
 
@@ -7952,7 +7956,7 @@ msgstr ""
 msgid "You're all caught up"
 msgstr ""
 
-#: src/settings/window.zig:415
+#: src/settings/window.zig:422
 msgid "Your desktop settings, together."
 msgstr ""
 
@@ -7964,7 +7968,7 @@ msgstr ""
 msgid "Your desktop, taking shape."
 msgstr ""
 
-#: src/settings/window.zig:636 src/ui/components/network.zig:467
+#: src/settings/window.zig:645 src/ui/components/network.zig:467
 msgid "Your device has internet access."
 msgstr ""
 
@@ -8011,7 +8015,7 @@ msgctxt "aqueous.input.touchpad.accel_profile.option"
 msgid "adaptive"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:281
+#: src/desktop/aqueous_settings.zig:286
 msgid "appearance"
 msgstr ""
 
@@ -8242,19 +8246,19 @@ msgctxt "aqueous.input.touchpad.accel_profile.option"
 msgid "flat"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:416
+#: src/desktop/aqueous_settings.zig:421
 msgid "flipped"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:416
+#: src/desktop/aqueous_settings.zig:421
 msgid "flipped-180"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:416
+#: src/desktop/aqueous_settings.zig:421
 msgid "flipped-270"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:416
+#: src/desktop/aqueous_settings.zig:421
 msgid "flipped-90"
 msgstr ""
 
@@ -8456,7 +8460,7 @@ msgstr ""
 msgid "https://search.example.org"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:281
+#: src/desktop/aqueous_settings.zig:286
 msgid "input"
 msgstr ""
 
@@ -8470,7 +8474,7 @@ msgctxt "aqueous.desktop.font.slant.option"
 msgid "italic"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:281
+#: src/desktop/aqueous_settings.zig:286
 msgid "layout"
 msgstr ""
 
@@ -8669,7 +8673,7 @@ msgctxt "aqueous.input.touchpad.scroll_method.option"
 msgid "no-scroll"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:416
+#: src/desktop/aqueous_settings.zig:421
 msgid "normal"
 msgstr ""
 
@@ -8737,7 +8741,7 @@ msgctxt "aqueous.bell.mode.option"
 msgid "off"
 msgstr ""
 
-#: src/desktop/aqueous_display_editor.zig:224 src/desktop/aqueous_settings.zig:281
+#: src/desktop/aqueous_display_editor.zig:224 src/desktop/aqueous_settings.zig:286
 msgid "outputs"
 msgstr ""
 
@@ -8870,7 +8874,7 @@ msgctxt "aqueous.layout.slots.tertiary.option"
 msgid "rows"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:281
+#: src/desktop/aqueous_settings.zig:286
 msgid "rules"
 msgstr ""
 
@@ -9318,7 +9322,7 @@ msgstr ""
 msgid "windows"
 msgstr ""
 
-#: src/desktop/aqueous_display_editor.zig:224 src/desktop/aqueous_settings.zig:281
+#: src/desktop/aqueous_display_editor.zig:224 src/desktop/aqueous_settings.zig:286
 msgid "wm"
 msgstr ""
 
@@ -9472,7 +9476,7 @@ msgstr ""
 msgid "▪ ▪ ▪ ▪"
 msgstr ""
 
-#: src/settings/window.zig:112
+#: src/settings/window.zig:106
 msgid "●"
 msgstr ""
 

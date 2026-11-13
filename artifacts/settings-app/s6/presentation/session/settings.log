@@ -1,210 +1,35 @@
-info: event=settings-launch activation_context=false
-info: event=settings-instance-ready session=84120e25c40d6d40782dbde9b1246a0d
-info: event=settings-page page=overview
-info: event=settings-page page=appearance
-info: event=settings-window-created app_id=org.aqueous.Pearl.Settings
-info: event=settings-page page=appearance
-info: event=settings-activation activation_context=false
-info: event=settings-page page=overview
-info: event=settings-activation activation_context=false
-info: event=settings-page page=appearance
-info: event=settings-activation activation_context=false
-info: event=settings-page page=network
-info: event=settings-activation activation_context=false
-info: event=settings-page page=bluetooth
-info: event=settings-activation activation_context=false
-info: event=settings-page page=sound
-info: event=settings-activation activation_context=false
-info: event=settings-page page=power
-info: event=settings-activation activation_context=false
-info: event=settings-page page=bar
-info: event=settings-activation activation_context=false
-info: event=settings-page page=notifications
-info: event=settings-activation activation_context=false
-info: event=settings-page page=session
-info: event=settings-activation activation_context=false
-info: event=settings-page page=aqueous
-info: event=settings-activation activation_context=false
-info: event=settings-page page=advanced
-info: event=settings-activation activation_context=false
-info: event=settings-page page=appearance
-info: event=settings-activation activation_context=false
-info: event=settings-page page=network
-info: event=settings-activation activation_context=false
-info: event=settings-page page=bluetooth
-info: event=settings-activation activation_context=false
-info: event=settings-page page=sound
-info: event=settings-activation activation_context=false
-info: event=settings-page page=power
-info: event=settings-activation activation_context=false
-info: event=settings-page page=appearance
-info: event=settings-activation activation_context=false
-info: event=settings-page page=network
-info: event=settings-activation activation_context=false
-info: event=settings-page page=bluetooth
-info: event=settings-activation activation_context=false
-info: event=settings-page page=sound
-info: event=settings-activation activation_context=false
-info: event=settings-page page=power
-info: event=settings-activation activation_context=false
-info: event=settings-page page=appearance
-info: event=settings-activation activation_context=false
-info: event=settings-page page=network
-info: event=settings-activation activation_context=false
-info: event=settings-page page=bluetooth
-info: event=settings-activation activation_context=false
-info: event=settings-page page=sound
-info: event=settings-activation activation_context=false
-info: event=settings-page page=power
-info: event=settings-activation activation_context=false
-info: event=settings-page page=appearance
-info: event=settings-activation activation_context=false
-info: event=settings-page page=network
-info: event=settings-activation activation_context=false
-info: event=settings-page page=bluetooth
-info: event=settings-activation activation_context=false
-info: event=settings-page page=sound
-info: event=settings-activation activation_context=false
-info: event=settings-page page=power
-info: event=settings-activation activation_context=false
-info: event=settings-page page=appearance
-info: event=settings-activation activation_context=false
-info: event=settings-page page=network
-info: event=settings-activation activation_context=false
-info: event=settings-page page=bluetooth
-info: event=settings-activation activation_context=false
-info: event=settings-page page=sound
-info: event=settings-activation activation_context=false
-info: event=settings-page page=power
-info: event=settings-activation activation_context=false
-info: event=settings-page page=appearance
-info: event=settings-activation activation_context=false
-info: event=settings-page page=network
-info: event=settings-activation activation_context=false
-info: event=settings-page page=bluetooth
-info: event=settings-activation activation_context=false
-info: event=settings-page page=sound
-info: event=settings-activation activation_context=false
-info: event=settings-page page=power
-info: event=settings-activation activation_context=false
-info: event=settings-page page=appearance
-info: event=settings-activation activation_context=false
-info: event=settings-page page=network
-info: event=settings-activation activation_context=false
-info: event=settings-page page=bluetooth
-info: event=settings-activation activation_context=false
-info: event=settings-page page=sound
-info: event=settings-activation activation_context=false
-info: event=settings-page page=power
-info: event=settings-activation activation_context=false
-info: event=settings-page page=appearance
-info: event=settings-activation activation_context=false
-info: event=settings-page page=overview
-info: event=settings-activation activation_context=false
-info: event=settings-page page=appearance
-info: event=settings-activation activation_context=false
-info: event=settings-page page=network
-info: event=settings-activation activation_context=false
-info: event=settings-page page=bluetooth
-info: event=settings-activation activation_context=false
-info: event=settings-page page=sound
-info: event=settings-activation activation_context=false
-info: event=settings-page page=power
-info: event=settings-activation activation_context=false
-info: event=settings-page page=bar
-info: event=settings-activation activation_context=false
-info: event=settings-page page=notifications
-info: event=settings-activation activation_context=false
-info: event=settings-page page=session
-info: event=settings-activation activation_context=false
-info: event=settings-page page=aqueous
-info: event=settings-activation activation_context=false
-info: event=settings-page page=advanced
-info: event=settings-activation activation_context=false
-info: event=settings-page page=overview
-info: event=settings-activation activation_context=false
-info: event=settings-page page=appearance
-info: event=settings-activation activation_context=false
-info: event=settings-page page=network
-info: event=settings-activation activation_context=false
-info: event=settings-page page=bluetooth
-info: event=settings-activation activation_context=false
-info: event=settings-page page=sound
-info: event=settings-activation activation_context=false
-info: event=settings-page page=power
-info: event=settings-activation activation_context=false
-info: event=settings-page page=bar
-info: event=settings-activation activation_context=false
-info: event=settings-page page=notifications
-info: event=settings-activation activation_context=false
-info: event=settings-page page=session
-info: event=settings-activation activation_context=false
-info: event=settings-page page=aqueous
-info: event=settings-activation activation_context=false
-info: event=settings-page page=advanced
-info: event=settings-activation activation_context=false
-info: event=settings-page page=overview
-info: event=settings-activation activation_context=false
-info: event=settings-page page=appearance
-info: event=settings-activation activation_context=false
-info: event=settings-page page=network
-info: event=settings-activation activation_context=false
-info: event=settings-page page=bluetooth
-info: event=settings-activation activation_context=false
-info: event=settings-page page=sound
-info: event=settings-activation activation_context=false
-info: event=settings-page page=power
-info: event=settings-activation activation_context=false
-info: event=settings-page page=bar
-info: event=settings-activation activation_context=false
-info: event=settings-page page=notifications
-info: event=settings-activation activation_context=false
-info: event=settings-page page=session
-info: event=settings-activation activation_context=false
-info: event=settings-page page=aqueous
-info: event=settings-activation activation_context=false
-info: event=settings-page page=advanced
-info: event=settings-activation activation_context=false
-info: event=settings-page page=overview
-info: event=settings-activation activation_context=false
-info: event=settings-page page=appearance
-info: event=settings-activation activation_context=false
-info: event=settings-page page=network
-info: event=settings-activation activation_context=false
-info: event=settings-page page=bluetooth
-info: event=settings-activation activation_context=false
-info: event=settings-page page=sound
-info: event=settings-activation activation_context=false
-info: event=settings-page page=power
-info: event=settings-activation activation_context=false
-info: event=settings-page page=bar
-info: event=settings-activation activation_context=false
-info: event=settings-page page=notifications
-info: event=settings-activation activation_context=false
-info: event=settings-page page=session
-info: event=settings-activation activation_context=false
-info: event=settings-page page=aqueous
-info: event=settings-activation activation_context=false
-info: event=settings-page page=advanced
-info: event=settings-activation activation_context=false
-info: event=settings-page page=overview
-info: event=settings-activation activation_context=false
-info: event=settings-page page=appearance
-info: event=settings-activation activation_context=false
-info: event=settings-page page=network
-info: event=settings-activation activation_context=false
-info: event=settings-page page=bluetooth
-info: event=settings-activation activation_context=false
-info: event=settings-page page=sound
-info: event=settings-activation activation_context=false
-info: event=settings-page page=power
-info: event=settings-activation activation_context=false
-info: event=settings-page page=bar
-info: event=settings-activation activation_context=false
-info: event=settings-page page=notifications
-info: event=settings-activation activation_context=false
-info: event=settings-page page=session
-info: event=settings-activation activation_context=false
-info: event=settings-page page=aqueous
-info: event=settings-activation activation_context=false
-info: event=settings-page page=advanced
+ts=2026-11-13T22:12:51Z pid=362812 info(settings): event=settings-launch activation_context=false
+ts=2026-11-13T22:12:51Z pid=362812 info(settings): event=settings-instance-ready session_hash=ba73b205496aace2
+ts=2026-11-13T22:12:51Z pid=362812 info(services): event=sched-profile-systemd result=polling
+ts=2026-11-13T22:12:51Z pid=362812 info(settings): event=settings-page page=overview
+ts=2026-11-13T22:12:51Z pid=362812 info(settings): event=settings-page page=appearance
+ts=2026-11-13T22:12:51Z pid=362812 info(settings): event=settings-window-created app_id=org.aqueous.Pearl.Settings
+ts=2026-11-13T22:12:51Z pid=362812 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to get properties: Process org.freedesktop.systemd1 exited with status 1"
+ts=2026-11-13T22:12:51Z pid=362812 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-13T22:12:51Z pid=362812 info(settings): event=settings-page page=appearance
+ts=2026-11-13T22:12:52Z pid=362812 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T22:12:52Z pid=362812 info(settings): event=settings-page page=overview
+ts=2026-11-13T22:12:52Z pid=362812 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T22:12:52Z pid=362812 info(settings): event=settings-page page=appearance
+ts=2026-11-13T22:12:53Z pid=362812 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to get properties: Process org.freedesktop.systemd1 exited with status 1"
+ts=2026-11-13T22:12:53Z pid=362812 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T22:12:53Z pid=362812 info(settings): event=settings-page page=network
+ts=2026-11-13T22:12:54Z pid=362812 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T22:12:54Z pid=362812 info(settings): event=settings-page page=bluetooth
+ts=2026-11-13T22:12:55Z pid=362812 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T22:12:55Z pid=362812 info(settings): event=settings-page page=sound
+ts=2026-11-13T22:12:55Z pid=362812 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to get properties: Process org.freedesktop.systemd1 exited with status 1"
+ts=2026-11-13T22:12:55Z pid=362812 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T22:12:55Z pid=362812 info(settings): event=settings-page page=power
+ts=2026-11-13T22:12:56Z pid=362812 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T22:12:56Z pid=362812 info(settings): event=settings-page page=bar
+ts=2026-11-13T22:12:57Z pid=362812 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-13T22:12:57Z pid=362812 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T22:12:57Z pid=362812 info(settings): event=settings-page page=notifications
+ts=2026-11-13T22:12:57Z pid=362812 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T22:12:57Z pid=362812 info(settings): event=settings-page page=system
+ts=2026-11-13T22:12:58Z pid=362812 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T22:12:58Z pid=362812 info(settings): event=settings-page page=aqueous
+ts=2026-11-13T22:12:59Z pid=362812 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to get properties: Process org.freedesktop.systemd1 exited with status 1"
+ts=2026-11-13T22:12:59Z pid=362812 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T22:12:59Z pid=362812 info(settings): event=settings-page page=advanced

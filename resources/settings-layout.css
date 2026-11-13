@@ -49,9 +49,6 @@
 
 .settings-window headerbar button { border-radius: 9px; min-width: 24px; min-height: 24px; padding: 5px; background: transparent; }
 
-.settings-window button.settings-nav-child { margin-left: 40px; }
-.settings-window button.settings-nav-parent label { font-weight: 600; }
-
 /* The display editor follows the approved arrangement / selected screen / position layout. */
 .settings-window .display-arrangement { border-radius: 16px; padding: 20px; }
 .settings-window .display-arrangement drawingarea { min-height: 190px; }

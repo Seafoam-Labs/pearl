@@ -808,6 +808,12 @@ pub fn build(b: *std.Build) void {
     settings_integration.addArtifactArg(production_locker);
     settings_integration.addArg("--themes");
     settings_integration.addArtifactArg(themes_tool);
+    settings_integration.addArg("--portal");
+    settings_integration.addArtifactArg(portal);
+    settings_integration.addArg("--capture-picker");
+    settings_integration.addArtifactArg(capture);
+    settings_integration.addArg("--preview-helper");
+    settings_integration.addArtifactArg(preview_helper);
     settings_integration.addPassthruArgs();
     b.step("test-settings-integration", "Verify staged Settings desktop, CLI and flyout launch integration").dependOn(&settings_integration.step);
 

@@ -1,16 +1,26 @@
-info: event=settings-launch activation_context=false
-info: event=settings-instance-ready session=c981928402faecaf3b230bd6c45a64be
-info: event=settings-page page=overview
-info: event=settings-page page=aqueous
-info: event=settings-window-created app_id=org.aqueous.Pearl.Settings
-info: event=settings-page page=aqueous
-info: event=settings-activation activation_context=false
-info: event=settings-page page=aqueous
-info: event=settings-activation activation_context=false
-info: event=settings-page page=aqueous
-info: event=settings-aqueous-action action=discard pending=false
-info: event=settings-aqueous-action action=identify pending=false
-info: event=settings-aqueous-action action=apply pending=false
-info: event=settings-aqueous-action action=revert pending=true
-info: event=settings-aqueous-action action=apply pending=false
-info: event=settings-aqueous-action action=keep pending=true
+ts=2026-11-13T22:23:23Z pid=463163 info(settings): event=settings-launch activation_context=false
+ts=2026-11-13T22:23:23Z pid=463163 info(settings): event=settings-instance-ready session_hash=8b36dee67a5122ba
+ts=2026-11-13T22:23:23Z pid=463163 info(services): event=sched-profile-systemd result=polling
+ts=2026-11-13T22:23:23Z pid=463163 info(settings): event=settings-page page=overview
+ts=2026-11-13T22:23:23Z pid=463163 info(settings): event=settings-page page=aqueous
+ts=2026-11-13T22:23:23Z pid=463163 info(settings): event=settings-window-created app_id=org.aqueous.Pearl.Settings
+ts=2026-11-13T22:23:23Z pid=463163 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-13T22:23:23Z pid=463163 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"
+ts=2026-11-13T22:23:23Z pid=463163 info(settings): event=settings-page page=aqueous
+ts=2026-11-13T22:23:25Z pid=463163 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"
+ts=2026-11-13T22:23:27Z pid=463163 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"
+ts=2026-11-13T22:23:29Z pid=463163 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-13T22:23:29Z pid=463163 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T22:23:29Z pid=463163 info(settings): event=settings-page page=aqueous
+ts=2026-11-13T22:23:29Z pid=463163 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T22:23:29Z pid=463163 info(settings): event=settings-page page=aqueous
+ts=2026-11-13T22:23:29Z pid=463163 info(settings): event=settings-aqueous-action action=discard pending=false
+ts=2026-11-13T22:23:31Z pid=463163 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"
+ts=2026-11-13T22:23:31Z pid=463163 info(settings): event=settings-aqueous-action action=identify pending=false
+ts=2026-11-13T22:23:34Z pid=463163 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-13T22:23:38Z pid=463163 info(settings): event=settings-aqueous-action action=apply pending=false
+ts=2026-11-13T22:23:38Z pid=463163 info(settings): event=settings-aqueous-action action=revert pending=true
+ts=2026-11-13T22:23:39Z pid=463163 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-13T22:23:39Z pid=463163 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"
+ts=2026-11-13T22:23:39Z pid=463163 info(settings): event=settings-aqueous-action action=apply pending=false
+ts=2026-11-13T22:23:40Z pid=463163 info(settings): event=settings-aqueous-action action=keep pending=true

@@ -1,0 +1,12 @@
+ts=2026-11-13T22:05:41Z pid=304475 info(settings): event=settings-launch activation_context=false
+ts=2026-11-13T22:05:41Z pid=304475 info(settings): event=settings-instance-ready session_hash=09adf85e0c15ce89
+ts=2026-11-13T22:05:41Z pid=304475 info(services): event=sched-profile-systemd result=polling
+ts=2026-11-13T22:05:41Z pid=304475 info(settings): event=settings-page page=overview
+ts=2026-11-13T22:05:41Z pid=304475 info(settings): event=settings-page page=network
+ts=2026-11-13T22:05:41Z pid=304475 info(settings): event=settings-window-created app_id=org.aqueous.Pearl.Settings
+ts=2026-11-13T22:05:41Z pid=304475 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to get properties: Process org.freedesktop.systemd1 exited with status 1"
+ts=2026-11-13T22:05:41Z pid=304475 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-13T22:05:41Z pid=304475 info(settings): event=settings-page page=network
+ts=2026-11-13T22:05:42Z pid=304475 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T22:05:42Z pid=304475 info(settings): event=settings-page page=bluetooth
+ts=2026-11-13T22:05:43Z pid=304475 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to get properties: Process org.freedesktop.systemd1 exited with status 1"
