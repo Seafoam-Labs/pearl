@@ -322,9 +322,9 @@ fn userDefault() ![:0]const u8 {
     return a.dupeSentinel(u8, try std.fmt.allocPrint(a, "{s}/autostart", .{config}), 0);
 }
 
-fn environmentRoot(override: []const u8, fallback: [:0]const u8) ![:0]const u8 {
+fn environmentRoot(override: [:0]const u8, fallback: [:0]const u8) ![:0]const u8 {
     if (@import("build_options").test_hooks) {
-        if (glib.getenv(override.ptr)) |raw| {
+        if (glib.getenv(override)) |raw| {
             const value = try a.dupeSentinel(u8, std.mem.span(raw), 0);
             a.free(fallback);
             return value;

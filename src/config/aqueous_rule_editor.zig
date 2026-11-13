@@ -10,7 +10,7 @@ pub fn matcher(name: []const u8) bool {
 /// The v1 compatibility map deliberately does not classify unknown keys.
 pub fn known(name: []const u8) bool {
     if (std.mem.eql(u8, name, "matching")) return true;
-    for ([_][]const u8{ "app_id", "class", "title", "content_type", "layout", "output", "workspace", "floating", "fullscreen", "ignore_struts", "width", "height", "x", "y", "placement_policy", "anchor", "size", "scale", "blur", "opacity", "buffer_scale_policy", "hdr_expand", "overlay_plane", "stack_layer", "focus", "fixed_position", "skip_switcher", "skip_taskbar", "scrolling_full_width", "scrolling_width", "tag", "scope", "window_type" }) |k| if (std.mem.eql(u8, name, k)) return true;
+    for ([_][]const u8{ "app_id", "class", "title", "content_type", "layout", "output", "workspace", "floating", "fullscreen", "ignore_struts", "width", "height", "x", "y", "placement_policy", "anchor", "size", "scale", "blur", "opacity", "buffer_scale_policy", "hdr_expand", "overlay_plane", "stack_layer", "focus", "fixed_position", "skip_switcher", "skip_taskbar", "scrolling_full_width", "scrolling_width", "tag", "scope", "window_type", "keep_render" }) |k| if (std.mem.eql(u8, name, k)) return true;
     return false;
 }
 pub fn overlay(a: std.mem.Allocator, original: m.Value, patch: m.Value) !m.Value {
@@ -110,6 +110,24 @@ test "projection preserves identity, unknown values, false zero and empty; remov
     try std.testing.expectEqual(@as(usize, 1), patch.object.count());
     try std.testing.expect(m.equal(try overlay(a, rows[0].values, patch), after));
 }
+
+test "keep_render is a known boolean effect, explicit off survives and null inherits" {
+    try std.testing.expect(known("keep_render"));
+    try std.testing.expect(!matcher("keep_render"));
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    const base = try m.parse(a, "{\"window_rules\":[{\"id\":\"a\",\"values\":{\"app_id\":\"steam_app_*\"}}]}", 4096);
+    const req = try m.parse(a, "{\"window_rule_changes\":[{\"op\":\"update\",\"id\":\"a\",\"values\":{\"keep_render\":true}}]}", 4096);
+    const rows = try project(a, base, req);
+    try std.testing.expect(m.equal(m.get(rows[0].values, "keep_render"), .{ .bool = true }));
+    const off = try overlay(a, rows[0].values, try m.parse(a, "{\"keep_render\":false}", 4096));
+    try std.testing.expect(m.equal(m.get(off, "keep_render"), .{ .bool = false }));
+    const inherited = try overlay(a, off, try m.parse(a, "{\"keep_render\":null}", 4096));
+    try std.testing.expect(!inherited.object.contains("keep_render"));
+    try std.testing.expect(m.equal(m.get(inherited, "app_id"), .{ .string = "steam_app_*" }));
+}
+
 test "isolated move projects order and rejects unrelated changes" {
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
