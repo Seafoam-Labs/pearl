@@ -95,6 +95,9 @@ pub const View = struct {
     desktop_preview: *@import("appearance_preview.zig").View,
     wallpaper_summary: *gtk.Label,
     wallpaper_thumbnail: *gtk.Picture,
+    /// Display selector for the wallpaper card: dropdown index 0 edits the
+    /// global default; index i (i>0) edits the connector named by that row.
+    wallpaper_output: *gtk.DropDown = undefined,
     customize: *gtk.Button,
     image_section: Section,
     text_section: Section,
@@ -192,6 +195,24 @@ pub const View = struct {
         appearance.append(customize.as(gtk.Widget));
         const wallpaper = card(host);
         wallpaper.append(w.label(@import("i18n").dtr("pearl", "Wallpaper"), "pearl-section-title").as(gtk.Widget));
+        // Per-display selector: index 0 edits the global default, the rest edit
+        // one connected display's own wallpaper override. The dropdown's string
+        // list copies the labels, so the enumerated connectors are temporary.
+        const wallpaper_output = blk: {
+            const connectors = listConnectors(window.as(gtk.Widget).getDisplay(), a) catch @panic("OOM");
+            defer {
+                for (connectors) |connector| a.free(connector);
+                if (connectors.len > 0) a.free(connectors);
+            }
+            const labels = a.alloc(?[*:0]const u8, connectors.len + 2) catch @panic("OOM");
+            defer a.free(labels);
+            labels[0] = @import("i18n").dtr("pearl", "All displays (default)");
+            for (connectors, 0..) |connector, i| labels[i + 1] = connector.ptr;
+            labels[connectors.len + 1] = null;
+            break :blk gtk.DropDown.newFromStrings(@ptrCast(labels.ptr));
+        };
+        row(wallpaper, @import("i18n").dtr("pearl", "Display"), wallpaper_output.as(gtk.Widget));
+        wallpaper.append(w.label(@import("i18n").dtr("pearl", "Give one display its own image, fit and color. The slideshow and dynamic colors always follow the default."), "pearl-secondary").as(gtk.Widget));
         const picture = desktop_preview.picture;
         w.name(picture.as(gtk.Widget), @import("i18n").dtr("pearl", "Wallpaper draft preview"));
         const wallpaper_row = w.flow(3);
@@ -304,7 +325,7 @@ pub const View = struct {
         raw_view.setRightMargin(24);
         w.name(raw_view.as(gtk.Widget), @import("i18n").dtr("pearl", "Full Pearl preferences JSON"));
         // The caller installs raw_view directly in Advanced's sole viewport.
-        self.* = .{ .editor = editor, .window = window, .host = host, .raw_view = raw_view, .raw = raw_view.getBuffer(), .arena = .init(a), .mode = mode, .desktop_preview = desktop_preview, .wallpaper_summary = wallpaper_summary, .wallpaper_thumbnail = thumbnail, .customize = customize, .image_section = image_section, .text_section = text_section, .apps_section = apps_section, .variant = variant, .source = source, .scheme = scheme, .fit = fit, .density = density, .entries = .{ gtk_name, seed, path, color, font }, .font_size = font_size, .motion = motion, .picture = picture, .preview_note = preview_note, .preview_css = gtk.CssProvider.new(), .choose = choose, .message = message, .mode_hint = hint, .qt_enabled = qt_enabled, .qt5 = qt5, .qt6 = qt6, .qt_palette = qt_palette, .qt_font = qt_font, .qt_icon = qt_icon, .qt_radius = qt_radius, .qt_motion = qt_motion, .qt_density = qt_density, .qt_kde = qt_kde, .qt_status = qt_status, .qt_retry = qt_retry, .qt_review = qt_review, .qt_reapply = qt_reapply, .qt_comparison = qt_comparison, .slideshow_enabled = slideshow_enabled, .slideshow_folder = slideshow_folder, .slideshow_choose = slideshow_choose, .slideshow_interval = slideshow_interval, .slideshow_order = slideshow_order, .slideshow_transition = slideshow_transition, .slideshow_duration = slideshow_duration };
+        self.* = .{ .editor = editor, .window = window, .host = host, .raw_view = raw_view, .raw = raw_view.getBuffer(), .arena = .init(a), .mode = mode, .desktop_preview = desktop_preview, .wallpaper_summary = wallpaper_summary, .wallpaper_thumbnail = thumbnail, .wallpaper_output = wallpaper_output, .customize = customize, .image_section = image_section, .text_section = text_section, .apps_section = apps_section, .variant = variant, .source = source, .scheme = scheme, .fit = fit, .density = density, .entries = .{ gtk_name, seed, path, color, font }, .font_size = font_size, .motion = motion, .picture = picture, .preview_note = preview_note, .preview_css = gtk.CssProvider.new(), .choose = choose, .message = message, .mode_hint = hint, .qt_enabled = qt_enabled, .qt5 = qt5, .qt6 = qt6, .qt_palette = qt_palette, .qt_font = qt_font, .qt_icon = qt_icon, .qt_radius = qt_radius, .qt_motion = qt_motion, .qt_density = qt_density, .qt_kde = qt_kde, .qt_status = qt_status, .qt_retry = qt_retry, .qt_review = qt_review, .qt_reapply = qt_reapply, .qt_comparison = qt_comparison, .slideshow_enabled = slideshow_enabled, .slideshow_folder = slideshow_folder, .slideshow_choose = slideshow_choose, .slideshow_interval = slideshow_interval, .slideshow_order = slideshow_order, .slideshow_transition = slideshow_transition, .slideshow_duration = slideshow_duration };
         self.language = language;
         self.qt_section = qt_section;
         self.profiles_section = profiles_section;
@@ -384,6 +405,7 @@ pub const View = struct {
         for (mode.buttons) |control| _ = gtk.CheckButton.signals.toggled.connect(control, *View, modeChosen, self, .{});
         _ = gtk.Button.signals.clicked.connect(customize, *View, openThemes, self, .{});
         for ([_]*gtk.DropDown{ variant, source, scheme, fit, density }) |control| _ = object.Object.signals.notify.connect(control.as(object.Object), *View, selected, self, .{ .detail = "selected" });
+        _ = object.Object.signals.notify.connect(self.wallpaper_output.as(object.Object), *View, displaySelected, self, .{ .detail = "selected" });
         _ = gtk.SpinButton.signals.value_changed.connect(font_size, *View, spun, self, .{});
         _ = object.Object.signals.notify.connect(motion.as(object.Object), *View, selected, self, .{ .detail = "active" });
         _ = gtk.Button.signals.clicked.connect(choose, *View, chooseWallpaper, self, .{});
@@ -463,8 +485,7 @@ pub const View = struct {
         self.qt_comparison.setText(self.editor.qt_review_text.z());
         self.qt_reapply.as(gtk.Widget).setVisible(@intFromBool(self.editor.qt_review_digest.len == 64 and self.editor.qt_review_text.len != 0));
         for (self.night_times) |control| control.as(gtk.Widget).setSensitive(@intFromBool(self.night_schedule.getSelected() == 1));
-        const slideshow_on = self.slideshow_enabled.getActive() != 0;
-        for ([_]*gtk.Widget{ self.slideshow_folder.as(gtk.Widget), self.slideshow_choose.as(gtk.Widget), self.slideshow_interval.as(gtk.Widget), self.slideshow_order.as(gtk.Widget), self.slideshow_transition.as(gtk.Widget), self.slideshow_duration.as(gtk.Widget) }) |control| control.setSensitive(@intFromBool(slideshow_on));
+        self.updateWallpaperSensitivity();
         const editable = self.editor.editable();
         self.host.as(gtk.Widget).setSensitive(@intFromBool(editable and !self.raw_invalid));
         self.raw_view.setEditable(@intFromBool(self.editor.online and self.editor.ready and !self.editor.state.locked and self.editor.download == .none));
@@ -487,7 +508,11 @@ pub const View = struct {
     fn presentation(self: *View) void {
         if (self.raw_invalid) return;
         const p = self.prefs;
-        if (self.editor.target.page == .appearance) self.desktop_preview.update(p);
+        // The card previews whichever display is selected, so its override (or
+        // the global default) drives the mock desktop and the summary below.
+        var preview_prefs = p;
+        if (self.selectedOutput()) |connector| preview_prefs.wallpaper = p.wallpaperForOutput(connector);
+        if (self.editor.target.page == .appearance) self.desktop_preview.update(preview_prefs);
         if (self.themes.preview_is_draft and self.editor.theme_error.len > 0 and !self.themes.preview_cancel_requested) self.desktop_preview.status.setText(self.editor.theme_error.z());
         var buf: [1024]u8 = undefined;
         self.text_section.summary.setText(std.mem.printSentinel(&buf, "{s} · {d} px · {s}{s}", .{ if (p.font.len == 0) @import("i18n").dtr("pearl", "System font") else p.font, p.font_size, if (p.density == .compact) @import("i18n").dtr("pearl", "Compact") else @import("i18n").dtr("pearl", "Comfortable"), if (p.reduced_motion) @import("i18n").dtr("pearl", " · Reduced motion") else "" }, 0) catch "");
@@ -504,9 +529,10 @@ pub const View = struct {
         self.profiles_section.summary.setText(if (self.editor.application_command and self.editor.theme_error.len > 0) self.editor.theme_error.z() else @import("i18n").dtr("pearl", "Matugen profiles · per-application colors"));
         self.login_section.summary.setText(std.mem.span(self.greeter_sync.status.getText()));
         const fit_names: [4][:0]const u8 = .{ @import("i18n").dtr("pearl", "Material gradient"), @import("i18n").dtr("pearl", "Solid color"), @import("i18n").dtr("pearl", "Cover"), @import("i18n").dtr("pearl", "Contain") };
-        const fit_name = fit_names[@backingInt(p.wallpaper.mode)];
-        const filename = if (p.wallpaper.path.len > 0) std.fs.path.basename(p.wallpaper.path) else @import("i18n").dtr("pearl", "No image selected");
-        self.wallpaper_summary.setText(if (@backingInt(p.wallpaper.mode) < 2) fit_name else std.mem.printSentinel(&buf, "{s}\n{s}", .{ filename, fit_name }, 0) catch fit_name);
+        const wp = preview_prefs.wallpaper;
+        const fit_name = fit_names[@backingInt(wp.mode)];
+        const filename = if (wp.path.len > 0) std.fs.path.basename(wp.path) else @import("i18n").dtr("pearl", "No image selected");
+        self.wallpaper_summary.setText(if (@backingInt(wp.mode) < 2) fit_name else std.mem.printSentinel(&buf, "{s}\n{s}", .{ filename, fit_name }, 0) catch fit_name);
         self.image_section.summary.setText(if (p.wallpaper.slideshow.enabled) @import("i18n").dtr("pearl", "Slideshow on · path, fit and timing") else @import("i18n").dtr("pearl", "Slideshow off · path, fit and background color"));
     }
     fn modeChosen(button: *gtk.CheckButton, self: *View) callconv(.c) void {
@@ -567,15 +593,9 @@ pub const View = struct {
         self.variant.setSelected(@backingInt(prefs.theme.variant));
         self.source.setSelected(@backingInt(prefs.theme.source));
         self.scheme.setSelected(@backingInt(prefs.theme.scheme));
-        self.fit.setSelected(@backingInt(prefs.wallpaper.mode));
-        self.slideshow_enabled.setActive(@intFromBool(prefs.wallpaper.slideshow.enabled));
-        self.slideshow_folder.as(gtk.Editable).setText(self.arena.allocator().dupeSentinel(u8, prefs.wallpaper.slideshow.folder, 0) catch "");
-        self.slideshow_interval.setValue(@floatFromInt(prefs.wallpaper.slideshow.interval_seconds));
-        self.slideshow_order.setSelected(@backingInt(prefs.wallpaper.slideshow.order));
-        self.slideshow_transition.setSelected(@backingInt(prefs.wallpaper.slideshow.transition));
-        self.slideshow_duration.setValue(@floatFromInt(prefs.wallpaper.slideshow.transition_ms));
         self.density.setSelected(@backingInt(prefs.density));
-        for (self.entries, [_][]const u8{ prefs.theme.gtk_name, prefs.theme.seed, prefs.wallpaper.path, prefs.wallpaper.color, prefs.font }) |control, value| control.as(gtk.Editable).setText(self.arena.allocator().dupeSentinel(u8, value, 0) catch "");
+        for ([_]*gtk.Entry{ self.entries[0], self.entries[1], self.entries[4] }, [_][]const u8{ prefs.theme.gtk_name, prefs.theme.seed, prefs.font }) |control, value| control.as(gtk.Editable).setText(self.arena.allocator().dupeSentinel(u8, value, 0) catch "");
+        self.fillWallpaper(prefs);
         self.font_size.setValue(@floatFromInt(prefs.font_size));
         self.motion.setActive(@intFromBool(prefs.reduced_motion));
         self.qt_enabled.setActive(@intFromBool(prefs.qt.enabled));
@@ -588,6 +608,53 @@ pub const View = struct {
         self.qt_motion.setActive(@intFromBool(prefs.qt.darkly.sync_reduced_motion));
         self.qt_kde.setActive(@intFromBool(prefs.qt.darkly.sync_kde_colors));
         self.qt_density.setActive(@intFromBool(prefs.qt.darkly.sync_density));
+    }
+    /// The connector whose override the wallpaper controls currently edit, or
+    /// null when the dropdown is on "All displays" (the global default).
+    fn selectedOutput(self: *const View) ?[]const u8 {
+        const index = self.wallpaper_output.getSelected();
+        // Index 0 is "All displays (default)"; every later row's label is the
+        // connector it edits, read back from the dropdown's own string list.
+        if (index == 0) return null;
+        const strings = object.ext.cast(gtk.StringList, self.wallpaper_output.getModel().?) orelse return null;
+        const label = strings.getString(index) orelse return null;
+        return std.mem.span(label);
+    }
+    /// Fills the wallpaper controls for the currently selected display: its own
+    /// override when one is chosen, else the global default. The slideshow is
+    /// global-only, so it always reflects the default and is disabled per-display.
+    fn fillWallpaper(self: *View, prefs: model.Preferences) void {
+        const alloc = self.arena.allocator();
+        const wp = if (self.selectedOutput()) |connector| prefs.wallpaperForOutput(connector) else prefs.wallpaper;
+        self.fit.setSelected(@backingInt(wp.mode));
+        self.entries[2].as(gtk.Editable).setText(alloc.dupeSentinel(u8, wp.path, 0) catch "");
+        self.entries[3].as(gtk.Editable).setText(alloc.dupeSentinel(u8, wp.color, 0) catch "");
+        self.slideshow_enabled.setActive(@intFromBool(prefs.wallpaper.slideshow.enabled));
+        self.slideshow_folder.as(gtk.Editable).setText(alloc.dupeSentinel(u8, prefs.wallpaper.slideshow.folder, 0) catch "");
+        self.slideshow_interval.setValue(@floatFromInt(prefs.wallpaper.slideshow.interval_seconds));
+        self.slideshow_order.setSelected(@backingInt(prefs.wallpaper.slideshow.order));
+        self.slideshow_transition.setSelected(@backingInt(prefs.wallpaper.slideshow.transition));
+        self.slideshow_duration.setValue(@floatFromInt(prefs.wallpaper.slideshow.transition_ms));
+        self.updateWallpaperSensitivity();
+    }
+    /// The slideshow belongs to the global default only; grey it out while a
+    /// single display's override is being edited, and keep its timing controls
+    /// off unless the slideshow is enabled.
+    fn updateWallpaperSensitivity(self: *View) void {
+        const per_display = self.selectedOutput() != null;
+        self.slideshow_enabled.as(gtk.Widget).setSensitive(@intFromBool(!per_display));
+        const slideshow_on = self.slideshow_enabled.getActive() != 0 and !per_display;
+        for ([_]*gtk.Widget{ self.slideshow_folder.as(gtk.Widget), self.slideshow_choose.as(gtk.Widget), self.slideshow_interval.as(gtk.Widget), self.slideshow_order.as(gtk.Widget), self.slideshow_transition.as(gtk.Widget), self.slideshow_duration.as(gtk.Widget) }) |control| control.setSensitive(@intFromBool(slideshow_on));
+    }
+    /// Switching display re-points the controls at that display's wallpaper; it
+    /// must not save, or the outgoing display's values would land on the new one.
+    fn displaySelected(_: *object.Object, _: *object.ParamSpec, self: *View) callconv(.c) void {
+        if (self.filling) return;
+        self.filling = true;
+        defer self.filling = false;
+        self.fillWallpaper(self.prefs);
+        self.presentation();
+        self.queuePreview();
     }
     fn saveForm(self: *View) void {
         if (self.filling or !self.editor.editable()) return;
@@ -616,10 +683,25 @@ pub const View = struct {
         // slideshow moves a gradient or solid fit to cover rather than failing.
         const slideshow_on = self.slideshow_enabled.getActive() != 0;
         const chosen_fit = self.fit.getSelected();
-        prefs.wallpaper = .{
+        const new_path = text(self.entries[2]);
+        const new_color = text(self.entries[3]);
+        if (self.selectedOutput()) |connector| {
+            // Editing one display's override. The slideshow stays on the global
+            // default, and a save must not drop placements the shell recorded.
+            const override: model.Wallpaper = .{
+                .mode = @fromBackingInt(@intCast(chosen_fit)),
+                .path = new_path,
+                .color = new_color,
+                .crops = prefs.wallpaperForOutput(connector).crops,
+            };
+            prefs.outputs = setOutputWallpaper(self.arena.allocator(), prefs.outputs, connector, override) catch {
+                self.rejectForm();
+                return;
+            };
+        } else prefs.wallpaper = .{
             .mode = @fromBackingInt(@intCast(if (slideshow_on and chosen_fit != 2 and chosen_fit != 3) @as(c_uint, 2) else chosen_fit)),
-            .path = text(self.entries[2]),
-            .color = text(self.entries[3]),
+            .path = new_path,
+            .color = new_color,
             // The form has no crop editor, so a save must not drop placements
             // the shell recorded for other images.
             .crops = prefs.wallpaper.crops,
@@ -1029,6 +1111,37 @@ fn rawText(buffer: *gtk.TextBuffer) [*:0]u8 {
 }
 fn text(entry_: *gtk.Entry) []const u8 {
     return std.mem.span(entry_.as(gtk.Editable).getText());
+}
+/// The connected displays' connector names, de-duplicated, for the wallpaper
+/// display selector. Mirrors the shell's own monitor enumeration.
+fn listConnectors(display: *gdk.Display, alloc: std.mem.Allocator) ![][:0]const u8 {
+    var list: std.ArrayList([:0]const u8) = .empty;
+    const monitors = display.getMonitors();
+    outer: for (0..monitors.getNItems()) |i| {
+        const item = monitors.getItem(@intCast(i)) orelse continue;
+        const monitor: *gdk.Monitor = @ptrCast(@alignCast(item));
+        defer monitor.unref();
+        if (monitor.isValid() == 0) continue;
+        const name = monitor.getConnector() orelse continue;
+        const spanned = std.mem.span(name);
+        for (list.items) |previous| if (std.mem.eql(u8, previous, spanned)) continue :outer;
+        try list.append(alloc, try alloc.dupeSentinel(u8, spanned, 0));
+    }
+    return try list.toOwnedSlice(alloc);
+}
+/// Returns `outputs` with `connector`'s wallpaper override set, preserving every
+/// other field and any unrelated output. The new list is allocated in `alloc`.
+fn setOutputWallpaper(alloc: std.mem.Allocator, outputs: []const model.Output, connector: []const u8, wallpaper: model.Wallpaper) ![]const model.Output {
+    var list: std.ArrayList(model.Output) = .empty;
+    var replaced = false;
+    for (outputs) |o| {
+        if (std.mem.eql(u8, o.connector, connector)) {
+            replaced = true;
+            try list.append(alloc, .{ .connector = o.connector, .bar = o.bar, .dock = o.dock, .wallpaper = wallpaper });
+        } else try list.append(alloc, o);
+    }
+    if (!replaced) try list.append(alloc, .{ .connector = try alloc.dupe(u8, connector), .wallpaper = wallpaper });
+    return try list.toOwnedSlice(alloc);
 }
 fn card(host: *gtk.Box) *gtk.Box {
     const box = w.column(0);
