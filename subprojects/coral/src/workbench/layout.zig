@@ -2,16 +2,18 @@
 //! Store desired sizes, not transient GTK allocations in a compact window.
 const std = @import("std");
 pub const Dock = enum { left, right, bottom };
-pub const Panel = enum { explorer, search, source_control, terminal };
+pub const Panel = enum { explorer, search, source_control, terminal, agent };
 pub const State = struct {
     explorer: Dock = .left,
     search: Dock = .bottom,
     source_control: Dock = .left,
     terminal: Dock = .bottom,
+    agent: Dock = .right,
     explorer_visible: bool = true,
     search_visible: bool = false,
     source_control_visible: bool = false,
     terminal_visible: bool = false,
+    agent_visible: bool = false,
     active: Panel = .explorer,
     left_size: u16 = 222,
     right_size: u16 = 320,
@@ -34,9 +36,10 @@ pub fn validate(state: State) !void {
 test "dock defaults and every supported placement are valid" {
     try validate(.{});
     inline for (.{ Dock.left, Dock.right, Dock.bottom }) |side| {
-        try validate(.{ .explorer = side, .search = side, .source_control = side, .terminal = side, .explorer_visible = false, .search_visible = true, .source_control_visible = true, .terminal_visible = true, .active = .search });
-        try validate(.{ .explorer = side, .search = side, .source_control = side, .terminal = side, .source_control_visible = true, .active = .source_control });
-        try validate(.{ .explorer = side, .search = side, .source_control = side, .terminal = side, .terminal_visible = true, .active = .terminal });
+        try validate(.{ .explorer = side, .search = side, .source_control = side, .terminal = side, .agent = side, .explorer_visible = false, .search_visible = true, .source_control_visible = true, .terminal_visible = true, .agent_visible = true, .active = .search });
+        try validate(.{ .explorer = side, .search = side, .source_control = side, .terminal = side, .agent = side, .source_control_visible = true, .active = .source_control });
+        try validate(.{ .explorer = side, .search = side, .source_control = side, .terminal = side, .agent = side, .terminal_visible = true, .active = .terminal });
+        try validate(.{ .explorer = side, .search = side, .source_control = side, .terminal = side, .agent = side, .agent_visible = true, .active = .agent });
     }
 }
 
@@ -56,6 +59,15 @@ test "terminal defaults keep old sessions decoding to a hidden bottom panel" {
     const default: State = .{};
     try std.testing.expectEqual(Dock.bottom, default.terminal);
     try std.testing.expectEqual(false, default.terminal_visible);
+    try validate(default);
+}
+
+test "agent defaults keep old sessions decoding to a hidden right panel" {
+    // Session v2 descriptors written before the Agent existed omit these
+    // fields; JSON decoding fills them from these defaults. Keep them stable.
+    const default: State = .{};
+    try std.testing.expectEqual(Dock.right, default.agent);
+    try std.testing.expectEqual(false, default.agent_visible);
     try validate(default);
 }
 

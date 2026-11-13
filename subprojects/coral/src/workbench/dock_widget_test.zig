@@ -19,6 +19,7 @@ const Fixture = struct {
     search: u.W = undefined,
     source_control: u.W = undefined,
     terminal: u.W = undefined,
+    agent: u.W = undefined,
     dock: Dock = undefined,
     fn init(self: *Fixture) !void {
         try t.expect(c.gtk_init_check() != 0);
@@ -33,6 +34,8 @@ const Fixture = struct {
         u.append(self.dock.source_control_slot, self.source_control);
         self.terminal = c.gtk_entry_new().?;
         u.append(self.dock.terminal_slot, self.terminal);
+        self.agent = c.gtk_entry_new().?;
+        u.append(self.dock.agent_slot, self.agent);
         c.gtk_window_set_child(u.cast(c.GtkWindow, self.window), self.dock.root);
         self.dock.attach();
         c.gtk_window_set_default_size(u.cast(c.GtkWindow, self.window), 960, 640);
@@ -328,4 +331,81 @@ test "terminal and search share the bottom dock keeping the active panel" {
     try t.expect(f.dock.effective[1] and !f.dock.effective[3]);
     // Desired state survives the shared-dock presentation collapse.
     try t.expect(f.dock.state.search_visible and f.dock.state.terminal_visible);
+}
+
+test "agent defaults to a hidden right panel and preserves old sessions" {
+    var f: Fixture = .{};
+    try f.init();
+    defer f.deinit();
+    try t.expect(f.dock.state.agent == .right);
+    try t.expect(!f.dock.state.agent_visible);
+    try t.expect(!f.dock.effective[4]);
+    try t.expect(c.gtk_widget_get_visible(f.dock.agent_slot) == 0);
+    // Explorer keeps its historical default while Agent stays hidden.
+    try t.expect(f.dock.effective[0]);
+    try t.expect(f.dock.state.active == .explorer);
+    try t.expect(c.gtk_widget_get_visible(f.dock.frames[1]) == 0);
+}
+
+test "agent dock moves hides and tabs without disturbing the other four panels" {
+    var f: Fixture = .{};
+    try f.init();
+    defer f.deinit();
+    const parent = c.gtk_widget_get_parent(f.editor);
+    const buffer = c.gtk_text_view_get_buffer(u.cast(c.GtkTextView, f.editor));
+    f.dock.show(.agent);
+    // effective/visibility/parent/tab assertions are synchronous in apply();
+    // no per-move settle is needed (keeps the widget suite within its budget).
+    try t.expect(f.dock.effective[4]);
+    try t.expect(f.dock.effective[0]);
+    try t.expect(f.dock.state.active == .agent);
+    try t.expect(c.gtk_widget_get_visible(f.dock.agent_slot) != 0);
+    for ([_]layout.Dock{ .right, .bottom, .left }) |side| {
+        f.dock.move(side);
+        try t.expect(c.gtk_widget_get_parent(f.dock.agent_slot) == f.dock.hosts[@backingInt(side)]);
+        try t.expect(f.dock.effective[4]);
+        // The Agent tab follows the panel; the other tabs stay put.
+        for (f.dock.tabs, 0..) |tabs, i| {
+            try t.expect(c.gtk_widget_get_visible(tabs[4]) == @intFromBool(i == @backingInt(side)));
+            try t.expect(c.gtk_widget_get_visible(tabs[0]) == @intFromBool(i == @backingInt(f.dock.state.explorer)));
+        }
+        try t.expect(c.gtk_widget_get_parent(f.editor) == parent);
+        try t.expect(c.gtk_text_view_get_buffer(u.cast(c.GtkTextView, f.editor)) == buffer);
+    }
+    f.dock.hide(.agent);
+    try t.expect(!f.dock.effective[4]);
+    try t.expect(c.gtk_widget_get_visible(f.dock.agent_slot) == 0);
+    // Explorer remains visible and becomes the active fallback.
+    try t.expect(f.dock.effective[0] and f.dock.state.active == .explorer);
+    for (f.dock.tabs) |tabs| try t.expect(c.gtk_widget_get_visible(tabs[4]) == 0);
+}
+
+test "agent and explorer share one dock keeping the active panel" {
+    var f: Fixture = .{};
+    try f.init();
+    defer f.deinit();
+    f.dock.restore(.{ .explorer = .left, .agent = .left, .explorer_visible = true, .agent_visible = true, .active = .agent });
+    try t.expect(!f.dock.effective[0] and f.dock.effective[4]);
+    f.dock.show(.explorer);
+    try t.expect(f.dock.effective[0] and !f.dock.effective[4]);
+    // Desired state survives the shared-dock presentation collapse.
+    try t.expect(f.dock.state.explorer_visible and f.dock.state.agent_visible);
+}
+
+test "moving focused agent keeps focus after allocation without overriding editor focus" {
+    var f: Fixture = .{};
+    try f.init();
+    defer f.deinit();
+    f.dock.show(.agent);
+    _ = c.gtk_widget_grab_focus(f.agent);
+    settle();
+    for ([_]layout.Dock{ .left, .bottom }) |side| {
+        f.dock.move(side);
+        settle();
+        try t.expect(@import("dock.zig").inside(c.gtk_window_get_focus(u.cast(c.GtkWindow, f.window)), f.dock.agent_slot));
+    }
+    f.dock.move(.right);
+    _ = c.gtk_widget_grab_focus(f.editor);
+    settle();
+    try t.expect(c.gtk_window_get_focus(u.cast(c.GtkWindow, f.window)) == f.editor);
 }

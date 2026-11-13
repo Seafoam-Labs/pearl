@@ -156,6 +156,15 @@ pub const Command = enum {
     tasks_run,
     tasks_stop,
     tasks_restart,
+    toggle_agent,
+    focus_agent,
+    agent_new_thread,
+    agent_send,
+    agent_cancel,
+    agent_allow,
+    agent_deny,
+    agent_accept_review,
+    agent_reject_review,
 
     pub fn metadata(self: Command) Metadata {
         return entries[@backingInt(self)];
@@ -316,6 +325,15 @@ pub const Command = enum {
             .tasks_run => i18n.dtr("coral", "Tasks: Run selected task"),
             .tasks_stop => i18n.dtr("coral", "Tasks: Stop task"),
             .tasks_restart => i18n.dtr("coral", "Tasks: Restart task"),
+            .toggle_agent => i18n.dtr("coral", "Toggle Agent dock"),
+            .focus_agent => i18n.dtr("coral", "Focus Agent"),
+            .agent_new_thread => i18n.dtr("coral", "Agent: New thread"),
+            .agent_send => i18n.dtr("coral", "Agent: Send message"),
+            .agent_cancel => i18n.dtr("coral", "Agent: Cancel run"),
+            .agent_allow => i18n.dtr("coral", "Agent: Allow permission"),
+            .agent_deny => i18n.dtr("coral", "Agent: Deny permission"),
+            .agent_accept_review => i18n.dtr("coral", "Agent: Accept review"),
+            .agent_reject_review => i18n.dtr("coral", "Agent: Reject review"),
         };
     }
 };
@@ -482,6 +500,15 @@ pub const entries = [_]Metadata{
     .{ .command = .tasks_run, .action = "tasks-run", .detailed_action = "win.tasks-run", .label = "Tasks: Run selected task", .shortcut = null },
     .{ .command = .tasks_stop, .action = "tasks-stop", .detailed_action = "win.tasks-stop", .label = "Tasks: Stop task", .shortcut = null },
     .{ .command = .tasks_restart, .action = "tasks-restart", .detailed_action = "win.tasks-restart", .label = "Tasks: Restart task", .shortcut = null },
+    .{ .command = .toggle_agent, .action = "toggle-agent", .detailed_action = "win.toggle-agent", .label = "Toggle Agent dock", .shortcut = null },
+    .{ .command = .focus_agent, .action = "focus-agent", .detailed_action = "win.focus-agent", .label = "Focus Agent", .shortcut = null },
+    .{ .command = .agent_new_thread, .action = "agent-new-thread", .detailed_action = "win.agent-new-thread", .label = "Agent: New thread", .shortcut = null },
+    .{ .command = .agent_send, .action = "agent-send", .detailed_action = "win.agent-send", .label = "Agent: Send message", .shortcut = null },
+    .{ .command = .agent_cancel, .action = "agent-cancel", .detailed_action = "win.agent-cancel", .label = "Agent: Cancel run", .shortcut = null },
+    .{ .command = .agent_allow, .action = "agent-allow", .detailed_action = "win.agent-allow", .label = "Agent: Allow permission", .shortcut = null },
+    .{ .command = .agent_deny, .action = "agent-deny", .detailed_action = "win.agent-deny", .label = "Agent: Deny permission", .shortcut = null },
+    .{ .command = .agent_accept_review, .action = "agent-accept-review", .detailed_action = "win.agent-accept-review", .label = "Agent: Accept review", .shortcut = null },
+    .{ .command = .agent_reject_review, .action = "agent-reject-review", .detailed_action = "win.agent-reject-review", .label = "Agent: Reject review", .shortcut = null },
 };
 
 pub fn fromAction(action: []const u8) ?Command {
@@ -546,7 +573,7 @@ pub fn fromKey(key: u32, state: u32) ?Command {
 
 test "registry is exhaustive, ordered and has unique stable actions" {
     try std.testing.expectEqual(@typeInfo(Command).@"enum".field_names.len, entries.len);
-    const actions = [_][]const u8{ "new", "open", "save", "save-as", "reload", "find", "goto", "spelling", "preferences", "about", "close", "quit", "command-palette", "split-group", "focus-next-group", "focus-previous-group", "close-group", "excerpt", "grouped-undo", "grouped-redo", "open-folder", "open-workspace", "workspace-roots", "workspace-back", "workspace-rescan", "close-workspace", "quick-open", "workspace-search", "workspace-policy", "workspace-trust", "workspace-revoke", "save-workspace-session", "restore-workspace-session", "toggle-explorer", "toggle-search", "toggle-source-control", "focus-source-control", "focus-explorer", "focus-search", "focus-editor", "hide-panel", "dock-left", "dock-right", "dock-bottom", "reset-docks", "dock-grow", "dock-shrink", "next-tab", "previous-tab", "new-window", "close-window", "next-window", "previous-window", "workspace-create-file", "workspace-create-directory", "workspace-rename", "workspace-move", "workspace-delete", "recent-projects", "open-buffers", "forget-project-session", "workspace-add-root", "workspace-remove-root", "save-workspace-as", "language-start", "language-stop", "language-restart", "language-status", "language-completion", "language-hover", "language-signature", "language-definition", "language-declaration", "language-type-definition", "language-implementation", "language-references", "language-document-symbols", "language-workspace-symbols", "language-problems", "language-formatting", "language-range-formatting", "language-rename", "language-code-actions", "language-semantic-tokens", "language-inlay-hints", "language-code-lenses", "language-document-links", "git-status", "git-refresh", "git-diff", "git-staged-diff", "git-stage", "git-unstage", "git-stage-hunk", "git-unstage-hunk", "git-next-hunk", "git-previous-hunk", "git-commit", "git-uncommit", "git-stage-tracked-commit", "git-branches", "git-create-branch", "git-switch-branch", "git-delete-branch", "git-tags", "git-create-tag", "git-worktrees", "git-add-worktree", "git-remove-worktree", "git-stash-push", "git-stash-list", "git-stash-apply", "git-stash-pop", "git-stash-drop", "git-conflicts", "git-resolve-current", "git-resolve-incoming", "git-resolve-both", "git-conflict-manual", "git-continue", "git-abort", "git-remotes", "git-fetch", "git-pull", "git-push", "git-force-push", "git-history", "git-blame", "git-commit-diff", "git-permalink", "git-project-diff", "git-project-diff-refresh", "git-project-diff-next-hunk", "git-project-diff-previous-hunk", "git-project-diff-stage-hunk", "git-project-diff-unstage-hunk", "git-project-diff-stage-selection", "git-project-diff-unstage-selection", "git-project-diff-unified", "git-project-diff-split", "git-project-diff-word", "toggle-terminal", "focus-terminal", "terminal-new", "terminal-close", "terminal-restart", "terminal-cancel", "tasks-show", "tasks-run", "tasks-stop", "tasks-restart" };
+    const actions = [_][]const u8{ "new", "open", "save", "save-as", "reload", "find", "goto", "spelling", "preferences", "about", "close", "quit", "command-palette", "split-group", "focus-next-group", "focus-previous-group", "close-group", "excerpt", "grouped-undo", "grouped-redo", "open-folder", "open-workspace", "workspace-roots", "workspace-back", "workspace-rescan", "close-workspace", "quick-open", "workspace-search", "workspace-policy", "workspace-trust", "workspace-revoke", "save-workspace-session", "restore-workspace-session", "toggle-explorer", "toggle-search", "toggle-source-control", "focus-source-control", "focus-explorer", "focus-search", "focus-editor", "hide-panel", "dock-left", "dock-right", "dock-bottom", "reset-docks", "dock-grow", "dock-shrink", "next-tab", "previous-tab", "new-window", "close-window", "next-window", "previous-window", "workspace-create-file", "workspace-create-directory", "workspace-rename", "workspace-move", "workspace-delete", "recent-projects", "open-buffers", "forget-project-session", "workspace-add-root", "workspace-remove-root", "save-workspace-as", "language-start", "language-stop", "language-restart", "language-status", "language-completion", "language-hover", "language-signature", "language-definition", "language-declaration", "language-type-definition", "language-implementation", "language-references", "language-document-symbols", "language-workspace-symbols", "language-problems", "language-formatting", "language-range-formatting", "language-rename", "language-code-actions", "language-semantic-tokens", "language-inlay-hints", "language-code-lenses", "language-document-links", "git-status", "git-refresh", "git-diff", "git-staged-diff", "git-stage", "git-unstage", "git-stage-hunk", "git-unstage-hunk", "git-next-hunk", "git-previous-hunk", "git-commit", "git-uncommit", "git-stage-tracked-commit", "git-branches", "git-create-branch", "git-switch-branch", "git-delete-branch", "git-tags", "git-create-tag", "git-worktrees", "git-add-worktree", "git-remove-worktree", "git-stash-push", "git-stash-list", "git-stash-apply", "git-stash-pop", "git-stash-drop", "git-conflicts", "git-resolve-current", "git-resolve-incoming", "git-resolve-both", "git-conflict-manual", "git-continue", "git-abort", "git-remotes", "git-fetch", "git-pull", "git-push", "git-force-push", "git-history", "git-blame", "git-commit-diff", "git-permalink", "git-project-diff", "git-project-diff-refresh", "git-project-diff-next-hunk", "git-project-diff-previous-hunk", "git-project-diff-stage-hunk", "git-project-diff-unstage-hunk", "git-project-diff-stage-selection", "git-project-diff-unstage-selection", "git-project-diff-unified", "git-project-diff-split", "git-project-diff-word", "toggle-terminal", "focus-terminal", "terminal-new", "terminal-close", "terminal-restart", "terminal-cancel", "tasks-show", "tasks-run", "tasks-stop", "tasks-restart", "toggle-agent", "focus-agent", "agent-new-thread", "agent-send", "agent-cancel", "agent-allow", "agent-deny", "agent-accept-review", "agent-reject-review" };
     for (entries, actions, 0..) |entry, action, index| {
         try std.testing.expectEqual(index, @backingInt(entry.command));
         try std.testing.expectEqualStrings(action, entry.action);

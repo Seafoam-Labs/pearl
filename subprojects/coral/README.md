@@ -49,10 +49,29 @@ immediately enables these executable surfaces with your user permissions;
 stale-generation invalidation, barriers, bounded capture and the remaining
 Git/language approvals are **not an OS sandbox**. Latest targeted gates: terminal
 12/12, tasks 7/7, policy 17/17; docks/session/widgets/production/visual are pending
-the parent aggregate. Agent services remain later work; **M6 agent core is next**. See the
+the parent aggregate. **M6 agent core and M7 Zed-agent-parity backend/UI are
+implemented and validated (targeted):** a GTK-free `src/agent` backend (engine,
+providers, per-tool policy, multi-file review with checkpoints, persistent
+worktree-bound threads, ACP v1 and MCP stdio clients, markdown skills, auth with
+secret redaction, cancellation and a host callback boundary) drives the native
+**Agent dock — the fifth persisted panel (default right, hidden)** with thread
+list, streaming transcript, context chips, provider picker, permission cards,
+review accept/reject, skills search and cancel. Providers are a deterministic
+offline `fake`, an **opt-in OpenAI-compatible** endpoint (user-supplied
+`base_url`/API key, no proxy substitution, no secret logs) and **ACP** external
+agents; MCP tools are read-only-allow / writable-ask. Threads persist under
+`$XDG_STATE_HOME/coral/agents`; stale reviews are refused wholesale and denied
+tools have no side effect. Workspaces stay always trusted (no consent); tool
+permissions/review remain and this is **not an OS sandbox**. Targeted gates:
+agent-core-unit 54, agent-protocol-unit 62, native agent 9/9, docks 27/27,
+session-unit 29/29, widgets 218, layout 5/5, build pass; the full aggregate was
+not rerun and production/visual gates are pending the parent aggregate. Two fake
+ACP adapters (echo/edit) and a fake MCP server are test fixtures; real external
+adapters are not installed or claimed. **M8 is next.** See the
 [M3 language guide](docs/WORKBENCH_M3_LANGUAGE.md),
-[M4 Git guide](docs/WORKBENCH_M4_GIT.md) and
-[M5 terminal/tasks guide](docs/WORKBENCH_M5_TERMINAL.md).
+[M4 Git guide](docs/WORKBENCH_M4_GIT.md),
+[M5 terminal/tasks guide](docs/WORKBENCH_M5_TERMINAL.md) and
+[M6/M7 agent guide](docs/WORKBENCH_M6_AGENT.md).
 
 ![Native Coral editor](artifacts/native/editor-dark.png)
 
@@ -539,7 +558,77 @@ production 46/46, visual 16/16) remain historical for the prior increment
 ([guide](docs/WORKBENCH_M5_TERMINAL.md#targeted-validation)); M1–M4 gates remain
 historical, and earlier failed attempts are retained in the guide.
 `test-m5-slice` composes only the changed M5 surfaces. This is not full Zed/VS
-Code terminal parity; **M6 agent core is next**.
+Code terminal parity.
+
+## Agent — M6 core and M7 Zed-agent parity implemented, targeted validation
+
+Open the **Agent** dock from the activity rail or palette (**Toggle Agent dock**,
+**Focus Agent**). It is the **fifth dock panel** beside Explorer/Search/Source
+Control/Terminal, moves left/right/bottom, resizes, hides and persists its layout
+(default right, hidden; old sessions decode to it). The panel
+(`src/agent/controller.zig`) shows the thread list, a streaming transcript,
+context attachment chips, the provider picker, permission cards, review
+proposals with accept/reject, skills search and cancel/status, and drives the
+**GTK-free `src/agent` backend** through its engine API (`newThread`, `send`,
+`cancel`, `respondPermission`, `acceptReview`, `rejectReview`, `setProvider`,
+`probe`, `pollEvent`, `waitIdle`, `threadState`, `searchSkills`,
+`revertCheckpoint`). The backend never imports GTK: the host supplies
+file/terminal/diagnostics callbacks, and writes happen only for accepted reviews
+or checkpoint reverts.
+
+Providers: a **deterministic scripted `fake`** (offline, the CI default), an
+**opt-in OpenAI-compatible** HTTP provider with SSE streaming whose `base_url`
+and API key come only from user config (`$XDG_CONFIG_HOME/coral/auth.json`) or a
+named environment variable — **no proxy is ever substituted and no secret is
+logged** — and **ACP** external agents. The **ACP v1 JSON-RPC stdio client**
+initializes with `protocolVersion: 1` and capability negotiation (omitted agent
+capabilities default to false), runs session new/prompt/update/cancel, answers
+permission requests (allow/deny/cancel), routes filesystem reads/writes through
+the host (writes through review) and drives terminal callbacks, with
+disconnect/malformed/fragmented-frame safety. The **MCP stdio client**
+(initialize → initialized → tools/list → tools/call) allows read-only tools and
+requires approval for writable ones. **Markdown skills** load from workspace
+`.coral/skills` (optional `name:`/`description:` frontmatter, filename-stem
+fallback), search by keyword and render into the prompt with source disclosure.
+Context attachments (file/selection/diagnostics/git_diff/folder) are bounded by
+per-kind and total byte budgets with a disclosure header listing what was
+attached and truncated.
+
+Threads persist as **atomic JSON under `$XDG_STATE_HOME/coral/agents`** (corrupt
+files are skipped on restore), bind to an optional **worktree** so concurrent
+agents stay path-isolated, and use an explicit state machine. Review proposals
+record per-file base SHA-256 revisions; **accept re-reads every file and refuses
+the whole proposal if any base changed (no writes)**, success snapshots a
+**checkpoint** for `revertCheckpoint`, and rejection discards without side
+effects. Per-tool policy is **allow/deny/ask** (read-only tools allow, edits
+propose review, terminal commands ask, unknown tools ask); **a denied tool never
+invokes a host callback**. Cancellation is cooperative across streams, tool runs
+and RPC waits. Workspaces are **always trusted** (no consent prompt); tool
+permissions and review remain, and this is **not an OS sandbox** — ACP external
+processes run with your user permissions. Commands (no default keybindings):
+`toggle-agent`, `focus-agent`, `agent-new-thread`, `agent-send`, `agent-cancel`,
+`agent-allow`, `agent-deny`, `agent-accept-review`, `agent-reject-review`. The
+instrumented binary exposes a `CORAL_AGENT` JSON probe for the native harness.
+
+**Targeted evidence:** `agent-core-unit` **54/54**, `agent-protocol-unit`
+**62/62**, native agent **9/9** (`panel-probe-show-hide`,
+`fake-thread-send-stream`, `permission-review-inert`, `cancel-and-resend`,
+`provider-picker`, `skills-search`, `select-thread`, `thread-persistence`,
+`bounds`), docks **27/27**, `session-unit` **29/29**
+([slice log](../../.cache/coral-m6-slice.log),
+[agent results](../../.cache/coral-agent/results.json)), widgets **218**, layout
+**5/5**, and build pass (**46/46 build steps**,
+[build log](../../.cache/coral-m6-production.log)). `test-m6-slice` composes the
+agent core/protocol/native gates with docks and session-unit. **The full
+aggregate was not rerun; hooks-disabled production and visual gates are pending
+the parent aggregate.** Protocol parity uses **two fake ACP adapters (echo/edit)
+and a fake MCP server** (`tests/fixtures`); real external adapters are not
+installed and no real-adapter parity is claimed. Limits: the ACP picker's empty
+argv clean-fails (real adapter argv configuration is future work), the UI does
+not rebuild restored threads (engine restore is covered), host root bind timing,
+the fake default script makes no tool calls, and no live provider/network tests
+were run. This is not full Zed agent parity; **M8 is next**. See the
+[M6/M7 agent guide](docs/WORKBENCH_M6_AGENT.md).
 
 ## Implemented
 
@@ -653,9 +742,15 @@ aggregate. Earlier targeted counts (task-unit 16, terminal 9, tasks 9, docks 27,
 session-unit 27, widgets 213, production 46/46, visual 16/16) remain historical.
 Workspaces are always trusted by user request (no consent prompts; stale-generation
 invalidation remains; not an OS sandbox); Git subprocess disclosure and language
-server approval remain. Agent UI remains unimplemented; M6 agent core is next**. See the
-[M4 verification status](docs/WORKBENCH_M4_GIT.md#final-m4-core-workflow-validation--accepted)
-and [M5 terminal/tasks guide](docs/WORKBENCH_M5_TERMINAL.md).
+server approval remain. M6 agent core and M7 Zed-agent-parity backend/UI are
+implemented and validated (targeted): agent-core-unit 54, agent-protocol-unit 62,
+native agent 9/9, docks 27/27, session-unit 29/29, widgets 218, layout 5/5 and
+build pass; the full aggregate was not rerun and hooks-disabled production/visual
+gates are pending the parent aggregate. Real external ACP adapters are not
+installed or claimed; no live provider/network tests were run. **M8 is next.** See the
+[M4 verification status](docs/WORKBENCH_M4_GIT.md#final-m4-core-workflow-validation--accepted),
+[M5 terminal/tasks guide](docs/WORKBENCH_M5_TERMINAL.md) and
+[M6/M7 agent guide](docs/WORKBENCH_M6_AGENT.md).
 Explore the separate [interactive workbench prototype](docs/mockups/workbench/index.html)
 and its [interaction guide](docs/mockups/workbench/README.md). All prototype
 operations stay in memory; they are not native feature evidence.
@@ -713,6 +808,10 @@ zig build task-unit -Doptimize=safe -j1
 zig build terminal -Doptimize=safe -j1
 zig build tasks -Doptimize=safe -j1
 zig build test-m5-slice -Doptimize=safe -j1
+zig build agent-core-unit -Doptimize=safe -j1
+zig build agent-protocol-unit -Doptimize=safe -j1
+zig build agent -Doptimize=safe -j1
+zig build test-m6-slice -Doptimize=safe -j1
 zig build session-unit -Doptimize=safe -j1
 zig build widgets -Doptimize=safe -- --aqueous-prefix /usr
 ```
@@ -720,6 +819,11 @@ zig build widgets -Doptimize=safe -- --aqueous-prefix /usr
 Pass `-Dghostty-prefix=PREFIX` to these commands for the M5 terminal; the M5
 targets (`task-unit`, `terminal`, `tasks`, `test-m5-slice`) require it.
 `test-m5-slice` composes only the changed M5 surfaces, not M1–M4 regressions.
+The M6/M7 GTK-free unit suites (`agent-core-unit`, `agent-protocol-unit`) need no
+display or ghostty prefix; the native `agent` step and `test-m6-slice` build the
+instrumented binary and need `-Dghostty-prefix` plus the private harness.
+`test-m6-slice` composes the agent core/protocol/native gates with docks and
+session-unit, not M1–M4 regressions.
 
 `/usr` is the installed-tool prefix used for this host's foundation validation;
 use the prepared fixture prefix on other setups. See the [status report](docs/WORKBENCH_STATUS.md#validation-completed)

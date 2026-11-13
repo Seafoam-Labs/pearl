@@ -75,6 +75,7 @@ pub const App = struct {
     git_project_diff: @import("git/project_diff.zig").Controller = undefined,
     terminal: @import("terminal/terminal_controller.zig").Controller = undefined,
     tasks: @import("tasks/tasks_controller.zig").Controller = undefined,
+    agent: @import("agent/controller.zig").Controller = undefined,
     session: WorkspaceSession = undefined,
     workspace_operations: WorkspaceOperations = undefined,
     workspace_roots: @import("workspace/roots_controller.zig").Controller = undefined,
@@ -273,11 +274,13 @@ pub const App = struct {
         self.tasks = .init(self);
         self.tasks.navigate = &tasksNavigate;
         self.tasks.navigate_context = self;
+        self.agent = .init(self);
         self.browser = WorkspaceController.init(self, self.dock.explorer_slot);
         self.browser.attach();
         self.dock.attach();
         self.git_panel.attach(self.dock.source_control_slot);
         self.terminal.attach(self.dock.terminal_slot);
+        self.agent.attach(self.dock.agent_slot);
         self.workspace_policy = WorkspacePolicy.init(self);
         self.session = .{ .app = self };
         self.workspace_operations = .init(self);
@@ -347,6 +350,27 @@ pub const App = struct {
         self.dock.show(.terminal);
         self.terminal.focusWidget();
     }
+    fn focusAgent(self: *App) void {
+        if (self.dock.picking) self.workspace_search.hide();
+        self.dock.show(.agent);
+        self.agent.show();
+    }
+    /// Mirror the panel's provider picker so palette-created threads match the
+    /// toolbar's New Thread button.
+    fn agentPickerSelection(self: *App) @import("agent/engine.zig").ProviderSelection {
+        const idx = c.gtk_drop_down_get_selected(u.cast(c.GtkDropDown, self.agent.provider_picker));
+        return switch (idx) {
+            1 => .{ .openai = .{ .base_url = if (self.agent.engine) |e| (e.auth_config.baseUrl("openai") orelse "") else "" } },
+            2 => .{ .acp = .{ .argv = &.{} } },
+            else => .{ .fake = .{} },
+        };
+    }
+    fn answerAgentPermission(self: *App, decision: @import("agent/engine.zig").PermissionResponse) void {
+        const idx = self.agent.active orelse return;
+        const t = self.agent.threads[idx] orelse return;
+        const p = t.permission orelse return;
+        self.agent.respondPermission(t.id, p.request_id, decision) catch {};
+    }
     fn projectDiffSave(context: ?*anyopaque, id: u64) void {
         const self = u.cast(App, context.?);
         if (self.documents.get(id)) |doc| self.save(doc, false, false);
@@ -370,6 +394,7 @@ pub const App = struct {
     }
     fn hidePanel(self: *App, panel: dock_layout.Panel) void {
         if (panel == .search) self.workspace_search.hide() else {
+            if (panel == .agent) self.agent.hide();
             self.dock.hide(panel);
             self.focusEditor();
         }
@@ -406,6 +431,7 @@ pub const App = struct {
         }
         self.git_panel.deinit();
         self.terminal.deinit();
+        self.agent.deinit();
         self.dock.shutdown();
         self.session.deinit();
         self.browser.deinit();
@@ -1506,6 +1532,7 @@ pub const App = struct {
         self.git_project_diff.invalidate();
         self.terminal.invalidate();
         self.tasks.invalidate();
+        self.agent.invalidate();
         self.workspace_search.invalidate("Stale — document lifecycle changed. Refresh required.");
         self.workspace.invalidate();
         for (self.documents.entries.items) |d| {
@@ -1875,6 +1902,7 @@ pub const App = struct {
         self.git_project_diff.invalidate();
         self.terminal.invalidate();
         self.tasks.invalidate();
+        self.agent.invalidate();
         self.dock.shutdown();
         self.session.shutdown();
         self.workspace_policy.shutdown();
@@ -2229,6 +2257,40 @@ pub const App = struct {
             .tasks_run => self.tasks.run(),
             .tasks_stop => self.tasks.stop(),
             .tasks_restart => self.tasks.restart(),
+            .toggle_agent => if (self.dock.visible(.agent)) self.hidePanel(.agent) else self.focusAgent(),
+            .focus_agent => self.focusAgent(),
+            .agent_new_thread => self.agent.newThread(.{ .provider = self.agentPickerSelection() }) catch {},
+            .agent_send => {
+                const idx = self.agent.active orelse return;
+                const t = self.agent.threads[idx] orelse return;
+                const text = u.entryText(self.agent.input_entry);
+                if (text.len == 0) return;
+                // The palette sends the current draft with its chips; the panel's
+                // own Send button (and the agent-send fixture) consumes them.
+                var inputs: std.ArrayList(@import("agent/engine.zig").AttachmentInput) = .empty;
+                defer inputs.deinit(a);
+                for (t.attachments.items) |chip| inputs.append(a, .{ .kind = chip.kind, .label = chip.label, .content = chip.content }) catch {};
+                self.agent.send(t.id, text, inputs.items) catch {};
+            },
+            .agent_cancel => {
+                const idx = self.agent.active orelse return;
+                const t = self.agent.threads[idx] orelse return;
+                self.agent.cancel(t.id);
+            },
+            .agent_allow => self.answerAgentPermission(.allow),
+            .agent_deny => self.answerAgentPermission(.deny),
+            .agent_accept_review => {
+                const idx = self.agent.active orelse return;
+                const t = self.agent.threads[idx] orelse return;
+                const r = t.review orelse return;
+                self.agent.acceptReview(t.id, r.review_id) catch {};
+            },
+            .agent_reject_review => {
+                const idx = self.agent.active orelse return;
+                const t = self.agent.threads[idx] orelse return;
+                const r = t.review orelse return;
+                self.agent.rejectReview(t.id, r.review_id) catch {};
+            },
             .focus_editor => {
                 if (self.dock.picking) self.workspace_search.hide();
                 self.focusEditor();
@@ -3602,7 +3664,8 @@ fn testCommand(receiver: *App) void {
         self.git_panel.fixture(action, git_value) or
         self.git_project_diff.fixture(action, git_value) or
         self.terminal.fixture(action, git_value) or
-        self.tasks.fixture(action, git_value))
+        self.tasks.fixture(action, git_value) or
+        self.agent.fixture(action, git_value))
     {
         // Git fixture dispatch is compiled out of production builds.
     } else if (std.mem.startsWith(u8, action, "git-")) {
@@ -4034,6 +4097,10 @@ fn testCommand(receiver: *App) void {
         self.undo(false);
     } else if (std.mem.eql(u8, action, "redo")) {
         self.undo(true);
+    } else if (std.mem.eql(u8, action, "agent-skills-query")) {
+        // Drive the real skills entry widget; its "changed" signal runs the
+        // controller's actual updateSkills/searchSkills workflow.
+        if (value != null) c.gtk_editable_set_text(u.cast(c.GtkEditable, self.agent.skills_entry), value);
     } else if (std.mem.eql(u8, action, "grouped-append")) {
         if (value != null) {
             const n = self.documents.entries.items.len;

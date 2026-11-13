@@ -137,7 +137,7 @@ test "explicit session owns and roundtrips binary paths, metadata, excerpts and 
 
 test "v2 preserves desired dock state and v1 migrates to defaults" {
     var value = sample;
-    value.layout = .{ .explorer = .right, .search = .left, .source_control = .bottom, .terminal = .right, .explorer_visible = false, .search_visible = true, .source_control_visible = true, .terminal_visible = true, .active = .source_control, .left_size = 455, .right_size = 521, .bottom_size = 309 };
+    value.layout = .{ .explorer = .right, .search = .left, .source_control = .bottom, .terminal = .right, .agent = .bottom, .explorer_visible = false, .search_visible = true, .source_control_visible = true, .terminal_visible = true, .agent_visible = true, .active = .source_control, .left_size = 455, .right_size = 521, .bottom_size = 309 };
     const encoded = try model.encode(a, value);
     defer a.free(encoded);
     const decoded = try model.decode(encoded);
@@ -221,6 +221,30 @@ test "v2 sessions written before terminal decode its fields with defaults" {
     try std.testing.expectEqualDeep(model.layout.State{ .terminal = .right, .terminal_visible = true, .active = .terminal }, partial_decoded.value.layout);
 }
 
+test "v2 sessions written before agent decode its fields with defaults" {
+    const snapshot = try recovery.encode(a, sample.snapshot);
+    defer a.free(snapshot);
+    // Exact descriptor shape persisted before the Agent dock existed.
+    const old_layout = "{\"explorer\":\"left\",\"search\":\"bottom\",\"source_control\":\"left\",\"terminal\":\"bottom\",\"explorer_visible\":true,\"search_visible\":false,\"source_control_visible\":false,\"terminal_visible\":false,\"active\":\"explorer\",\"left_size\":222,\"right_size\":320,\"bottom_size\":240}";
+    const payload = try std.fmt.allocPrint(a, "{{\"workspace\":null,\"layout\":{s}}}\n{s}", .{ old_layout, snapshot });
+    defer a.free(payload);
+    const encoded = try frame("CORAL-SESSION 2\n", payload);
+    defer a.free(encoded);
+    const decoded = try model.decode(encoded);
+    defer decoded.deinit();
+    try std.testing.expectEqualDeep(model.layout.State{}, decoded.value.layout);
+    try std.testing.expectEqual(model.layout.Dock.right, decoded.value.layout.agent);
+    try std.testing.expectEqual(false, decoded.value.layout.agent_visible);
+    // A descriptor carrying only the agent fields keeps every other default.
+    const partial = try std.fmt.allocPrint(a, "{{\"workspace\":null,\"layout\":{{\"agent\":\"left\",\"agent_visible\":true,\"active\":\"agent\"}}}}\n{s}", .{snapshot});
+    defer a.free(partial);
+    const partial_encoded = try frame("CORAL-SESSION 2\n", partial);
+    defer a.free(partial_encoded);
+    const partial_decoded = try model.decode(partial_encoded);
+    defer partial_decoded.deinit();
+    try std.testing.expectEqualDeep(model.layout.State{ .agent = .left, .agent_visible = true, .active = .agent }, partial_decoded.value.layout);
+}
+
 test "v2 requires valid bounded layout and v1 refuses future layout fields" {
     const snapshot = try recovery.encode(a, newer.snapshot);
     defer a.free(snapshot);
@@ -230,6 +254,8 @@ test "v2 requires valid bounded layout and v1 refuses future layout fields" {
         "{\"workspace\":null,\"layout\":{\"explorer\":\"floating\"}}",
         "{\"workspace\":null,\"layout\":{\"source_control\":\"floating\"}}",
         "{\"workspace\":null,\"layout\":{\"source_control_visible\":\"yes\"}}",
+        "{\"workspace\":null,\"layout\":{\"agent\":\"floating\"}}",
+        "{\"workspace\":null,\"layout\":{\"agent_visible\":\"yes\"}}",
         "{\"workspace\":null,\"layout\":{\"active\":\"debug\"}}",
         "{\"workspace\":null,\"layout\":{\"trust\":true}}",
         "{\"workspace\":null,\"layout\":{\"left_size\":-1}}",
