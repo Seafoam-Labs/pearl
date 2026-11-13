@@ -63,6 +63,28 @@ test "wallpaper crops roundtrip and reject malformed entries" {
     try std.testing.expectError(error.DuplicateCrop, parse(alloc, "{\"wallpaper\":{\"crops\":[{\"path\":\"/p/a.png\"},{\"path\":\"/p/a.png\"}]}}"));
     try std.testing.expectError(error.UnknownField, parse(alloc, "{\"wallpaper\":{\"crops\":[{\"path\":\"/p/a.png\",\"zoom\":2}]}}"));
 }
+test "per-output wallpaper overrides roundtrip and fall back to the global image" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const alloc = arena.allocator();
+    const document = "{\"wallpaper\":{\"mode\":\"cover\",\"path\":\"/p/global.png\"},\"outputs\":[{\"connector\":\"DP-1\",\"wallpaper\":{\"mode\":\"cover\",\"path\":\"/p/one.png\",\"color\":\"#000000\",\"crops\":[{\"path\":\"/p/one.png\",\"x\":0.5,\"y\":0,\"width\":0.5,\"height\":1}]}},{\"connector\":\"DP-2\"}]}";
+    const saved = try parse(alloc, document);
+    try std.testing.expect(saved.outputs[0].wallpaper != null);
+    try std.testing.expectEqualStrings("/p/one.png", saved.outputs[0].wallpaper.?.path);
+    try std.testing.expectEqual(@as(usize, 1), saved.outputs[0].wallpaper.?.crops.len);
+    // DP-1 overrides; DP-2 (no override) and DP-3 (unknown) fall back to global.
+    try std.testing.expectEqualStrings("/p/one.png", saved.wallpaperForOutput("DP-1").path);
+    try std.testing.expectEqualStrings("/p/global.png", saved.wallpaperForOutput("DP-2").path);
+    try std.testing.expectEqualStrings("/p/global.png", saved.wallpaperForOutput("DP-3").path);
+    try std.testing.expect(saved.hasWallpaperOverride("DP-1"));
+    try std.testing.expect(!saved.hasWallpaperOverride("DP-2"));
+    const encoded = try std.json.Stringify.valueAlloc(alloc, saved, .{});
+    try std.testing.expectEqualDeep(saved.outputs[0].wallpaper.?, (try parse(alloc, encoded)).outputs[0].wallpaper.?);
+    try std.testing.expectError(error.AbsoluteImagePathRequired, parse(alloc, "{\"outputs\":[{\"connector\":\"DP-1\",\"wallpaper\":{\"mode\":\"cover\",\"path\":\"rel.png\"}}]}"));
+    try std.testing.expectError(error.ImageRequired, parse(alloc, "{\"outputs\":[{\"connector\":\"DP-1\",\"wallpaper\":{\"mode\":\"cover\"}}]}"));
+    try std.testing.expectError(error.InvalidColor, parse(alloc, "{\"outputs\":[{\"connector\":\"DP-1\",\"wallpaper\":{\"mode\":\"solid\",\"color\":\"zzz\"}}]}"));
+    try std.testing.expectError(error.InvalidCropRect, parse(alloc, "{\"outputs\":[{\"connector\":\"DP-1\",\"wallpaper\":{\"crops\":[{\"path\":\"/p/a.png\",\"x\":0.75,\"width\":0.5}]}}]}"));
+}
 pub const Theme = struct {
     mode: enum { static, dynamic, gtk, package } = .static,
     package_id: []const u8 = "",
@@ -108,7 +130,7 @@ pub const WorkspaceMode = @import("../desktop/workspace_policy.zig").Mode;
 pub const ResourceMode = @import("../desktop/resource_model.zig").Mode;
 pub const ResourceSelection = @import("../desktop/resource_model.zig").Selection;
 pub const Bar = struct { clocks: []const @import("../desktop/clock_policy.zig").Definition = &.{}, mode: @import("../desktop/bar_visibility.zig").Mode = .always, background_opacity: @import("../desktop/bar_opacity.zig").Config = .{}, launcher_icon: @import("../desktop/launcher_icon_policy.zig").Config = .{}, workspace_mode: WorkspaceMode = .large, running_apps_per_window: bool = false, resource_mode: ResourceMode = .icon, resource_series: ResourceSelection = .{}, media_art: bool = false, islands: bool = true, attached: bool = false, edge: Edge = .top, size: u16 = 48, radius: u8 = 14, groups: Groups = .{} };
-pub const Output = struct { connector: []const u8, bar: Bar = .{}, dock: ?Dock = null };
+pub const Output = struct { connector: []const u8, bar: Bar = .{}, dock: ?Dock = null, wallpaper: ?Wallpaper = null };
 pub const Export = struct { name: []const u8, template: []const u8 };
 pub const Preferences = struct {
     version: u32 = 1,
@@ -148,6 +170,18 @@ pub const Preferences = struct {
     pub fn dockForOutput(self: Preferences, connector: []const u8) Dock {
         for (self.outputs) |o| if (std.mem.eql(u8, o.connector, connector)) return o.dock orelse self.dock;
         return self.dock;
+    }
+    /// The wallpaper for one output: its own override when set, else the global
+    /// image. The slideshow stays global, so an override's `slideshow` is unused.
+    pub fn wallpaperForOutput(self: Preferences, connector: []const u8) Wallpaper {
+        for (self.outputs) |o| if (std.mem.eql(u8, o.connector, connector)) return o.wallpaper orelse self.wallpaper;
+        return self.wallpaper;
+    }
+    /// True when `connector` carries its own wallpaper, so the shell decodes a
+    /// separate texture for it instead of sharing the global one.
+    pub fn hasWallpaperOverride(self: Preferences, connector: []const u8) bool {
+        for (self.outputs) |o| if (std.mem.eql(u8, o.connector, connector)) return o.wallpaper != null;
+        return false;
     }
     pub fn barHidden(self: Preferences, connector: []const u8) bool {
         for (self.bar_hidden_outputs) |hidden| if (std.mem.eql(u8, hidden, connector)) return true;
@@ -200,6 +234,7 @@ pub const Preferences = struct {
             for (self.outputs[0..i]) |previous| if (std.mem.eql(u8, previous.connector, o.connector)) return error.DuplicateOutput;
             try barValid(o.bar);
             if (o.dock) |dock| try @import("../desktop/dock_policy.zig").validate(dock);
+            if (o.wallpaper) |wp| try wallpaperValid(wp);
         }
         if (self.bar_hidden_outputs.len > 16) return error.TooManyOutputs;
         for (self.bar_hidden_outputs, 0..) |connector, i| {
@@ -223,6 +258,15 @@ fn barValid(b: Bar) !void {
     if (b.size < 32 or b.size > 160) return error.InvalidBarSize;
     try b.groups.validate();
     try @import("../desktop/clock_policy.zig").validate(b.clocks, b.groups);
+}
+/// A per-output wallpaper override. The slideshow is global-only, so an
+/// override's `slideshow` is ignored and left unvalidated here.
+fn wallpaperValid(w: Wallpaper) !void {
+    if (!hex(w.color)) return error.InvalidColor;
+    try safeText(w.path, 1024);
+    if (w.path.len > 0 and w.path[0] != '/') return error.AbsoluteImagePathRequired;
+    if ((w.mode == .cover or w.mode == .contain) and w.path.len == 0) return error.ImageRequired;
+    try @import("crop_policy.zig").validate(w.crops);
 }
 fn safeText(s: []const u8, max: usize) !void {
     if (s.len > max or !std.unicode.utf8ValidateSlice(s)) return error.InvalidText;

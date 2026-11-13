@@ -28,7 +28,10 @@ const Owner = @import("../../services/view_ownership.zig").Owner;
 const Layout = @import("../../platform/wayland/layout.zig").Layout;
 const Groups = @import("../../desktop/policy.zig").Groups;
 const slideshow_policy = @import("../../config/slideshow_policy.zig");
+const crop_policy = @import("../../config/crop_policy.zig");
+const prefs_model = @import("../../config/preferences.zig");
 const Crop = @import("../../desktop/wallpaper_crop.zig");
+const pixbuf = @import("gdkpixbuf2");
 const tr = @import("../../desktop/text.zig").tr;
 const power_presentation = @import("../../services/power_presentation.zig");
 const log = std.log.scoped(.ui);
@@ -79,6 +82,14 @@ const Surface = struct {
     wallpaper_pictures: [2]?*gtk.Picture = .{ null, null },
     wallpaper_index: u8 = 0,
     wallpaper_texture: ?*gdk.Texture = null,
+    /// This output's own wallpaper, decoded and cropped here instead of sharing
+    /// the service's single global texture. `override_key` (path + crop) gates a
+    /// re-decode so an unrelated preference change does not reload the image;
+    /// `override_css`/`override_color` repaint the background for a solid fit.
+    override_texture: ?*gdk.Texture = null,
+    override_key: ?[:0]u8 = null,
+    override_css: ?*gtk.CssProvider = null,
+    override_color: ?[:0]u8 = null,
     appearance_revision: u64 = std.math.maxInt(u64),
     measure_signal: c_ulong = 0,
     measure_clock: ?*gdk.FrameClock = null,
@@ -109,6 +120,13 @@ const Surface = struct {
         }
         self.effects.deinit();
 
+        if (self.override_texture) |texture| texture.unref();
+        if (self.override_key) |key| a.free(key);
+        if (self.override_css) |provider| {
+            self.window.as(gtk.Widget).getStyleContext().removeProvider(provider.as(gtk.StyleProvider));
+            provider.unref();
+        }
+        if (self.override_color) |color| a.free(color);
         self.window.destroy();
         self.window.unref();
         self.panel.unref();
@@ -351,11 +369,13 @@ pub const Manager = struct {
         self.schedule();
     }
     /// Opens the crop editor for one image against the output it has to fill.
+    /// `save_connector` names the output whose override receives the crop, or
+    /// null to edit the global wallpaper (the bar picker is a global control).
     /// A second request is dropped: the editor is modal, so whatever is behind
     /// it is already unreachable.
-    pub fn openCrop(self: *Manager, parent: *gtk.Window, output: *Output, path: []const u8) void {
+    pub fn openCrop(self: *Manager, parent: *gtk.Window, output: *Output, path: []const u8, save_connector: ?[]const u8) void {
         if (self.crop != null) return;
-        self.crop = Crop.Window.open(parent, &self.preferences, &self.effects, path, output.bounds.width, output.bounds.height, .{ .context = self, .closed = cropClosed }) catch |err| {
+        self.crop = Crop.Window.open(parent, &self.preferences, &self.effects, path, save_connector, output.bounds.width, output.bounds.height, .{ .context = self, .closed = cropClosed }) catch |err| {
             log.warn("event=wallpaper-crop-open-failed path={s} error={s}", .{ path, @errorName(err) });
             return;
         };
@@ -383,15 +403,16 @@ pub const Manager = struct {
     fn wallpaperPressed(_: *gtk.GestureClick, presses: c_int, _: f64, _: f64, s: *Surface) callconv(.c) void {
         if (s.desktop_icons != null) return;
         if (presses != 2) return;
-        const path = s.manager.preferences.prefs().wallpaper.path;
+        const path = s.manager.preferences.prefs().wallpaperForOutput(s.output.connector).path;
         if (path.len == 0) return;
-        s.manager.openCrop(s.window, s.output, path);
+        s.manager.openCrop(s.window, s.output, path, s.output.connector);
     }
-    /// The picker names an image; the popup's own output decides its shape.
+    /// The picker names an image; the popup's own output decides its shape. The
+    /// picker is a global control, so its crop edits the global wallpaper.
     fn pickerCrop(context: *anyopaque, path: []const u8) void {
         const self: *Manager = @ptrCast(@alignCast(context));
         const s = self.popup orelse return;
-        self.openCrop(s.window, s.output, path);
+        self.openCrop(s.window, s.output, path, null);
     }
     pub fn clear(self: *Manager) void {
         // The editor is transient for a surface window, so it goes first.
@@ -638,8 +659,8 @@ pub const Manager = struct {
     }
     fn desktopCrop(context: *anyopaque) void {
         const surface: *Surface = @ptrCast(@alignCast(context));
-        const path = surface.manager.preferences.prefs().wallpaper.path;
-        if (path.len != 0) surface.manager.openCrop(surface.window, surface.output, path);
+        const path = surface.manager.preferences.prefs().wallpaperForOutput(surface.output.connector).path;
+        if (path.len != 0) surface.manager.openCrop(surface.window, surface.output, path, surface.output.connector);
     }
     fn syncDesktop(self: *Manager) !void {
         const store = self.desktop_directory orelse return;
@@ -716,9 +737,18 @@ pub const Manager = struct {
         if (surface.bar) |bar| bar.styleIslands();
         if (surface.wallpaper_stack) |stack| {
             const prefs = self.preferences.prefs();
+            const connector = surface.output.connector;
+            const wp = prefs.wallpaperForOutput(connector);
+            const override = prefs.hasWallpaperOverride(connector);
             const transition = prefs.wallpaper.slideshow.transition;
-            const image = if (self.preferences.live) |live| live.texture else null;
-            const shown = image != null and (prefs.wallpaper.mode == .cover or prefs.wallpaper.mode == .contain);
+            // An output with its own wallpaper decodes and crops that image here;
+            // every other output shares the service's single global texture.
+            const image = if (override) overrideWallpaperTexture(surface, wp) else blk: {
+                releaseOverride(surface);
+                break :blk if (self.preferences.live) |live| live.texture else null;
+            };
+            styleWallpaperBackground(surface, wp, override);
+            const shown = image != null and (wp.mode == .cover or wp.mode == .contain);
             // Only a replacement image animates; the first paint must not.
             const animated = shown and !prefs.reduced_motion and
                 surface.wallpaper_texture != null and image.? != surface.wallpaper_texture.?;
@@ -735,7 +765,7 @@ pub const Manager = struct {
                 const index: u8 = if (animated) surface.wallpaper_index ^ 1 else surface.wallpaper_index;
                 const picture = surface.wallpaper_pictures[index].?;
                 picture.setPaintable(image.?.as(gdk.Paintable));
-                picture.setContentFit(if (prefs.wallpaper.mode == .cover) .cover else .contain);
+                picture.setContentFit(if (wp.mode == .cover) .cover else .contain);
                 if (animated) {
                     surface.wallpaper_index = index;
                     stack.setVisibleChildName(if (index == 0) "a" else "b");
@@ -2502,6 +2532,79 @@ pub const Manager = struct {
         return std.json.Stringify.valueAlloc(alloc, .{ .services = try self.serviceStatus(alloc, null), .apps = .{ .ready = self.index.catalog != null, .truncated = if (self.index.catalog) |c| c.truncated else false, .count = if (self.index.catalog) |c| c.entries.items.len else 0, .generation = self.index.generation }, .layout = .{ .available = self.layout.?.global != null, .pending = self.layout.?.manager != null, .output = self.layout.?.output[0..self.layout.?.output_len], .value = self.layout.?.value[0..self.layout.?.value_len], .workspace = self.layout.?.workspace, .err = self.layout.?.err }, .session = self.client.model.session, .availability = self.client.availability, .graphics = .{ .renderer = if (self.outputs.items.len > 0) rendererName(self.outputs.items[0].bar.?.window) else "unrealized", .gpu_agreement = "unverified" }, .blur = self.effects.available, .outputs = items.items, .popup = if (self.popup) |s| @as(?struct { output: []const u8, rect: Rect, pane: Bar.Pane, page: ?navigation.Route, results: usize, latency_us: i64 }, .{ .output = s.output.id, .rect = self.popup_rect.?, .pane = self.pane, .page = self.settings_page, .results = if (s.launcher) |l| l.count else 0, .latency_us = if (s.launcher) |l| l.latency_us else 0 }) else null, .notification = self.notification != null, .media_views = self.session_services.media.viewers, .artwork = self.session_services.media.art.image != null, .artwork_pending = self.session_services.media.art.job != null, .identifying = self.identifiers.items.len, .osd = self.osd != null, .osd_text = self.osd_text.slice(), .osd_detail = self.osdStatus(), .window_switcher = if (self.switcher) |surface| @as(?struct { output: []const u8, keyboard_mode: []const u8, text: []const u8, serial: u64, rect: Rect }, .{ .output = surface.output.id, .keyboard_mode = @tagName(layer.getKeyboardMode(surface.window)), .text = surface.switcher_spoken orelse "", .serial = self.switcher_serial, .rect = .{ .x = surface.output.usable.x + @divTrunc(surface.output.usable.width - surface.window.as(gtk.Widget).getWidth(), 2), .y = surface.output.usable.y + surface.output.usable.height - layer.getMargin(surface.window, .bottom) - surface.window.as(gtk.Widget).getHeight(), .width = surface.window.as(gtk.Widget).getWidth(), .height = surface.window.as(gtk.Widget).getHeight() } }) else null }, .{});
     }
 };
+/// Drops a surface's cached override wallpaper, so the texture lives exactly
+/// while the output has an override of its own.
+fn releaseOverride(surface: *Surface) void {
+    if (surface.override_texture) |old| old.unref();
+    surface.override_texture = null;
+    if (surface.override_key) |old| a.free(old);
+    surface.override_key = null;
+}
+/// The texture for one output's own wallpaper, decoded and cropped on demand and
+/// cached on the surface until its path or crop changes. Returns null when the
+/// fit shows no image or the file cannot be decoded, so the surface falls back to
+/// its background color. Outputs without an override keep using the service's
+/// single global texture instead.
+fn overrideWallpaperTexture(surface: *Surface, wp: prefs_model.Wallpaper) ?*gdk.Texture {
+    if (wp.mode != .cover and wp.mode != .contain) return null;
+    if (wp.path.len == 0) return null;
+    const saved = crop_policy.find(wp.crops, wp.path);
+    // Key on path + crop so an unrelated preference edit does not re-decode.
+    const key = std.fmt.allocPrintSentinel(a, "{s}|{d}|{d}|{d}|{d}", .{
+        wp.path,
+        if (saved) |c| c.x else @as(f32, 0),
+        if (saved) |c| c.y else @as(f32, 0),
+        if (saved) |c| c.width else @as(f32, 1),
+        if (saved) |c| c.height else @as(f32, 1),
+    }, 0) catch return null;
+    defer a.free(key);
+    if (surface.override_key) |current| if (std.mem.eql(u8, current, key)) return surface.override_texture;
+    releaseOverride(surface);
+    const path = a.dupeSentinel(u8, wp.path, 0) catch return null;
+    defer a.free(path);
+    const image = pixbuf.Pixbuf.newFromFile(path.ptr, null) orelse {
+        log.warn("event=wallpaper-override-decode-failed path={s}", .{wp.path});
+        return null;
+    };
+    defer image.unref();
+    // Mirrors the service's global wallpaperTexture: a saved crop sub-sets the
+    // image, otherwise the whole frame is used.
+    const texture = if (saved) |c| blk: {
+        if (crop_policy.pixels(c, image.getWidth(), image.getHeight())) |rect| {
+            const part = image.newSubpixbuf(rect.x, rect.y, rect.width, rect.height);
+            defer part.unref();
+            break :blk gdk.Texture.newForPixbuf(part);
+        }
+        break :blk gdk.Texture.newForPixbuf(image);
+    } else gdk.Texture.newForPixbuf(image);
+    surface.override_texture = texture;
+    surface.override_key = a.dupeSentinel(u8, key, 0) catch null;
+    return texture;
+}
+/// Repaints one output's wallpaper background when it overrides the global
+/// color. Gradient mode derives from the theme and stays global, so only a solid
+/// or image fit carries an explicit color; the rule matches the global selector
+/// and wins on provider priority, scoped to this surface's window alone.
+fn styleWallpaperBackground(surface: *Surface, wp: prefs_model.Wallpaper, override: bool) void {
+    const want: ?[]const u8 = if (override and wp.mode != .gradient and wp.color.len > 0) wp.color else null;
+    if (want == null and surface.override_color == null) return;
+    if (want != null and surface.override_color != null and std.mem.eql(u8, surface.override_color.?, want.?)) return;
+    if (want) |color| {
+        const css = std.fmt.allocPrintSentinel(a, ".pearl-root.pearl-shell.pearl-wallpaper {{ background: {s}; }}", .{color}, 0) catch return;
+        defer a.free(css);
+        if (surface.override_css == null) {
+            surface.override_css = gtk.CssProvider.new();
+            surface.window.as(gtk.Widget).getStyleContext().addProvider(surface.override_css.?.as(gtk.StyleProvider), 602);
+        }
+        surface.override_css.?.loadFromString(css);
+        if (surface.override_color) |old| a.free(old);
+        surface.override_color = a.dupeSentinel(u8, color, 0) catch null;
+    } else {
+        if (surface.override_css) |provider| provider.loadFromString("");
+        if (surface.override_color) |old| a.free(old);
+        surface.override_color = null;
+    }
+}
 fn rectangle(r: anytype) !Rect {
     return .{ .x = std.math.cast(i32, r.x) orelse return error.InvalidGeometry, .y = std.math.cast(i32, r.y) orelse return error.InvalidGeometry, .width = std.math.cast(i32, r.width) orelse return error.InvalidGeometry, .height = std.math.cast(i32, r.height) orelse return error.InvalidGeometry };
 }

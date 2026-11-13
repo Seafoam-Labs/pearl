@@ -170,7 +170,7 @@ msgstr ""
 msgid "Aa     +1"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:864
+#: src/ui/surfaces/manager.zig:894
 msgid "About {0} h {1} min left"
 msgstr ""
 
@@ -327,7 +327,7 @@ msgstr ""
 msgid "Advanced"
 msgstr ""
 
-#: src/desktop/settings.zig:453
+#: src/desktop/settings.zig:454
 msgid "Advanced JSON is invalid. Correct it before using the form."
 msgstr ""
 
@@ -534,7 +534,7 @@ msgstr ""
 msgid "Applications dock"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:129 src/desktop/settings.zig:143 src/settings/window.zig:192
+#: src/desktop/aqueous_settings.zig:129 src/desktop/settings.zig:144 src/settings/window.zig:192
 msgid "Apply & save"
 msgstr ""
 
@@ -546,7 +546,7 @@ msgstr ""
 msgid "Apply changes"
 msgstr ""
 
-#: src/desktop/wallpaper_crop.zig:227
+#: src/desktop/wallpaper_crop.zig:244
 msgid "Apply crop"
 msgstr ""
 
@@ -663,7 +663,7 @@ msgstr ""
 msgid "At home in your bar. Or out on your desktop."
 msgstr ""
 
-#: src/desktop/settings.zig:111
+#: src/desktop/settings.zig:112
 msgid "Attach bar to screen edge"
 msgstr ""
 
@@ -797,7 +797,7 @@ msgstr ""
 msgid "Bar appearance"
 msgstr ""
 
-#: src/desktop/settings.zig:108
+#: src/desktop/settings.zig:109
 msgid "Bar corner radius"
 msgstr ""
 
@@ -805,15 +805,15 @@ msgstr ""
 msgid "Bar displays"
 msgstr ""
 
-#: src/desktop/settings.zig:106
+#: src/desktop/settings.zig:107
 msgid "Bar edge"
 msgstr ""
 
-#: src/desktop/settings.zig:107
+#: src/desktop/settings.zig:108
 msgid "Bar minimum size"
 msgstr ""
 
-#: src/desktop/settings.zig:103
+#: src/desktop/settings.zig:104
 msgid "Bar opacity and widgets…"
 msgstr ""
 
@@ -846,7 +846,7 @@ msgstr ""
 msgid "Battery service unavailable"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:854
+#: src/ui/surfaces/manager.zig:884
 msgid "Battery very low"
 msgstr ""
 
@@ -1059,7 +1059,7 @@ msgstr ""
 msgid "Calculation · Enter to copy · = to continue"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:770 src/desktop/clipboard_capture.zig:146 src/desktop/connectivity.zig:117 src/desktop/services.zig:296 src/desktop/wallpaper_crop.zig:226 src/services/polkit.zig:315 src/settings/bar_view.zig:1144 src/settings/notification_filters_view.zig:437 src/settings/scheduler_view.zig:385 src/settings/scheduler_view.zig:438
+#: src/desktop/aqueous_settings.zig:770 src/desktop/clipboard_capture.zig:146 src/desktop/connectivity.zig:117 src/desktop/services.zig:296 src/desktop/wallpaper_crop.zig:243 src/services/polkit.zig:315 src/settings/bar_view.zig:1144 src/settings/notification_filters_view.zig:437 src/settings/scheduler_view.zig:385 src/settings/scheduler_view.zig:438
 msgid "Cancel"
 msgstr ""
 
@@ -1099,7 +1099,7 @@ msgstr ""
 msgid "Cannot divide by zero"
 msgstr ""
 
-#: src/desktop/settings.zig:468
+#: src/desktop/settings.zig:469
 msgid "Cannot merge this draft. Correct its JSON and try again."
 msgstr ""
 
@@ -1202,7 +1202,7 @@ msgctxt "aqueous.input.repeat_rate.description"
 msgid "Characters per second; zero disables repeat."
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:871
+#: src/ui/surfaces/manager.zig:901
 msgid "Charge is running low."
 msgstr ""
 
@@ -1302,7 +1302,7 @@ msgstr ""
 msgid "Choose an image smaller than 64 MiB."
 msgstr ""
 
-#: src/desktop/settings.zig:261 src/settings/preferences_view.zig:786
+#: src/desktop/settings.zig:262 src/settings/preferences_view.zig:786
 msgid "Choose an image stored on this computer."
 msgstr ""
 
@@ -1597,7 +1597,7 @@ msgstr ""
 msgid "Connect and manage your wireless devices."
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:867
+#: src/ui/surfaces/manager.zig:897
 msgid "Connect power now to avoid losing unsaved work."
 msgstr ""
 
@@ -1714,7 +1714,7 @@ msgstr ""
 msgid "Correct the invalid appearance settings before syncing."
 msgstr ""
 
-#: src/desktop/wallpaper_crop.zig:340
+#: src/desktop/wallpaper_crop.zig:378
 msgid "Could not apply the crop. Try again."
 msgstr ""
 
@@ -1734,11 +1734,11 @@ msgstr ""
 msgid "Could not open Assistant. Your question is preserved; retry or check Settings."
 msgstr ""
 
-#: src/desktop/settings.zig:395
+#: src/desktop/settings.zig:396
 msgid "Could not open Pearl Settings. Bar preferences remain available in Advanced."
 msgstr ""
 
-#: src/desktop/settings.zig:403
+#: src/desktop/settings.zig:404
 msgid "Could not open Pearl Settings. Qt preferences remain available in Advanced."
 msgstr ""
 
@@ -1750,7 +1750,7 @@ msgstr ""
 msgid "Could not preview this image. Apply will validate the file."
 msgstr ""
 
-#: src/desktop/settings.zig:370
+#: src/desktop/settings.zig:371
 msgid "Could not retain this edit. The shared draft has not been overwritten; reopen settings to load it."
 msgstr ""
 
@@ -1758,7 +1758,7 @@ msgstr ""
 msgid "Could not save desktop positions. Changes remain in memory; try arranging again."
 msgstr ""
 
-#: src/desktop/wallpaper_crop.zig:313
+#: src/desktop/wallpaper_crop.zig:330
 msgid "Could not save the crop. Try again."
 msgstr ""
 
@@ -1802,11 +1802,11 @@ msgstr ""
 msgid "Critical"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:855
+#: src/ui/surfaces/manager.zig:885
 msgid "Critical battery level"
 msgstr ""
 
-#: src/desktop/wallpaper_crop.zig:160
+#: src/desktop/wallpaper_crop.zig:177
 msgid "Crop wallpaper"
 msgstr ""
 
@@ -1928,7 +1928,7 @@ msgstr ""
 msgid "Cycle windows requires updated Aqueous"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:1581
+#: src/ui/surfaces/manager.zig:1611
 msgid "Cycle →"
 msgstr ""
 
@@ -1982,8 +1982,12 @@ msgctxt "aqueous.layout.default.label"
 msgid "Default layout"
 msgstr ""
 
-#: src/desktop/settings.zig:102
+#: src/desktop/settings.zig:103
 msgid "Default layout for every output. Connector overrides are available in Advanced."
+msgstr ""
+
+#: src/desktop/settings.zig:91
+msgid "Default wallpaper for every output. Per-monitor image, fit and color overrides are available in Advanced; right-click a background to crop just that monitor."
 msgstr ""
 
 #: src/settings/bar_view.zig:1131
@@ -2018,7 +2022,7 @@ msgstr ""
 msgid "Delivered normally"
 msgstr ""
 
-#: src/desktop/settings.zig:93 src/settings/preferences_view.zig:252
+#: src/desktop/settings.zig:94 src/settings/preferences_view.zig:252
 msgid "Density"
 msgstr ""
 
@@ -2135,7 +2139,7 @@ msgstr ""
 msgid "Discard all Aqueous changes?"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:123 src/desktop/settings.zig:138
+#: src/desktop/aqueous_settings.zig:123 src/desktop/settings.zig:139
 msgid "Discard draft"
 msgstr ""
 
@@ -2179,7 +2183,7 @@ msgstr ""
 msgid "Dismiss"
 msgstr ""
 
-#: src/desktop/settings.zig:123
+#: src/desktop/settings.zig:124
 msgid "Dismiss popups when clicking outside"
 msgstr ""
 
@@ -2264,15 +2268,15 @@ msgstr ""
 msgid "Do not disturb · On"
 msgstr ""
 
-#: src/desktop/settings.zig:120
+#: src/desktop/settings.zig:121
 msgid "Dock distance from edge"
 msgstr ""
 
-#: src/desktop/settings.zig:117
+#: src/desktop/settings.zig:118
 msgid "Dock edge (moves opposite if shared with bar)"
 msgstr ""
 
-#: src/desktop/settings.zig:119
+#: src/desktop/settings.zig:120
 msgid "Dock icon size"
 msgstr ""
 
@@ -2280,7 +2284,7 @@ msgstr ""
 msgid "Dock opacity slider (%)"
 msgstr ""
 
-#: src/desktop/settings.zig:118
+#: src/desktop/settings.zig:119
 msgid "Dock visibility"
 msgstr ""
 
@@ -2312,7 +2316,7 @@ msgstr ""
 msgid "Draft colors · scoped to this preview."
 msgstr ""
 
-#: src/desktop/settings.zig:438
+#: src/desktop/settings.zig:439
 msgid "Draft exceeds 64 KiB. Reduce its size before applying."
 msgstr ""
 
@@ -2324,7 +2328,7 @@ msgstr ""
 msgid "Draft illustration · Not applied"
 msgstr ""
 
-#: src/desktop/settings.zig:427
+#: src/desktop/settings.zig:428
 msgid "Draft is limited to 64 KiB. The insertion was rejected; existing text is retained."
 msgstr ""
 
@@ -2348,7 +2352,7 @@ msgstr ""
 msgid "Drag screens to match how they sit on your desk."
 msgstr ""
 
-#: src/desktop/wallpaper_crop.zig:182
+#: src/desktop/wallpaper_crop.zig:199
 msgid "Drag to place, scroll to zoom. The frame is this display's shape."
 msgstr ""
 
@@ -2781,7 +2785,7 @@ msgstr ""
 msgid "Follow system"
 msgstr ""
 
-#: src/desktop/settings.zig:91 src/settings/preferences_view.zig:248
+#: src/desktop/settings.zig:92 src/settings/preferences_view.zig:248
 msgid "Font family"
 msgstr ""
 
@@ -2790,7 +2794,7 @@ msgctxt "aqueous.desktop.font.family.description"
 msgid "Font family synchronized across Noctalia, GTK, qt5ct, and qt6ct."
 msgstr ""
 
-#: src/desktop/settings.zig:92 src/settings/preferences_view.zig:251
+#: src/desktop/settings.zig:93 src/settings/preferences_view.zig:251
 msgid "Font size"
 msgstr ""
 
@@ -2837,11 +2841,11 @@ msgstr ""
 msgid "Full draft request (JSON). Collection editors: monitor_changes, custom_keybind_changes, window_rule_changes, snap_zone_changes, snap_layouts and default_snap_layout. See docs/AQUEOUS_SETTINGS.md for exact examples. Apply saves personal copies of changed system defaults."
 msgstr ""
 
-#: src/desktop/settings.zig:133
+#: src/desktop/settings.zig:134
 msgid "Full preferences JSON"
 msgstr ""
 
-#: src/desktop/settings.zig:125
+#: src/desktop/settings.zig:126
 msgid "Full preferences JSON. This includes connector overrides, center widgets, popup limits and opt-in exports. Apply validates every field. Export files are owned under pearl/exports; edited files are protected and the first replacement is backed up."
 msgstr ""
 
@@ -3356,7 +3360,7 @@ msgstr ""
 msgid "Layout behavior"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:2693
+#: src/ui/surfaces/manager.zig:2796
 msgid "Layout change unavailable"
 msgstr ""
 
@@ -3588,7 +3592,7 @@ msgstr ""
 msgid "Low"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:853
+#: src/ui/surfaces/manager.zig:883
 msgid "Low battery"
 msgstr ""
 
@@ -3771,7 +3775,7 @@ msgstr ""
 msgid "Merge changes"
 msgstr ""
 
-#: src/desktop/settings.zig:140
+#: src/desktop/settings.zig:141
 msgid "Merge external changes"
 msgstr ""
 
@@ -4293,7 +4297,7 @@ msgctxt "desktop.agent.description"
 msgid "On-device answers with your configured search engines"
 msgstr ""
 
-#: src/desktop/settings.zig:113
+#: src/desktop/settings.zig:114
 msgid "One taskbar button per window"
 msgstr ""
 
@@ -4343,7 +4347,7 @@ msgstr ""
 msgid "Open Power controls"
 msgstr ""
 
-#: src/desktop/settings.zig:98
+#: src/desktop/settings.zig:99
 msgid "Open Qt appearance settings…"
 msgstr ""
 
@@ -4583,7 +4587,7 @@ msgstr ""
 msgid "Pause automatic idle"
 msgstr ""
 
-#: src/core/application.zig:179 src/ui/surfaces/manager.zig:1376
+#: src/core/application.zig:179 src/ui/surfaces/manager.zig:1406
 msgid "Pearl"
 msgstr ""
 
@@ -4708,7 +4712,7 @@ msgctxt "aqueous.layout.options.scrolling.allow_overscroll.description"
 msgid "Permit edge columns beyond the centered bound."
 msgstr ""
 
-#: src/desktop/settings.zig:121
+#: src/desktop/settings.zig:122
 msgid "Pin applications using their dock action menu. Per-output dock overrides and pinned desktop IDs are available in Advanced."
 msgstr ""
 
@@ -4855,7 +4859,7 @@ msgctxt "aqueous.layout.options.float.placement.description"
 msgid "Policy used for newly opened freeform windows."
 msgstr ""
 
-#: src/desktop/settings.zig:122
+#: src/desktop/settings.zig:123
 msgid "Popup placement"
 msgstr ""
 
@@ -4968,7 +4972,7 @@ msgstr ""
 msgid "Preview only · committed appearance is unchanged. To select a package, choose Use theme, then Apply & save."
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:1580
+#: src/ui/surfaces/manager.zig:1610
 msgid "Previous"
 msgstr ""
 
@@ -5133,7 +5137,7 @@ msgstr ""
 msgid "Reduce brightness before the screen turns off"
 msgstr ""
 
-#: src/ui/i18n.zig:10 src/desktop/settings.zig:94
+#: src/ui/i18n.zig:10 src/desktop/settings.zig:95
 msgid "Reduce motion"
 msgstr ""
 
@@ -5287,7 +5291,7 @@ msgstr ""
 msgid "Reserved space, fullscreen and bell"
 msgstr ""
 
-#: src/desktop/wallpaper_crop.zig:225
+#: src/desktop/wallpaper_crop.zig:242
 msgid "Reset"
 msgstr ""
 
@@ -5853,7 +5857,7 @@ msgstr ""
 msgid "Selection matches saved preferences."
 msgstr ""
 
-#: src/desktop/settings.zig:109
+#: src/desktop/settings.zig:110
 msgid "Separate rounded bar islands"
 msgstr ""
 
@@ -6559,7 +6563,7 @@ msgstr ""
 msgid "Show album art instead of the media icon"
 msgstr ""
 
-#: src/desktop/settings.zig:115
+#: src/desktop/settings.zig:116
 msgid "Show applications dock"
 msgstr ""
 
@@ -6982,11 +6986,11 @@ msgstr ""
 msgid "The default profiles could not be restored."
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:1350
+#: src/ui/surfaces/manager.zig:1380
 msgid "The desktop action could not be completed."
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:1346
+#: src/ui/surfaces/manager.zig:1376
 msgid "The desktop action could not be confirmed."
 msgstr ""
 
@@ -7014,7 +7018,7 @@ msgstr ""
 msgid "The image path is too long or is not valid UTF-8."
 msgstr ""
 
-#: src/desktop/settings.zig:266
+#: src/desktop/settings.zig:267
 msgid "The image path must be valid UTF-8 and at most 1024 bytes."
 msgstr ""
 
@@ -7055,7 +7059,7 @@ msgstr ""
 msgid "The result is too large"
 msgstr ""
 
-#: src/desktop/settings.zig:468
+#: src/desktop/settings.zig:469
 msgid "The same field changed in both versions. Draft retained; review Advanced before discarding or resolving it."
 msgstr ""
 
@@ -7087,7 +7091,7 @@ msgstr ""
 msgid "The service reported more items than it can expose. This list is incomplete."
 msgstr ""
 
-#: src/desktop/settings.zig:478
+#: src/desktop/settings.zig:479
 msgid "The shared draft changed. Reopen settings before discarding it."
 msgstr ""
 
@@ -7253,7 +7257,7 @@ msgstr ""
 msgid "Tomorrow · 10:00\nReview the colors, spacing and keyboard navigation."
 msgstr ""
 
-#: src/desktop/wallpaper_crop.zig:334
+#: src/desktop/wallpaper_crop.zig:353
 msgid "Too many saved crops. Reset one of the others first."
 msgstr ""
 
@@ -7854,7 +7858,7 @@ msgstr ""
 msgid "Working…"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:1662
+#: src/ui/surfaces/manager.zig:1692
 msgid "Workspace"
 msgstr ""
 
@@ -9331,7 +9335,7 @@ msgstr ""
 msgid "{0} with its own defaults"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:870
+#: src/ui/surfaces/manager.zig:900
 msgid "{0} {1}"
 msgstr ""
 
@@ -9343,7 +9347,7 @@ msgstr ""
 msgid "{0} {1}{2}{3}"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:875
+#: src/ui/surfaces/manager.zig:905
 msgid "{0} · {1}%"
 msgstr ""
 
@@ -9351,11 +9355,11 @@ msgstr ""
 msgid "{0} — {1} {2}, all workspaces{3}{4}"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:862
+#: src/ui/surfaces/manager.zig:892
 msgid "{0}% charge remaining"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:862
+#: src/ui/surfaces/manager.zig:892
 msgid "{0}% remaining · about {1} h {2} min left"
 msgstr ""
 

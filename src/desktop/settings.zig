@@ -88,6 +88,7 @@ pub const View = struct {
         _ = gtk.Button.signals.clicked.connect(self.wallpaper_button, *View, chooseWallpaper, self, .{});
         self.fit = dropdown(appearance, @import("i18n").dtr("pearl", "Wallpaper fit"), &.{ "Material gradient", "Solid color", "Cover", "Contain" });
         self.entries[3] = entry(appearance, @import("i18n").dtr("pearl", "Background color"), "#141218");
+        appearance.append(w.label(@import("i18n").dtr("pearl", "Default wallpaper for every output. Per-monitor image, fit and color overrides are available in Advanced; right-click a background to crop just that monitor."), "pearl-secondary").as(gtk.Widget));
         self.entries[4] = entry(appearance, @import("i18n").dtr("pearl", "Font family"), "System default / Material fallback");
         self.font_size = spin(appearance, @import("i18n").dtr("pearl", "Font size"), 10, 24);
         self.density = dropdown(appearance, @import("i18n").dtr("pearl", "Density"), &.{ "Comfortable", "Compact" });

@@ -166,6 +166,7 @@ pub const events: []const Event = &.{
     .{ .name = "wallpaper-applications-applied", .scopes = &.{.config} },
     .{ .name = "wallpaper-changed", .scopes = &.{.config} },
     .{ .name = "wallpaper-crop-open-failed", .scopes = &.{.ui} },
+    .{ .name = "wallpaper-override-decode-failed", .scopes = &.{.ui} },
     .{ .name = "work-finished", .scopes = &.{.pearl} },
     .{ .name = "work-started", .scopes = &.{.pearl} },
 };
