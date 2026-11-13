@@ -27,7 +27,7 @@ fn pageTitle(index: usize) [:0]const u8 {
     };
 }
 const symbols = [_][*:0]const u8{ "view-grid-symbolic", "computer-symbolic", "media-flash-symbolic", "drive-harddisk-symbolic", "network-wireless-symbolic", "video-display-symbolic", "weather-clear-symbolic", "view-list-symbolic", "preferences-system-symbolic" };
-const Field = enum { cpu, io_wait, frequency, processes, threads, uptime, mem_used, mem_available, mem_cached, swap, disk_read, disk_write, disk_busy, disk_latency, disk_size, net_receive, net_send, net_rx, net_tx, net_speed, gpu_usage, gpu_used, gpu_total, gpu_temp, gpu_power, gpu_power_cap, gpu_fan, gpu_encode, gpu_decode, gpu_frequency, gpu_mem_frequency, gpu_max_frequency, gpu_mem_usage, gpu_gtt, gpu_gtt_total, gpu_pcie, sensor, proc_cpu, proc_memory, proc_read, proc_write, proc_threads, proc_pss, proc_command };
+const Field = enum { cpu, io_wait, frequency, processes, threads, uptime, mem_used, mem_available, mem_cached, swap, disk_read, disk_write, disk_busy, disk_latency, disk_size, net_receive, net_send, net_rx, net_tx, net_speed, gpu_usage, gpu_used, gpu_total, gpu_temp, gpu_power, gpu_power_cap, gpu_fan, gpu_encode, gpu_decode, gpu_frequency, gpu_mem_frequency, gpu_max_frequency, gpu_mem_usage, gpu_gtt, gpu_gtt_total, gpu_pcie, gpu_video_frequency, gpu_pstate, gpu_compute, gpu_pcie_rx, gpu_pcie_tx, sensor, proc_cpu, proc_memory, proc_read, proc_write, proc_threads, proc_pss, proc_command };
 const Binding = struct { widget: u.W, field: Field, index: usize = 0 };
 pub const App = struct {
     application: *c.GtkApplication,
@@ -651,9 +651,34 @@ pub const App = struct {
         self.metric(shared, @import("i18n").dtr("dome", "Shared memory (GTT) capacity"), .gpu_gtt_total, index);
         u.append(self.content, shared);
         self.metric(self.content, @import("i18n").dtr("dome", "PCIe link"), .gpu_pcie, index);
+        const memory_clocks = u.box(c.GTK_ORIENTATION_HORIZONTAL, 12, null);
+        self.metric(memory_clocks, @import("i18n").dtr("dome", "Memory clock"), .gpu_mem_frequency, index);
+        self.metric(memory_clocks, @import("i18n").dtr("dome", "Video clock"), .gpu_video_frequency, index);
+        u.append(self.content, memory_clocks);
+        const state = u.box(c.GTK_ORIENTATION_HORIZONTAL, 12, null);
+        self.metric(state, @import("i18n").dtr("dome", "Performance state"), .gpu_pstate, index);
+        self.metric(state, @import("i18n").dtr("dome", "CUDA compute"), .gpu_compute, index);
+        u.append(self.content, state);
+        const rates = u.box(c.GTK_ORIENTATION_HORIZONTAL, 12, null);
+        self.metric(rates, @import("i18n").dtr("dome", "PCIe receive · rate"), .gpu_pcie_rx, index);
+        self.metric(rates, @import("i18n").dtr("dome", "PCIe send · rate"), .gpu_pcie_tx, index);
+        u.append(self.content, rates);
         self.addNote(@import("i18n").dtr("dome", "A dash means the driver does not expose that metric or permission is unavailable. Visible client usage is never presented as device-wide utilization."));
         var power_note: [512]u8 = undefined;
         if (g.power_label.len > 0) self.addNote(@import("i18n").dfmt("dome", &power_note, "Power reading: {s}", .{g.power_label.slice()}));
+        if (g.reserved) |value| if (value > 0) {
+            var reserved_note: [512]u8 = undefined;
+            self.addNote(@import("i18n").dfmt("dome", &reserved_note, "Driver-reserved memory: {s}", .{u.bytes(value).slice()}));
+        };
+        if (g.cuda.len > 0) {
+            var cuda_note: [512]u8 = undefined;
+            self.addNote(@import("i18n").dfmt("dome", &cuda_note, "CUDA driver: {s}", .{g.cuda.slice()}));
+        }
+        var throttle_names: [128]u8 = undefined;
+        if (m.throttleText(g.throttle orelse 0, &throttle_names)) |names| if (names.len > 0) {
+            var throttle_note: [512]u8 = undefined;
+            self.addNote(@import("i18n").dfmt("dome", &throttle_note, "Clock limits: {s}", .{names}));
+        };
         if (g.integrated) self.addNote(@import("i18n").dtr("dome", "Integrated graphics: shared memory is normal GPU memory, not spill."));
     }
     fn buildSensors(self: *App, s: *m.Snapshot) void {
@@ -796,7 +821,7 @@ pub const App = struct {
                     else => unreachable,
                 };
             },
-            .gpu_usage, .gpu_used, .gpu_total, .gpu_temp, .gpu_power, .gpu_power_cap, .gpu_fan, .gpu_encode, .gpu_decode, .gpu_frequency, .gpu_mem_frequency, .gpu_max_frequency, .gpu_mem_usage, .gpu_gtt, .gpu_gtt_total, .gpu_pcie => {
+            .gpu_usage, .gpu_used, .gpu_total, .gpu_temp, .gpu_power, .gpu_power_cap, .gpu_fan, .gpu_encode, .gpu_decode, .gpu_frequency, .gpu_mem_frequency, .gpu_max_frequency, .gpu_mem_usage, .gpu_gtt, .gpu_gtt_total, .gpu_pcie, .gpu_video_frequency, .gpu_pstate, .gpu_compute, .gpu_pcie_rx, .gpu_pcie_tx => {
                 if (index >= s.gpus.len) return m.Text(512).init("—");
                 const g = self.nvml.resolve(s.gpus[index]);
                 return switch (field) {
@@ -812,9 +837,22 @@ pub const App = struct {
                     .gpu_frequency => numberText(g.frequency, " MHz"),
                     .gpu_mem_frequency => numberText(g.mem_frequency, " MHz"),
                     .gpu_max_frequency => numberText(g.max_frequency, " MHz"),
+                    .gpu_video_frequency => numberText(g.video_frequency, " MHz"),
                     .gpu_mem_usage => numberText(g.mem_usage, "%"),
                     .gpu_gtt => byteText(g.gtt_used, false),
                     .gpu_gtt_total => byteText(g.gtt_total, false),
+                    .gpu_pstate => blk: {
+                        if (g.pstate == null) break :blk m.Text(512).init("—");
+                        const text = io.path("P{d}", .{g.pstate.?});
+                        break :blk m.Text(512).init(text.slice());
+                    },
+                    .gpu_compute => blk: {
+                        if (g.cuda_major == null or g.cuda_minor == null) break :blk m.Text(512).init("—");
+                        const text = io.path("{d}.{d}", .{ g.cuda_major.?, g.cuda_minor.? });
+                        break :blk m.Text(512).init(text.slice());
+                    },
+                    .gpu_pcie_rx => byteText(g.pcie_rx, true),
+                    .gpu_pcie_tx => byteText(g.pcie_tx, true),
                     .gpu_pcie => blk: {
                         if (g.pcie_gen == null or g.pcie_width == null) break :blk m.Text(512).init("—");
                         const text = io.path("Gen{d} ×{d}", .{ g.pcie_gen.?, g.pcie_width.? });
