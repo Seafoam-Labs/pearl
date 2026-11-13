@@ -3,9 +3,12 @@ const std = @import("std");
 const gio = @import("gio2");
 const glib = @import("glib2");
 const object = @import("gobject2");
+const pixbuf = @import("gdkpixbuf2");
 const m = @import("model.zig");
 const wire = @import("protocol.zig");
 const discovery_policy = @import("discovery_policy.zig");
+const artwork = @import("artwork.zig");
+const artwork_policy = @import("artwork_policy.zig");
 const Registry = @import("registry.zig").Registry;
 const Transport = @import("../aqueous/transport.zig").Transport;
 const activity_policy = @import("activity_policy.zig");
@@ -33,6 +36,9 @@ pub const Slot = struct {
     timer: c_uint = 0,
     scene: ?[]u8 = null,
     config: ?[]u8 = null,
+    /// Decoded user replacements, indexed exactly like the package's assets.
+    /// Null entries keep the approved package art. Host-side presentation only.
+    artwork: ?[]?*pixbuf.Pixbuf = null,
     last_send: i64 = 0,
     test_activity_events: u64 = 0,
     test_painted_us: i64 = 0,
@@ -54,9 +60,47 @@ pub const Slot = struct {
         if (self.refs != 0) return;
         self.transport.deinit();
         self.clearView();
+        self.clearArtwork();
         if (self.config) |bytes| a.free(bytes);
         self.entry.release();
         a.destroy(self);
+    }
+    fn clearArtwork(self: *Slot) void {
+        const images = self.artwork orelse return;
+        self.artwork = null;
+        for (images) |image| if (image) |value| value.unref();
+        a.free(images);
+    }
+    /// Decode the user's chosen replacements. Unreadable or wrongly sized art
+    /// is reported and skipped; the approved package art always remains usable.
+    fn applyArtwork(self: *Slot, requested: []const m.Artwork) void {
+        self.clearArtwork();
+        if (requested.len == 0) return;
+        const assets = self.entry.package.manifest.assets;
+        const images = a.alloc(?*pixbuf.Pixbuf, assets.len) catch return;
+        @memset(images, null);
+        var chosen: usize = 0;
+        for (requested) |selection| {
+            const index = for (assets, 0..) |asset, i| {
+                if (std.mem.eql(u8, asset.id, selection.asset)) break i;
+            } else continue;
+            const name = a.dupeSentinel(u8, selection.file, 0) catch continue;
+            defer a.free(name);
+            const dir = artwork_policy.folder(a, self.owner.artwork_root, self.id(), selection.asset) catch continue;
+            defer a.free(dir);
+            const image = artwork.decode(dir, name, assets[index]) catch |err| {
+                log.warn("event=plugin-artwork-rejected id={f} asset={f} file={f} code={f}", .{ diagnostics.safe(self.id()), diagnostics.safe(selection.asset), diagnostics.safe(selection.file), diagnostics.safe(@errorName(err)) });
+                continue;
+            };
+            if (images[index]) |previous| previous.unref();
+            images[index] = image;
+            chosen += 1;
+        }
+        if (chosen == 0) {
+            a.free(images);
+            return;
+        }
+        self.artwork = images;
     }
     pub fn activityState(self: *const Slot) activity_policy.HostState {
         var state = self.owner.activity_state;
@@ -257,6 +301,8 @@ pub const Manager = struct {
     reduced_motion: bool = false,
     cancel: *gio.Cancellable,
     roots: [2][:0]const u8,
+    /// `$XDG_DATA_HOME/pearl/plugin-artwork`: user-writable replacement art.
+    artwork_root: [:0]const u8,
     registry: ?*Registry = null,
     slots: std.ArrayList(*Slot) = .empty,
     prefs: ?[]u8 = null,
@@ -313,6 +359,10 @@ pub const Manager = struct {
         defer a.free(user_path);
         const user = try a.dupeSentinel(u8, user_path, 0);
         errdefer a.free(user);
+        const artwork_path = try std.fs.path.resolve(a, &.{ root, "pearl", "plugin-artwork" });
+        defer a.free(artwork_path);
+        const artwork_root = try a.dupeSentinel(u8, artwork_path, 0);
+        errdefer a.free(artwork_root);
         var executable: [4096]u8 = undefined;
         const path = try @import("../settings/distribution.zig").executable(&executable);
         const system_path = try std.fmt.allocPrintSentinel(a, "{s}/../share/pearl{s}/plugins", .{ std.fs.path.dirname(path).?, if (@import("../settings/distribution.zig").isGit(path)) "-git" else "" }, 0);
@@ -322,7 +372,7 @@ pub const Manager = struct {
         const system = try a.dupeSentinel(u8, normalized, 0);
         errdefer a.free(system);
         const self = try a.create(Manager);
-        self.* = .{ .app = app, .context = context, .notify = notify, .cancel = gio.Cancellable.new(), .roots = .{ user, system } };
+        self.* = .{ .app = app, .context = context, .notify = notify, .cancel = gio.Cancellable.new(), .roots = .{ user, system }, .artwork_root = artwork_root };
         app.hold();
         self.discovery = .{ .context = self, .request = filesChanged };
         self.discovery.rebuild(&self.roots, &.{}, false);
@@ -526,6 +576,7 @@ pub const Manager = struct {
         if (self.registry) |registry| registry.destroy();
         if (self.prefs) |v| a.free(v);
         for (self.roots) |root| a.free(root);
+        a.free(self.artwork_root);
         self.cancel.unref();
         self.app.release();
         a.destroy(self);
@@ -629,6 +680,8 @@ pub const Manager = struct {
                 slot.error_code = "PluginRuntimeNotBuilt";
                 continue;
             }
+            // Fresh art per start, so replacing a file and pressing Retry is enough.
+            slot.applyArtwork(cfg.artwork);
             self.startSlot(slot, cfg, alloc) catch |err| slot.fail(@errorName(err));
         }
         self.refreshDemand();
@@ -642,9 +695,19 @@ pub const Manager = struct {
         };
         return values.items;
     }
+    /// Candidate replacement art per declared asset, for the Settings picker.
+    pub fn artworkChoices(self: *Manager, alloc: std.mem.Allocator, slot: *Slot) ![]const m.ArtworkChoice {
+        var choices: std.ArrayList(m.ArtworkChoice) = .empty;
+        for (slot.entry.package.manifest.assets) |asset| {
+            const dir = try artwork_policy.folder(alloc, self.artwork_root, slot.id(), asset.id);
+            defer alloc.free(dir);
+            try choices.append(alloc, .{ .asset = asset.id, .width = asset.width, .height = asset.height, .files = try artwork.candidates(alloc, dir, asset) });
+        }
+        return choices.items;
+    }
     pub fn report(self: *Manager, alloc: std.mem.Allocator, id: ?[]const u8, offset: usize) ![]const u8 {
         const TestActivity = struct { events: u64, painted_us: i64, scene: m.Scene };
-        const Info = struct { sources: []const m.PackageSource, source: []const u8, path: []const u8, shadowed: usize, test_activity: ?TestActivity = null, id: []const u8, name: []const u8, version: []const u8, digest: []const u8, status: Status, error_code: ?[]const u8, generation: u64, nodes: usize, input_activity: activity_policy.Availability, activity_requested: bool, capabilities: m.Grants };
+        const Info = struct { sources: []const m.PackageSource, source: []const u8, path: []const u8, shadowed: usize, test_activity: ?TestActivity = null, id: []const u8, name: []const u8, version: []const u8, digest: []const u8, capabilities: m.Grants, artwork: []const m.ArtworkChoice = &.{}, status: Status, error_code: ?[]const u8, generation: u64, nodes: usize, input_activity: activity_policy.Availability, activity_requested: bool };
         var infos: std.ArrayList(Info) = .empty;
         const start = @min(offset, self.slots.items.len);
         const end = if (id != null) self.slots.items.len else @min(start + 4, self.slots.items.len);
@@ -652,7 +715,7 @@ pub const Manager = struct {
             if (id) |value| if (!std.mem.eql(u8, value, slot.id())) continue;
             const scene = if (slot.scene) |bytes| try std.json.parseFromSliceLeaky(m.Scene, alloc, bytes, .{}) else m.Scene{ .nodes = &.{} };
             const manifest = slot.entry.package.manifest;
-            try infos.append(alloc, .{ .sources = try self.sources(alloc, slot.id()), .source = if (slot.entry.root == 0) "user" else "system", .path = slot.entry.path, .shadowed = slot.shadowed, .test_activity = if (@import("build_options").test_hooks) .{ .events = slot.test_activity_events, .painted_us = slot.test_painted_us, .scene = scene } else null, .id = slot.id(), .name = manifest.name, .version = manifest.version, .digest = &slot.entry.package.digest, .status = slot.status, .error_code = slot.error_code, .generation = slot.generation, .nodes = scene.nodes.len, .input_activity = slot.activityState().availability, .activity_requested = slot.activity_requested, .capabilities = manifest.capabilities });
+            try infos.append(alloc, .{ .sources = try self.sources(alloc, slot.id()), .source = if (slot.entry.root == 0) "user" else "system", .path = slot.entry.path, .shadowed = slot.shadowed, .test_activity = if (@import("build_options").test_hooks) .{ .events = slot.test_activity_events, .painted_us = slot.test_painted_us, .scene = scene } else null, .id = slot.id(), .name = manifest.name, .version = manifest.version, .digest = &slot.entry.package.digest, .capabilities = manifest.capabilities, .artwork = try self.artworkChoices(alloc, slot), .status = slot.status, .error_code = slot.error_code, .generation = slot.generation, .nodes = scene.nodes.len, .input_activity = slot.activityState().availability, .activity_requested = slot.activity_requested });
         }
         if (id != null and infos.items.len == 0) return error.UnknownPlugin;
         var issues: []const @import("registry.zig").Issue = if (self.registry) |registry| registry.issues.items[0..@min(4, registry.issues.items.len)] else &.{};

@@ -104,6 +104,7 @@ pub const events: []const Event = &.{
     .{ .name = "operation-finished", .scopes = &.{.platform} },
     .{ .name = "output-mapped", .scopes = &.{.ui} },
     .{ .name = "pearlctl-failed", .scopes = &.{.cli} },
+    .{ .name = "plugin-artwork-rejected", .scopes = &.{.plugins} },
     .{ .name = "plugin-callback-failed", .scopes = &.{.plugins} },
     .{ .name = "plugin-failed", .scopes = &.{.plugins} },
     .{ .name = "popup-close-reason", .scopes = &.{.ui} },

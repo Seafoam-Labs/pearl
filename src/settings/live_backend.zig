@@ -291,7 +291,7 @@ pub const Live = struct {
             var infos: std.ArrayList(ui.PluginInfo) = .empty;
             for (plugins.slots.items) |slot| {
                 const manifest = slot.entry.package.manifest;
-                try infos.append(alloc, .{ .available = slot.discovery_error == null, .sources = try plugins.sources(alloc, slot.id()), .source = if (slot.entry.root == 0) "user" else "system", .path = slot.entry.path, .shadowed = slot.shadowed, .id = manifest.id, .name = manifest.name, .version = manifest.version, .digest = &slot.entry.package.digest, .capabilities = manifest.capabilities, .settings = manifest.settings, .status = @tagName(slot.status), .input_activity = @tagName(slot.activityState().availability), .error_code = slot.error_code });
+                try infos.append(alloc, .{ .available = slot.discovery_error == null, .sources = try plugins.sources(alloc, slot.id()), .source = if (slot.entry.root == 0) "user" else "system", .path = slot.entry.path, .shadowed = slot.shadowed, .id = manifest.id, .name = manifest.name, .version = manifest.version, .digest = &slot.entry.package.digest, .capabilities = manifest.capabilities, .settings = manifest.settings, .artwork = try plugins.artworkChoices(alloc, slot), .status = @tagName(slot.status), .input_activity = @tagName(slot.activityState().availability), .error_code = slot.error_code });
             }
             const saved = try std.json.parseFromSliceLeaky(@import("../plugins/model.zig").Preferences, alloc, plugins.prefs orelse "{}", .{});
             for (saved.entries) |cfg| {
