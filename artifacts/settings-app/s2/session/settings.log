@@ -1,6 +1,6 @@
-ts=2026-11-13T23:57:53Z pid=795199 info(settings): event=settings-launch activation_context=false
-ts=2026-11-13T23:57:53Z pid=795199 info(settings): event=settings-instance-ready session_hash=b84c18b44499d27e
-ts=2026-11-13T23:57:53Z pid=795199 info(settings): event=settings-page page=overview
-ts=2026-11-13T23:57:53Z pid=795199 info(settings): event=settings-page page=appearance
-ts=2026-11-13T23:57:53Z pid=795199 info(settings): event=settings-window-created app_id=org.aqueous.Pearl.Settings
-ts=2026-11-13T23:57:53Z pid=795199 info(settings): event=settings-connection-unavailable error=Unavailable
+ts=2026-11-14T02:53:22Z pid=985067 info(settings): event=settings-launch activation_context=false
+ts=2026-11-14T02:53:22Z pid=985067 info(settings): event=settings-instance-ready session_hash=7ec50d07596742e3
+ts=2026-11-14T02:53:22Z pid=985067 info(settings): event=settings-page page=overview
+ts=2026-11-14T02:53:22Z pid=985067 info(settings): event=settings-page page=appearance
+ts=2026-11-14T02:53:22Z pid=985067 info(settings): event=settings-window-created app_id=org.aqueous.Pearl.Settings
+ts=2026-11-14T02:53:22Z pid=985067 info(settings): event=settings-connection-unavailable error=Unavailable

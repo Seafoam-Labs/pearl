@@ -1,26 +1,26 @@
-ts=2026-11-13T23:55:47Z pid=772189 info(settings): event=settings-launch activation_context=false
-ts=2026-11-13T23:55:47Z pid=772189 info(settings): event=settings-instance-ready session_hash=7a07c9f7590d6711
-ts=2026-11-13T23:55:47Z pid=772189 info(services): event=sched-profile-systemd result=polling
-ts=2026-11-13T23:55:47Z pid=772189 info(settings): event=settings-page page=overview
-ts=2026-11-13T23:55:47Z pid=772189 info(settings): event=settings-page page=aqueous
-ts=2026-11-13T23:55:47Z pid=772189 info(settings): event=settings-window-created app_id=org.aqueous.Pearl.Settings
-ts=2026-11-13T23:55:47Z pid=772189 warning(services): event=sched-profile-systemd step=unit result=failed
-ts=2026-11-13T23:55:47Z pid=772189 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"
-ts=2026-11-13T23:55:47Z pid=772189 info(settings): event=settings-page page=aqueous
-ts=2026-11-13T23:55:49Z pid=772189 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"
-ts=2026-11-13T23:55:51Z pid=772189 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"
-ts=2026-11-13T23:55:52Z pid=772189 info(settings): event=settings-activation activation_context=false
-ts=2026-11-13T23:55:52Z pid=772189 info(settings): event=settings-page page=aqueous
-ts=2026-11-13T23:55:52Z pid=772189 info(settings): event=settings-activation activation_context=false
-ts=2026-11-13T23:55:53Z pid=772189 info(settings): event=settings-page page=aqueous
-ts=2026-11-13T23:55:53Z pid=772189 warning(services): event=sched-profile-systemd step=unit result=failed
-ts=2026-11-13T23:55:53Z pid=772189 info(settings): event=settings-aqueous-action action=discard pending=false
-ts=2026-11-13T23:55:54Z pid=772189 info(settings): event=settings-aqueous-action action=identify pending=false
-ts=2026-11-13T23:55:55Z pid=772189 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"
-ts=2026-11-13T23:55:58Z pid=772189 warning(services): event=sched-profile-systemd step=unit result=failed
-ts=2026-11-13T23:56:01Z pid=772189 info(settings): event=settings-aqueous-action action=apply pending=false
-ts=2026-11-13T23:56:02Z pid=772189 info(settings): event=settings-aqueous-action action=revert pending=true
-ts=2026-11-13T23:56:03Z pid=772189 info(settings): event=settings-aqueous-action action=apply pending=false
-ts=2026-11-13T23:56:03Z pid=772189 warning(services): event=sched-profile-systemd step=unit result=failed
-ts=2026-11-13T23:56:03Z pid=772189 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"
-ts=2026-11-13T23:56:03Z pid=772189 info(settings): event=settings-aqueous-action action=keep pending=true
+ts=2026-11-14T02:16:14Z pid=945554 info(settings): event=settings-launch activation_context=false
+ts=2026-11-14T02:16:14Z pid=945554 info(settings): event=settings-instance-ready session_hash=370d0ea5d42f2579
+ts=2026-11-14T02:16:14Z pid=945554 info(services): event=sched-profile-systemd result=polling
+ts=2026-11-14T02:16:15Z pid=945554 info(settings): event=settings-page page=overview
+ts=2026-11-14T02:16:15Z pid=945554 info(settings): event=settings-page page=aqueous
+ts=2026-11-14T02:16:15Z pid=945554 info(settings): event=settings-window-created app_id=org.aqueous.Pearl.Settings
+ts=2026-11-14T02:16:15Z pid=945554 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-14T02:16:15Z pid=945554 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"
+ts=2026-11-14T02:16:15Z pid=945554 info(settings): event=settings-page page=aqueous
+ts=2026-11-14T02:16:16Z pid=945554 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"
+ts=2026-11-14T02:16:18Z pid=945554 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"
+ts=2026-11-14T02:16:20Z pid=945554 info(settings): event=settings-activation activation_context=false
+ts=2026-11-14T02:16:20Z pid=945554 info(settings): event=settings-page page=aqueous
+ts=2026-11-14T02:16:20Z pid=945554 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-14T02:16:20Z pid=945554 info(settings): event=settings-activation activation_context=false
+ts=2026-11-14T02:16:20Z pid=945554 info(settings): event=settings-page page=aqueous
+ts=2026-11-14T02:16:20Z pid=945554 info(settings): event=settings-aqueous-action action=discard pending=false
+ts=2026-11-14T02:16:22Z pid=945554 info(settings): event=settings-aqueous-action action=identify pending=false
+ts=2026-11-14T02:16:22Z pid=945554 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"
+ts=2026-11-14T02:16:25Z pid=945554 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-14T02:16:29Z pid=945554 info(settings): event=settings-aqueous-action action=apply pending=false
+ts=2026-11-14T02:16:30Z pid=945554 info(settings): event=settings-aqueous-action action=revert pending=true
+ts=2026-11-14T02:16:30Z pid=945554 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-14T02:16:30Z pid=945554 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"
+ts=2026-11-14T02:16:30Z pid=945554 info(settings): event=settings-aqueous-action action=apply pending=false
+ts=2026-11-14T02:16:31Z pid=945554 info(settings): event=settings-aqueous-action action=keep pending=true

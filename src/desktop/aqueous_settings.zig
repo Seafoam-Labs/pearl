@@ -938,6 +938,14 @@ pub fn ViewFor(comptime ClientType: type) type {
                 break;
             };
         }
+        /// Stage a field for reveal + focus after the next page show. Used by
+        /// field-level search; reuses the validation-issue reveal machinery.
+        pub fn stageReveal(self: *Self, id: []const u8) void {
+            @memset(&self.issue_focus, 0);
+            const len = @min(id.len, self.issue_focus.len - 1);
+            @memcpy(self.issue_focus[0..len], id[0..len]);
+            if (self.notebook != null) self.revealIssue();
+        }
         pub fn focusIssue(self: *Self) bool {
             if (self.issue_focus[0] == 0) return false;
             defer @memset(&self.issue_focus, 0);

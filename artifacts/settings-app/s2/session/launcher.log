@@ -2,5 +2,5 @@
   GLib.unix_signal_add(GLib.PRIORITY_DEFAULT, 15, lambda: (app.quit(), False)[1])
 event=launcher-ready
 event=settings-launched
-ts=2026-11-13T23:58:03Z pid=798837 info(settings): event=settings-launch activation_context=true
-ts=2026-11-13T23:58:03Z pid=798837 info(settings): event=settings-forward activation_context=true
+ts=2026-11-14T02:53:31Z pid=989141 info(settings): event=settings-launch activation_context=true
+ts=2026-11-14T02:53:32Z pid=989141 info(settings): event=settings-forward activation_context=true

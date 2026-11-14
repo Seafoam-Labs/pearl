@@ -1,132 +1,130 @@
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.4' (uid=1000 pid=758766 comm="/usr/bin/systemctl show scx.service --property=Loa")
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.3' (uid=1000 pid=758680 comm="/home/zoey/Projects/pearl/.zig-cache/o/47ae73c40c4")
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.5' (uid=1000 pid=758772 comm="/usr/bin/systemctl show scx.service --property=Loa")
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.7' (uid=1000 pid=758816 comm="/usr/bin/systemctl show scx.service --property=Loa")
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.8' (uid=1000 pid=758821 comm="/usr/bin/systemctl show scx.service --property=Loa")
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.6' (uid=1000 pid=758799 comm="/home/zoey/Projects/pearl/.zig-cache/o/d1ab9cdfd12")
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.9' (uid=1000 pid=759177 comm="/usr/bin/systemctl show scx.service --property=Loa")
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.11' (uid=1000 pid=759184 comm="/usr/bin/systemctl show scx.service --property=Loa")
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.13' (uid=1000 pid=759801 comm="/usr/bin/systemctl show scx.service --property=Loa")
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.15' (uid=1000 pid=759807 comm="/usr/bin/systemctl show scx.service --property=Loa")
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.6' (uid=1000 pid=758799 comm="/home/zoey/Projects/pearl/.zig-cache/o/d1ab9cdfd12")
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.17' (uid=1000 pid=760893 comm="/usr/bin/systemctl show scx.service --property=Loa")
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.18' (uid=1000 pid=760897 comm="/usr/bin/systemctl show scx.service --property=Loa")
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.20' (uid=1000 pid=760969 comm="/usr/bin/systemctl show scx.service --property=Loa")
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.21' (uid=1000 pid=760974 comm="/usr/bin/systemctl show scx.service --property=Loa")
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.19' (uid=1000 pid=760883 comm="/home/zoey/Projects/pearl/.zig-cache/o/d1ab9cdfd12")
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.22' (uid=1000 pid=761316 comm="/usr/bin/systemctl show scx.service --property=Loa")
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.23' (uid=1000 pid=761320 comm="/usr/bin/systemctl show scx.service --property=Loa")
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.25' (uid=1000 pid=761674 comm="/usr/bin/systemctl show scx.service --property=Loa")
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.26' (uid=1000 pid=761678 comm="/usr/bin/systemctl show scx.service --property=Loa")
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.24' (uid=1000 pid=761598 comm="/home/zoey/Projects/pearl/.zig-cache/o/d1ab9cdfd12")
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.3' (uid=1000 pid=758680 comm="/home/zoey/Projects/pearl/.zig-cache/o/47ae73c40c4")
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.27' (uid=1000 pid=762093 comm="/usr/bin/systemctl show scx.service --property=Loa")
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.28' (uid=1000 pid=762097 comm="/usr/bin/systemctl show scx.service --property=Loa")
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.29' (uid=1000 pid=762766 comm="/usr/bin/systemctl show scx.service --property=Loa")
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.30' (uid=1000 pid=762770 comm="/usr/bin/systemctl show scx.service --property=Loa")
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.24' (uid=1000 pid=761598 comm="/home/zoey/Projects/pearl/.zig-cache/o/d1ab9cdfd12")
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.3' (uid=1000 pid=758680 comm="/home/zoey/Projects/pearl/.zig-cache/o/47ae73c40c4")
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.31' (uid=1000 pid=763247 comm="/usr/bin/systemctl show scx.service --property=Loa")
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.32' (uid=1000 pid=763251 comm="/usr/bin/systemctl show scx.service --property=Loa")
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.33' (uid=1000 pid=763539 comm="/usr/bin/systemctl show scx.service --property=Loa")
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.34' (uid=1000 pid=763543 comm="/usr/bin/systemctl show scx.service --property=Loa")
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.24' (uid=1000 pid=761598 comm="/home/zoey/Projects/pearl/.zig-cache/o/d1ab9cdfd12")
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.3' (uid=1000 pid=758680 comm="/home/zoey/Projects/pearl/.zig-cache/o/47ae73c40c4")
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.24' (uid=1000 pid=761598 comm="/home/zoey/Projects/pearl/.zig-cache/o/d1ab9cdfd12")
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.35' (uid=1000 pid=765730 comm="/usr/bin/systemctl show scx.service --property=Loa")
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.36' (uid=1000 pid=765734 comm="/usr/bin/systemctl show scx.service --property=Loa")
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.3' (uid=1000 pid=758680 comm="/home/zoey/Projects/pearl/.zig-cache/o/47ae73c40c4")
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.24' (uid=1000 pid=761598 comm="/home/zoey/Projects/pearl/.zig-cache/o/d1ab9cdfd12")
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.37' (uid=1000 pid=766843 comm="/usr/bin/systemctl show scx.service --property=Loa")
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.38' (uid=1000 pid=766847 comm="/usr/bin/systemctl show scx.service --property=Loa")
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.40' (uid=1000 pid=766927 comm="/usr/bin/systemctl show scx.service --property=Loa")
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.41' (uid=1000 pid=766931 comm="/usr/bin/systemctl show scx.service --property=Loa")
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.39' (uid=1000 pid=766851 comm="/home/zoey/Projects/pearl/.zig-cache/o/d1ab9cdfd12")
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.42' (uid=1000 pid=767085 comm="/usr/bin/systemctl show scx.service --property=Loa")
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.43' (uid=1000 pid=767089 comm="/usr/bin/systemctl show scx.service --property=Loa")
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.45' (uid=1000 pid=767448 comm="/usr/bin/systemctl show scx.service --property=Loa")
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.46' (uid=1000 pid=767452 comm="/usr/bin/systemctl show scx.service --property=Loa")
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.44' (uid=1000 pid=767436 comm="/home/zoey/Projects/pearl/.zig-cache/o/d1ab9cdfd12")
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.3' (uid=1000 pid=758680 comm="/home/zoey/Projects/pearl/.zig-cache/o/47ae73c40c4")
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.47' (uid=1000 pid=767739 comm="/usr/bin/systemctl show scx.service --property=Loa")
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.48' (uid=1000 pid=767743 comm="/usr/bin/systemctl show scx.service --property=Loa")
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.49' (uid=1000 pid=768324 comm="/usr/bin/systemctl show scx.service --property=Loa")
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.50' (uid=1000 pid=768329 comm="/usr/bin/systemctl show scx.service --property=Loa")
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.52' (uid=1000 pid=768409 comm="/usr/bin/systemctl show scx.service --property=Loa")
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.53' (uid=1000 pid=768413 comm="/usr/bin/systemctl show scx.service --property=Loa")
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.51' (uid=1000 pid=768332 comm="/home/zoey/Projects/pearl/.zig-cache/o/d1ab9cdfd12")
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.55' (uid=1000 pid=768640 comm="/usr/bin/systemctl show scx.service --property=Loa")
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.54' (uid=1000 pid=768558 comm="/home/zoey/Projects/pearl/.zig-cache/o/47ae73c40c4")
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.56' (uid=1000 pid=768646 comm="/usr/bin/systemctl show scx.service --property=Loa")
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.57' (uid=1000 pid=768720 comm="/usr/bin/systemctl show scx.service --property=Loa")
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.58' (uid=1000 pid=768724 comm="/usr/bin/systemctl show scx.service --property=Loa")
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.59' (uid=1000 pid=768941 comm="/usr/bin/systemctl show scx.service --property=Loa")
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.60' (uid=1000 pid=768945 comm="/usr/bin/systemctl show scx.service --property=Loa")
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.61' (uid=1000 pid=769347 comm="/usr/bin/systemctl show scx.service --property=Loa")
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.62' (uid=1000 pid=769351 comm="/usr/bin/systemctl show scx.service --property=Loa")
-dbus-daemon[758579]: [session uid=1000 pid=758579 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.4' (uid=1000 pid=933665 comm="/usr/bin/systemctl show scx.service --property=Loa")
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.5' (uid=1000 pid=933670 comm="/usr/bin/systemctl show scx.service --property=Loa")
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.7' (uid=1000 pid=933756 comm="/usr/bin/systemctl show scx.service --property=Loa")
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.8' (uid=1000 pid=933762 comm="/usr/bin/systemctl show scx.service --property=Loa")
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.6' (uid=1000 pid=933676 comm="/home/zoey/Projects/pearl/.zig-cache/o/467ad91c2c3")
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.9' (uid=1000 pid=934258 comm="/usr/bin/systemctl show scx.service --property=Loa")
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.11' (uid=1000 pid=934264 comm="/usr/bin/systemctl show scx.service --property=Loa")
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.13' (uid=1000 pid=934886 comm="/usr/bin/systemctl show scx.service --property=Loa")
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.15' (uid=1000 pid=934893 comm="/usr/bin/systemctl show scx.service --property=Loa")
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.3' (uid=1000 pid=933556 comm="/home/zoey/Projects/pearl/.zig-cache/o/b483fd6299f")
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.6' (uid=1000 pid=933676 comm="/home/zoey/Projects/pearl/.zig-cache/o/467ad91c2c3")
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.18' (uid=1000 pid=935778 comm="/usr/bin/systemctl show scx.service --property=Loa")
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.19' (uid=1000 pid=935782 comm="/usr/bin/systemctl show scx.service --property=Loa")
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.17' (uid=1000 pid=935701 comm="/home/zoey/Projects/pearl/.zig-cache/o/467ad91c2c3")
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.20' (uid=1000 pid=936059 comm="/usr/bin/systemctl show scx.service --property=Loa")
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.21' (uid=1000 pid=936063 comm="/usr/bin/systemctl show scx.service --property=Loa")
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.22' (uid=1000 pid=936339 comm="/usr/bin/systemctl show scx.service --property=Loa")
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.23' (uid=1000 pid=936343 comm="/usr/bin/systemctl show scx.service --property=Loa")
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.25' (uid=1000 pid=936561 comm="/usr/bin/systemctl show scx.service --property=Loa")
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.26' (uid=1000 pid=936565 comm="/usr/bin/systemctl show scx.service --property=Loa")
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.24' (uid=1000 pid=936484 comm="/home/zoey/Projects/pearl/.zig-cache/o/467ad91c2c3")
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.3' (uid=1000 pid=933556 comm="/home/zoey/Projects/pearl/.zig-cache/o/b483fd6299f")
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.27' (uid=1000 pid=936853 comm="/usr/bin/systemctl show scx.service --property=Loa")
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.28' (uid=1000 pid=936857 comm="/usr/bin/systemctl show scx.service --property=Loa")
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.29' (uid=1000 pid=937461 comm="/usr/bin/systemctl show scx.service --property=Loa")
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.30' (uid=1000 pid=937465 comm="/usr/bin/systemctl show scx.service --property=Loa")
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.24' (uid=1000 pid=936484 comm="/home/zoey/Projects/pearl/.zig-cache/o/467ad91c2c3")
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.3' (uid=1000 pid=933556 comm="/home/zoey/Projects/pearl/.zig-cache/o/b483fd6299f")
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.31' (uid=1000 pid=938082 comm="/usr/bin/systemctl show scx.service --property=Loa")
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.32' (uid=1000 pid=938086 comm="/usr/bin/systemctl show scx.service --property=Loa")
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.33' (uid=1000 pid=938235 comm="/usr/bin/systemctl show scx.service --property=Loa")
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.34' (uid=1000 pid=938239 comm="/usr/bin/systemctl show scx.service --property=Loa")
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.24' (uid=1000 pid=936484 comm="/home/zoey/Projects/pearl/.zig-cache/o/467ad91c2c3")
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.3' (uid=1000 pid=933556 comm="/home/zoey/Projects/pearl/.zig-cache/o/b483fd6299f")
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.24' (uid=1000 pid=936484 comm="/home/zoey/Projects/pearl/.zig-cache/o/467ad91c2c3")
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.35' (uid=1000 pid=940407 comm="/usr/bin/systemctl show scx.service --property=Loa")
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.36' (uid=1000 pid=940411 comm="/usr/bin/systemctl show scx.service --property=Loa")
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.3' (uid=1000 pid=933556 comm="/home/zoey/Projects/pearl/.zig-cache/o/b483fd6299f")
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.24' (uid=1000 pid=936484 comm="/home/zoey/Projects/pearl/.zig-cache/o/467ad91c2c3")
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.3' (uid=1000 pid=933556 comm="/home/zoey/Projects/pearl/.zig-cache/o/b483fd6299f")
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.38' (uid=1000 pid=941678 comm="/usr/bin/systemctl show scx.service --property=Loa")
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.39' (uid=1000 pid=941682 comm="/usr/bin/systemctl show scx.service --property=Loa")
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.37' (uid=1000 pid=941600 comm="/home/zoey/Projects/pearl/.zig-cache/o/467ad91c2c3")
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.40' (uid=1000 pid=941829 comm="/usr/bin/systemctl show scx.service --property=Loa")
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.41' (uid=1000 pid=941833 comm="/usr/bin/systemctl show scx.service --property=Loa")
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.42' (uid=1000 pid=941994 comm="/usr/bin/systemctl show scx.service --property=Loa")
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.43' (uid=1000 pid=941998 comm="/usr/bin/systemctl show scx.service --property=Loa")
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.45' (uid=1000 pid=942355 comm="/usr/bin/systemctl show scx.service --property=Loa")
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.46' (uid=1000 pid=942419 comm="/usr/bin/systemctl show scx.service --property=Loa")
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.44' (uid=1000 pid=942339 comm="/home/zoey/Projects/pearl/.zig-cache/o/467ad91c2c3")
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.47' (uid=1000 pid=942640 comm="/usr/bin/systemctl show scx.service --property=Loa")
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.48' (uid=1000 pid=942644 comm="/usr/bin/systemctl show scx.service --property=Loa")
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.3' (uid=1000 pid=933556 comm="/home/zoey/Projects/pearl/.zig-cache/o/b483fd6299f")
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.49' (uid=1000 pid=943228 comm="/usr/bin/systemctl show scx.service --property=Loa")
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.50' (uid=1000 pid=943232 comm="/usr/bin/systemctl show scx.service --property=Loa")
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.52' (uid=1000 pid=943379 comm="/usr/bin/systemctl show scx.service --property=Loa")
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.53' (uid=1000 pid=943383 comm="/usr/bin/systemctl show scx.service --property=Loa")
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.51' (uid=1000 pid=943301 comm="/home/zoey/Projects/pearl/.zig-cache/o/467ad91c2c3")
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.55' (uid=1000 pid=943614 comm="/usr/bin/systemctl show scx.service --property=Loa")
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.54' (uid=1000 pid=943530 comm="/home/zoey/Projects/pearl/.zig-cache/o/b483fd6299f")
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.56' (uid=1000 pid=943624 comm="/usr/bin/systemctl show scx.service --property=Loa")
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.57' (uid=1000 pid=944232 comm="/usr/bin/systemctl show scx.service --property=Loa")
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.58' (uid=1000 pid=944236 comm="/usr/bin/systemctl show scx.service --property=Loa")
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.59' (uid=1000 pid=944243 comm="/usr/bin/systemctl show scx.service --property=Loa")
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.60' (uid=1000 pid=944247 comm="/usr/bin/systemctl show scx.service --property=Loa")
+dbus-daemon[933454]: [session uid=1000 pid=933454 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1

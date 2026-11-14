@@ -17,8 +17,8 @@ info(input): cursor theme=default size=24
 info(drm_lease): DRM leasing unavailable (no usable lease device)
 info(wlroots): [backend/headless/backend.c:17] Starting headless backend
 info: set Aqueous file descriptor soft limit to hard limit 524288
-info(ipc): protocol=1 listening on /tmp/pearl-dev-tdi1e2pm/run/aqueous/3f22abe920b8016007ea3d1b6ecc2563/ipc.sock
-info(output_service): output protocol=1 listening on /tmp/pearl-dev-tdi1e2pm/run/aqueous/outputd.sock
+info(ipc): protocol=1 listening on /tmp/pearl-dev-3z9faprk/run/aqueous/dc4cd5698d8cec297a5d83624fea6e23/ipc.sock
+info(output_service): output protocol=1 listening on /tmp/pearl-dev-3z9faprk/run/aqueous/outputd.sock
 info: running init executable 'printenv WAYLAND_DISPLAY > "$XDG_RUNTIME_DIR/display"; printenv AQUEOUS_SOCKET > "$XDG_RUNTIME_DIR/endpoint"'
 info: running server
 info(output): applying output configuration
@@ -108,7 +108,6 @@ error(input): inactive text input tried to commit an update, client bug?
 error(input): inactive text input tried to commit an update, client bug?
 error(input): inactive text input tried to commit an update, client bug?
 error(input): inactive text input tried to commit an update, client bug?
-error(input): inactive text input tried to commit an update, client bug?
 info: Vulkan rounded effects draw count=2000 texture=1025 rect=975 normal=2000 swapchain=0 explicit-sync=0
 info(aqueous): configuration reloaded layout=floating
 error(input): inactive text input tried to commit an update, client bug?
@@ -116,13 +115,13 @@ error(input): inactive text input tried to commit an update, client bug?
 error(input): inactive text input tried to commit an update, client bug?
 error(input): inactive text input tried to commit an update, client bug?
 error(input): inactive text input tried to commit an update, client bug?
-info: Vulkan rounded effects draw count=3000 texture=1535 rect=1465 normal=3000 swapchain=0 explicit-sync=0
+info: Vulkan rounded effects draw count=3000 texture=1533 rect=1467 normal=3000 swapchain=0 explicit-sync=0
 info(lock): session locked
 info(lock): session unlocked
 info: Vulkan rounded effects draw count=4000 texture=2028 rect=1972 normal=3980 swapchain=20 explicit-sync=0
 error(input): inactive text input tried to commit an update, client bug?
 info: destroyed Vulkan blur after 0 checkpoints, 0 offscreen draws, and 0 composites (0 cache hits, 0 partial rebuilds, 0 full rebuilds, 0 pixels processed)
 info: Vulkan blur resources created: 0 scratch sets, 0 images, 0 descriptors, 0 cache images, 0 composite pipelines
-info: destroyed Vulkan rounded effects after 2224 texture and 2144 rect draws (4348 normal, 20 swapchain, 0 explicit-sync)
+info: destroyed Vulkan rounded effects after 2274 texture and 2193 rect draws (4447 normal, 20 swapchain, 0 explicit-sync)
 info: Vulkan rounded resources created: 1 texture pipelines, 1 rect pipelines
 info: destroyed Vulkan effects context

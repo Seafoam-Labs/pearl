@@ -1,9 +1,9 @@
-ts=2026-11-13T23:58:23Z pid=806754 info(settings): event=settings-launch activation_context=false
-ts=2026-11-13T23:58:23Z pid=806754 info(settings): event=settings-instance-ready session_hash=fae81761a1113e91
-ts=2026-11-13T23:58:24Z pid=806754 info(services): event=sched-profile-systemd result=polling
-ts=2026-11-13T23:58:24Z pid=806754 info(settings): event=settings-page page=overview
-ts=2026-11-13T23:58:24Z pid=806754 info(settings): event=settings-page page=appearance
-ts=2026-11-13T23:58:24Z pid=806754 info(settings): event=settings-window-created app_id=org.aqueous.Pearl.Settings
-ts=2026-11-13T23:58:24Z pid=806754 info(settings): event=settings-connection-unavailable error=Unavailable
-ts=2026-11-13T23:58:24Z pid=806754 warning(services): event=sched-profile-systemd step=unit result=failed
-ts=2026-11-13T23:58:24Z pid=806754 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"
+ts=2026-11-14T02:53:52Z pid=997013 info(settings): event=settings-launch activation_context=false
+ts=2026-11-14T02:53:52Z pid=997013 info(settings): event=settings-instance-ready session_hash=f11cbf2ff8cf3822
+ts=2026-11-14T02:53:52Z pid=997013 info(services): event=sched-profile-systemd result=polling
+ts=2026-11-14T02:53:52Z pid=997013 info(settings): event=settings-page page=overview
+ts=2026-11-14T02:53:52Z pid=997013 info(settings): event=settings-page page=appearance
+ts=2026-11-14T02:53:52Z pid=997013 info(settings): event=settings-window-created app_id=org.aqueous.Pearl.Settings
+ts=2026-11-14T02:53:52Z pid=997013 info(settings): event=settings-connection-unavailable error=Unavailable
+ts=2026-11-14T02:53:52Z pid=997013 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-14T02:53:52Z pid=997013 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"

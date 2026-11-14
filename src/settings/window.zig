@@ -7,6 +7,7 @@ const gio = @import("gio2");
 const glib = @import("glib2");
 const object = @import("gobject2");
 const nav = @import("../desktop/settings_navigation.zig");
+const search_index = @import("search_index.zig");
 const w = @import("../ui/components/widgets.zig");
 const theme = @import("../theme/theme.zig");
 const appearance = @import("appearance.zig");
@@ -17,6 +18,8 @@ const Page = struct { scroll: *gtk.ScrolledWindow, body: *gtk.Widget, focus: ?*g
 const navigation_count = nav.entries.len;
 const Link = struct { owner: *Window, target: nav.Target, button: *gtk.ToggleButton };
 const SearchLink = struct { owner: *Window, index: usize };
+const ResultLink = struct { owner: *Window, copy: usize, hit: usize };
+const max_search_hits = 64;
 const SectionState = struct { scroll: f64 = 0, focus: ?*gtk.Widget = null };
 pub const Window = struct {
     window: *gtk.Window,
@@ -73,6 +76,14 @@ pub const Window = struct {
     nav_scrolls: [2]*gtk.ScrolledWindow = undefined,
     group_labels: [2][std.enums.values(nav.Group).len]*gtk.Label = undefined,
     no_results: [2]*gtk.Label = undefined,
+    results_box: [2]*gtk.Box = undefined,
+    result_buttons: [2][max_search_hits]*gtk.Button = undefined,
+    result_links: [2][max_search_hits]ResultLink = undefined,
+    search_hits: [max_search_hits]search_index.Hit = undefined,
+    search_hit_count: usize = 0,
+    results_arena: std.heap.ArenaAllocator,
+    pending_pearl_reveal: [128:0]u8 = @splat(0),
+    pearl_reveal_tries: u8 = 0,
     pages: [count]Page = undefined,
     links: [2 * navigation_count]Link = undefined,
     target: nav.Target = .{},
@@ -232,7 +243,7 @@ pub const Window = struct {
             monitor.getGeometry(&rect);
             win.setDefaultSize(@min(1040, @max(240, rect.f_width - 32)), @min(760, @max(200, rect.f_height - 64)));
         }
-        self.* = .{ .aqueous = aqueous, .aqueous_footer = aqueous_footer, .review_button = review_button, .window = win, .root = root, .sidebar = sidebar, .sections = sections, .popover = popover, .popup_scroll = popup_scroll, .heading = heading, .heading_anchor = page_header.as(gtk.Widget), .subtitle = subtitle, .stack = stack, .footer = footer, .footer_text = footer_text, .save = save, .discard = discard, .merge_button = merge_button, .actions = actions, .draft_badge = draft_badge, .editor = editor, .saved_button = saved_button, .retry_button = retry_button, .status = status, .display_count = display_count, .arena = .init(a), .context = context, .retry = retry, .close = close, .fixture = fixture, .narrow = true, .css = gtk.CssProvider.new(), .native_css = gtk.CssProvider.new(), .font_css = gtk.CssProvider.new() };
+        self.* = .{ .aqueous = aqueous, .aqueous_footer = aqueous_footer, .review_button = review_button, .window = win, .root = root, .sidebar = sidebar, .sections = sections, .popover = popover, .popup_scroll = popup_scroll, .heading = heading, .heading_anchor = page_header.as(gtk.Widget), .subtitle = subtitle, .stack = stack, .footer = footer, .footer_text = footer_text, .save = save, .discard = discard, .merge_button = merge_button, .actions = actions, .draft_badge = draft_badge, .editor = editor, .saved_button = saved_button, .retry_button = retry_button, .status = status, .display_count = display_count, .arena = .init(a), .results_arena = .init(a), .context = context, .retry = retry, .close = close, .fixture = fixture, .narrow = true, .css = gtk.CssProvider.new(), .native_css = gtk.CssProvider.new(), .font_css = gtk.CssProvider.new() };
         errdefer self.destroy();
         const navbox = self.navigation(0);
         sidebar.setChild(navbox.as(gtk.Widget));
@@ -421,6 +432,7 @@ pub const Window = struct {
         self.window.destroy();
         self.window.unref();
         self.arena.deinit();
+        self.results_arena.deinit();
         a.destroy(self);
     }
     fn title(_: *Window, route: nav.Route) [:0]const u8 {
@@ -516,6 +528,14 @@ pub const Window = struct {
         _ = gtk.SearchEntry.signals.activate.connect(search, *SearchLink, searchActivated, &self.search_links[index], .{});
         box.append(search.as(gtk.Widget));
         const list = w.column(2);
+        // Results live inside the scroll's list, not as a sibling of the scroll:
+        // showing/hiding them must change scroll content, never the viewport
+        // size, which would resize the surface and crash the Vulkan renderer.
+        const results = w.column(2);
+        results.as(gtk.Widget).addCssClass("settings-search-results");
+        results.as(gtk.Widget).setVisible(0);
+        self.results_box[index] = results;
+        list.append(results.as(gtk.Widget));
         var previous: ?nav.Group = null;
         for (nav.entries, 0..) |entry, i| {
             if (previous == null or previous.? != entry.group) {
@@ -561,12 +581,66 @@ pub const Window = struct {
     }
     fn searchActivated(_: *gtk.SearchEntry, link: *SearchLink) callconv(.c) void {
         const self = link.owner;
+        if (self.search_hit_count > 0) {
+            self.activateHit(self.search_hits[0]);
+            return;
+        }
         for (self.links[link.index * navigation_count ..][0..navigation_count]) |*item| {
             if (item.button.as(gtk.Widget).getVisible() != 0) {
                 self.requestSelect(item.target, false);
                 return;
             }
         }
+    }
+    fn resultClicked(_: *gtk.Button, link: *ResultLink) callconv(.c) void {
+        const self = link.owner;
+        if (link.hit < self.search_hit_count) self.activateHit(self.search_hits[link.hit]);
+    }
+    fn activateHit(self: *Window, hit: search_index.Hit) void {
+        if (hit.kind == .aqueous) {
+            if (self.aqueous_view) |view| view.stageReveal(hit.id);
+            self.requestSelect(.{ .page = hit.route, .section = hit.section }, false);
+        } else {
+            @memset(&self.pending_pearl_reveal, 0);
+            const len = @min(hit.id.len, self.pending_pearl_reveal.len - 1);
+            @memcpy(self.pending_pearl_reveal[0..len], hit.id[0..len]);
+            self.pearl_reveal_tries = 0;
+            self.requestSelect(.{ .page = hit.route }, false);
+        }
+    }
+    /// Expand any collapsed ancestors and focus a resolved Pearl control.
+    fn revealWidget(widget: *gtk.Widget) bool {
+        var parent = widget.getParent();
+        while (parent) |wgt| : (parent = wgt.getParent()) {
+            if (object.ext.cast(gtk.Expander, wgt)) |expander| expander.setExpanded(1);
+        }
+        return widget.grabFocus() != 0;
+    }
+    /// Resolve a Pearl manifest id against the current page's live controls.
+    /// Returns false when unresolved so navigation falls back to the heading.
+    fn revealPearl(self: *Window, id: []const u8) bool {
+        switch (self.target.page) {
+            .bar => {
+                const pp = self.preference_pages[0] orelse return false;
+                for (pp.fields) |field| if (std.mem.eql(u8, field.spec.path, id)) return revealWidget(field.widget);
+                if (pp.bar) |bar| {
+                    for (bar.controls.items) |control| if (std.mem.eql(u8, control.id, id)) return revealWidget(control.widget);
+                    for (bar.menu_controls.items) |control| if (std.mem.eql(u8, control.id, id)) return revealWidget(control.widget);
+                }
+                if (pp.launchers) |launchers| {
+                    if (std.mem.eql(u8, id, "launchers")) {
+                        launchers.expander.setExpanded(1);
+                        return launchers.expander.as(gtk.Widget).grabFocus() != 0;
+                    }
+                    for (launchers.controls.items) |control| if (std.mem.eql(u8, control.id, id)) return revealWidget(control.widget);
+                }
+            },
+            .advanced => {
+                if (std.mem.eql(u8, id, "raw")) if (self.preferences_view) |view| return revealWidget(view.raw_view.as(gtk.Widget));
+            },
+            else => {},
+        }
+        return false;
     }
     fn entryMatches(self: *Window, entry: nav.Entry, needle_lower: []const u8) bool {
         return nav.containsIgnoreCase(self.entryTitle(entry.target), needle_lower) or
@@ -589,9 +663,44 @@ pub const Window = struct {
             }
             for ([_]usize{ 0, 1 }) |copy| self.links[copy * navigation_count + i].button.as(gtk.Widget).setVisible(@intFromBool(visible));
         }
+        // Field-level results: Aqueous schema fields plus the Pearl manifest.
+        // Drop the previous rows before invalidating the arena that backs them.
         for ([_]usize{ 0, 1 }) |copy| {
+            const box = self.results_box[copy];
+            while (box.as(gtk.Widget).getFirstChild()) |child| box.remove(child);
+        }
+        _ = self.results_arena.reset(.retain_capacity);
+        const alloc = self.results_arena.allocator();
+        var hits: std.ArrayList(search_index.Hit) = .empty;
+        if (needle.len > 0) {
+            search_index.collectAqueous(alloc, self.aqueous.value(), needle, &hits) catch {};
+            search_index.collectPearl(alloc, needle, &hits) catch {};
+        }
+        self.search_hit_count = @min(hits.items.len, max_search_hits);
+        for (hits.items[0..self.search_hit_count], 0..) |hit, i| self.search_hits[i] = hit;
+        for ([_]usize{ 0, 1 }) |copy| {
+            const box = self.results_box[copy];
+            for (self.search_hits[0..self.search_hit_count], 0..) |hit, i| {
+                const button = gtk.Button.new();
+                button.as(gtk.Widget).addCssClass("settings-search-result");
+                const col = w.column(1);
+                const title_label = w.label(hit.label, "settings-row-title");
+                title_label.as(gtk.Widget).setHalign(.start);
+                title_label.setWrap(1);
+                col.append(title_label.as(gtk.Widget));
+                const crumb = w.label(hit.breadcrumb, "pearl-secondary");
+                crumb.as(gtk.Widget).setHalign(.start);
+                col.append(crumb.as(gtk.Widget));
+                button.as(gtk.Button).setChild(col.as(gtk.Widget));
+                w.name(button.as(gtk.Widget), hit.label);
+                self.result_links[copy][i] = .{ .owner = self, .copy = copy, .hit = i };
+                _ = gtk.Button.signals.clicked.connect(button.as(gtk.Button), *ResultLink, resultClicked, &self.result_links[copy][i], .{});
+                box.append(button.as(gtk.Widget));
+                self.result_buttons[copy][i] = button;
+            }
+            box.as(gtk.Widget).setVisible(@intFromBool(self.search_hit_count > 0));
             for (std.enums.values(nav.Group)) |group| self.group_labels[copy][@backingInt(group)].as(gtk.Widget).setVisible(@intFromBool(groups[@backingInt(group)]));
-            self.no_results[copy].as(gtk.Widget).setVisible(@intFromBool(needle.len > 0 and matched == 0));
+            self.no_results[copy].as(gtk.Widget).setVisible(@intFromBool(needle.len > 0 and matched == 0 and self.search_hit_count == 0));
         }
     }
     fn updateNavigation(self: *Window) void {
@@ -873,6 +982,26 @@ pub const Window = struct {
             self.revealNavigation();
             return 0;
         };
+        // A field-level search result asked to reveal a Pearl control; fall back
+        // to the heading focus below when the id no longer resolves.
+        if (self.pending_pearl_reveal[0] != 0) {
+            const id = std.mem.sliceTo(&self.pending_pearl_reveal, 0);
+            if (self.revealPearl(id)) {
+                @memset(&self.pending_pearl_reveal, 0);
+                self.pearl_reveal_tries = 0;
+                self.revealNavigation();
+                return 0;
+            }
+            // Pearl controls can populate a frame or two after the page shows;
+            // retry briefly before falling back to the heading.
+            if (self.pearl_reveal_tries < 6) {
+                self.pearl_reveal_tries += 1;
+                self.restore_id = glib.idleAdd(restore, self);
+                return 0;
+            }
+            @memset(&self.pending_pearl_reveal, 0);
+            self.pearl_reveal_tries = 0;
+        }
         // A modal editor can restore its own trigger after rebuilding the page.
         // Do not let the deferred scroll restoration replace that newer focus.
         const current = self.window.getFocus();
@@ -1301,6 +1430,10 @@ pub const Window = struct {
         // the entry's internal text widget, so match by ancestry.
         for (self.search_entries, 0..) |entry, copy| {
             if ((focus == entry.as(gtk.Widget) or focus.isAncestor(entry.as(gtk.Widget)) != 0) and key == 0xff54) {
+                if (self.search_hit_count > 0) {
+                    _ = self.result_buttons[copy][0].as(gtk.Widget).grabFocus();
+                    return 1;
+                }
                 for (self.links[copy * navigation_count ..][0..navigation_count]) |*link| {
                     if (link.button.as(gtk.Widget).getVisible() != 0) {
                         _ = link.button.as(gtk.Widget).grabFocus();
@@ -1308,6 +1441,23 @@ pub const Window = struct {
                     }
                 }
                 return 1;
+            }
+        }
+        // Arrow keys move through the field-level search results.
+        for ([_]usize{ 0, 1 }) |copy| {
+            for (self.result_buttons[copy][0..self.search_hit_count], 0..) |button, i| {
+                if (focus == button.as(gtk.Widget)) {
+                    const n = self.search_hit_count;
+                    const next: usize = switch (key) {
+                        0xff54 => (i + 1) % n,
+                        0xff52 => (i + n - 1) % n,
+                        0xff50 => 0,
+                        0xff57 => n - 1,
+                        else => return 0,
+                    };
+                    _ = self.result_buttons[copy][next].as(gtk.Widget).grabFocus();
+                    return 1;
+                }
             }
         }
         // GtkBox's focusable heading anchor does not traverse backward out of
@@ -1345,6 +1495,14 @@ pub const Window = struct {
         for (&links, 0..) |*link, i| {
             const item = &self.links[(if (self.narrow) @as(usize, navigation_count) else 0) + i];
             link.* = .{ .page = item.target.page, .section = item.target.section, .visible = item.button.as(gtk.Widget).getVisible() != 0, .focused = self.window.getFocus() == item.button.as(gtk.Widget), .active = item.button.getActive() != 0, .bounds = self.bounds(item.button.as(gtk.Widget)) };
+        }
+        const ResultProbe = struct { id: []const u8, label: []const u8, route: nav.Route, section: ?[]const u8, kind: search_index.Kind, focused: bool, bounds: @TypeOf(self.bounds(self.heading.as(gtk.Widget))) };
+        var search_results: std.ArrayList(ResultProbe) = .empty;
+        defer search_results.deinit(alloc);
+        const result_copy: usize = if (self.narrow) 1 else 0;
+        for (self.search_hits[0..self.search_hit_count], 0..) |hit, i| {
+            const button = self.result_buttons[result_copy][i].as(gtk.Widget);
+            try search_results.append(alloc, .{ .id = hit.id, .label = hit.label, .route = hit.route, .section = hit.section, .kind = hit.kind, .focused = self.window.getFocus() == button, .bounds = self.bounds(button) });
         }
         const ControlProbe = struct { field: []const u8, focused: bool, enabled: bool = true, visible: bool = true, selected: ?bool = null, text: ?[]const u8 = null, bounds: @TypeOf(self.bounds(self.heading.as(gtk.Widget))) };
         var controls: std.ArrayList(ControlProbe) = .empty;
@@ -1537,7 +1695,7 @@ pub const Window = struct {
                 bar_groups[i] = std.mem.span(label.getText());
             };
         };
-        return std.json.Stringify.valueAlloc(alloc, .{ .plugins = plugins_state, .assistant_state = if (self.assistant_view) |view| view.diagnostic() else null, .window_rules = if (self.aqueous_view) |view| if (view.rules_view) |rules| try rules.diagnostic(alloc) else null else null, .notification_filters = if (self.notification_filters) |view| try view.diagnostic(alloc) else null, .launcher_icon_picker = if (self.preference_pages[0]) |view| if (view.bar) |bar| bar.picker != null else false else false, .bar_groups = bar_groups, .links = links, .controls = controls.items, .editor = editor_state, .theme_busy = self.editor.theme_busy, .theme_status = if (self.preferences_view) |view| std.mem.span(view.themes.status.getText()) else "", .service_prompt = if (self.live_pages[@backingInt(self.target.page)]) |view| view.prompt != null else false, .aqueous = .{ .online = self.aqueous.online, .ready = self.aqueous.ready, .recovery = self.aqueous.recovery, .dirty = self.aqueous.dirty, .version = self.aqueous.version, .revision = self.aqueous.server_revision, .backend_version = self.aqueous.server_version, .mode = self.aqueous.mode, .phase = self.aqueous.phase, .busy = self.aqueous.job != null, .receipt_pending = self.aqueous.pending_receipt, .recording = self.aqueous.recording, .shared_focus = if (self.aqueous_view) |view| view.sharedFocus() else "", .shared_review = if (self.aqueous_view) |view| view.shared_dialog != null else false, .display_changes = if (self.aqueous_view) |view| view.display_changes else 0, .display_blocked = if (self.aqueous_view) |view| view.display_blocked else false, .fields = if (self.aqueous_view) |view| view.editors.items.len else 0, .err = if (self.aqueous.err) |err| @errorName(err) else null, .detail = std.mem.sliceTo(&self.aqueous.detail, 0) }, .greeter_sync_status = if (self.preferences_view) |view| std.mem.span(view.greeter_sync.status.getText()) else "", .footer_text = std.mem.span(self.footer_text.getText()), .widget_focus = @import("../desktop/aqueous_settings.zig").ViewFor(@import("aqueous_editor.zig").Editor).focusName(self.window), .focus = focus_name, .active = self.window.isActive() != 0, .key_events = self.key_events, .header_bounds = self.bounds(self.heading.as(gtk.Widget)), .footer_bounds = self.bounds(self.footer.as(gtk.Widget)), .body_bounds = self.bounds(page.scroll.as(gtk.Widget)), .retry_bounds = self.bounds(self.retry_button.as(gtk.Widget)), .navigation_bounds = self.bounds((if (self.narrow) self.popup_scroll else self.sidebar).as(gtk.Widget)), .sections_bounds = self.bounds(self.sections.as(gtk.Widget)), .nav_search = std.mem.sliceTo(&self.nav_search, 0), .search_bounds = self.bounds(search_entry), .search_focused = focus == search_entry or (focus != null and focus.?.isAncestor(search_entry) != 0), .pid = std.os.linux.getpid(), .page = self.target.page, .section = self.target.section, .connected = self.connected, .fixture = self.fixture, .narrow = self.narrow, .width = self.window.as(gtk.Widget).getWidth(), .height = self.window.as(gtk.Widget).getHeight(), .visible = self.window.as(gtk.Widget).getVisible() != 0, .scroll = page.scroll.getVadjustment().getValue(), .heading = std.mem.span(self.heading.getText()), .status = std.mem.span(self.status.getText()), .style = self.style_mode, .appearance_updates = self.appearance_updates, .activation_contexts = self.activation_contexts, .sections_open = self.popover.as(gtk.Widget).getVisible() != 0 }, .{});
+        return std.json.Stringify.valueAlloc(alloc, .{ .plugins = plugins_state, .assistant_state = if (self.assistant_view) |view| view.diagnostic() else null, .window_rules = if (self.aqueous_view) |view| if (view.rules_view) |rules| try rules.diagnostic(alloc) else null else null, .notification_filters = if (self.notification_filters) |view| try view.diagnostic(alloc) else null, .launcher_icon_picker = if (self.preference_pages[0]) |view| if (view.bar) |bar| bar.picker != null else false else false, .bar_groups = bar_groups, .links = links, .controls = controls.items, .editor = editor_state, .theme_busy = self.editor.theme_busy, .theme_status = if (self.preferences_view) |view| std.mem.span(view.themes.status.getText()) else "", .service_prompt = if (self.live_pages[@backingInt(self.target.page)]) |view| view.prompt != null else false, .aqueous = .{ .online = self.aqueous.online, .ready = self.aqueous.ready, .recovery = self.aqueous.recovery, .dirty = self.aqueous.dirty, .version = self.aqueous.version, .revision = self.aqueous.server_revision, .backend_version = self.aqueous.server_version, .mode = self.aqueous.mode, .phase = self.aqueous.phase, .busy = self.aqueous.job != null, .receipt_pending = self.aqueous.pending_receipt, .recording = self.aqueous.recording, .shared_focus = if (self.aqueous_view) |view| view.sharedFocus() else "", .shared_review = if (self.aqueous_view) |view| view.shared_dialog != null else false, .display_changes = if (self.aqueous_view) |view| view.display_changes else 0, .display_blocked = if (self.aqueous_view) |view| view.display_blocked else false, .fields = if (self.aqueous_view) |view| view.editors.items.len else 0, .err = if (self.aqueous.err) |err| @errorName(err) else null, .detail = std.mem.sliceTo(&self.aqueous.detail, 0) }, .greeter_sync_status = if (self.preferences_view) |view| std.mem.span(view.greeter_sync.status.getText()) else "", .footer_text = std.mem.span(self.footer_text.getText()), .widget_focus = @import("../desktop/aqueous_settings.zig").ViewFor(@import("aqueous_editor.zig").Editor).focusName(self.window), .focus = focus_name, .active = self.window.isActive() != 0, .key_events = self.key_events, .header_bounds = self.bounds(self.heading.as(gtk.Widget)), .footer_bounds = self.bounds(self.footer.as(gtk.Widget)), .body_bounds = self.bounds(page.scroll.as(gtk.Widget)), .retry_bounds = self.bounds(self.retry_button.as(gtk.Widget)), .navigation_bounds = self.bounds((if (self.narrow) self.popup_scroll else self.sidebar).as(gtk.Widget)), .sections_bounds = self.bounds(self.sections.as(gtk.Widget)), .nav_search = std.mem.sliceTo(&self.nav_search, 0), .search_results = search_results.items, .search_bounds = self.bounds(search_entry), .search_focused = focus == search_entry or (focus != null and focus.?.isAncestor(search_entry) != 0), .pid = std.os.linux.getpid(), .page = self.target.page, .section = self.target.section, .connected = self.connected, .fixture = self.fixture, .narrow = self.narrow, .width = self.window.as(gtk.Widget).getWidth(), .height = self.window.as(gtk.Widget).getHeight(), .visible = self.window.as(gtk.Widget).getVisible() != 0, .scroll = page.scroll.getVadjustment().getValue(), .heading = std.mem.span(self.heading.getText()), .status = std.mem.span(self.status.getText()), .style = self.style_mode, .appearance_updates = self.appearance_updates, .activation_contexts = self.activation_contexts, .sections_open = self.popover.as(gtk.Widget).getVisible() != 0 }, .{});
     }
 };
 fn schedulerChanged(context: *anyopaque) void {

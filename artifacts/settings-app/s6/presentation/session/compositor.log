@@ -17,8 +17,8 @@ info(input): cursor theme=default size=24
 info(drm_lease): DRM leasing unavailable (no usable lease device)
 info(wlroots): [backend/headless/backend.c:17] Starting headless backend
 info: set Aqueous file descriptor soft limit to hard limit 524288
-info(ipc): protocol=1 listening on /tmp/pearl-dev-gx2zivn2/run/aqueous/cb70447464038ce8ee2ac4dfa22f6718/ipc.sock
-info(output_service): output protocol=1 listening on /tmp/pearl-dev-gx2zivn2/run/aqueous/outputd.sock
+info(ipc): protocol=1 listening on /tmp/pearl-dev-a0_eip93/run/aqueous/e20fe4ea15dc460d4728fb2185b87a1e/ipc.sock
+info(output_service): output protocol=1 listening on /tmp/pearl-dev-a0_eip93/run/aqueous/outputd.sock
 info: running init executable 'printenv WAYLAND_DISPLAY > "$XDG_RUNTIME_DIR/display"; printenv AQUEOUS_SOCKET > "$XDG_RUNTIME_DIR/endpoint"'
 info: running server
 info(output): applying output configuration
@@ -57,8 +57,8 @@ info(aqueous): configuration reloaded layout=floating
 info(output): applying output configuration
 info(aqueous): configuration reloaded layout=floating
 info(output): applying output configuration
+info: Vulkan rounded effects draw count=2000 texture=1050 rect=950 normal=1990 swapchain=10 explicit-sync=0
 info(aqueous): configuration reloaded layout=floating
-info: Vulkan rounded effects draw count=2000 texture=1053 rect=947 normal=1988 swapchain=12 explicit-sync=0
 info(output): applying output configuration
 info(wm): layer surface has no requested output, choosing the first output
 info(wm): layer surface has no requested output, choosing the first output
@@ -69,6 +69,6 @@ info(wm): layer surface has no requested output, choosing the first output
 info(output): applying output configuration
 info: destroyed Vulkan blur after 0 checkpoints, 0 offscreen draws, and 0 composites (0 cache hits, 0 partial rebuilds, 0 full rebuilds, 0 pixels processed)
 info: Vulkan blur resources created: 0 scratch sets, 0 images, 0 descriptors, 0 cache images, 0 composite pipelines
-info: destroyed Vulkan rounded effects after 1154 texture and 1029 rect draws (2167 normal, 16 swapchain, 0 explicit-sync)
+info: destroyed Vulkan rounded effects after 1161 texture and 1036 rect draws (2181 normal, 16 swapchain, 0 explicit-sync)
 info: Vulkan rounded resources created: 1 texture pipelines, 1 rect pipelines
 info: destroyed Vulkan effects context

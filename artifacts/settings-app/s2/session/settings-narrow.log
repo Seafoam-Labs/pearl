@@ -1,18 +1,18 @@
-ts=2026-11-13T23:58:12Z pid=802356 info(settings): event=settings-launch activation_context=false
-ts=2026-11-13T23:58:12Z pid=802356 info(settings): event=settings-instance-ready session_hash=b84c18b44499d27e
-ts=2026-11-13T23:58:12Z pid=802356 info(settings): event=settings-page page=overview
-ts=2026-11-13T23:58:12Z pid=802356 info(settings): event=settings-page page=appearance
-ts=2026-11-13T23:58:12Z pid=802356 info(settings): event=settings-window-created app_id=org.aqueous.Pearl.Settings
-ts=2026-11-13T23:58:12Z pid=802356 info(settings): event=settings-activation activation_context=false
-ts=2026-11-13T23:58:12Z pid=802356 info(settings): event=settings-page page=appearance
-ts=2026-11-13T23:58:12Z pid=802356 info(settings): event=settings-page page=appearance
+ts=2026-11-14T02:53:41Z pid=992730 info(settings): event=settings-launch activation_context=false
+ts=2026-11-14T02:53:41Z pid=992730 info(settings): event=settings-instance-ready session_hash=7ec50d07596742e3
+ts=2026-11-14T02:53:41Z pid=992730 info(settings): event=settings-page page=overview
+ts=2026-11-14T02:53:41Z pid=992730 info(settings): event=settings-page page=appearance
+ts=2026-11-14T02:53:41Z pid=992730 info(settings): event=settings-window-created app_id=org.aqueous.Pearl.Settings
+ts=2026-11-14T02:53:41Z pid=992730 info(settings): event=settings-activation activation_context=false
+ts=2026-11-14T02:53:41Z pid=992730 info(settings): event=settings-page page=appearance
+ts=2026-11-14T02:53:41Z pid=992730 info(settings): event=settings-page page=appearance
 
-(pearl-settings-test:802356): Gdk-WARNING **: 18:58:16.060: gdk_frame_timings_discarded() called on already presented frame.
+(pearl-settings-test:992730): Gdk-WARNING **: 21:53:44.991: Duplicate call to gdk_frame_timings_presented() with different values: presentation time is 16.16ms off from expected
 
-(pearl-settings-test:802356): Gdk-WARNING **: 18:58:16.109: Duplicate call to gdk_frame_timings_presented() with different values: presentation time is 16.107ms off from expected
-ts=2026-11-13T23:58:16Z pid=802356 info(settings): event=settings-page page=aqueous
-ts=2026-11-13T23:58:17Z pid=802356 info(settings): event=settings-page page=aqueous
-ts=2026-11-13T23:58:18Z pid=802356 info(settings): event=settings-page page=aqueous
-ts=2026-11-13T23:58:18Z pid=802356 info(settings): event=settings-activation activation_context=false
-ts=2026-11-13T23:58:18Z pid=802356 info(settings): event=settings-page page=appearance
-ts=2026-11-13T23:58:20Z pid=802356 info(settings): event=settings-connection-unavailable error=Eof
+(pearl-settings-test:992730): Gdk-WARNING **: 21:53:45.076: gdk_frame_timings_discarded() called on already presented frame.
+ts=2026-11-14T02:53:45Z pid=992730 info(settings): event=settings-page page=aqueous
+ts=2026-11-14T02:53:46Z pid=992730 info(settings): event=settings-page page=aqueous
+ts=2026-11-14T02:53:47Z pid=992730 info(settings): event=settings-page page=aqueous
+ts=2026-11-14T02:53:47Z pid=992730 info(settings): event=settings-activation activation_context=false
+ts=2026-11-14T02:53:47Z pid=992730 info(settings): event=settings-page page=appearance
+ts=2026-11-14T02:53:49Z pid=992730 info(settings): event=settings-connection-unavailable error=Eof

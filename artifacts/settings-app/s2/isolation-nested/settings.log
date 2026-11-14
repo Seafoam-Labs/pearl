@@ -1,9 +1,9 @@
-ts=2026-11-13T23:58:23Z pid=806499 info(settings): event=settings-launch activation_context=false
-ts=2026-11-13T23:58:23Z pid=806499 info(settings): event=settings-instance-ready session_hash=0ae6f3d0063d7ace
-ts=2026-11-13T23:58:23Z pid=806499 info(services): event=sched-profile-systemd result=polling
-ts=2026-11-13T23:58:23Z pid=806499 info(settings): event=settings-page page=overview
-ts=2026-11-13T23:58:23Z pid=806499 info(settings): event=settings-page page=power
-ts=2026-11-13T23:58:23Z pid=806499 info(settings): event=settings-window-created app_id=org.aqueous.Pearl.Settings
-ts=2026-11-13T23:58:23Z pid=806499 info(settings): event=settings-connection-unavailable error=Unavailable
-ts=2026-11-13T23:58:23Z pid=806499 warning(services): event=sched-profile-systemd step=unit result=failed
-ts=2026-11-13T23:58:23Z pid=806499 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"
+ts=2026-11-14T02:53:52Z pid=996711 info(settings): event=settings-launch activation_context=false
+ts=2026-11-14T02:53:52Z pid=996711 info(settings): event=settings-instance-ready session_hash=1e4ff03703659122
+ts=2026-11-14T02:53:52Z pid=996711 info(services): event=sched-profile-systemd result=polling
+ts=2026-11-14T02:53:52Z pid=996711 info(settings): event=settings-page page=overview
+ts=2026-11-14T02:53:52Z pid=996711 info(settings): event=settings-page page=power
+ts=2026-11-14T02:53:52Z pid=996711 info(settings): event=settings-window-created app_id=org.aqueous.Pearl.Settings
+ts=2026-11-14T02:53:52Z pid=996711 info(settings): event=settings-connection-unavailable error=Unavailable
+ts=2026-11-14T02:53:52Z pid=996711 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-14T02:53:52Z pid=996711 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"

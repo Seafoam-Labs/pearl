@@ -1,0 +1,16 @@
+ts=2026-11-14T02:53:54Z pid=997543 info(settings): event=settings-launch activation_context=false
+ts=2026-11-14T02:53:54Z pid=997543 info(settings): event=settings-instance-ready session_hash=a31b9cbd2d40205c
+ts=2026-11-14T02:53:54Z pid=997543 info(services): event=sched-profile-systemd result=polling
+ts=2026-11-14T02:53:54Z pid=997543 info(settings): event=settings-page page=overview
+ts=2026-11-14T02:53:54Z pid=997543 info(settings): event=settings-page page=appearance
+ts=2026-11-14T02:53:54Z pid=997543 info(settings): event=settings-window-created app_id=org.aqueous.Pearl.Settings
+ts=2026-11-14T02:53:54Z pid=997543 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-14T02:53:54Z pid=997543 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"
+ts=2026-11-14T02:53:54Z pid=997543 info(settings): event=settings-page page=appearance
+ts=2026-11-14T02:53:55Z pid=997543 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"
+ts=2026-11-14T02:53:56Z pid=997543 info(settings): event=settings-page page=bar
+ts=2026-11-14T02:53:57Z pid=997543 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"
+ts=2026-11-14T02:53:57Z pid=997543 info(settings): event=settings-page page=bar
+ts=2026-11-14T02:53:59Z pid=997543 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-14T02:53:59Z pid=997543 info(settings): event=settings-page page=aqueous
+ts=2026-11-14T02:54:01Z pid=997543 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"

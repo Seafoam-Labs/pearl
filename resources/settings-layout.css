@@ -4,6 +4,10 @@
 .settings-pearl { font-size: 22px; color: #d0bcff; }
 .settings-nav { padding: 6px 12px 18px; }
 .settings-nav .settings-nav-search { margin-bottom: 6px; }
+.settings-search-results { padding: 0 0 6px; }
+.settings-window button.settings-search-result { border-radius: 11px; padding: 8px 12px; min-height: 44px; }
+.settings-window button.settings-search-result label { font-weight: normal; }
+.settings-window button.settings-search-result .settings-row-title { font-weight: 600; }
 .settings-group { font-size: 0.72em; letter-spacing: 1.4px; margin: 10px 12px 6px; }
 .settings-window button.settings-nav-item { border-radius: 11px; padding: 0 12px; min-height: 44px; }
 .settings-window button.settings-nav-item label { font-weight: normal; }

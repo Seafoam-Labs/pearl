@@ -1,0 +1,10 @@
+{
+  "status": "passed",
+  "checks": {
+    "launcher-returns-pearl-and-aqueous-settings": true,
+    "pearl-result-navigates-and-focuses": true,
+    "bar-field-manifest-entry-resolves": true,
+    "aqueous-field-result-reveals-section": true,
+    "empty-query-and-no-match-behavior": true
+  }
+}

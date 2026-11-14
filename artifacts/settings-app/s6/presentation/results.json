@@ -771,13 +771,13 @@
         "x": 220,
         "y": 152,
         "width": 820,
-        "height": 531
+        "height": 493
       },
       "footer": {
         "x": 220,
-        "y": 683,
+        "y": 645,
         "width": 820,
-        "height": 77
+        "height": 115
       },
       "narrow": false,
       "output": "1"
@@ -2764,8 +2764,8 @@
     }
   ],
   "binaries": {
-    "settings": "294abed9da5a102bf4ab87ca05671da0cc5993773917cbd2e5732e784a8d77fc",
-    "pearl": "497f5ed8e9a34735eaba029db4a8f5f8a50d7bb2b5805422a0ee70797b294ed1",
+    "settings": "1029c5693ee61d3d38b754b9045ac2ea59050f49334c710571ed4ff98fb5fd17",
+    "pearl": "8232a59d14810880ce15ad98450cfb4f01e36a863d4781957de4df1a9c17f798",
     "ctl": "c315de7cfb26c57dd92af8fb621dd5f12188b969f28b0f28a2e5af61a93ebd1d"
   },
   "disabled_output_auto_relocated": false

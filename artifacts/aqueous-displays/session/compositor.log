@@ -17,8 +17,8 @@ info(input): cursor theme=default size=24
 info(drm_lease): DRM leasing unavailable (no usable lease device)
 info(wlroots): [backend/headless/backend.c:17] Starting headless backend
 info: set Aqueous file descriptor soft limit to hard limit 524288
-info(ipc): protocol=1 listening on /tmp/pearl-dev-vd942k45/run/aqueous/1d311fdbcb690a088f98b162a9d8cb77/ipc.sock
-info(output_service): output protocol=1 listening on /tmp/pearl-dev-vd942k45/run/aqueous/outputd.sock
+info(ipc): protocol=1 listening on /tmp/pearl-dev-iguoqnb5/run/aqueous/a8f3590a86ad429f4a5b8ab8947c3707/ipc.sock
+info(output_service): output protocol=1 listening on /tmp/pearl-dev-iguoqnb5/run/aqueous/outputd.sock
 info: running init executable 'printenv WAYLAND_DISPLAY > "$XDG_RUNTIME_DIR/display"; printenv AQUEOUS_SOCKET > "$XDG_RUNTIME_DIR/endpoint"'
 info: running server
 info(output_service): output service set: staged 1 output(s), rejected 0 setting(s)
@@ -42,6 +42,6 @@ info(output_service): configured output: staged 2 output(s), rejected 0 setting(
 info(aqueous): configuration reloaded layout=floating
 info: destroyed Vulkan blur after 0 checkpoints, 0 offscreen draws, and 0 composites (0 cache hits, 0 partial rebuilds, 0 full rebuilds, 0 pixels processed)
 info: Vulkan blur resources created: 0 scratch sets, 0 images, 0 descriptors, 0 cache images, 0 composite pipelines
-info: destroyed Vulkan rounded effects after 1002 texture and 907 rect draws (1901 normal, 8 swapchain, 0 explicit-sync)
+info: destroyed Vulkan rounded effects after 1031 texture and 935 rect draws (1958 normal, 8 swapchain, 0 explicit-sync)
 info: Vulkan rounded resources created: 1 texture pipelines, 1 rect pipelines
 info: destroyed Vulkan effects context

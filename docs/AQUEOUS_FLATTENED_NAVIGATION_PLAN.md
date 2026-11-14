@@ -42,7 +42,7 @@ popover. The query is bounded to 128 bytes and never changes the selected page
 until a result is activated.
 
 Field-level search (returning individual settings, e.g. every `launcher`
-option, not just destinations) is planned separately in
+option, not just destinations) is implemented in
 [SETTINGS_FIELD_SEARCH_PLAN.md](SETTINGS_FIELD_SEARCH_PLAN.md). That plan
 explicitly accepts Pearl registry drift for its initial version and defers the
 structural anti-drift fix to a future update.

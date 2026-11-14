@@ -1,39 +1,39 @@
-ts=2026-11-13T23:56:09Z pid=777019 info(settings): event=settings-launch activation_context=false
-ts=2026-11-13T23:56:09Z pid=777019 info(settings): event=settings-instance-ready session_hash=b7e2fd4036d4b402
-ts=2026-11-13T23:56:09Z pid=777019 info(services): event=sched-profile-systemd result=polling
-ts=2026-11-13T23:56:09Z pid=777019 info(settings): event=settings-page page=overview
-ts=2026-11-13T23:56:09Z pid=777019 info(settings): event=settings-page page=aqueous
-ts=2026-11-13T23:56:09Z pid=777019 info(settings): event=settings-window-created app_id=org.aqueous.Pearl.Settings
-ts=2026-11-13T23:56:09Z pid=777019 warning(services): event=sched-profile-systemd step=unit result=failed
-ts=2026-11-13T23:56:09Z pid=777019 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"
-ts=2026-11-13T23:56:09Z pid=777019 info(settings): event=settings-page page=aqueous
-ts=2026-11-13T23:56:09Z pid=777019 info(settings): event=settings-activation activation_context=false
-ts=2026-11-13T23:56:09Z pid=777019 info(settings): event=settings-page page=aqueous
-ts=2026-11-13T23:56:10Z pid=777019 info(settings): event=settings-activation activation_context=false
-ts=2026-11-13T23:56:10Z pid=777019 info(settings): event=settings-page page=aqueous
-ts=2026-11-13T23:56:10Z pid=777019 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"
-ts=2026-11-13T23:56:11Z pid=777019 info(settings): event=settings-activation activation_context=false
-ts=2026-11-13T23:56:11Z pid=777019 info(settings): event=settings-page page=aqueous
-ts=2026-11-13T23:56:12Z pid=777019 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"
+ts=2026-11-14T02:16:36Z pid=950358 info(settings): event=settings-launch activation_context=false
+ts=2026-11-14T02:16:36Z pid=950358 info(settings): event=settings-instance-ready session_hash=b952dcc9d63d07fa
+ts=2026-11-14T02:16:36Z pid=950358 info(services): event=sched-profile-systemd result=polling
+ts=2026-11-14T02:16:36Z pid=950358 info(settings): event=settings-page page=overview
+ts=2026-11-14T02:16:36Z pid=950358 info(settings): event=settings-page page=aqueous
+ts=2026-11-14T02:16:36Z pid=950358 info(settings): event=settings-window-created app_id=org.aqueous.Pearl.Settings
+ts=2026-11-14T02:16:36Z pid=950358 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-14T02:16:36Z pid=950358 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"
+ts=2026-11-14T02:16:36Z pid=950358 info(settings): event=settings-page page=aqueous
+ts=2026-11-14T02:16:37Z pid=950358 info(settings): event=settings-activation activation_context=false
+ts=2026-11-14T02:16:37Z pid=950358 info(settings): event=settings-page page=aqueous
+ts=2026-11-14T02:16:37Z pid=950358 info(settings): event=settings-activation activation_context=false
+ts=2026-11-14T02:16:37Z pid=950358 info(settings): event=settings-page page=aqueous
+ts=2026-11-14T02:16:37Z pid=950358 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"
+ts=2026-11-14T02:16:39Z pid=950358 info(settings): event=settings-activation activation_context=false
+ts=2026-11-14T02:16:39Z pid=950358 info(settings): event=settings-page page=aqueous
+ts=2026-11-14T02:16:39Z pid=950358 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"
 
-(pearl-settings-test:777019): Gdk-WARNING **: 18:56:13.561: gdk_frame_timings_discarded() called on already presented frame.
-ts=2026-11-13T23:56:14Z pid=777019 warning(services): event=sched-profile-systemd step=unit result=failed
-ts=2026-11-13T23:56:15Z pid=777019 info(settings): event=settings-activation activation_context=false
-ts=2026-11-13T23:56:15Z pid=777019 info(settings): event=settings-page page=aqueous
-ts=2026-11-13T23:56:15Z pid=777019 info(settings): event=settings-activation activation_context=false
-ts=2026-11-13T23:56:15Z pid=777019 info(settings): event=settings-page page=aqueous
-ts=2026-11-13T23:56:16Z pid=777019 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"
-ts=2026-11-13T23:56:19Z pid=777019 warning(services): event=sched-profile-systemd step=unit result=failed
-ts=2026-11-13T23:56:24Z pid=777019 warning(services): event=sched-profile-systemd step=unit result=failed
-ts=2026-11-13T23:56:24Z pid=777019 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"
-ts=2026-11-13T23:56:26Z pid=777019 info(settings): event=settings-activation activation_context=false
-ts=2026-11-13T23:56:26Z pid=777019 info(settings): event=settings-page page=advanced
-ts=2026-11-13T23:56:26Z pid=777019 info(settings): event=settings-aqueous-action action=validate pending=false
-ts=2026-11-13T23:56:27Z pid=777019 info(settings): event=settings-activation activation_context=false
-ts=2026-11-13T23:56:27Z pid=777019 info(settings): event=settings-page page=aqueous
-ts=2026-11-13T23:56:28Z pid=777019 info(settings): event=settings-aqueous-action action=apply pending=false
-ts=2026-11-13T23:56:29Z pid=777019 warning(services): event=sched-profile-systemd step=unit result=failed
-ts=2026-11-13T23:56:33Z pid=777019 info(settings): event=settings-aqueous-action action=apply pending=false
-ts=2026-11-13T23:56:34Z pid=777019 warning(services): event=sched-profile-systemd step=unit result=failed
-ts=2026-11-13T23:56:39Z pid=777019 warning(services): event=sched-profile-systemd step=unit result=failed
-ts=2026-11-13T23:56:40Z pid=777019 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"
+(pearl-settings-test:950358): Gdk-WARNING **: 21:16:40.977: gdk_frame_timings_discarded() called on already presented frame.
+ts=2026-11-14T02:16:41Z pid=950358 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-14T02:16:42Z pid=950358 info(settings): event=settings-activation activation_context=false
+ts=2026-11-14T02:16:42Z pid=950358 info(settings): event=settings-page page=aqueous
+ts=2026-11-14T02:16:43Z pid=950358 info(settings): event=settings-activation activation_context=false
+ts=2026-11-14T02:16:43Z pid=950358 info(settings): event=settings-page page=aqueous
+ts=2026-11-14T02:16:43Z pid=950358 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"
+ts=2026-11-14T02:16:46Z pid=950358 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-14T02:16:52Z pid=950358 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-14T02:16:52Z pid=950358 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"
+ts=2026-11-14T02:16:53Z pid=950358 info(settings): event=settings-activation activation_context=false
+ts=2026-11-14T02:16:53Z pid=950358 info(settings): event=settings-page page=advanced
+ts=2026-11-14T02:16:54Z pid=950358 info(settings): event=settings-aqueous-action action=validate pending=false
+ts=2026-11-14T02:16:54Z pid=950358 info(settings): event=settings-activation activation_context=false
+ts=2026-11-14T02:16:54Z pid=950358 info(settings): event=settings-page page=aqueous
+ts=2026-11-14T02:16:55Z pid=950358 info(settings): event=settings-aqueous-action action=apply pending=false
+ts=2026-11-14T02:16:56Z pid=950358 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-14T02:17:00Z pid=950358 info(settings): event=settings-aqueous-action action=apply pending=false
+ts=2026-11-14T02:17:01Z pid=950358 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-14T02:17:06Z pid=950358 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-14T02:17:07Z pid=950358 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"

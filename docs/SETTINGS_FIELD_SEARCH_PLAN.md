@@ -1,11 +1,29 @@
 # Settings field-level search
 
-Status: planned; not implemented.
+Status: initial version implemented (Phases 1–2); the structural anti-drift
+update (Phase 3) remains deferred.
 
 **Recorded decision:** accept Pearl registry drift for the initial version
 (static manifest). The structural anti-drift fix (co-located metadata + derived
 index + coverage gate) is deferred to a future update — see
 [Eliminate drift](#future-update-eliminate-drift-deferred).
+
+## Implemented (initial version)
+
+- `src/settings/search_index.zig` derives Aqueous hits from the live helper
+  schema (all categories) and Pearl hits from the static `pearl_manifest`;
+  matching is case-insensitive over id/label/description/keywords.
+- The navigation search box shows a bounded field-result list (label +
+  breadcrumb) above the filtered destinations, in both the sidebar and the
+  Sections popover. Down/Up/Enter navigate results; Enter in the box activates
+  the first result; Escape clears the query.
+- Selecting an Aqueous result stages `issue_focus` and reuses the existing
+  reveal/focus machinery; selecting a Pearl result navigates and resolves the
+  control against the live view arrays, expanding ancestors and focusing, with
+  a bounded retry and a fallback to the page heading when unresolved.
+- `pearl-settings` probe reports `search_results`; covered by
+  `tests/integration/test_settings_field_search.py`
+  (`zig build test-settings-field-search`) and `search_index.zig` unit tests.
 
 ## Goal
 

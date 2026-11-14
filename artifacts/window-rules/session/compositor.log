@@ -17,8 +17,8 @@ info(input): cursor theme=default size=24
 info(drm_lease): DRM leasing unavailable (no usable lease device)
 info(wlroots): [backend/headless/backend.c:17] Starting headless backend
 info: set Aqueous file descriptor soft limit to hard limit 524288
-info(ipc): protocol=1 listening on /tmp/pearl-dev-96bs14bx/run/aqueous/7ff089cf43b1528875da408e4d8b20b9/ipc.sock
-info(output_service): output protocol=1 listening on /tmp/pearl-dev-96bs14bx/run/aqueous/outputd.sock
+info(ipc): protocol=1 listening on /tmp/pearl-dev-88uvcgzl/run/aqueous/afa2485828dcb8c993851bd25cdf300d/ipc.sock
+info(output_service): output protocol=1 listening on /tmp/pearl-dev-88uvcgzl/run/aqueous/outputd.sock
 info: running init executable 'printenv WAYLAND_DISPLAY > "$XDG_RUNTIME_DIR/display"; printenv AQUEOUS_SOCKET > "$XDG_RUNTIME_DIR/endpoint"'
 info: running server
 info(output): applying output configuration
@@ -103,11 +103,10 @@ info(aqueous): configuration reloaded layout=floating
 error(input): inactive text input tried to commit an update, client bug?
 error(input): inactive text input tried to commit an update, client bug?
 error(input): inactive text input tried to commit an update, client bug?
-info: Vulkan rounded effects draw count=4000 texture=2102 rect=1898 normal=4000 swapchain=0 explicit-sync=0
+info: Vulkan rounded effects draw count=4000 texture=2103 rect=1897 normal=4000 swapchain=0 explicit-sync=0
 info(aqueous): configuration reloaded layout=floating
 error(input): inactive text input tried to commit an update, client bug?
 error(input): inactive text input tried to commit an update, client bug?
-info(aqueous): configuration hot-reloaded layout=floating
 info(aqueous): configuration reloaded layout=floating
 error(input): inactive text input tried to commit an update, client bug?
 error(input): inactive text input tried to commit an update, client bug?
@@ -133,6 +132,6 @@ error(input): inactive text input tried to commit an update, client bug?
 error(input): inactive text input tried to commit an update, client bug?
 info: destroyed Vulkan blur after 0 checkpoints, 0 offscreen draws, and 0 composites (0 cache hits, 0 partial rebuilds, 0 full rebuilds, 0 pixels processed)
 info: Vulkan blur resources created: 0 scratch sets, 0 images, 0 descriptors, 0 cache images, 0 composite pipelines
-info: destroyed Vulkan rounded effects after 3053 texture and 2721 rect draws (5774 normal, 0 swapchain, 0 explicit-sync)
+info: destroyed Vulkan rounded effects after 3072 texture and 2740 rect draws (5812 normal, 0 swapchain, 0 explicit-sync)
 info: Vulkan rounded resources created: 1 texture pipelines, 1 rect pipelines
 info: destroyed Vulkan effects context

@@ -1875,6 +1875,7 @@
     "height": 0
   },
   "nav_search": "",
+  "search_results": [],
   "search_bounds": {
     "x": 12,
     "y": 57,
@@ -1882,7 +1883,7 @@
     "height": 54
   },
   "search_focused": false,
-  "pid": 760883,
+  "pid": 935701,
   "page": "network",
   "section": null,
   "connected": true,

@@ -1,41 +1,41 @@
-ts=2026-11-13T23:57:16Z pid=790411 info(platform): event=background-effect-owner owner=gtk gtk=4.24.1
-ts=2026-11-13T23:57:16Z pid=790411 info(desktop): event=steam-library-sync games=0 created=0 removed=0
-ts=2026-11-13T23:57:16Z pid=790411 info(platform): event=blur-capability available=false
-ts=2026-11-13T23:57:16Z pid=790411 info(services): event=sched-profile-systemd result=polling
-ts=2026-11-13T23:57:16Z pid=790411 info(pearl): event=aqueous-availability state=connecting
-ts=2026-11-13T23:57:16Z pid=790411 info(pearl): event=ready mode=session
-ts=2026-11-13T23:57:16Z pid=790411 info(desktop): event=app-index-ready entries=75 truncated=false
-ts=2026-11-13T23:57:16Z pid=790411 warning(services): event=sched-profile-systemd step=unit result=failed
-ts=2026-11-13T23:57:16Z pid=790411 debug(aqueous): event=ipc-request op=hello
-ts=2026-11-13T23:57:16Z pid=790411 debug(aqueous): event=ipc-request op=hello
-ts=2026-11-13T23:57:16Z pid=790411 debug(aqueous): event=ipc-response op=hello
-ts=2026-11-13T23:57:16Z pid=790411 debug(aqueous): event=ipc-response op=hello
-ts=2026-11-13T23:57:16Z pid=790411 info(pearl): event=aqueous-availability state=subscribing
-ts=2026-11-13T23:57:16Z pid=790411 debug(aqueous): event=ipc-request op=subscribe
-ts=2026-11-13T23:57:16Z pid=790411 debug(aqueous): event=ipc-response op=subscribe
-ts=2026-11-13T23:57:16Z pid=790411 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T23:57:16Z pid=790411 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"
-ts=2026-11-13T23:57:16Z pid=790411 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T23:57:16Z pid=790411 info(pearl): event=aqueous-availability state=ready
-ts=2026-11-13T23:57:16Z pid=790411 info(services): event=autostart-launched file=/etc/xdg/autostart/xdg-user-dirs.desktop
-ts=2026-11-13T23:57:16Z pid=790411 info(services): event=autostart-run entries=4 launched=1
+ts=2026-11-14T02:12:36Z pid=918823 info(platform): event=background-effect-owner owner=gtk gtk=4.24.1
+ts=2026-11-14T02:12:36Z pid=918823 info(desktop): event=steam-library-sync games=0 created=0 removed=0
+ts=2026-11-14T02:12:36Z pid=918823 info(platform): event=blur-capability available=false
+ts=2026-11-14T02:12:36Z pid=918823 info(services): event=sched-profile-systemd result=polling
+ts=2026-11-14T02:12:36Z pid=918823 info(pearl): event=aqueous-availability state=connecting
+ts=2026-11-14T02:12:36Z pid=918823 info(pearl): event=ready mode=session
+ts=2026-11-14T02:12:36Z pid=918823 info(desktop): event=app-index-ready entries=75 truncated=false
+ts=2026-11-14T02:12:36Z pid=918823 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-14T02:12:36Z pid=918823 debug(aqueous): event=ipc-request op=hello
+ts=2026-11-14T02:12:36Z pid=918823 debug(aqueous): event=ipc-request op=hello
+ts=2026-11-14T02:12:36Z pid=918823 debug(aqueous): event=ipc-response op=hello
+ts=2026-11-14T02:12:36Z pid=918823 debug(aqueous): event=ipc-response op=hello
+ts=2026-11-14T02:12:36Z pid=918823 info(pearl): event=aqueous-availability state=subscribing
+ts=2026-11-14T02:12:36Z pid=918823 debug(aqueous): event=ipc-request op=subscribe
+ts=2026-11-14T02:12:36Z pid=918823 debug(aqueous): event=ipc-response op=subscribe
+ts=2026-11-14T02:12:36Z pid=918823 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-14T02:12:36Z pid=918823 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"
+ts=2026-11-14T02:12:36Z pid=918823 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-14T02:12:36Z pid=918823 info(pearl): event=aqueous-availability state=ready
+ts=2026-11-14T02:12:36Z pid=918823 info(services): event=autostart-launched file=/etc/xdg/autostart/xdg-user-dirs.desktop
+ts=2026-11-14T02:12:36Z pid=918823 info(services): event=autostart-run entries=4 launched=1
 No default user directories
-ts=2026-11-13T23:57:16Z pid=790411 info(ui): event=output-mapped id=1 connector=HEADLESS-2 scale=1 renderer=GskCairoRenderer gpu_agreement=unverified session_hash=3a06045dc3c83819
-ts=2026-11-13T23:57:16Z pid=790411 info(ui): event=output-mapped id=2 connector=HEADLESS-1 scale=1 renderer=GskCairoRenderer gpu_agreement=unverified session_hash=3a06045dc3c83819
-ts=2026-11-13T23:57:16Z pid=790411 info(pearl): event=settings-backend-ready session_hash=3a06045dc3c83819
-ts=2026-11-13T23:57:16Z pid=790411 info(pearl): event=control-ready session_hash=3a06045dc3c83819
-ts=2026-11-13T23:57:16Z pid=790411 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T23:57:16Z pid=790411 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T23:57:16Z pid=790411 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T23:57:16Z pid=790411 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T23:57:16Z pid=790411 info(desktop): event=app-index-ready entries=75 truncated=false
-ts=2026-11-13T23:57:16Z pid=790411 info(config): event=preferences-applied revision=1 mode=static cache=false
-ts=2026-11-13T23:57:16Z pid=790411 info(config): event=wallpaper-applications-applied generation=5 elapsed_us=21676 success=true
-ts=2026-11-13T23:57:16Z pid=790411 info(desktop): event=app-index-ready entries=75 truncated=false
-ts=2026-11-13T23:57:17Z pid=790411 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"
-ts=2026-11-13T23:57:19Z pid=790411 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"
-ts=2026-11-13T23:57:21Z pid=790411 warning(services): event=sched-profile-systemd step=unit result=failed
-ts=2026-11-13T23:57:23Z pid=790411 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"
-ts=2026-11-13T23:57:26Z pid=790411 warning(services): event=sched-profile-systemd step=unit result=failed
-ts=2026-11-13T23:57:29Z pid=790411 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T23:57:29Z pid=790411 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-14T02:12:36Z pid=918823 info(ui): event=output-mapped id=1 connector=HEADLESS-2 scale=1 renderer=GskCairoRenderer gpu_agreement=unverified session_hash=e76e4eb0b52d61d5
+ts=2026-11-14T02:12:36Z pid=918823 info(ui): event=output-mapped id=2 connector=HEADLESS-1 scale=1 renderer=GskCairoRenderer gpu_agreement=unverified session_hash=e76e4eb0b52d61d5
+ts=2026-11-14T02:12:36Z pid=918823 info(pearl): event=settings-backend-ready session_hash=e76e4eb0b52d61d5
+ts=2026-11-14T02:12:36Z pid=918823 info(pearl): event=control-ready session_hash=e76e4eb0b52d61d5
+ts=2026-11-14T02:12:36Z pid=918823 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-14T02:12:36Z pid=918823 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-14T02:12:36Z pid=918823 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-14T02:12:36Z pid=918823 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-14T02:12:37Z pid=918823 info(desktop): event=app-index-ready entries=75 truncated=false
+ts=2026-11-14T02:12:37Z pid=918823 info(config): event=preferences-applied revision=1 mode=static cache=false
+ts=2026-11-14T02:12:37Z pid=918823 info(config): event=wallpaper-applications-applied generation=5 elapsed_us=24064 success=true
+ts=2026-11-14T02:12:37Z pid=918823 info(desktop): event=app-index-ready entries=75 truncated=false
+ts=2026-11-14T02:12:38Z pid=918823 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"
+ts=2026-11-14T02:12:40Z pid=918823 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"
+ts=2026-11-14T02:12:42Z pid=918823 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-14T02:12:44Z pid=918823 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"
+ts=2026-11-14T02:12:47Z pid=918823 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-14T02:12:50Z pid=918823 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-14T02:12:50Z pid=918823 debug(aqueous): event=ipc-response op=ack
