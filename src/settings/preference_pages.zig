@@ -43,12 +43,14 @@ pub const View = struct {
     filling: bool = false,
     editing: bool = false,
     own_invalid: ?[64]u8 = null,
+    presets: ?*@import("presets_view.zig").View = null,
     bar: ?*@import("bar_view.zig").View = null,
     launchers: ?*@import("application_launchers_view.zig").View = null,
     pub fn create(host: *gtk.Box, editor: *Editor, context: *anyopaque, invalidate: *const fn (*anyopaque, @import("../desktop/settings_navigation.zig").Route) void) !*View {
         const self = try a.create(View);
         const specs: []const Spec = &bar_fields;
         self.* = .{ .editor = editor, .host = host, .fields = try a.alloc(Field, specs.len) };
+        self.presets = try @import("presets_view.zig").View.create(host, editor);
         var card = w.column(0);
         card.as(gtk.Widget).addCssClass("settings-card");
         host.append(card.as(gtk.Widget));
@@ -242,6 +244,7 @@ pub const View = struct {
     pub fn destroy(self: *View) void {
         if (self.launchers) |view| view.destroy();
         if (self.bar) |bar| bar.destroy();
+        if (self.presets) |picker| picker.destroy();
         for (self.fields) |field| object.signalHandlerDisconnect(field.widget.as(object.Object), field.signal);
         for (self.displays) |field| {
             object.signalHandlerDisconnect(field.widget.as(object.Object), field.signal);
@@ -254,6 +257,7 @@ pub const View = struct {
     pub fn update(self: *View) void {
         if (self.launchers) |view| view.update();
         if (self.bar) |bar| bar.update();
+        if (self.presets) |picker| picker.update();
         if (self.editing) return;
         self.filling = true;
         defer self.filling = false;
@@ -393,5 +397,8 @@ fn patch(alloc: std.mem.Allocator, text: []const u8, path: []const u8, value: st
         part = next;
     }
     try current.object.put(alloc, part, value);
+    // Editing a setting a preset owns makes the layout the user's own again.
+    if (std.mem.startsWith(u8, path, "bar.") or std.mem.startsWith(u8, path, "dock."))
+        try document.object.put(alloc, "bar_dock_preset", .{ .string = "" });
     return std.json.Stringify.valueAlloc(alloc, document, .{ .whitespace = .indent_2 });
 }

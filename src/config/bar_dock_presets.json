@@ -1,0 +1,57 @@
+[
+  {
+    "id": "macos",
+    "name": "macOS",
+    "description": "Slim bar at the top with status items on the right, and a bottom dock that is always visible.",
+    "bar": {
+      "mode": "always",
+      "edge": "top",
+      "size": 32,
+      "radius": 0,
+      "islands": false,
+      "attached": true,
+      "workspace_mode": "small"
+    },
+    "widgets": {
+      "left": ["workspaces", "title"],
+      "center": [],
+      "right": ["media", "tray", "network", "battery", "notifications", "control", "clock"]
+    },
+    "dock": {
+      "enabled": true,
+      "edge": "bottom",
+      "mode": "always",
+      "icon_size": 48,
+      "margin": 8,
+      "opacity_sync": true
+    }
+  },
+  {
+    "id": "windows",
+    "name": "Windows",
+    "description": "Taskbar at the bottom: widgets on the left, pinned and running applications in the center, clock on the right.",
+    "bar": {
+      "mode": "always",
+      "edge": "bottom",
+      "size": 48,
+      "radius": 0,
+      "islands": false,
+      "attached": true,
+      "workspace_mode": "small",
+      "running_apps_per_window": false
+    },
+    "widgets": {
+      "left": ["weather"],
+      "center": ["launcher", "dock"],
+      "right": ["media", "tray", "audio", "network", "battery", "notifications", "control", "clock"]
+    },
+    "dock": {
+      "enabled": false,
+      "edge": "bottom",
+      "mode": "always",
+      "icon_size": 32,
+      "margin": 4,
+      "opacity_sync": true
+    }
+  }
+]
