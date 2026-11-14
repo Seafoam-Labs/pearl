@@ -1,12 +1,12 @@
-ts=2026-11-13T22:30:55Z pid=508200 info(settings): event=settings-launch activation_context=false
-ts=2026-11-13T22:30:55Z pid=508200 info(settings): event=settings-instance-ready session_hash=315de34458671560
-ts=2026-11-13T22:30:55Z pid=508200 info(services): event=sched-profile-systemd result=polling
-ts=2026-11-13T22:30:55Z pid=508200 info(settings): event=settings-page page=overview
-ts=2026-11-13T22:30:55Z pid=508200 info(settings): event=settings-page page=appearance
-ts=2026-11-13T22:30:55Z pid=508200 info(settings): event=settings-window-created app_id=org.aqueous.Pearl.Settings
-ts=2026-11-13T22:30:55Z pid=508200 warning(services): event=sched-profile-systemd step=unit result=failed
-ts=2026-11-13T22:30:55Z pid=508200 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"
-ts=2026-11-13T22:30:55Z pid=508200 info(settings): event=settings-page page=appearance
-ts=2026-11-13T22:30:55Z pid=508200 info(settings): event=settings-connection-unavailable error=Eof
-ts=2026-11-13T22:30:56Z pid=508200 info(settings): event=settings-page page=appearance
-ts=2026-11-13T22:30:56Z pid=508200 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"
+ts=2026-11-13T23:58:21Z pid=805000 info(settings): event=settings-launch activation_context=false
+ts=2026-11-13T23:58:21Z pid=805000 info(settings): event=settings-instance-ready session_hash=b84c18b44499d27e
+ts=2026-11-13T23:58:21Z pid=805000 info(services): event=sched-profile-systemd result=polling
+ts=2026-11-13T23:58:21Z pid=805000 info(settings): event=settings-page page=overview
+ts=2026-11-13T23:58:21Z pid=805000 info(settings): event=settings-page page=appearance
+ts=2026-11-13T23:58:21Z pid=805000 info(settings): event=settings-window-created app_id=org.aqueous.Pearl.Settings
+ts=2026-11-13T23:58:21Z pid=805000 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-13T23:58:21Z pid=805000 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"
+ts=2026-11-13T23:58:21Z pid=805000 info(settings): event=settings-page page=appearance
+ts=2026-11-13T23:58:21Z pid=805000 info(settings): event=settings-connection-unavailable error=Eof
+ts=2026-11-13T23:58:21Z pid=805000 info(settings): event=settings-page page=appearance
+ts=2026-11-13T23:58:22Z pid=805000 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"

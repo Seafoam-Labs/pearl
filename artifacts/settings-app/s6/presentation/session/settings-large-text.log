@@ -1,153 +1,153 @@
-ts=2026-11-13T22:13:41Z pid=373412 info(settings): event=settings-launch activation_context=false
-ts=2026-11-13T22:13:41Z pid=373412 info(settings): event=settings-instance-ready session_hash=ba73b205496aace2
-ts=2026-11-13T22:13:41Z pid=373412 info(services): event=sched-profile-systemd result=polling
-ts=2026-11-13T22:13:41Z pid=373412 info(settings): event=settings-page page=overview
-ts=2026-11-13T22:13:41Z pid=373412 info(settings): event=settings-page page=aqueous
-ts=2026-11-13T22:13:41Z pid=373412 info(settings): event=settings-window-created app_id=org.aqueous.Pearl.Settings
-ts=2026-11-13T22:13:41Z pid=373412 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to get properties: Process org.freedesktop.systemd1 exited with status 1"
-ts=2026-11-13T22:13:41Z pid=373412 warning(services): event=sched-profile-systemd step=unit result=failed
-ts=2026-11-13T22:13:41Z pid=373412 info(settings): event=settings-page page=aqueous
-ts=2026-11-13T22:13:42Z pid=373412 info(settings): event=settings-activation activation_context=false
-ts=2026-11-13T22:13:42Z pid=373412 info(settings): event=settings-page page=appearance
-ts=2026-11-13T22:13:42Z pid=373412 info(settings): event=settings-activation activation_context=false
-ts=2026-11-13T22:13:42Z pid=373412 info(settings): event=settings-page page=network
-ts=2026-11-13T22:13:43Z pid=373412 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to get properties: Process org.freedesktop.systemd1 exited with status 1"
-ts=2026-11-13T22:13:43Z pid=373412 info(settings): event=settings-activation activation_context=false
-ts=2026-11-13T22:13:43Z pid=373412 info(settings): event=settings-page page=bluetooth
-ts=2026-11-13T22:13:44Z pid=373412 info(settings): event=settings-activation activation_context=false
-ts=2026-11-13T22:13:44Z pid=373412 info(settings): event=settings-page page=sound
-ts=2026-11-13T22:13:45Z pid=373412 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to get properties: Process org.freedesktop.systemd1 exited with status 1"
-ts=2026-11-13T22:13:45Z pid=373412 info(settings): event=settings-activation activation_context=false
-ts=2026-11-13T22:13:45Z pid=373412 info(settings): event=settings-page page=power
-ts=2026-11-13T22:13:46Z pid=373412 info(settings): event=settings-activation activation_context=false
-ts=2026-11-13T22:13:46Z pid=373412 info(settings): event=settings-page page=aqueous
-ts=2026-11-13T22:13:47Z pid=373412 warning(services): event=sched-profile-systemd step=unit result=failed
-ts=2026-11-13T22:13:48Z pid=373412 info(settings): event=settings-activation activation_context=false
-ts=2026-11-13T22:13:48Z pid=373412 info(settings): event=settings-page page=appearance
-ts=2026-11-13T22:13:49Z pid=373412 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to get properties: Process org.freedesktop.systemd1 exited with status 1"
-ts=2026-11-13T22:13:50Z pid=373412 info(settings): event=settings-activation activation_context=false
-ts=2026-11-13T22:13:50Z pid=373412 info(settings): event=settings-page page=overview
-ts=2026-11-13T22:13:51Z pid=373412 info(settings): event=settings-activation activation_context=false
-ts=2026-11-13T22:13:51Z pid=373412 info(settings): event=settings-page page=appearance
-ts=2026-11-13T22:13:52Z pid=373412 info(settings): event=settings-activation activation_context=false
-ts=2026-11-13T22:13:52Z pid=373412 info(settings): event=settings-page page=network
-ts=2026-11-13T22:13:52Z pid=373412 warning(services): event=sched-profile-systemd step=unit result=failed
-ts=2026-11-13T22:13:52Z pid=373412 info(settings): event=settings-activation activation_context=false
-ts=2026-11-13T22:13:52Z pid=373412 info(settings): event=settings-page page=bluetooth
-ts=2026-11-13T22:13:53Z pid=373412 info(settings): event=settings-activation activation_context=false
-ts=2026-11-13T22:13:53Z pid=373412 info(settings): event=settings-page page=sound
-ts=2026-11-13T22:13:54Z pid=373412 info(settings): event=settings-activation activation_context=false
-ts=2026-11-13T22:13:54Z pid=373412 info(settings): event=settings-page page=power
-ts=2026-11-13T22:13:54Z pid=373412 info(settings): event=settings-activation activation_context=false
-ts=2026-11-13T22:13:54Z pid=373412 info(settings): event=settings-page page=bar
-ts=2026-11-13T22:13:55Z pid=373412 info(settings): event=settings-activation activation_context=false
-ts=2026-11-13T22:13:55Z pid=373412 info(settings): event=settings-page page=notifications
-ts=2026-11-13T22:13:56Z pid=373412 info(settings): event=settings-activation activation_context=false
-ts=2026-11-13T22:13:56Z pid=373412 info(settings): event=settings-page page=system
-ts=2026-11-13T22:13:57Z pid=373412 warning(services): event=sched-profile-systemd step=unit result=failed
-ts=2026-11-13T22:13:57Z pid=373412 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to get properties: Process org.freedesktop.systemd1 exited with status 1"
-ts=2026-11-13T22:13:57Z pid=373412 info(settings): event=settings-activation activation_context=false
-ts=2026-11-13T22:13:57Z pid=373412 info(settings): event=settings-page page=aqueous
-ts=2026-11-13T22:13:57Z pid=373412 info(settings): event=settings-activation activation_context=false
-ts=2026-11-13T22:13:57Z pid=373412 info(settings): event=settings-page page=advanced
-ts=2026-11-13T22:13:59Z pid=373412 info(settings): event=settings-activation activation_context=false
-ts=2026-11-13T22:13:59Z pid=373412 info(settings): event=settings-page page=overview
-ts=2026-11-13T22:13:59Z pid=373412 info(settings): event=settings-activation activation_context=false
-ts=2026-11-13T22:13:59Z pid=373412 info(settings): event=settings-page page=appearance
-ts=2026-11-13T22:14:00Z pid=373412 info(settings): event=settings-activation activation_context=false
-ts=2026-11-13T22:14:00Z pid=373412 info(settings): event=settings-page page=network
-ts=2026-11-13T22:14:01Z pid=373412 info(settings): event=settings-activation activation_context=false
-ts=2026-11-13T22:14:01Z pid=373412 info(settings): event=settings-page page=bluetooth
-ts=2026-11-13T22:14:02Z pid=373412 warning(services): event=sched-profile-systemd step=unit result=failed
-ts=2026-11-13T22:14:02Z pid=373412 info(settings): event=settings-activation activation_context=false
-ts=2026-11-13T22:14:02Z pid=373412 info(settings): event=settings-page page=sound
-ts=2026-11-13T22:14:02Z pid=373412 info(settings): event=settings-activation activation_context=false
-ts=2026-11-13T22:14:02Z pid=373412 info(settings): event=settings-page page=power
-ts=2026-11-13T22:14:03Z pid=373412 info(settings): event=settings-activation activation_context=false
-ts=2026-11-13T22:14:03Z pid=373412 info(settings): event=settings-page page=bar
-ts=2026-11-13T22:14:04Z pid=373412 info(settings): event=settings-activation activation_context=false
-ts=2026-11-13T22:14:04Z pid=373412 info(settings): event=settings-page page=notifications
-ts=2026-11-13T22:14:05Z pid=373412 info(settings): event=settings-activation activation_context=false
-ts=2026-11-13T22:14:05Z pid=373412 info(settings): event=settings-page page=system
-ts=2026-11-13T22:14:05Z pid=373412 info(settings): event=settings-activation activation_context=false
-ts=2026-11-13T22:14:05Z pid=373412 info(settings): event=settings-page page=aqueous
-ts=2026-11-13T22:14:06Z pid=373412 info(settings): event=settings-activation activation_context=false
-ts=2026-11-13T22:14:06Z pid=373412 info(settings): event=settings-page page=advanced
-ts=2026-11-13T22:14:07Z pid=373412 warning(services): event=sched-profile-systemd step=unit result=failed
-ts=2026-11-13T22:14:07Z pid=373412 info(settings): event=settings-activation activation_context=false
-ts=2026-11-13T22:14:07Z pid=373412 info(settings): event=settings-page page=overview
-ts=2026-11-13T22:14:08Z pid=373412 info(settings): event=settings-activation activation_context=false
-ts=2026-11-13T22:14:08Z pid=373412 info(settings): event=settings-page page=appearance
-ts=2026-11-13T22:14:09Z pid=373412 info(settings): event=settings-activation activation_context=false
-ts=2026-11-13T22:14:09Z pid=373412 info(settings): event=settings-page page=network
-ts=2026-11-13T22:14:10Z pid=373412 info(settings): event=settings-activation activation_context=false
-ts=2026-11-13T22:14:10Z pid=373412 info(settings): event=settings-page page=bluetooth
-ts=2026-11-13T22:14:10Z pid=373412 info(settings): event=settings-activation activation_context=false
-ts=2026-11-13T22:14:10Z pid=373412 info(settings): event=settings-page page=sound
-ts=2026-11-13T22:14:11Z pid=373412 info(settings): event=settings-activation activation_context=false
-ts=2026-11-13T22:14:11Z pid=373412 info(settings): event=settings-page page=power
-ts=2026-11-13T22:14:12Z pid=373412 warning(services): event=sched-profile-systemd step=unit result=failed
-ts=2026-11-13T22:14:12Z pid=373412 info(settings): event=settings-activation activation_context=false
-ts=2026-11-13T22:14:12Z pid=373412 info(settings): event=settings-page page=bar
-ts=2026-11-13T22:14:12Z pid=373412 info(settings): event=settings-activation activation_context=false
-ts=2026-11-13T22:14:12Z pid=373412 info(settings): event=settings-page page=notifications
-ts=2026-11-13T22:14:13Z pid=373412 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to get properties: Process org.freedesktop.systemd1 exited with status 1"
-ts=2026-11-13T22:14:13Z pid=373412 info(settings): event=settings-activation activation_context=false
-ts=2026-11-13T22:14:13Z pid=373412 info(settings): event=settings-page page=system
-ts=2026-11-13T22:14:14Z pid=373412 info(settings): event=settings-activation activation_context=false
-ts=2026-11-13T22:14:14Z pid=373412 info(settings): event=settings-page page=aqueous
-ts=2026-11-13T22:14:15Z pid=373412 info(settings): event=settings-activation activation_context=false
-ts=2026-11-13T22:14:15Z pid=373412 info(settings): event=settings-page page=advanced
-ts=2026-11-13T22:14:16Z pid=373412 info(settings): event=settings-activation activation_context=false
-ts=2026-11-13T22:14:16Z pid=373412 info(settings): event=settings-page page=overview
-ts=2026-11-13T22:14:17Z pid=373412 info(settings): event=settings-activation activation_context=false
-ts=2026-11-13T22:14:17Z pid=373412 info(settings): event=settings-page page=appearance
-ts=2026-11-13T22:14:17Z pid=373412 warning(services): event=sched-profile-systemd step=unit result=failed
-ts=2026-11-13T22:14:17Z pid=373412 info(settings): event=settings-activation activation_context=false
-ts=2026-11-13T22:14:17Z pid=373412 info(settings): event=settings-page page=network
-ts=2026-11-13T22:14:18Z pid=373412 info(settings): event=settings-activation activation_context=false
-ts=2026-11-13T22:14:18Z pid=373412 info(settings): event=settings-page page=bluetooth
-ts=2026-11-13T22:14:19Z pid=373412 info(settings): event=settings-activation activation_context=false
-ts=2026-11-13T22:14:19Z pid=373412 info(settings): event=settings-page page=sound
-ts=2026-11-13T22:14:20Z pid=373412 info(settings): event=settings-activation activation_context=false
-ts=2026-11-13T22:14:20Z pid=373412 info(settings): event=settings-page page=power
-ts=2026-11-13T22:14:20Z pid=373412 info(settings): event=settings-activation activation_context=false
-ts=2026-11-13T22:14:20Z pid=373412 info(settings): event=settings-page page=bar
-ts=2026-11-13T22:14:21Z pid=373412 info(settings): event=settings-activation activation_context=false
-ts=2026-11-13T22:14:21Z pid=373412 info(settings): event=settings-page page=notifications
-ts=2026-11-13T22:14:22Z pid=373412 warning(services): event=sched-profile-systemd step=unit result=failed
-ts=2026-11-13T22:14:22Z pid=373412 info(settings): event=settings-activation activation_context=false
-ts=2026-11-13T22:14:22Z pid=373412 info(settings): event=settings-page page=system
-ts=2026-11-13T22:14:23Z pid=373412 info(settings): event=settings-activation activation_context=false
-ts=2026-11-13T22:14:23Z pid=373412 info(settings): event=settings-page page=aqueous
-ts=2026-11-13T22:14:23Z pid=373412 info(settings): event=settings-activation activation_context=false
-ts=2026-11-13T22:14:23Z pid=373412 info(settings): event=settings-page page=advanced
-ts=2026-11-13T22:14:24Z pid=373412 info(settings): event=settings-activation activation_context=false
-ts=2026-11-13T22:14:24Z pid=373412 info(settings): event=settings-page page=overview
-ts=2026-11-13T22:14:25Z pid=373412 info(settings): event=settings-activation activation_context=false
-ts=2026-11-13T22:14:25Z pid=373412 info(settings): event=settings-page page=appearance
-ts=2026-11-13T22:14:26Z pid=373412 info(settings): event=settings-activation activation_context=false
-ts=2026-11-13T22:14:26Z pid=373412 info(settings): event=settings-page page=network
-ts=2026-11-13T22:14:27Z pid=373412 warning(services): event=sched-profile-systemd step=unit result=failed
-ts=2026-11-13T22:14:27Z pid=373412 info(settings): event=settings-activation activation_context=false
-ts=2026-11-13T22:14:27Z pid=373412 info(settings): event=settings-page page=bluetooth
-ts=2026-11-13T22:14:28Z pid=373412 info(settings): event=settings-activation activation_context=false
-ts=2026-11-13T22:14:28Z pid=373412 info(settings): event=settings-page page=sound
-ts=2026-11-13T22:14:29Z pid=373412 info(settings): event=settings-activation activation_context=false
-ts=2026-11-13T22:14:29Z pid=373412 info(settings): event=settings-page page=power
-ts=2026-11-13T22:14:29Z pid=373412 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to get properties: Process org.freedesktop.systemd1 exited with status 1"
-ts=2026-11-13T22:14:29Z pid=373412 info(settings): event=settings-activation activation_context=false
-ts=2026-11-13T22:14:29Z pid=373412 info(settings): event=settings-page page=bar
-ts=2026-11-13T22:14:30Z pid=373412 info(settings): event=settings-activation activation_context=false
-ts=2026-11-13T22:14:30Z pid=373412 info(settings): event=settings-page page=notifications
-ts=2026-11-13T22:14:31Z pid=373412 info(settings): event=settings-activation activation_context=false
-ts=2026-11-13T22:14:31Z pid=373412 info(settings): event=settings-page page=system
-ts=2026-11-13T22:14:32Z pid=373412 warning(services): event=sched-profile-systemd step=unit result=failed
-ts=2026-11-13T22:14:32Z pid=373412 info(settings): event=settings-activation activation_context=false
-ts=2026-11-13T22:14:32Z pid=373412 info(settings): event=settings-page page=aqueous
-ts=2026-11-13T22:14:32Z pid=373412 info(settings): event=settings-activation activation_context=false
-ts=2026-11-13T22:14:32Z pid=373412 info(settings): event=settings-page page=advanced
-ts=2026-11-13T22:14:33Z pid=373412 info(settings): event=settings-activation activation_context=false
-ts=2026-11-13T22:14:33Z pid=373412 info(settings): event=settings-page page=bar
-ts=2026-11-13T22:14:34Z pid=373412 info(settings): event=settings-activation activation_context=false
-ts=2026-11-13T22:14:34Z pid=373412 info(settings): event=settings-page page=bar
+ts=2026-11-13T23:49:54Z pid=738940 info(settings): event=settings-launch activation_context=false
+ts=2026-11-13T23:49:54Z pid=738940 info(settings): event=settings-instance-ready session_hash=4b43f187a8c13694
+ts=2026-11-13T23:49:55Z pid=738940 info(services): event=sched-profile-systemd result=polling
+ts=2026-11-13T23:49:55Z pid=738940 info(settings): event=settings-page page=overview
+ts=2026-11-13T23:49:55Z pid=738940 info(settings): event=settings-page page=aqueous
+ts=2026-11-13T23:49:55Z pid=738940 info(settings): event=settings-window-created app_id=org.aqueous.Pearl.Settings
+ts=2026-11-13T23:49:55Z pid=738940 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to get properties: Process org.freedesktop.systemd1 exited with status 1"
+ts=2026-11-13T23:49:55Z pid=738940 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-13T23:49:55Z pid=738940 info(settings): event=settings-page page=aqueous
+ts=2026-11-13T23:49:55Z pid=738940 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T23:49:55Z pid=738940 info(settings): event=settings-page page=appearance
+ts=2026-11-13T23:49:56Z pid=738940 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T23:49:56Z pid=738940 info(settings): event=settings-page page=network
+ts=2026-11-13T23:49:56Z pid=738940 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to get properties: Process org.freedesktop.systemd1 exited with status 1"
+ts=2026-11-13T23:49:57Z pid=738940 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T23:49:57Z pid=738940 info(settings): event=settings-page page=bluetooth
+ts=2026-11-13T23:49:58Z pid=738940 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T23:49:58Z pid=738940 info(settings): event=settings-page page=sound
+ts=2026-11-13T23:49:58Z pid=738940 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to get properties: Process org.freedesktop.systemd1 exited with status 1"
+ts=2026-11-13T23:49:59Z pid=738940 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T23:49:59Z pid=738940 info(settings): event=settings-page page=power
+ts=2026-11-13T23:50:00Z pid=738940 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T23:50:00Z pid=738940 info(settings): event=settings-page page=aqueous
+ts=2026-11-13T23:50:00Z pid=738940 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-13T23:50:01Z pid=738940 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T23:50:01Z pid=738940 info(settings): event=settings-page page=appearance
+ts=2026-11-13T23:50:02Z pid=738940 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to get properties: Process org.freedesktop.systemd1 exited with status 1"
+ts=2026-11-13T23:50:03Z pid=738940 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T23:50:03Z pid=738940 info(settings): event=settings-page page=overview
+ts=2026-11-13T23:50:04Z pid=738940 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T23:50:04Z pid=738940 info(settings): event=settings-page page=appearance
+ts=2026-11-13T23:50:05Z pid=738940 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T23:50:05Z pid=738940 info(settings): event=settings-page page=network
+ts=2026-11-13T23:50:05Z pid=738940 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-13T23:50:06Z pid=738940 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T23:50:06Z pid=738940 info(settings): event=settings-page page=bluetooth
+ts=2026-11-13T23:50:07Z pid=738940 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T23:50:07Z pid=738940 info(settings): event=settings-page page=sound
+ts=2026-11-13T23:50:07Z pid=738940 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T23:50:07Z pid=738940 info(settings): event=settings-page page=power
+ts=2026-11-13T23:50:08Z pid=738940 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T23:50:08Z pid=738940 info(settings): event=settings-page page=bar
+ts=2026-11-13T23:50:09Z pid=738940 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T23:50:09Z pid=738940 info(settings): event=settings-page page=notifications
+ts=2026-11-13T23:50:09Z pid=738940 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T23:50:09Z pid=738940 info(settings): event=settings-page page=system
+ts=2026-11-13T23:50:10Z pid=738940 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T23:50:10Z pid=738940 info(settings): event=settings-page page=aqueous
+ts=2026-11-13T23:50:10Z pid=738940 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-13T23:50:10Z pid=738940 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to get properties: Process org.freedesktop.systemd1 exited with status 1"
+ts=2026-11-13T23:50:11Z pid=738940 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T23:50:11Z pid=738940 info(settings): event=settings-page page=advanced
+ts=2026-11-13T23:50:12Z pid=738940 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T23:50:12Z pid=738940 info(settings): event=settings-page page=overview
+ts=2026-11-13T23:50:13Z pid=738940 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T23:50:13Z pid=738940 info(settings): event=settings-page page=appearance
+ts=2026-11-13T23:50:14Z pid=738940 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T23:50:14Z pid=738940 info(settings): event=settings-page page=network
+ts=2026-11-13T23:50:14Z pid=738940 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T23:50:14Z pid=738940 info(settings): event=settings-page page=bluetooth
+ts=2026-11-13T23:50:15Z pid=738940 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T23:50:15Z pid=738940 info(settings): event=settings-page page=sound
+ts=2026-11-13T23:50:15Z pid=738940 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-13T23:50:16Z pid=738940 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T23:50:16Z pid=738940 info(settings): event=settings-page page=power
+ts=2026-11-13T23:50:17Z pid=738940 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T23:50:17Z pid=738940 info(settings): event=settings-page page=bar
+ts=2026-11-13T23:50:17Z pid=738940 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T23:50:17Z pid=738940 info(settings): event=settings-page page=notifications
+ts=2026-11-13T23:50:18Z pid=738940 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T23:50:18Z pid=738940 info(settings): event=settings-page page=system
+ts=2026-11-13T23:50:19Z pid=738940 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T23:50:19Z pid=738940 info(settings): event=settings-page page=aqueous
+ts=2026-11-13T23:50:20Z pid=738940 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T23:50:20Z pid=738940 info(settings): event=settings-page page=advanced
+ts=2026-11-13T23:50:20Z pid=738940 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-13T23:50:21Z pid=738940 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T23:50:21Z pid=738940 info(settings): event=settings-page page=overview
+ts=2026-11-13T23:50:21Z pid=738940 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T23:50:21Z pid=738940 info(settings): event=settings-page page=appearance
+ts=2026-11-13T23:50:22Z pid=738940 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T23:50:22Z pid=738940 info(settings): event=settings-page page=network
+ts=2026-11-13T23:50:23Z pid=738940 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T23:50:23Z pid=738940 info(settings): event=settings-page page=bluetooth
+ts=2026-11-13T23:50:24Z pid=738940 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T23:50:24Z pid=738940 info(settings): event=settings-page page=sound
+ts=2026-11-13T23:50:25Z pid=738940 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T23:50:25Z pid=738940 info(settings): event=settings-page page=power
+ts=2026-11-13T23:50:25Z pid=738940 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-13T23:50:25Z pid=738940 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T23:50:25Z pid=738940 info(settings): event=settings-page page=bar
+ts=2026-11-13T23:50:26Z pid=738940 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T23:50:26Z pid=738940 info(settings): event=settings-page page=notifications
+ts=2026-11-13T23:50:26Z pid=738940 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to get properties: Process org.freedesktop.systemd1 exited with status 1"
+ts=2026-11-13T23:50:27Z pid=738940 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T23:50:27Z pid=738940 info(settings): event=settings-page page=system
+ts=2026-11-13T23:50:27Z pid=738940 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T23:50:27Z pid=738940 info(settings): event=settings-page page=aqueous
+ts=2026-11-13T23:50:28Z pid=738940 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T23:50:28Z pid=738940 info(settings): event=settings-page page=advanced
+ts=2026-11-13T23:50:29Z pid=738940 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T23:50:29Z pid=738940 info(settings): event=settings-page page=overview
+ts=2026-11-13T23:50:30Z pid=738940 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T23:50:30Z pid=738940 info(settings): event=settings-page page=appearance
+ts=2026-11-13T23:50:30Z pid=738940 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-13T23:50:31Z pid=738940 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T23:50:31Z pid=738940 info(settings): event=settings-page page=network
+ts=2026-11-13T23:50:32Z pid=738940 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T23:50:32Z pid=738940 info(settings): event=settings-page page=bluetooth
+ts=2026-11-13T23:50:32Z pid=738940 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T23:50:32Z pid=738940 info(settings): event=settings-page page=sound
+ts=2026-11-13T23:50:33Z pid=738940 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T23:50:33Z pid=738940 info(settings): event=settings-page page=power
+ts=2026-11-13T23:50:34Z pid=738940 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T23:50:34Z pid=738940 info(settings): event=settings-page page=bar
+ts=2026-11-13T23:50:35Z pid=738940 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T23:50:35Z pid=738940 info(settings): event=settings-page page=notifications
+ts=2026-11-13T23:50:35Z pid=738940 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-13T23:50:35Z pid=738940 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T23:50:35Z pid=738940 info(settings): event=settings-page page=system
+ts=2026-11-13T23:50:36Z pid=738940 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T23:50:36Z pid=738940 info(settings): event=settings-page page=aqueous
+ts=2026-11-13T23:50:37Z pid=738940 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T23:50:37Z pid=738940 info(settings): event=settings-page page=advanced
+ts=2026-11-13T23:50:38Z pid=738940 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T23:50:38Z pid=738940 info(settings): event=settings-page page=overview
+ts=2026-11-13T23:50:39Z pid=738940 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T23:50:39Z pid=738940 info(settings): event=settings-page page=appearance
+ts=2026-11-13T23:50:40Z pid=738940 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T23:50:40Z pid=738940 info(settings): event=settings-page page=network
+ts=2026-11-13T23:50:40Z pid=738940 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-13T23:50:40Z pid=738940 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T23:50:40Z pid=738940 info(settings): event=settings-page page=bluetooth
+ts=2026-11-13T23:50:41Z pid=738940 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T23:50:41Z pid=738940 info(settings): event=settings-page page=sound
+ts=2026-11-13T23:50:42Z pid=738940 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T23:50:42Z pid=738940 info(settings): event=settings-page page=power
+ts=2026-11-13T23:50:42Z pid=738940 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to get properties: Process org.freedesktop.systemd1 exited with status 1"
+ts=2026-11-13T23:50:43Z pid=738940 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T23:50:43Z pid=738940 info(settings): event=settings-page page=bar
+ts=2026-11-13T23:50:44Z pid=738940 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T23:50:44Z pid=738940 info(settings): event=settings-page page=notifications
+ts=2026-11-13T23:50:44Z pid=738940 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T23:50:44Z pid=738940 info(settings): event=settings-page page=system
+ts=2026-11-13T23:50:45Z pid=738940 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T23:50:45Z pid=738940 info(settings): event=settings-page page=aqueous
+ts=2026-11-13T23:50:45Z pid=738940 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-13T23:50:46Z pid=738940 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T23:50:46Z pid=738940 info(settings): event=settings-page page=advanced
+ts=2026-11-13T23:50:47Z pid=738940 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T23:50:47Z pid=738940 info(settings): event=settings-page page=bar
+ts=2026-11-13T23:50:47Z pid=738940 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T23:50:47Z pid=738940 info(settings): event=settings-page page=bar

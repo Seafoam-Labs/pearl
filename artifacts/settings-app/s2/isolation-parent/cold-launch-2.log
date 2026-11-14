@@ -1,2 +1,15 @@
-ts=2026-11-13T22:30:57Z pid=509528 info(settings): event=settings-launch activation_context=false
-ts=2026-11-13T22:30:57Z pid=509528 info(settings): event=settings-forward activation_context=false
+ts=2026-11-13T23:58:23Z pid=806153 info(settings): event=settings-launch activation_context=false
+ts=2026-11-13T23:58:23Z pid=806153 info(settings): event=settings-instance-ready session_hash=fae81761a1113e91
+ts=2026-11-13T23:58:23Z pid=806153 info(services): event=sched-profile-systemd result=polling
+ts=2026-11-13T23:58:23Z pid=806153 info(settings): event=settings-page page=overview
+ts=2026-11-13T23:58:23Z pid=806153 info(settings): event=settings-page page=sound
+ts=2026-11-13T23:58:23Z pid=806153 info(settings): event=settings-window-created app_id=org.aqueous.Pearl.Settings
+ts=2026-11-13T23:58:23Z pid=806153 info(settings): event=settings-connection-unavailable error=Unavailable
+ts=2026-11-13T23:58:23Z pid=806153 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-13T23:58:23Z pid=806153 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T23:58:23Z pid=806153 info(settings): event=settings-page page=sound
+ts=2026-11-13T23:58:23Z pid=806153 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T23:58:23Z pid=806153 info(settings): event=settings-page page=sound
+ts=2026-11-13T23:58:23Z pid=806153 info(settings): event=settings-activation activation_context=false
+ts=2026-11-13T23:58:23Z pid=806153 info(settings): event=settings-page page=sound
+ts=2026-11-13T23:58:23Z pid=806153 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"

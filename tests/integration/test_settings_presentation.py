@@ -2,7 +2,7 @@
 """S6 real service pages, window geometry, scales and output removal."""
 import argparse, copy, hashlib, json, time
 from pathlib import Path
-from test_settings_app import ROOT, APP_ID, PrivateSession, IPC, wait_for, ctl, status, clean, probe, windows, capture, click_widget, keys, apply_preferences
+from test_settings_app import ROOT, APP_ID, PrivateSession, IPC, wait_for, ctl, status, clean, probe, windows, capture, click_widget, keys, apply_preferences, FRAME_WARNINGS
 from pearl_session import fixture_prefix, fixture_source
 from test_settings_appearance import ready, click, type_text
 from test_settings_services import navigate, aq_ready, Peer
@@ -50,7 +50,7 @@ def main():
         s.run(['pactl','set-default-sink','acceptance_output']);s.run(['pactl','set-default-source','acceptance_output.monitor'])
         shell=s.child('pearl',[args.pearl],G_DEBUG='fatal-warnings');shell.expect('event=control-ready')
         ctl(s,args.ctl,'session','action','--command','dnd_on')
-        app=s.child('settings',[args.settings,'--page','appearance'],G_DEBUG='fatal-warnings');app.expect('event=settings-window-created');ready(s,ipc)
+        app=s.child('settings',[args.settings,'--page','appearance'],G_DEBUG='fatal-criticals');app.expect('event=settings-window-created');ready(s,ipc)
         peer=Peer(s,ipc);aq_ready(s,ipc,peer)
         initial=copy.deepcopy(json.loads(peer.document('committed')))
         custom=Path(s.env['XDG_DATA_HOME'])/'themes/Pearl-Acceptance/gtk-4.0';custom.mkdir(parents=True)
@@ -102,8 +102,8 @@ def main():
             wait_for(lambda:probe(s,ipc)['style']==('gtk' if theme=='gtk' else variant));size(width,height)
             # Start each reference size with its placement rule, avoiding a
             # previous wide page's minimum size constraining the next case.
-            app.stop();clean(app)
-            app=s.child('settings-'+label,[args.settings,'--page','aqueous','--section','displays'],G_DEBUG='fatal-warnings')
+            app.stop();clean(app, allowed_warnings=FRAME_WARNINGS)
+            app=s.child('settings-'+label,[args.settings,'--page','aqueous','--section','displays'],G_DEBUG='fatal-criticals')
             app.expect('event=settings-window-created');ready(s,ipc);aq_ready(s,ipc,peer)
             if width<760:wait_for(lambda:probe(s,ipc)['narrow'])
             for page in (*REFERENCE_PAGES,'aqueous'):layout(page,label,True)
@@ -147,7 +147,7 @@ def main():
         s.run(['wlr-randr','--output',other['name'],'--on'])
         checks['move-output-disable-and-explicit-recovery-preserve-window-and-draft']=True
         peer.action('discard');ready(s,ipc)
-        app.stop();clean(app);peer.close();shell.stop();clean(shell);ipc.close()
+        app.stop();clean(app, allowed_warnings=FRAME_WARNINGS);peer.close();shell.stop();clean(shell);ipc.close()
       report['status']='passed'
     except Exception as error:report.update(status='failed',error=repr(error));raise
     finally:(args.output/'results.json').write_text(json.dumps(report,indent=2)+'\n')

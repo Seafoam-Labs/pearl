@@ -177,7 +177,8 @@ first output keeps its bar. The list is independent of `outputs[].bar`
 overrides, so a display override never re-enables a hidden bar.
 
 The Zig `pearl-settings --page appearance` application edits the same session-owned
-Pearl draft as the shell preference popup. Advanced exposes the full JSON,
+Pearl draft as the shell preference popup. A search box above the navigation
+filters settings destinations by name, description and keywords. Advanced exposes the full JSON,
 including output overrides, pinned applications and export templates. The same
 Advanced page also hosts the Aqueous configuration status, receipts, raw TOML
 files and draft request below the Pearl document; those edits belong to the

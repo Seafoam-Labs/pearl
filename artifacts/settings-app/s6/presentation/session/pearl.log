@@ -1,192 +1,192 @@
-ts=2026-11-13T22:12:51Z pid=362711 info(platform): event=background-effect-owner owner=gtk gtk=4.24.1
-ts=2026-11-13T22:12:51Z pid=362711 info(desktop): event=steam-library-sync games=0 created=0 removed=0
-ts=2026-11-13T22:12:51Z pid=362711 info(platform): event=blur-capability available=false
-ts=2026-11-13T22:12:51Z pid=362711 info(services): event=sched-profile-systemd result=polling
-ts=2026-11-13T22:12:51Z pid=362711 info(pearl): event=aqueous-availability state=connecting
-ts=2026-11-13T22:12:51Z pid=362711 info(pearl): event=ready mode=session
-ts=2026-11-13T22:12:51Z pid=362711 info(desktop): event=app-index-ready entries=75 truncated=false
-ts=2026-11-13T22:12:51Z pid=362711 debug(aqueous): event=ipc-request op=hello
-ts=2026-11-13T22:12:51Z pid=362711 debug(aqueous): event=ipc-request op=hello
-ts=2026-11-13T22:12:51Z pid=362711 debug(aqueous): event=ipc-response op=hello
-ts=2026-11-13T22:12:51Z pid=362711 debug(aqueous): event=ipc-response op=hello
-ts=2026-11-13T22:12:51Z pid=362711 info(pearl): event=aqueous-availability state=subscribing
-ts=2026-11-13T22:12:51Z pid=362711 debug(aqueous): event=ipc-request op=subscribe
-ts=2026-11-13T22:12:51Z pid=362711 warning(services): event=sched-profile-systemd step=unit result=failed
-ts=2026-11-13T22:12:51Z pid=362711 debug(aqueous): event=ipc-response op=subscribe
-ts=2026-11-13T22:12:51Z pid=362711 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:12:51Z pid=362711 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to get properties: Process org.freedesktop.systemd1 exited with status 1"
-ts=2026-11-13T22:12:51Z pid=362711 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:12:51Z pid=362711 info(pearl): event=aqueous-availability state=ready
-ts=2026-11-13T22:12:51Z pid=362711 info(services): event=autostart-launched file=/etc/xdg/autostart/xdg-user-dirs.desktop
-ts=2026-11-13T22:12:51Z pid=362711 info(services): event=autostart-run entries=4 launched=1
+ts=2026-11-13T23:49:04Z pid=728001 info(platform): event=background-effect-owner owner=gtk gtk=4.24.1
+ts=2026-11-13T23:49:04Z pid=728001 info(desktop): event=steam-library-sync games=0 created=0 removed=0
+ts=2026-11-13T23:49:04Z pid=728001 info(platform): event=blur-capability available=false
+ts=2026-11-13T23:49:04Z pid=728001 info(services): event=sched-profile-systemd result=polling
+ts=2026-11-13T23:49:04Z pid=728001 info(pearl): event=aqueous-availability state=connecting
+ts=2026-11-13T23:49:04Z pid=728001 info(pearl): event=ready mode=session
+ts=2026-11-13T23:49:04Z pid=728001 info(desktop): event=app-index-ready entries=75 truncated=false
+ts=2026-11-13T23:49:04Z pid=728001 debug(aqueous): event=ipc-request op=hello
+ts=2026-11-13T23:49:04Z pid=728001 debug(aqueous): event=ipc-request op=hello
+ts=2026-11-13T23:49:04Z pid=728001 debug(aqueous): event=ipc-response op=hello
+ts=2026-11-13T23:49:04Z pid=728001 debug(aqueous): event=ipc-response op=hello
+ts=2026-11-13T23:49:04Z pid=728001 info(pearl): event=aqueous-availability state=subscribing
+ts=2026-11-13T23:49:04Z pid=728001 debug(aqueous): event=ipc-request op=subscribe
+ts=2026-11-13T23:49:04Z pid=728001 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-13T23:49:04Z pid=728001 debug(aqueous): event=ipc-response op=subscribe
+ts=2026-11-13T23:49:04Z pid=728001 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:49:04Z pid=728001 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:49:04Z pid=728001 info(pearl): event=aqueous-availability state=ready
+ts=2026-11-13T23:49:04Z pid=728001 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to get properties: Process org.freedesktop.systemd1 exited with status 1"
+ts=2026-11-13T23:49:04Z pid=728001 info(services): event=autostart-launched file=/etc/xdg/autostart/xdg-user-dirs.desktop
+ts=2026-11-13T23:49:04Z pid=728001 info(services): event=autostart-run entries=4 launched=1
 No default user directories
-ts=2026-11-13T22:12:51Z pid=362711 info(ui): event=output-mapped id=1 connector=HEADLESS-2 scale=1 renderer=GskCairoRenderer gpu_agreement=unverified session_hash=ba73b205496aace2
-ts=2026-11-13T22:12:51Z pid=362711 info(ui): event=output-mapped id=2 connector=HEADLESS-1 scale=1 renderer=GskCairoRenderer gpu_agreement=unverified session_hash=ba73b205496aace2
-ts=2026-11-13T22:12:51Z pid=362711 info(pearl): event=settings-backend-ready session_hash=ba73b205496aace2
-ts=2026-11-13T22:12:51Z pid=362711 info(pearl): event=control-ready session_hash=ba73b205496aace2
-ts=2026-11-13T22:12:51Z pid=362711 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:12:51Z pid=362711 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:12:51Z pid=362711 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:12:51Z pid=362711 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:12:51Z pid=362711 info(desktop): event=app-index-ready entries=75 truncated=false
-ts=2026-11-13T22:12:51Z pid=362711 info(config): event=preferences-applied revision=1 mode=static cache=false
-ts=2026-11-13T22:12:51Z pid=362711 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:12:51Z pid=362711 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:12:51Z pid=362711 info(config): event=wallpaper-applications-applied generation=5 elapsed_us=18379 success=true
-ts=2026-11-13T22:12:51Z pid=362711 info(desktop): event=app-index-ready entries=75 truncated=false
-ts=2026-11-13T22:12:53Z pid=362711 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to get properties: Process org.freedesktop.systemd1 exited with status 1"
-ts=2026-11-13T22:12:55Z pid=362711 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to get properties: Process org.freedesktop.systemd1 exited with status 1"
-ts=2026-11-13T22:12:57Z pid=362711 warning(services): event=sched-profile-systemd step=unit result=failed
-ts=2026-11-13T22:12:59Z pid=362711 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to get properties: Process org.freedesktop.systemd1 exited with status 1"
-ts=2026-11-13T22:13:00Z pid=362711 info(config): event=preferences-applied revision=2 mode=static cache=false
-ts=2026-11-13T22:13:00Z pid=362711 info(config): event=wallpaper-applications-applied generation=6 elapsed_us=86260 success=true
-ts=2026-11-13T22:13:00Z pid=362711 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:13:00Z pid=362711 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:13:01Z pid=362711 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:13:01Z pid=362711 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:13:02Z pid=362711 warning(services): event=sched-profile-systemd step=unit result=failed
-ts=2026-11-13T22:13:06Z pid=362711 info(config): event=preferences-applied revision=3 mode=static cache=false
-ts=2026-11-13T22:13:06Z pid=362711 info(config): event=wallpaper-applications-applied generation=8 elapsed_us=215392 success=true
-ts=2026-11-13T22:13:07Z pid=362711 warning(services): event=sched-profile-systemd step=unit result=failed
-ts=2026-11-13T22:13:07Z pid=362711 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to get properties: Process org.freedesktop.systemd1 exited with status 1"
-ts=2026-11-13T22:13:07Z pid=362711 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:13:07Z pid=362711 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:13:07Z pid=362711 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:13:07Z pid=362711 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:13:12Z pid=362711 warning(services): event=sched-profile-systemd step=unit result=failed
-ts=2026-11-13T22:13:13Z pid=362711 info(config): event=preferences-applied revision=4 mode=gtk cache=false
-ts=2026-11-13T22:13:13Z pid=362711 info(config): event=wallpaper-applications-applied generation=10 elapsed_us=60698 success=false
-ts=2026-11-13T22:13:13Z pid=362711 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:13:13Z pid=362711 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:13:14Z pid=362711 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:13:14Z pid=362711 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:13:17Z pid=362711 warning(services): event=sched-profile-systemd step=unit result=failed
-ts=2026-11-13T22:13:19Z pid=362711 info(config): event=preferences-applied revision=5 mode=static cache=false
-ts=2026-11-13T22:13:19Z pid=362711 info(config): event=wallpaper-applications-applied generation=12 elapsed_us=163480 success=true
-ts=2026-11-13T22:13:19Z pid=362711 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:13:19Z pid=362711 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:13:20Z pid=362711 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:13:20Z pid=362711 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:13:20Z pid=362711 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:13:20Z pid=362711 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:13:22Z pid=362711 warning(services): event=sched-profile-systemd step=unit result=failed
-ts=2026-11-13T22:13:23Z pid=362711 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to get properties: Process org.freedesktop.systemd1 exited with status 1"
-ts=2026-11-13T22:13:26Z pid=362711 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:13:26Z pid=362711 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:13:26Z pid=362711 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:13:26Z pid=362711 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:13:26Z pid=362711 info(config): event=preferences-applied revision=6 mode=static cache=false
-ts=2026-11-13T22:13:26Z pid=362711 info(config): event=wallpaper-applications-applied generation=14 elapsed_us=170845 success=true
-ts=2026-11-13T22:13:27Z pid=362711 warning(services): event=sched-profile-systemd step=unit result=failed
-ts=2026-11-13T22:13:27Z pid=362711 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:13:27Z pid=362711 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:13:27Z pid=362711 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:13:27Z pid=362711 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:13:32Z pid=362711 warning(services): event=sched-profile-systemd step=unit result=failed
-ts=2026-11-13T22:13:33Z pid=362711 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:13:33Z pid=362711 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:13:33Z pid=362711 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:13:33Z pid=362711 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:13:33Z pid=362711 info(config): event=preferences-applied revision=7 mode=gtk cache=false
-ts=2026-11-13T22:13:33Z pid=362711 info(config): event=wallpaper-applications-applied generation=16 elapsed_us=68154 success=false
-ts=2026-11-13T22:13:34Z pid=362711 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:13:34Z pid=362711 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:13:34Z pid=362711 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:13:34Z pid=362711 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:13:37Z pid=362711 warning(services): event=sched-profile-systemd step=unit result=failed
-ts=2026-11-13T22:13:39Z pid=362711 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to get properties: Process org.freedesktop.systemd1 exited with status 1"
-ts=2026-11-13T22:13:40Z pid=362711 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:13:40Z pid=362711 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:13:40Z pid=362711 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:13:40Z pid=362711 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:13:40Z pid=362711 info(config): event=preferences-applied revision=8 mode=static cache=false
-ts=2026-11-13T22:13:40Z pid=362711 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:13:40Z pid=362711 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:13:40Z pid=362711 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:13:40Z pid=362711 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:13:40Z pid=362711 info(config): event=wallpaper-applications-applied generation=18 elapsed_us=171508 success=true
-ts=2026-11-13T22:13:41Z pid=362711 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:13:41Z pid=362711 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:13:41Z pid=362711 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:13:41Z pid=362711 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:13:41Z pid=362711 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:13:41Z pid=362711 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:13:42Z pid=362711 warning(services): event=sched-profile-systemd step=unit result=failed
-ts=2026-11-13T22:13:47Z pid=362711 warning(services): event=sched-profile-systemd step=unit result=failed
-ts=2026-11-13T22:13:47Z pid=362711 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:13:47Z pid=362711 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:13:47Z pid=362711 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:13:47Z pid=362711 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:13:47Z pid=362711 info(config): event=preferences-applied revision=9 mode=static cache=false
-ts=2026-11-13T22:13:47Z pid=362711 info(config): event=wallpaper-applications-applied generation=20 elapsed_us=80959 success=true
-ts=2026-11-13T22:13:47Z pid=362711 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:13:47Z pid=362711 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:13:49Z pid=362711 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:13:49Z pid=362711 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:13:49Z pid=362711 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:13:49Z pid=362711 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:13:49Z pid=362711 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:13:49Z pid=362711 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:13:50Z pid=362711 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:13:50Z pid=362711 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:13:50Z pid=362711 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:13:50Z pid=362711 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:13:52Z pid=362711 warning(services): event=sched-profile-systemd step=unit result=failed
-ts=2026-11-13T22:13:55Z pid=362711 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to get properties: Process org.freedesktop.systemd1 exited with status 1"
-ts=2026-11-13T22:13:57Z pid=362711 warning(services): event=sched-profile-systemd step=unit result=failed
-ts=2026-11-13T22:13:58Z pid=362711 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:13:58Z pid=362711 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:13:58Z pid=362711 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:13:58Z pid=362711 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:14:02Z pid=362711 warning(services): event=sched-profile-systemd step=unit result=failed
-ts=2026-11-13T22:14:07Z pid=362711 warning(services): event=sched-profile-systemd step=unit result=failed
-ts=2026-11-13T22:14:07Z pid=362711 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:14:07Z pid=362711 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:14:07Z pid=362711 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:14:07Z pid=362711 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:14:11Z pid=362711 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to get properties: Process org.freedesktop.systemd1 exited with status 1"
-ts=2026-11-13T22:14:12Z pid=362711 warning(services): event=sched-profile-systemd step=unit result=failed
-ts=2026-11-13T22:14:15Z pid=362711 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:14:15Z pid=362711 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:14:15Z pid=362711 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:14:15Z pid=362711 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:14:15Z pid=362711 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:14:15Z pid=362711 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:14:17Z pid=362711 warning(services): event=sched-profile-systemd step=unit result=failed
-ts=2026-11-13T22:14:22Z pid=362711 warning(services): event=sched-profile-systemd step=unit result=failed
-ts=2026-11-13T22:14:24Z pid=362711 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:14:24Z pid=362711 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:14:24Z pid=362711 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:14:24Z pid=362711 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:14:27Z pid=362711 warning(services): event=sched-profile-systemd step=unit result=failed
-ts=2026-11-13T22:14:27Z pid=362711 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to get properties: Process org.freedesktop.systemd1 exited with status 1"
-ts=2026-11-13T22:14:32Z pid=362711 warning(services): event=sched-profile-systemd step=unit result=failed
-ts=2026-11-13T22:14:32Z pid=362711 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:14:32Z pid=362711 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:14:33Z pid=362711 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:14:33Z pid=362711 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:14:33Z pid=362711 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:14:33Z pid=362711 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:14:33Z pid=362711 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:14:33Z pid=362711 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:14:33Z pid=362711 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:14:33Z pid=362711 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:14:33Z pid=362711 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:14:33Z pid=362711 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:14:33Z pid=362711 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:14:33Z pid=362711 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:14:33Z pid=362711 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:14:33Z pid=362711 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:14:34Z pid=362711 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:14:34Z pid=362711 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:14:34Z pid=362711 info(ui): event=output-mapped id=2 connector=HEADLESS-1 scale=1 renderer=GskCairoRenderer gpu_agreement=unverified session_hash=ba73b205496aace2
-ts=2026-11-13T22:14:34Z pid=362711 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:14:34Z pid=362711 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:14:34Z pid=362711 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:14:34Z pid=362711 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:14:35Z pid=362711 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:14:35Z pid=362711 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:14:35Z pid=362711 info(pearl): event=stopping reason=signal pending=false
-ts=2026-11-13T22:14:35Z pid=362711 info(pearl): event=aqueous-availability state=stopped
-ts=2026-11-13T22:14:35Z pid=362711 info(pearl): event=cleanup pending=false watched_objects=0
-ts=2026-11-13T22:14:35Z pid=362711 info(pearl): event=stopped
+ts=2026-11-13T23:49:04Z pid=728001 info(ui): event=output-mapped id=1 connector=HEADLESS-2 scale=1 renderer=GskCairoRenderer gpu_agreement=unverified session_hash=4b43f187a8c13694
+ts=2026-11-13T23:49:04Z pid=728001 info(ui): event=output-mapped id=2 connector=HEADLESS-1 scale=1 renderer=GskCairoRenderer gpu_agreement=unverified session_hash=4b43f187a8c13694
+ts=2026-11-13T23:49:04Z pid=728001 info(pearl): event=settings-backend-ready session_hash=4b43f187a8c13694
+ts=2026-11-13T23:49:04Z pid=728001 info(pearl): event=control-ready session_hash=4b43f187a8c13694
+ts=2026-11-13T23:49:04Z pid=728001 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:49:04Z pid=728001 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:49:04Z pid=728001 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:49:04Z pid=728001 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:49:04Z pid=728001 info(desktop): event=app-index-ready entries=75 truncated=false
+ts=2026-11-13T23:49:05Z pid=728001 info(config): event=preferences-applied revision=1 mode=static cache=false
+ts=2026-11-13T23:49:05Z pid=728001 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:49:05Z pid=728001 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:49:05Z pid=728001 info(config): event=wallpaper-applications-applied generation=5 elapsed_us=18617 success=true
+ts=2026-11-13T23:49:05Z pid=728001 info(desktop): event=app-index-ready entries=75 truncated=false
+ts=2026-11-13T23:49:05Z pid=728001 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to get properties: Process org.freedesktop.systemd1 exited with status 1"
+ts=2026-11-13T23:49:07Z pid=728001 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to get properties: Process org.freedesktop.systemd1 exited with status 1"
+ts=2026-11-13T23:49:09Z pid=728001 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-13T23:49:11Z pid=728001 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to get properties: Process org.freedesktop.systemd1 exited with status 1"
+ts=2026-11-13T23:49:13Z pid=728001 info(config): event=preferences-applied revision=2 mode=static cache=false
+ts=2026-11-13T23:49:13Z pid=728001 info(config): event=wallpaper-applications-applied generation=6 elapsed_us=81848 success=true
+ts=2026-11-13T23:49:14Z pid=728001 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:49:14Z pid=728001 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:49:14Z pid=728001 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:49:14Z pid=728001 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:49:14Z pid=728001 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-13T23:49:19Z pid=728001 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-13T23:49:19Z pid=728001 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to get properties: Process org.freedesktop.systemd1 exited with status 1"
+ts=2026-11-13T23:49:20Z pid=728001 info(config): event=preferences-applied revision=3 mode=static cache=false
+ts=2026-11-13T23:49:20Z pid=728001 info(config): event=wallpaper-applications-applied generation=8 elapsed_us=217032 success=true
+ts=2026-11-13T23:49:20Z pid=728001 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:49:20Z pid=728001 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:49:21Z pid=728001 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:49:21Z pid=728001 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:49:24Z pid=728001 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-13T23:49:26Z pid=728001 info(config): event=preferences-applied revision=4 mode=gtk cache=false
+ts=2026-11-13T23:49:26Z pid=728001 info(config): event=wallpaper-applications-applied generation=10 elapsed_us=60945 success=false
+ts=2026-11-13T23:49:27Z pid=728001 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:49:27Z pid=728001 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:49:27Z pid=728001 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:49:27Z pid=728001 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:49:29Z pid=728001 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-13T23:49:33Z pid=728001 info(config): event=preferences-applied revision=5 mode=static cache=false
+ts=2026-11-13T23:49:33Z pid=728001 info(config): event=wallpaper-applications-applied generation=12 elapsed_us=162195 success=true
+ts=2026-11-13T23:49:33Z pid=728001 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:49:33Z pid=728001 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:49:33Z pid=728001 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:49:33Z pid=728001 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:49:34Z pid=728001 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:49:34Z pid=728001 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:49:34Z pid=728001 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-13T23:49:35Z pid=728001 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to get properties: Process org.freedesktop.systemd1 exited with status 1"
+ts=2026-11-13T23:49:39Z pid=728001 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-13T23:49:39Z pid=728001 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:49:39Z pid=728001 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:49:40Z pid=728001 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:49:40Z pid=728001 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:49:40Z pid=728001 info(config): event=preferences-applied revision=6 mode=static cache=false
+ts=2026-11-13T23:49:40Z pid=728001 info(config): event=wallpaper-applications-applied generation=14 elapsed_us=173737 success=true
+ts=2026-11-13T23:49:40Z pid=728001 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:49:40Z pid=728001 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:49:41Z pid=728001 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:49:41Z pid=728001 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:49:44Z pid=728001 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-13T23:49:46Z pid=728001 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:49:46Z pid=728001 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:49:47Z pid=728001 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:49:47Z pid=728001 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:49:47Z pid=728001 info(config): event=preferences-applied revision=7 mode=gtk cache=false
+ts=2026-11-13T23:49:47Z pid=728001 info(config): event=wallpaper-applications-applied generation=16 elapsed_us=72952 success=false
+ts=2026-11-13T23:49:47Z pid=728001 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:49:47Z pid=728001 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:49:48Z pid=728001 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:49:48Z pid=728001 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:49:49Z pid=728001 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-13T23:49:51Z pid=728001 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to get properties: Process org.freedesktop.systemd1 exited with status 1"
+ts=2026-11-13T23:49:53Z pid=728001 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:49:53Z pid=728001 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:49:54Z pid=728001 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:49:54Z pid=728001 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:49:54Z pid=728001 info(config): event=preferences-applied revision=8 mode=static cache=false
+ts=2026-11-13T23:49:54Z pid=728001 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:49:54Z pid=728001 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:49:54Z pid=728001 info(config): event=wallpaper-applications-applied generation=18 elapsed_us=170390 success=true
+ts=2026-11-13T23:49:54Z pid=728001 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:49:54Z pid=728001 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:49:54Z pid=728001 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-13T23:49:54Z pid=728001 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:49:54Z pid=728001 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:49:55Z pid=728001 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:49:55Z pid=728001 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:49:55Z pid=728001 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:49:55Z pid=728001 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:49:59Z pid=728001 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-13T23:50:01Z pid=728001 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:50:01Z pid=728001 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:50:01Z pid=728001 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:50:01Z pid=728001 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:50:01Z pid=728001 info(config): event=preferences-applied revision=9 mode=static cache=false
+ts=2026-11-13T23:50:01Z pid=728001 info(config): event=wallpaper-applications-applied generation=20 elapsed_us=81926 success=true
+ts=2026-11-13T23:50:01Z pid=728001 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:50:01Z pid=728001 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:50:03Z pid=728001 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:50:03Z pid=728001 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:50:03Z pid=728001 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:50:03Z pid=728001 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:50:03Z pid=728001 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:50:03Z pid=728001 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:50:03Z pid=728001 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:50:03Z pid=728001 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:50:03Z pid=728001 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:50:03Z pid=728001 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:50:04Z pid=728001 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-13T23:50:07Z pid=728001 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to get properties: Process org.freedesktop.systemd1 exited with status 1"
+ts=2026-11-13T23:50:09Z pid=728001 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-13T23:50:12Z pid=728001 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:50:12Z pid=728001 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:50:12Z pid=728001 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:50:12Z pid=728001 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:50:14Z pid=728001 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-13T23:50:19Z pid=728001 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-13T23:50:20Z pid=728001 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:50:20Z pid=728001 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:50:20Z pid=728001 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:50:20Z pid=728001 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:50:23Z pid=728001 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to get properties: Process org.freedesktop.systemd1 exited with status 1"
+ts=2026-11-13T23:50:24Z pid=728001 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-13T23:50:29Z pid=728001 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:50:29Z pid=728001 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:50:29Z pid=728001 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:50:29Z pid=728001 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:50:29Z pid=728001 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:50:29Z pid=728001 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:50:29Z pid=728001 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-13T23:50:34Z pid=728001 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-13T23:50:38Z pid=728001 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:50:38Z pid=728001 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:50:38Z pid=728001 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:50:38Z pid=728001 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:50:39Z pid=728001 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-13T23:50:39Z pid=728001 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to get properties: Process org.freedesktop.systemd1 exited with status 1"
+ts=2026-11-13T23:50:44Z pid=728001 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-13T23:50:46Z pid=728001 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:50:46Z pid=728001 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:50:47Z pid=728001 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:50:47Z pid=728001 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:50:47Z pid=728001 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:50:47Z pid=728001 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:50:47Z pid=728001 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:50:47Z pid=728001 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:50:47Z pid=728001 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:50:47Z pid=728001 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:50:47Z pid=728001 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:50:47Z pid=728001 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:50:47Z pid=728001 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:50:47Z pid=728001 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:50:47Z pid=728001 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:50:47Z pid=728001 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:50:48Z pid=728001 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:50:48Z pid=728001 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:50:48Z pid=728001 info(ui): event=output-mapped id=2 connector=HEADLESS-1 scale=1 renderer=GskCairoRenderer gpu_agreement=unverified session_hash=4b43f187a8c13694
+ts=2026-11-13T23:50:48Z pid=728001 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:50:48Z pid=728001 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:50:48Z pid=728001 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:50:48Z pid=728001 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:50:48Z pid=728001 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:50:48Z pid=728001 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:50:48Z pid=728001 info(pearl): event=stopping reason=signal pending=false
+ts=2026-11-13T23:50:48Z pid=728001 info(pearl): event=aqueous-availability state=stopped
+ts=2026-11-13T23:50:48Z pid=728001 info(pearl): event=cleanup pending=false watched_objects=0
+ts=2026-11-13T23:50:48Z pid=728001 info(pearl): event=stopped

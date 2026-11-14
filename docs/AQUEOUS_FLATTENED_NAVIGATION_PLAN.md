@@ -29,6 +29,24 @@ SYSTEM       System · Startup applications · Advanced · Plugins
   **Sections** popover; choosing an entry closes the popover.
 - Overview tiles mirror the same entries.
 
+## Search
+
+A search box sits above the GENERAL group in both the sidebar and the Sections
+popover, pinned while the entry list scrolls beneath it. Typing filters entries
+case-insensitively against their translated title and description plus stable
+English keywords (`settings_navigation.zig`); group headers with no match are
+hidden and an empty result shows "No matching settings". Both navigation copies
+share one query. Down moves from the box to the first visible result, Enter
+activates it, and Escape clears a non-empty query before it dismisses the
+popover. The query is bounded to 128 bytes and never changes the selected page
+until a result is activated.
+
+Field-level search (returning individual settings, e.g. every `launcher`
+option, not just destinations) is planned separately in
+[SETTINGS_FIELD_SEARCH_PLAN.md](SETTINGS_FIELD_SEARCH_PLAN.md). That plan
+explicitly accepts Pearl registry drift for its initial version and defers the
+structural anti-drift fix to a future update.
+
 ## Routing compatibility
 
 Internal routing keeps the stable `aqueous` page and section IDs

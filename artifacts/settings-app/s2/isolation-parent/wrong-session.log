@@ -1,8 +1,8 @@
-ts=2026-11-13T22:30:58Z pid=509898 info(settings): event=settings-launch activation_context=false
-ts=2026-11-13T22:30:58Z pid=509898 info(services): event=sched-profile-systemd result=polling
-ts=2026-11-13T22:30:58Z pid=509898 info(settings): event=settings-page page=overview
-ts=2026-11-13T22:30:58Z pid=509898 info(settings): event=settings-page page=bluetooth
-ts=2026-11-13T22:30:58Z pid=509898 info(settings): event=settings-window-created app_id=org.aqueous.Pearl.Settings
-ts=2026-11-13T22:30:58Z pid=509898 info(settings): event=settings-connection-unavailable error=DisplayMismatch
-ts=2026-11-13T22:30:58Z pid=509898 warning(services): event=sched-profile-systemd step=unit result=failed
-ts=2026-11-13T22:30:58Z pid=509898 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"
+ts=2026-11-13T23:58:23Z pid=806601 info(settings): event=settings-launch activation_context=false
+ts=2026-11-13T23:58:23Z pid=806601 info(services): event=sched-profile-systemd result=polling
+ts=2026-11-13T23:58:23Z pid=806601 info(settings): event=settings-page page=overview
+ts=2026-11-13T23:58:23Z pid=806601 info(settings): event=settings-page page=bluetooth
+ts=2026-11-13T23:58:23Z pid=806601 info(settings): event=settings-window-created app_id=org.aqueous.Pearl.Settings
+ts=2026-11-13T23:58:23Z pid=806601 info(settings): event=settings-connection-unavailable error=DisplayMismatch
+ts=2026-11-13T23:58:23Z pid=806601 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-13T23:58:23Z pid=806601 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"

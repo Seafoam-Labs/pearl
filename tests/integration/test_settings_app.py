@@ -12,7 +12,7 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / 'scripts'))
 from pearl_session import PrivateSession, wait_for
 from pearl_session import fixture_prefix, fixture_source
-from wayland_test_input import configure_output, pointer_move, pointer_click, pointer_scroll, press_keys
+from wayland_test_input import configure_output, pointer_move, pointer_click, pointer_scroll, press_keys, type_text
 from test_surfaces import IPC, ctl, status, capture, clean
 APP_ID = 'org.aqueous.Pearl.Settings'
 FRAME_WARNINGS = ('gdk_frame_timings_discarded() called on already presented frame',
@@ -86,6 +86,8 @@ def choose_navigation(s, ipc, page, section=None, pointer=True):
         return probe(s, ipc)
     if not v['narrow']:
         click_widget(s, ipc, v['header_bounds'])
+    elif probe(s, ipc).get('search_focused'):
+        keys(s, 'Down')
     for _ in range(24):
         if any(link['focused'] for link in probe(s, ipc)['links']):
             break
@@ -190,6 +192,31 @@ def main():
             assert s.run([args.production, '--page', 'aqueous'], check=False).returncode == 0
             wait_for(lambda: probe(s, ipc)['section'] == 'appearance')
             checks['aqueous-flattened-navigation-merged-advanced-and-external-default'] = True
+            # The search box filters navigation by title, description and keywords.
+            # Let the external launch's deferred heading focus settle first.
+            wait_for(lambda: probe(s, ipc)['focus'] == 'heading')
+            v = probe(s, ipc)
+            click_widget(s, ipc, v['header_bounds'])
+            click_widget(s, ipc, v['search_bounds'])
+            type_text(s, 'shortcut')
+            wait_for(lambda: probe(s, ipc)['nav_search'] == 'shortcut')
+            v = probe(s, ipc)
+            assert [(l['page'], l['section']) for l in v['links'] if l['visible']] == [('aqueous', 'keybinds')], v['links']
+            capture(s, 'search-filtered-wide', output['name'])
+            keys(s, 'Down')
+            assert next(l for l in probe(s, ipc)['links'] if l['focused'])['section'] == 'keybinds'
+            keys(s, 'Return')
+            wait_for(lambda: probe(s, ipc)['section'] == 'keybinds')
+            wait_for(lambda: probe(s, ipc)['focus'] == 'heading')
+            click_widget(s, ipc, probe(s, ipc)['search_bounds'])
+            type_text(s, 'no-such-setting', select_all=True)
+            wait_for(lambda: probe(s, ipc)['nav_search'] == 'no-such-setting')
+            assert not any(l['visible'] for l in probe(s, ipc)['links'])
+            press_keys(s, 'a', modifiers=('ctrl',))
+            press_keys(s, 'Delete')
+            wait_for(lambda: probe(s, ipc)['nav_search'] == '')
+            assert all(l['visible'] for l in probe(s, ipc)['links'])
+            checks['navigation-search-filters-activates-and-clears'] = True
             # Parallel launches all complete through one owner.
             launches = [s.child('concurrent-' + str(i), [args.production, '--page', 'sound']) for i in range(6)]
             for child in launches: clean(child)
@@ -297,6 +324,22 @@ def main():
             keys(s, 'Escape'); wait_for(lambda: not probe(s, ipc)['sections_open'])
             assert app.proc.poll() is None
             checks['narrow-navigation-fixed-footer-and-escape'] = True
+            click_widget(s, ipc, probe(s, ipc)['sections_bounds'])
+            wait_for(lambda: probe(s, ipc)['sections_open'])
+            v = probe(s, ipc)
+            click_widget(s, ipc, v['search_bounds'])
+            type_text(s, 'monitor')
+            wait_for(lambda: probe(s, ipc)['nav_search'] == 'monitor')
+            v = probe(s, ipc)
+            assert [(l['page'], l['section']) for l in v['links'] if l['visible']] == [('aqueous', 'displays')], v['links']
+            capture(s, 'search-filtered-narrow', output['name'])
+            # Escape clears the query first; a second Escape dismisses the popover.
+            keys(s, 'Escape')
+            wait_for(lambda: probe(s, ipc)['nav_search'] == '')
+            assert probe(s, ipc)['sections_open']
+            assert all(l['visible'] for l in probe(s, ipc)['links'])
+            keys(s, 'Escape'); wait_for(lambda: not probe(s, ipc)['sections_open'])
+            checks['narrow-search-filters-and-escape-clears-before-dismiss'] = True
             v = choose_navigation(s, ipc, 'aqueous', 'appearance', pointer=False)
             assert not v['sections_open'] and v['section'] == 'appearance', v
             capture(s, 'aqueous-flattened-narrow', output['name'])

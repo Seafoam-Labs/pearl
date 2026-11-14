@@ -80,29 +80,54 @@ pub fn groupTitle(group: Group) [:0]const u8 {
     };
 }
 
-pub const Entry = struct { target: Target, group: Group };
+pub const Entry = struct {
+    target: Target,
+    group: Group,
+    /// Lowercase search aliases. Titles and descriptions are matched in their
+    /// translated form; these stay stable English keywords.
+    keywords: []const u8 = "",
+};
 
 pub const entries = [_]Entry{
-    .{ .target = .{ .page = .overview }, .group = .general },
-    .{ .target = .{ .page = .network }, .group = .connections },
-    .{ .target = .{ .page = .bluetooth }, .group = .connections },
-    .{ .target = .{ .page = .sound }, .group = .devices },
-    .{ .target = .{ .page = .power }, .group = .devices },
-    .{ .target = .{ .page = .aqueous, .section = "displays" }, .group = .devices },
-    .{ .target = .{ .page = .aqueous, .section = "input" }, .group = .devices },
-    .{ .target = .{ .page = .aqueous, .section = "keybinds" }, .group = .devices },
-    .{ .target = .{ .page = .appearance }, .group = .desktop },
-    .{ .target = .{ .page = .aqueous, .section = "appearance" }, .group = .desktop },
-    .{ .target = .{ .page = .aqueous, .section = "layouts" }, .group = .desktop },
-    .{ .target = .{ .page = .aqueous, .section = "rules" }, .group = .desktop },
-    .{ .target = .{ .page = .assistant }, .group = .desktop },
-    .{ .target = .{ .page = .bar }, .group = .desktop },
-    .{ .target = .{ .page = .notifications }, .group = .desktop },
-    .{ .target = .{ .page = .system }, .group = .system },
-    .{ .target = .{ .page = .startup }, .group = .system },
-    .{ .target = .{ .page = .advanced }, .group = .system },
-    .{ .target = .{ .page = .plugins }, .group = .system },
+    .{ .target = .{ .page = .overview }, .group = .general, .keywords = "home start" },
+    .{ .target = .{ .page = .network }, .group = .connections, .keywords = "wifi wireless ethernet internet connection" },
+    .{ .target = .{ .page = .bluetooth }, .group = .connections, .keywords = "pair wireless devices" },
+    .{ .target = .{ .page = .sound }, .group = .devices, .keywords = "audio volume microphone speakers" },
+    .{ .target = .{ .page = .power }, .group = .devices, .keywords = "battery sleep suspend lock session energy" },
+    .{ .target = .{ .page = .aqueous, .section = "displays" }, .group = .devices, .keywords = "monitor screen resolution refresh scale orientation hdr mirror" },
+    .{ .target = .{ .page = .aqueous, .section = "input" }, .group = .devices, .keywords = "keyboard mouse pointer touchpad typing repeat" },
+    .{ .target = .{ .page = .aqueous, .section = "keybinds" }, .group = .devices, .keywords = "shortcut keybinding hotkey keys" },
+    .{ .target = .{ .page = .appearance }, .group = .desktop, .keywords = "theme wallpaper color font dark light" },
+    .{ .target = .{ .page = .aqueous, .section = "appearance" }, .group = .desktop, .keywords = "border effects blur shadow decoration" },
+    .{ .target = .{ .page = .aqueous, .section = "layouts" }, .group = .desktop, .keywords = "workspace tiling snap gaps arrangement" },
+    .{ .target = .{ .page = .aqueous, .section = "rules" }, .group = .desktop, .keywords = "window rules floating matcher behavior" },
+    .{ .target = .{ .page = .assistant }, .group = .desktop, .keywords = "ai search engine answers" },
+    .{ .target = .{ .page = .bar }, .group = .desktop, .keywords = "dock panel widgets" },
+    .{ .target = .{ .page = .notifications }, .group = .desktop, .keywords = "dnd disturb alerts history" },
+    .{ .target = .{ .page = .system }, .group = .system, .keywords = "scheduler cpu performance" },
+    .{ .target = .{ .page = .startup }, .group = .system, .keywords = "autostart login applications" },
+    .{ .target = .{ .page = .advanced }, .group = .system, .keywords = "json raw toml configuration draft" },
+    .{ .target = .{ .page = .plugins }, .group = .system, .keywords = "extension addons" },
 };
+
+/// Substring search with an already-lowercased needle; haystack case is folded
+/// per byte. Navigation titles are short, so no allocation is needed.
+pub fn containsIgnoreCase(haystack: []const u8, needle_lower: []const u8) bool {
+    if (needle_lower.len == 0) return true;
+    if (needle_lower.len > haystack.len) return false;
+    var i: usize = 0;
+    while (i + needle_lower.len <= haystack.len) : (i += 1) {
+        var match = true;
+        for (needle_lower, 0..) |c, j| {
+            if (std.ascii.toLower(haystack[i + j]) != c) {
+                match = false;
+                break;
+            }
+        }
+        if (match) return true;
+    }
+    return false;
+}
 
 pub fn entryIndex(target: Target) ?usize {
     const normalized = normalize(target);
@@ -184,6 +209,21 @@ test "normalize merges the Aqueous Advanced section into the shared Advanced pag
     const plain = normalize(.{ .page = .appearance });
     try t.expectEqual(Route.appearance, plain.page);
     try t.expect(plain.section == null);
+}
+
+test "navigation search matches case-insensitively and every entry has keywords" {
+    const t = std.testing;
+    try t.expect(containsIgnoreCase("Window appearance", "window"));
+    try t.expect(containsIgnoreCase("Window appearance", "appear"));
+    try t.expect(containsIgnoreCase("WINDOW APPEARANCE", "appear"));
+    try t.expect(containsIgnoreCase("Power & session", "session"));
+    try t.expect(!containsIgnoreCase("Displays", "keyboard"));
+    try t.expect(!containsIgnoreCase("ab", "abc"));
+    try t.expect(containsIgnoreCase("anything", ""));
+    try t.expect(containsIgnoreCase("", ""));
+    for (entries) |entry| try t.expect(entry.keywords.len > 0);
+    try t.expect(containsIgnoreCase(entries[entryIndex(.{ .page = .aqueous, .section = "keybinds" }).?].keywords, "shortcut"));
+    try t.expect(containsIgnoreCase(entries[entryIndex(.{ .page = .aqueous, .section = "displays" }).?].keywords, "monitor"));
 }
 
 pub const compact_routes = blk: {

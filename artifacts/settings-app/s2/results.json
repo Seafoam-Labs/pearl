@@ -7,6 +7,7 @@
     "second-launch-selects-page-and-retains-one-window": true,
     "generic-launch-strict-validation-and-aqueous-sections": true,
     "aqueous-flattened-navigation-merged-advanced-and-external-default": true,
+    "navigation-search-filters-activates-and-clears": true,
     "concurrent-launches-single-owner": true,
     "gio-launcher-token-forwards-and-restores-minimized-window": true,
     "ordinary-minimize-maximize-reactivation-and-escape": true,
@@ -15,6 +16,7 @@
     "internal-body-focus-and-page-scroll-restoration": true,
     "committed-material-light-dark-native-gtk": true,
     "narrow-navigation-fixed-footer-and-escape": true,
+    "narrow-search-filters-and-escape-clears-before-dismiss": true,
     "narrow-flattened-sections-select-and-escape-retains-section": true,
     "large-text-reduced-motion-no-window-width-growth": true,
     "backend-loss-and-explicit-retry-without-shell-start": true,
@@ -25,9 +27,9 @@
     "frontend-crash-stale-instance-recovery": true
   },
   "binaries": {
-    "settings": "9c0f3058f9092baf84340f932c8ca373039d9db707e2ec17e1a232f59b5a84c7",
-    "production": "59b48b14422b0c83f62590bcf53aff34ebf24defac971b3162498a32d6056968",
-    "pearl": "d028ea3dda1b8631d1d75249ac713b6feaba1ed9793f11ef41dca3c6879ea0a6",
-    "ctl": "5a0286ba0e70033e8931425dd091e506cfe91b4c657bcc1ec7148a06bef22ebc"
+    "settings": "294abed9da5a102bf4ab87ca05671da0cc5993773917cbd2e5732e784a8d77fc",
+    "production": "a8fe470cd9908d8a34df6565e817d523a2f6cbc186dab12cb0ceb1287031176c",
+    "pearl": "702c98659e9a1bee87556c4525497106f8eb1954466e1af8fc91dd6c1fedeaee",
+    "ctl": "c315de7cfb26c57dd92af8fb621dd5f12188b969f28b0f28a2e5af61a93ebd1d"
   }
 }

@@ -1,197 +1,197 @@
-ts=2026-11-13T22:28:01Z pid=489230 info(platform): event=background-effect-owner owner=gtk gtk=4.24.1
-ts=2026-11-13T22:28:01Z pid=489230 info(desktop): event=steam-library-sync games=0 created=0 removed=0
-ts=2026-11-13T22:28:01Z pid=489230 info(platform): event=blur-capability available=false
-ts=2026-11-13T22:28:01Z pid=489230 info(services): event=sched-profile-systemd result=polling
-ts=2026-11-13T22:28:01Z pid=489230 info(pearl): event=aqueous-availability state=connecting
-ts=2026-11-13T22:28:01Z pid=489230 info(pearl): event=ready mode=session
-ts=2026-11-13T22:28:01Z pid=489230 info(desktop): event=app-index-ready entries=75 truncated=false
-ts=2026-11-13T22:28:01Z pid=489230 warning(services): event=sched-profile-systemd step=unit result=failed
-ts=2026-11-13T22:28:01Z pid=489230 debug(aqueous): event=ipc-request op=hello
-ts=2026-11-13T22:28:01Z pid=489230 debug(aqueous): event=ipc-request op=hello
-ts=2026-11-13T22:28:01Z pid=489230 debug(aqueous): event=ipc-response op=hello
-ts=2026-11-13T22:28:01Z pid=489230 debug(aqueous): event=ipc-response op=hello
-ts=2026-11-13T22:28:01Z pid=489230 info(pearl): event=aqueous-availability state=subscribing
-ts=2026-11-13T22:28:01Z pid=489230 debug(aqueous): event=ipc-request op=subscribe
-ts=2026-11-13T22:28:01Z pid=489230 debug(aqueous): event=ipc-response op=subscribe
-ts=2026-11-13T22:28:01Z pid=489230 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:28:01Z pid=489230 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:28:01Z pid=489230 info(pearl): event=aqueous-availability state=ready
-ts=2026-11-13T22:28:01Z pid=489230 info(services): event=autostart-launched file=/etc/xdg/autostart/xdg-user-dirs.desktop
-ts=2026-11-13T22:28:01Z pid=489230 info(services): event=autostart-run entries=4 launched=1
+ts=2026-11-13T23:56:09Z pid=776929 info(platform): event=background-effect-owner owner=gtk gtk=4.24.1
+ts=2026-11-13T23:56:09Z pid=776929 info(desktop): event=steam-library-sync games=0 created=0 removed=0
+ts=2026-11-13T23:56:09Z pid=776929 info(platform): event=blur-capability available=false
+ts=2026-11-13T23:56:09Z pid=776929 info(services): event=sched-profile-systemd result=polling
+ts=2026-11-13T23:56:09Z pid=776929 info(pearl): event=aqueous-availability state=connecting
+ts=2026-11-13T23:56:09Z pid=776929 info(pearl): event=ready mode=session
+ts=2026-11-13T23:56:09Z pid=776929 info(desktop): event=app-index-ready entries=75 truncated=false
+ts=2026-11-13T23:56:09Z pid=776929 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-13T23:56:09Z pid=776929 debug(aqueous): event=ipc-request op=hello
+ts=2026-11-13T23:56:09Z pid=776929 debug(aqueous): event=ipc-request op=hello
+ts=2026-11-13T23:56:09Z pid=776929 debug(aqueous): event=ipc-response op=hello
+ts=2026-11-13T23:56:09Z pid=776929 debug(aqueous): event=ipc-response op=hello
+ts=2026-11-13T23:56:09Z pid=776929 info(pearl): event=aqueous-availability state=subscribing
+ts=2026-11-13T23:56:09Z pid=776929 debug(aqueous): event=ipc-request op=subscribe
+ts=2026-11-13T23:56:09Z pid=776929 debug(aqueous): event=ipc-response op=subscribe
+ts=2026-11-13T23:56:09Z pid=776929 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:56:09Z pid=776929 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"
+ts=2026-11-13T23:56:09Z pid=776929 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:56:09Z pid=776929 info(pearl): event=aqueous-availability state=ready
+ts=2026-11-13T23:56:09Z pid=776929 info(services): event=autostart-launched file=/etc/xdg/autostart/xdg-user-dirs.desktop
+ts=2026-11-13T23:56:09Z pid=776929 info(services): event=autostart-run entries=4 launched=1
 No default user directories
-ts=2026-11-13T22:28:01Z pid=489230 info(ui): event=output-mapped id=1 connector=HEADLESS-2 scale=1 renderer=GskCairoRenderer gpu_agreement=unverified session_hash=7a156390d9b3e3af
-ts=2026-11-13T22:28:01Z pid=489230 info(ui): event=output-mapped id=2 connector=HEADLESS-1 scale=1 renderer=GskCairoRenderer gpu_agreement=unverified session_hash=7a156390d9b3e3af
-ts=2026-11-13T22:28:01Z pid=489230 info(pearl): event=settings-backend-ready session_hash=7a156390d9b3e3af
-ts=2026-11-13T22:28:01Z pid=489230 info(pearl): event=control-ready session_hash=7a156390d9b3e3af
-ts=2026-11-13T22:28:01Z pid=489230 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:28:01Z pid=489230 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"
-ts=2026-11-13T22:28:01Z pid=489230 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:28:01Z pid=489230 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:28:01Z pid=489230 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:28:01Z pid=489230 info(desktop): event=app-index-ready entries=75 truncated=false
-ts=2026-11-13T22:28:01Z pid=489230 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:28:01Z pid=489230 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:28:01Z pid=489230 info(config): event=preferences-applied revision=1 mode=static cache=false
-ts=2026-11-13T22:28:01Z pid=489230 info(config): event=wallpaper-applications-applied generation=5 elapsed_us=17841 success=true
-ts=2026-11-13T22:28:01Z pid=489230 info(desktop): event=app-index-ready entries=75 truncated=false
-ts=2026-11-13T22:28:02Z pid=489230 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"
-ts=2026-11-13T22:28:03Z pid=489230 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:28:03Z pid=489230 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:28:03Z pid=489230 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:28:03Z pid=489230 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:28:03Z pid=489230 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:28:03Z pid=489230 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:28:04Z pid=489230 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:28:04Z pid=489230 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:28:04Z pid=489230 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"
-ts=2026-11-13T22:28:04Z pid=489230 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:28:04Z pid=489230 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:28:05Z pid=489230 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:28:05Z pid=489230 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:28:05Z pid=489230 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:28:05Z pid=489230 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:28:05Z pid=489230 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:28:05Z pid=489230 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:28:06Z pid=489230 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:28:06Z pid=489230 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:28:06Z pid=489230 warning(services): event=sched-profile-systemd step=unit result=failed
-ts=2026-11-13T22:28:06Z pid=489230 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:28:06Z pid=489230 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:28:06Z pid=489230 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:28:06Z pid=489230 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:28:06Z pid=489230 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:28:06Z pid=489230 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:28:07Z pid=489230 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:28:07Z pid=489230 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:28:07Z pid=489230 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:28:07Z pid=489230 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:28:08Z pid=489230 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"
-ts=2026-11-13T22:28:08Z pid=489230 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:28:08Z pid=489230 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:28:09Z pid=489230 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:28:09Z pid=489230 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:28:09Z pid=489230 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:28:09Z pid=489230 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:28:09Z pid=489230 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:28:09Z pid=489230 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:28:11Z pid=489230 warning(services): event=sched-profile-systemd step=unit result=failed
-ts=2026-11-13T22:28:11Z pid=489230 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:28:11Z pid=489230 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:28:11Z pid=489230 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:28:11Z pid=489230 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:28:11Z pid=489230 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:28:11Z pid=489230 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:28:12Z pid=489230 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:28:12Z pid=489230 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:28:12Z pid=489230 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:28:12Z pid=489230 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:28:12Z pid=489230 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:28:12Z pid=489230 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:28:12Z pid=489230 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:28:12Z pid=489230 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:28:12Z pid=489230 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:28:12Z pid=489230 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:28:13Z pid=489230 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:28:13Z pid=489230 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:28:14Z pid=489230 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:28:14Z pid=489230 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:28:14Z pid=489230 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:28:14Z pid=489230 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:28:14Z pid=489230 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:28:14Z pid=489230 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:28:14Z pid=489230 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:28:14Z pid=489230 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:28:15Z pid=489230 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:28:15Z pid=489230 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:28:15Z pid=489230 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:28:15Z pid=489230 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:28:16Z pid=489230 warning(services): event=sched-profile-systemd step=unit result=failed
-ts=2026-11-13T22:28:16Z pid=489230 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"
-ts=2026-11-13T22:28:16Z pid=489230 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:28:16Z pid=489230 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:28:17Z pid=489230 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:28:17Z pid=489230 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:28:17Z pid=489230 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:28:17Z pid=489230 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:28:18Z pid=489230 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:28:18Z pid=489230 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:28:18Z pid=489230 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:28:18Z pid=489230 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:28:19Z pid=489230 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:28:19Z pid=489230 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:28:20Z pid=489230 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:28:20Z pid=489230 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:28:20Z pid=489230 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:28:20Z pid=489230 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:28:20Z pid=489230 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:28:20Z pid=489230 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:28:20Z pid=489230 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:28:20Z pid=489230 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:28:20Z pid=489230 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:28:20Z pid=489230 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:28:21Z pid=489230 warning(services): event=sched-profile-systemd step=unit result=failed
-ts=2026-11-13T22:28:21Z pid=489230 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:28:21Z pid=489230 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:28:21Z pid=489230 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:28:21Z pid=489230 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:28:24Z pid=489230 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:28:24Z pid=489230 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:28:24Z pid=489230 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:28:24Z pid=489230 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:28:24Z pid=489230 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:28:24Z pid=489230 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:28:24Z pid=489230 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:28:24Z pid=489230 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:28:24Z pid=489230 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:28:24Z pid=489230 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:28:25Z pid=489230 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:28:25Z pid=489230 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:28:25Z pid=489230 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:28:25Z pid=489230 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:28:25Z pid=489230 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:28:25Z pid=489230 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:28:25Z pid=489230 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:28:25Z pid=489230 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:28:25Z pid=489230 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:28:25Z pid=489230 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:28:26Z pid=489230 warning(services): event=sched-profile-systemd step=unit result=failed
-ts=2026-11-13T22:28:26Z pid=489230 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:28:26Z pid=489230 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:28:26Z pid=489230 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:28:26Z pid=489230 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:28:26Z pid=489230 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:28:26Z pid=489230 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:28:27Z pid=489230 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:28:27Z pid=489230 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:28:28Z pid=489230 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:28:28Z pid=489230 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:28:28Z pid=489230 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:28:28Z pid=489230 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:28:28Z pid=489230 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:28:28Z pid=489230 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:28:29Z pid=489230 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:28:29Z pid=489230 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:28:29Z pid=489230 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:28:29Z pid=489230 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:28:29Z pid=489230 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:28:29Z pid=489230 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:28:30Z pid=489230 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:28:30Z pid=489230 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:28:30Z pid=489230 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:28:30Z pid=489230 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:28:31Z pid=489230 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:28:31Z pid=489230 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:28:31Z pid=489230 warning(services): event=sched-profile-systemd step=unit result=failed
-ts=2026-11-13T22:28:31Z pid=489230 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:28:31Z pid=489230 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:28:31Z pid=489230 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:28:31Z pid=489230 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:28:32Z pid=489230 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"
-ts=2026-11-13T22:28:32Z pid=489230 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:28:32Z pid=489230 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:28:33Z pid=489230 debug(aqueous): event=ipc-request op=ack
-ts=2026-11-13T22:28:33Z pid=489230 debug(aqueous): event=ipc-response op=ack
-ts=2026-11-13T22:28:33Z pid=489230 info(pearl): event=stopping reason=control-quit pending=false
-ts=2026-11-13T22:28:33Z pid=489230 info(pearl): event=aqueous-availability state=stopped
-ts=2026-11-13T22:28:33Z pid=489230 info(pearl): event=cleanup pending=false watched_objects=0
-ts=2026-11-13T22:28:33Z pid=489230 info(pearl): event=stopped
+ts=2026-11-13T23:56:09Z pid=776929 info(ui): event=output-mapped id=1 connector=HEADLESS-2 scale=1 renderer=GskCairoRenderer gpu_agreement=unverified session_hash=b7e2fd4036d4b402
+ts=2026-11-13T23:56:09Z pid=776929 info(ui): event=output-mapped id=2 connector=HEADLESS-1 scale=1 renderer=GskCairoRenderer gpu_agreement=unverified session_hash=b7e2fd4036d4b402
+ts=2026-11-13T23:56:09Z pid=776929 info(pearl): event=settings-backend-ready session_hash=b7e2fd4036d4b402
+ts=2026-11-13T23:56:09Z pid=776929 info(pearl): event=control-ready session_hash=b7e2fd4036d4b402
+ts=2026-11-13T23:56:09Z pid=776929 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:56:09Z pid=776929 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:56:09Z pid=776929 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:56:09Z pid=776929 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:56:09Z pid=776929 info(desktop): event=app-index-ready entries=75 truncated=false
+ts=2026-11-13T23:56:09Z pid=776929 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:56:09Z pid=776929 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:56:09Z pid=776929 info(config): event=preferences-applied revision=1 mode=static cache=false
+ts=2026-11-13T23:56:09Z pid=776929 info(config): event=wallpaper-applications-applied generation=5 elapsed_us=18684 success=true
+ts=2026-11-13T23:56:09Z pid=776929 info(desktop): event=app-index-ready entries=75 truncated=false
+ts=2026-11-13T23:56:10Z pid=776929 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"
+ts=2026-11-13T23:56:11Z pid=776929 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:56:11Z pid=776929 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:56:11Z pid=776929 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:56:11Z pid=776929 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:56:11Z pid=776929 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:56:11Z pid=776929 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:56:11Z pid=776929 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:56:11Z pid=776929 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:56:12Z pid=776929 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:56:12Z pid=776929 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:56:12Z pid=776929 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"
+ts=2026-11-13T23:56:12Z pid=776929 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:56:12Z pid=776929 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:56:13Z pid=776929 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:56:13Z pid=776929 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:56:13Z pid=776929 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:56:13Z pid=776929 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:56:13Z pid=776929 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:56:13Z pid=776929 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:56:13Z pid=776929 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:56:13Z pid=776929 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:56:14Z pid=776929 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:56:14Z pid=776929 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:56:14Z pid=776929 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:56:14Z pid=776929 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:56:14Z pid=776929 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-13T23:56:14Z pid=776929 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:56:14Z pid=776929 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:56:15Z pid=776929 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:56:15Z pid=776929 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:56:16Z pid=776929 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:56:16Z pid=776929 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:56:16Z pid=776929 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"
+ts=2026-11-13T23:56:16Z pid=776929 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:56:16Z pid=776929 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:56:17Z pid=776929 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:56:17Z pid=776929 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:56:17Z pid=776929 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:56:17Z pid=776929 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:56:18Z pid=776929 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:56:18Z pid=776929 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:56:19Z pid=776929 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:56:19Z pid=776929 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:56:19Z pid=776929 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:56:19Z pid=776929 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:56:19Z pid=776929 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:56:19Z pid=776929 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:56:19Z pid=776929 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-13T23:56:19Z pid=776929 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:56:19Z pid=776929 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:56:19Z pid=776929 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:56:19Z pid=776929 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:56:20Z pid=776929 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:56:20Z pid=776929 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:56:20Z pid=776929 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:56:20Z pid=776929 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:56:21Z pid=776929 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:56:21Z pid=776929 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:56:21Z pid=776929 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:56:21Z pid=776929 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:56:21Z pid=776929 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:56:21Z pid=776929 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:56:21Z pid=776929 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:56:21Z pid=776929 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:56:22Z pid=776929 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:56:22Z pid=776929 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:56:22Z pid=776929 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:56:22Z pid=776929 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:56:23Z pid=776929 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:56:23Z pid=776929 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:56:23Z pid=776929 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:56:23Z pid=776929 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:56:24Z pid=776929 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-13T23:56:24Z pid=776929 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"
+ts=2026-11-13T23:56:25Z pid=776929 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:56:25Z pid=776929 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:56:25Z pid=776929 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:56:25Z pid=776929 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:56:25Z pid=776929 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:56:25Z pid=776929 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:56:25Z pid=776929 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:56:25Z pid=776929 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:56:27Z pid=776929 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:56:27Z pid=776929 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:56:27Z pid=776929 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:56:27Z pid=776929 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:56:27Z pid=776929 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:56:27Z pid=776929 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:56:27Z pid=776929 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:56:27Z pid=776929 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:56:28Z pid=776929 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:56:28Z pid=776929 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:56:28Z pid=776929 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:56:28Z pid=776929 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:56:29Z pid=776929 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:56:29Z pid=776929 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:56:29Z pid=776929 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:56:29Z pid=776929 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:56:29Z pid=776929 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-13T23:56:31Z pid=776929 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:56:31Z pid=776929 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:56:32Z pid=776929 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:56:32Z pid=776929 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:56:32Z pid=776929 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:56:32Z pid=776929 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:56:32Z pid=776929 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:56:32Z pid=776929 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:56:32Z pid=776929 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:56:32Z pid=776929 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:56:33Z pid=776929 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:56:33Z pid=776929 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:56:33Z pid=776929 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:56:33Z pid=776929 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:56:33Z pid=776929 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:56:33Z pid=776929 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:56:33Z pid=776929 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:56:33Z pid=776929 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:56:33Z pid=776929 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:56:33Z pid=776929 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:56:34Z pid=776929 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:56:34Z pid=776929 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:56:34Z pid=776929 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:56:34Z pid=776929 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:56:34Z pid=776929 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:56:34Z pid=776929 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:56:34Z pid=776929 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-13T23:56:35Z pid=776929 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:56:35Z pid=776929 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:56:35Z pid=776929 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:56:35Z pid=776929 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:56:36Z pid=776929 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:56:36Z pid=776929 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:56:36Z pid=776929 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:56:36Z pid=776929 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:56:36Z pid=776929 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:56:36Z pid=776929 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:56:37Z pid=776929 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:56:37Z pid=776929 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:56:37Z pid=776929 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:56:37Z pid=776929 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:56:38Z pid=776929 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:56:38Z pid=776929 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:56:38Z pid=776929 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:56:38Z pid=776929 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:56:38Z pid=776929 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:56:38Z pid=776929 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:56:39Z pid=776929 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:56:39Z pid=776929 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:56:39Z pid=776929 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:56:39Z pid=776929 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:56:39Z pid=776929 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-13T23:56:40Z pid=776929 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:56:40Z pid=776929 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:56:40Z pid=776929 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"
+ts=2026-11-13T23:56:41Z pid=776929 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T23:56:41Z pid=776929 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T23:56:41Z pid=776929 info(pearl): event=stopping reason=control-quit pending=false
+ts=2026-11-13T23:56:41Z pid=776929 info(pearl): event=aqueous-availability state=stopped
+ts=2026-11-13T23:56:41Z pid=776929 info(pearl): event=cleanup pending=false watched_objects=0
+ts=2026-11-13T23:56:41Z pid=776929 info(pearl): event=stopped
