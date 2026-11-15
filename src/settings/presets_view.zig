@@ -31,12 +31,22 @@ pub const View = struct {
         errdefer a.destroy(self);
         self.* = .{ .editor = editor, .root = undefined, .status = undefined, .tiles = &.{}, .bindings = &.{} };
         const alloc = self.arena.allocator();
-        const root = w.column(10);
+        // A collapsed section like Bar displays: no dead space until opened.
+        const expander = gtk.Expander.new(null);
+        expander.as(gtk.Widget).addCssClass("settings-card");
+        expander.as(gtk.Widget).addCssClass("settings-section");
+        w.tagExpanderArrow(expander, "settings-section-arrow");
+        const heading = w.column(5);
+        heading.as(gtk.Widget).addCssClass("settings-section-heading");
+        heading.append(w.label(i18n.dtr("pearl", "Layout presets"), "pearl-section-title").as(gtk.Widget));
+        expander.setLabelWidget(heading.as(gtk.Widget));
+        w.name(expander.as(gtk.Widget), i18n.dtr("pearl", "Layout presets"));
+        try self.controls.append(a, .{ .id = "bar.presets.expand", .widget = heading.as(gtk.Widget) });
+        const root = w.column(8);
         root.as(gtk.Widget).addCssClass("settings-card");
-        root.as(gtk.Widget).addCssClass("bar-presets");
-        host.append(root.as(gtk.Widget));
+        expander.setChild(root.as(gtk.Widget));
+        host.append(expander.as(gtk.Widget));
         self.root = root;
-        root.append(w.label(i18n.dtr("pearl", "Layout presets"), "settings-row-title").as(gtk.Widget));
         const hint = w.label(i18n.dtr("pearl", "Start from a shipped layout. A preset changes bar and dock settings and their widgets only: your other preferences, per-display overrides, pinned applications and widget data such as the weather location stay as they are."), "pearl-secondary");
         hint.setWrap(1);
         hint.as(gtk.Widget).setHexpand(1);

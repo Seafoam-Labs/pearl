@@ -141,6 +141,7 @@ def main():
             # Layout presets rewrite only the bar and dock settings they own:
             # the display override, pins and the unavailable plugin reference
             # survive, and a manual bar edit clears the recorded preset.
+            click(s, ipc, 'bar.presets.expand'); ready(s, ipc)
             click(s, ipc, 'bar.preset.macos'); ready(s, ipc)
             doc = json.loads(peer.document())
             assert doc['bar_dock_preset'] == 'macos'

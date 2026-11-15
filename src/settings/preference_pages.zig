@@ -50,7 +50,6 @@ pub const View = struct {
         const self = try a.create(View);
         const specs: []const Spec = &bar_fields;
         self.* = .{ .editor = editor, .host = host, .fields = try a.alloc(Field, specs.len) };
-        self.presets = try @import("presets_view.zig").View.create(host, editor);
         var card = w.column(0);
         card.as(gtk.Widget).addCssClass("settings-card");
         host.append(card.as(gtk.Widget));
@@ -109,6 +108,8 @@ pub const View = struct {
                 const hint = w.label(@import("i18n").dtr("pearl", "Autohide reveals the bar at the screen edge and gives applications more space. Display overrides in Advanced take priority."), "pearl-secondary");
                 hint.setWrap(1);
                 card.append(hint.as(gtk.Widget));
+                // Presets sit directly above the per-display switches.
+                self.presets = try @import("presets_view.zig").View.create(host, editor);
                 try self.buildDisplays();
             }
             field.* = .{ .view = self, .spec = spec, .widget = widget, .signal = 0 };
