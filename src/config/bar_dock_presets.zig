@@ -6,7 +6,6 @@
 const std = @import("std");
 const prefs = @import("preferences.zig");
 const policy = @import("../desktop/policy.zig");
-const clock_policy = @import("../desktop/clock_policy.zig");
 
 const source = @embedFile("bar_dock_presets.json");
 

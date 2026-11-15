@@ -36,15 +36,16 @@ pub const View = struct {
         root.as(gtk.Widget).addCssClass("bar-presets");
         host.append(root.as(gtk.Widget));
         self.root = root;
-        const heading = w.column(4);
-        heading.append(w.label(i18n.dtr("pearl", "Layout presets"), "pearl-section-title").as(gtk.Widget));
+        root.append(w.label(i18n.dtr("pearl", "Layout presets"), "settings-row-title").as(gtk.Widget));
         const hint = w.label(i18n.dtr("pearl", "Start from a shipped layout. A preset changes bar and dock settings and their widgets only: your other preferences, per-display overrides, pinned applications and widget data such as the weather location stay as they are."), "pearl-secondary");
         hint.setWrap(1);
-        heading.append(hint.as(gtk.Widget));
-        root.append(heading.as(gtk.Widget));
+        hint.as(gtk.Widget).setHexpand(1);
+        hint.as(gtk.Widget).setHalign(.fill);
+        root.append(hint.as(gtk.Widget));
         const catalog = try presets.catalog(alloc);
-        const flow = w.flow(3);
+        const flow = w.flow(4);
         flow.setHomogeneous(1);
+        flow.as(gtk.Widget).addCssClass("appearance-modes");
         root.append(flow.as(gtk.Widget));
         self.tiles = try alloc.alloc(Tile, catalog.len);
         self.bindings = try alloc.alloc(Binding, catalog.len);
@@ -52,15 +53,16 @@ pub const View = struct {
             const button = gtk.CheckButton.new();
             if (i > 0) button.setGroup(self.tiles[0].button);
             button.as(gtk.Widget).addCssClass("appearance-mode");
-            const labels = w.column(5);
+            const labels = w.column(3);
+            labels.as(gtk.Widget).setValign(.center);
             const name = try alloc.dupeSentinel(u8, preset.name, 0);
             labels.append(w.label(i18n.dtr("pearl", name), "settings-row-title").as(gtk.Widget));
-            const detail = w.label(i18n.dtr("pearl", try alloc.dupeSentinel(u8, preset.description, 0)), "pearl-secondary");
-            detail.setWrap(1);
-            labels.append(detail.as(gtk.Widget));
             const summary = w.label(try alloc.dupeSentinel(u8, try presets.summary(alloc, preset), 0), "pearl-secondary");
             labels.append(summary.as(gtk.Widget));
             button.setChild(labels.as(gtk.Widget));
+            // The longer description lives in the tooltip so the tile stays as
+            // compact as the Appearance cards and its content fills it.
+            button.as(gtk.Widget).setTooltipText(try alloc.dupeSentinel(u8, preset.description, 0));
             w.name(button.as(gtk.Widget), name);
             flow.insert(button.as(gtk.Widget), -1);
             self.bindings[i] = .{ .view = self, .index = i };

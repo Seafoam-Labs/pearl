@@ -153,6 +153,25 @@ Pearl. The implementation uses Zig 0.16.0 and the pinned Ghostty GTK/GIO binding
 
 ## Standalone editor
 
+**Bar & dock → Layout presets** starts the bar and dock from a shipped layout —
+**macOS** (slim top bar, always-visible bottom dock) and **Windows** (bottom
+taskbar with the applications strip in the bar). A preset rewrites only the bar
+and dock settings it names and their widgets; everything else — other
+preferences, per-display overrides, pinned applications and widget data such as
+the weather location and custom clocks — is left exactly as it was. Installed
+plugin widgets and custom clock references keep their place in the group they
+were in.
+
+The JSON field is the top-level `bar_dock_preset`, recording the id of the last
+applied preset (for example `"macos"`). It is informational only: the `bar` and
+`dock` values remain the source of truth. Changing any bar or dock setting, or
+moving a widget, clears it back to `""` so the picker reports a custom layout.
+Presets are authored in `src/config/bar_dock_presets.json`; `bar` and `dock` keys
+are matched against the live preference fields and `widgets` against the live
+widget names, so new settings and widgets need no code change. Keys a preset may
+not own — `groups`, `clocks` and `launcher_icon` — are refused by the preset
+tests and at apply time.
+
 **Bar & dock → Bar visibility** offers **Always visible** (default) and
 **Autohide**. Autohide reveals the bar at its screen edge and hides it 450 ms
 after the pointer leaves. An open Pearl flyout keeps its output's bar visible.
