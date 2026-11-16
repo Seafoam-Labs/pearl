@@ -30,6 +30,47 @@ pub fn eventPayload(buffer: []u8, kind: Kind, result: Outcome, successful: usize
 }
 
 const attrs = "standard::*,unix::mode,time::modified,time::modified-usec,etag::value,id::file,trash::*";
+
+/// Per-file content digests recorded while a transfer streams bytes, keyed by
+/// parse name. The fingerprint walk reuses them instead of re-reading every
+/// copied byte, so a large copy hashes its content once (overlapped with I/O)
+/// rather than twice. Only regular files are cached; directories and symlinks
+/// are hashed from metadata, which is cheap to query.
+const ContentCache = struct {
+    map: std.StringHashMap([32]u8),
+    fn init() ContentCache {
+        return .{ .map = std.StringHashMap([32]u8).init(a) };
+    }
+    fn deinit(self: *ContentCache) void {
+        var it = self.map.keyIterator();
+        while (it.next()) |key| a.free(key.*);
+        self.map.deinit();
+    }
+    fn put(self: *ContentCache, file: *gio.File, value: [32]u8) void {
+        const parse_name = file.getParseName();
+        defer glib.free(parse_name);
+        const key = a.dupe(u8, std.mem.span(parse_name)) catch unreachable;
+        self.map.put(key, value) catch {
+            a.free(key);
+            unreachable;
+        };
+    }
+    fn get(self: *const ContentCache, file: *gio.File) ?[32]u8 {
+        const parse_name = file.getParseName();
+        defer glib.free(parse_name);
+        return self.map.get(std.mem.span(parse_name));
+    }
+};
+
+/// Which sides of a transfer to record content digests for. A copy only needs
+/// the destination (for its undo fingerprint); a cross-filesystem move also
+/// records the source so it can verify the source did not change without a
+/// second full read.
+const CopyCache = struct {
+    src: ?*ContentCache = null,
+    dst: ?*ContentCache = null,
+};
+
 pub const Pair = struct {
     source: *gio.File,
     destination: ?*gio.File = null,
@@ -120,7 +161,13 @@ pub const Job = struct {
                 continue;
             };
             p.completed = true;
-            if (p.destination) |dest| p.fingerprint = self.digest(dest) catch null;
+            // Copy and move record a fingerprint from their in-stream content
+            // digests inside perform(); other kinds have tiny destinations, so a
+            // direct digest here is cheap. The null check also provides a safe
+            // fallback to a full digest if the cached walk could not complete.
+            if (p.destination) |dest| {
+                if (p.fingerprint == null) p.fingerprint = self.digest(dest) catch null;
+            }
         }
     }
     fn perform(self: *Job, p: *Pair) Failure!void {
@@ -158,8 +205,14 @@ pub const Job = struct {
         }
         var err: ?*glib.Error = null;
         switch (self.kind) {
-            .copy => try self.copyTree(p.source, p.destination.?, 0),
-            .move, .restore => try self.moveTree(p.source, p.destination.?),
+            .copy => {
+                var cache = ContentCache.init();
+                defer cache.deinit();
+                var caches: CopyCache = .{ .dst = &cache };
+                try self.copyTree(p.source, p.destination.?, 0, &caches);
+                p.fingerprint = self.cachedDigest(p.destination.?, &cache, true) catch null;
+            },
+            .move, .restore => try self.moveTree(p),
             .trash => if (p.source.trash(self.cancel, &err) == 0) {
                 return self.io(err);
             },
@@ -212,7 +265,7 @@ pub const Job = struct {
         const d = std.mem.span(real_parent);
         if (std.mem.eql(u8, s, d) or (std.mem.startsWith(u8, d, s) and d.len > s.len and d[s.len] == '/')) return error.InvalidTarget;
     }
-    pub fn copyTree(self: *Job, src: *gio.File, dst: *gio.File, depth: usize) Failure!void {
+    pub fn copyTree(self: *Job, src: *gio.File, dst: *gio.File, depth: usize, caches: ?*CopyCache) Failure!void {
         try self.check(depth);
         var err: ?*glib.Error = null;
         const info = src.queryInfo(attrs, .{ .nofollow_symlinks = true }, self.cancel, &err) orelse return self.io(err);
@@ -233,7 +286,7 @@ pub const Job = struct {
                     defer from.unref();
                     const to = dst.getChild(child.getName());
                     defer to.unref();
-                    try self.copyTree(from, to, depth + 1);
+                    try self.copyTree(from, to, depth + 1, caches);
                 }
                 // Copy permissions/timestamps after children so read-only source directories work.
                 try self.copyMetadata(info, dst);
@@ -252,15 +305,24 @@ pub const Job = struct {
                     _ = dst.delete(null, null);
                 }
                 var buffer: [128 * 1024]u8 = undefined;
+                var content_hash = std.crypto.hash.sha2.Sha256.init(.{});
                 while (true) {
                     const n = input.as(gio.InputStream).read(&buffer, buffer.len, self.cancel, &err);
                     if (n < 0) return self.io(err);
                     if (n == 0) break;
                     if (output.as(gio.OutputStream).writeAll(&buffer, @intCast(n), null, self.cancel, &err) == 0) return self.io(err);
+                    content_hash.update(buffer[0..@intCast(n)]);
                     _ = self.bytes.fetchAdd(@intCast(n), .monotonic);
                 }
                 if (output.as(gio.OutputStream).close(self.cancel, &err) == 0) return self.io(err);
                 try self.copyMetadata(info, dst);
+                // The bytes written to the destination are exactly the bytes read
+                // from the source, so one in-stream digest serves both sides.
+                if (caches) |cc| {
+                    const digest_ = content_hash.finalResult();
+                    if (cc.src) |c| c.put(src, digest_);
+                    if (cc.dst) |c| c.put(dst, digest_);
+                }
             },
             else => return error.Unsupported,
         }
@@ -295,7 +357,9 @@ pub const Job = struct {
         }
         if (file.delete(cancel, &err) == 0) return self.io(err);
     }
-    fn moveTree(self: *Job, src: *gio.File, dst: *gio.File) Failure!void {
+    fn moveTree(self: *Job, p: *Pair) Failure!void {
+        const src = p.source;
+        const dst = p.destination.?;
         var err: ?*glib.Error = null;
         if (src.move(dst, .{ .nofollow_symlinks = true, .no_fallback_for_move = true }, self.cancel, null, null, &err) != 0) return;
         if (err) |e| {
@@ -304,27 +368,60 @@ pub const Job = struct {
             e.free();
             err = null;
         }
+        // A pre-copy content baseline is still read once so a source edited
+        // during the transfer is detected with a full content comparison. The
+        // post-copy source and destination digests come from the in-stream
+        // caches instead of two more full reads.
         const before = try self.contentDigest(src);
-        try self.copyTree(src, dst, 0);
+        var src_cache = ContentCache.init();
+        defer src_cache.deinit();
+        var dst_cache = ContentCache.init();
+        defer dst_cache.deinit();
+        var caches: CopyCache = .{ .src = &src_cache, .dst = &dst_cache };
+        try self.copyTree(src, dst, 0, &caches);
         // Source changes and cancellation leave the original intact. Keep the copy visible.
-        const after = try self.contentDigest(src);
-        const copied = try self.contentDigest(dst);
+        const after = try self.cachedDigest(src, &src_cache, false);
+        const copied = try self.cachedDigest(dst, &dst_cache, false);
         if (!std.mem.eql(u8, &before, &after) or !std.mem.eql(u8, &after, &copied)) return error.Changed;
         try self.check(0);
         // Commit phase is non-cancellable: destination is complete and verified.
         try self.removeTree(src, 0, null);
+        p.fingerprint = self.cachedDigest(dst, &dst_cache, true) catch null;
     }
     pub fn digest(self: *Job, file: *gio.File) Failure![32]u8 {
         var hash = std.crypto.hash.sha2.Sha256.init(.{});
-        try self.hashTree(file, &hash, 0, true);
+        try self.hashTree(file, &hash, 0, true, null);
         return hash.finalResult();
     }
     fn contentDigest(self: *Job, file: *gio.File) Failure![32]u8 {
         var hash = std.crypto.hash.sha2.Sha256.init(.{});
-        try self.hashTree(file, &hash, 0, false);
+        try self.hashTree(file, &hash, 0, false, null);
         return hash.finalResult();
     }
-    fn hashTree(self: *Job, file: *gio.File, hash: *std.crypto.hash.sha2.Sha256, depth: usize, metadata: bool) Failure!void {
+    /// Same walk as digest/contentDigest, but regular-file content digests come
+    /// from a cache recorded during the transfer instead of a fresh read. Because
+    /// the assembly is shared with hashTree, the result is byte-identical to a
+    /// full digest of the same tree.
+    fn cachedDigest(self: *Job, file: *gio.File, cache: *const ContentCache, metadata: bool) Failure![32]u8 {
+        var hash = std.crypto.hash.sha2.Sha256.init(.{});
+        try self.hashTree(file, &hash, 0, metadata, cache);
+        return hash.finalResult();
+    }
+    fn fileContentDigest(self: *Job, file: *gio.File) Failure![32]u8 {
+        var err: ?*glib.Error = null;
+        const input = file.read(self.cancel, &err) orelse return self.io(err);
+        defer input.unref();
+        var hash = std.crypto.hash.sha2.Sha256.init(.{});
+        var buf: [64 * 1024]u8 = undefined;
+        while (true) {
+            const n = input.as(gio.InputStream).read(&buf, buf.len, self.cancel, &err);
+            if (n < 0) return self.io(err);
+            if (n == 0) break;
+            hash.update(buf[0..@intCast(n)]);
+        }
+        return hash.finalResult();
+    }
+    fn hashTree(self: *Job, file: *gio.File, hash: *std.crypto.hash.sha2.Sha256, depth: usize, metadata: bool, cache: ?*const ContentCache) Failure!void {
         try self.check(depth);
         var err: ?*glib.Error = null;
         const info = file.queryInfo(attrs, .{ .nofollow_symlinks = true }, self.cancel, &err) orelse return self.io(err);
@@ -373,20 +470,16 @@ pub const Job = struct {
                     hash.update(&.{0});
                     const child = file.getChild(n);
                     defer child.unref();
-                    try self.hashTree(child, hash, depth + 1, metadata);
+                    try self.hashTree(child, hash, depth + 1, metadata, cache);
                 }
             },
             .symbolic_link => hash.update(std.mem.span(info.getSymlinkTarget() orelse "")),
             .regular => {
-                const input = file.read(self.cancel, &err) orelse return self.io(err);
-                defer input.unref();
-                var buf: [64 * 1024]u8 = undefined;
-                while (true) {
-                    const n = input.as(gio.InputStream).read(&buf, buf.len, self.cancel, &err);
-                    if (n < 0) return self.io(err);
-                    if (n == 0) break;
-                    hash.update(buf[0..@intCast(n)]);
-                }
+                // Feed a per-file content digest rather than the raw bytes so a
+                // transfer can reuse the digest it computed while streaming. The
+                // uncached path reads the file to produce the same digest.
+                const content_sha = if (cache) |c| (c.get(file) orelse return error.Unsupported) else try self.fileContentDigest(file);
+                hash.update(&content_sha);
             },
             else => return error.Unsupported,
         }
@@ -463,6 +556,77 @@ test "recursive copy preserves bytes, symlink identity and existing destinations
     try std.testing.expect(again.conflict);
     const unchanged = try job.contentDigest(dest);
     try std.testing.expectEqualSlices(u8, &before, &unchanged);
+}
+test "cached transfer fingerprint equals a full digest for files, trees and symlinks" {
+    var f = Fixture.init();
+    defer f.deinit();
+    const source = f.child("source");
+    defer source.unref();
+    try std.testing.expect(source.makeDirectory(null, null) != 0);
+    const top = source.getChild("top.bin");
+    defer top.unref();
+    writeFixture(top, "top-level bytes");
+    const nested = source.getChild("nested");
+    defer nested.unref();
+    try std.testing.expect(nested.makeDirectory(null, null) != 0);
+    const inner = nested.getChild("inner.bin");
+    defer inner.unref();
+    writeFixture(inner, "nested bytes");
+    const link = source.getChild("link");
+    defer link.unref();
+    try std.testing.expect(link.makeSymbolicLink("top.bin", null, null) != 0);
+    const dest = f.child("copy");
+    defer dest.unref();
+    const job = Job.create(.copy);
+    defer job.destroy();
+    job.add(source, dest);
+    job.run();
+    try std.testing.expect(job.pairs.items[0].completed);
+    // The fingerprint recorded from in-stream digests must match a fresh full
+    // digest of the destination, including metadata, structure and content.
+    const full = try job.digest(dest);
+    try std.testing.expectEqualSlices(u8, &full, &job.pairs.items[0].fingerprint.?);
+    // Undo relies on this equality: a changed destination must still be detected.
+    const dest_nested = dest.getChild("nested");
+    defer dest_nested.unref();
+    const dest_inner = dest_nested.getChild("inner.bin");
+    defer dest_inner.unref();
+    writeFixture(dest_inner, "tampered");
+    const changed = try job.digest(dest);
+    try std.testing.expect(!std.mem.eql(u8, &changed, &job.pairs.items[0].fingerprint.?));
+}
+test "in-stream content caches reproduce full content digests for a copied tree" {
+    var f = Fixture.init();
+    defer f.deinit();
+    const source = f.child("source");
+    defer source.unref();
+    try std.testing.expect(source.makeDirectory(null, null) != 0);
+    const one = source.getChild("one.bin");
+    defer one.unref();
+    writeFixture(one, "first file bytes");
+    const sub = source.getChild("sub");
+    defer sub.unref();
+    try std.testing.expect(sub.makeDirectory(null, null) != 0);
+    const two = sub.getChild("two.bin");
+    defer two.unref();
+    writeFixture(two, "second file bytes");
+    const dest = f.child("dest");
+    defer dest.unref();
+    var src_cache = ContentCache.init();
+    defer src_cache.deinit();
+    var dst_cache = ContentCache.init();
+    defer dst_cache.deinit();
+    var caches: CopyCache = .{ .src = &src_cache, .dst = &dst_cache };
+    const job = Job.create(.copy);
+    defer job.destroy();
+    try job.copyTree(source, dest, 0, &caches);
+    const src_full = try job.contentDigest(source);
+    const src_cached = try job.cachedDigest(source, &src_cache, false);
+    try std.testing.expectEqualSlices(u8, &src_full, &src_cached);
+    const dst_full = try job.contentDigest(dest);
+    const dst_cached = try job.cachedDigest(dest, &dst_cache, false);
+    try std.testing.expectEqualSlices(u8, &dst_full, &dst_cached);
+    try std.testing.expectEqualSlices(u8, &src_full, &dst_full);
 }
 test "cancelled batches and invalid descendant targets retain sources" {
     var f = Fixture.init();
