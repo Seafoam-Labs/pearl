@@ -27,7 +27,7 @@ def handoff(s, binary):
 
 def main():
     p=argparse.ArgumentParser(description=__doc__)
-    for name in ('pearl','production-pearl','ctl','settings','production-settings','spike','locker','themes'):
+    for name in ('pearl','production-pearl','ctl','settings','production-settings','spike','locker','themes','portal','capture-picker','preview-helper'):
         p.add_argument('--'+name,type=Path,required=True)
     p.add_argument('--agent',type=Path,default=ROOT/'zig-out/bin/pearl-agent')
     p.add_argument('--output',type=Path,default=ROOT/'artifacts/settings-app/s5/integration')
@@ -37,7 +37,7 @@ def main():
     try:
       with tempfile.TemporaryDirectory(prefix='pearl-settings-stage-') as temp:
         root=Path(temp);source=root/'binaries';source.mkdir();stage=root/'installed tree'
-        for src,name in [(args.production_pearl,'pearl'),(args.ctl,'pearlctl'),(args.production_settings,'pearl-settings'),(args.locker,'pearl-lock'),(args.themes,'pearl-themes'),(args.agent,'pearl-agent')]:shutil.copy2(src,source/name)
+        for src,name in [(args.production_pearl,'pearl'),(args.ctl,'pearlctl'),(args.production_settings,'pearl-settings'),(args.locker,'pearl-lock'),(args.themes,'pearl-themes'),(args.agent,'pearl-agent'),(args.portal,'xdg-desktop-portal-pearl'),(args.capture_picker,'pearl-capture-picker'),(args.preview_helper,'pearl-preview-helper')]:shutil.copy2(src,source/name)
         subprocess.run(['bash',ROOT/'packaging/install.sh'],env=dict(os.environ,DESTDIR=str(stage),PEARL_BINARY_DIR=str(source)),check=True)
         bindir=stage/'usr/bin';shellbin=bindir/'pearl';ctlbin=bindir/'pearlctl';settings=bindir/'pearl-settings'
         desktop=stage/'usr/share/applications'/f'{APP_ID}.desktop'
@@ -82,10 +82,13 @@ def main():
           ctl(s,ctlbin,'settings','show');wait_for(lambda:len(windows(ipc))==1,20)
           wait_for(lambda:probe(s,ipc)['connected']);first=probe(s,ipc)['pid']
           assert probe(s,ipc)['page']=='overview'
-          for page in ('appearance','network','bluetooth','sound','power','bar','notifications','session','advanced'):
+          for page in ('appearance','network','bluetooth','sound','power','bar','notifications','advanced'):
             ctl(s,ctlbin,'settings','show','--page',page)
             wait_for(lambda:probe(s,ipc)['page']==page)
             assert probe(s,ipc)['pid']==first and len(windows(ipc))==1
+          # The legacy Session & lock route id selects the merged Power & session page.
+          ctl(s,ctlbin,'settings','show','--page','session')
+          wait_for(lambda:probe(s,ipc)['page']=='power')
           ctl(s,ctlbin,'aqueous','show','--text','layouts');wait_for(lambda:probe(s,ipc)['section']=='layouts')
           ctl(s,ctlbin,'aqueous','show','--section','input');wait_for(lambda:probe(s,ipc)['section']=='input')
           ctl(s,ctlbin,'settings','show','--page','aqueous','--section','displays');wait_for(lambda:probe(s,ipc)['section']=='displays')

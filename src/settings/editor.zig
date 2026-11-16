@@ -350,7 +350,8 @@ pub const Editor = struct {
         self.wake();
         return 0;
     }
-    pub fn navigate(self: *Editor, requested: nav.Target, external: bool) void {
+    pub fn navigate(self: *Editor, requested_in: nav.Target, external: bool) void {
+        const requested = nav.normalize(requested_in);
         requested.validate() catch return;
         const target: nav.Target = .{ .page = requested.page, .section = if (requested.section) |section| nav.aqueous_sections[nav.aqueousSectionIndex(section) catch return] else null };
         self.live_offset = 0;

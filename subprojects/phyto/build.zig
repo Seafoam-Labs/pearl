@@ -52,6 +52,9 @@ pub fn build(b: *std.Build) void {
     for ([_][]const u8{ "gio2", "glib2" }) |name| engine_module.addImport(name, bindings.module(name));
     const engine_tests = b.addTest(.{ .root_module = engine_module });
     test_step.dependOn(&b.addRunArtifact(engine_tests).step);
+    const io_priority_module = createModule(b, .{ .root_source_file = b.path("src/platform/io_priority.zig"), .target = target, .optimize = optimize, .link_libc = true });
+    const io_priority_tests = b.addTest(.{ .root_module = io_priority_module });
+    test_step.dependOn(&b.addRunArtifact(io_priority_tests).step);
     const network_module = createModule(b, .{ .root_source_file = b.path("src/network_tests.zig"), .target = target, .optimize = optimize, .link_libc = true });
     for ([_][]const u8{ "gtk4", "gdk4", "gio2", "glib2", "gobject2", "pango1", "gdkpixbuf2" }) |name| network_module.addImport(name, bindings.module(name));
     const network_tests = b.addTest(.{ .root_module = network_module });

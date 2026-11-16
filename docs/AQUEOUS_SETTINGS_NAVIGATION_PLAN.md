@@ -2,6 +2,8 @@
 
 Status: implemented September 16, 2026; validation evidence is recorded in
 [the implementation review](../artifacts/aqueous-navigation/README.md).
+Superseded November 13, 2026 by the flattened navigation and merged Advanced
+page in [AQUEOUS_FLATTENED_NAVIGATION_PLAN.md](AQUEOUS_FLATTENED_NAVIGATION_PLAN.md).
 
 ## Goal
 

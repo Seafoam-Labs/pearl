@@ -16,7 +16,7 @@ parity or a fully qualified distribution release.
 | Memory | Total, used, available, cached and swap; RSS process rows; PSS and command line only for a selected process |
 | Storage | Whole-device selection, read/write rates, activity, average response time, capacity; readable local mounted filesystems |
 | Network | Individual interfaces, receive/send, lifetime totals, state, addresses, hardware address and readable link speed; bytes/s or bits/s summaries |
-| GPU | Multiple DRM adapters; label-checked AMD sysfs metrics (busy, memory, power/cap, edge temperature, clocks, fan, GTT, PCIe, product names); Intel discovery/frequency; optional NVIDIA NVML helper with deadline and stale-result handling |
+| GPU | Multiple DRM adapters; label-checked AMD sysfs metrics (busy, memory, power/cap, edge temperature, clocks, fan, GTT, PCIe, product names); Intel discovery/frequency; optional NVIDIA NVML helper exposing utilization, memory incl. reserved, clocks, power limit, fan, P-state, PCIe link/throughput, clock-limit reasons, driver and CUDA versions, with deadline and stale-result handling |
 | Sensors | Named hwmon temperature and fan readings, with per-sensor history |
 | Processes | Recycled sortable/filterable GTK column view, user filter, cgroup application grouping, details, right-click row menu, pidfd-based end/force-stop confirmations |
 | Services | Optional user/system systemd manager, search, selection, right-click row menu, asynchronous start/stop/restart, authorization errors, owner-change recovery |
@@ -88,8 +88,10 @@ service requests, kills/drains a running helper and releases models/histories.
   temperature and clocks, power average/input with cap and label, busy and memory
   utilization, VRAM, GTT, fan, PCIe link, and product names from sysfs/pci.ids.
   Intel currently exposes discovery and readable frequency only; device
-  utilization/VRAM is not inferred from clients. NVIDIA supplies available
-  utilization, video, memory, temperature and power.
+  utilization/VRAM is not inferred from clients. The NVIDIA NVML helper exposes
+  utilization, memory including driver-reserved, current and maximum clocks,
+  power with cap, fan, P-state, PCIe link generation/width and Tx/Rx throughput,
+  clock-limit reasons and driver/CUDA versions; unsupported calls dash their field.
 - Only local ext4, XFS, Btrfs and VFAT mounts are queried with `statvfs`. Remote,
   FUSE and pseudo filesystems are skipped. The disk page labels the mount list as
   covering all devices; mount capacity is refreshed on opening the page.

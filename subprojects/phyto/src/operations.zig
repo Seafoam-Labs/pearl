@@ -9,6 +9,7 @@ const a = u.a;
 const Window = @import("window.zig").Window;
 const Context = @import("context.zig").Context;
 pub const engine = @import("operations/engine.zig");
+const io_priority = @import("platform/io_priority.zig");
 const log = std.log.scoped(.platform);
 pub const Operations = struct {
     owner: *Window,
@@ -299,6 +300,10 @@ pub const Operations = struct {
     }
     fn worker(task: *gio.Task, _: *object.Object, data: ?*anyopaque, _: ?*gio.Cancellable) callconv(.c) void {
         const j: *engine.Job = @ptrCast(@alignCast(data.?));
+        // Yield storage bandwidth to interactive I/O while the transfer runs, then
+        // leave the shared pool thread's priority as it was (issue #124).
+        const saved = io_priority.lower();
+        defer io_priority.restore(saved);
         j.run();
         task.returnBoolean(1);
     }
