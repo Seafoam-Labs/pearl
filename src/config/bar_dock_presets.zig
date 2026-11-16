@@ -25,6 +25,8 @@ pub const Preset = struct {
     id: []const u8,
     name: []const u8,
     description: []const u8 = "",
+    /// GResource path of the clickable preview image; empty shows no picture.
+    preview: []const u8 = "",
     /// Keys are `prefs.Bar` field names, values are parsed into that field's type.
     bar: ?std.json.ObjectMap = null,
     /// Keys are `prefs.Dock` field names.
@@ -37,6 +39,7 @@ const Wire = struct {
     id: []const u8,
     name: []const u8,
     description: []const u8 = "",
+    preview: []const u8 = "",
     bar: ?std.json.Value = null,
     dock: ?std.json.Value = null,
     widgets: ?Widgets = null,
@@ -54,7 +57,8 @@ pub fn catalog(alloc: std.mem.Allocator) ![]const Preset {
     const result = try alloc.alloc(Preset, wire.len);
     for (wire, result) |entry, *out| {
         if (!identifier(entry.id) or entry.name.len == 0) return error.InvalidPreset;
-        out.* = .{ .id = entry.id, .name = entry.name, .description = entry.description, .bar = try objectOf(entry.bar), .dock = try objectOf(entry.dock), .widgets = entry.widgets };
+        if (entry.preview.len > 0 and !previewPath(entry.preview)) return error.InvalidPreset;
+        out.* = .{ .id = entry.id, .name = entry.name, .description = entry.description, .preview = entry.preview, .bar = try objectOf(entry.bar), .dock = try objectOf(entry.dock), .widgets = entry.widgets };
     }
     return result;
 }
@@ -70,6 +74,20 @@ pub fn identifier(id: []const u8) bool {
     if (id.len == 0 or id.len > 64) return false;
     for (id) |ch| if (!std.ascii.isAlphanumeric(ch) and ch != '-' and ch != '_') return false;
     return true;
+}
+
+/// Preview images ship in the GResource bundle. The JSON names the exact
+/// resource, so a placeholder can be replaced by a real screenshot in any
+/// installed gdk-pixbuf format without a code change.
+pub fn previewPath(path: []const u8) bool {
+    const prefix = "/org/aqueous/Pearl/previews/";
+    if (path.len > 256 or !std.mem.startsWith(u8, path, prefix)) return false;
+    if (std.mem.indexOf(u8, path, "..") != null) return false;
+    for (path) |ch| if (ch < 32 or ch == 127 or ch == '\\' or ch == '"') return false;
+    for ([_][]const u8{ ".png", ".webp", ".avif", ".jpg", ".jpeg" }) |ext| {
+        if (std.mem.endsWith(u8, path, ext)) return path.len > prefix.len + ext.len;
+    }
+    return false;
 }
 
 fn userOwned(comptime name: []const u8) bool {
@@ -173,6 +191,7 @@ test "shipped presets are well formed and only name real bar and dock settings" 
         for (presets[0..i]) |old| try t.expect(!std.mem.eql(u8, old.id, preset.id));
         try t.expect(identifier(preset.id));
         try t.expect(preset.name.len > 0 and preset.widgets != null);
+        try t.expect(preset.preview.len > 0 and previewPath(preset.preview));
         for ([_]?std.json.ObjectMap{ preset.bar, preset.dock }) |overrides| {
             const listed = overrides orelse continue;
             try t.expect(listed.count() > 0);
@@ -188,6 +207,11 @@ test "shipped presets are well formed and only name real bar and dock settings" 
     try t.expect((try find(alloc, "nope")) == null);
     try t.expectError(error.UnknownPreset, apply(alloc, "{}", "nope"));
     try t.expectError(error.UnknownField, apply(alloc, "{\"future\":1}", "macos"));
+}
+
+test "preview paths stay inside the bundled previews directory" {
+    for ([_][]const u8{ "/org/aqueous/Pearl/previews/macos.png", "/org/aqueous/Pearl/previews/windows-11.avif", "/org/aqueous/Pearl/previews/a.webp" }) |path| try std.testing.expect(previewPath(path));
+    for ([_][]const u8{ "", "/org/aqueous/Pearl/previews/", "/org/aqueous/Pearl/previews/../style.css", "/org/aqueous/Pearl/style.css", "/org/aqueous/Pearl/previews/a.svg", "/org/aqueous/Pearl/previews/a.png.exe", "previews/a.png", "/org/aqueous/Pearl/previews/a\x00.png" }) |path| try std.testing.expect(!previewPath(path));
 }
 
 test "the macOS and Windows presets describe their layouts" {

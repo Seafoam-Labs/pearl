@@ -239,6 +239,7 @@ ids, as arrays per group:
 ```json
 {
   "id": "macos",
+  "preview": "/org/aqueous/Pearl/previews/macos.png",
   "bar": { "edge": "top", "size": 32 },
   "widgets": {
     "left": ["workspaces", "title"],
@@ -248,6 +249,16 @@ ids, as arrays per group:
   "dock": { "enabled": true, "edge": "bottom" }
 }
 ```
+
+`preview` names the tile's clickable image in the GResource bundle
+(`resources/previews/`, registered in `resources/pearl.gresource.xml`). The
+shipped files are ~10 KB PNG placeholders; clicking the small preview opens it
+large in a modal window. To use real 4K screenshots later, drop the capture
+into `resources/previews/`, register it in the manifest and point `preview` at
+it — no code change. Prefer AVIF (smallest 4K size) or WebP; decoding uses the
+installed gdk-pixbuf loaders, and PNG always works. Paths are validated: they
+must stay under `/org/aqueous/Pearl/previews/` and end in `.png`, `.webp`,
+`.avif`, `.jpg` or `.jpeg`.
 
 `bar` and `dock` keys are matched against the live preference fields and
 `widgets` against the live widget enum, so new settings and widgets need no

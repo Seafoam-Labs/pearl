@@ -3,6 +3,7 @@
     "id": "macos",
     "name": "macOS",
     "description": "Slim bar at the top with status items on the right, and a bottom dock that is always visible.",
+    "preview": "/org/aqueous/Pearl/previews/macos.png",
     "bar": {
       "mode": "always",
       "edge": "top",
@@ -30,6 +31,7 @@
     "id": "windows",
     "name": "Windows",
     "description": "Taskbar at the bottom: widgets on the left, pinned and running applications in the center, clock on the right.",
+    "preview": "/org/aqueous/Pearl/previews/windows.png",
     "bar": {
       "mode": "always",
       "edge": "bottom",

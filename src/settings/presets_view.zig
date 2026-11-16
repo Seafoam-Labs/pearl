@@ -3,6 +3,9 @@
 //! desktop changes.
 const std = @import("std");
 const gtk = @import("gtk4");
+const gdk = @import("gdk4");
+const gio = @import("gio2");
+const pixbuf = @import("gdkpixbuf2");
 const object = @import("gobject2");
 const w = @import("../ui/components/widgets.zig");
 const prefs = @import("../config/preferences.zig");
@@ -14,6 +17,7 @@ const a = std.heap.c_allocator;
 pub const Control = struct { id: []const u8, widget: *gtk.Widget };
 const Binding = struct { view: *View, index: usize };
 const Tile = struct { id: []const u8, button: *gtk.CheckButton, signal: c_ulong };
+const Zoom = struct { view: *View, preview: []const u8, name: []const u8 };
 
 pub const View = struct {
     editor: *Editor,
@@ -23,6 +27,7 @@ pub const View = struct {
     bindings: []Binding,
     controls: std.ArrayList(Control) = .empty,
     arena: std.heap.ArenaAllocator = .init(a),
+    zoom: ?*gtk.Window = null,
     filling: bool = false,
     editing: bool = false,
 
@@ -65,6 +70,26 @@ pub const View = struct {
             button.as(gtk.Widget).addCssClass("appearance-mode");
             const labels = w.column(3);
             labels.as(gtk.Widget).setValign(.center);
+            if (preset.preview.len > 0) {
+                const picture = gtk.Picture.new();
+                picture.setCanShrink(1);
+                picture.setContentFit(.cover);
+                picture.as(gtk.Widget).setHexpand(1);
+                picture.as(gtk.Widget).setSizeRequest(-1, 150);
+                picture.as(gtk.Widget).setTooltipText(i18n.dtr("pearl", "Click to enlarge"));
+                if (previewTexture(alloc, preset.preview)) |texture| {
+                    defer texture.unref();
+                    picture.setPaintable(texture.as(gdk.Paintable));
+                }
+                // The picture opens the large view; the rest of the tile still
+                // selects the preset.
+                const zoom = try alloc.create(Zoom);
+                zoom.* = .{ .view = self, .preview = try alloc.dupe(u8, preset.preview), .name = try alloc.dupe(u8, preset.name) };
+                const click = gtk.GestureClick.new();
+                picture.as(gtk.Widget).addController(click.as(gtk.EventController));
+                _ = gtk.GestureClick.signals.released.connect(click, *Zoom, zoomClicked, zoom, .{});
+                labels.append(picture.as(gtk.Widget));
+            }
             const name = try alloc.dupeSentinel(u8, preset.name, 0);
             labels.append(w.label(i18n.dtr("pearl", name), "settings-row-title").as(gtk.Widget));
             const summary = w.label(try alloc.dupeSentinel(u8, try presets.summary(alloc, preset), 0), "pearl-secondary");
@@ -88,6 +113,11 @@ pub const View = struct {
     }
 
     pub fn destroy(self: *View) void {
+        if (self.zoom) |window| {
+            self.zoom = null;
+            window.destroy();
+            window.unref();
+        }
         for (self.tiles) |tile| object.signalHandlerDisconnect(tile.button.as(object.Object), tile.signal);
         self.controls.deinit(a);
         self.arena.deinit();
@@ -110,6 +140,56 @@ pub const View = struct {
         const preset = if (document.bar_dock_preset.len == 0) null else presets.find(alloc, document.bar_dock_preset) catch null;
         for (self.tiles) |tile| tile.button.setActive(@intFromBool(preset != null and std.mem.eql(u8, tile.id, preset.?.id)));
         self.status.setText(statusText(alloc, preset) catch i18n.dtr("pearl", "Custom layout"));
+    }
+
+    fn zoomClicked(_: *gtk.GestureClick, _: c_int, _: f64, _: f64, zoom: *Zoom) callconv(.c) void {
+        zoom.view.openZoom(zoom.preview, zoom.name);
+    }
+
+    /// The tile shows a small preview; clicking it brings the image up large
+    /// in a modal window, scaled to fit without cropping.
+    fn openZoom(self: *View, preview: []const u8, name: []const u8) void {
+        if (self.zoom != null) return;
+        const alloc = self.arena.allocator();
+        const title = alloc.dupeSentinel(u8, name, 0) catch return;
+        const texture = previewTexture(alloc, preview) orelse return;
+        defer texture.unref();
+        const window = gtk.Window.new();
+        self.zoom = window;
+        _ = window.ref();
+        window.setTitle(title);
+        if (self.root.as(gtk.Widget).getRoot()) |root| window.setTransientFor(object.ext.cast(gtk.Window, root));
+        window.setModal(1);
+        window.setDefaultSize(1280, 720);
+        const picture = gtk.Picture.new();
+        picture.setCanShrink(1);
+        picture.setContentFit(.contain);
+        picture.as(gtk.Widget).setHexpand(1);
+        picture.as(gtk.Widget).setVexpand(1);
+        picture.setPaintable(texture.as(gdk.Paintable));
+        window.setChild(picture.as(gtk.Widget));
+        _ = gtk.Window.signals.close_request.connect(window, *View, zoomClosed, self, .{});
+        window.present();
+    }
+
+    fn zoomClosed(window: *gtk.Window, self: *View) callconv(.c) c_int {
+        self.zoom = null;
+        window.destroy();
+        window.unref();
+        return 1;
+    }
+
+    /// Decodes through gdk-pixbuf, so any installed loader works: the shipped
+    /// PNG placeholders can be replaced by AVIF/WebP screenshots via the JSON.
+    /// A missing or undecodable asset leaves the tile without a picture.
+    fn previewTexture(alloc: std.mem.Allocator, path: []const u8) ?*gdk.Texture {
+        const sentinel = alloc.dupeSentinel(u8, path, 0) catch return null;
+        defer alloc.free(sentinel);
+        const stream = gio.resourcesOpenStream(sentinel, .{}, null) orelse return null;
+        defer stream.unref();
+        const image = pixbuf.Pixbuf.newFromStream(stream.as(gio.InputStream), null, null) orelse return null;
+        defer image.unref();
+        return gdk.Texture.newForPixbuf(image);
     }
 
     fn statusText(alloc: std.mem.Allocator, preset: ?presets.Preset) ![:0]const u8 {
