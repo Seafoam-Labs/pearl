@@ -17,6 +17,7 @@ test {
     _ = @import("desktop/workspace_policy.zig");
     _ = @import("desktop/task_model.zig");
     _ = @import("settings/bar_model.zig");
+    _ = @import("settings/bar_dock_fields.zig");
     _ = @import("theme/package_model.zig");
     _ = @import("theme/palette_resolver.zig");
     _ = @import("theme/style.zig");

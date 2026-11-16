@@ -430,7 +430,9 @@ support, remove `launcher_icon` from the default bar and every output bar in the
 saved configuration; older parsers reject unknown fields.
 
 Bar group strings remain comma-separated.
-See the [bar editor implementation](BAR_EDITOR_IMPLEMENTATION_PLAN.md).
+See the [bar editor implementation](BAR_EDITOR_IMPLEMENTATION_PLAN.md) and the
+[widget-to-JSON guide](BAR_WIDGETS.md) for every widget id, its settings fields
+and the bar/dock form values.
 
 Closing a popup, output removal, or lock hides the
 view while retaining the draft in memory. Drafts do not survive process exit.
