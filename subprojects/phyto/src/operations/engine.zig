@@ -79,11 +79,28 @@ pub const Pair = struct {
     undone: bool = false,
     original_index: usize = 0,
     skipped: bool = false,
+    /// Replace was chosen for this item: the existing destination goes to Trash
+    /// before anything is written. Consumed by perform(), so a later collision
+    /// on the same item asks again instead of replacing implicitly.
+    replace: bool = false,
+    /// This job moved an existing destination to Trash, so the receipt can say
+    /// where the previous item went.
+    replaced: bool = false,
     fingerprint: ?[32]u8 = null,
     pub fn deinit(self: *Pair) void {
         self.source.unref();
         if (self.destination) |f| f.unref();
     }
+};
+/// What the worker learned about the existing destination when a collision
+/// stopped the batch. The dialog reads this instead of querying a possibly
+/// remote file on the main thread, and uses it to explain or withhold Replace.
+pub const ConflictInfo = struct {
+    /// False when the destination could not be queried. Replace is then still
+    /// offered and the transfer reports the real outcome.
+    known: bool = false,
+    directory: bool = false,
+    can_trash: bool = false,
 };
 pub const Job = struct {
     kind: Kind,
@@ -93,11 +110,16 @@ pub const Job = struct {
     error_message: ?[:0]u8 = null,
     failures: std.ArrayList(u8) = .empty,
     conflict: bool = false,
+    conflict_info: ConflictInfo = .{},
     cancelled: bool = false,
     undo: bool = false,
     redo: bool = false,
     cut: bool = false,
     clipboard_serial: u64 = 0,
+    /// Paste/transfer jobs may resolve a destination equal to the source as a
+    /// numbered duplicate. Rename jobs must not: their operands are equal only
+    /// when the user kept the current name.
+    self_duplicate: bool = false,
     bytes: std.atomic.Value(u64) = .init(0),
     nodes: usize = 0,
     /// Count of items that failed (not cancelled, not skipped), accumulated
@@ -146,6 +168,7 @@ pub const Job = struct {
             self.perform(p) catch |err| {
                 if (err == error.Conflict) {
                     self.conflict = true;
+                    self.describeConflict(p);
                     return;
                 }
                 if (err == error.Cancelled) {
@@ -194,15 +217,27 @@ pub const Job = struct {
             p.destination = gio.File.newForPath(path);
         }
         if (p.destination) |dest| {
-            if (dest.equal(p.source) != 0 or dest.hasPrefix(p.source) != 0) {
+            if (dest.equal(p.source) != 0) {
+                // Pasting onto the source itself is a duplicate, not recursion:
+                // keep the source and transfer to a numbered sibling instead.
+                if ((self.kind == .copy or self.kind == .move) and self.self_duplicate) {
+                    const renamed = try self.numberedSibling(dest);
+                    p.destination = renamed;
+                    dest.unref();
+                } else if (self.kind != .mkdir and self.kind != .document) {
+                    self.setError("A folder cannot be copied or moved into itself.");
+                    return error.InvalidTarget;
+                }
+            } else if (dest.hasPrefix(p.source) != 0) {
                 if (self.kind != .mkdir and self.kind != .document) {
                     self.setError("A folder cannot be copied or moved into itself.");
                     return error.InvalidTarget;
                 }
             }
             // Also reject local aliases through a symlinked destination parent.
-            if (self.kind == .copy or self.kind == .move) try self.checkLocalTarget(p.source, dest);
+            if (self.kind == .copy or self.kind == .move) try self.checkLocalTarget(p.source, p.destination.?);
         }
+        if (p.replace) try self.replaceTarget(p);
         var err: ?*glib.Error = null;
         switch (self.kind) {
             .copy => {
@@ -485,18 +520,79 @@ pub const Job = struct {
         }
         hash.update(&.{0xff});
     }
+    /// The Replace resolution for the item that stopped the batch. The dialog
+    /// offers it only for transfers, never for undo/redo: a collision there
+    /// means the destination changed underneath the journal.
+    pub fn replace(self: *Job) void {
+        self.pairs.items[self.index].replace = true;
+    }
+    /// Replace is recoverable: the existing destination is moved to Trash before
+    /// the transfer writes anything, so the previous item can be restored. When
+    /// it cannot be trashed the item is kept and the failure is reported, so
+    /// Replace never becomes a silent permanent deletion.
+    fn replaceTarget(self: *Job, p: *Pair) Failure!void {
+        p.replace = false;
+        const dest = p.destination orelse return;
+        var err: ?*glib.Error = null;
+        if (dest.trash(self.cancel, &err) != 0) {
+            p.replaced = true;
+            return;
+        }
+        if (err) |e| {
+            defer e.free();
+            // A destination that vanished needs no replacement; the transfer
+            // creates it.
+            if (e.matches(gio.ioErrorQuark(), @backingInt(gio.IOErrorEnum.not_found)) != 0) return;
+            const msg = std.fmt.allocPrint(a, "The existing item could not be moved to Trash ({s}), so it was kept.", .{std.mem.span(e.f_message orelse "Trash is unavailable")}) catch unreachable;
+            defer a.free(msg);
+            self.setError(msg);
+            return error.Unsupported;
+        }
+        self.setError("The existing item could not be moved to Trash, so it was kept.");
+        return error.Unsupported;
+    }
+    /// Records the collision facts the dialog needs. This runs on the worker, so
+    /// a slow or remote destination never blocks the main thread; a failed query
+    /// leaves the information unknown rather than guessing.
+    fn describeConflict(self: *Job, p: *Pair) void {
+        self.conflict_info = .{};
+        const dest = p.destination orelse return;
+        var err: ?*glib.Error = null;
+        const info = dest.queryInfo("standard::type,access::can-trash", .{ .nofollow_symlinks = true }, self.cancel, &err) orelse {
+            if (err) |e| e.free();
+            return;
+        };
+        defer info.unref();
+        self.conflict_info = .{
+            .known = true,
+            .directory = info.getFileType() == .directory,
+            .can_trash = info.getAttributeBoolean("access::can-trash") != 0,
+        };
+    }
+    /// First free sibling of `file` named "base (2)", "base (3)", …, so duplicate
+    /// paste and Keep both produce readable numbered copies instead of random
+    /// ids. Bounded so an almost-full directory cannot spin forever.
+    fn numberedSibling(self: *Job, file: *gio.File) Failure!*gio.File {
+        const parent = file.getParent() orelse return error.InvalidTarget;
+        defer parent.unref();
+        const base = file.getBasename() orelse return error.InvalidTarget;
+        defer glib.free(base);
+        var n: usize = 2;
+        while (n < 10_000) : (n += 1) {
+            try self.check(0);
+            const name = std.fmt.allocPrintSentinel(a, "{s} ({d})", .{ std.mem.span(base), n }, 0) catch unreachable;
+            defer a.free(name);
+            const candidate = parent.getChild(name);
+            if (candidate.queryExists(self.cancel) == 0) return candidate;
+            candidate.unref();
+        }
+        return error.Limit;
+    }
     pub fn keepBoth(self: *Job) void {
         const p = &self.pairs.items[self.index];
         const old = p.destination orelse return;
-        const parent = old.getParent() orelse return;
-        defer parent.unref();
-        const basename = old.getBasename() orelse return;
-        defer glib.free(basename);
-        const id = glib.uuidStringRandom();
-        defer glib.free(id);
-        const name = std.fmt.allocPrintSentinel(a, "{s} (copy {s})", .{ basename, std.mem.span(id)[0..8] }, 0) catch unreachable;
-        defer a.free(name);
-        p.destination = parent.getChild(name);
+        const renamed = self.numberedSibling(old) catch return;
+        p.destination = renamed;
         old.unref();
     }
 };
@@ -522,6 +618,19 @@ const Fixture = struct {
 };
 fn writeFixture(file: *gio.File, value: []const u8) void {
     std.debug.assert(file.replaceContents(value.ptr, value.len, null, 0, .{}, null, null, null) != 0);
+}
+fn expectContents(file: *gio.File, expected: []const u8) !void {
+    var contents: [*]u8 = undefined;
+    var length: usize = 0;
+    std.debug.assert(file.loadContents(null, &contents, &length, null, null) != 0);
+    defer glib.free(contents);
+    try std.testing.expectEqualStrings(expected, contents[0..length]);
+}
+fn setMode(file: *gio.File, mode: u32) void {
+    const info = gio.FileInfo.new();
+    defer info.unref();
+    info.setAttributeUint32("unix::mode", mode);
+    std.debug.assert(file.setAttributesFromInfo(info, .{}, null, null) != 0);
 }
 test "recursive copy preserves bytes, symlink identity and existing destinations" {
     var f = Fixture.init();
@@ -780,4 +889,228 @@ test "a job counts failed items separately from completed ones" {
     }
     try std.testing.expectEqual(@as(usize, 1), successful);
     try std.testing.expectEqual(Outcome.partial, outcome(job.cancelled, successful, skipped, job.failed));
+}
+
+test "replace trashes the existing destination before transferring the source" {
+    var f = Fixture.init();
+    defer f.deinit();
+    const src = f.child("replace-copy-src");
+    defer src.unref();
+    writeFixture(src, "new bytes");
+    const dest = f.child("replace-copy-dest");
+    defer dest.unref();
+    writeFixture(dest, "previous bytes");
+    const j = Job.create(.copy);
+    defer j.destroy();
+    j.add(src, dest);
+    j.run();
+    try std.testing.expect(j.conflict);
+    try std.testing.expect(j.conflict_info.known);
+    try std.testing.expect(j.conflict_info.can_trash);
+    try std.testing.expect(!j.conflict_info.directory);
+    // The collision itself changed nothing.
+    try expectContents(dest, "previous bytes");
+    j.replace();
+    j.run();
+    try std.testing.expect(!j.conflict);
+    const p = j.pairs.items[0];
+    try std.testing.expect(p.completed);
+    // Set only after GIO moved the previous item to Trash, so the receipt can
+    // promise recovery. The native suite restores it end to end.
+    try std.testing.expect(p.replaced);
+    // The resolution is one-shot: a later collision must ask again.
+    try std.testing.expect(!p.replace);
+    try expectContents(dest, "new bytes");
+    try expectContents(src, "new bytes");
+    // Undo still guards the new destination, not the item that was replaced.
+    const full = try j.digest(dest);
+    try std.testing.expectEqualSlices(u8, &full, &p.fingerprint.?);
+}
+
+test "replace swaps a whole folder rather than merging into the existing one" {
+    var f = Fixture.init();
+    defer f.deinit();
+    const src = f.child("replace-folder-src");
+    defer src.unref();
+    try std.testing.expect(src.makeDirectory(null, null) != 0);
+    const incoming = src.getChild("incoming.txt");
+    defer incoming.unref();
+    writeFixture(incoming, "incoming");
+    const dest = f.child("replace-folder-dest");
+    defer dest.unref();
+    try std.testing.expect(dest.makeDirectory(null, null) != 0);
+    const stale = dest.getChild("stale.txt");
+    defer stale.unref();
+    writeFixture(stale, "stale");
+    const j = Job.create(.copy);
+    defer j.destroy();
+    j.add(src, dest);
+    j.run();
+    try std.testing.expect(j.conflict);
+    try std.testing.expect(j.conflict_info.directory);
+    j.replace();
+    j.run();
+    try std.testing.expect(j.pairs.items[0].completed);
+    try std.testing.expect(j.pairs.items[0].replaced);
+    try std.testing.expect(stale.queryExists(null) == 0);
+    const copied = dest.getChild("incoming.txt");
+    defer copied.unref();
+    try expectContents(copied, "incoming");
+}
+
+test "replace lets a cut/paste move overwrite and still removes the source last" {
+    var f = Fixture.init();
+    defer f.deinit();
+    const src = f.child("replace-move-src");
+    defer src.unref();
+    writeFixture(src, "moved bytes");
+    const dest = f.child("replace-move-dest");
+    defer dest.unref();
+    writeFixture(dest, "previous bytes");
+    const j = Job.create(.move);
+    defer j.destroy();
+    j.add(src, dest);
+    j.run();
+    try std.testing.expect(j.conflict);
+    try std.testing.expect(src.queryExists(null) != 0);
+    j.replace();
+    j.run();
+    try std.testing.expect(j.pairs.items[0].completed);
+    try std.testing.expect(src.queryExists(null) == 0);
+    try expectContents(dest, "moved bytes");
+}
+
+test "an untrashable destination is kept and reported instead of replaced" {
+    // Root bypasses the directory permission this test relies on.
+    if (std.os.linux.getuid() == 0) return error.SkipZigTest;
+    var f = Fixture.init();
+    defer f.deinit();
+    const locked = f.child("locked");
+    defer locked.unref();
+    try std.testing.expect(locked.makeDirectory(null, null) != 0);
+    const dest = locked.getChild("replace-locked-dest");
+    defer dest.unref();
+    writeFixture(dest, "previous bytes");
+    setMode(locked, 0o555);
+    defer setMode(locked, 0o755);
+    const src = f.child("replace-locked-src");
+    defer src.unref();
+    writeFixture(src, "new bytes");
+    const j = Job.create(.copy);
+    defer j.destroy();
+    j.add(src, dest);
+    j.run();
+    try std.testing.expect(j.conflict);
+    try std.testing.expect(j.conflict_info.known);
+    try std.testing.expect(!j.conflict_info.can_trash);
+    j.replace();
+    j.run();
+    try std.testing.expect(!j.pairs.items[0].completed);
+    try std.testing.expect(!j.pairs.items[0].replaced);
+    try std.testing.expectEqual(@as(usize, 1), j.failed);
+    try std.testing.expect(j.failures.items.len > 0);
+    try expectContents(dest, "previous bytes");
+    try expectContents(src, "new bytes");
+}
+
+test "pasting onto the source itself creates numbered duplicates instead of failing" {
+    var f = Fixture.init();
+    defer f.deinit();
+    const src = f.child("dup");
+    defer src.unref();
+    try std.testing.expect(src.makeDirectory(null, null) != 0);
+    const inner = src.getChild("inner.txt");
+    defer inner.unref();
+    writeFixture(inner, "duplicate me");
+    const first = Job.create(.copy);
+    defer first.destroy();
+    first.self_duplicate = true;
+    first.add(src, src);
+    first.run();
+    try std.testing.expect(!first.conflict);
+    try std.testing.expect(first.pairs.items[0].completed);
+    const second = f.child("dup (2)");
+    defer second.unref();
+    const copied = second.getChild("inner.txt");
+    defer copied.unref();
+    try expectContents(copied, "duplicate me");
+    try expectContents(inner, "duplicate me");
+    const again = Job.create(.copy);
+    defer again.destroy();
+    again.self_duplicate = true;
+    again.add(src, src);
+    again.run();
+    try std.testing.expect(again.pairs.items[0].completed);
+    const third = f.child("dup (3)");
+    defer third.unref();
+    try std.testing.expect(third.queryExists(null) != 0);
+    // A true descendant target still recurses and must stay rejected.
+    const nested = src.getChild("inside");
+    defer nested.unref();
+    const recursive = Job.create(.copy);
+    defer recursive.destroy();
+    recursive.add(src, nested);
+    recursive.run();
+    try std.testing.expect(recursive.failures.items.len > 0);
+    try std.testing.expect(nested.queryExists(null) == 0);
+    // Without paste intent (a rename keeps the current name) equal operands
+    // stay an error instead of inventing a numbered rename.
+    const rename = Job.create(.move);
+    defer rename.destroy();
+    rename.add(src, src);
+    rename.run();
+    try std.testing.expect(rename.failures.items.len > 0);
+    try std.testing.expect(src.queryExists(null) != 0);
+}
+
+test "cut and paste into the same folder renames to a numbered sibling" {
+    var f = Fixture.init();
+    defer f.deinit();
+    const src = f.child("move-dup");
+    defer src.unref();
+    writeFixture(src, "moved");
+    const j = Job.create(.move);
+    defer j.destroy();
+    j.self_duplicate = true;
+    j.add(src, src);
+    j.run();
+    try std.testing.expect(j.pairs.items[0].completed);
+    try std.testing.expect(src.queryExists(null) == 0);
+    const renamed = f.child("move-dup (2)");
+    defer renamed.unref();
+    try expectContents(renamed, "moved");
+}
+
+test "keep both numbers successive copies of the same destination" {
+    var f = Fixture.init();
+    defer f.deinit();
+    const src = f.child("keep-src");
+    defer src.unref();
+    writeFixture(src, "bytes");
+    const dest = f.child("keep-dest");
+    defer dest.unref();
+    writeFixture(dest, "existing");
+    const j = Job.create(.copy);
+    defer j.destroy();
+    j.add(src, dest);
+    j.run();
+    try std.testing.expect(j.conflict);
+    j.keepBoth();
+    j.run();
+    try std.testing.expect(j.pairs.items[0].completed);
+    const two = f.child("keep-dest (2)");
+    defer two.unref();
+    try expectContents(two, "bytes");
+    try expectContents(dest, "existing");
+    const again = Job.create(.copy);
+    defer again.destroy();
+    again.add(src, dest);
+    again.run();
+    try std.testing.expect(again.conflict);
+    again.keepBoth();
+    again.run();
+    try std.testing.expect(again.pairs.items[0].completed);
+    const three = f.child("keep-dest (3)");
+    defer three.unref();
+    try expectContents(three, "bytes");
 }
