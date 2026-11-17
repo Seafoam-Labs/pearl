@@ -41,6 +41,8 @@ pub const Network = struct {
     enabled: bool = false,
     hardware_enabled: bool = false,
     connectivity: u32 = 0,
+    /// NetworkManager PrimaryConnection object path: the link currently in use.
+    primary: Text(512) = .{},
     truncated: bool = false,
     err: ?[]const u8 = null,
     pending: bool = false,
@@ -118,6 +120,7 @@ pub const Network = struct {
             self.enabled = false;
             self.hardware_enabled = false;
             self.connectivity = 0;
+            self.primary = .{};
             self.scan_pending = false;
             self.scan_last = 0;
             self.agent.stop();
@@ -140,6 +143,7 @@ pub const Network = struct {
         const snapshot = self.peer.snapshot orelse {
             self.enabled = false;
             self.hardware_enabled = false;
+            self.primary = .{};
             self.saved_count = 0;
             self.cancelOperation();
             return;
@@ -151,6 +155,7 @@ pub const Network = struct {
                 self.enabled = d.boolean(props, "WirelessEnabled");
                 self.hardware_enabled = d.boolean(props, "WirelessHardwareEnabled");
                 self.connectivity = d.number(props, "Connectivity");
+                self.primary = d.string(props, "PrimaryConnection", "o");
             }
         }
         for (0..snapshot.nChildren()) |i| {
