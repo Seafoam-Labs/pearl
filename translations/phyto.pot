@@ -7,7 +7,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: subprojects/phyto/src/operations.zig:435
+#: subprojects/phyto/src/operations.zig:440
 msgid "A file with this name already exists"
 msgstr ""
 
@@ -168,7 +168,7 @@ msgstr ""
 msgid "Empty document…"
 msgstr ""
 
-#: subprojects/phyto/src/operations.zig:118
+#: subprojects/phyto/src/operations.zig:119
 msgid "Enter a name without /; . and .. are not allowed."
 msgstr ""
 
@@ -212,7 +212,7 @@ msgstr ""
 msgid "File is unreadable or has been removed."
 msgstr ""
 
-#: subprojects/phyto/src/operations.zig:435 subprojects/phyto/src/window.zig:142
+#: subprojects/phyto/src/operations.zig:440 subprojects/phyto/src/window.zig:142
 msgid "File operations"
 msgstr ""
 
@@ -556,7 +556,7 @@ msgstr ""
 msgid "Tab limit reached"
 msgstr ""
 
-#: subprojects/phyto/src/operations.zig:445
+#: subprojects/phyto/src/operations.zig:450
 msgid "The existing item will be kept."
 msgstr ""
 
@@ -616,7 +616,7 @@ msgstr ""
 msgid "When Phyto opens"
 msgstr ""
 
-#: subprojects/phyto/src/operations.zig:451
+#: subprojects/phyto/src/operations.zig:456
 msgid "Working…"
 msgstr ""
 

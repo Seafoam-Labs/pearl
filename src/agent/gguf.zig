@@ -65,3 +65,31 @@ pub fn layers(path: [:0]const u8) !u16 {
     }
     return error.ModelLayerCountUnavailable;
 }
+/// Bounded `general.architecture` read; separates embedding backbones from chat
+/// models before launch. Managed downloads are additionally SHA256-verified.
+pub fn architecture(a: std.mem.Allocator, path: [:0]const u8) ![]const u8 {
+    const fd = std.c.open(path, .{ .ACCMODE = .RDONLY, .CLOEXEC = true, .NOFOLLOW = true }, @as(c_uint, 0));
+    if (fd < 0) return error.ModelNotInstalled;
+    defer _ = std.c.close(fd);
+    var reader: Reader = .{ .fd = fd };
+    if (try reader.uint(u32) != 0x46554747 or try reader.uint(u32) != 3) return error.InvalidModelMetadata;
+    _ = try reader.uint(u64);
+    const count = try reader.uint(u64);
+    if (count > 100000) return error.ModelMetadataTooLarge;
+    for (0..@intCast(count)) |_| {
+        const len = try reader.uint(u64);
+        if (len > 512) return error.InvalidModelMetadata;
+        var key: [512]u8 = undefined;
+        try reader.bytes(key[0..@intCast(len)]);
+        const kind = try reader.uint(u32);
+        if (std.mem.eql(u8, key[0..@intCast(len)], "general.architecture") and kind == 8) {
+            const size = try reader.uint(u64);
+            if (size == 0 or size > 128) return error.InvalidModelMetadata;
+            const name = try a.alloc(u8, @intCast(size));
+            try reader.bytes(name);
+            return name;
+        }
+        try reader.value(kind, 0);
+    }
+    return error.ModelArchitectureUnavailable;
+}

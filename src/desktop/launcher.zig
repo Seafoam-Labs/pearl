@@ -16,7 +16,8 @@ const Client = @import("../aqueous/client.zig").Client;
 const log = std.log.scoped(.desktop);
 const a = std.heap.c_allocator;
 const Window = struct { id: [:0]const u8, name: [:0]const u8, detail: [:0]const u8, keywords: [:0]const u8, visible: bool };
-const Hit = struct { kind: enum { app, window, calculator, ask, conversation }, index: usize, score: i32, id: []const u8, name: [:0]const u8, detail: [:0]const u8 };
+const Document = @import("../search/service.zig").Document;
+const Hit = struct { kind: enum { app, window, calculator, ask, conversation, document }, index: usize, score: i32, id: []const u8, name: [:0]const u8, detail: [:0]const u8 };
 const Job = struct {
     arena: std.heap.ArenaAllocator,
     catalog: ?*apps.Catalog,
@@ -37,6 +38,21 @@ const Job = struct {
         a.destroy(self);
     }
 };
+const SemanticJob = struct {
+    arena: std.heap.ArenaAllocator,
+    launcher: *Launcher,
+    query: []const u8,
+    revision: u64,
+    generation: u64,
+    session: [32]u8,
+    cancel: *gio.Cancellable,
+    documents: []const Document = &.{},
+    fn destroy(self: *SemanticJob) void {
+        self.cancel.unref();
+        self.arena.deinit();
+        a.destroy(self);
+    }
+};
 pub const Launcher = struct {
     app: *gio.Application,
     display: *gdk.Display,
@@ -48,6 +64,12 @@ pub const Launcher = struct {
     ask: ?*const fn (*anyopaque, []const u8) anyerror!void = null,
     assistant_enabled: bool = false,
     assistant_pending: ?u64 = null,
+    semantic: ?*const fn (*anyopaque, std.mem.Allocator, []const u8, *gio.Cancellable) anyerror![]Document = null,
+    semantic_enabled: bool = false,
+    semantic_timer: c_uint = 0,
+    semantic_cancel: ?*gio.Cancellable = null,
+    semantic_tasks: usize = 0,
+    semantic_revision: u64 = 0,
     search: *gtk.SearchEntry,
     strings: *gtk.StringList,
     selection: *gtk.SingleSelection,
@@ -94,6 +116,85 @@ pub const Launcher = struct {
         self.ask = ask;
         self.search.setPlaceholderText(if (enabled) @import("i18n").dtr("pearl", "Search apps, calculate, or ask a question") else @import("i18n").dtr("pearl", "Search applications, windows or calculate"));
         self.refresh();
+    }
+    pub fn configureSemantic(self: *Launcher, enabled: bool, query: @FieldType(Launcher, "semantic")) void {
+        self.semantic_enabled = enabled;
+        self.semantic = query;
+        if (!enabled) {
+            self.cancelSemantic();
+            self.refresh();
+        }
+    }
+    fn cancelSemantic(self: *Launcher) void {
+        if (self.semantic_timer != 0) _ = glib.Source.remove(self.semantic_timer);
+        self.semantic_timer = 0;
+        if (self.semantic_cancel) |cancel| cancel.cancel();
+    }
+    /// Semantic results are a second, debounced stage: instant hits never wait
+    /// on a model, and stale document rows are discarded by revision checks.
+    fn scheduleSemantic(self: *Launcher) void {
+        if (!self.semantic_enabled or self.semantic == null or self.stopping) return;
+        const job = self.shown orelse return;
+        if (!self.fresh(job) or job.calculation.outcome == .value or job.calculation.explicit) return;
+        const query = std.mem.trim(u8, job.query, " \t\r\n");
+        if (query.len < 3 or query[0] == '?' or query[0] == '=') return;
+        self.cancelSemantic();
+        self.semantic_revision = self.edit_revision;
+        self.semantic_timer = glib.timeoutAdd(200, semanticFire, self);
+    }
+    fn semanticFire(data: ?*anyopaque) callconv(.c) c_int {
+        const self: *Launcher = @ptrCast(@alignCast(data.?));
+        self.semantic_timer = 0;
+        if (self.stopping or !self.semantic_enabled or self.semantic == null) return 0;
+        const shown = self.shown orelse return 0;
+        if (!self.fresh(shown) or self.semantic_revision != self.edit_revision) return 0;
+        const job = a.create(SemanticJob) catch return 0;
+        job.* = .{ .arena = .init(a), .launcher = self, .query = "", .revision = self.edit_revision, .generation = self.generation, .session = self.client.model.session[0..32].*, .cancel = gio.Cancellable.new() };
+        const alloc = job.arena.allocator();
+        job.query = alloc.dupe(u8, shown.query) catch {
+            job.destroy();
+            return 0;
+        };
+        self.semantic_cancel = job.cancel;
+        self.semantic_tasks += 1;
+        self.app.hold();
+        const task = gio.Task.new(null, job.cancel, semanticDone, self);
+        task.setCheckCancellable(0);
+        _ = task.setReturnOnCancel(0);
+        task.setTaskData(job, null);
+        task.runInThread(semanticRank);
+        task.unref();
+        return 0;
+    }
+    fn semanticRank(task: *gio.Task, _: ?*object.Object, data: ?*anyopaque, cancel: ?*gio.Cancellable) callconv(.c) void {
+        const job: *SemanticJob = @ptrCast(@alignCast(data.?));
+        const self = job.launcher;
+        if (self.semantic) |query| {
+            job.documents = query(self.context, job.arena.allocator(), job.query, cancel.?) catch &.{};
+        }
+        task.returnPointer(job, null);
+    }
+    fn semanticDone(_: ?*object.Object, result: *gio.AsyncResult, data: ?*anyopaque) callconv(.c) void {
+        const self: *Launcher = @ptrCast(@alignCast(data.?));
+        const job: *SemanticJob = @ptrCast(@alignCast(object.ext.cast(gio.Task, result).?.propagatePointer(null).?));
+        defer job.destroy();
+        self.semantic_tasks -= 1;
+        if (self.semantic_cancel == job.cancel) self.semantic_cancel = null;
+        defer if (self.stopping and !self.pending and self.semantic_tasks == 0) self.free();
+        if (self.stopping) return;
+        const shown = self.shown orelse return;
+        if (job.revision != self.edit_revision or job.generation != self.generation or !std.mem.eql(u8, &job.session, self.client.model.session) or !self.fresh(shown) or !std.mem.eql(u8, job.query, shown.query)) return;
+        if (job.documents.len == 0) return;
+        var i: usize = 0;
+        while (i < shown.hits.items.len) {
+            if (shown.hits.items[i].kind == .document) _ = shown.hits.orderedRemove(i) else i += 1;
+        }
+        for (job.documents) |doc| {
+            shown.hits.append(shown.arena.allocator(), .{ .kind = .document, .index = 0, .score = doc.score, .id = doc.path, .name = doc.name, .detail = doc.detail }) catch return;
+        }
+        std.mem.sort(Hit, shown.hits.items, {}, less);
+        self.render(shown);
+        self.updateMessage(shown);
     }
     pub fn assistantAcknowledged(self: *Launcher, ok: bool) bool {
         const revision = self.assistant_pending orelse return false;
@@ -161,9 +262,10 @@ pub const Launcher = struct {
         }
         self.connection_count = 0;
         if (self.cancel) |c| c.cancel();
+        self.cancelSemantic();
         // The parent destroys widgets immediately after this call. Retained models
         // and job state survive only until the pending callback has drained.
-        if (!self.pending) self.free();
+        if (!self.pending and self.semantic_tasks == 0) self.free();
     }
     fn free(self: *Launcher) void {
         self.selection.unref();
@@ -293,7 +395,7 @@ pub const Launcher = struct {
         self.cancel = null;
         if (self.stopping) {
             job.destroy();
-            self.free();
+            if (self.semantic_tasks == 0) self.free();
             app.release();
             return;
         }
@@ -313,18 +415,27 @@ pub const Launcher = struct {
                 if (revision == self.edit_revision) self.activate(self.selection.getSelected());
             }
         }
+        self.scheduleSemantic();
         app.release();
     }
     fn publish(self: *Launcher, job: *Job) void {
         const old = self.shown;
+        self.shown = job;
+        self.render(old);
+        if (old) |j| j.destroy();
+        self.updateMessage(job);
+        self.render_started = job.started;
+        log.debug("event=launcher-results count={d} shown={d} publish_us={d}", .{ job.hits.items.len, self.count, glib.getMonotonicTime() - job.started });
+    }
+    fn render(self: *Launcher, previous: ?*Job) void {
+        const job = self.shown.?;
         var selected_id: ?[]const u8 = null;
         var selected_kind: ?@FieldType(Hit, "kind") = null;
-        if (old) |j| if (std.mem.eql(u8, j.query, job.query) and self.selection.getSelected() < j.hits.items.len) {
+        if (previous) |j| if (std.mem.eql(u8, j.query, job.query) and self.selection.getSelected() < j.hits.items.len) {
             const h = j.hits.items[self.selection.getSelected()];
             selected_id = h.id;
             selected_kind = h.kind;
         };
-        self.shown = job;
         self.count = @min(job.hits.items.len, 200);
         var values: [201:null]?[*:0]const u8 = @splat(null);
         var selected: c_uint = 0;
@@ -336,19 +447,19 @@ pub const Launcher = struct {
         }
         self.strings.splice(0, self.strings.as(gio.ListModel).getNItems(), @ptrCast(&values));
         self.selection.setSelected(selected);
-        if (old) |j| j.destroy();
+    }
+    fn updateMessage(self: *Launcher, job: *Job) void {
         var buffer: [180]u8 = undefined;
         const message = if (self.count == 0) (if (self.index.pending) @import("i18n").dtr("pearl", "Loading applications…") else if (self.index.failed) @import("i18n").dtr("pearl", "Application discovery unavailable") else @import("i18n").dtr("pearl", "No matches. Try another name.")) else std.mem.printSentinel(&buffer, "{d} · {s}", .{ job.hits.items.len, @import("i18n").dtr("pearl", "results · ↑ ↓ to choose · Enter to open") }, 0) catch unreachable;
         const detail = if (job.hits.items.len > self.count) std.mem.printSentinel(&buffer, "{d} / {d} · {s}", .{ self.count, job.hits.items.len, @import("i18n").dtr("pearl", "Refine your search for more results") }, 0) catch unreachable else message;
         self.message.setText(self.action_message orelse if (job.calculation.explicit and job.calculation.outcome != .value) calculationMessage(job.calculation.outcome) else if (job.calculation.outcome == .value) @import("i18n").dtr("pearl", "↑ ↓ to choose · Enter to copy calculation · = to continue") else detail);
-        self.render_started = job.started;
-        log.debug("event=launcher-results count={d} shown={d} publish_us={d}", .{ job.hits.items.len, self.count, glib.getMonotonicTime() - job.started });
     }
     fn edited(_: *gtk.Editable, self: *Launcher) callconv(.c) void {
         self.action_message = null;
         self.edit_revision +%= 1;
         self.generation +%= 1;
         self.activate_pending = null;
+        self.cancelSemantic();
         // Invalidate synchronously, before SearchEntry's coalesced notification.
         self.count = 0;
         self.strings.splice(0, self.strings.as(gio.ListModel).getNItems(), null);
@@ -456,6 +567,24 @@ pub const Launcher = struct {
             _ = try self.client.enqueue(.{ .window_activate = .{ .id = hit.id } });
             return;
         }
+        if (hit.kind == .document) {
+            // Document ids are owned sentinel paths; re-stat so a vanished file
+            // never launches from an old result.
+            const path_z: [*:0]const u8 = @ptrCast(hit.id.ptr);
+            if (std.c.access(path_z, std.c.F_OK) != 0) return error.StaleResult;
+            const file = gio.File.newForPath(path_z);
+            defer file.unref();
+            const uri = file.getUri();
+            defer glib.free(uri);
+            const context = self.display.getAppLaunchContext();
+            defer context.unref();
+            context.setTimestamp(0);
+            var err: ?*glib.Error = null;
+            defer if (err) |e| e.free();
+            if (gio.AppInfo.launchDefaultForUri(uri, context.as(gio.AppLaunchContext), &err) == 0) return error.LaunchFailed;
+            log.info("event=document-launch accepted=true", .{});
+            return;
+        }
         const entry = job.catalog.?.entries.items[hit.index];
         // Re-read by desktop ID: removed/hidden entries must not launch from an old result.
         const desktop = unix.DesktopAppInfo.new(entry.id) orelse return error.StaleResult;
@@ -519,6 +648,7 @@ pub const Launcher = struct {
             .message = std.mem.span(self.message.getText()),
             .rows = rows.items,
             .pending = self.pending or self.waiting or self.dirty,
+            .semantic_pending = self.semantic_tasks != 0 or self.semantic_timer != 0,
             .fresh = if (self.shown) |job| self.fresh(job) else false,
             .composing = self.composing,
             .caret = self.search.as(gtk.Editable).getPosition(),
@@ -562,6 +692,7 @@ pub const Launcher = struct {
             .app => "pearl-application-x-executable-symbolic",
             .calculator => "pearl-calculator-symbolic",
             .ask, .conversation => "user-available-symbolic",
+            .document => "pearl-document-symbolic",
         });
         if (hit.kind == .app) if (job.catalog.?.entries.items[hit.index].info.getIcon()) |gicon| {
             if (object.ext.cast(gio.ThemedIcon, gicon)) |themed| {

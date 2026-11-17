@@ -307,6 +307,27 @@ test "assistant runtime migration preserves existing CPU installations" {
     try std.testing.expectEqual(.system, (try parse(a, "{\"assistant\":{\"runtime\":{\"source\":\"system\"}}}")).assistant.runtime.source);
 }
 
+test "semantic search stays disabled when older preferences omit it" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    const fresh = try parse(a, "{}");
+    try std.testing.expect(!fresh.assistant.semantic.enabled);
+    try std.testing.expectEqual(@as(usize, 0), fresh.assistant.semantic.folders.len);
+    try std.testing.expectEqual(@import("../agent/config.zig").Background.idle_low_use, fresh.assistant.semantic.background);
+    const old = try parse(a, "{\"assistant\":{\"enabled\":true}}");
+    try std.testing.expect(old.assistant.enabled);
+    try std.testing.expect(!old.assistant.semantic.enabled);
+    const saved = try parse(a, "{\"assistant\":{\"semantic\":{\"enabled\":true,\"model_id\":\"embeddinggemma-2-ud-q4_k_xl\",\"folders\":[\"/home/zoey/Documents\"]}}}");
+    try std.testing.expect(saved.assistant.semantic.enabled);
+    try std.testing.expectEqualStrings("embeddinggemma-2-ud-q4_k_xl", saved.assistant.semantic.model_id);
+    const encoded = try std.json.Stringify.valueAlloc(a, saved, .{});
+    const round = try parse(a, encoded);
+    try std.testing.expectEqualStrings("/home/zoey/Documents", round.assistant.semantic.folders[0]);
+    try std.testing.expectError(error.UnknownEmbeddingModel, parse(a, "{\"assistant\":{\"semantic\":{\"model_id\":\"liquid-lfm25-350m-q4km\"}}}"));
+    try std.testing.expectError(error.AbsoluteFolderPathRequired, parse(a, "{\"assistant\":{\"semantic\":{\"folders\":[\"Documents\"]}}}"));
+}
+
 fn tolerantParse(a: std.mem.Allocator, dom: std.json.Value) !Preferences {
     const encoded = try std.json.Stringify.valueAlloc(a, dom, .{});
     var p = try std.json.parseFromSliceLeaky(Preferences, a, encoded, .{ .allocate = .alloc_always, .ignore_unknown_fields = true });

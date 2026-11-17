@@ -48,6 +48,7 @@ pub const events: []const Event = &.{
     .{ .name = "dock-action", .scopes = &.{.desktop} },
     .{ .name = "dock-activate-fallback", .scopes = &.{.desktop} },
     .{ .name = "dock-reorder", .scopes = &.{.desktop} },
+    .{ .name = "document-launch", .scopes = &.{.desktop} },
     .{ .name = "document-load-failed", .scopes = &.{.platform} },
     .{ .name = "document-save-failed", .scopes = &.{.platform} },
     .{ .name = "file-chooser-failed", .scopes = &.{.platform} },

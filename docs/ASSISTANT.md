@@ -153,6 +153,95 @@ own reproducible release/checksum independently of Pearl. It defaults to CPU;
 builds the corresponding alternative package. A system/custom runtime can be
 used without that package. Model download integrity checks remain mandatory.
 
+## Semantic search
+
+Semantic search is a separate opt-in feature in Settings → Assistant →
+**Semantic search**, disabled on fresh installs and when older preferences omit
+the field. It does not require the chat assistant to be enabled, a chat model
+or any search provider. When enabled and indexed, the Super+Space launcher
+finds documents by description and shows the matching passage; Enter opens the
+file with its default application. See
+[DESKTOP.md](DESKTOP.md#semantic-document-search) for launcher behavior and the
+[implementation plan](SEMANTIC_SEARCH_IMPLEMENTATION_PLAN.md) for architecture.
+
+Turning the switch on immediately sets the feature up: it reuses a compatible
+installed runtime or installs llama.cpp through the distribution package
+manager (a terminal opens for authentication and confirmation), then downloads
+the embedding model. Both are immediate operations that survive Discard, with
+progress, cancellation of the download phase, and clear errors;
+**Set up now (runtime and model)** retries them. The package manager owns its
+transaction — Pearl never kills it, and closing Settings does not stop it.
+Setup verifies the runtime supports `--embeddings` before and after installing;
+a repository release without embedding support is reported, not used.
+
+The embedding model is **EmbeddingGemma 2** (Google DeepMind, Apache-2.0), text
+backbone only. Two managed profiles are pinned with immutable revisions, exact
+byte counts and SHA256 in [`model_registry.zig`](../src/agent/model_registry.zig):
+`ggml-org/embeddinggemma-2-GGUF` Q8_0 (310 MB, recommended) and
+`unsloth/embeddinggemma-2-GGUF` UD-Q4_K_XL (176 MB, low memory). The multimodal
+`mmproj` projectors are not downloaded. Downloads reuse the chat model
+machinery: resumable and hash-verified before atomic installation; an already
+installed model is not downloaded again.
+
+Nothing is indexed until you add folders (at most 16, absolute paths). The
+first index pass is scheduled automatically once enabling takes effect with
+folders configured and the model installed — it runs in the first quiet
+window (below), not immediately. An existing index is never rebuilt
+implicitly; **Index now** re-runs a pass on demand, immediately. Indexing walks
+selected folders without following symlinks,
+skips hidden entries and common cache directories, and indexes UTF-8 text
+documents (`.txt`, `.md`, `.markdown`, `.rst`) natively and PDFs through a
+bubblewrap-sandboxed `pdftotext` child. PDF indexing requires Poppler; without
+it, text documents still index and the status says so. Scanned PDFs without a
+text layer are counted as skipped, never OCR'd. Files are capped at 20 MiB;
+the index at 50,000 files / 200,000 passages. Changed files are re-embedded by
+mtime/size; deleted files and removed folders drop out on the next pass.
+
+The index lives in `~/.local/share/pearl/search/` (0700, files 0600): a manifest,
+normalized 256-dimension Matryoshka vectors and passage records. It contains
+document excerpts, stays on the device, and is excluded from preference
+exports, the raw JSON editor and `pearlctl report`. **Delete index** removes it;
+disabling the feature keeps it for cheap re-enable. A model or chunker change
+invalidates the index and requires an explicit reindex.
+
+Semantic search reuses the runtime and acceleration selected for the assistant.
+The embedding server is a second, separately locked `llama-server` started with
+`--embeddings` and mean pooling; runtimes without embedding support are
+rejected with an actionable error. Readiness verifies a probe embedding is
+768 finite, non-zero values before any document is indexed. The runtime unloads
+after 120 idle seconds; indexing defers while a chat answer is running and
+yields to live launcher queries. Lock screen and session loss cancel work and
+unload the runtime. All indexing, embedding and ranking are local — the model
+download is the only network operation.
+
+`pearlctl semantic status|index|stop|delete` exposes the same controls; Settings
+uses that verified channel because the shell owns the index.
+
+**Background indexing** (Settings → Assistant → Semantic search) keeps the
+index fresh without manual passes, primarily when the computer is idle or in
+low use. The choice is `Idle or low use` (default), `Idle only` or `Manual
+only`. Automatic work runs in bounded bursts — 120 s in idle windows (180 s of
+no input, via the compositor's ext-idle-notify, which honors idle inhibitors
+so video and games block it) and 15 s in low-use windows (confirmed low CPU
+load, no typing, AC power). Bursts stop promptly when you return, keep their
+committed progress (searchable immediately) and reschedule; at least five
+minutes separate automatic passes, and the first window opens no earlier than
+two minutes after login. On battery, only idle windows run, and only while
+charging or at ≥ 50%; power-saver mode defers everything. Locked sessions
+never index. Compositors without idle notifications degrade to low-use-only
+mode, disclosed in status.
+
+Freshness sources: directory monitors (folder roots plus discovered
+subdirectories, capped at 256) mark changed paths dirty; a stat-only rescan at
+most every six hours covers anything monitors miss (network mounts, inotify
+limits), with degraded mode reported honestly. Removing a folder applies
+immediately as a metadata-only commit — no runtime or window needed. Adding a
+folder queues an incremental pass for the next quiet window. Switching the
+embedding model queues a full rebuild the same way. The status line shows
+pending changes and what the scheduler is waiting for. Code-file support and
+real-hardware latency/memory acceptance remain open gates in the
+[idle reindex plan](SEMANTIC_IDLE_REINDEX_PLAN.md).
+
 ## GPU execution and recovery
 
 CPU is the default. **Automatic** chooses one available supported device with

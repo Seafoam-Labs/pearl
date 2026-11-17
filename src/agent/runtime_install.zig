@@ -41,7 +41,8 @@ pub fn command(a: std.mem.Allocator, selected: Manager, compute: config.Compute)
     return args.toOwnedSlice(a);
 }
 pub const Result = struct { runtime: config.RuntimeConfig, info: probe.Probe, installed: bool = false };
-fn suitable(info: probe.Probe, compute: config.Compute) bool {
+fn suitable(info: probe.Probe, compute: config.Compute, embedding: bool) bool {
+    if (embedding and !info.has("--embeddings")) return false;
     if (compute.mode == .cpu) return true;
     if (!info.has("--device") or !info.has("--split-mode")) return false;
     for (info.devices) |device| {
@@ -52,6 +53,14 @@ fn suitable(info: probe.Probe, compute: config.Compute) bool {
 // The environment boundary also lets tests exercise setup without touching the
 // host package database, authenticating, or launching an actual terminal.
 pub fn ensureWith(a: std.mem.Allocator, cfg: config.Config, cancel: *gio.Cancellable, environment: anytype) !Result {
+    return ensureImpl(a, cfg, cancel, environment, false);
+}
+/// Semantic search setup additionally requires the embeddings endpoint, both
+/// when reusing an installed runtime and after a package-manager install.
+pub fn ensureEmbeddingWith(a: std.mem.Allocator, cfg: config.Config, cancel: *gio.Cancellable, environment: anytype) !Result {
+    return ensureImpl(a, cfg, cancel, environment, true);
+}
+fn ensureImpl(a: std.mem.Allocator, cfg: config.Config, cancel: *gio.Cancellable, environment: anytype, embedding: bool) !Result {
     const candidates = [_]config.RuntimeConfig{ cfg.runtime, .{ .source = .system }, .{ .source = .packaged } };
     for (candidates, 0..) |candidate, i| {
         if (cancel.isCancelled() != 0) return error.Cancelled;
@@ -60,7 +69,7 @@ pub fn ensureWith(a: std.mem.Allocator, cfg: config.Config, cancel: *gio.Cancell
             if (err == error.Cancelled or err == error.OutOfMemory) return err;
             continue;
         };
-        if (suitable(info, cfg.compute)) return .{ .runtime = candidate, .info = info };
+        if (suitable(info, cfg.compute, embedding)) return .{ .runtime = candidate, .info = info };
     }
     if (cancel.isCancelled() != 0) return error.Cancelled;
     try environment.install(a, cfg.compute, cancel);
@@ -68,10 +77,15 @@ pub fn ensureWith(a: std.mem.Allocator, cfg: config.Config, cancel: *gio.Cancell
     const runtime: config.RuntimeConfig = .{ .source = .system };
     // Probe again even if the package manager reported success. A repository
     // release may lack required options; never claim it is compatible blindly.
-    return .{ .runtime = runtime, .info = try environment.inspect(a, runtime, cancel), .installed = true };
+    const info = try environment.inspect(a, runtime, cancel);
+    if (embedding and !info.has("--embeddings")) return error.RuntimeEmbeddingUnsupported;
+    return .{ .runtime = runtime, .info = info, .installed = true };
 }
 pub fn ensure(a: std.mem.Allocator, cfg: config.Config, cancel: *gio.Cancellable) !Result {
     return ensureWith(a, cfg, cancel, Desktop{});
+}
+pub fn ensureEmbedding(a: std.mem.Allocator, cfg: config.Config, cancel: *gio.Cancellable) !Result {
+    return ensureEmbeddingWith(a, cfg, cancel, Desktop{});
 }
 fn installInTerminal(a: std.mem.Allocator, cmd: []const [:0]const u8, cancel: *gio.Cancellable, environment: anytype) !void {
     const terminals = [_][]const [:0]const u8{
@@ -233,4 +247,35 @@ test "setup reuses compatible runtimes, installs once when absent, and rejects f
     var cancelled: Fake = .{};
     try std.testing.expectError(error.Cancelled, ensureWith(std.testing.allocator, .{}, cancel, &cancelled));
     try std.testing.expectEqual(@as(usize, 0), cancelled.installs);
+}
+
+test "embedding setup reuses only embedding-capable runtimes and verifies installs" {
+    const Fake = struct {
+        present: bool = false,
+        embeddings: bool = true,
+        installs: usize = 0,
+        fn inspect(self: *@This(), _: std.mem.Allocator, _: config.RuntimeConfig, _: *gio.Cancellable) !probe.Probe {
+            if (!self.present) return error.AssistantRuntimeNotInstalled;
+            return .{ .executable = "/usr/bin/llama-server", .fingerprint = "test", .version = "unrestricted release", .help = if (self.embeddings) "--device --split-mode --embeddings" else "--device --split-mode", .devices = &.{}, .child_environment = &.{} };
+        }
+        fn install(self: *@This(), _: std.mem.Allocator, _: config.Compute, _: *gio.Cancellable) !void {
+            self.installs += 1;
+            self.present = true;
+        }
+    };
+    const cancel = gio.Cancellable.new();
+    defer cancel.unref();
+    var capable: Fake = .{ .present = true };
+    const reused = try ensureEmbeddingWith(std.testing.allocator, .{}, cancel, &capable);
+    try std.testing.expect(!reused.installed and capable.installs == 0);
+    var old_release: Fake = .{ .present = true, .embeddings = false };
+    try std.testing.expectError(error.RuntimeEmbeddingUnsupported, ensureEmbeddingWith(std.testing.allocator, .{}, cancel, &old_release));
+    try std.testing.expectEqual(@as(usize, 1), old_release.installs);
+    var missing: Fake = .{};
+    const installed = try ensureEmbeddingWith(std.testing.allocator, .{}, cancel, &missing);
+    try std.testing.expect(installed.installed and missing.installs == 1);
+    // Chat setup keeps accepting the same runtime without the embeddings flag.
+    var chat_only: Fake = .{ .present = true, .embeddings = false };
+    const chat = try ensureWith(std.testing.allocator, .{}, cancel, &chat_only);
+    try std.testing.expect(!chat.installed and chat_only.installs == 0);
 }
