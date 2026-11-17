@@ -617,6 +617,15 @@ pub fn build(b: *std.Build) void {
     settings_services.addPassthruArgs();
     b.step("test-settings-services", "Verify standalone live pages and complete Aqueous editor boundary").dependOn(&settings_services.step);
 
+    const settings_field_search = b.addSystemCommand(&.{ "python3", "tests/integration/test_settings_field_search.py", "--settings" });
+    settings_field_search.addArtifactArg(settings_test_app);
+    settings_field_search.addArg("--pearl");
+    settings_field_search.addArtifactArg(app);
+    settings_field_search.addArg("--ctl");
+    settings_field_search.addArtifactArg(ctl);
+    settings_field_search.addPassthruArgs();
+    b.step("test-settings-field-search", "Verify field-level search across Aqueous schema fields and the Pearl manifest").dependOn(&settings_field_search.step);
+
     const settings_displays = b.addSystemCommand(&.{ "python3", "tests/integration/test_settings_displays.py", "--settings" });
     settings_displays.addArtifactArg(settings_test_app);
     settings_displays.addArg("--pearl");
@@ -808,6 +817,12 @@ pub fn build(b: *std.Build) void {
     settings_integration.addArtifactArg(production_locker);
     settings_integration.addArg("--themes");
     settings_integration.addArtifactArg(themes_tool);
+    settings_integration.addArg("--portal");
+    settings_integration.addArtifactArg(portal);
+    settings_integration.addArg("--capture-picker");
+    settings_integration.addArtifactArg(capture);
+    settings_integration.addArg("--preview-helper");
+    settings_integration.addArtifactArg(preview_helper);
     settings_integration.addPassthruArgs();
     b.step("test-settings-integration", "Verify staged Settings desktop, CLI and flyout launch integration").dependOn(&settings_integration.step);
 

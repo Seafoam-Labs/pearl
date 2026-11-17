@@ -8,11 +8,14 @@ const registry = @import("model_registry.zig");
 const probe = @import("runtime_probe.zig");
 const compute = @import("compute.zig");
 const memory = @import("memory.zig");
+const embed = @import("embed.zig");
 const c = @import("pearl_libc");
 const a = std.heap.c_allocator;
+pub const Mode = enum { chat, embedding };
 pub const Runtime = struct {
     process: ?*gio.Subprocess = null,
     arena: ?std.heap.ArenaAllocator = null,
+    mode: Mode = .chat,
     base: []const u8 = "",
     authorization: []const u8 = "",
     keyfile: ?[:0]const u8 = null,
@@ -42,7 +45,7 @@ pub const Runtime = struct {
         if (self.lockfd >= 0) _ = std.c.close(self.lockfd);
         if (self.keyfile) |path| _ = std.c.unlink(path);
         if (self.arena) |*arena| arena.deinit();
-        self.* = .{ .telemetry = self.telemetry };
+        self.* = .{ .telemetry = self.telemetry, .mode = self.mode };
     }
     pub fn ensure(self: *Runtime, cfg: config.Config, cancel: *gio.Cancellable) !void {
         var scratch = std.heap.ArenaAllocator.init(a);
@@ -54,11 +57,33 @@ pub const Runtime = struct {
         const identity = try std.json.Stringify.valueAlloc(a, .{ cfg.model_id, cfg.custom_model, cfg.cpu_threads, cfg.contextTokens(), cfg.answerTokens(), cfg.runtime, cfg.compute, try probe.fingerprint(temporary, resolved), model_identity }, .{});
         defer a.free(identity);
         if (self.process) |process| if (process.getIdentifier() != null and std.mem.eql(u8, identity, self.identity)) return;
-        self.launch(cfg, cancel) catch |err| {
+        self.launch(cfg, .chat, cancel) catch |err| {
             if (cancel.isCancelled() != 0 or !cfg.compute.fallback() or !recoverable(err)) return err;
             var cpu = cfg;
             cpu.compute.mode = .cpu;
-            try self.launch(cpu, cancel);
+            try self.launch(cpu, .chat, cancel);
+            self.fallback_reason = @errorName(err);
+        };
+        self.identity = try self.arena.?.allocator().dupe(u8, identity);
+    }
+    /// Semantic search owns a second, separately locked server for the pinned
+    /// embedding backbone. Chat keeps its own lock; the two may coexist.
+    pub fn ensureEmbedding(self: *Runtime, cfg: config.Config, cancel: *gio.Cancellable) !void {
+        var scratch = std.heap.ArenaAllocator.init(a);
+        defer scratch.deinit();
+        const temporary = scratch.allocator();
+        const resolved = try probe.resolve(temporary, cfg.runtime);
+        const model = registry.findEmbedding(cfg.semantic.model_id) orelse return error.UnknownEmbeddingModel;
+        const model_path = try @import("downloads.zig").path(temporary, model);
+        const model_identity = probe.fingerprint(temporary, model_path) catch return error.ModelNotInstalled;
+        const identity = try std.json.Stringify.valueAlloc(a, .{ "embedding", cfg.semantic.model_id, cfg.cpu_threads, cfg.runtime, cfg.compute, try probe.fingerprint(temporary, resolved), model_identity }, .{});
+        defer a.free(identity);
+        if (self.process) |process| if (process.getIdentifier() != null and std.mem.eql(u8, identity, self.identity)) return;
+        self.launch(cfg, .embedding, cancel) catch |err| {
+            if (cancel.isCancelled() != 0 or !cfg.compute.fallback() or !recoverable(err)) return err;
+            var cpu = cfg;
+            cpu.compute.mode = .cpu;
+            try self.launch(cpu, .embedding, cancel);
             self.fallback_reason = @errorName(err);
         };
         self.identity = try self.arena.?.allocator().dupe(u8, identity);
@@ -68,22 +93,25 @@ pub const Runtime = struct {
         defer a.free(identity);
         var cpu = cfg;
         cpu.compute.mode = .cpu;
-        try self.launch(cpu, cancel);
+        try self.launch(cpu, self.mode, cancel);
         self.identity = try self.arena.?.allocator().dupe(u8, identity);
         self.fallback_reason = "GPU inference failed; continued on CPU";
     }
-    fn launch(self: *Runtime, cfg: config.Config, cancel: *gio.Cancellable) !void {
+    fn launch(self: *Runtime, cfg: config.Config, mode: Mode, cancel: *gio.Cancellable) !void {
         self.stop();
+        self.mode = mode;
         self.arena = .init(a);
         errdefer self.stop();
         const alloc = self.arena.?.allocator();
-        self.inference_seconds = cfg.inferenceSeconds();
+        const model: ?registry.Model = if (mode == .embedding) registry.findEmbedding(cfg.semantic.model_id) else registry.find(cfg.model_id);
+        if (mode == .embedding and model == null) return error.UnknownEmbeddingModel;
+        self.inference_seconds = if (mode == .embedding) model.?.inference_seconds else cfg.inferenceSeconds();
         self.deadline = glib.getMonotonicTime() + @as(i64, self.inference_seconds) * 3 * std.time.us_per_s;
-        const lockpath = try std.fmt.allocPrintSentinel(alloc, "{s}/pearl-assistant-runtime.lock", .{glib.getUserRuntimeDir()}, 0);
+        const lockname = if (mode == .embedding) "pearl-embedding-runtime.lock" else "pearl-assistant-runtime.lock";
+        const lockpath = try std.fmt.allocPrintSentinel(alloc, "{s}/{s}", .{ glib.getUserRuntimeDir(), lockname }, 0);
         self.lockfd = std.c.open(lockpath, .{ .ACCMODE = .RDWR, .CREAT = true, .CLOEXEC = true, .NOFOLLOW = true, .NONBLOCK = true }, @as(c_uint, 0o600));
         if (self.lockfd < 0 or fetch.c.flock(self.lockfd, fetch.c.LOCK_EX | fetch.c.LOCK_NB) != 0) return error.AssistantRuntimeBusy;
-        const model = registry.find(cfg.model_id);
-        const reasoning = if (model) |m| m.reasoning else false;
+        const reasoning = if (mode == .chat) (if (model) |m| m.reasoning else false) else false;
         self.check_tokens = if (reasoning) cfg.answerTokens() else 256;
         const filename = if (model) |m| try @import("downloads.zig").path(alloc, m) else try alloc.dupeSentinel(u8, cfg.custom_model, 0);
         {
@@ -97,10 +125,21 @@ pub const Runtime = struct {
         defer if (self.telemetry) |metrics| {
             metrics.load_us += glib.getMonotonicTime() - load_start;
         };
+        if (mode == .embedding) {
+            const architecture = try @import("gguf.zig").architecture(alloc, filename);
+            if (!std.mem.eql(u8, architecture, registry.embedding_architecture)) return error.NotAnEmbeddingModel;
+            // Conservative resident-memory guard before a second server loads.
+            var st: std.os.linux.Statx = undefined;
+            if (std.os.linux.statx(std.os.linux.AT.FDCWD, filename, 0, .{ .SIZE = true }, &st) != 0) return error.ModelNotInstalled;
+            const weights = std.math.divCeil(u64, st.size, 1024 * 1024) catch return error.InvalidModelFile;
+            if ((memory.availableMiB() orelse 0) < weights + 512) return error.SystemMemoryPressure;
+        }
         const info = try probe.inspect(alloc, cfg.runtime, cfg.compute.mode != .cpu, cancel);
+        if (mode == .embedding) try probe.requiredEmbedding(info.help);
         if (reasoning and !info.has("--reasoning-format")) return error.RuntimeReasoningUnsupported;
         self.executable = info.executable;
         self.version = info.version;
+        const context_tokens: u32 = if (mode == .embedding) model.?.context_tokens else cfg.contextTokens();
         var layers: u16 = 0;
         if (cfg.compute.mode != .cpu) {
             const total = try @import("gguf.zig").layers(filename);
@@ -110,7 +149,7 @@ pub const Runtime = struct {
             var st: std.os.linux.Statx = undefined;
             if (std.os.linux.statx(std.os.linux.AT.FDCWD, filename, 0, .{ .SIZE = true }, &st) != 0) return error.ModelNotInstalled;
             const weights = std.math.divCeil(u64, st.size, 1024 * 1024) catch return error.InvalidModelFile;
-            const required = weights * layers / total + @as(u64, cfg.contextTokens()) / 16 + 128;
+            const required = weights * layers / total + @as(u64, context_tokens) / 16 + 128;
             self.device = try compute.select(info.devices, cfg.compute, required);
             if (self.device) |device| {
                 if (!info.has("--device") or !info.has("--split-mode")) return error.GpuRuntimeCapabilityMissing;
@@ -149,10 +188,19 @@ pub const Runtime = struct {
         var setup: Setup = .{ .parent = c.getpid() };
         launcher.setChildSetup(childSetup, &setup, null);
         const port_z = try std.fmt.allocPrintSentinel(alloc, "{d}", .{port}, 0);
-        const context = try std.fmt.allocPrintSentinel(alloc, "{d}", .{cfg.contextTokens()}, 0);
+        const context = try std.fmt.allocPrintSentinel(alloc, "{d}", .{context_tokens}, 0);
         const threads = try std.fmt.allocPrintSentinel(alloc, "{d}", .{cfg.threads()}, 0);
+        const alias: [:0]const u8 = if (mode == .embedding) embed.alias else "pearl-local";
         var args: std.ArrayList(?[*:0]const u8) = .empty;
-        try args.appendSlice(alloc, &.{ info.executable, "-m", filename, "--alias", "pearl-local", "--host", "127.0.0.1", "--port", port_z, "--api-key-file", temp, "--jinja", "--ctx-size", context, "--parallel", "1", "--threads", threads, "--threads-batch", threads, "--threads-http", "2", "--batch-size", "128", "--ubatch-size", "64", "--gpu-layers", if (self.gpu) try std.fmt.allocPrintSentinel(alloc, "{d}", .{layers}, 0) else "0" });
+        try args.appendSlice(alloc, &.{ info.executable, "-m", filename, "--alias", alias, "--host", "127.0.0.1", "--port", port_z, "--api-key-file", temp });
+        if (mode == .chat) try args.append(alloc, "--jinja");
+        try args.appendSlice(alloc, &.{ "--ctx-size", context, "--parallel", "1", "--threads", threads, "--threads-batch", threads, "--threads-http", "2", "--batch-size", if (mode == .embedding) "2048" else "128", "--ubatch-size", if (mode == .embedding) "512" else "64", "--gpu-layers", if (self.gpu) try std.fmt.allocPrintSentinel(alloc, "{d}", .{layers}, 0) else "0" });
+        if (mode == .embedding) {
+            try args.append(alloc, "--embeddings");
+            // The GGUF carries mean pooling; request it explicitly where the
+            // runtime exposes the switch so older metadata cannot change it.
+            if (info.has("--pooling")) try args.appendSlice(alloc, &.{ "--pooling", "mean" });
+        }
         for ([_][:0]const u8{ "--no-webui", "--no-agent", "--no-op-offload" }) |flag| if (info.has(flag)) {
             try args.append(alloc, flag);
         };
@@ -160,7 +208,7 @@ pub const Runtime = struct {
         if (info.has("--fit")) try args.appendSlice(alloc, &.{ "--fit", "off" });
         if (info.has("--poll")) try args.appendSlice(alloc, &.{ "--poll", "0" });
         // Keep internal reasoning out of answer text and citation validation.
-        if (info.has("--reasoning-format")) try args.appendSlice(alloc, &.{ "--reasoning-format", "deepseek" });
+        if (mode == .chat and info.has("--reasoning-format")) try args.appendSlice(alloc, &.{ "--reasoning-format", "deepseek" });
         if (info.has("--device")) try args.appendSlice(alloc, &.{ "--device", if (self.device) |d| try alloc.dupeSentinel(u8, d.name, 0) else "none" });
         if (self.gpu) try args.appendSlice(alloc, &.{ "--split-mode", "none" });
         try args.append(alloc, null);
@@ -177,11 +225,18 @@ pub const Runtime = struct {
                 glib.usleep(200000);
                 continue;
             };
-            if (ready.status == 200 and std.mem.indexOf(u8, ready.bytes, "pearl-local") != null) {
-                const unauth = try fetch.request(alloc, .{ .url = try std.fmt.allocPrint(alloc, "{s}/v1/chat/completions", .{self.base}), .body = "{}", .private_endpoint = true, .timeout_seconds = 2 }, cancel);
+            if (ready.status == 200 and std.mem.indexOf(u8, ready.bytes, alias) != null) {
+                const unauth_path = if (mode == .embedding) "/v1/embeddings" else "/v1/chat/completions";
+                const unauth = try fetch.request(alloc, .{ .url = try std.fmt.allocPrint(alloc, "{s}{s}", .{ self.base, unauth_path }), .body = "{}", .private_endpoint = true, .timeout_seconds = 2 }, cancel);
                 if (unauth.status != 401 and unauth.status != 403) return error.RuntimeAuthenticationMissing;
-                _ = try @import("llama.zig").tokenCount(alloc, self, "Pearl local compatibility check", cancel);
-                try @import("model_check.zig").check(alloc, self, cancel);
+                if (mode == .chat) {
+                    _ = try @import("llama.zig").tokenCount(alloc, self, "Pearl local compatibility check", cancel);
+                    try @import("model_check.zig").check(alloc, self, cancel);
+                } else {
+                    // Rejects non-finite, zero or wrong-width vectors before any
+                    // document is indexed (silent-degradation failure class).
+                    _ = try embed.vector(alloc, self, "Pearl local embedding compatibility check", cancel);
+                }
                 try self.monitor();
                 if (self.gpu and self.offload_layers == 0) return error.GpuOffloadUnverified;
                 if (!std.mem.eql(u8, info.fingerprint, try probe.fingerprint(alloc, info.executable))) return error.RuntimeChanged;

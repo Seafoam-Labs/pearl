@@ -267,16 +267,7 @@ pub fn extractHere(owner: *Window, file: *gio.File, tool: Extractor) void {
 }
 pub fn integration(owner: *Window, c: *const Context, cmd: Command) void {
     if (cmd == .admin) {
-        const path = c.target().getPath() orelse return;
-        defer glib.free(path);
-        const escaped = glib.Uri.escapeString(path, "/", 0);
-        defer glib.free(escaped);
-        const uri = u.format("admin://{s}", .{escaped});
-        defer a.free(uri);
-        const file = gio.File.newForUri(uri);
-        defer file.unref();
-        owner.addTab(c.pane, file);
-        owner.sync();
+        openAdmin(owner, c);
         return;
     }
     if (cmd == .extract) {
@@ -299,6 +290,45 @@ pub fn integration(owner: *Window, c: *const Context, cmd: Command) void {
         args.append(a, path) catch unreachable;
     }
     spawn(owner, args.items, c.directory);
+}
+const AdminRequest = struct { owner: *Window, pane: usize, file: *gio.File, operation: *gtk.MountOperation };
+/// The GVFS admin backend is mountable: it must be mounted (which spawns
+/// gvfsd-admin through pkexec and authenticates via polkit) before its contents
+/// can be enumerated. Opening the tab without mounting first leaves it empty
+/// with G_IO_ERROR_NOT_MOUNTED (issue: "Open as administrator" shows no files).
+fn openAdmin(owner: *Window, c: *const Context) void {
+    const path = c.target().getPath() orelse return;
+    defer glib.free(path);
+    const escaped = glib.Uri.escapeString(path, "/", 0);
+    defer glib.free(escaped);
+    const uri = u.format("admin://{s}", .{escaped});
+    defer a.free(uri);
+    const file = gio.File.newForUri(uri);
+    const r = a.create(AdminRequest) catch {
+        file.unref();
+        return;
+    };
+    r.* = .{ .owner = owner, .pane = c.pane, .file = file, .operation = gtk.MountOperation.new(owner.window) };
+    owner.app.as(gio.Application).hold();
+    file.mountEnclosingVolume(.{}, r.operation.as(gio.MountOperation), null, adminMounted, r);
+}
+fn adminMounted(_: ?*u.object.Object, result: *gio.AsyncResult, data: ?*anyopaque) callconv(.c) void {
+    const r: *AdminRequest = @ptrCast(@alignCast(data.?));
+    defer {
+        r.file.unref();
+        r.operation.unref();
+        r.owner.app.as(gio.Application).release();
+        a.destroy(r);
+    }
+    var err: ?*glib.Error = null;
+    if (r.file.mountEnclosingVolumeFinish(result, &err) == 0) {
+        defer if (err) |e| e.free();
+        r.owner.message("Could not open as administrator", if (err) |e| e.f_message orelse "Authentication failed or the admin backend is unavailable." else "Authentication failed or the admin backend is unavailable.");
+        return;
+    }
+    if (r.owner.closed) return;
+    r.owner.addTab(r.pane, r.file);
+    r.owner.sync();
 }
 const VolumeRequest = struct { owner: *Window, context: Context, command: Command, operation: *gtk.MountOperation };
 pub fn volume(owner: *Window, c: *const Context, cmd: Command) void {

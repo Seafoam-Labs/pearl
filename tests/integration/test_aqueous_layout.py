@@ -12,7 +12,10 @@ from test_settings_services import Peer, aq_ready, navigate
 from pearl_session import fixture_prefix
 
 FRAME_WARNINGS = ('gdk_frame_timings_discarded() called on already presented frame',
-                  'gdk_frame_timings_throttling_hint: runtime check failed')
+                  'gdk_frame_timings_throttling_hint: runtime check failed',
+                  'Duplicate call to gdk_frame_timings_presented() with different values')
+# Hosts without the German locale installed fall back to C for that capture.
+ENV_WARNINGS = ('Locale not supported by C library',)
 SECTIONS = ('appearance', 'layouts', 'input', 'keybinds', 'rules', 'displays', 'advanced')
 
 
@@ -47,7 +50,10 @@ def main():
             def go(section):
                 navigate(s, ipc, 'aqueous', section)
                 aq_ready(s, ipc, peer)
-                wait_for(lambda: probe(s, ipc)['section'] == section)
+                if section == 'advanced':
+                    wait_for(lambda: probe(s, ipc)['page'] == 'advanced')
+                else:
+                    wait_for(lambda: probe(s, ipc)['section'] == section)
 
             def controls():
                 return {c['field']: c for c in probe(s, ipc)['controls']}
@@ -86,13 +92,13 @@ def main():
             scalar_ids = {field['id'] for field in before['fields']}
             for section in SECTIONS:
                 go(section)
-                assert probe(s, ipc)['aqueous']['fields'] == 221
+                assert probe(s, ipc)['aqueous']['fields'] == 241, probe(s, ipc)['aqueous']
                 assert not controls()['aqueous.apply']['enabled']
                 if section != 'advanced':
                     assert 'aqueous.validate' not in controls()
                 shot(section)
             assert peer.aq_document('committed') == before
-            report['checks'].append('seven-routes-221-fields-fixed-footer-without-mutation')
+            report['checks'].append('seven-destinations-241-fields-fixed-footer-without-mutation')
 
             go('input')
             click(s, ipc, 'aqueous.section.focus')
@@ -216,7 +222,7 @@ def main():
             def finish_app():
                 app.stop()
                 report['frame_warnings'].extend(line for line in app.lines if any(w in line for w in FRAME_WARNINGS))
-                clean(app, allowed_warnings=FRAME_WARNINGS)
+                clean(app, allowed_warnings=FRAME_WARNINGS + ENV_WARNINGS)
 
             finish_app()
             for name, width, height, variant, mode, font, scale, language in (

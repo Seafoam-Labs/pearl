@@ -1,63 +1,139 @@
-info(pearl): event=aqueous-availability state=connecting
-info(pearl): event=ready mode=session
-info: event=blur-capability available=false
-info(pearl): event=aqueous-availability state=subscribing
-info(pearl): event=aqueous-availability state=ready
-info: event=output-mapped id=1 connector=HEADLESS-2 scale=1
-info: event=output-mapped id=2 connector=HEADLESS-1 scale=1
-info(pearl): event=settings-backend-ready session=e8b38d154fce15f67d9629c481a617f5
-info(pearl): event=control-ready session=e8b38d154fce15f67d9629c481a617f5
-info: event=app-index-ready entries=161 truncated=false
-info: event=popup-opened output=1
-info: event=launcher-results count=114 shown=114 publish_us=6905
-info: event=launcher-results count=114 shown=114 publish_us=3992
-info: event=launcher-painted latency_us=23713
-info: event=launcher-results count=114 shown=114 publish_us=4818
-info: event=preferences-applied revision=0 mode=static cache=false
-info: event=launcher-results count=114 shown=114 publish_us=3961
-info: event=launcher-painted latency_us=15804
-info: event=launcher-results count=161 shown=161 publish_us=7277
-info: event=launcher-results count=39 shown=39 publish_us=4071
-info: event=launcher-results count=6 shown=6 publish_us=799
-info: event=launcher-results count=5 shown=5 publish_us=325
-info: event=launcher-painted latency_us=4803
-info: event=launcher-results count=3 shown=3 publish_us=394
-info: event=launcher-results count=3 shown=3 publish_us=289
-info: event=launcher-results count=3 shown=3 publish_us=298
-info: event=launcher-results count=3 shown=3 publish_us=291
-info: event=launcher-painted latency_us=4114
-info: event=launcher-results count=3 shown=3 publish_us=286
-info: event=launcher-results count=2 shown=2 publish_us=296
-info: event=launcher-results count=2 shown=2 publish_us=199
-info: event=launcher-results count=2 shown=2 publish_us=1105
-info: event=launcher-painted latency_us=3774
-info: event=launcher-results count=2 shown=2 publish_us=239
-info: event=launcher-results count=2 shown=2 publish_us=190
-info: event=launcher-results count=2 shown=2 publish_us=715
-info: event=launcher-painted latency_us=5629
-info: event=launcher-results count=2 shown=2 publish_us=343
-info: event=launcher-results count=2 shown=2 publish_us=1568
-info: event=launcher-results count=2 shown=2 publish_us=192
-info: event=launcher-painted latency_us=6980
-info: event=launcher-results count=2 shown=2 publish_us=656
-info: event=launcher-painted latency_us=16012
-info: event=application-launch accepted=true action=false
-info: event=popup-closed
-{"pearl":1,"id":"1","ok":true,"result":{"launched":true}}
-info: event=settings-launch activation_context=true
-info: event=settings-instance-ready session=e8b38d154fce15f67d9629c481a617f5
-info: event=settings-page page=overview
-info: event=settings-page page=overview
-info: event=settings-window-created app_id=org.aqueous.Pearl.Settings
-info: event=settings-page page=overview
-info: event=preferences-applied revision=1 mode=static cache=false
-info: event=settings-launch activation_context=true
-info: event=settings-instance-ready session=e8b38d154fce15f67d9629c481a617f5
-info: event=settings-page page=overview
-info: event=settings-page page=sound
-info: event=settings-window-created app_id=org.aqueous.Pearl.Settings
-info: event=settings-page page=sound
-info(pearl): event=stopping reason=signal pending=false
-info(pearl): event=aqueous-availability state=stopped
-info(pearl): event=cleanup pending=false watched_objects=0
-info(pearl): event=stopped
+ts=2026-11-13T22:17:36Z pid=418099 info(platform): event=background-effect-owner owner=gtk gtk=4.24.1
+ts=2026-11-13T22:17:36Z pid=418099 info(desktop): event=steam-library-sync games=0 created=0 removed=0
+ts=2026-11-13T22:17:36Z pid=418099 info(platform): event=blur-capability available=false
+ts=2026-11-13T22:17:36Z pid=418099 info(services): event=sched-profile-systemd result=polling
+ts=2026-11-13T22:17:36Z pid=418099 info(pearl): event=aqueous-availability state=connecting
+ts=2026-11-13T22:17:36Z pid=418099 info(pearl): event=ready mode=session
+ts=2026-11-13T22:17:36Z pid=418099 info(desktop): event=app-index-ready entries=75 truncated=false
+ts=2026-11-13T22:17:36Z pid=418099 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-13T22:17:36Z pid=418099 debug(aqueous): event=ipc-request op=hello
+ts=2026-11-13T22:17:36Z pid=418099 debug(aqueous): event=ipc-request op=hello
+ts=2026-11-13T22:17:36Z pid=418099 debug(aqueous): event=ipc-response op=hello
+ts=2026-11-13T22:17:36Z pid=418099 debug(aqueous): event=ipc-response op=hello
+ts=2026-11-13T22:17:36Z pid=418099 info(pearl): event=aqueous-availability state=subscribing
+ts=2026-11-13T22:17:36Z pid=418099 debug(aqueous): event=ipc-request op=subscribe
+ts=2026-11-13T22:17:36Z pid=418099 debug(aqueous): event=ipc-response op=subscribe
+ts=2026-11-13T22:17:36Z pid=418099 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T22:17:36Z pid=418099 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T22:17:36Z pid=418099 info(pearl): event=aqueous-availability state=ready
+ts=2026-11-13T22:17:36Z pid=418099 info(services): event=autostart-launched file=/etc/xdg/autostart/xdg-user-dirs.desktop
+ts=2026-11-13T22:17:36Z pid=418099 info(services): event=autostart-run entries=4 launched=1
+No default user directories
+ts=2026-11-13T22:17:36Z pid=418099 info(ui): event=output-mapped id=1 connector=HEADLESS-2 scale=1 renderer=GskCairoRenderer gpu_agreement=unverified session_hash=39ca67b9b7d3ac65
+ts=2026-11-13T22:17:36Z pid=418099 info(ui): event=output-mapped id=2 connector=HEADLESS-1 scale=1 renderer=GskCairoRenderer gpu_agreement=unverified session_hash=39ca67b9b7d3ac65
+ts=2026-11-13T22:17:36Z pid=418099 info(pearl): event=settings-backend-ready session_hash=39ca67b9b7d3ac65
+ts=2026-11-13T22:17:36Z pid=418099 info(pearl): event=control-ready session_hash=39ca67b9b7d3ac65
+ts=2026-11-13T22:17:36Z pid=418099 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T22:17:36Z pid=418099 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"
+ts=2026-11-13T22:17:36Z pid=418099 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T22:17:36Z pid=418099 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T22:17:36Z pid=418099 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T22:17:36Z pid=418099 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T22:17:36Z pid=418099 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T22:17:36Z pid=418099 debug(ui): event=popup-close-reason reason=show-pane
+ts=2026-11-13T22:17:36Z pid=418099 debug(ui): event=popup-opened output=1
+ts=2026-11-13T22:17:36Z pid=418099 debug(desktop): event=launcher-results count=49 shown=49 publish_us=5828
+ts=2026-11-13T22:17:36Z pid=418099 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T22:17:36Z pid=418099 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T22:17:36Z pid=418099 debug(desktop): event=launcher-results count=49 shown=49 publish_us=1795
+ts=2026-11-13T22:17:36Z pid=418099 debug(desktop): event=launcher-painted latency_us=8533
+ts=2026-11-13T22:17:36Z pid=418099 debug(desktop): event=launcher-results count=49 shown=49 publish_us=2427
+ts=2026-11-13T22:17:36Z pid=418099 debug(desktop): event=launcher-painted latency_us=7352
+ts=2026-11-13T22:17:36Z pid=418099 debug(desktop): event=launcher-results count=49 shown=49 publish_us=2394
+ts=2026-11-13T22:17:36Z pid=418099 debug(desktop): event=launcher-results count=49 shown=49 publish_us=1755
+ts=2026-11-13T22:17:36Z pid=418099 debug(desktop): event=launcher-painted latency_us=9930
+ts=2026-11-13T22:17:36Z pid=418099 info(desktop): event=app-index-ready entries=75 truncated=false
+ts=2026-11-13T22:17:36Z pid=418099 debug(desktop): event=launcher-results count=49 shown=49 publish_us=2564
+ts=2026-11-13T22:17:36Z pid=418099 debug(desktop): event=launcher-results count=49 shown=49 publish_us=2110
+ts=2026-11-13T22:17:36Z pid=418099 debug(desktop): event=launcher-painted latency_us=13033
+ts=2026-11-13T22:17:36Z pid=418099 info(config): event=preferences-applied revision=1 mode=static cache=false
+ts=2026-11-13T22:17:36Z pid=418099 debug(desktop): event=launcher-results count=49 shown=49 publish_us=4640
+ts=2026-11-13T22:17:36Z pid=418099 debug(desktop): event=launcher-painted latency_us=10712
+ts=2026-11-13T22:17:36Z pid=418099 debug(desktop): event=launcher-results count=49 shown=49 publish_us=1960
+ts=2026-11-13T22:17:36Z pid=418099 debug(desktop): event=launcher-painted latency_us=7083
+ts=2026-11-13T22:17:36Z pid=418099 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T22:17:36Z pid=418099 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T22:17:36Z pid=418099 debug(desktop): event=launcher-results count=75 shown=75 publish_us=2292
+ts=2026-11-13T22:17:36Z pid=418099 debug(desktop): event=launcher-results count=47 shown=47 publish_us=1159
+ts=2026-11-13T22:17:36Z pid=418099 debug(desktop): event=launcher-results count=11 shown=11 publish_us=477
+ts=2026-11-13T22:17:36Z pid=418099 debug(desktop): event=launcher-results count=9 shown=9 publish_us=413
+ts=2026-11-13T22:17:36Z pid=418099 debug(desktop): event=launcher-painted latency_us=4547
+ts=2026-11-13T22:17:36Z pid=418099 debug(desktop): event=launcher-results count=4 shown=4 publish_us=638
+ts=2026-11-13T22:17:36Z pid=418099 debug(desktop): event=launcher-results count=4 shown=4 publish_us=295
+ts=2026-11-13T22:17:36Z pid=418099 debug(desktop): event=launcher-results count=4 shown=4 publish_us=295
+ts=2026-11-13T22:17:36Z pid=418099 debug(desktop): event=launcher-results count=4 shown=4 publish_us=336
+ts=2026-11-13T22:17:36Z pid=418099 debug(desktop): event=launcher-painted latency_us=1957
+ts=2026-11-13T22:17:36Z pid=418099 debug(desktop): event=launcher-results count=4 shown=4 publish_us=280
+ts=2026-11-13T22:17:36Z pid=418099 debug(desktop): event=launcher-results count=4 shown=4 publish_us=300
+ts=2026-11-13T22:17:36Z pid=418099 debug(desktop): event=launcher-results count=4 shown=4 publish_us=250
+ts=2026-11-13T22:17:36Z pid=418099 debug(desktop): event=launcher-painted latency_us=5297
+ts=2026-11-13T22:17:36Z pid=418099 debug(desktop): event=launcher-results count=4 shown=4 publish_us=283
+ts=2026-11-13T22:17:36Z pid=418099 debug(desktop): event=launcher-results count=2 shown=2 publish_us=190
+ts=2026-11-13T22:17:36Z pid=418099 debug(desktop): event=launcher-results count=1 shown=1 publish_us=140
+ts=2026-11-13T22:17:36Z pid=418099 debug(desktop): event=launcher-results count=1 shown=1 publish_us=171
+ts=2026-11-13T22:17:36Z pid=418099 debug(desktop): event=launcher-painted latency_us=4222
+ts=2026-11-13T22:17:36Z pid=418099 debug(desktop): event=launcher-results count=1 shown=1 publish_us=141
+ts=2026-11-13T22:17:36Z pid=418099 debug(desktop): event=launcher-results count=1 shown=1 publish_us=158
+ts=2026-11-13T22:17:36Z pid=418099 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T22:17:36Z pid=418099 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T22:17:36Z pid=418099 debug(desktop): event=launcher-painted latency_us=75990
+ts=2026-11-13T22:17:36Z pid=418099 debug(desktop): event=launcher-results count=1 shown=1 publish_us=515
+ts=2026-11-13T22:17:36Z pid=418099 info(config): event=wallpaper-applications-applied generation=5 elapsed_us=15969 success=true
+ts=2026-11-13T22:17:36Z pid=418099 debug(desktop): event=launcher-painted latency_us=15698
+ts=2026-11-13T22:17:36Z pid=418099 debug(desktop): event=launcher-results count=1 shown=1 publish_us=1016
+ts=2026-11-13T22:17:36Z pid=418099 debug(desktop): event=launcher-painted latency_us=16549
+ts=2026-11-13T22:17:36Z pid=418099 info(desktop): event=app-index-ready entries=75 truncated=false
+ts=2026-11-13T22:17:36Z pid=418099 debug(desktop): event=launcher-results count=1 shown=1 publish_us=462
+ts=2026-11-13T22:17:36Z pid=418099 debug(desktop): event=launcher-painted latency_us=15670
+ts=2026-11-13T22:17:36Z pid=418099 debug(desktop): event=launcher-results count=1 shown=1 publish_us=290
+ts=2026-11-13T22:17:36Z pid=418099 debug(desktop): event=launcher-results count=1 shown=1 publish_us=220
+ts=2026-11-13T22:17:36Z pid=418099 debug(desktop): event=launcher-painted latency_us=5897
+ts=2026-11-13T22:17:37Z pid=418099 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T22:17:37Z pid=418099 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T22:17:37Z pid=418099 debug(desktop): event=launcher-results count=1 shown=1 publish_us=658
+ts=2026-11-13T22:17:37Z pid=418099 debug(desktop): event=launcher-painted latency_us=11740
+ts=2026-11-13T22:17:37Z pid=418099 debug(desktop): event=launcher-results count=1 shown=1 publish_us=219
+ts=2026-11-13T22:17:37Z pid=418099 debug(desktop): event=launcher-results count=1 shown=1 publish_us=136
+ts=2026-11-13T22:17:37Z pid=418099 debug(desktop): event=launcher-painted latency_us=15293
+ts=2026-11-13T22:17:37Z pid=418099 info(desktop): event=application-launch accepted=true action=false
+ts=2026-11-13T22:17:37Z pid=418099 debug(ui): event=popup-close-reason reason=dismiss
+ts=2026-11-13T22:17:37Z pid=418099 debug(ui): event=popup-closed
+ts=2026-11-13T22:17:37Z pid=418099 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T22:17:37Z pid=418099 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T22:17:37Z pid=418636 info(settings): event=settings-launch activation_context=true
+ts=2026-11-13T22:17:37Z pid=418636 info(settings): event=settings-instance-ready session_hash=39ca67b9b7d3ac65
+ts=2026-11-13T22:17:37Z pid=418636 info(services): event=sched-profile-systemd result=polling
+ts=2026-11-13T22:17:37Z pid=418099 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T22:17:37Z pid=418099 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T22:17:37Z pid=418636 info(settings): event=settings-page page=overview
+ts=2026-11-13T22:17:37Z pid=418636 info(settings): event=settings-page page=overview
+ts=2026-11-13T22:17:37Z pid=418636 info(settings): event=settings-window-created app_id=org.aqueous.Pearl.Settings
+ts=2026-11-13T22:17:37Z pid=418636 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-13T22:17:37Z pid=418099 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T22:17:37Z pid=418099 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T22:17:37Z pid=418636 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"
+ts=2026-11-13T22:17:37Z pid=418636 info(settings): event=settings-page page=overview
+ts=2026-11-13T22:17:37Z pid=418099 info(config): event=preferences-applied revision=2 mode=static cache=false
+ts=2026-11-13T22:17:37Z pid=418099 info(config): event=wallpaper-applications-applied generation=6 elapsed_us=82789 success=true
+ts=2026-11-13T22:17:37Z pid=418099 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"
+ts=2026-11-13T22:17:38Z pid=418099 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T22:17:38Z pid=418099 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T22:17:38Z pid=418099 debug(ui): event=popup-close-reason reason=open-settings
+ts=2026-11-13T22:17:38Z pid=419075 info(settings): event=settings-launch activation_context=true
+ts=2026-11-13T22:17:38Z pid=419075 info(settings): event=settings-instance-ready session_hash=39ca67b9b7d3ac65
+ts=2026-11-13T22:17:39Z pid=419075 info(services): event=sched-profile-systemd result=polling
+ts=2026-11-13T22:17:39Z pid=419075 info(settings): event=settings-page page=overview
+ts=2026-11-13T22:17:39Z pid=419075 info(settings): event=settings-page page=sound
+ts=2026-11-13T22:17:39Z pid=419075 info(settings): event=settings-window-created app_id=org.aqueous.Pearl.Settings
+ts=2026-11-13T22:17:39Z pid=419075 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-13T22:17:39Z pid=419075 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"
+ts=2026-11-13T22:17:39Z pid=418099 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T22:17:39Z pid=418099 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T22:17:39Z pid=419075 info(settings): event=settings-page page=sound
+ts=2026-11-13T22:17:39Z pid=418099 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-13T22:17:39Z pid=418099 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-13T22:17:39Z pid=418099 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"
+ts=2026-11-13T22:17:39Z pid=418099 info(pearl): event=stopping reason=signal pending=false
+ts=2026-11-13T22:17:39Z pid=418099 info(pearl): event=aqueous-availability state=stopped
+ts=2026-11-13T22:17:39Z pid=418099 info(pearl): event=cleanup pending=false watched_objects=0
+ts=2026-11-13T22:17:39Z pid=418099 info(pearl): event=stopped

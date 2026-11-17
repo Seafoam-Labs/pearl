@@ -7,7 +7,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: subprojects/phyto/src/operations.zig:435
+#: subprojects/phyto/src/operations.zig:455
 msgid "A file with this name already exists"
 msgstr ""
 
@@ -40,7 +40,7 @@ msgctxt "desktop.description"
 msgid "Browse files with Pearl"
 msgstr ""
 
-#: subprojects/phyto/src/network_ui.zig:100 subprojects/phyto/src/window.zig:1320 subprojects/phyto/src/window.zig:1362
+#: subprojects/phyto/src/network_ui.zig:100 subprojects/phyto/src/window.zig:1324 subprojects/phyto/src/window.zig:1366
 msgid "Cancel"
 msgstr ""
 
@@ -108,7 +108,7 @@ msgstr ""
 msgid "Copy to"
 msgstr ""
 
-#: subprojects/phyto/src/window.zig:1413
+#: subprojects/phyto/src/window.zig:1417
 msgid "Could not open file"
 msgstr ""
 
@@ -168,19 +168,19 @@ msgstr ""
 msgid "Empty document…"
 msgstr ""
 
-#: subprojects/phyto/src/operations.zig:118
+#: subprojects/phyto/src/operations.zig:126
 msgid "Enter a name without /; . and .. are not allowed."
 msgstr ""
 
-#: subprojects/phyto/src/window.zig:1385 subprojects/phyto/src/window.zig:1394
+#: subprojects/phyto/src/window.zig:1389 subprojects/phyto/src/window.zig:1398
 msgid "Executable file"
 msgstr ""
 
-#: subprojects/phyto/src/window.zig:1303
+#: subprojects/phyto/src/window.zig:1307
 msgid "Extract archive?"
 msgstr ""
 
-#: subprojects/phyto/src/window.zig:1321
+#: subprojects/phyto/src/window.zig:1325
 msgid "Extract here"
 msgstr ""
 
@@ -212,7 +212,7 @@ msgstr ""
 msgid "File is unreadable or has been removed."
 msgstr ""
 
-#: subprojects/phyto/src/operations.zig:435 subprojects/phyto/src/window.zig:142
+#: subprojects/phyto/src/operations.zig:455 subprojects/phyto/src/window.zig:142
 msgid "File operations"
 msgstr ""
 
@@ -288,7 +288,7 @@ msgstr ""
 msgid "Location"
 msgstr ""
 
-#: subprojects/phyto/src/window.zig:1363
+#: subprojects/phyto/src/window.zig:1367
 msgid "Make executable and run"
 msgstr ""
 
@@ -436,7 +436,7 @@ msgstr ""
 msgid "Places"
 msgstr ""
 
-#: subprojects/phyto/src/window.zig:501 subprojects/phyto/src/window.zig:1264
+#: subprojects/phyto/src/window.zig:501 subprojects/phyto/src/window.zig:1268
 msgid "Preferences were not saved"
 msgstr ""
 
@@ -476,6 +476,18 @@ msgstr ""
 msgid "Rename…"
 msgstr ""
 
+#: subprojects/phyto/src/operations.zig:477
+msgid "Replace is unavailable because the existing item cannot be moved to Trash here."
+msgstr ""
+
+#: subprojects/phyto/src/operations.zig:472
+msgid "Replace moves the existing folder and everything in it to Trash first."
+msgstr ""
+
+#: subprojects/phyto/src/operations.zig:474
+msgid "Replace moves the existing item to Trash first, so you can restore it."
+msgstr ""
+
 #: subprojects/phyto/src/context_menu.zig:409
 msgid "Restore"
 msgstr ""
@@ -492,11 +504,11 @@ msgstr ""
 msgid "Review…"
 msgstr ""
 
-#: subprojects/phyto/src/window.zig:1363
+#: subprojects/phyto/src/window.zig:1367
 msgid "Run"
 msgstr ""
 
-#: subprojects/phyto/src/window.zig:1346
+#: subprojects/phyto/src/window.zig:1350
 msgid "Run executable?"
 msgstr ""
 
@@ -556,7 +568,7 @@ msgstr ""
 msgid "Tab limit reached"
 msgstr ""
 
-#: subprojects/phyto/src/operations.zig:445
+#: subprojects/phyto/src/operations.zig:465
 msgid "The existing item will be kept."
 msgstr ""
 
@@ -564,11 +576,11 @@ msgstr ""
 msgid "The file could not be read."
 msgstr ""
 
-#: subprojects/phyto/src/window.zig:1355
+#: subprojects/phyto/src/window.zig:1359
 msgid "This file is not marked as executable. It will be made executable and run as a program. Only run programs from sources you trust."
 msgstr ""
 
-#: subprojects/phyto/src/window.zig:1357
+#: subprojects/phyto/src/window.zig:1361
 msgid "This file will be run as a program. Only run programs from sources you trust."
 msgstr ""
 
@@ -576,7 +588,7 @@ msgstr ""
 msgid "This folder is empty"
 msgstr ""
 
-#: subprojects/phyto/src/window.zig:1315
+#: subprojects/phyto/src/window.zig:1319
 msgid "This is an archive. Extract its contents into the folder that contains it?"
 msgstr ""
 
@@ -616,7 +628,7 @@ msgstr ""
 msgid "When Phyto opens"
 msgstr ""
 
-#: subprojects/phyto/src/operations.zig:451
+#: subprojects/phyto/src/operations.zig:485
 msgid "Working…"
 msgstr ""
 
