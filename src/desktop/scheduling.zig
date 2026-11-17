@@ -165,6 +165,7 @@ pub const View = struct {
             check.as(gtk.Widget).setOpacity(switch (mark) {
                 .current => 1,
                 .stopped => 0.4,
+                .configured => 0,
                 .none => 0,
             });
             check.as(gtk.Widget).setTooltipText(if (mark == .stopped) @import("i18n").dtr("pearl", "Selected, stopped") else null);
