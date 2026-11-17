@@ -3162,7 +3162,7 @@ msgstr ""
 msgid "Idle or low use"
 msgstr ""
 
-#: src/settings/plugins_view.zig:122
+#: src/settings/plugins_view.zig:126
 msgid "Illustrative layout · Experimental plugins"
 msgstr ""
 
