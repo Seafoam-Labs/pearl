@@ -62,6 +62,13 @@ pub const Operations = struct {
         d.as(gtk.Widget).addCssClass("phyto-root");
         d.as(gtk.Widget).addCssClass(@import("appearance.zig").themeClass());
         d.getContentArea().as(gtk.Widget).addCssClass("dialog-body");
+        if (@import("build_options").test_hooks) {
+            // Same inspection hook as the connection editor, so the native suite
+            // can read and click the collision choices while the dialog is modal.
+            const keys = gtk.EventControllerKey.new();
+            _ = gtk.EventControllerKey.signals.key_pressed.connect(keys, *Window, Window.keyPressed, self.owner, .{});
+            d.as(gtk.Widget).addController(keys.as(gtk.EventController));
+        }
         return d;
     }
     pub fn nameDialog(self: *Operations, rename: bool) void {
@@ -210,6 +217,7 @@ pub const Operations = struct {
     }
     pub fn transfer(self: *Operations, c: *const Context, destination: ?*gio.File, kind: engine.Kind) void {
         const j = engine.Job.create(kind);
+        j.self_duplicate = true;
         for (c.items.items) |item| {
             var dest: ?*gio.File = null;
             if (destination) |parent| {
@@ -263,6 +271,7 @@ pub const Operations = struct {
         const j = engine.Job.create(if (cb.cut) .move else .copy);
         j.cut = cb.cut;
         j.clipboard_serial = cb.serial;
+        j.self_duplicate = true;
         for (cb.files.items) |f| {
             const basename = f.getBasename() orelse continue;
             defer glib.free(basename);
@@ -339,9 +348,11 @@ pub const Operations = struct {
         self.closeDialogs();
         var successful: usize = 0;
         var skipped: usize = 0;
+        var replaced: usize = 0;
         for (j.pairs.items) |p| {
             if (p.completed) successful += 1;
             if (p.skipped) skipped += 1;
+            if (p.replaced) replaced += 1;
         }
         // One batch-level line at the operation boundary. The payload carries
         // only the kind, the category and aggregate counts, so a large copy
@@ -355,7 +366,11 @@ pub const Operations = struct {
             .ok => log.debug("event=operation-finished {s}", .{text}),
         }
         a.free(self.result);
-        self.result = u.format("{d} completed · {d} skipped{s}{s}", .{ successful, skipped, if (j.cancelled) " · Cancelled" else "", if (j.failures.items.len != 0) " · Some items failed" else "" });
+        // A replaced item is recoverable from Trash, not from undo: undo removes
+        // the new item, so the receipt says where the previous one went.
+        const replaced_note: [:0]const u8 = if (replaced > 0) u.format(" · {d} replaced (previous items are in Trash)", .{replaced}) else "";
+        defer if (replaced > 0) a.free(replaced_note);
+        self.result = u.format("{d} completed · {d} skipped{s}{s}{s}", .{ successful, skipped, replaced_note, if (j.cancelled) " · Cancelled" else "", if (j.failures.items.len != 0) " · Some items failed" else "" });
         self.owner.setStatus(self.result);
         self.owner.clipboard.remaining(j);
         var relocated = false;
@@ -448,8 +463,22 @@ pub const Operations = struct {
             label.setMaxWidthChars(50);
             d.getContentArea().append(label.as(gtk.Widget));
             d.getContentArea().append(u.label(@import("i18n").dtr("phyto", "The existing item will be kept."), "secondary").as(gtk.Widget));
+            // Replace is a transfer decision, never an undo/redo repair, and it
+            // needs a Trash the existing item can actually go to.
+            const transfer_kind = !j.undo and !j.redo and (j.kind == .copy or j.kind == .move or j.kind == .restore);
+            const replaceable = transfer_kind and (!j.conflict_info.known or j.conflict_info.can_trash);
+            if (replaceable) {
+                const note = if (j.conflict_info.directory)
+                    @import("i18n").dtr("phyto", "Replace moves the existing folder and everything in it to Trash first.")
+                else
+                    @import("i18n").dtr("phyto", "Replace moves the existing item to Trash first, so you can restore it.");
+                d.getContentArea().append(u.label(note, "secondary").as(gtk.Widget));
+            } else if (transfer_kind) {
+                d.getContentArea().append(u.label(@import("i18n").dtr("phyto", "Replace is unavailable because the existing item cannot be moved to Trash here."), "secondary").as(gtk.Widget));
+            }
             _ = d.addButton("Cancel operation", -1);
             _ = d.addButton("Skip", 0);
+            if (replaceable) d.addButton("Replace", 3).addCssClass("destructive-action");
             if (!j.undo and !j.redo) _ = d.addButton("Keep both", 2);
             d.setDefaultResponse(0);
         } else {
@@ -469,7 +498,7 @@ pub const Operations = struct {
         self.closeDialogs();
         const j = self.active orelse return;
         if (self.conflict) {
-            if (response == 2) j.keepBoth() else if (response == 0) {
+            if (response == 2) j.keepBoth() else if (response == 3) j.replace() else if (response == 0) {
                 j.pairs.items[j.index].skipped = true;
                 j.index += 1;
             } else {

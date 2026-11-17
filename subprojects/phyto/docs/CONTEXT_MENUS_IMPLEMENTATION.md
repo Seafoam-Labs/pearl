@@ -12,7 +12,7 @@ as clarified during implementation.
 | --- | --- |
 | M0 reference | Nemo 6.6.4 (Arch package 6.6.4-1.1) informed the inventory. Phyto uses its own GTK4 actions and provider format; exact Nemo menu or extension parity is not an acceptance requirement. |
 | M1 menus and targets | Native GtkPopoverMenu for grid/list items, background, Places/bookmarks, devices, location and tabs. Secondary click preserves an existing multi-selection; an unselected item becomes the sole target. Menu/Shift+F10 and touch long-press share target resolution. |
-| M2 operations | Asynchronous system clipboard, recursive copy/move, multi-selection, folder paste, explicit destinations, duplicate/link, collision Skip/Keep both/Cancel, progress/cancellation and a 32-group session undo/redo journal. |
+| M2 operations | Asynchronous system clipboard, recursive copy/move, multi-selection, folder paste, explicit destinations, duplicate/link, collision Skip/Replace/Keep both/Cancel, progress/cancellation and a 32-group session undo/redo journal. |
 | M3 open/recovery | MIME application intersection and one-off chooser, count confirmation above five opens, terminal detection, documents/templates, aggregate Properties, batch Trash, Restore/Restore to, permanent deletion and Empty Trash. |
 | M4 surfaces | Persisted bookmarks and custom names, GIO mounts/volumes, location copying, clicked-tab duplication/reordering/closing/moving between panes, filtered-result parent navigation. |
 | M5 preferences | Advanced-menu and permanent-delete visibility, checked view/sort state, descending/folders-first, pinned ordering, favorites, and selection preservation during sorting. |
@@ -31,15 +31,33 @@ navigation and monitor changes invalidate pending menu discovery.
 `src/operations/engine.zig` runs GIO work in GTask workers. Each job owns its source
 and destination list. Directory copy does not follow symlinks, and rejects copying
 a parent into itself, including destination-parent symlink aliases. Existing
-items are not overwritten or merged. Copies preserve ordinary mode bits and
-modification times where the backend supports those attributes. Special file
-types report an unsupported operation instead of being read as ordinary files.
+items are never overwritten implicitly; Replace is the explicit, recoverable
+choice described below. Copies preserve ordinary mode bits and modification
+times where the backend supports those attributes. Special file types report an
+unsupported operation instead of being read as ordinary files.
 
 A cross-filesystem move verifies source and destination contents before deleting
 the source. Its final source-removal phase is non-cancellable. Failed partial
 copies attempt cleanup only of their own newly created destination. Per-item
 success, skip, failure and cancellation are reported; successfully moved cut
 entries are removed from the clipboard only if its owner/content has not changed.
+
+Replace is offered for copy, move and restore collisions, never for undo/redo.
+It moves the existing destination to Trash before anything is written, so the
+previous item stays recoverable through Trash and Restore. A folder is replaced
+whole; there is no merge. The worker reports whether the destination can be
+trashed, and the dialog withholds Replace with an explanation when it cannot. A
+chosen Replace that still cannot trash the item keeps the existing item and
+reports the failure instead of deleting permanently. The batch receipt counts
+replaced items and points at Trash; undo removes the new item and does not
+restore the replaced one. Skip keeps the default focus, and a resolution applies
+to one item only, so a later collision asks again.
+
+Keep both and duplicate paste write the first free numbered sibling, “name (2)”,
+“name (3)”, … instead of a random id. Pasting a clipboard item onto its own path
+(the source's folder) is that duplicate rather than an error; a destination
+inside the source is still rejected because copying it would recurse. Cut and
+paste into the same folder renames the item to the numbered sibling.
 
 Undo fingerprints include contents, directory membership, symlink targets,
 identity, mode and modification time. Changed targets are left untouched. Undo
@@ -86,7 +104,8 @@ as optional dependencies.
 ## Explicit differences and remaining qualification
 
 - File mutations are serialized per window; there is no parallel transfer queue.
-  Replace/merge, crash resume and cross-window undo remain outside this delivery.
+  Folder merge, a side-by-side size/date comparison, “apply to remaining
+  conflicts”, crash resume and cross-window undo remain outside this delivery.
 - Undo covers successful copy/move/rename/create/link operations for this session.
   Trash uses explicit Restore, and permanent deletion has no undo.
 - Properties aggregates selected-file sizes and folder counts; it explicitly
