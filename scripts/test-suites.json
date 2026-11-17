@@ -867,6 +867,32 @@
     "options": []
   },
   {
+    "id": "test-settings-field-search",
+    "description": "Verify field-level search across Aqueous schema fields and the Pearl manifest",
+    "groups": [
+      "integration"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-settings-field-search"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "session",
+      "aqueous",
+      "native-input"
+    ],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 900,
+    "sources": [
+      "tests/integration/test_settings_field_search.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
     "id": "test-border-theme",
     "description": "Verify matugen border colors, draft deferral and generator failure",
     "groups": [
