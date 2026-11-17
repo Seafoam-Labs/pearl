@@ -12,6 +12,7 @@ const w = @import("../ui/components/widgets.zig");
 const tr = @import("text.zig").tr;
 const chargeState = @import("text.zig").chargeState;
 const presentation = @import("../services/power_presentation.zig");
+const network_presentation = @import("../services/network_presentation.zig");
 const a = std.heap.c_allocator;
 /// Matches the theme CSS; preferences at this value leave the theme in control.
 const default_radius: u8 = 14;
@@ -63,6 +64,8 @@ pub const Bar = struct {
     media_art_viewing: bool = false,
     media_art_image: ?*@import("gdkpixbuf2").Pixbuf = null,
     network_label: ?*gtk.Label = null,
+    /// Swapped between wired, wireless and offline glyphs as the link changes.
+    network_icon: ?*gtk.Image = null,
     bluetooth_label: ?*gtk.Label = null,
     audio_label: ?*gtk.Label = null,
     /// Speaker glyph tracking mute state and volume level.
@@ -473,13 +476,14 @@ pub const Bar = struct {
                         const glyph = w.icon(switch (item) {
                             .audio => "pearl-audio-volume-high-symbolic",
                             .battery => "pearl-battery-symbolic",
-                            .network => "pearl-network-wireless-symbolic",
+                            .network => network_presentation.icon(self.network_service),
                             .bluetooth => "pearl-bluetooth-active-symbolic",
                             .scheduler => "pearl-scheduler-symbolic",
                             else => unreachable,
                         });
                         if (item == .battery) self.battery_icon = glyph;
                         if (item == .audio) self.audio_icon = glyph;
+                        if (item == .network) self.network_icon = glyph;
                         const symbol = glyph.as(gtk.Widget);
                         if (item == .scheduler) {
                             // Right-click opens the profiles in Settings.
@@ -744,6 +748,7 @@ pub const Bar = struct {
         }
         if (self.network_label) |label| {
             const n = self.network_service;
+            if (self.network_icon) |glyph| glyph.setFromIconName(network_presentation.icon(n));
             var connected = false;
             for (n.devices[0..n.device_count]) |dev| if (dev.state == 100) {
                 connected = true;
