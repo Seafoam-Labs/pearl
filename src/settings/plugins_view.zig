@@ -42,6 +42,10 @@ const Row = struct {
     locked: *gtk.Switch,
     fullscreen: *gtk.Switch,
     values: []*gtk.Widget,
+    /// One dropdown per declared asset, parallel to `info.artwork`. Null when
+    /// the artwork folder holds no candidate for that asset. Selection 0 is
+    /// always the approved package art.
+    artwork: []?*gtk.DropDown,
     fn track(self: *Row, value: *object.Object, id: c_ulong) void {
         self.signals.append(a, .{ .value = value, .id = id }) catch object.signalHandlerDisconnect(value, id);
     }
@@ -239,7 +243,7 @@ pub const View = struct {
         self.discovery_issue.setText(alloc.dupeSentinel(u8, issue, 0) catch "Plugin discovery needs attention");
         self.discovery_issue.as(gtk.Widget).setVisible(@intFromBool(issue.len != 0));
         self.summary.setText(std.fmt.allocPrintSentinel(alloc, "{d} on this page{s}", .{ page.plugins.len, if (page.pending) " · Refreshing…" else "" }, 0) catch return);
-        self.discovery.setText(std.fmt.allocPrintSentinel(alloc, "{s}\nMonitoring: {s} · Discovery {s}\n\nUser packages: $XDG_DATA_HOME/pearl/plugins (normally ~/.local/share/pearl/plugins).\nSystem packages: the installation's share/pearl/plugins or share/pearl-git/plugins folder.\n\nInstalled packages refresh automatically. Changed packages need fresh approval and permission review. Discovery does not execute plugins.", .{ page.summary, page.monitoring, page.discovery_revision }, 0) catch return);
+        self.discovery.setText(std.fmt.allocPrintSentinel(alloc, "{s}\nMonitoring: {s} · Discovery {s}\n\nUser packages: $XDG_DATA_HOME/pearl/plugins (normally ~/.local/share/pearl/plugins).\nSystem packages: the installation's share/pearl/plugins or share/pearl-git/plugins folder.\nReplacement artwork: $XDG_DATA_HOME/pearl/plugin-artwork/<package id>/<image id>/<name>.png, listed per image once it matches the declared size.\n\nInstalled packages refresh automatically. Changed packages need fresh approval and permission review. Replacement artwork keeps approval. Discovery does not execute plugins.", .{ page.summary, page.monitoring, page.discovery_revision }, 0) catch return);
         self.refresh.as(gtk.Widget).setSensitive(@intFromBool(page.refresh_available));
         self.next.as(gtk.Widget).setSensitive(@intFromBool(page.next_offset != null));
         self.next_offset = if (page.next_offset) |offset| std.fmt.parseInt(u64, offset, 10) catch 0 else 0;
@@ -250,7 +254,7 @@ pub const View = struct {
         while (index < self.rows.items.len) {
             const row = self.rows.items[index];
             var keep = false;
-            for (page.plugins) |info| if (std.mem.eql(u8, row.info.id, info.id) and std.mem.eql(u8, row.info.digest, info.digest) and std.mem.eql(u8, row.info.path, info.path) and row.info.installed == info.installed) {
+            for (page.plugins) |info| if (std.mem.eql(u8, row.info.id, info.id) and std.mem.eql(u8, row.info.digest, info.digest) and std.mem.eql(u8, row.info.path, info.path) and row.info.installed == info.installed and artworkEqual(row.info.artwork, info.artwork)) {
                 keep = true;
                 break;
             };
@@ -336,8 +340,33 @@ pub const View = struct {
                     .toggle => object.ext.cast(gtk.Switch, entry).?.setActive(@intFromBool(std.mem.eql(u8, value, "true"))),
                 }
             }
+            for (row.info.artwork, row.artwork) |group, entry| {
+                const widget = entry orelse continue;
+                var selected: u32 = 0;
+                if (cfg.artworkFor(group.asset)) |file| for (group.files, 0..) |name, i| {
+                    if (std.mem.eql(u8, name, file)) {
+                        selected = @intCast(i + 1);
+                        break;
+                    }
+                };
+                widget.setSelected(selected);
+            }
         }
         self.filterRows();
+    }
+    /// Rows rebuild when the offered artwork changes, so a dropdown always
+    /// lists what is on disk now.
+    fn artworkEqual(x: []const m.ArtworkChoice, y: []const m.ArtworkChoice) bool {
+        if (x.len != y.len) return false;
+        for (x, y) |group, other| {
+            if (!std.mem.eql(u8, group.asset, other.asset) or group.files.len != other.files.len) return false;
+            for (group.files, other.files) |file, other_file| if (!std.mem.eql(u8, file, other_file)) return false;
+        }
+        return true;
+    }
+    fn hasArtwork(info: ui.PluginInfo) bool {
+        for (info.artwork) |group| if (group.files.len != 0) return true;
+        return false;
     }
     fn statusText(status: []const u8) [:0]const u8 {
         const names = .{ .{ "active", "Running" }, .{ "disabled", "Disabled" }, .{ "failed", "Stopped unexpectedly" }, .{ "suspended", "Suspended" }, .{ "missing", "Package missing" }, .{ "unavailable", "Unavailable" } };
@@ -400,7 +429,8 @@ pub const View = struct {
         const activity_group = w.column(0);
         activity_group.as(gtk.Widget).setVisible(@intFromBool(info.capabilities.input_activity));
         config.append(activity_group.as(gtk.Widget));
-        row.* = .{ .arena = arena, .card = card, .details = details, .expand = expand, .view = self, .info = info, .status = status, .diagnostics = diagnostics, .diagnostic_expander = diagnostic_expander, .diagnostic_details = diagnostic_details, .placement_details = placement_details, .notice = notice, .config = config, .enabled = enabled, .activity = toggle(activity_group, @import("i18n").dtr("pearl", "Allow keyboard and mouse activity")), .overlay = overlay, .mode = mode, .output = makeEntry(placement_details, @import("i18n").dtr("pearl", "Display (empty: first output)")), .x = number(placement_details, @import("i18n").dtr("pearl", "Horizontal position"), 0, 65535), .y = number(placement_details, @import("i18n").dtr("pearl", "Vertical position"), 0, 65535), .width = number(placement_details, @import("i18n").dtr("pearl", "Width"), 16, 512), .height = number(placement_details, @import("i18n").dtr("pearl", "Height"), 16, 512), .interactive = toggle(placement_details, @import("i18n").dtr("pearl", "Accept clicks (off: click through)")), .locked = toggle(placement_details, @import("i18n").dtr("pearl", "Lock placement")), .fullscreen = toggle(placement_details, @import("i18n").dtr("pearl", "Hide over fullscreen windows")), .values = try alloc.alloc(*gtk.Widget, info.settings.len) };
+        row.* = .{ .arena = arena, .card = card, .details = details, .expand = expand, .view = self, .info = info, .status = status, .diagnostics = diagnostics, .diagnostic_expander = diagnostic_expander, .diagnostic_details = diagnostic_details, .placement_details = placement_details, .notice = notice, .config = config, .enabled = enabled, .activity = toggle(activity_group, @import("i18n").dtr("pearl", "Allow keyboard and mouse activity")), .overlay = overlay, .mode = mode, .output = makeEntry(placement_details, @import("i18n").dtr("pearl", "Display (empty: first output)")), .x = number(placement_details, @import("i18n").dtr("pearl", "Horizontal position"), 0, 65535), .y = number(placement_details, @import("i18n").dtr("pearl", "Vertical position"), 0, 65535), .width = number(placement_details, @import("i18n").dtr("pearl", "Width"), 16, 512), .height = number(placement_details, @import("i18n").dtr("pearl", "Height"), 16, 512), .interactive = toggle(placement_details, @import("i18n").dtr("pearl", "Accept clicks (off: click through)")), .locked = toggle(placement_details, @import("i18n").dtr("pearl", "Lock placement")), .fullscreen = toggle(placement_details, @import("i18n").dtr("pearl", "Hide over fullscreen windows")), .values = try alloc.alloc(*gtk.Widget, info.settings.len), .artwork = try alloc.alloc(?*gtk.DropDown, info.artwork.len) };
+        @memset(row.artwork, null);
         row.output.setMaxLength(128);
         activity_group.append(w.label(@import("i18n").dtr("pearl", "Coarse activity only. No keys, text or pointer positions are exposed."), "pearl-secondary").as(gtk.Widget));
         if (!info.capabilities.overlay) config.append(w.label(@import("i18n").dtr("pearl", "Placement: Bar"), "pearl-secondary").as(gtk.Widget));
@@ -438,6 +468,18 @@ pub const View = struct {
                 },
             };
         }
+        for (info.artwork, row.artwork) |group, *value| {
+            if (group.files.len == 0) continue;
+            const names = try alloc.alloc(?[*:0]const u8, group.files.len + 2);
+            names[0] = @import("i18n").dtr("pearl", "Package artwork");
+            for (group.files, 0..) |file, i| names[i + 1] = try alloc.dupeSentinel(u8, file, 0);
+            names[names.len - 1] = null;
+            const widget = gtk.DropDown.newFromStrings(@ptrCast(names.ptr));
+            field(config, try std.fmt.allocPrintSentinel(alloc, "{s} artwork", .{group.asset}, 0), widget.as(gtk.Widget));
+            config.append(w.label(try std.fmt.allocPrintSentinel(alloc, "{s} {d}×{d}", .{ @import("i18n").dtr("pearl", "Replacement PNGs in your artwork folder must be"), group.width, group.height }, 0), "pearl-secondary").as(gtk.Widget));
+            value.* = widget;
+            row.track(widget.as(object.Object), object.Object.signals.notify.connect(widget.as(object.Object), *Row, changed, row, .{ .detail = "selected" }));
+        }
         const buttons = w.flow(3);
         buttons.setHomogeneous(0);
         buttons.as(gtk.Widget).setMarginStart(16);
@@ -453,7 +495,7 @@ pub const View = struct {
                 button.as(gtk.Widget).addCssClass("plugins-review");
                 card.insertChildAfter(button.as(gtk.Widget), notice.as(gtk.Widget));
             } else buttons.insert(button.as(gtk.Widget), -1);
-            button.as(gtk.Widget).setVisible(@intFromBool(pair[0] != .reset or info.settings.len > 0));
+            button.as(gtk.Widget).setVisible(@intFromBool(pair[0] != .reset or info.settings.len > 0 or hasArtwork(info)));
             button.as(gtk.Widget).setSensitive(@intFromBool(info.installed));
             const binding = try alloc.create(Button);
             binding.* = .{ .row = row, .action = pair[0] };
@@ -644,6 +686,16 @@ pub const View = struct {
             };
             if (!found) return error.UnknownPluginSetting;
         }
+        // A missing file is tolerated: the package art stays in use. An asset
+        // the package no longer declares is not.
+        for (cfg.artwork) |art| {
+            var found = false;
+            for (info.artwork) |group| if (std.mem.eql(u8, group.asset, art.asset)) {
+                found = true;
+                break;
+            };
+            if (!found) return error.UnknownPluginAsset;
+        }
         return null;
     }
     fn save(self: *View, row: *Row, action: ?Action) !void {
@@ -685,6 +737,14 @@ pub const View = struct {
                 }
             }
             cfg.settings = values;
+            var chosen: std.ArrayList(m.Artwork) = .empty;
+            for (row.info.artwork, row.artwork) |group, entry| {
+                const widget = entry orelse continue;
+                const selected = widget.getSelected();
+                if (selected == 0 or selected > group.files.len) continue;
+                try chosen.append(alloc, .{ .asset = group.asset, .file = group.files[selected - 1] });
+            }
+            cfg.artwork = if (action == .reset) &.{} else chosen.items;
             if (action == .approve) cfg.digest = row.info.digest;
         }
         try @import("../plugins/placement.zig").update(alloc, &document, previous, &cfg, action == .bar);
