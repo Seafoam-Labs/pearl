@@ -1,4 +1,5 @@
 //! Immutable publisher revisions and LFS SHA256 values, verified 2026-10-15.
+//! EmbeddingGemma 2 text-backbone profiles verified 2026-11-16 (issue #46).
 const std = @import("std");
 pub const revision = "657e078c94084481950a2d555a941481f715536b";
 pub const base_url = "https://huggingface.co/LiquidAI/LFM2.5-350M-GGUF/resolve/" ++ revision ++ "/";
@@ -55,6 +56,37 @@ pub const models = [_]Model{
         .inference_seconds = 120,
     },
 };
+/// Semantic search loads only the text backbone; the multimodal `mmproj`
+/// projectors published beside these files are deliberately not downloaded.
+pub const embedding_architecture = "gemma-embedding2";
+pub const embedding_models = [_]Model{
+    .{
+        .id = "embeddinggemma-2-q8_0",
+        .name = "EmbeddingGemma 2 · Q8_0 · 310 MB",
+        .filename = "embeddinggemma-2-Q8_0.gguf",
+        .bytes = 309855456,
+        .sha256 = "2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135",
+        .base_url = "https://huggingface.co/ggml-org/embeddinggemma-2-GGUF/resolve/6ea3e3a309d12a4779cfda98b8c19800d2d5da71/",
+        .license_url = "https://www.apache.org/licenses/LICENSE-2.0.txt",
+        .context_tokens = 2048,
+        .inference_seconds = 60,
+    },
+    .{
+        .id = "embeddinggemma-2-ud-q4_k_xl",
+        .name = "EmbeddingGemma 2 · UD-Q4_K_XL · 176 MB",
+        .filename = "embeddinggemma-2-UD-Q4_K_XL.gguf",
+        .bytes = 175673856,
+        .sha256 = "ea905fd08e8061db77a0031cbb5096d459d7cfd2bdd0ad2ba66e483f16719493",
+        .base_url = "https://huggingface.co/unsloth/embeddinggemma-2-GGUF/resolve/031f0d4b35536f69ab3509d4893c923264fcf253/",
+        .license_url = "https://www.apache.org/licenses/LICENSE-2.0.txt",
+        .context_tokens = 2048,
+        .inference_seconds = 60,
+    },
+};
+pub fn findEmbedding(id: []const u8) ?Model {
+    for (embedding_models) |model| if (std.mem.eql(u8, model.id, id)) return model;
+    return null;
+}
 pub fn selection(id: []const u8) u32 {
     for (models, 0..) |model, i| if (std.mem.eql(u8, model.id, id)) return @intCast(i);
     return models.len; // Custom local model is always the final entry.
@@ -82,4 +114,25 @@ test "managed models have unique identities and immutable verified downloads" {
         }
     }
     try std.testing.expectEqualStrings("custom", selected(selection("custom")));
+}
+
+test "embedding profiles are pinned, unique and separate from chat models" {
+    for (embedding_models, 0..) |model, i| {
+        try std.testing.expect(findEmbedding(model.id) != null);
+        try std.testing.expect(find(model.id) == null);
+        try std.testing.expect(selection(model.id) == models.len);
+        try std.testing.expect(model.bytes > 0 and model.sha256.len == 64);
+        for (model.sha256) |ch| try std.testing.expect(std.ascii.isHex(ch));
+        const marker = std.mem.indexOf(u8, model.base_url, "/resolve/") orelse return error.UnpinnedModelDownload;
+        const pinned = std.mem.trimEnd(u8, model.base_url[marker + 9 ..], "/");
+        try std.testing.expectEqual(@as(usize, 40), pinned.len);
+        for (pinned) |ch| try std.testing.expect(std.ascii.isHex(ch));
+        for (embedding_models[i + 1 ..]) |other| {
+            try std.testing.expect(!std.mem.eql(u8, model.id, other.id));
+            try std.testing.expect(!std.mem.eql(u8, model.filename, other.filename));
+        }
+        for (models) |chat| try std.testing.expect(!std.mem.eql(u8, model.filename, chat.filename));
+    }
+    try std.testing.expect(findEmbedding("custom") == null);
+    try std.testing.expect(findEmbedding(models[0].id) == null);
 }

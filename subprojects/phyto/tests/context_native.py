@@ -98,6 +98,14 @@ def main():
                 rect = windows()[0]['geometry']
                 s.run(['grim', '-g', f"{rect['x']},{rect['y']} {rect['width']}x{rect['height']}", output / (name + '.png')])
 
+            def dialog_click(title, label):
+                row = next(x for x in probe()['operation_dialog_widgets'] if x['label'] == label)
+                rect = next(w['geometry'] for w in ipc.state() if w['kind'] == 'window' and w.get('title') == title)
+                s.run(['wlrctl', 'pointer', 'move', '-100000', '-100000'])
+                s.run(['wlrctl', 'pointer', 'move', str(round(rect['x'] + row['x'] + row['width'] / 2)), str(round(rect['y'] + row['y'] + row['height'] / 2))])
+                s.run(['wlrctl', 'pointer', 'click', 'left'])
+                time.sleep(0.15)
+
             def passed(label):
                 report['checks'].append(label)
                 print('PASS', label, flush=True)
@@ -148,6 +156,38 @@ def main():
             wait_for(lambda: not probe()['busy'])
             assert (dest / 'Folder/loop').is_symlink()
             passed('Preserved multi-selection, recursive batch copy and collision Skip')
+            (source / 'one.txt').write_text('replacement bytes\n')
+            navigate(source)
+            click('one.txt')
+            key('c', 'ctrl')
+            wait_for(lambda: probe()['clipboard_count'] == 1)
+            navigate(dest)
+            key('v', 'ctrl')
+            conflict_title = 'A file with this name already exists'
+            wait_for(lambda: any((w.get('title') == conflict_title for w in ipc.state())))
+            choices = probe()['operation_dialog_widgets']
+            labels = [w['label'] for w in choices]
+            assert 'Skip' in labels and 'Replace' in labels and 'Keep both' in labels
+            assert any(('to Trash first' in w['label'] for w in choices))
+            assert (dest / 'one.txt').read_text() == 'original bytes\n'
+            s.run(['grim', '-o', display['name'], output / 'conflict-replace.png'])
+            dialog_click(conflict_title, 'Replace')
+            wait_for(lambda: (dest / 'one.txt').read_text() == 'replacement bytes\n')
+            wait_for(lambda: not probe()['busy'])
+            assert '1 replaced' in probe()['operation_result']
+            assert (source / 'one.txt').read_text() == 'replacement bytes\n'
+            trash_files = Path(s.env['XDG_DATA_HOME']) / 'Trash' / 'files'
+            assert any((p.name == 'one.txt' and p.read_text() == 'original bytes\n' for p in trash_files.iterdir()))
+            passed('Collision Replace overwrites only after moving the previous item to Trash')
+            click('Folder')
+            key('c', 'ctrl')
+            wait_for(lambda: probe()['clipboard_count'] == 1)
+            key('v', 'ctrl')
+            wait_for(lambda: (dest / 'Folder (2)').is_dir())
+            wait_for(lambda: not probe()['busy'])
+            assert (dest / 'Folder (2)/nested.txt').read_text() == 'recursive\n'
+            assert (dest / 'Folder/nested.txt').read_text() == 'recursive\n'
+            passed('Duplicate paste into the source folder creates a numbered copy')
             navigate(source)
             key('2', 'ctrl')
             click('two.txt', button='right')

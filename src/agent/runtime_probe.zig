@@ -85,8 +85,15 @@ pub fn required(help: []const u8) !void {
     if ((hasFlag(help, "--webui") or hasFlag(help, "--ui")) and !hasFlag(help, "--no-webui") and !hasFlag(help, "--no-ui")) return error.RuntimeCapabilityMissing;
     if ((hasFlag(help, "--agent") or hasFlag(help, "--mcp-servers-config")) and !hasFlag(help, "--no-agent")) return error.RuntimeCapabilityMissing;
 }
+/// Semantic search needs the embeddings endpoint in addition to the common
+/// server capabilities. Older releases are rejected, never silently replaced.
+pub fn requiredEmbedding(help: []const u8) !void {
+    try required(help);
+    if (!hasFlag(help, "--embeddings")) return error.RuntimeEmbeddingUnsupported;
+}
 test "option discovery uses exact tokens, not versions or prefix matches" {
     try std.testing.expect(hasFlag("-ngl, --gpu-layers N\n--fit [on|off]", "--gpu-layers"));
     try std.testing.expect(!hasFlag("--device-draft X", "--device"));
     try std.testing.expectError(error.RuntimeCapabilityMissing, required("--version arbitrary-new-release"));
+    try std.testing.expectError(error.RuntimeEmbeddingUnsupported, requiredEmbedding("--host --port --api-key-file --alias --jinja --ctx-size --parallel --threads --threads-batch --threads-http --batch-size --ubatch-size --gpu-layers --no-webui --no-agent"));
 }

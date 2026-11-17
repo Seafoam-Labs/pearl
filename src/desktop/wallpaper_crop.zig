@@ -10,6 +10,7 @@ const native = @import("../platform/wayland/effects.zig");
 const w = @import("../ui/components/widgets.zig");
 const tr = @import("text.zig").tr;
 const crop = @import("../config/crop_policy.zig");
+const model = @import("../config/preferences.zig");
 const Service = @import("../config/service.zig").Service;
 const a = std.heap.c_allocator;
 
@@ -40,6 +41,9 @@ pub const Window = struct {
     image: *pixbuf.Pixbuf,
     texture: *gdk.Texture,
     path: [:0]u8,
+    /// The output whose override receives the crop, or null to edit the global
+    /// wallpaper. The bar picker is a global control and passes null.
+    save_connector: ?[:0]u8,
     image_width: u32,
     image_height: u32,
     frame: crop.Frame,
@@ -58,10 +62,14 @@ pub const Window = struct {
     effects_ready: bool = false,
 
     /// `display_width` and `display_height` are the output the crop will fill.
-    pub fn open(parent: *gtk.Window, service: *Service, effects: *native.Effects, path: []const u8, display_width: i32, display_height: i32, owner: ?Owner) !*Window {
+    /// `save_connector` names the output whose override receives the crop, or
+    /// null to edit the global wallpaper.
+    pub fn open(parent: *gtk.Window, service: *Service, effects: *native.Effects, path: []const u8, save_connector: ?[]const u8, display_width: i32, display_height: i32, owner: ?Owner) !*Window {
         if (display_width < 1 or display_height < 1) return error.InvalidOutput;
         const owned = try a.dupeSentinel(u8, path, 0);
         errdefer a.free(owned);
+        const owned_connector = if (save_connector) |c| try a.dupeSentinel(u8, c, 0) else null;
+        errdefer if (owned_connector) |c| a.free(c);
         const image = try load(service, owned);
         errdefer image.unref();
         const wide: u32 = @intCast(@max(0, image.getWidth()));
@@ -80,6 +88,7 @@ pub const Window = struct {
             .image = image,
             .texture = texture,
             .path = owned,
+            .save_connector = owned_connector,
             .image_width = wide,
             .image_height = tall,
             .frame = framed,
@@ -87,7 +96,7 @@ pub const Window = struct {
             .parent_keyboard = layer.getKeyboardMode(parent),
             .owner = owner,
         };
-        self.place(crop.find(service.prefs().wallpaper.crops, owned));
+        self.place(crop.find(self.seedCrops(), owned));
         self.build();
         // Registered after the window and its panel exist, because the broker
         // hooks their map and unmap signals.
@@ -112,6 +121,14 @@ pub const Window = struct {
             }
         }
         return pixbuf.Pixbuf.newFromFile(path.ptr, null) orelse error.InvalidImage;
+    }
+
+    /// The crop list this editor reads from and writes to: the target output's
+    /// effective wallpaper, or the global image when the editor is global.
+    fn seedCrops(self: *const Window) []const crop.Crop {
+        const prefs = self.service.prefs();
+        if (self.save_connector) |connector| return prefs.wallpaperForOutput(connector).crops;
+        return prefs.wallpaper.crops;
     }
 
     /// Starts from a saved placement, or centres the widest frame the display's
@@ -322,8 +339,10 @@ pub const Window = struct {
             .height = self.frame.height * self.zoom,
         };
         var prefs = self.service.prefs();
+        // Rebuild the crop list against the wallpaper this editor targets, so a
+        // per-output edit never disturbs the global image's own placements.
         var saved: std.ArrayList(crop.Crop) = .empty;
-        for (prefs.wallpaper.crops) |existing| {
+        for (self.seedCrops()) |existing| {
             if (std.mem.eql(u8, existing.path, self.path)) continue;
             saved.append(alloc, existing) catch return self.fail(rejected);
         }
@@ -334,7 +353,26 @@ pub const Window = struct {
             if (saved.items.len >= crop.max) return self.fail(@import("i18n").dtr("pearl", "Too many saved crops. Reset one of the others first."));
             saved.append(alloc, entry) catch return self.fail(rejected);
         }
-        prefs.wallpaper.crops = saved.items;
+        if (self.save_connector) |connector| {
+            // Store the placement on this output's override, inheriting the
+            // global image, fit and color when the output has none yet. The
+            // slideshow is global-only, so an override never carries one.
+            const target = prefs.wallpaperForOutput(connector);
+            const override: model.Wallpaper = .{ .mode = target.mode, .path = target.path, .color = target.color, .crops = saved.items };
+            var outputs: std.ArrayList(model.Output) = .empty;
+            var replaced = false;
+            for (prefs.outputs) |o| {
+                if (std.mem.eql(u8, o.connector, connector)) {
+                    replaced = true;
+                    outputs.append(alloc, .{ .connector = o.connector, .bar = o.bar, .dock = o.dock, .wallpaper = override }) catch return self.fail(rejected);
+                } else outputs.append(alloc, o) catch return self.fail(rejected);
+            }
+            if (!replaced) {
+                const name = alloc.dupe(u8, connector) catch return self.fail(rejected);
+                outputs.append(alloc, .{ .connector = name, .wallpaper = override }) catch return self.fail(rejected);
+            }
+            prefs.outputs = outputs.items;
+        } else prefs.wallpaper.crops = saved.items;
         prefs.validate() catch return self.fail(rejected);
         const json = std.json.Stringify.valueAlloc(alloc, prefs, .{}) catch return self.fail(rejected);
         self.service.apply(json, self.service.revision) catch return self.fail(@import("i18n").dtr("pearl", "Could not apply the crop. Try again."));
@@ -361,6 +399,7 @@ pub const Window = struct {
         self.texture.unref();
         self.image.unref();
         a.free(self.path);
+        if (self.save_connector) |connector| a.free(connector);
         const owner = self.owner;
         const parent = self.parent;
         a.destroy(self);

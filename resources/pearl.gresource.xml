@@ -10,6 +10,7 @@
     <file alias="fixture-license.txt">../tests/fixtures/aqueous/GPL-3.0-only.txt</file>
     <file>demo.txt</file>
     <file>icons/scalable/actions/pearl-application-x-executable-symbolic.svg</file>
+    <file>icons/scalable/actions/pearl-document-symbolic.svg</file>
     <file>icons/scalable/actions/pearl-applications-graphics-symbolic.svg</file>
     <file>icons/scalable/actions/pearl-user-available-symbolic.svg</file>
     <file>icons/scalable/actions/pearl-system-lock-screen-symbolic.svg</file>
@@ -36,6 +37,8 @@
     <file>icons/scalable/actions/pearl-weather-storm-symbolic.svg</file>
     <file>icons/scalable/actions/pearl-view-grid-symbolic.svg</file>
     <file>icons/scalable/actions/pearl-window-symbolic.svg</file>
+    <file>icons/scalable/actions/pearl-keyboard-symbolic.svg</file>
+    <file>icons/scalable/actions/pearl-shortcuts-symbolic.svg</file>
     <file>icons/scalable/actions/pearl-window-switcher-symbolic.svg</file>
     <file>icons/scalable/actions/pearl-battery-symbolic.svg</file>
     <file>icons/scalable/actions/pearl-battery-empty-symbolic.svg</file>

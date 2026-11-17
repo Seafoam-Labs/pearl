@@ -5,6 +5,7 @@ test {
     _ = @import("services/sched_profiles.zig");
     _ = @import("services/sched_editor.zig");
     _ = @import("services/sched_systemd.zig");
+    _ = @import("services/autostart_policy.zig");
     _ = @import("desktop/calculator.zig");
     _ = @import("services/notification_filter_policy.zig");
     _ = @import("desktop/window_switcher.zig");
@@ -21,6 +22,7 @@ test {
     _ = @import("theme/style.zig");
     _ = @import("plugins/model.zig");
     _ = @import("plugins/placement.zig");
+    _ = @import("plugins/artwork_policy.zig");
     _ = @import("plugins/discovery_policy.zig");
     _ = @import("settings/live_protocol.zig");
     _ = @import("plugins/protocol.zig");
@@ -35,6 +37,7 @@ test {
     _ = @import("settings/activation.zig");
     _ = @import("settings/options.zig");
     _ = @import("settings/protocol.zig");
+    _ = @import("settings/search_index.zig");
     _ = @import("config/dms_import.zig");
     _ = @import("desktop/dock_policy.zig");
     _ = @import("services/clipboard_policy.zig");

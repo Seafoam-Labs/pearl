@@ -245,6 +245,7 @@ pub fn For(comptime Parent: type) type {
                 const is_condition = projection.matcher(k) or std.mem.eql(u8, k, "scope");
                 (if (is_condition) conditions else effects).append(row.as(gtk.Widget));
                 if (std.mem.eql(u8, k, "matching")) text(row, "Always matches every window. Once binds to the first matching window; Startup accepts windows during the first 10 seconds. Claimed rules remain bound until removed or their matching conditions change.", "pearl-secondary");
+                if (std.mem.eql(u8, k, "keep_render")) text(row, "Keeps frame callbacks at about 60 Hz while the window is hidden (inactive workspace, minimized, output off or locked) so games keep rendering, and never sends the suspended state. The window stays invisible and is not captured. Kept clients use GPU and battery continuously; hidden FIFO clients stay capped at 40 Hz. Managed scope only.", "pearl-secondary");
                 const typ = m.str(m.get(spec, "type"));
                 const options = m.list(m.get(spec, "options"));
                 var input: *gtk.Widget = undefined;
@@ -473,7 +474,7 @@ pub fn For(comptime Parent: type) type {
 }
 fn labelFor(key: []const u8) []const u8 {
     if (std.mem.eql(u8, key, "matching")) return "Matching timing";
-    const labels = .{ .{ "app_id", "Application ID" }, .{ "class", "X11 class" }, .{ "title", "Title" }, .{ "tag", "Launch tag" }, .{ "content_type", "Content type" }, .{ "window_type", "X11 window type" }, .{ "scope", "Scope" }, .{ "floating", "Floating" }, .{ "fullscreen", "Fullscreen" }, .{ "workspace", "Workspace (1-based)" }, .{ "output", "Output connector" }, .{ "stack_layer", "Stack layer" }, .{ "width", "Width" }, .{ "height", "Height" }, .{ "opacity", "Opacity" }, .{ "blur", "Blur" }, .{ "placement_policy", "Placement" } };
+    const labels = .{ .{ "app_id", "Application ID" }, .{ "class", "X11 class" }, .{ "title", "Title" }, .{ "tag", "Launch tag" }, .{ "content_type", "Content type" }, .{ "window_type", "X11 window type" }, .{ "scope", "Scope" }, .{ "floating", "Floating" }, .{ "fullscreen", "Fullscreen" }, .{ "workspace", "Workspace (1-based)" }, .{ "output", "Output connector" }, .{ "stack_layer", "Stack layer" }, .{ "width", "Width" }, .{ "height", "Height" }, .{ "opacity", "Opacity" }, .{ "blur", "Blur" }, .{ "keep_render", "Keep rendering while hidden" }, .{ "placement_policy", "Placement" } };
     inline for (labels) |pair| if (std.mem.eql(u8, key, pair[0])) return pair[1];
     return key;
 }

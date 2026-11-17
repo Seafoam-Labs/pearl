@@ -12,6 +12,7 @@ pub const Route = enum {
     bar,
     notifications,
     system,
+    startup,
     aqueous,
     advanced,
     plugins,
@@ -32,6 +33,7 @@ pub const Route = enum {
             .bar => @import("i18n").mark("Bar & dock"),
             .notifications => @import("i18n").mark("Notifications"),
             .system => @import("i18n").mark("System"),
+            .startup => @import("i18n").mark("Startup applications"),
             .aqueous => @import("i18n").mark("Aqueous"),
             .advanced => @import("i18n").mark("Advanced"),
             .plugins => @import("i18n").mark("Plugins"),
@@ -41,7 +43,7 @@ pub const Route = enum {
     pub fn isCompact(self: Route) bool {
         return switch (self) {
             .overview, .network, .bluetooth, .sound, .power => true,
-            .appearance, .assistant, .bar, .notifications, .system, .aqueous, .advanced, .plugins => false,
+            .appearance, .assistant, .bar, .notifications, .system, .startup, .aqueous, .advanced, .plugins => false,
         };
     }
 };
@@ -53,11 +55,100 @@ pub fn parse(id: []const u8) !Route {
 }
 
 /// Preserve the existing Aqueous editor's section IDs and notebook order.
+/// "advanced" remains parseable for compatibility but normalizes to the shared
+/// Advanced page; the Aqueous editor itself only hosts the first six sections.
 pub const aqueous_sections = [_][]const u8{ "appearance", "layouts", "input", "keybinds", "rules", "displays", "advanced" };
+pub const aqueous_page_sections = aqueous_sections[0..6];
 
 pub fn aqueousSectionIndex(id: []const u8) !usize {
     for (aqueous_sections, 0..) |name, index| if (std.mem.eql(u8, id, name)) return index;
     return error.UnknownPage;
+}
+
+/// The retired Aqueous parent category is flattened: every editor section is a
+/// permanent top-level destination in its subject group. Internal routing keeps
+/// the stable aqueous page/section IDs for CLI and wire compatibility.
+pub const Group = enum { general, connections, devices, desktop, system };
+
+pub fn groupTitle(group: Group) [:0]const u8 {
+    return switch (group) {
+        .general => @import("i18n").mark("GENERAL"),
+        .connections => @import("i18n").mark("CONNECTIONS"),
+        .devices => @import("i18n").mark("DEVICES"),
+        .desktop => @import("i18n").mark("DESKTOP"),
+        .system => @import("i18n").mark("SYSTEM"),
+    };
+}
+
+pub const Entry = struct {
+    target: Target,
+    group: Group,
+    /// Lowercase search aliases. Titles and descriptions are matched in their
+    /// translated form; these stay stable English keywords.
+    keywords: []const u8 = "",
+};
+
+pub const entries = [_]Entry{
+    .{ .target = .{ .page = .overview }, .group = .general, .keywords = "home start" },
+    .{ .target = .{ .page = .network }, .group = .connections, .keywords = "wifi wireless ethernet internet connection" },
+    .{ .target = .{ .page = .bluetooth }, .group = .connections, .keywords = "pair wireless devices" },
+    .{ .target = .{ .page = .sound }, .group = .devices, .keywords = "audio volume microphone speakers" },
+    .{ .target = .{ .page = .power }, .group = .devices, .keywords = "battery sleep suspend lock session energy" },
+    .{ .target = .{ .page = .aqueous, .section = "displays" }, .group = .devices, .keywords = "monitor screen resolution refresh scale orientation hdr mirror" },
+    .{ .target = .{ .page = .aqueous, .section = "input" }, .group = .devices, .keywords = "keyboard mouse pointer touchpad typing repeat" },
+    .{ .target = .{ .page = .aqueous, .section = "keybinds" }, .group = .devices, .keywords = "shortcut keybinding hotkey keys" },
+    .{ .target = .{ .page = .appearance }, .group = .desktop, .keywords = "theme wallpaper color font dark light" },
+    .{ .target = .{ .page = .aqueous, .section = "appearance" }, .group = .desktop, .keywords = "border effects blur shadow decoration" },
+    .{ .target = .{ .page = .aqueous, .section = "layouts" }, .group = .desktop, .keywords = "workspace tiling snap gaps arrangement" },
+    .{ .target = .{ .page = .aqueous, .section = "rules" }, .group = .desktop, .keywords = "window rules floating matcher behavior" },
+    .{ .target = .{ .page = .assistant }, .group = .desktop, .keywords = "ai search engine answers" },
+    .{ .target = .{ .page = .bar }, .group = .desktop, .keywords = "dock panel widgets" },
+    .{ .target = .{ .page = .notifications }, .group = .desktop, .keywords = "dnd disturb alerts history" },
+    .{ .target = .{ .page = .system }, .group = .system, .keywords = "scheduler cpu performance" },
+    .{ .target = .{ .page = .startup }, .group = .system, .keywords = "autostart login applications" },
+    .{ .target = .{ .page = .advanced }, .group = .system, .keywords = "json raw toml configuration draft" },
+    .{ .target = .{ .page = .plugins }, .group = .system, .keywords = "extension addons" },
+};
+
+/// Substring search with an already-lowercased needle; haystack case is folded
+/// per byte. Navigation titles are short, so no allocation is needed.
+pub fn containsIgnoreCase(haystack: []const u8, needle_lower: []const u8) bool {
+    if (needle_lower.len == 0) return true;
+    if (needle_lower.len > haystack.len) return false;
+    var i: usize = 0;
+    while (i + needle_lower.len <= haystack.len) : (i += 1) {
+        var match = true;
+        for (needle_lower, 0..) |c, j| {
+            if (std.ascii.toLower(haystack[i + j]) != c) {
+                match = false;
+                break;
+            }
+        }
+        if (match) return true;
+    }
+    return false;
+}
+
+pub fn entryIndex(target: Target) ?usize {
+    const normalized = normalize(target);
+    for (entries, 0..) |entry, index| {
+        if (entry.target.page != normalized.page) continue;
+        const a = entry.target.section orelse "";
+        const b = normalized.section orelse "";
+        if (std.mem.eql(u8, a, b)) return index;
+    }
+    return null;
+}
+
+/// The merged Advanced page owns the former Aqueous Advanced section. Legacy
+/// destinations normalize before validation decisions, storage and rendering.
+pub fn normalize(target: Target) Target {
+    if (target.page == .aqueous) {
+        if (target.section) |section| {
+            if (std.mem.eql(u8, section, "advanced")) return .{ .page = .advanced };
+        }
+    }
+    return target;
 }
 
 pub const Target = struct {
@@ -80,6 +171,59 @@ test "application targets reuse routes and preserve Aqueous sections" {
     }
     try (Target{}).validate();
     try std.testing.expectError(error.UnknownPage, (Target{ .page = .aqueous, .section = "unknown" }).validate());
+}
+
+test "flattened entries cover every route and Aqueous editor section exactly once" {
+    const t = std.testing;
+    for (entries) |entry| try entry.target.validate();
+    for (std.enums.values(Route)) |route| {
+        if (route == .aqueous) continue;
+        const index = entryIndex(.{ .page = route }) orelse return error.MissingEntry;
+        try t.expectEqual(route, entries[index].target.page);
+        try t.expect(entries[index].target.section == null);
+    }
+    for (aqueous_page_sections) |section| {
+        const index = entryIndex(.{ .page = .aqueous, .section = section }) orelse return error.MissingEntry;
+        try t.expectEqualStrings(section, entries[index].target.section.?);
+    }
+    // The retired parent and the merged Advanced section have no own entry.
+    try t.expect(entryIndex(.{ .page = .aqueous }) == null);
+    try t.expectEqual(entryIndex(.{ .page = .advanced }), entryIndex(.{ .page = .aqueous, .section = "advanced" }));
+    var groups: usize = 0;
+    var previous: ?Group = null;
+    for (entries) |entry| {
+        if (previous == null or previous.? != entry.group) groups += 1;
+        previous = entry.group;
+    }
+    try t.expectEqual(@as(usize, 5), groups);
+}
+
+test "normalize merges the Aqueous Advanced section into the shared Advanced page" {
+    const t = std.testing;
+    const merged = normalize(.{ .page = .aqueous, .section = "advanced" });
+    try t.expectEqual(Route.advanced, merged.page);
+    try t.expect(merged.section == null);
+    const kept = normalize(.{ .page = .aqueous, .section = "displays" });
+    try t.expectEqual(Route.aqueous, kept.page);
+    try t.expectEqualStrings("displays", kept.section.?);
+    const plain = normalize(.{ .page = .appearance });
+    try t.expectEqual(Route.appearance, plain.page);
+    try t.expect(plain.section == null);
+}
+
+test "navigation search matches case-insensitively and every entry has keywords" {
+    const t = std.testing;
+    try t.expect(containsIgnoreCase("Window appearance", "window"));
+    try t.expect(containsIgnoreCase("Window appearance", "appear"));
+    try t.expect(containsIgnoreCase("WINDOW APPEARANCE", "appear"));
+    try t.expect(containsIgnoreCase("Power & session", "session"));
+    try t.expect(!containsIgnoreCase("Displays", "keyboard"));
+    try t.expect(!containsIgnoreCase("ab", "abc"));
+    try t.expect(containsIgnoreCase("anything", ""));
+    try t.expect(containsIgnoreCase("", ""));
+    for (entries) |entry| try t.expect(entry.keywords.len > 0);
+    try t.expect(containsIgnoreCase(entries[entryIndex(.{ .page = .aqueous, .section = "keybinds" }).?].keywords, "shortcut"));
+    try t.expect(containsIgnoreCase(entries[entryIndex(.{ .page = .aqueous, .section = "displays" }).?].keywords, "monitor"));
 }
 
 pub const compact_routes = blk: {
