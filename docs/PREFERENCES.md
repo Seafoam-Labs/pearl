@@ -166,11 +166,17 @@ Each preset tile shows a small clickable preview of the layout; clicking the
 image opens it large in a modal window, while clicking the rest of the tile
 selects the preset. The `preview` field in `src/config/bar_dock_presets.json`
 names a bundled GResource image (`/org/aqueous/Pearl/previews/<file>`). The
-shipped previews are small PNG placeholders; replacing one with a real
-screenshot is a data change only. Decoding uses the installed gdk-pixbuf
-loaders, so AVIF or WebP keep 4K captures to a few hundred kilobytes; PNG is
-the universal fallback. A missing or undecodable image leaves the tile without
-a picture.
+shipped previews are real 16:9 desktop captures of each preset (AVIF, a few
+kilobytes); the tile shows the whole desktop and clicking it opens the capture
+at full size. `scripts/preset-screenshot.py` produces them in a private
+headless Aqueous session; re-run it to refresh after layout changes
+(`--reuse` re-encodes the stored captures without a session, `--detail`
+encodes close-up bar/dock sheets instead of the whole desktop). The source
+captures stay in `artifacts/preset-screenshot/`. Swapping in a different
+image is a data change only. Decoding uses the installed gdk-pixbuf loaders,
+so AVIF or WebP keep even 4K captures to a few hundred kilobytes; PNG is the
+universal fallback. A missing or undecodable image leaves the tile without a
+picture.
 
 The JSON field is the top-level `bar_dock_preset`, recording the id of the last
 applied preset (for example `"macos"`). It is informational only: the `bar` and

@@ -58,10 +58,12 @@ pub const View = struct {
         hint.as(gtk.Widget).setHalign(.fill);
         root.append(hint.as(gtk.Widget));
         const catalog = try presets.catalog(alloc);
-        const flow = w.flow(4);
-        flow.setHomogeneous(1);
-        flow.as(gtk.Widget).addCssClass("appearance-modes");
-        root.append(flow.as(gtk.Widget));
+        // A plain row keeps the cards together: flowbox cells spread across
+        // the whole body width, pushing the tiles to opposite ends.
+        const row = w.row(12);
+        row.as(gtk.Widget).setHalign(.start);
+        row.as(gtk.Widget).addCssClass("appearance-modes");
+        root.append(row.as(gtk.Widget));
         self.tiles = try alloc.alloc(Tile, catalog.len);
         self.bindings = try alloc.alloc(Binding, catalog.len);
         for (catalog, 0..) |preset, i| {
@@ -74,13 +76,16 @@ pub const View = struct {
                 const picture = gtk.Picture.new();
                 picture.setCanShrink(1);
                 picture.setContentFit(.cover);
-                picture.as(gtk.Widget).setHexpand(1);
-                picture.as(gtk.Widget).setSizeRequest(-1, 150);
+                picture.as(gtk.Widget).setSizeRequest(320, 180);
                 picture.as(gtk.Widget).setTooltipText(i18n.dtr("pearl", "Click to enlarge"));
-                if (previewTexture(alloc, preset.preview)) |texture| {
+                if (previewTexture(alloc, preset.preview, 480, 270)) |texture| {
                     defer texture.unref();
                     picture.setPaintable(texture.as(gdk.Paintable));
                 }
+                // The frame holds the 16:9 aspect even when the row shrinks on
+                // narrow windows, so cover never crops the capture.
+                const frame = gtk.AspectFrame.new(0.5, 0.5, 16.0 / 9.0, 0);
+                frame.setChild(picture.as(gtk.Widget));
                 // The picture opens the large view; the rest of the tile still
                 // selects the preset.
                 const zoom = try alloc.create(Zoom);
@@ -88,7 +93,7 @@ pub const View = struct {
                 const click = gtk.GestureClick.new();
                 picture.as(gtk.Widget).addController(click.as(gtk.EventController));
                 _ = gtk.GestureClick.signals.released.connect(click, *Zoom, zoomClicked, zoom, .{});
-                labels.append(picture.as(gtk.Widget));
+                labels.append(frame.as(gtk.Widget));
             }
             const name = try alloc.dupeSentinel(u8, preset.name, 0);
             labels.append(w.label(i18n.dtr("pearl", name), "settings-row-title").as(gtk.Widget));
@@ -99,7 +104,7 @@ pub const View = struct {
             // compact as the Appearance cards and its content fills it.
             button.as(gtk.Widget).setTooltipText(try alloc.dupeSentinel(u8, preset.description, 0));
             w.name(button.as(gtk.Widget), name);
-            flow.insert(button.as(gtk.Widget), -1);
+            row.append(button.as(gtk.Widget));
             self.bindings[i] = .{ .view = self, .index = i };
             self.tiles[i] = .{ .id = try alloc.dupe(u8, preset.id), .button = button, .signal = 0 };
             self.tiles[i].signal = gtk.CheckButton.signals.toggled.connect(button, *Binding, chosen, &self.bindings[i], .{});
@@ -152,7 +157,7 @@ pub const View = struct {
         if (self.zoom != null) return;
         const alloc = self.arena.allocator();
         const title = alloc.dupeSentinel(u8, name, 0) catch return;
-        const texture = previewTexture(alloc, preview) orelse return;
+        const texture = previewTexture(alloc, preview, 0, 0) orelse return;
         defer texture.unref();
         const window = gtk.Window.new();
         self.zoom = window;
@@ -180,14 +185,17 @@ pub const View = struct {
     }
 
     /// Decodes through gdk-pixbuf, so any installed loader works: the shipped
-    /// PNG placeholders can be replaced by AVIF/WebP screenshots via the JSON.
+    /// captures can be replaced by AVIF/WebP screenshots via the JSON.
     /// A missing or undecodable asset leaves the tile without a picture.
-    fn previewTexture(alloc: std.mem.Allocator, path: []const u8) ?*gdk.Texture {
+    /// `width`/`height` bound the decode (0 keeps full resolution): a Picture's
+    /// natural size is its paintable's intrinsic size, so the tile must load a
+    /// bounded texture or the flowbox gives every tile the whole row width.
+    fn previewTexture(alloc: std.mem.Allocator, path: []const u8, width: c_int, height: c_int) ?*gdk.Texture {
         const sentinel = alloc.dupeSentinel(u8, path, 0) catch return null;
         defer alloc.free(sentinel);
         const stream = gio.resourcesOpenStream(sentinel, .{}, null) orelse return null;
         defer stream.unref();
-        const image = pixbuf.Pixbuf.newFromStream(stream.as(gio.InputStream), null, null) orelse return null;
+        const image = (if (width > 0) pixbuf.Pixbuf.newFromStreamAtScale(stream.as(gio.InputStream), width, height, 1, null, null) else pixbuf.Pixbuf.newFromStream(stream.as(gio.InputStream), null, null)) orelse return null;
         defer image.unref();
         return gdk.Texture.newForPixbuf(image);
     }

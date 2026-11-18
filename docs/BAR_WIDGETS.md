@@ -252,10 +252,17 @@ ids, as arrays per group:
 
 `preview` names the tile's clickable image in the GResource bundle
 (`resources/previews/`, registered in `resources/pearl.gresource.xml`). The
-shipped files are ~10 KB PNG placeholders; clicking the small preview opens it
-large in a modal window. To use real 4K screenshots later, drop the capture
-into `resources/previews/`, register it in the manifest and point `preview` at
-it — no code change. Prefer AVIF (smallest 4K size) or WebP; decoding uses the
+shipped files are real 16:9 desktop captures of each preset (AVIF, a few
+kilobytes), shown whole in the tile; clicking the small preview opens the
+capture at full size in a modal window. Refresh them with
+`scripts/preset-screenshot.py`, which seeds each preset into a private
+headless Aqueous session, screencopies with `grim` and encodes with `avifenc`
+(`--reuse` re-encodes stored captures without a session; `--detail` encodes
+captioned close-up sheets of the bar/dock strips instead of the whole
+desktop; the headless output defaults to 1280×720, `wlr-randr --custom-mode`
+sizes it for 1080p/4K captures). To use a different image, drop it into
+`resources/previews/`, register it in the manifest and point `preview` at it —
+no code change. Prefer AVIF (smallest 4K size) or WebP; decoding uses the
 installed gdk-pixbuf loaders, and PNG always works. Paths are validated: they
 must stay under `/org/aqueous/Pearl/previews/` and end in `.png`, `.webp`,
 `.avif`, `.jpg` or `.jpeg`.
