@@ -28,7 +28,7 @@ _greeter_depends=('greetd>=0.10.3' 'aqueous>0.7' 'uwsm>=0.26.7' 'dbus' 'polkit'
 # Runtime handshake/native registry enforce the pinned capability contract; see RELEASE.md.
 # Keep session runtime dependencies out of the build to avoid the Aqueous
 # Pearl preset's build-order cycle. Checks use private fixtures.
-makedepends=('git' 'zig=0.17.0' 'pkgconf' 'gcc' 'qt5-base' 'qt6-base' 'python>=3.14'
+makedepends=('git' 'zig=0.17.1' 'pkgconf' 'gcc' 'qt5-base' 'qt6-base' 'python>=3.14'
              'rust' 'rust-wasm' 'librsvg'
              "${_build_libraries[@]}")
 options=('!strip' '!debug')

@@ -1,6 +1,6 @@
 {
   "generator": "zig-wayland v0.7.0 (package integrity in build.zig.zon)",
-  "zig": "0.17.0",
+  "zig": "0.17.1",
   "globals": {
     "wl_compositor": 6,
     "ext_background_effect_manager_v1": 1,

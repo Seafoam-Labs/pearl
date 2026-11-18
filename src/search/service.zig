@@ -120,6 +120,8 @@ pub const Service = struct {
         self.last_rescan_us = self.startup_us;
         if (self.tick_source == 0) self.tick_source = glib.timeoutAdd(2000, tick, self);
     }
+    /// Idempotent: shell teardown reaches Manager.deinit from both stop() and
+    /// cleanup(), and std deinits leave poisoned or dangling containers.
     pub fn deinit(self: *Service) void {
         self.stopIndexing();
         if (self.tick_source != 0) _ = glib.Source.remove(self.tick_source);
@@ -134,14 +136,17 @@ pub const Service = struct {
         self.stopWatch();
         for (self.subdirs.items) |path| a.free(path);
         self.subdirs.deinit(a);
+        self.subdirs = .empty;
         if (self.dirty) |*dirty| {
             var it = dirty.keyIterator();
             while (it.next()) |key| a.free(key.*);
             dirty.deinit();
         }
+        self.dirty = null;
         if (self.dir) |dir| a.free(dir);
         self.dir = null;
         self.cfg_arena.deinit();
+        self.cfg_arena = .init(a);
     }
     fn directory(self: *Service) ![:0]const u8 {
         if (self.dir) |dir| return dir;
@@ -712,4 +717,16 @@ test "snippets flatten whitespace and cut on character boundaries" {
     const cut = try snippet(alloc, long.items);
     try std.testing.expect(std.unicode.utf8ValidateSlice(cut));
     try std.testing.expect(std.mem.endsWith(u8, cut, "…"));
+}
+test "service deinit is idempotent across repeated shell teardown" {
+    var service: Service = .{};
+    service.start();
+    service.markDirty("/tmp/pearl-deinit-file");
+    Service.noteDir(&service, "/tmp/pearl-deinit-dir");
+    service.deinit();
+    try std.testing.expectEqual(@as(usize, 0), service.subdirs.items.len);
+    try std.testing.expect(service.dirty == null);
+    // stop() deinits the manager, then cleanup() does it again; the second
+    // pass must not read freed lists or double-free the config arena.
+    service.deinit();
 }

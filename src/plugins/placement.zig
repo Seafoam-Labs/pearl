@@ -9,9 +9,13 @@ pub fn update(a: std.mem.Allocator, document: *prefs.Preferences, previous: mode
     if (!add_to_bar and !entering_bar) return;
     const reference = try std.fmt.allocPrint(a, "plugin:{s}/main", .{current.id});
     try append(a, &document.bar.groups, reference);
-    // Output overrides replace the global bar groups, so they need a placement too.
+    // An output with its own bar override replaces the global groups, so it
+    // needs a placement too. Outputs without an override inherit the global
+    // groups (just patched) and must not gain a default bar override.
     const outputs = try a.dupe(prefs.Output, document.outputs);
-    for (outputs) |*output| try append(a, &output.bar.groups, reference);
+    for (outputs) |*output| {
+        if (output.bar) |*bar| try append(a, &bar.groups, reference);
+    }
     document.outputs = outputs;
 }
 fn append(a: std.mem.Allocator, groups: *prefs.Groups, reference: []const u8) !void {
@@ -35,9 +39,9 @@ test "enabling a bar plugin places it on global and per-output bars without movi
     current.enabled = true;
     try update(arena.allocator(), &document, previous, &current, false);
     try std.testing.expect(std.mem.endsWith(u8, document.bar.groups.right, ",plugin:pearl.companion/main"));
-    try std.testing.expectEqualStrings("plugin:pearl.companion/main", document.outputs[0].bar.groups.center);
-    try std.testing.expect(std.mem.indexOf(u8, document.outputs[0].bar.groups.right, "plugin:") == null);
-    try std.testing.expect(std.mem.endsWith(u8, document.outputs[1].bar.groups.right, ",plugin:pearl.companion/main"));
+    try std.testing.expectEqualStrings("plugin:pearl.companion/main", document.outputs[0].bar.?.groups.center);
+    try std.testing.expect(std.mem.indexOf(u8, document.outputs[0].bar.?.groups.right, "plugin:") == null);
+    try std.testing.expect(std.mem.endsWith(u8, document.outputs[1].bar.?.groups.right, ",plugin:pearl.companion/main"));
     const right = document.bar.groups.right;
     try update(arena.allocator(), &document, current, &current, true);
     try std.testing.expectEqualStrings(right, document.bar.groups.right);

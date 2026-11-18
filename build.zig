@@ -7,8 +7,8 @@ var pearl_version: *std.Build.Module = undefined;
 pub fn build(b: *std.Build) void {
     defer @import("pearl_ffi").attach(b, b.path("bindings/c"));
     @import("packaging/assistant/build.zig").add(b);
-    if (!std.mem.eql(u8, builtin.zig_version_string, "0.17.0"))
-        @panic("Pearl requires Zig 0.17.0; see .zigversion");
+    if (!std.mem.eql(u8, builtin.zig_version_string, "0.17.1"))
+        @panic("Pearl requires Zig 0.17.1; see .zigversion");
     const plugin_examples = b.option([]const u8, "plugin-examples", "Prebuilt plugin examples and failure fixtures") orelse ".cache/plugin-examples";
     const wasm_plugins = b.option(bool, "wasm-plugins", "Build the experimental WebAssembly plugin helper") orelse false;
     const community_theme_repository = b.option(bool, "community-theme-repository", "Include the Seafoam GitHub community repository by default") orelse true;

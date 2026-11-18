@@ -23,6 +23,6 @@ def main():
             results.append(binaries)
         assert results[0]==results[1],results
     args.output.parent.mkdir(parents=True,exist_ok=True)
-    args.output.write_text(json.dumps({'status':'passed','fresh_build_roots':2,'compiler':'0.17.0','optimize':'safe','stripped':True,'binaries':results[0],'production_accepted':False},indent=2)+'\n')
+    args.output.write_text(json.dumps({'status':'passed','fresh_build_roots':2,'compiler':'0.17.1','optimize':'safe','stripped':True,'binaries':results[0],'production_accepted':False},indent=2)+'\n')
     print(args.output)
 if __name__=='__main__':main()

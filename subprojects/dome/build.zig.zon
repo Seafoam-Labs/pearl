@@ -2,7 +2,7 @@
     .name = .dome,
     .fingerprint = 0x3b00b368b19bab05,
     .version = "0.1.1",
-    .minimum_zig_version = "0.17.0",
+    .minimum_zig_version = "0.17.1",
     .paths = .{ "build.zig", "build.zig.zon", ".zigversion", "src", "resources", "packaging", "tests", "README.md", "docs" },
     .dependencies = .{
         .pearl_ffi = .{ .path = "../../bindings/c" },

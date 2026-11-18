@@ -2,7 +2,7 @@
   "version": "0.3.10",
   "arch_pkgver": "0.3.10",
   "license": "LicenseRef-Pearl-Unlicensed",
-  "zig": "0.17.0",
+  "zig": "0.17.1",
   "source_date_epoch": 1792170497,
   "aqueous_revision": "debc0353e745890f205cd399613f942f83e34986",
   "aqueous_config_floor": "0.8.2",

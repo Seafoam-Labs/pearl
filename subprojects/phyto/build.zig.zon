@@ -2,7 +2,7 @@
     .name = .phyto,
     .fingerprint = 0x0c1c5bdaf1c65e40,
     .version = "0.1.2",
-    .minimum_zig_version = "0.17.0",
+    .minimum_zig_version = "0.17.1",
     .paths = .{ "build.zig", "build.zig.zon", ".zigversion", "src", "resources", "packaging", "tests", "README.md", "docs" },
     .dependencies = .{
         .pearl_ffi = .{ .path = "../../bindings/c" },

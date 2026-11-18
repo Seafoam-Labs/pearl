@@ -10,7 +10,7 @@ main-loop ABI from [pinned headers](headers/README.md). T12 adds pinned Linux-PA
 
 ## Pinned inputs
 
-- Zig: **0.17.0**, enforced by `build.zig` and recorded in `.zigversion`.
+- Zig: **0.17.1**, enforced by `build.zig` and recorded in `.zigversion`.
 - Ghostty artifact: `https://github.com/ghostty-org/zig-gobject/releases/download/0.11.0-zig-0.17.0-2026-10-02-38-1/ghostty-gobject-0.11.0-zig-0.17.0-2026-10-02-38-1.tar.gz`.
 - Generator: `jcollie/zig-gobject` commit
   `4272fe9e0a1b7d8c0e6bd8ffe258e787b80ed038`, the upstream generator’s `zig-0.17` branch.

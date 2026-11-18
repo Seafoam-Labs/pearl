@@ -140,7 +140,7 @@ pub fn main(init: std.process.Init) void {
             return;
         },
         .version => {
-            glib.print("pearlctl " ++ @import("version.zig").string ++ " (control v1, Zig 0.17.0)\n");
+            glib.print("pearlctl " ++ @import("version.zig").string ++ " (control v1, Zig 0.17.1)\n");
             return;
         },
         .request => {},
