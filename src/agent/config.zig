@@ -39,6 +39,23 @@ pub const Compute = struct {
         return self.mode == .auto or (self.mode == .gpu and self.allow_cpu_fallback);
     }
 };
+pub const Background = enum { idle_low_use, idle_only, manual };
+pub const Semantic = struct {
+    enabled: bool = false,
+    model_id: []const u8 = "embeddinggemma-2-q8_0",
+    folders: []const []const u8 = &.{},
+    background: Background = .idle_low_use,
+    pub fn validate(self: Semantic) !void {
+        try identifier(self.model_id);
+        if (@import("model_registry.zig").findEmbedding(self.model_id) == null) return error.UnknownEmbeddingModel;
+        if (self.folders.len > 16) return error.TooManySemanticFolders;
+        for (self.folders, 0..) |folder, i| {
+            try text(folder, 4096);
+            if (folder.len == 0 or !std.fs.path.isAbsolute(folder)) return error.AbsoluteFolderPathRequired;
+            for (self.folders[0..i]) |other| if (std.mem.eql(u8, folder, other)) return error.DuplicateSemanticFolder;
+        }
+    }
+};
 pub const Config = struct {
     enabled: bool = false,
     runtime: RuntimeConfig = .{},
@@ -49,6 +66,7 @@ pub const Config = struct {
     default_provider_id: []const u8 = "bing",
     search_mode: enum { default, all } = .default,
     read_pages: bool = true,
+    semantic: Semantic = .{},
     // Zero selects the model profile or the runtime's CPU thread detection.
     context_tokens: u32 = 0,
     answer_tokens: u32 = 0,
@@ -76,6 +94,7 @@ pub const Config = struct {
         if (self.search_mode == .all and active > 3) return error.TooManyEnabledProviders;
         if (self.contextTokens() > std.math.maxInt(c_int) or self.contextTokens() <= @as(u64, self.answerTokens()) + 700) return error.InvalidAssistantContext;
         if (self.cpu_threads > std.math.maxInt(c_int) or self.idle_unload_seconds < 15 or self.idle_unload_seconds > 300) return error.InvalidAssistantBudget;
+        try self.semantic.validate();
     }
     pub fn contextTokens(self: Config) u32 {
         if (self.context_tokens != 0) return self.context_tokens;
@@ -121,6 +140,34 @@ test "disabled default selects Bing RSS without requiring provider setup" {
     try std.testing.expectEqual(ProviderKind.bing, cfg.provider("bing").?.kind);
     try std.testing.expectEqualStrings("", cfg.provider("bing").?.endpoint);
     try std.testing.expect(cfg.selected(cfg.providers[0]));
+}
+
+test "semantic search stays opt-in with explicit absolute folders" {
+    const cfg: Config = .{};
+    try std.testing.expect(!cfg.semantic.enabled);
+    try std.testing.expectEqual(@as(usize, 0), cfg.semantic.folders.len);
+    try (Config{ .semantic = .{ .enabled = true, .folders = &.{"/home/zoey/Documents"} } }).validate();
+    try std.testing.expectError(error.UnknownEmbeddingModel, (Config{ .semantic = .{ .model_id = "liquid-lfm25-350m-q4km" } }).validate());
+    try std.testing.expectError(error.UnknownAssistantModel, (Config{ .model_id = "embeddinggemma-2-q8_0" }).validate());
+    try std.testing.expectError(error.AbsoluteFolderPathRequired, (Config{ .semantic = .{ .folders = &.{"Documents"} } }).validate());
+    try std.testing.expectError(error.DuplicateSemanticFolder, (Config{ .semantic = .{ .folders = &.{ "/tmp/a", "/tmp/a" } } }).validate());
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const folders = try arena.allocator().alloc([]const u8, 17);
+    for (folders, 0..) |*folder, i| folder.* = try std.fmt.allocPrint(arena.allocator(), "/tmp/folder-{d}", .{i});
+    try std.testing.expectError(error.TooManySemanticFolders, (Config{ .semantic = .{ .folders = folders } }).validate());
+    const saved: Config = .{ .semantic = .{ .enabled = true, .model_id = "embeddinggemma-2-ud-q4_k_xl", .folders = &.{"/home/zoey/Documents"} } };
+    const copy = try std.json.parseFromSliceLeaky(Config, arena.allocator(), try std.json.Stringify.valueAlloc(arena.allocator(), saved, .{}), .{});
+    try copy.validate();
+    try std.testing.expect(copy.semantic.enabled);
+    try std.testing.expectEqualStrings("embeddinggemma-2-ud-q4_k_xl", copy.semantic.model_id);
+    try std.testing.expectEqualStrings("/home/zoey/Documents", copy.semantic.folders[0]);
+    try std.testing.expectEqual(Background.idle_low_use, copy.semantic.background);
+    const manual: Config = .{ .semantic = .{ .background = .manual } };
+    const manual_copy = try std.json.parseFromSliceLeaky(Config, arena.allocator(), try std.json.Stringify.valueAlloc(arena.allocator(), manual, .{}), .{});
+    try manual_copy.validate();
+    try std.testing.expectEqual(Background.manual, manual_copy.semantic.background);
+    try std.testing.expectError(error.InvalidEnumTag, std.json.parseFromSliceLeaky(Config, arena.allocator(), "{\"semantic\":{\"background\":\"always\"}}", .{}));
 }
 test "provider identity and endpoints are validated without a CPU thread cap" {
     try std.testing.expectError(error.DuplicateSearchProvider, (Config{ .providers = &.{ .{}, .{} } }).validate());

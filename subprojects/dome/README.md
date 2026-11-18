@@ -1,6 +1,6 @@
 # Dome
 
-A standalone Linux system monitor written in **Zig 0.17.0 and GTK4**, with Pearl
+A standalone Linux system monitor written in **Zig 0.17.1 and GTK4**, with Pearl
 styling and Mission Center as its functional reference.
 
 ![Native Dome overview](artifacts/native/overview-dark.png)
@@ -10,7 +10,7 @@ processes with right-click row menus, safe process termination, optional systemd
 service controls and a compact summary. Sampling, graph duration, colors, columns
 and units are configurable. It runs independently of Pearl and Aqueous.
 
-Build from the Pearl checkout with Zig 0.17.0, `pkg-config`, GTK4/GLib,
+Build from the Pearl checkout with Zig 0.17.1, `pkg-config`, GTK4/GLib,
 Wayland and libpng development headers and libc. Dome uses Pearl's shared
 appearance client and pinned Zig GObject/Wayland bindings:
 

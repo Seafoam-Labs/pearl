@@ -48,6 +48,7 @@ pub const events: []const Event = &.{
     .{ .name = "dock-action", .scopes = &.{.desktop} },
     .{ .name = "dock-activate-fallback", .scopes = &.{.desktop} },
     .{ .name = "dock-reorder", .scopes = &.{.desktop} },
+    .{ .name = "document-launch", .scopes = &.{.desktop} },
     .{ .name = "document-load-failed", .scopes = &.{.platform} },
     .{ .name = "document-save-failed", .scopes = &.{.platform} },
     .{ .name = "file-chooser-failed", .scopes = &.{.platform} },
@@ -104,6 +105,7 @@ pub const events: []const Event = &.{
     .{ .name = "operation-finished", .scopes = &.{.platform} },
     .{ .name = "output-mapped", .scopes = &.{.ui} },
     .{ .name = "pearlctl-failed", .scopes = &.{.cli} },
+    .{ .name = "plugin-artwork-rejected", .scopes = &.{.plugins} },
     .{ .name = "plugin-callback-failed", .scopes = &.{.plugins} },
     .{ .name = "plugin-failed", .scopes = &.{.plugins} },
     .{ .name = "popup-close-reason", .scopes = &.{.ui} },
@@ -176,6 +178,7 @@ pub const events: []const Event = &.{
     .{ .name = "wallpaper-applications-applied", .scopes = &.{.config} },
     .{ .name = "wallpaper-changed", .scopes = &.{.config} },
     .{ .name = "wallpaper-crop-open-failed", .scopes = &.{.ui} },
+    .{ .name = "wallpaper-override-decode-failed", .scopes = &.{.ui} },
     .{ .name = "work-finished", .scopes = &.{.pearl} },
     .{ .name = "work-started", .scopes = &.{.pearl} },
 };

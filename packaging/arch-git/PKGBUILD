@@ -3,7 +3,7 @@
 # for the next boot, without restarting the running display manager.
 pkgbase=pearl-git
 pkgname=(pearl-git pearl-greeter-git)
-pkgver=0.3.9
+pkgver=0.3.10
 pkgrel=1
 # Preserve upgrade ordering from packages previously numbered 1.0.0rc2.
 epoch=1
@@ -30,7 +30,7 @@ _greeter_depends=('greetd>=0.10.3' 'aqueous>0.7' 'uwsm>=0.26.7' 'dbus' 'polkit'
 # Keep desktop/session runtime requirements inside the split package functions.
 # Requiring Aqueous here creates a build-order cycle with its Pearl preset.
 # Compilation uses the vendored protocols; check() uses private fixtures.
-makedepends=('git' 'zig=0.17.0' 'pkgconf' 'gcc' 'qt5-base' 'qt6-base' 'python>=3.14'
+makedepends=('git' 'zig=0.17.1' 'pkgconf' 'gcc' 'qt5-base' 'qt6-base' 'python>=3.14'
              'rust' 'rust-wasm' 'librsvg'
              "${_build_libraries[@]}")
 options=('!strip' '!debug')

@@ -51,7 +51,15 @@ pub fn build(b: *std.Build) void {
     const engine_module = createModule(b, .{ .root_source_file = b.path("src/operations/engine.zig"), .target = target, .optimize = optimize, .link_libc = true });
     for ([_][]const u8{ "gio2", "glib2" }) |name| engine_module.addImport(name, bindings.module(name));
     const engine_tests = b.addTest(.{ .root_module = engine_module });
-    test_step.dependOn(&b.addRunArtifact(engine_tests).step);
+    const engine_run = b.addRunArtifact(engine_tests);
+    // Replace tests move existing destinations to Trash. Give the whole test
+    // process a cache-local data directory: the tests run in parallel, so a
+    // per-test environment change would race, and the real Trash stays clean.
+    engine_run.setEnvironmentVariable("XDG_DATA_HOME", b.pathResolve(&.{ ".zig-cache", "phyto-engine-test-data" }));
+    test_step.dependOn(&engine_run.step);
+    const io_priority_module = createModule(b, .{ .root_source_file = b.path("src/platform/io_priority.zig"), .target = target, .optimize = optimize, .link_libc = true });
+    const io_priority_tests = b.addTest(.{ .root_module = io_priority_module });
+    test_step.dependOn(&b.addRunArtifact(io_priority_tests).step);
     const network_module = createModule(b, .{ .root_source_file = b.path("src/network_tests.zig"), .target = target, .optimize = optimize, .link_libc = true });
     for ([_][]const u8{ "gtk4", "gdk4", "gio2", "glib2", "gobject2", "pango1", "gdkpixbuf2" }) |name| network_module.addImport(name, bindings.module(name));
     const network_tests = b.addTest(.{ .root_module = network_module });

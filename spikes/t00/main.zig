@@ -81,7 +81,7 @@ fn showPopup() void {
     entry.setPlaceholderText("Type here; Escape or click outside to close");
     _ = gtk.Editable.signals.changed.connect(entry.as(gtk.Editable), ?*anyopaque, textChanged, null, .{});
     panel.append(entry.as(gtk.Widget));
-    panel.append(gtk.Label.new("Zig 0.17.0 · generated GTK layer-shell bindings").as(gtk.Widget));
+    panel.append(gtk.Label.new("Zig 0.17.1 · generated GTK layer-shell bindings").as(gtk.Widget));
     window.setChild(panel.as(gtk.Widget));
     const key = gtk.EventControllerKey.new().as(gtk.EventControllerKey);
     _ = gtk.EventControllerKey.signals.key_pressed.connect(key, ?*anyopaque, keyPressed, null, .{});

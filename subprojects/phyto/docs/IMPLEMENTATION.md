@@ -52,8 +52,12 @@ not link layer-shell, Cinnamon, Nemo or Pearl services.
   labeled as such; recursive search remains in the roadmap.
 - Places includes real XDG locations and GIO URI entry points. Fictional devices
   and storage-capacity numbers are not shown.
-- Transfer UI is backed by recursive batch GIO worker jobs. Collisions offer Skip and
-  Keep both. Replace remains out of scope until replacement recovery is implemented.
+- Transfer UI is backed by recursive batch GIO worker jobs. Collisions offer Skip,
+  Keep both and Replace. Replace moves the existing item to Trash before writing, so
+  it stays recoverable; a folder is replaced whole rather than merged. Where the
+  destination cannot be trashed, Replace is withheld. Keep both and pasting onto
+  the source's own folder write numbered copies (“name (2)”). The
+  [context-menu report](CONTEXT_MENUS_IMPLEMENTATION.md) records the full contract.
 - Appearance uses the stock Pearl palettes with explicit light/compact/native
   choices. It does not yet subscribe to the Pearl committed-appearance protocol.
 - Each invocation opens its own application instance; this avoids crossing display

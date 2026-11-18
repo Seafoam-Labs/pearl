@@ -21,8 +21,8 @@ pub const View = struct {
     buttons: []*gtk.CheckButton = &.{},
     /// Whether each profile's scheduler is installed.
     available: []bool = &.{},
-    /// "Selected, stopped" under each profile, shown for a selection kept
-    /// while the unit is stopped.
+    /// "Selected, stopped" or "Configured, not started at boot" under a
+    /// profile.
     stopped: []*gtk.Label = &.{},
     bindings: []Binding = &.{},
     root: *gtk.Box,
@@ -262,7 +262,9 @@ pub const View = struct {
             // is stopped is not, but says so, and choosing it starts it.
             const mark = service.mark(i);
             const current = mark == .current;
-            stopped.as(gtk.Widget).setVisible(@intFromBool(mark == .stopped));
+            // Translators: A profile scx.service is set up to run, while the service is neither running nor started at boot.
+            stopped.setText(if (mark == .configured) @import("i18n").dtr("pearl", "Configured, not started at boot") else @import("i18n").dtr("pearl", "Selected, stopped"));
+            stopped.as(gtk.Widget).setVisible(@intFromBool(mark == .stopped or mark == .configured));
             button.setActive(@intFromBool(current));
             if (current) button.as(gtk.Widget).addCssClass("power-selected") else button.as(gtk.Widget).removeCssClass("power-selected");
             button.as(gtk.Widget).setSensitive(@intFromBool(usable and available));

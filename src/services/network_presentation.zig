@@ -50,6 +50,23 @@ pub fn status(available: bool, snapshot_ready: bool, connectivity: u32) Status {
 pub fn signal(strength: u8) enum { strong, good, weak } {
     return if (strength >= 70) .strong else if (strength >= 40) .good else .weak;
 }
+/// Bar glyph for the link in use: wireless while Wi-Fi carries the primary
+/// connection, wired for Ethernet, and offline when nothing is activated.
+/// With several links up, NetworkManager's PrimaryConnection decides; without
+/// one, a wired link wins the way NM's default routing prefers it.
+pub fn icon(n: anytype) [:0]const u8 {
+    if (n.peer.snapshot == null) return "pearl-network-offline-symbolic";
+    var wired = false;
+    var wireless = false;
+    for (n.devices[0..n.device_count]) |*dev| {
+        if (dev.state != 100) continue;
+        if (n.primary.len != 0 and same(dev.active.slice(), n.primary.slice())) return if (dev.kind == 2) "pearl-network-wireless-symbolic" else "pearl-network-wired-symbolic";
+        if (dev.kind == 2) wireless = true else wired = true;
+    }
+    if (wired) return "pearl-network-wired-symbolic";
+    if (wireless) return "pearl-network-wireless-symbolic";
+    return "pearl-network-offline-symbolic";
+}
 fn same(a: []const u8, b: []const u8) bool {
     return std.mem.eql(u8, a, b);
 }
@@ -184,7 +201,7 @@ pub fn build(alloc: std.mem.Allocator, n: anytype, owner: anytype, now: i64) !Sn
 
 const Fixture = struct {
     const T = @import("policy.zig").Text;
-    const Dev = struct { path: T(512) = .{}, name: T(512) = .{}, ap: T(512) = .{}, profile: T(512) = .{}, state: u32 = 30, kind: u32 = 2 };
+    const Dev = struct { path: T(512) = .{}, name: T(512) = .{}, ap: T(512) = .{}, profile: T(512) = .{}, active: T(512) = .{}, state: u32 = 30, kind: u32 = 2 };
     const AP = struct { path: T(512) = .{}, label: T(128) = .{}, device: T(512) = .{}, len: usize = 1, ssid: [32]u8 = @splat(0), security: policy.Security = .psk, strength: u8 = 80 };
     const Saved = struct { path: T(512) = .{}, label: T(512) = .{}, device: T(512) = .{}, wireless: bool = true, loaded: bool = true, ssid_len: usize = 1, ssid: [32]u8 = @splat(0), security: policy.Security = .psk };
     peer: struct { owner: T(512) = .{}, snapshot: ?u8 = 1, epoch: u64 = 2, err: ?[]const u8 = null } = .{},
@@ -204,6 +221,7 @@ const Fixture = struct {
     scan_pending: bool = false,
     scan_last: i64 = 0,
     connectivity: u32 = 4,
+    primary: T(512) = .{},
     truncated: bool = false,
     err: ?[]const u8 = null,
     fn init() Fixture {
@@ -346,4 +364,92 @@ test "groups preserve raw SSID security and adapter identity" {
     two = one;
     two.path.set("/ap/2");
     try std.testing.expect(!sameGroup(one, two));
+}
+test "bar glyph follows the primary connection and never invents a link" {
+    var f = Fixture.init();
+    f.devices[0].active.set("/active/1");
+    // Wi-Fi alone activated keeps the wireless glyph.
+    f.devices[0].state = 100;
+    try std.testing.expectEqualStrings("pearl-network-wireless-symbolic", icon(&f));
+    // Ethernet alone activated shows wired, not Wi-Fi.
+    f.devices[0].state = 30;
+    f.device_count = 2;
+    f.devices[1].kind = 1;
+    f.devices[1].state = 100;
+    f.devices[1].path.set("/dev/2");
+    f.devices[1].active.set("/active/2");
+    try std.testing.expectEqualStrings("pearl-network-wired-symbolic", icon(&f));
+    // Both links up: the primary connection decides which one is in use.
+    f.devices[0].state = 100;
+    f.primary.set("/active/2");
+    try std.testing.expectEqualStrings("pearl-network-wired-symbolic", icon(&f));
+    f.primary.set("/active/1");
+    try std.testing.expectEqualStrings("pearl-network-wireless-symbolic", icon(&f));
+    // A primary path outside the tracked devices falls back to the links up.
+    f.primary.set("/active/vpn");
+    try std.testing.expectEqualStrings("pearl-network-wired-symbolic", icon(&f));
+    // No primary reported: wired wins, matching NM's routing preference.
+    f.primary = .{};
+    try std.testing.expectEqualStrings("pearl-network-wired-symbolic", icon(&f));
+    // Nothing activated is offline, radio on or off.
+    f.devices[0].state = 30;
+    f.devices[1].state = 30;
+    try std.testing.expectEqualStrings("pearl-network-offline-symbolic", icon(&f));
+    f.enabled = false;
+    try std.testing.expectEqualStrings("pearl-network-offline-symbolic", icon(&f));
+    // A vanished daemon is offline, never a stale link glyph.
+    f.peer.snapshot = null;
+    try std.testing.expectEqualStrings("pearl-network-offline-symbolic", icon(&f));
+}
+/// Every glyph the policy can select, all registered in pearl.gresource.xml.
+/// An unregistered name renders as a broken image rather than an error, so a
+/// rename here must be matched in the manifest.
+const shipped_icons = [_][:0]const u8{
+    "pearl-network-wired-symbolic",
+    "pearl-network-wireless-symbolic",
+    "pearl-network-offline-symbolic",
+};
+
+test "every network icon the policy selects is a shipped, reachable glyph" {
+    var reachable = @as([shipped_icons.len]bool, @splat(false));
+    var f = Fixture.init();
+    f.device_count = 2;
+    f.devices[1].kind = 1;
+    f.devices[1].path.set("/dev/2");
+    f.devices[0].active.set("/active/1");
+    f.devices[1].active.set("/active/2");
+    // Sweep daemon presence, link kinds, activation and primary identities.
+    var present: u8 = 0;
+    while (present <= 1) : (present += 1) {
+        f.peer.snapshot = if (present == 0) null else 1;
+        var kind: u32 = 1;
+        while (kind <= 2) : (kind += 1) {
+            f.devices[0].kind = kind;
+            var state0: u32 = 30;
+            while (state0 <= 100) : (state0 += 70) {
+                f.devices[0].state = state0;
+                var state1: u32 = 30;
+                while (state1 <= 100) : (state1 += 70) {
+                    f.devices[1].state = state1;
+                    for ([_][]const u8{ "", "/active/1", "/active/2", "/active/other" }) |primary| {
+                        f.primary = .{};
+                        f.primary.set(primary);
+                        const symbol = icon(&f);
+                        const index = for (shipped_icons, 0..) |name, i| {
+                            if (std.mem.eql(u8, name, symbol)) break i;
+                        } else {
+                            std.debug.print("unregistered network icon: {s}\n", .{symbol});
+                            return error.TestUnexpectedResult;
+                        };
+                        reachable[index] = true;
+                    }
+                }
+            }
+        }
+    }
+    // A glyph no state can select means the policy or the asset set drifted.
+    for (shipped_icons, 0..) |name, i| {
+        try std.testing.expect(reachable[i]);
+        _ = name;
+    }
 }

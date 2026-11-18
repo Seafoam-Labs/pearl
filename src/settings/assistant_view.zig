@@ -97,6 +97,7 @@ pub const View = struct {
     timer: c_uint = 0,
     buttons: [10]*gtk.Button = undefined,
     comparison: ?*@import("benchmark_view.zig").View = null,
+    semantic: ?*@import("semantic_view.zig").View = null,
     pub fn create(host: *gtk.Box, editor: *Editor) !*View {
         const self = try a.create(View);
         host.as(gtk.Widget).addCssClass("assistant-view");
@@ -213,6 +214,8 @@ pub const View = struct {
         // Comparison is one sibling section; all shortcuts reveal this instance.
         const comparison_host = w.column(0);
         host.append(comparison_host.as(gtk.Widget));
+        const semantic_host = w.column(0);
+        host.append(semantic_host.as(gtk.Widget));
         const resources_section = layout.Section.create(host, "Resources & behavior", "Automatic model profile and idle unload");
         const resources = resources_section.body;
         const read_pages = toggle(resources, @import("i18n").dtr("pearl", "Read search result pages"));
@@ -238,6 +241,7 @@ pub const View = struct {
         _ = gtk.Button.signals.clicked.connect(browse, *View, browseClicked, self, .{});
         _ = object.Object.signals.notify.connect(device.as(object.Object), *View, deviceSelected, self, .{ .detail = "selected" });
         self.comparison = try @import("benchmark_view.zig").View.create(comparison_host, editor, self, comparisonAvailable);
+        self.semantic = try @import("semantic_view.zig").View.create(semantic_host, editor, self, comparisonAvailable);
         self.timer = glib.timeoutAdd(250, tick, self);
         self.update();
         return self;
@@ -245,6 +249,7 @@ pub const View = struct {
     pub fn destroy(self: *View) void {
         self.dead = true;
         if (self.comparison) |comparison| comparison.destroy();
+        if (self.semantic) |semantic| semantic.destroy();
         if (self.timer != 0) _ = glib.Source.remove(self.timer);
         self.timer = 0;
         if (self.cancel) |cancel| cancel.cancel();

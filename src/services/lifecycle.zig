@@ -25,6 +25,8 @@ pub const Lifecycle = struct {
     request_logout: *const fn (*anyopaque) void,
     peer: db.Peer = undefined,
     idle: Idle = undefined,
+    maintenance: ?*const fn (*anyopaque, bool) void = null,
+    maintenance_context: ?*anyopaque = null,
     saver: screensaver.Saver = .{},
     saver_overlay: screensaver.Overlay = .{},
     saver_on: bool = false,
@@ -104,6 +106,14 @@ pub const Lifecycle = struct {
         self.on_battery = on_battery;
         self.reduced_motion = reduced_motion;
         self.rearm();
+    }
+    /// Background-indexing idle windows are independent of the user's
+    /// lock/screensaver timeouts; zero disables the maintenance notification.
+    pub fn configureMaintenance(self: *Lifecycle, seconds: u32) void {
+        self.idle.configureMaintenance(seconds);
+    }
+    pub fn idleAvailable(self: *const Lifecycle) bool {
+        return self.idle.available();
     }
     fn rearm(self: *Lifecycle) void {
         self.stopSaver();
@@ -470,7 +480,10 @@ pub const Lifecycle = struct {
                 if (self.power) |power| power.dim(false);
                 self.gate.sleep_pending = false;
                 self.err = "Compositor idle notifications unavailable.";
+                if (self.maintenance) |notify| notify(self.maintenance_context.?, false);
             },
+            .maintenance_idle => if (self.maintenance) |notify| notify(self.maintenance_context.?, true),
+            .maintenance_resumed => if (self.maintenance) |notify| notify(self.maintenance_context.?, false),
             .resumed => {
                 self.stopSaver();
                 if (self.power) |power| power.dim(false);

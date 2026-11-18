@@ -1,13 +1,13 @@
 # Phyto
 
-A native **Zig 0.17.0 / GTK4** file explorer following Pearl's design, with
+A native **Zig 0.17.1 / GTK4** file explorer following Pearl's design, with
 Nemo-inspired navigation. The revised layout is implemented: one navigation
 and view toolbar, per-pane tabs, file content and an optional details sidebar.
 There is no large Home/location heading or subtitle.
 
 ## Build and run
 
-Use Zig 0.17.0 and GTK4/GLib development packages (verified with GTK 4.22.5 and
+Use Zig 0.17.1 and GTK4/GLib development packages (verified with GTK 4.22.5 and
 GLib 2.88.3). The manifest pins Pearl's Ghostty-generated GObject bindings.
 
 ```sh
@@ -56,8 +56,10 @@ application identity so release and Git installs can coexist.
   Places/bookmarks, devices, location and tabs. Targets remain tied to the clicked
   files and originating tab; multi-selection works in grid and list views.
 - System Copy/Cut/Paste, folder-specific paste, recursive batch copy/move,
-  collision Skip/Keep both, cancellation, duplicate/link, and guarded session
-  undo/redo. Existing destinations are never silently overwritten.
+  collision Skip/Replace/Keep both, cancellation, duplicate/link, and guarded
+  session undo/redo. Existing destinations are never silently overwritten:
+  Replace moves the previous item to Trash first. Keep both and pasting onto the
+  source's own folder write numbered copies such as “Folder (2)”.
 - Open with, terminal, empty documents/templates, aggregate Properties, Trash
   restore and permanent deletion with confirmation. GIO capabilities govern
   availability; optional integrations depend on installed providers.

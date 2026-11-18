@@ -193,6 +193,35 @@ acknowledgment, with a bounded 500 ms fallback that destroys the subscription.
 Fresh readiness is required on resume. Older compositors, unsupported sessions
 and unauthorized launches retain local clicks and Settings Preview.
 
+## Replacement artwork
+
+You can replace any image an approved package declares with your own PNG,
+without editing the package and without losing its approval:
+
+```sh
+mkdir -p ~/.local/share/pearl/plugin-artwork/pearl.companion/cat
+cp bunny.png ~/.local/share/pearl/plugin-artwork/pearl.companion/cat/
+```
+
+The folder is `$XDG_DATA_HOME/pearl/plugin-artwork/<package id>/<image id>/`.
+Main Settings → Plugins lists the file names it finds there under each image, so
+a replacement is chosen from a dropdown; **Package artwork** restores the art
+that shipped with the package. Refresh plugins after adding files.
+
+A candidate is offered only when its PNG dimensions equal the size the manifest
+declares for that image — Pearl Cat's `cat` image is 384×96, three 128×96 frames
+for `idle`, `tap-left` and `tap-right`, so a replacement keeps that layout.
+Files of any other size are ignored and the package art stays in use. Selections
+are saved per package as `plugins.entries[].artwork`, a list of
+`{"asset": "...", "file": "..."}` pairs holding a bare file name.
+
+Artwork is host-side presentation: Pearl decodes it, it is never handed to a
+guest, and it is not part of the package fingerprint, so choosing a picture
+never requires a fresh review. Editing a PNG inside an installed package
+directory is the opposite case — that changes the fingerprint and the package
+needs approval again. Replacements are re-read whenever the instance starts, so
+**Retry** picks up edited file content.
+
 ## CLI
 
 ```sh
@@ -237,6 +266,12 @@ rescan. These commands use the existing session-scoped Pearl control endpoint.
 - Scenes have at most 32 nodes and four images. PNG assets, paths, dimensions,
   sprite rectangles, clip durations and settings are validated. Text is plain
   text, never GTK markup or executable CSS. Asset decoding runs off the GTK thread.
+- Replacement artwork is read through `O_NOFOLLOW` opens of regular files only,
+  at most 2 MiB each, with at most 16 candidates offered per image and eight
+  selections per package. Names are bare identifiers, so a stored selection
+  cannot address another folder. Artwork must match the declared image size and
+  is decoded by the host; it is outside the snapshot fingerprint and never
+  reaches a guest.
 - No WASI imports, network, arbitrary filesystem, environment, process launch,
   raw devices, GTK pointers or system-service interfaces are exposed to guests.
   Snapshot fingerprints cover the manifest, component and every declared asset.

@@ -200,6 +200,15 @@ if that object omits `mode`, that display uses `always`, even if `bar.mode` is
 `autohide`. Edit display overrides in Advanced. Visibility changes apply live
 and survive restart. See [the implementation plan](BAR_AUTOHIDE_IMPLEMENTATION_PLAN.md).
 
+An output entry with **no** `bar` object (or `"bar": null`) inherits the global
+bar instead, so adding a per-display wallpaper or dock override never resets bar
+settings such as islands, opacity, size or layout. A `bar` object that is exactly
+the built-in defaults *and* accompanies a wallpaper override is also treated as
+no override; this heals displays whose bar was reset by older wallpaper/crop
+saves that materialized a default bar. An explicit, non-default `bar` object
+still replaces the global bar completely. The Bar page shows a notice when a
+connected display's override replaces the defaults shown there.
+
 **Bar & dock → Bar displays** switches the bar off per connected display, for
 setups where the bar should stay always visible on one screen only. The JSON
 field is the top-level `bar_hidden_outputs`, a list of connector names (for
@@ -400,9 +409,11 @@ light/dark Pearl container color. Theme background images and existing alpha
 are replaced on the bar background in Custom. Other shell surfaces keep their
 appearance. Blur remains controlled by the compositor.
 
-Each `outputs[].bar` can contain the same field. These are complete overrides:
-omitting `background_opacity` there selects Automatic, even if the default bar
-uses Custom. Display overrides remain editable in Advanced.
+Each `outputs[].bar` can contain the same field. An explicit `bar` override is
+complete: omitting `background_opacity` there selects Automatic, even if the
+default bar uses Custom. An output with no `bar` object (or `"bar": null`)
+inherits the global opacity instead, so a wallpaper-only override keeps the
+default bar's Custom setting. Display overrides remain editable in Advanced.
 
 ### Launcher button icon
 

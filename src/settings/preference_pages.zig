@@ -23,6 +23,7 @@ pub const View = struct {
     editing: bool = false,
     own_invalid: ?[64]u8 = null,
     presets: ?*@import("presets_view.zig").View = null,
+    notice: *gtk.Label = undefined,
     bar: ?*@import("bar_view.zig").View = null,
     launchers: ?*@import("application_launchers_view.zig").View = null,
     pub fn create(host: *gtk.Box, editor: *Editor, context: *anyopaque, invalidate: *const fn (*anyopaque, @import("../desktop/settings_navigation.zig").Route) void) !*View {
@@ -32,6 +33,10 @@ pub const View = struct {
         var card = w.column(0);
         card.as(gtk.Widget).addCssClass("settings-card");
         host.append(card.as(gtk.Widget));
+        self.notice = w.label("", "pearl-secondary");
+        self.notice.setWrap(1);
+        self.notice.as(gtk.Widget).setVisible(0);
+        card.append(self.notice.as(gtk.Widget));
         for (specs, self.fields) |spec, *field| {
             const dock_start = std.mem.eql(u8, spec.path, "dock.enabled");
             if (dock_start or std.mem.eql(u8, spec.path, "popup.dismiss_outside")) {
@@ -250,6 +255,7 @@ pub const View = struct {
                 if (field.slider) |slider| slider.as(gtk.Widget).setSensitive(0);
             }
             for (self.displays) |field| field.widget.as(gtk.Widget).setSensitive(0);
+            self.notice.as(gtk.Widget).setVisible(0);
             return;
         };
         for (self.fields) |field| field.widget.setSensitive(@intFromBool(self.editor.editable()));
@@ -297,6 +303,22 @@ pub const View = struct {
             field.widget.as(gtk.Widget).setSensitive(@intFromBool(self.editor.editable() and (hidden or shown > 1)));
             field.widget.setActive(@intFromBool(!hidden));
         }
+        // Make override shadowing and pending drafts visible: a control showing
+        // "off" here must not silently disagree with the bar on another display.
+        var overridden = std.array_list.Managed([]const u8).init(alloc);
+        defer overridden.deinit();
+        for (self.displays) |field| {
+            if (outputBarOverride(document, field.connector)) overridden.append(field.connector) catch {};
+        }
+        if (overridden.items.len > 0) {
+            const list = std.mem.join(alloc, ", ", overridden.items) catch "";
+            const text = @import("i18n").fmtAlloc(alloc, "Display overrides replace these defaults on: {s}. Edit or remove them in Advanced.", .{list}) catch "";
+            self.notice.setText(text);
+            self.notice.as(gtk.Widget).setVisible(1);
+        } else if (self.editor.state.dirty or self.editor.local != null) {
+            self.notice.setText(@import("i18n").dtr("pearl", "Changes are retained as a draft. Use Apply & save to make them active."));
+            self.notice.as(gtk.Widget).setVisible(1);
+        } else self.notice.as(gtk.Widget).setVisible(0);
     }
     fn save(field: *Field) void {
         const self = field.view;
@@ -341,6 +363,20 @@ fn lookup(document: std.json.Value, path: []const u8) ?std.json.Value {
     var parts = std.mem.splitScalar(u8, path, '.');
     while (parts.next()) |part| value = if (value == .object) value.object.get(part) orelse return null else return null;
     return value;
+}
+/// True when `connector` has an explicit per-output bar override object, which
+/// replaces the global bar defaults shown on this page.
+fn outputBarOverride(document: std.json.Value, connector: []const u8) bool {
+    const outputs = lookup(document, "outputs") orelse return false;
+    if (outputs != .array) return false;
+    for (outputs.array.items) |entry| {
+        if (entry != .object) continue;
+        const conn = entry.object.get("connector") orelse continue;
+        if (conn != .string or !std.mem.eql(u8, conn.string, connector)) continue;
+        const bar = entry.object.get("bar") orelse return false;
+        return bar == .object;
+    }
+    return false;
 }
 fn barHiddenIn(document: std.json.Value, connector: []const u8) bool {
     const value = lookup(document, "bar_hidden_outputs") orelse return false;

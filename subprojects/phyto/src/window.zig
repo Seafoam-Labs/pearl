@@ -1189,8 +1189,12 @@ pub const Window = struct {
         var dialog_widgets: std.ArrayList(ProbeWidget) = .empty;
         defer dialog_widgets.deinit(a);
         if (self.network_ui.editor) |e| self.probeWidgetsAt(e.dialog.as(gtk.Widget), e.dialog.as(gtk.Widget), &dialog_widgets);
+        var operation_widgets: std.ArrayList(ProbeWidget) = .empty;
+        defer operation_widgets.deinit(a);
+        if (self.operations.dialog) |d| self.probeWidgetsAt(d.as(gtk.Widget), d.as(gtk.Widget), &operation_widgets);
         const json = std.json.Stringify.valueAlloc(a, .{
             .network_dialog_widgets = dialog_widgets.items,
+            .operation_dialog_widgets = operation_widgets.items,
             .network_profiles = @import("platform/network_mounts.zig").shared.?.store.profiles.items,
             .network_states = @import("platform/network_mounts.zig").shared.?.entries.items,
             .network_attempts = @import("platform/network_mounts.zig").shared.?.attempts,
