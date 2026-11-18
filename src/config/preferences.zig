@@ -99,7 +99,7 @@ test "wallpaper-only display overrides inherit the global bar and never reset is
     try std.testing.expectEqual(.bottom, wallpaper_only.forOutput("DP-1").edge);
     // A historically materialized all-default bar alongside a wallpaper override
     // is healed: the display inherits the global bar instead of the defaults.
-    const materialized = try parse(a, "{\"bar\":{\"islands\":false,\"background_opacity\":{\"mode\":\"custom\",\"percent\":100},\"edge\":\"bottom\"},\"outputs\":[{\"connector\":\"DP-1\",\"bar\":{\"islands\":true,\"background_opacity\":{\"mode\":\"automatic\",\"percent\":86},\"edge\":\"top\"},\"wallpaper\":{\"mode\":\"cover\",\"path\":\"/p/one.png\"}}]}");
+    const materialized = try parse(a, "{\"bar\":{\"islands\":false,\"background_opacity\":{\"mode\":\"custom\",\"percent\":100},\"edge\":\"bottom\"},\"outputs\":[{\"connector\":\"DP-1\",\"bar\":{\"clocks\":[],\"mode\":\"always\",\"background_opacity\":{\"mode\":\"automatic\",\"percent\":86},\"launcher_icon\":{\"kind\":\"default\",\"value\":\"\"},\"workspace_mode\":\"large\",\"running_apps_per_window\":false,\"resource_mode\":\"icon\",\"resource_series\":{\"cpu\":true,\"gpu\":true,\"memory\":true,\"network\":true},\"media_art\":false,\"islands\":true,\"attached\":false,\"edge\":\"top\",\"size\":48,\"radius\":14,\"groups\":{\"left\":\"launcher,workspaces,title\",\"center\":\"clock\",\"right\":\"media,tray,audio,network,battery,notifications,clipboard,keyboard,control\"}},\"wallpaper\":{\"mode\":\"cover\",\"path\":\"/p/one.png\"}}]}");
     try std.testing.expectEqual(false, materialized.forOutput("DP-1").islands);
     try std.testing.expectEqual(@as(u8, 100), materialized.forOutput("DP-1").background_opacity.percent);
     try std.testing.expectEqual(.bottom, materialized.forOutput("DP-1").edge);
@@ -205,7 +205,7 @@ pub const Preferences = struct {
     pub fn forOutput(self: Preferences, connector: []const u8) Bar {
         for (self.outputs) |o| if (std.mem.eql(u8, o.connector, connector)) {
             if (o.bar) |bar| {
-                if (o.wallpaper != null and std.meta.eql(bar, Bar{})) return self.bar;
+                if (o.wallpaper != null and barIsDefault(bar)) return self.bar;
                 return bar;
             }
             return self.bar;
@@ -297,6 +297,22 @@ pub const Preferences = struct {
         }
     }
 };
+/// True when a bar override carries no customization beyond the built-in
+/// defaults. Compared by content (strings and slices), not pointer identity:
+/// parsed documents allocate their own copies of the default strings, so
+/// std.meta.eql would wrongly report a materialized default bar as non-default.
+fn barIsDefault(b: Bar) bool {
+    const d: Bar = .{};
+    if (b.clocks.len != 0) return false;
+    if (b.mode != d.mode or b.workspace_mode != d.workspace_mode or b.resource_mode != d.resource_mode) return false;
+    if (b.running_apps_per_window != d.running_apps_per_window or b.media_art != d.media_art or b.islands != d.islands or b.attached != d.attached) return false;
+    if (b.edge != d.edge or b.size != d.size or b.radius != d.radius) return false;
+    if (b.background_opacity.mode != d.background_opacity.mode or b.background_opacity.percent != d.background_opacity.percent) return false;
+    if (b.launcher_icon.kind != d.launcher_icon.kind or !std.mem.eql(u8, b.launcher_icon.value, d.launcher_icon.value)) return false;
+    if (!std.meta.eql(b.resource_series, d.resource_series)) return false;
+    if (!std.mem.eql(u8, b.groups.left, d.groups.left) or !std.mem.eql(u8, b.groups.center, d.groups.center) or !std.mem.eql(u8, b.groups.right, d.groups.right)) return false;
+    return true;
+}
 fn barValid(b: Bar) !void {
     try b.background_opacity.validate();
     try b.launcher_icon.validate();
