@@ -85,6 +85,35 @@ test "per-output wallpaper overrides roundtrip and fall back to the global image
     try std.testing.expectError(error.InvalidColor, parse(alloc, "{\"outputs\":[{\"connector\":\"DP-1\",\"wallpaper\":{\"mode\":\"solid\",\"color\":\"zzz\"}}]}"));
     try std.testing.expectError(error.InvalidCropRect, parse(alloc, "{\"outputs\":[{\"connector\":\"DP-1\",\"wallpaper\":{\"crops\":[{\"path\":\"/p/a.png\",\"x\":0.75,\"width\":0.5}]}}]}"));
 }
+test "wallpaper-only display overrides inherit the global bar and never reset islands or opacity" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    const global_bar: Bar = .{ .islands = false, .background_opacity = .{ .mode = .custom, .percent = 100 }, .edge = .bottom };
+    // A wallpaper-only entry carries no bar override: it inherits the global bar.
+    const wallpaper_only = try parse(a, try std.json.Stringify.valueAlloc(a, Preferences{ .bar = global_bar, .outputs = &.{.{ .connector = "DP-1", .wallpaper = .{ .mode = .cover, .path = "/p/one.png" } }} }, .{}));
+    try std.testing.expect(wallpaper_only.outputs[0].bar == null);
+    try std.testing.expectEqual(false, wallpaper_only.forOutput("DP-1").islands);
+    try std.testing.expectEqual(.custom, wallpaper_only.forOutput("DP-1").background_opacity.mode);
+    try std.testing.expectEqual(@as(u8, 100), wallpaper_only.forOutput("DP-1").background_opacity.percent);
+    try std.testing.expectEqual(.bottom, wallpaper_only.forOutput("DP-1").edge);
+    // A historically materialized all-default bar alongside a wallpaper override
+    // is healed: the display inherits the global bar instead of the defaults.
+    const materialized = try parse(a, "{\"bar\":{\"islands\":false,\"background_opacity\":{\"mode\":\"custom\",\"percent\":100},\"edge\":\"bottom\"},\"outputs\":[{\"connector\":\"DP-1\",\"bar\":{\"islands\":true,\"background_opacity\":{\"mode\":\"automatic\",\"percent\":86},\"edge\":\"top\"},\"wallpaper\":{\"mode\":\"cover\",\"path\":\"/p/one.png\"}}]}");
+    try std.testing.expectEqual(false, materialized.forOutput("DP-1").islands);
+    try std.testing.expectEqual(@as(u8, 100), materialized.forOutput("DP-1").background_opacity.percent);
+    try std.testing.expectEqual(.bottom, materialized.forOutput("DP-1").edge);
+    // An intentional, non-default bar override still replaces the global bar
+    // completely, even alongside a wallpaper override.
+    const intentional = try parse(a, "{\"bar\":{\"islands\":false,\"background_opacity\":{\"mode\":\"custom\",\"percent\":100}},\"outputs\":[{\"connector\":\"DP-1\",\"bar\":{\"edge\":\"left\"},\"wallpaper\":{\"mode\":\"cover\",\"path\":\"/p/one.png\"}}]}");
+    try std.testing.expectEqual(true, intentional.forOutput("DP-1").islands);
+    try std.testing.expectEqual(.automatic, intentional.forOutput("DP-1").background_opacity.mode);
+    try std.testing.expectEqual(.left, intentional.forOutput("DP-1").edge);
+    // An empty bar override without a wallpaper override keeps the documented
+    // complete-override behavior (reset to defaults).
+    const reset = try parse(a, "{\"bar\":{\"islands\":false},\"outputs\":[{\"connector\":\"DP-1\",\"bar\":{}}]}");
+    try std.testing.expectEqual(true, reset.forOutput("DP-1").islands);
+}
 pub const Theme = struct {
     mode: enum { static, dynamic, gtk, package } = .static,
     package_id: []const u8 = "",
@@ -130,7 +159,9 @@ pub const WorkspaceMode = @import("../desktop/workspace_policy.zig").Mode;
 pub const ResourceMode = @import("../desktop/resource_model.zig").Mode;
 pub const ResourceSelection = @import("../desktop/resource_model.zig").Selection;
 pub const Bar = struct { clocks: []const @import("../desktop/clock_policy.zig").Definition = &.{}, mode: @import("../desktop/bar_visibility.zig").Mode = .always, background_opacity: @import("../desktop/bar_opacity.zig").Config = .{}, launcher_icon: @import("../desktop/launcher_icon_policy.zig").Config = .{}, workspace_mode: WorkspaceMode = .large, running_apps_per_window: bool = false, resource_mode: ResourceMode = .icon, resource_series: ResourceSelection = .{}, media_art: bool = false, islands: bool = true, attached: bool = false, edge: Edge = .top, size: u16 = 48, radius: u8 = 14, groups: Groups = .{} };
-pub const Output = struct { connector: []const u8, bar: Bar = .{}, dock: ?Dock = null, wallpaper: ?Wallpaper = null };
+/// A per-display override. `bar` is optional: null inherits the global bar
+/// entirely, so adding a wallpaper or dock override never resets bar settings.
+pub const Output = struct { connector: []const u8, bar: ?Bar = null, dock: ?Dock = null, wallpaper: ?Wallpaper = null };
 pub const Export = struct { name: []const u8, template: []const u8 };
 pub const Preferences = struct {
     version: u32 = 1,
@@ -163,8 +194,22 @@ pub const Preferences = struct {
     popup: struct { dismiss_outside: bool = true, placement: enum { anchored, centered } = .anchored, max_width: u16 = 720, max_height: u16 = 800 } = .{},
     // Only explicitly listed files in Pearl's export directory are managed.
     exports: []const Export = &.{},
+    /// The bar for one output: its own override when set, else the global bar.
+    /// A null override inherits the global bar entirely. An override identical
+    /// to the built-in defaults that accompanies a wallpaper override is also
+    /// treated as absent: per-display wallpaper/crop saves historically
+    /// materialized a default bar, which must not shadow the global bar's
+    /// islands, opacity and layout. An explicit non-default override (or an
+    /// empty `"bar":{}` without a wallpaper override) still replaces the global
+    /// bar completely.
     pub fn forOutput(self: Preferences, connector: []const u8) Bar {
-        for (self.outputs) |o| if (std.mem.eql(u8, o.connector, connector)) return o.bar;
+        for (self.outputs) |o| if (std.mem.eql(u8, o.connector, connector)) {
+            if (o.bar) |bar| {
+                if (o.wallpaper != null and std.meta.eql(bar, Bar{})) return self.bar;
+                return bar;
+            }
+            return self.bar;
+        };
         return self.bar;
     }
     pub fn dockForOutput(self: Preferences, connector: []const u8) Dock {
@@ -232,7 +277,7 @@ pub const Preferences = struct {
             try safeText(o.connector, 128);
             if (o.connector.len == 0) return error.InvalidConnector;
             for (self.outputs[0..i]) |previous| if (std.mem.eql(u8, previous.connector, o.connector)) return error.DuplicateOutput;
-            try barValid(o.bar);
+            if (o.bar) |bar| try barValid(bar);
             if (o.dock) |dock| try @import("../desktop/dock_policy.zig").validate(dock);
             if (o.wallpaper) |wp| try wallpaperValid(wp);
         }
@@ -407,9 +452,25 @@ pub fn parseRecovering(a: std.mem.Allocator, bytes: []const u8) !Preferences {
     defer keys.deinit();
     var it = dom.object.iterator();
     while (it.next()) |entry| try keys.append(entry.key_ptr.*);
-    // Prefer dropping a single offending field and keeping every other.
+    // Prefer dropping a single offending field and keeping every other. For an
+    // object field, first try dropping just one invalid sub-field so valid
+    // siblings survive (e.g. bar.islands and bar.background_opacity survive a
+    // broken bar.groups) instead of resetting the whole field to defaults.
     for (keys.items) |key| {
         const value = dom.object.get(key) orelse continue;
+        if (value == .object) {
+            const objptr = dom.object.getPtr(key).?;
+            var subkeys = std.array_list.Managed([]const u8).init(a);
+            defer subkeys.deinit();
+            var sit = objptr.object.iterator();
+            while (sit.next()) |entry| try subkeys.append(entry.key_ptr.*);
+            for (subkeys.items) |subkey| {
+                const subvalue = objptr.object.get(subkey) orelse continue;
+                _ = objptr.object.orderedRemove(subkey);
+                if (tolerantParse(a, dom)) |p| return p else |_| {}
+                try objptr.object.put(a, subkey, subvalue);
+            }
+        }
         _ = dom.object.orderedRemove(key);
         if (tolerantParse(a, dom)) |p| {
             return p;
@@ -458,6 +519,19 @@ test "recovering parse keeps readable fields and defaults only what is broken" {
     const encoded = try std.json.Stringify.valueAlloc(a, strict, .{});
     try std.testing.expectEqualDeep(strict, try parseRecovering(a, encoded));
     try std.testing.expectEqual(.packaged, (try parseRecovering(a, "{\"assistant\":{\"enabled\":true}}")).assistant.runtime.source);
+}
+test "recovering parse keeps valid bar scalars when a sibling bar field is broken" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    // A dangling clock reference breaks bar.groups, but islands and opacity are
+    // readable and must survive instead of the whole bar resetting to defaults.
+    const broken = try parseRecovering(a, "{\"font_size\":18,\"bar\":{\"islands\":false,\"background_opacity\":{\"mode\":\"custom\",\"percent\":100},\"groups\":{\"center\":\"clock:missing\"}}}");
+    try std.testing.expectEqual(@as(u8, 18), broken.font_size);
+    try std.testing.expectEqual(false, broken.bar.islands);
+    try std.testing.expectEqual(.custom, broken.bar.background_opacity.mode);
+    try std.testing.expectEqual(@as(u8, 100), broken.bar.background_opacity.percent);
+    try broken.validate();
 }
 pub fn boundedJson(bytes: []const u8, max: usize, max_depth: usize) !void {
     if (bytes.len > max or !std.unicode.utf8ValidateSlice(bytes)) return error.InvalidConfig;
@@ -544,7 +618,7 @@ test "workspace mode defaults, strict values and complete output overrides" {
         } };
         const parsed = try parse(a, try std.json.Stringify.valueAlloc(a, original, .{}));
         try std.testing.expectEqual(mode, parsed.forOutput("HDMI-1").workspace_mode);
-        try std.testing.expectEqual(.large, parsed.forOutput("DP-1").workspace_mode);
+        try std.testing.expectEqual(mode, parsed.forOutput("DP-1").workspace_mode);
         try std.testing.expectEqual(.medium, parsed.forOutput("DP-2").workspace_mode);
     }
 }
@@ -605,7 +679,8 @@ test "bar opacity preserves legacy defaults, overrides and strict validation" {
         const original: Preferences = .{ .bar = .{ .background_opacity = .{ .mode = .custom, .percent = percent } }, .outputs = &.{ .{ .connector = "DP-1" }, .{ .connector = "DP-2", .bar = .{ .background_opacity = .{ .mode = .custom, .percent = 50 } } } } };
         const roundtrip = try parse(a, try std.json.Stringify.valueAlloc(a, original, .{}));
         try t.expectEqualDeep(original.bar, roundtrip.bar);
-        try t.expectEqual(.automatic, roundtrip.forOutput("DP-1").background_opacity.mode);
+        try t.expectEqual(.custom, roundtrip.forOutput("DP-1").background_opacity.mode);
+        try t.expectEqual(percent, roundtrip.forOutput("DP-1").background_opacity.percent);
         try t.expectEqual(@as(u8, 50), roundtrip.forOutput("DP-2").background_opacity.percent);
         try t.expectEqual(percent, roundtrip.forOutput("OTHER").background_opacity.percent);
     }

@@ -723,7 +723,7 @@ msgstr ""
 msgid "Authentication response"
 msgstr ""
 
-#: src/settings/preference_pages.zig:107
+#: src/settings/preference_pages.zig:112
 msgid "Autohide reveals the bar at the screen edge and gives applications more space. Display overrides in Advanced take priority."
 msgstr ""
 
@@ -747,7 +747,7 @@ msgstr ""
 msgid "Automatic discovery is degraded. Use Installed to refresh available themes."
 msgstr ""
 
-#: src/settings/preference_pages.zig:138
+#: src/settings/preference_pages.zig:143
 msgid "Automatic follows the theme and blur availability. Custom changes only the bar background, including when blur is unavailable."
 msgstr ""
 
@@ -805,7 +805,7 @@ msgstr ""
 msgid "Background indexing"
 msgstr ""
 
-#: src/settings/preference_pages.zig:119
+#: src/settings/preference_pages.zig:124
 msgid "Background opacity slider (%)"
 msgstr ""
 
@@ -841,7 +841,7 @@ msgstr ""
 msgid "Bar corner radius"
 msgstr ""
 
-#: src/settings/preference_pages.zig:183 src/settings/preference_pages.zig:185
+#: src/settings/preference_pages.zig:188 src/settings/preference_pages.zig:190
 msgid "Bar displays"
 msgstr ""
 
@@ -1235,6 +1235,10 @@ msgstr ""
 
 #: src/desktop/brightness_controls.zig:103
 msgid "Changes apply to the selected display"
+msgstr ""
+
+#: src/settings/preference_pages.zig:335
+msgid "Changes are retained as a draft. Use Apply & save to make them active."
 msgstr ""
 
 #: src/settings/window.zig:1092
@@ -2297,6 +2301,10 @@ msgstr ""
 msgid "Display name"
 msgstr ""
 
+#: src/settings/preference_pages.zig:331
+msgid "Display overrides replace these defaults on: {0}. Edit or remove them in Advanced."
+msgstr ""
+
 #: src/config/aqueous_presentation.zig:77
 msgid "Display policy"
 msgstr ""
@@ -2349,7 +2357,7 @@ msgstr ""
 msgid "Dock icon size"
 msgstr ""
 
-#: src/settings/preference_pages.zig:119
+#: src/settings/preference_pages.zig:124
 msgid "Dock opacity slider (%)"
 msgstr ""
 
@@ -2679,7 +2687,7 @@ msgstr ""
 msgid "Enter to copy"
 msgstr ""
 
-#: src/search/service.zig:456
+#: src/search/service.zig:461
 msgid "Enter to open"
 msgstr ""
 
@@ -3697,7 +3705,7 @@ msgstr ""
 msgid "Lock placement"
 msgstr ""
 
-#: src/settings/preference_pages.zig:131
+#: src/settings/preference_pages.zig:136
 msgid "Locked to bar"
 msgstr ""
 
@@ -4468,7 +4476,7 @@ msgctxt "aqueous.opacity.unfocused.description"
 msgid "Opacity of unfocused windows."
 msgstr ""
 
-#: src/settings/preference_pages.zig:126
+#: src/settings/preference_pages.zig:131
 msgid "Opaque"
 msgstr ""
 
@@ -6781,7 +6789,7 @@ msgstr ""
 msgid "Show applications dock"
 msgstr ""
 
-#: src/settings/preference_pages.zig:201
+#: src/settings/preference_pages.zig:206
 msgid "Show bar on"
 msgstr ""
 
@@ -7059,7 +7067,7 @@ msgstr ""
 msgid "Switch keyboard layout"
 msgstr ""
 
-#: src/settings/preference_pages.zig:189
+#: src/settings/preference_pages.zig:194
 msgid "Switch the bar off on displays you do not want it on. One display always keeps its bar."
 msgstr ""
 
@@ -7558,7 +7566,7 @@ msgstr ""
 msgid "Transition"
 msgstr ""
 
-#: src/settings/preference_pages.zig:122
+#: src/settings/preference_pages.zig:127
 msgid "Transparent"
 msgstr ""
 

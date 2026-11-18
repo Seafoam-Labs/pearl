@@ -11,7 +11,7 @@ pub fn main(init: std.process.Init) !void {
     const a = arena.allocator();
     const args = try init.minimal.args.toSlice(a);
     if (args.len == 2 and std.mem.eql(u8, args[1], "--version")) {
-        glib.print("Pearl themes " ++ @import("version.zig").string ++ " (Zig 0.17.0)\n");
+        glib.print("Pearl themes " ++ @import("version.zig").string ++ " (Zig 0.17.1)\n");
         return;
     }
     if (args.len == 2 and std.mem.eql(u8, args[1], "--help")) {

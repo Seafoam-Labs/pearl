@@ -7,7 +7,7 @@ host configuration. It is not wired into the production build.
 
 ## Pinned tools
 
-- Host and guest compiler: Zig 0.17.0, using its bundled C compiler for `guest.c`.
+- Host and guest compiler: Zig 0.17.1, using its bundled C compiler for `guest.c`.
 - [Wasmtime 48.0.2 Linux x86_64 C API archive](https://github.com/bytecodealliance/wasmtime/releases/download/v48.0.2/wasmtime-v48.0.2-x86_64-linux-c-api.tar.xz).
   SHA-256: `d9a2b5dfaf688035f288a7ae81a4b96c3acdd3e849262c2ab577b61908c3f9f9`.
 - [wasm-tools 1.259.0 Linux x86_64 archive](https://github.com/bytecodealliance/wasm-tools/releases/download/v1.259.0/wasm-tools-1.259.0-x86_64-linux.tar.gz).

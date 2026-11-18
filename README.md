@@ -6,7 +6,7 @@ Pearl's initial design and implementation used **spec-driven development**. Writ
 
 Version **0.3.6** removes periodic DDC brightness polling that caused frame drops during gaming. Brightness now refreshes on demand and on hardware changes, with targeted writes and safe idle-dim restoration. It retains the libddcutil startup fix and bundles Phyto, Dome and Coral **0.1.1** with refreshed Arch and Devario packaging. It includes live Pearl theme following in Dome, updated Settings pages, the local launcher assistant with Bing RSS search by default, floating islands, a dock and migration tooling. Release acceptance is pending the physical, real-login, accessibility and license gates in [RELEASE.md](docs/RELEASE.md).
 
-The pinned Zig 0.17.0 stack has generated
+The pinned Zig 0.17.1 stack has generated
 layer-shell/session-lock bindings, an application lifecycle, compiled GTK
 resources and a demo gallery. Private Aqueous tests cover startup, shutdown,
 cancellation and session isolation. A bounded Aqueous decoder and atomic state
