@@ -7,30 +7,9 @@ const model = @import("../config/preferences.zig");
 const w = @import("../ui/components/widgets.zig");
 const Editor = @import("editor.zig").Editor;
 const a = std.heap.c_allocator;
-const Spec = struct { path: []const u8, label: [:0]const u8, kind: enum { text, number, percent, toggle, choice }, choices: []const [:0]const u8 = &.{}, min: f64 = 0, max: f64 = 86400 };
-const edges: []const [:0]const u8 = &.{ "top", "bottom", "left", "right" };
-const bar_fields = [_]Spec{
-    .{ .path = "bar.mode", .label = "Bar visibility", .kind = .choice, .choices = &.{ "always", "autohide" } },
-    .{ .path = "bar.edge", .label = "Bar edge", .kind = .choice, .choices = edges },
-    .{ .path = "bar.size", .label = "Bar size", .kind = .number, .min = 32, .max = 160 },
-    .{ .path = "bar.radius", .label = "Bar corner radius", .kind = .number, .min = 0, .max = 48 },
-    .{ .path = "bar.running_apps_per_window", .label = "One taskbar button per window", .kind = .toggle },
-    .{ .path = "bar.islands", .label = "Separate bar islands", .kind = .toggle },
-    .{ .path = "bar.attached", .label = "Attach bar to screen edge", .kind = .toggle },
-    .{ .path = "bar.background_opacity.mode", .label = "Background opacity", .kind = .choice, .choices = &.{ "automatic", "custom" } },
-    .{ .path = "bar.background_opacity.percent", .label = "Background opacity (%)", .kind = .percent, .min = 0, .max = 100 },
-    .{ .path = "dock.enabled", .label = "Show dock", .kind = .toggle },
-    .{ .path = "dock.edge", .label = "Dock edge", .kind = .choice, .choices = edges },
-    .{ .path = "dock.mode", .label = "Dock visibility", .kind = .choice, .choices = &.{ "always", "autohide", "intelligent" } },
-    .{ .path = "dock.icon_size", .label = "Dock icon size", .kind = .number, .min = 24, .max = 64 },
-    .{ .path = "dock.margin", .label = "Dock margin", .kind = .number, .min = 4, .max = 32 },
-    .{ .path = "dock.opacity_sync", .label = "Match bar opacity", .kind = .toggle },
-    .{ .path = "dock.background_opacity.percent", .label = "Dock opacity (%)", .kind = .percent, .min = 0, .max = 100 },
-    .{ .path = "popup.dismiss_outside", .label = "Dismiss flyouts when clicking outside", .kind = .toggle },
-    .{ .path = "popup.placement", .label = "Flyout placement", .kind = .choice, .choices = &.{ "anchored", "centered" } },
-    .{ .path = "popup.max_width", .label = "Maximum flyout width", .kind = .number, .min = 320, .max = 1280 },
-    .{ .path = "popup.max_height", .label = "Maximum flyout height", .kind = .number, .min = 320, .max = 1600 },
-};
+const form = @import("bar_dock_fields.zig");
+const Spec = form.Spec;
+const bar_fields = form.fields;
 const Field = struct { view: *View, spec: Spec, widget: *gtk.Widget, signal: c_ulong, slider: ?*gtk.Scale = null, lock: ?*gtk.Widget = null };
 /// One "show the bar here" switch per connected display. The connector names
 /// come from GDK, so this works on any Wayland compositor.
@@ -43,6 +22,7 @@ pub const View = struct {
     filling: bool = false,
     editing: bool = false,
     own_invalid: ?[64]u8 = null,
+    presets: ?*@import("presets_view.zig").View = null,
     notice: *gtk.Label = undefined,
     bar: ?*@import("bar_view.zig").View = null,
     launchers: ?*@import("application_launchers_view.zig").View = null,
@@ -112,6 +92,8 @@ pub const View = struct {
                 const hint = w.label(@import("i18n").dtr("pearl", "Autohide reveals the bar at the screen edge and gives applications more space. Display overrides in Advanced take priority."), "pearl-secondary");
                 hint.setWrap(1);
                 card.append(hint.as(gtk.Widget));
+                // Presets sit directly above the per-display switches.
+                self.presets = try @import("presets_view.zig").View.create(host, editor);
                 try self.buildDisplays();
             }
             field.* = .{ .view = self, .spec = spec, .widget = widget, .signal = 0 };
@@ -247,6 +229,7 @@ pub const View = struct {
     pub fn destroy(self: *View) void {
         if (self.launchers) |view| view.destroy();
         if (self.bar) |bar| bar.destroy();
+        if (self.presets) |picker| picker.destroy();
         for (self.fields) |field| object.signalHandlerDisconnect(field.widget.as(object.Object), field.signal);
         for (self.displays) |field| {
             object.signalHandlerDisconnect(field.widget.as(object.Object), field.signal);
@@ -259,6 +242,7 @@ pub const View = struct {
     pub fn update(self: *View) void {
         if (self.launchers) |view| view.update();
         if (self.bar) |bar| bar.update();
+        if (self.presets) |picker| picker.update();
         if (self.editing) return;
         self.filling = true;
         defer self.filling = false;
@@ -429,5 +413,8 @@ fn patch(alloc: std.mem.Allocator, text: []const u8, path: []const u8, value: st
         part = next;
     }
     try current.object.put(alloc, part, value);
+    // Editing a setting a preset owns makes the layout the user's own again.
+    if (std.mem.startsWith(u8, path, "bar.") or std.mem.startsWith(u8, path, "dock."))
+        try document.object.put(alloc, "bar_dock_preset", .{ .string = "" });
     return std.json.Stringify.valueAlloc(alloc, document, .{ .whitespace = .indent_2 });
 }

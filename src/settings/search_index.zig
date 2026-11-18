@@ -77,6 +77,7 @@ pub const PearlEntry = struct {
 /// bar_view control id, "launchers", or "raw"); reveal falls back to the page
 /// heading when a control cannot be resolved.
 pub const pearl_manifest = [_]PearlEntry{
+    .{ .id = "bar.presets", .label = "Layout presets", .description = "Start from a shipped bar and dock layout", .route = .bar, .breadcrumb = "Bar & dock › Layout presets", .keywords = "preset presets layout macos windows taskbar menu bar dock" },
     .{ .id = "bar.widget.launcher", .label = "Launcher", .description = "Open your applications", .route = .bar, .breadcrumb = "Bar & dock › Widgets", .keywords = "launcher applications start menu app button" },
     .{ .id = "bar.icon.expand", .label = "Launcher icon", .description = "Change the launcher button icon", .route = .bar, .breadcrumb = "Bar & dock › Launcher", .keywords = "launcher icon image picture" },
     .{ .id = "launchers", .label = "Application launchers", .description = "Remove remembered launcher choices", .route = .bar, .breadcrumb = "Bar & dock › Application launchers", .keywords = "launcher remembered default applications choices" },
@@ -109,6 +110,17 @@ pub fn collectPearl(alloc: std.mem.Allocator, needle_lower: []const u8, out: *st
             .kind = .pearl,
         });
     }
+    // Shipped bar and dock layouts are catalog data, so their hits are derived
+    // from the same source the picker renders and cannot drift from it.
+    const breadcrumb = try alloc.dupeSentinel(u8, i18n.dtr("pearl", "Bar & dock › Layout presets"), 0);
+    const catalog = @import("../config/bar_dock_presets.zig").catalog(alloc) catch return;
+    for (catalog) |preset| {
+        const label = i18n.dtr("pearl", try alloc.dupeSentinel(u8, preset.name, 0));
+        const description = i18n.dtr("pearl", try alloc.dupeSentinel(u8, preset.description, 0));
+        const id = try std.fmt.allocPrintSentinel(alloc, "bar.preset.{s}", .{preset.id}, 0);
+        if (!matches(needle_lower, id, label, description, "preset layout bar dock")) continue;
+        try out.append(alloc, .{ .id = id, .label = label, .breadcrumb = breadcrumb, .route = .bar, .section = null, .kind = .pearl });
+    }
 }
 
 test "pearl manifest ids are unique and resolve to a known route" {
@@ -124,6 +136,29 @@ test "pearl manifest ids are unique and resolve to a known route" {
     try t.expect(seen.contains("bar.widget.launcher"));
     try t.expect(seen.contains("bar.icon.expand"));
     try t.expect(seen.contains("launchers"));
+}
+
+test "shipped layout presets are searchable next to the static manifest" {
+    const t = std.testing;
+    var arena = std.heap.ArenaAllocator.init(t.allocator);
+    defer arena.deinit();
+    const alloc = arena.allocator();
+    var hits: std.ArrayList(Hit) = .empty;
+    try collectPearl(alloc, "macos", &hits);
+    var preset_found = false;
+    for (hits.items) |hit| if (std.mem.eql(u8, hit.id, "bar.preset.macos")) {
+        preset_found = true;
+        try t.expectEqual(nav.Route.bar, hit.route);
+        try t.expectEqual(Kind.pearl, hit.kind);
+    };
+    try t.expect(preset_found);
+    hits.clearRetainingCapacity();
+    try collectPearl(alloc, "layout", &hits);
+    var manifest_found = false;
+    for (hits.items) |hit| {
+        if (std.mem.eql(u8, hit.id, "bar.presets")) manifest_found = true;
+    }
+    try t.expect(manifest_found);
 }
 
 test "matches is case-insensitive across id label description and keywords" {

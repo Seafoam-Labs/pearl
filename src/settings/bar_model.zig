@@ -114,6 +114,8 @@ pub fn patch(a: std.mem.Allocator, text: []const u8, id: []const u8, action: Act
     var document = try prefs.parse(a, text);
     const layout = try Layout.parse(a, document.bar.groups);
     document.bar.groups = try (try layout.change(a, id, action)).serialize(a);
+    // A preset describes a shipped layout; moving a widget makes it the user's.
+    document.bar_dock_preset = "";
     try document.validate();
     const result = try std.json.Stringify.valueAlloc(a, document, .{ .whitespace = .indent_2 });
     if (result.len > prefs.max_bytes) return error.DocumentTooLarge;
@@ -124,6 +126,7 @@ pub fn patchWorkspaceMode(a: std.mem.Allocator, text: []const u8, mode: prefs.Wo
     const layout = try Layout.parse(a, document.bar.groups);
     if (layout.find("workspaces") == null) return error.WidgetNotFound;
     document.bar.workspace_mode = mode;
+    document.bar_dock_preset = "";
     try document.validate();
     const result = try std.json.Stringify.valueAlloc(a, document, .{ .whitespace = .indent_2 });
     if (result.len > prefs.max_bytes) return error.DocumentTooLarge;
@@ -134,6 +137,7 @@ pub fn patchResourceMode(a: std.mem.Allocator, text: []const u8, mode: prefs.Res
     const layout = try Layout.parse(a, document.bar.groups);
     if (layout.find("resources") == null) return error.WidgetNotFound;
     document.bar.resource_mode = mode;
+    document.bar_dock_preset = "";
     try document.validate();
     const result = try std.json.Stringify.valueAlloc(a, document, .{ .whitespace = .indent_2 });
     if (result.len > prefs.max_bytes) return error.DocumentTooLarge;
@@ -144,6 +148,7 @@ pub fn patchResourceSeries(a: std.mem.Allocator, text: []const u8, selection: pr
     const layout = try Layout.parse(a, document.bar.groups);
     if (layout.find("resources") == null) return error.WidgetNotFound;
     document.bar.resource_series = selection;
+    document.bar_dock_preset = "";
     try document.validate();
     const result = try std.json.Stringify.valueAlloc(a, document, .{ .whitespace = .indent_2 });
     if (result.len > prefs.max_bytes) return error.DocumentTooLarge;
@@ -154,6 +159,7 @@ pub fn patchMediaArt(a: std.mem.Allocator, text: []const u8, enabled: bool) ![]c
     const layout = try Layout.parse(a, document.bar.groups);
     if (layout.find("media") == null) return error.WidgetNotFound;
     document.bar.media_art = enabled;
+    document.bar_dock_preset = "";
     try document.validate();
     const result = try std.json.Stringify.valueAlloc(a, document, .{ .whitespace = .indent_2 });
     if (result.len > prefs.max_bytes) return error.DocumentTooLarge;

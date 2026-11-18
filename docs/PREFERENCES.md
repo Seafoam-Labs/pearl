@@ -153,6 +153,41 @@ Pearl. The implementation uses Zig 0.16.0 and the pinned Ghostty GTK/GIO binding
 
 ## Standalone editor
 
+**Bar & dock → Layout presets** starts the bar and dock from a shipped layout —
+**macOS** (slim top bar, always-visible bottom dock) and **Windows** (bottom
+taskbar with the applications strip in the bar). A preset rewrites only the bar
+and dock settings it names and their widgets; everything else — other
+preferences, per-display overrides, pinned applications and widget data such as
+the weather location and custom clocks — is left exactly as it was. Installed
+plugin widgets and custom clock references keep their place in the group they
+were in.
+
+Each preset tile shows a small clickable preview of the layout; clicking the
+image opens it large in a modal window, while clicking the rest of the tile
+selects the preset. The `preview` field in `src/config/bar_dock_presets.json`
+names a bundled GResource image (`/org/aqueous/Pearl/previews/<file>`). The
+shipped previews are real 16:9 desktop captures of each preset (AVIF, a few
+kilobytes); the tile shows the whole desktop and clicking it opens the capture
+at full size. `scripts/preset-screenshot.py` produces them in a private
+headless Aqueous session; re-run it to refresh after layout changes
+(`--reuse` re-encodes the stored captures without a session, `--detail`
+encodes close-up bar/dock sheets instead of the whole desktop). The source
+captures stay in `artifacts/preset-screenshot/`. Swapping in a different
+image is a data change only. Decoding uses the installed gdk-pixbuf loaders,
+so AVIF or WebP keep even 4K captures to a few hundred kilobytes; PNG is the
+universal fallback. A missing or undecodable image leaves the tile without a
+picture.
+
+The JSON field is the top-level `bar_dock_preset`, recording the id of the last
+applied preset (for example `"macos"`). It is informational only: the `bar` and
+`dock` values remain the source of truth. Changing any bar or dock setting, or
+moving a widget, clears it back to `""` so the picker reports a custom layout.
+Presets are authored in `src/config/bar_dock_presets.json`; `bar` and `dock` keys
+are matched against the live preference fields and `widgets` against the live
+widget names, so new settings and widgets need no code change. Keys a preset may
+not own — `groups`, `clocks` and `launcher_icon` — are refused by the preset
+tests and at apply time.
+
 **Bar & dock → Bar visibility** offers **Always visible** (default) and
 **Autohide**. Autohide reveals the bar at its screen edge and hides it 450 ms
 after the pointer leaves. An open Pearl flyout keeps its output's bar visible.
@@ -422,7 +457,9 @@ support, remove `launcher_icon` from the default bar and every output bar in the
 saved configuration; older parsers reject unknown fields.
 
 Bar group strings remain comma-separated.
-See the [bar editor implementation](BAR_EDITOR_IMPLEMENTATION_PLAN.md).
+See the [bar editor implementation](BAR_EDITOR_IMPLEMENTATION_PLAN.md) and the
+[widget-to-JSON guide](BAR_WIDGETS.md) for every widget id, its settings fields
+and the bar/dock form values.
 
 Closing a popup, output removal, or lock hides the
 view while retaining the draft in memory. Drafts do not survive process exit.

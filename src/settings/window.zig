@@ -623,6 +623,10 @@ pub const Window = struct {
             .bar => {
                 const pp = self.preference_pages[0] orelse return false;
                 for (pp.fields) |field| if (std.mem.eql(u8, field.spec.path, id)) return revealWidget(field.widget);
+                if (pp.presets) |picker| {
+                    if (std.mem.eql(u8, id, "bar.presets") and picker.tiles.len > 0) return revealWidget(picker.tiles[0].button.as(gtk.Widget));
+                    for (picker.controls.items) |control| if (std.mem.eql(u8, control.id, id)) return revealWidget(control.widget);
+                }
                 if (pp.bar) |bar| {
                     for (bar.controls.items) |control| if (std.mem.eql(u8, control.id, id)) return revealWidget(control.widget);
                     for (bar.menu_controls.items) |control| if (std.mem.eql(u8, control.id, id)) return revealWidget(control.widget);
@@ -1608,6 +1612,11 @@ pub const Window = struct {
                 const widget = button.as(gtk.Widget);
                 try controls.append(alloc, .{ .field = try std.fmt.allocPrint(alloc, "{s}/{s}", .{ row.info.id, name }), .focused = if (focus) |f| f == widget else false, .enabled = widget.isSensitive() != 0, .bounds = self.bounds(widget) });
             }
+        };
+        if (self.preference_pages[0]) |view| if (view.presets) |picker| {
+            for (picker.controls.items) |control| if (control.widget.getMapped() != 0) {
+                try controls.append(alloc, .{ .field = control.id, .focused = if (focus) |f| f == control.widget or f.isAncestor(control.widget) != 0 else false, .enabled = control.widget.isSensitive() != 0, .selected = if (object.ext.cast(gtk.CheckButton, control.widget)) |check| check.getActive() != 0 else null, .text = if (object.ext.cast(gtk.Label, control.widget)) |label| std.mem.span(label.getText()) else null, .bounds = self.bounds(control.widget) });
+            };
         };
         if (self.preference_pages[0]) |view| if (view.bar) |bar| {
             if (bar.repair.as(gtk.Widget).getMapped() != 0) try controls.append(alloc, .{ .field = "bar.repair", .focused = focus == bar.repair.as(gtk.Widget), .enabled = true, .bounds = self.bounds(bar.repair.as(gtk.Widget)) });

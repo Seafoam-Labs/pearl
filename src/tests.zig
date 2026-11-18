@@ -17,6 +17,7 @@ test {
     _ = @import("desktop/workspace_policy.zig");
     _ = @import("desktop/task_model.zig");
     _ = @import("settings/bar_model.zig");
+    _ = @import("settings/bar_dock_fields.zig");
     _ = @import("theme/package_model.zig");
     _ = @import("theme/palette_resolver.zig");
     _ = @import("theme/style.zig");
@@ -58,6 +59,7 @@ test {
     _ = @import("config/aqueous_display_mutations.zig");
     _ = @import("config/aqueous_display_setup.zig");
     _ = @import("config/preferences.zig");
+    _ = @import("config/bar_dock_presets.zig");
     _ = @import("config/slideshow_policy.zig");
     _ = @import("desktop/bar_opacity.zig");
     _ = @import("desktop/bar_visibility.zig");

@@ -184,6 +184,11 @@ pub const Preferences = struct {
     reduced_motion: bool = false,
     bar: Bar = .{},
     dock: Dock = .{},
+    /// Identifier of the shipped layout last applied to `bar` and `dock`, empty
+    /// once the user changes any of those settings again. Recording it keeps the
+    /// presets picker honest without making a preset authoritative: the values
+    /// above stay the only source of truth for the shell.
+    bar_dock_preset: []const u8 = "",
     pinned_apps: []const []const u8 = &.{},
     application_launchers: []const @import("../desktop/app_identity.zig").Association = &.{},
     outputs: []const Output = &.{},
@@ -271,6 +276,7 @@ pub const Preferences = struct {
         if (self.wallpaper.slideshow.folder.len > 0 and self.wallpaper.slideshow.folder[0] != '/') return error.AbsoluteImagePathRequired;
         // A rotating image is only visible in an image fit.
         if (self.wallpaper.slideshow.enabled and self.wallpaper.mode != .cover and self.wallpaper.mode != .contain) return error.SlideshowNeedsImageMode;
+        if (self.bar_dock_preset.len > 0 and !@import("bar_dock_presets.zig").identifier(self.bar_dock_preset)) return error.InvalidPresetId;
         try barValid(self.bar);
         if (self.outputs.len > 16) return error.TooManyOutputs;
         for (self.outputs, 0..) |o, i| {
@@ -612,6 +618,20 @@ test "dock preferences preserve inherited settings and reject duplicate or unsaf
     try t.expectError(error.InvalidDesktopId, p.validate());
     p.pinned_apps = &.{"org.example.App.desktop"};
     try p.validate();
+}
+
+test "the recorded bar and dock preset roundtrips and rejects unsafe identifiers" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    // Older documents have no recorded preset and stay valid.
+    try std.testing.expectEqualStrings("", (try parse(a, "{}")).bar_dock_preset);
+    const saved = try parse(a, "{\"bar_dock_preset\":\"macos\"}");
+    try std.testing.expectEqualStrings("macos", (try parse(a, try std.json.Stringify.valueAlloc(a, saved, .{}))).bar_dock_preset);
+    for ([_][]const u8{ "../macos", "mac os", "a/b", @import("test_strings").string("a", 65) }) |id| {
+        const document = try std.fmt.allocPrint(a, "{{\"bar_dock_preset\":\"{s}\"}}", .{id});
+        try std.testing.expectError(error.InvalidPresetId, parse(a, document));
+    }
 }
 
 test "workspace mode defaults, strict values and complete output overrides" {

@@ -138,6 +138,29 @@ def main():
             wait_for(lambda: live_bar()['bar_exclusive_zone'] == live_bar()['bar_size'])
             disk = path.read_bytes()
             passed('bar-autohide-draft-discard-apply-override-and-reopen')
+            # Layout presets rewrite only the bar and dock settings they own:
+            # the display override, pins and the unavailable plugin reference
+            # survive, and a manual bar edit clears the recorded preset.
+            click(s, ipc, 'bar.presets.expand'); ready(s, ipc)
+            click(s, ipc, 'bar.preset.macos'); ready(s, ipc)
+            doc = json.loads(peer.document())
+            assert doc['bar_dock_preset'] == 'macos'
+            assert doc['bar']['edge'] == 'top' and doc['bar']['size'] == 32
+            assert doc['dock']['edge'] == 'bottom' and doc['dock']['enabled']
+            assert doc['bar']['groups']['left'] == 'workspaces,title'
+            assert 'plugin:missing/main' in doc['bar']['groups']['center']
+            assert doc['outputs'] == baseline['outputs'] and doc['pinned_apps'] == baseline['pinned_apps']
+            click(s, ipc, 'bar.preset.windows'); ready(s, ipc)
+            doc = json.loads(peer.document())
+            assert doc['bar_dock_preset'] == 'windows'
+            assert doc['bar']['edge'] == 'bottom' and not doc['dock']['enabled']
+            assert doc['bar']['groups']['center'].startswith('launcher,dock')
+            assert 'plugin:missing/main' in doc['bar']['groups']['center']
+            click(s, ipc, 'bar.edge'); keys(s, 'Home', 'Return'); ready(s, ipc)
+            assert json.loads(peer.document())['bar_dock_preset'] == ''
+            click(s, ipc, 'discard'); ready(s, ipc)
+            assert json.loads(peer.document('committed')).get('bar_dock_preset', '') == ''
+            passed('layout-presets-rewrite-bar-and-dock-only')
             def icon_state():
                 return ctl(s,args.ctl,'aqueous','status','--text','test-bar-layout:' + output['id'])['result']
             # Opacity uses the shared draft, and the scale and spin share a value.
