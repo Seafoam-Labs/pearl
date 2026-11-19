@@ -114,6 +114,33 @@ test "wallpaper-only display overrides inherit the global bar and never reset is
     const reset = try parse(a, "{\"bar\":{\"islands\":false},\"outputs\":[{\"connector\":\"DP-1\",\"bar\":{}}]}");
     try std.testing.expectEqual(true, reset.forOutput("DP-1").islands);
 }
+test "per-screen wallpaper save keeps the left edge and widgets and heals a materialized default bar" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    // Issue #133: the bar sits on the left edge with customized widgets, shown
+    // only on the leftmost display. A per-screen wallpaper there materialized
+    // an all-default bar that reset the edge to top and the widgets to defaults.
+    const global_bar: Bar = .{ .edge = .left, .groups = .{ .left = "launcher", .center = "clock", .right = "control" } };
+    const document: Preferences = .{ .bar = global_bar, .bar_hidden_outputs = &.{"DP-2"}, .outputs = &.{.{ .connector = "DP-1", .bar = .{}, .wallpaper = .{ .mode = .cover, .path = "/p/one.png" } }} };
+    const saved = try parse(a, try std.json.Stringify.valueAlloc(a, document, .{}));
+    try std.testing.expectEqual(Edge.left, saved.forOutput("DP-1").edge);
+    try std.testing.expectEqualStrings("launcher", saved.forOutput("DP-1").groups.left);
+    try std.testing.expectEqualStrings("control", saved.forOutput("DP-1").groups.right);
+    // Re-saving the wallpaper drops the stale default bar for good, so the
+    // inheritance survives even if the wallpaper override is later removed.
+    const healed = saved.outputs[0].withWallpaper(saved.outputs[0].wallpaper.?);
+    try std.testing.expect(healed.bar == null);
+    const roundtrip = try parse(a, try std.json.Stringify.valueAlloc(a, Preferences{ .bar = global_bar, .outputs = &.{healed} }, .{}));
+    try std.testing.expect(roundtrip.outputs[0].bar == null);
+    try std.testing.expectEqual(Edge.left, roundtrip.forOutput("DP-1").edge);
+    // An intentional, non-default bar override and the dock survive the save.
+    const intentional: Output = .{ .connector = "DP-1", .bar = .{ .edge = .right }, .dock = .{ .enabled = false } };
+    const kept = intentional.withWallpaper(.{ .mode = .cover, .path = "/p/one.png" });
+    try std.testing.expectEqual(Edge.right, kept.bar.?.edge);
+    try std.testing.expectEqual(false, kept.dock.?.enabled);
+    try std.testing.expectEqualStrings("/p/one.png", kept.wallpaper.?.path);
+}
 pub const Theme = struct {
     mode: enum { static, dynamic, gtk, package } = .static,
     package_id: []const u8 = "",
@@ -161,7 +188,20 @@ pub const ResourceSelection = @import("../desktop/resource_model.zig").Selection
 pub const Bar = struct { clocks: []const @import("../desktop/clock_policy.zig").Definition = &.{}, mode: @import("../desktop/bar_visibility.zig").Mode = .always, background_opacity: @import("../desktop/bar_opacity.zig").Config = .{}, launcher_icon: @import("../desktop/launcher_icon_policy.zig").Config = .{}, workspace_mode: WorkspaceMode = .large, running_apps_per_window: bool = false, resource_mode: ResourceMode = .icon, resource_series: ResourceSelection = .{}, media_art: bool = false, islands: bool = true, attached: bool = false, edge: Edge = .top, size: u16 = 48, radius: u8 = 14, groups: Groups = .{} };
 /// A per-display override. `bar` is optional: null inherits the global bar
 /// entirely, so adding a wallpaper or dock override never resets bar settings.
-pub const Output = struct { connector: []const u8, bar: ?Bar = null, dock: ?Dock = null, wallpaper: ?Wallpaper = null };
+pub const Output = struct {
+    connector: []const u8,
+    bar: ?Bar = null,
+    dock: ?Dock = null,
+    wallpaper: ?Wallpaper = null,
+    /// Attach a wallpaper override, dropping a historically materialized
+    /// all-default bar so the entry inherits the global bar permanently.
+    /// forOutput already heals such bars while reading; this keeps the stored
+    /// document from carrying a reset that reappears if the override is removed.
+    pub fn withWallpaper(self: Output, wallpaper: Wallpaper) Output {
+        const bar = if (self.bar) |b| (if (barIsDefault(b)) null else self.bar) else null;
+        return .{ .connector = self.connector, .bar = bar, .dock = self.dock, .wallpaper = wallpaper };
+    }
+};
 pub const Export = struct { name: []const u8, template: []const u8 };
 pub const Preferences = struct {
     version: u32 = 1,

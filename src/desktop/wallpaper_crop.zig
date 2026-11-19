@@ -364,7 +364,7 @@ pub const Window = struct {
             for (prefs.outputs) |o| {
                 if (std.mem.eql(u8, o.connector, connector)) {
                     replaced = true;
-                    outputs.append(alloc, .{ .connector = o.connector, .bar = o.bar, .dock = o.dock, .wallpaper = override }) catch return self.fail(rejected);
+                    outputs.append(alloc, o.withWallpaper(override)) catch return self.fail(rejected);
                 } else outputs.append(alloc, o) catch return self.fail(rejected);
             }
             if (!replaced) {

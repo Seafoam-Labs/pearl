@@ -1137,7 +1137,7 @@ fn setOutputWallpaper(alloc: std.mem.Allocator, outputs: []const model.Output, c
     for (outputs) |o| {
         if (std.mem.eql(u8, o.connector, connector)) {
             replaced = true;
-            try list.append(alloc, .{ .connector = o.connector, .bar = o.bar, .dock = o.dock, .wallpaper = wallpaper });
+            try list.append(alloc, o.withWallpaper(wallpaper));
         } else try list.append(alloc, o);
     }
     if (!replaced) try list.append(alloc, .{ .connector = try alloc.dupe(u8, connector), .wallpaper = wallpaper });
