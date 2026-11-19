@@ -324,6 +324,10 @@ pub const Window = struct {
             right.as(gtk.GestureSingle).setButton(3);
             _ = gtk.GestureClick.signals.pressed.connect(right, *Tab, tabContext, tab, .{});
             b.as(gtk.Widget).addController(right.as(gtk.EventController));
+            const middle = gtk.GestureClick.new();
+            middle.as(gtk.GestureSingle).setButton(2);
+            _ = gtk.GestureClick.signals.pressed.connect(middle, *Tab, tabMiddlePressed, tab, .{});
+            b.as(gtk.Widget).addController(middle.as(gtk.EventController));
             @import("dnd.zig").attachTabButton(self, b, tab);
             p.tabs_row.append(b.as(gtk.Widget));
         }
@@ -461,6 +465,12 @@ pub const Window = struct {
         const c = @import("context.zig").Context.init(tab, .tab);
         tab.owner.context.show(c, gesture.as(gtk.EventController).getWidget().?, x, y);
         _ = gesture.as(gtk.Gesture).setState(.claimed);
+    }
+    fn tabMiddlePressed(gesture: *gtk.GestureClick, count: c_int, _: f64, _: f64, tab: *Tab) callconv(.c) void {
+        if (count != 1) return;
+        _ = gesture.as(gtk.Gesture).setState(.claimed);
+        // Same path as Ctrl+W: closing the last tab un-splits or closes the window.
+        tab.owner.tabCommand(tab, .close_tab);
     }
     fn placeContext(gesture: *gtk.GestureClick, _: c_int, x: f64, y: f64, self: *Window) callconv(.c) void {
         const widget = gesture.as(gtk.EventController).getWidget().?;

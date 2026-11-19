@@ -92,6 +92,7 @@ application identity so release and Git installs can coexist.
 | Ctrl+F; Escape | Filter the current folder; clear search/location editor |
 | Ctrl+H | Show/hide hidden files |
 | Ctrl+T / Ctrl+W | New / close tab; last tab closes window |
+| Middle-click tab | Close that tab |
 | Ctrl+Tab / Ctrl+Shift+Tab | Next / previous tab in current pane |
 | Ctrl+N | New window |
 | F3 / F6 | Toggle split / switch active pane |
