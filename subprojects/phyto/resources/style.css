@@ -59,5 +59,8 @@
 .phyto-root .preview-body { padding: 16px; }
 .phyto-root .preview-slot textview { padding: 8px; }
 
+/* Drag-and-drop destination highlight on folder items, Places rows and tabs. */
+.phyto-root .drop-target { background: alpha(currentColor, 0.10); outline: 2px solid alpha(currentColor, 0.55); outline-offset: -2px; border-radius: 8px; }
+
 .phyto-root .network-page { padding: 16px; }
 .phyto-root .network-card { padding: 14px; border: 1px solid alpha(currentColor, 0.15); border-radius: 12px; }

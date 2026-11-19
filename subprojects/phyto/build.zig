@@ -48,6 +48,13 @@ pub fn build(b: *std.Build) void {
     test_step.dependOn(&b.addRunArtifact(preview_tests).step);
     const context_tests = b.addTest(.{ .root_module = createModule(b, .{ .root_source_file = b.path("src/core/context.zig"), .target = target, .optimize = optimize }) });
     test_step.dependOn(&b.addRunArtifact(context_tests).step);
+    const dnd_tests = b.addTest(.{ .root_module = createModule(b, .{ .root_source_file = b.path("src/core/dnd.zig"), .target = target, .optimize = optimize }) });
+    test_step.dependOn(&b.addRunArtifact(dnd_tests).step);
+    const dnd_formats_module = createModule(b, .{ .root_source_file = b.path("src/dnd_tests.zig"), .target = target, .optimize = optimize, .link_libc = true });
+    for ([_][]const u8{ "gtk4", "gdk4", "gio2", "glib2", "gobject2" }) |name| dnd_formats_module.addImport(name, bindings.module(name));
+    dnd_formats_module.linkSystemLibrary("gtk4", .{ .use_pkg_config = .yes });
+    const dnd_formats_tests = b.addTest(.{ .root_module = dnd_formats_module });
+    test_step.dependOn(&b.addRunArtifact(dnd_formats_tests).step);
     const engine_module = createModule(b, .{ .root_source_file = b.path("src/operations/engine.zig"), .target = target, .optimize = optimize, .link_libc = true });
     for ([_][]const u8{ "gio2", "glib2" }) |name| engine_module.addImport(name, bindings.module(name));
     const engine_tests = b.addTest(.{ .root_module = engine_module });

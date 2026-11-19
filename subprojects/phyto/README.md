@@ -55,6 +55,14 @@ application identity so release and Git installs can coexist.
 - Native right-click, Menu-key and Shift+F10 menus for files, background,
   Places/bookmarks, devices, location and tabs. Targets remain tied to the clicked
   files and originating tab; multi-selection works in grid and list views.
+- Drag and drop in grid and list views: drag selections onto folder items, the
+  background, Places rows (including Trash) and tab headers; hovering a tab
+  reveals it. Files exchange with other applications through text/uri-list.
+  Drops reuse the batch operation engine, so collisions, progress, receipts and
+  undo match Paste. Ctrl forces copy, Shift forces move, Ctrl+Shift asks
+  (copy/move/link); without modifiers a drop moves within one filesystem and
+  copies across filesystems. A move accepted by another application trashes the
+  originals so they stay recoverable.
 - System Copy/Cut/Paste, folder-specific paste, recursive batch copy/move,
   collision Skip/Replace/Keep both, cancellation, duplicate/link, and guarded
   session undo/redo. Existing destinations are never silently overwritten:
@@ -89,6 +97,7 @@ application identity so release and Git installs can coexist.
 | F3 / F6 | Toggle split / switch active pane |
 | Ctrl+Shift+N; F2 | Create folder; rename selected item |
 | Ctrl+C / Ctrl+X / Ctrl+V | System clipboard Copy / Cut / Paste |
+| Drag; Ctrl / Shift / Ctrl+Shift | Move or copy by filesystem; force copy / force move / ask (copy, move, link) |
 | Ctrl+Z / Ctrl+Shift+Z | Undo / redo completed reversible operations |
 | Menu / Shift+F10 | Context menu for the focused target |
 | Shift+F4 | Open local folder in an available terminal |
@@ -136,7 +145,7 @@ its own display and D-Bus with disposable home/config/data directories. The app
 itself has no such test dependencies. `integration` builds a separate instrumented
 binary; the normal build contains no F12 test inspection shortcut.
 
-Recursive search, drag/drop, replacement/merge, localization and
+Recursive search, replacement/merge, localization and
 FileManager1 remain future work. Optional
 Trash/network/admin support requires the relevant GIO/GVfs backends; file-roller
 provides archive actions. Preferences live in

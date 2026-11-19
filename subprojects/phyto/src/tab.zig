@@ -141,6 +141,7 @@ pub const Tab = struct {
         touch.as(gtk.GestureSingle).setTouchOnly(1);
         _ = gtk.GestureLongPress.signals.pressed.connect(touch, *Tab, longPressed, self, .{});
         root.as(gtk.Widget).addController(touch.as(gtk.EventController));
+        @import("dnd.zig").attachTab(self);
         self.navigate(file, true);
         self.ready = true;
         return self;

@@ -324,6 +324,7 @@ pub const Window = struct {
             right.as(gtk.GestureSingle).setButton(3);
             _ = gtk.GestureClick.signals.pressed.connect(right, *Tab, tabContext, tab, .{});
             b.as(gtk.Widget).addController(right.as(gtk.EventController));
+            @import("dnd.zig").attachTabButton(self, b, tab);
             p.tabs_row.append(b.as(gtk.Widget));
         }
         const add = u.iconButton("list-add-symbolic", @import("i18n").dtr("phyto", "New tab · Ctrl+T"));
@@ -370,6 +371,7 @@ pub const Window = struct {
         right.as(gtk.GestureSingle).setButton(3);
         _ = gtk.GestureClick.signals.pressed.connect(right, *Window, placeContext, self, .{});
         button.as(gtk.Widget).addController(right.as(gtk.EventController));
+        @import("dnd.zig").attachPlace(self, button);
         container.append(button.as(gtk.Widget));
     }
     fn unrefFile(data: ?*anyopaque) callconv(.c) void {
