@@ -10,11 +10,12 @@ const glib = @import("glib2");
 const unix = @import("giounix2");
 const object = @import("gobject2");
 const policy = @import("autostart_policy.zig");
+const session_marker = @import("autostart_session.zig");
 const log = std.log.scoped(.services);
 const a = std.heap.c_allocator;
 
 const Monitor = struct { monitor: ?*gio.FileMonitor = null, signal: c_ulong = 0 };
-const Job = struct { service: *Service, display: *gdk.Display, path: [:0]const u8 };
+const Job = struct { service: *Service, display: *gdk.Display, path: [:0]const u8, source: c_uint = 0 };
 
 pub const Service = struct {
     app: *gio.Application,
@@ -27,6 +28,9 @@ pub const Service = struct {
     system_root: ?[:0]const u8 = null,
     monitors: [2]Monitor = .{ .{}, .{} },
     debounce: c_uint = 0,
+    /// Pending delayed launches, cancelled by stop() so a freed Service is
+    /// never dereferenced by a late timeout.
+    delayed: std.ArrayList(*Job) = .empty,
     started: bool = false,
     err: ?[:0]const u8 = null,
 
@@ -54,6 +58,14 @@ pub const Service = struct {
     pub fn stop(self: *Service) void {
         if (!self.started) return;
         self.started = false;
+        for (self.delayed.items) |job| {
+            if (job.source != 0) _ = glib.Source.remove(job.source);
+            self.app.release();
+            a.free(job.path);
+            a.destroy(job);
+        }
+        self.delayed.deinit(a);
+        self.delayed = .empty;
         if (self.debounce != 0) _ = glib.Source.remove(self.debounce);
         self.debounce = 0;
         for (&self.monitors) |*slot| {
@@ -137,9 +149,16 @@ pub const Service = struct {
         self.refresh();
     }
 
-    /// Launches every qualifying entry once. The caller guarantees this runs
-    /// only for a verified, unlocked session start.
-    pub fn launch(self: *Service, display: *gdk.Display) void {
+    /// Launches every qualifying entry once per login session. The caller
+    /// guarantees this runs only for a verified, unlocked session start; the
+    /// session marker additionally suppresses a restarted shell in the same
+    /// session so entries are not launched twice.
+    pub fn launch(self: *Service, display: *gdk.Display, session: []const u8) void {
+        const runtime = if (glib.getenv("XDG_RUNTIME_DIR")) |raw| std.mem.span(raw) else "";
+        if (!session_marker.claim(runtime, session)) {
+            log.info("event=autostart-run entries={d} launched=0 reason=session-already-launched", .{self.entries.len});
+            return;
+        }
         var arena = std.heap.ArenaAllocator.init(a);
         defer arena.deinit();
         const alloc = arena.allocator();
@@ -155,8 +174,20 @@ pub const Service = struct {
                     a.destroy(job);
                     continue;
                 } };
+                self.delayed.append(a, job) catch {
+                    a.free(job.path);
+                    a.destroy(job);
+                    continue;
+                };
                 self.app.hold();
-                _ = glib.timeoutAdd(entry.delay * 1000, launchDelayed, job);
+                job.source = glib.timeoutAdd(entry.delay * 1000, launchDelayed, job);
+                if (job.source == 0) {
+                    self.app.release();
+                    _ = self.delayed.swapRemove(self.delayed.items.len - 1);
+                    a.free(job.path);
+                    a.destroy(job);
+                    continue;
+                }
             } else launchOne(display, path);
             launched += 1;
         }
@@ -230,12 +261,19 @@ pub const Service = struct {
 
     fn launchDelayed(data: ?*anyopaque) callconv(.c) c_int {
         const job: *Job = @ptrCast(@alignCast(data.?));
+        const service = job.service;
+        for (service.delayed.items, 0..) |item, i| {
+            if (item == job) {
+                _ = service.delayed.swapRemove(i);
+                break;
+            }
+        }
         defer {
             a.free(job.path);
             a.destroy(job);
         }
         launchOne(job.display, job.path);
-        job.service.app.release();
+        service.app.release();
         return 0;
     }
 };

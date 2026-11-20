@@ -1227,14 +1227,15 @@ pub const Manager = struct {
             self.clear();
             return error.SessionDisplayMismatch;
         }
-        // Autostart runs once per shell lifetime, after the compositor session
-        // is verified and unlocked; a session that starts locked defers to
-        // the first unlocked sync.
+        // Autostart runs once per login session, after the compositor session
+        // is verified and unlocked; a session that starts locked defers to the
+        // first unlocked sync. The service claims a session-scoped marker so a
+        // shell restarted within the same session does not launch again.
         if (!self.autostart_launched) {
             const locked = if (self.client.model.get(.session, "session")) |session| session.locked else true;
             if (!locked) {
                 self.autostart_launched = true;
-                self.autostart.launch(self.display);
+                self.autostart.launch(self.display, self.client.model.session);
             }
         }
         try self.tasks.update(&self.client.model, &self.index, self.preferences.prefs().application_launchers, self.preferences.prefs().pinned_apps);

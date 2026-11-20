@@ -6,6 +6,7 @@ test {
     _ = @import("services/sched_editor.zig");
     _ = @import("services/sched_systemd.zig");
     _ = @import("services/autostart_policy.zig");
+    _ = @import("services/autostart_session.zig");
     _ = @import("desktop/calculator.zig");
     _ = @import("services/notification_filter_policy.zig");
     _ = @import("desktop/window_switcher.zig");
