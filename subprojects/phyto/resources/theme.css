@@ -10,7 +10,7 @@
 .phyto-root.$scope .breadcrumb, .phyto-root.$scope .details-art, .phyto-root.$scope .tonal { background: $high$; }
 .phyto-root.$scope .selected, .phyto-root.$scope gridview > child:selected, .phyto-root.$scope columnview row:selected { background: $primary_container$; color: $on_container$; }
 .phyto-root.$scope .selected-tab { background: $low$; border-bottom-color: $primary$; }
-.phyto-root.$scope .active-pane { border-color: $primary$; }
+.phyto-root.$scope .active-pane .tabs { background: $high$; }
 .phyto-root.$scope .file-card image, .phyto-root.$scope .file-name image, .phyto-root.$scope .details-art image, .phyto-root.$scope .brand image { color: $primary$; }
 .phyto-root.$scope entry, .phyto-root.$scope searchentry { background: $container$; color: $text$; border: 1px solid $outline$; border-radius: 12px; }
 .phyto-root.$scope popover > contents { background: $container$; color: $text$; border-radius: 12px; }

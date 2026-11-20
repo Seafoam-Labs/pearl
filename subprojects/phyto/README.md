@@ -49,6 +49,8 @@ application identity so release and Git installs can coexist.
   forward, parent and refresh. Missing/empty locations retain navigation.
 - Multiple tabs in each pane, split view, active-pane targeting and independent
   view, location, history and selection state. Narrow windows retain both panes.
+  Creating a split starts the second pane with a single fresh tab: Home for F3,
+  or just the clicked tab for “Split with this tab” in the tab menu.
 - Unicode case-insensitive filename filtering of the **current directory**, hidden
   files, native multi-selection, opening files through the default application,
   metadata details and Properties.

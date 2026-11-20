@@ -174,7 +174,6 @@ pub const Window = struct {
         content.as(gtk.Widget).setHexpand(1);
         browser.append(content.as(gtk.Widget));
         const paned = gtk.Paned.new(.horizontal);
-        paned.setWideHandle(1);
         paned.setShrinkStartChild(1);
         paned.setShrinkEndChild(1);
         paned.as(gtk.Widget).setHexpand(1);
@@ -545,6 +544,18 @@ pub const Window = struct {
         self.preferences.save();
         self.queueUpdate();
     }
+    /// Drop every tab of a pane that is not currently visible. Used when a
+    /// split is created so the revealed pane starts fresh; the active pane is
+    /// never cleared here.
+    fn clearPane(self: *Window, pane: usize) void {
+        const p = &self.panes[pane];
+        for (p.tabs.items) |t| {
+            p.stack.remove(t.root.as(gtk.Widget));
+            t.destroy();
+        }
+        p.tabs.clearRetainingCapacity();
+        p.selected = 0;
+    }
     pub fn tabCommand(self: *Window, tab: *Tab, command: Command) void {
         self.context.close();
         const pane = tab.pane;
@@ -566,7 +577,14 @@ pub const Window = struct {
                 if (p.selected == index) p.selected = other else if (p.selected == other) p.selected = index;
             },
             .tab_other => {
-                if (!self.split or self.panes[1 - pane].tabs.items.len >= 32) return;
+                if (self.split and self.panes[1 - pane].tabs.items.len >= 32) return;
+                // From an unsplit window this creates the split, placing the
+                // tab next to the current one instead of requiring F3 first.
+                if (!self.split) {
+                    self.split = true;
+                    self.paned.setPosition(@divTrunc(@max(400, self.width - 256), 2));
+                    self.clearPane(1 - pane);
+                }
                 if (p.tabs.items.len == 1) self.addTab(pane, self.home);
                 _ = p.tabs.orderedRemove(index);
                 p.stack.remove(tab.root.as(gtk.Widget));
@@ -958,7 +976,13 @@ pub const Window = struct {
             },
             .split => {
                 self.split = !self.split;
-                if (!self.split) self.active = 0;
+                if (!self.split) self.active = 0 else {
+                    // A new split starts the revealed pane with a single fresh
+                    // Home tab instead of exposing placeholder tabs duplicated
+                    // from the window's initial location.
+                    self.clearPane(1 - self.active);
+                    self.addTab(1 - self.active, self.home);
+                }
                 self.paned.setPosition(@divTrunc(@max(400, self.width - 256), 2));
                 self.sync();
             },
