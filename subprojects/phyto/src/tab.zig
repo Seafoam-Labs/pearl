@@ -345,8 +345,21 @@ pub const Tab = struct {
         self.invalidate();
         if (self.alive and self.ready) self.owner.queueUpdate();
     }
-    fn pressed(_: *gtk.GestureClick, _: c_int, _: f64, _: f64, self: *Tab) callconv(.c) void {
+    fn pressed(gesture: *gtk.GestureClick, count: c_int, x: f64, y: f64, self: *Tab) callconv(.c) void {
         self.owner.activatePane(self.pane);
+        // A left click on dead space deselects, like the background right-click;
+        // presses on items keep the view's own selection behavior.
+        if (count != 1 or gesture.as(gtk.GestureSingle).getCurrentButton() != 1) return;
+        const root = self.root.as(gtk.Widget);
+        const picked = root.pick(x, y, .{}) orelse return;
+        // Headers, scrollbars and buttons retain their own interaction behavior.
+        var ancestor: ?*gtk.Widget = picked;
+        while (ancestor) |w| : (ancestor = w.getParent()) {
+            if (object.ext.cast(gtk.Scrollbar, w) != null or object.ext.cast(gtk.Button, w) != null or w.as(gtk.Accessible).getAccessibleRole() == .column_header) return;
+            if (w == root) break;
+        }
+        if (itemAt(picked, root) != null) return;
+        _ = self.selection.as(gtk.SelectionModel).unselectAll();
     }
     pub fn invalidate(self: *Tab) void {
         if (self.owner.context.snapshot) |c| if (c.tab_id == self.id) self.owner.context.close();
