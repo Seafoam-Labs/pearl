@@ -82,13 +82,50 @@ fn dragGestureBegin(source: *gtk.DragSource, sequence: ?*gdk.EventSequence, tab:
     const view = source.as(gtk.EventController).getWidget() orelse return;
     const picked = view.pick(x, y, .{}) orelse return;
     if (Tab.itemAt(picked, view) == null) return;
-    tab.grid.setEnableRubberband(0);
-    tab.list.setEnableRubberband(0);
+    rubberbandState(tab).set(false);
 }
 
 fn dragGestureEnd(_: *gtk.DragSource, _: ?*gdk.EventSequence, tab: *Tab) callconv(.c) void {
-    tab.grid.setEnableRubberband(1);
-    tab.list.setEnableRubberband(1);
+    rubberbandState(tab).set(true);
+}
+
+/// Toggling enable-rubberband adds/removes a gesture controller, and GTK walks
+/// the widget's controller list live during event propagation — removing the
+/// rubberband gesture from inside a gesture callback frees the list node the
+/// walk visits next (general protection fault in get_propagation_phase). Apply
+/// the change from a high-priority idle instead: it runs after propagation
+/// finishes but before the next pointer event is dispatched, so the rubberband
+/// still cannot claim an item drag.
+const Rubberband = struct {
+    tab: *Tab,
+    enable: bool = true,
+    idle: c_uint = 0,
+    fn set(self: *Rubberband, enable: bool) void {
+        self.enable = enable;
+        if (self.idle == 0) self.idle = glib.idleAddFull(-100, apply, self, null);
+    }
+    fn apply(data: ?*anyopaque) callconv(.c) c_int {
+        const self: *Rubberband = @ptrCast(@alignCast(data.?));
+        self.idle = 0;
+        const on: c_int = @intFromBool(self.enable);
+        self.tab.grid.setEnableRubberband(on);
+        self.tab.list.setEnableRubberband(on);
+        return 0;
+    }
+    fn free(data: ?*anyopaque) callconv(.c) void {
+        const self: *Rubberband = @ptrCast(@alignCast(data.?));
+        if (self.idle != 0) _ = glib.Source.remove(self.idle);
+        a.destroy(self);
+    }
+};
+
+fn rubberbandState(tab: *Tab) *Rubberband {
+    const root = tab.root.as(object.Object);
+    if (root.getData("phyto-rubberband")) |data| return @ptrCast(@alignCast(data));
+    const state = a.create(Rubberband) catch unreachable;
+    state.* = .{ .tab = tab };
+    root.setDataFull("phyto-rubberband", state, Rubberband.free);
+    return state;
 }
 
 pub fn attachPlace(owner: *Window, button: *gtk.Button) void {

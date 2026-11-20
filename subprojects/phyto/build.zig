@@ -19,7 +19,7 @@ pub fn build(b: *std.Build) void {
     const options = b.addOptions();
     options.addOption(bool, "test_hooks", b.option(bool, "test-hooks", "Enable test-only state inspection") orelse false);
     const module = createModule(b, .{ .root_source_file = b.path("src/main.zig"), .target = target, .optimize = optimize, .link_libc = true });
-    for ([_][]const u8{ "gtk4", "gdk4", "gio2", "glib2", "gobject2", "pango1", "gdkpixbuf2" }) |name| module.addImport(name, bindings.module(name));
+    for ([_][]const u8{ "gtk4", "gdk4", "gio2", "giounix2", "glib2", "gobject2", "pango1", "gdkpixbuf2" }) |name| module.addImport(name, bindings.module(name));
     module.addAnonymousImport("style", .{ .root_source_file = b.path("resources/style.css") });
     module.addAnonymousImport("theme_style", .{ .root_source_file = b.path("resources/theme.css") });
     module.addImport("appearance_client", appearance);
@@ -79,7 +79,7 @@ pub fn build(b: *std.Build) void {
     const appearance_tests = b.addTest(.{ .root_module = appearance_module });
     test_step.dependOn(&b.addRunArtifact(appearance_tests).step);
     const test_module = createModule(b, .{ .root_source_file = b.path("src/main.zig"), .target = target, .optimize = optimize, .link_libc = true });
-    for ([_][]const u8{ "gtk4", "gdk4", "gio2", "glib2", "gobject2", "pango1", "gdkpixbuf2" }) |name| test_module.addImport(name, bindings.module(name));
+    for ([_][]const u8{ "gtk4", "gdk4", "gio2", "giounix2", "glib2", "gobject2", "pango1", "gdkpixbuf2" }) |name| test_module.addImport(name, bindings.module(name));
     test_module.addAnonymousImport("style", .{ .root_source_file = b.path("resources/style.css") });
     test_module.addAnonymousImport("theme_style", .{ .root_source_file = b.path("resources/theme.css") });
     test_module.addImport("appearance_client", appearance);

@@ -2,6 +2,7 @@ const std = @import("std");
 const u = @import("ui.zig");
 const gtk = u.gtk;
 const gio = u.gio;
+const giounix = @import("giounix2");
 const glib = u.glib;
 const object = u.object;
 const gdk = @import("gdk4");
@@ -416,6 +417,7 @@ pub const Window = struct {
             }
         }
         self.network_ui.fillPlaces(container);
+        var devices_shown = false;
         const mounts = g_volume_monitor_get_mounts(self.volume_monitor);
         if (mounts) |head| {
             defer head.free();
@@ -430,7 +432,24 @@ pub const Window = struct {
                 defer f.unref();
                 const name_ = mount_.getName();
                 defer glib.free(name_);
-                self.place(container, name_, "drive-removable-media-symbolic", f);
+                const path = f.getPath();
+                const remote = path == null;
+                if (path) |p| glib.free(p);
+                if (remote) {
+                    // An unsaved GVfs mount belongs with the network devices.
+                    self.place(container, name_, "network-workgroup-symbolic", f);
+                } else {
+                    // OS mounts (/, /boot, fstab internals) are not user devices.
+                    if (systemMount(f)) {
+                        mount_.unref();
+                        continue;
+                    }
+                    if (!devices_shown) {
+                        container.append(u.label(@import("i18n").dtr("phyto", "DEVICES"), "section-label").as(gtk.Widget));
+                        devices_shown = true;
+                    }
+                    self.place(container, name_, "drive-removable-media-symbolic", f);
+                }
                 container.as(gtk.Widget).getLastChild().?.as(object.Object).setDataFull("phyto-mount", mount_, unrefObject);
             }
         }
@@ -449,10 +468,24 @@ pub const Window = struct {
                 defer f.unref();
                 const name_ = v.getName();
                 defer glib.free(name_);
+                if (!devices_shown) {
+                    container.append(u.label(@import("i18n").dtr("phyto", "DEVICES"), "section-label").as(gtk.Widget));
+                    devices_shown = true;
+                }
                 self.place(container, name_, "drive-removable-media-symbolic", f);
                 container.as(gtk.Widget).getLastChild().?.as(object.Object).setDataFull("phyto-volume", v, unrefObject);
             }
         }
+    }
+    /// GLib's own heuristic for OS-internal mounts (fstab entries without user
+    /// options, mounts outside /media, /mnt and /run/media): the same filter
+    /// GVfs uses to decide what is a user-visible device.
+    fn systemMount(root: *gio.File) bool {
+        const path = root.getPath() orelse return false;
+        defer glib.free(path);
+        const entry = giounix.MountEntry.at(path, null) orelse return false;
+        defer entry.free();
+        return entry.isSystemInternal() != 0;
     }
     fn locationContext(gesture: *gtk.GestureClick, _: c_int, x: f64, y: f64, self: *Window) callconv(.c) void {
         var c = @import("context.zig").Context.init(self.current(), .location);

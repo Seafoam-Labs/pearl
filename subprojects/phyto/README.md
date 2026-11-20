@@ -47,6 +47,8 @@ application identity so release and Git installs can coexist.
   or device click, native authentication and persistent disconnected Places rows.
 - XDG Places, Home, local paths, supported GIO URIs, editable location, back,
   forward, parent and refresh. Missing/empty locations retain navigation.
+  Removable drives and unmounted volumes list under Devices; OS-internal mounts
+  stay hidden, and unsaved GVfs mounts stay with the network devices.
 - Multiple tabs in each pane, split view, active-pane targeting and independent
   view, location, history and selection state. Narrow windows retain both panes.
   Creating a split starts the second pane with a single fresh tab: Home for F3,
