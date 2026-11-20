@@ -61,7 +61,9 @@ application identity so release and Git installs can coexist.
   files and originating tab; multi-selection works in grid and list views.
 - Drag and drop in grid and list views: drag selections onto folder items, the
   background, Places rows (including Trash) and tab headers; hovering a tab
-  reveals it. Files exchange with other applications through text/uri-list.
+  reveals it. The drag image is a card showing the held file's thumbnail (or
+  MIME icon), its name, and a count badge for multi-selection. Files exchange
+  with other applications through text/uri-list.
   Drops reuse the batch operation engine, so collisions, progress, receipts and
   undo match Paste. Ctrl forces copy, Shift forces move, Ctrl+Shift asks
   (copy/move/link); without modifiers a drop moves within one filesystem and

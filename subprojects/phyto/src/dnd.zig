@@ -10,12 +10,16 @@ const gio = u.gio;
 const glib = u.glib;
 const object = u.object;
 const gdk = @import("gdk4");
+const gsk = @import("gsk4");
+const graphene = @import("graphene1");
+const pango = @import("pango1");
 const a = u.a;
 const Tab = @import("tab.zig").Tab;
 const Window = @import("window.zig").Window;
 const Context = @import("context.zig").Context;
 const engine = @import("operations/engine.zig");
 const core = @import("core/dnd.zig");
+const preview = @import("preview.zig");
 
 /// The one drag this process is performing; a pointer can only drag once at a
 /// time. Drop sites use it to recognize their own drags, and drag-end uses it to
@@ -26,10 +30,12 @@ var active: ?*Drag = null;
 const Drag = struct {
     context: Context,
     source_fs: ?[:0]u8 = null,
+    thumb: ?*gdk.Texture = null,
     handled: bool = false,
     fn deinit(self: *Drag) void {
         self.context.deinit();
         if (self.source_fs) |id| a.free(id);
+        if (self.thumb) |t| t.unref();
         a.destroy(self);
     }
 };
@@ -157,6 +163,19 @@ fn dragPrepare(source: *gtk.DragSource, x: f64, y: f64, tab: *Tab) callconv(.c) 
     const item = Tab.itemAt(picked, view) orelse return null;
     const position = item.getPosition();
     if (position == std.math.maxInt(c_uint)) return null;
+    // Carry the row's already-decoded thumbnail into the drag image; the
+    // scheduler owns the entry, so hold our own reference for the drag.
+    var thumb: ?*gdk.Texture = null;
+    if (item.getChild()) |row| if (row.getFirstChild()) |visual| {
+        if (visual.as(object.Object).getData("phyto-preview") != null) {
+            if (preview.Slot.from(visual).entry) |e| {
+                if (e.texture) |t| if (t.getWidth() >= 48) {
+                    t.ref();
+                    thumb = t;
+                };
+            }
+        }
+    };
     const selection = tab.selection.as(gtk.SelectionModel);
     if (selection.isSelected(position) == 0) {
         _ = selection.unselectAll();
@@ -177,16 +196,176 @@ fn dragPrepare(source: *gtk.DragSource, x: f64, y: f64, tab: *Tab) callconv(.c) 
     value.setBoxedTakeOwnership(list);
     if (active) |old| old.deinit();
     const drag = a.create(Drag) catch unreachable;
-    drag.* = .{ .context = context, .source_fs = filesystemId(files[0]) };
+    drag.* = .{ .context = context, .source_fs = filesystemId(files[0]), .thumb = thumb };
     active = drag;
     return gdk.ContentProvider.newForValue(&value);
 }
 
-fn dragBegin(source: *gtk.DragSource, _: *gdk.Drag, _: *Tab) callconv(.c) void {
+fn dragBegin(source: *gtk.DragSource, _: *gdk.Drag, tab: *Tab) callconv(.c) void {
     const drag = active orelse return;
+    if (dragCard(drag, tab)) |card| {
+        defer card.paintable.unref();
+        source.setIcon(card.paintable, card.hot_x, card.hot_y);
+        return;
+    }
     const icon = gtk.IconPaintable.newForFile(drag.context.items.items[0].file, 64, 1);
     defer icon.unref();
     source.setIcon(icon.as(gdk.Paintable), 32, 32);
+}
+
+const DragIcon = struct { paintable: *gdk.Paintable, hot_x: c_int, hot_y: c_int };
+
+/// A card showing what is being held: the file's thumbnail (or MIME icon), its
+/// name, and a count badge for multi-selection. Colors come from the view's
+/// resolved CSS foreground (the Pearl palette slices may be empty or borrowed
+/// from a freed snapshot, so they are not safe to read here); the background is
+/// chosen against that foreground's luminance so every theme mode stays legible.
+fn dragCard(drag: *Drag, tab: *Tab) ?DragIcon {
+    var fg: gdk.RGBA = undefined;
+    tab.root.as(gtk.Widget).getColor(&fg);
+    const luminance = 0.299 * fg.f_red + 0.587 * fg.f_green + 0.114 * fg.f_blue;
+    const light = luminance < 0.5;
+    const bg: gdk.RGBA = if (light) .{ .f_red = 0.97, .f_green = 0.97, .f_blue = 0.97, .f_alpha = 1 } else .{ .f_red = 0.13, .f_green = 0.13, .f_blue = 0.13, .f_alpha = 1 };
+    const badge_bg = fg;
+    const badge_fg = bg;
+    const first = drag.context.items.items[0];
+    var owned_thumb: ?*gdk.Texture = null;
+    const thumb = drag.thumb orelse blk: {
+        owned_thumb = cachedThumb(first);
+        break :blk owned_thumb;
+    };
+    defer if (owned_thumb) |t| t.unref();
+    const context = tab.root.as(gtk.Widget).createPangoContext();
+    defer context.unref();
+    const font = pango.FontDescription.new();
+    defer font.free();
+    font.setAbsoluteSize(13);
+    const layout = pango.Layout.new(context);
+    defer layout.unref();
+    layout.setFontDescription(font);
+    layout.setText((first.info orelse return null).getDisplayName(), -1);
+    layout.setEllipsize(.end);
+    layout.setWidth(160 * pango.SCALE);
+    var ink: pango.Rectangle = undefined;
+    var logical: pango.Rectangle = undefined;
+    layout.getPixelExtents(&ink, &logical);
+    const pad: f32 = 10;
+    const icon_size: f32 = 64;
+    const gap: f32 = 6;
+    const text_w: f32 = @floatFromInt(logical.f_width);
+    const text_h: f32 = @floatFromInt(logical.f_height);
+    const w = @max(icon_size, text_w) + pad * 2;
+    const h = pad + icon_size + gap + text_h + pad;
+    const snap = gtk.Snapshot.new();
+    defer snap.unref();
+    var outline: gsk.RoundedRect = undefined;
+    outline.f_bounds = .{ .f_origin = .{ .f_x = 0, .f_y = 0 }, .f_size = .{ .f_width = w, .f_height = h } };
+    const corner: graphene.Size = .{ .f_width = 12, .f_height = 12 };
+    outline.f_corner = .{ corner, corner, corner, corner };
+    snap.pushRoundedClip(&outline);
+    snap.appendColor(&bg, &outline.f_bounds);
+    const ix = (w - icon_size) / 2;
+    if (thumb) |texture| {
+        const tw: f32 = @floatFromInt(texture.getWidth());
+        const th: f32 = @floatFromInt(texture.getHeight());
+        const scale = @min(icon_size / tw, icon_size / th);
+        const dw = tw * scale;
+        const dh = th * scale;
+        snap.appendTexture(texture, &.{ .f_origin = .{ .f_x = ix + (icon_size - dw) / 2, .f_y = pad + (icon_size - dh) / 2 }, .f_size = .{ .f_width = dw, .f_height = dh } });
+    } else {
+        const icon = fileIcon(first.info.?, @intFromFloat(icon_size));
+        defer icon.unref();
+        snap.save();
+        snap.translate(&.{ .f_x = ix, .f_y = pad });
+        if (object.ext.cast(gtk.SymbolicPaintable, icon)) |symbolic| {
+            // Symbolic paintables snapshot with no color of their own; give
+            // them the card foreground or they render invisible.
+            const colors = [_]gdk.RGBA{fg};
+            symbolic.snapshotSymbolic(snap.as(gdk.Snapshot), icon_size, icon_size, &colors, 1);
+        } else {
+            icon.as(gdk.Paintable).snapshot(snap.as(gdk.Snapshot), icon_size, icon_size);
+        }
+        snap.restore();
+    }
+    snap.save();
+    snap.translate(&.{ .f_x = (w - text_w) / 2, .f_y = pad + icon_size + gap });
+    snap.appendLayout(layout, &fg);
+    snap.restore();
+    const count = drag.context.items.items.len;
+    if (count > 1) {
+        const badge = pango.Layout.new(context);
+        defer badge.unref();
+        badge.setFontDescription(font);
+        const text = u.format("{d}", .{count});
+        defer a.free(text);
+        badge.setText(text, -1);
+        badge.getPixelExtents(&ink, &logical);
+        const bw: f32 = @floatFromInt(logical.f_width);
+        const bh: f32 = @floatFromInt(logical.f_height);
+        var circle: gsk.RoundedRect = undefined;
+        circle.f_bounds = .{ .f_origin = .{ .f_x = w - 26, .f_y = 2 }, .f_size = .{ .f_width = 24, .f_height = 24 } };
+        circle.f_corner = .{ corner, corner, corner, corner };
+        snap.pushRoundedClip(&circle);
+        snap.appendColor(&badge_bg, &circle.f_bounds);
+        snap.save();
+        snap.translate(&.{ .f_x = w - 26 + (24 - bw) / 2, .f_y = 2 + (24 - bh) / 2 });
+        snap.appendLayout(badge, &badge_fg);
+        snap.restore();
+        snap.pop();
+    }
+    snap.pop();
+    const paintable = snap.toPaintable(&.{ .f_width = w, .f_height = h }) orelse return null;
+    return .{ .paintable = paintable, .hot_x = @intFromFloat(w / 2), .hot_y = @intFromFloat(pad + icon_size / 2) };
+}
+
+/// Resolved icon for the held file: folder glyph for directories, the file's
+/// symbolic MIME icon otherwise, and a generic file glyph when the theme has
+/// nothing for the type — the card must never show an empty icon box.
+fn fileIcon(info: *gio.FileInfo, size: c_int) *gtk.IconPaintable {
+    const theme = gtk.IconTheme.getForDisplay(gdk.Display.getDefault().?);
+    var owned: ?*gio.Icon = null;
+    defer if (owned) |i| i.unref();
+    const gicon: *gio.Icon = if (info.getFileType() == .directory) blk: {
+        const themed = gio.ThemedIcon.new("folder-symbolic");
+        owned = themed.as(gio.Icon);
+        break :blk themed.as(gio.Icon);
+    } else info.getSymbolicIcon() orelse blk: {
+        const themed = gio.ThemedIcon.new("text-x-generic-symbolic");
+        owned = themed.as(gio.Icon);
+        break :blk themed.as(gio.Icon);
+    };
+    var paintable = theme.lookupByGicon(gicon, size, 1, .ltr, .{});
+    if (paintable.getIconName() == null) {
+        paintable.unref();
+        paintable = theme.lookupIcon("text-x-generic-symbolic", null, size, 1, .ltr, .{});
+    }
+    return paintable;
+}
+
+/// A freedesktop thumbnail cache hit for the held file, so the drag card shows
+/// a real preview even when the row has not decoded one (list view, cold row).
+/// Thumbnails are small, so the synchronous decode is cheap. Caller unrefs.
+fn cachedThumb(item: @import("context.zig").Item) ?*gdk.Texture {
+    const info = item.info orelse return null;
+    const mime = info.getContentType() orelse return null;
+    if (!std.mem.startsWith(u8, std.mem.span(mime), "image/")) return null;
+    const uri = item.file.getUri();
+    defer glib.free(uri);
+    var digest: [16]u8 = undefined;
+    std.crypto.hash.Md5.hash(std.mem.span(uri), &digest, .{});
+    const name = std.fmt.bytesToHex(digest, .lower);
+    const cache: [*:0]u8 = @constCast(glib.getUserCacheDir());
+    defer glib.free(cache);
+    for ([_][]const u8{ "large", "normal" }) |class| {
+        const path = u.format("{s}/thumbnails/{s}/{s}.png", .{ std.mem.span(cache), class, name });
+        defer a.free(path);
+        const f = gio.File.newForPath(path);
+        defer f.unref();
+        var err: ?*glib.Error = null;
+        if (gdk.Texture.newFromFile(f, &err)) |texture| return texture;
+        if (err) |e| e.free();
+    }
+    return null;
 }
 
 fn dragEnd(_: *gtk.DragSource, _: *gdk.Drag, delete_data: c_int, tab: *Tab) callconv(.c) void {
