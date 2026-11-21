@@ -16,22 +16,22 @@ def qualification_fixture():
     """Offline server used by runtime.zig tests; never executes returned tools."""
     executable = Path(sys.argv[0])
     scenario = Path(str(executable) + ".scenario").read_text()
-    flags = "--host --port --api-key-file --alias --ctx-size --parallel --threads --threads-batch --threads-http --batch-size --ubatch-size --gpu-layers --jinja --reasoning-format"
+    serve_flags = "-f, --quantized-file --host --port --max-model-len --no-ui --cpu --max-seqs --disable-metrics --disable-access-log -n"
     if "--help" in sys.argv:
-        if scenario == "no_jinja":
-            flags = flags.replace(" --jinja", "")
-        if scenario == "missing_auth":
-            flags = flags.replace("--api-key-file", "--unsupported-auth")
-        print(flags)
+        if "serve" in sys.argv:
+            print(serve_flags)
+        else:
+            print("Commands: serve run doctor tune\n  serve [embedding]")
         return
     if "--version" in sys.argv:
         print("deterministic-chat-tool-qualification")
         return
     def option(name):
         return sys.argv[sys.argv.index(name) + 1]
+    assert "serve" in sys.argv
     assert option("--host") == "127.0.0.1"
-    assert ("--jinja" in sys.argv) == (scenario != "no_jinja")
-    key = Path(option("--api-key-file")).read_text()
+    assert option("--max-seqs") == "1"
+    assert "--cpu" in sys.argv
     log_path = Path(str(executable) + ".requests.jsonl")
     class Handler(http.server.BaseHTTPRequestHandler):
         def reply(self, status, value):
@@ -41,24 +41,16 @@ def qualification_fixture():
             self.send_header("Content-Type", "application/json")
             self.end_headers()
             self.wfile.write(data)
-        def authorized(self):
-            if scenario == "no_auth" or self.headers.get("Authorization") == "Bearer " + key:
-                return True
-            self.reply(401, {"error": "unauthorized"})
-            return False
         def do_GET(self):
-            if self.authorized():
+            # mistral.rs has no authentication; Authorization headers are ignored.
+            if self.path == "/health" or self.path == "/":
+                self.reply(200, {"status": "ok"})
+            elif self.path == "/v1/models":
                 self.reply(200, {"data": [{"id": "pearl-local"}]})
+            else:
+                self.reply(404, {"error": "not found"})
         def do_POST(self):
-            if not self.authorized():
-                return
             payload = json.loads(self.rfile.read(int(self.headers.get("Content-Length", "0"))))
-            if self.path == "/tokenize":
-                self.reply(200, {"tokens": [1, 2, 3]})
-                return
-            if scenario == "no_auth":
-                self.reply(200, {})
-                return
             assert self.path == "/v1/chat/completions", self.path
             messages = payload["messages"]
             followup = any(m["role"] == "tool" for m in messages)
@@ -182,7 +174,7 @@ def main():
                 shutil.copyfile(Path(__file__).with_name("fake_llama_server.py"), executable)
                 executable.chmod(0o755)
                 return dict(enabled=True, read_pages=False, default_provider_id="google", model_id="custom", custom_model=str(models / "LFM3-1.7B-Q4_K_M.gguf"), runtime=dict(source="custom", executable=str(executable)),
-                    compute=dict(mode=mode, backend="vulkan", device_id="vulkan:NVIDIA Fixture:8192", allow_cpu_fallback=fallback),
+                    compute=dict(mode=mode, backend="vulkan", device_id="vulkan:NVIDIA Fixture:8192", offload_layers=16, allow_cpu_fallback=fallback),
                     providers=[dict(id="google", kind="google", endpoint=f"http://127.0.0.1:{server.server_port}")])
             try:
                 assert not request("test_state")["runtime"] and not Search.requests
@@ -246,14 +238,14 @@ def main():
                 request("ask", config=mutable, question="Find fixture GPU failure evidence?")
                 assert len(idle()["turns"]) == 1
                 executable = Path(mutable["runtime"]["executable"])
-                executable.write_text(executable.read_text().replace("--api-key-file", "--unavailable-key", 1))
+                executable.write_text(executable.read_text().replace("--max-seqs", "--unavailable-seqs", 1))
                 before = len(Search.requests)
                 request("ask", config=mutable, question="Find fixture GPU failure evidence?")
                 changed = idle()
                 assert changed["error_code"] == "RuntimeCapabilityMissing" and not changed["runtime"], changed
                 assert len(Search.requests) == before
                 checks["runtime_replacement_invalidates_compatibility"] = True
-                for scenario, code in [("missing", "RuntimeCapabilityMissing"), ("noauth", "RuntimeAuthenticationMissing"), ("startup_fail", "RuntimeStartupFailed")]:
+                for scenario, code in [("missing", "RuntimeCapabilityMissing"), ("startup_fail", "RuntimeStartupFailed")]:
                     before = len(Search.requests)
                     request("ask", config=config(scenario, fallback=False), question="Find fixture GPU failure evidence?")
                     state = idle()

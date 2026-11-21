@@ -25,6 +25,8 @@ pub const Provider = struct {
     }
 };
 pub const default_providers = [_]Provider{.{}};
+/// Provenance of the mistralrs inference binary: a distribution package on
+/// PATH, the bundled libexec copy, or a user-selected custom executable.
 pub const RuntimeSource = enum { system, packaged, custom };
 pub const Backend = enum { auto, vulkan, cuda };
 pub const RuntimeConfig = struct { source: RuntimeSource = .system, executable: []const u8 = "" };

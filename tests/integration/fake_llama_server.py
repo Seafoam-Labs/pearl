@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-"""Protocol fixture only. Simulates devices; never performs GPU inference."""
+"""Protocol fixture only. Simulates a mistralrs server and devices; never performs GPU inference."""
 import http.server
 import json
 import os
@@ -8,49 +8,48 @@ import sys
 import time
 
 scenario = Path(sys.argv[0]).stem
-flags = "--host --port --api-key-file --alias --jinja --ctx-size --parallel --threads --threads-batch --threads-http --batch-size --ubatch-size --gpu-layers --device --split-mode --list-devices --no-agent --agent --no-webui --webui --no-op-offload --fit --poll"
+serve_flags = "-f, --quantized-file --host --port --max-model-len --no-ui --cpu --max-seqs --disable-metrics --disable-access-log -n, --n-gpu-layers --gpu-memory-utilization"
+main_help = "mistralrs fixture\nCommands: serve run doctor tune\n  serve [embedding]  OpenAI-compatible local server"
 if "--help" in sys.argv:
     if "slow" in scenario:
         time.sleep(10)
-    print(flags.replace("--api-key-file", "--unsupported-auth") if "missing" in scenario else flags)
+    if "serve" in sys.argv:
+        print(serve_flags.replace("--max-seqs", "--unsupported-seqs") if "missing" in scenario else serve_flags)
+    else:
+        print(main_help)
     sys.exit(0)
 if "--version" in sys.argv:
-    print("arbitrary-unlisted-build-" + scenario)
+    print("mistralrs arbitrary-unlisted-build-" + scenario)
     sys.exit(0)
-if "--list-devices" in sys.argv:
-    print("Available devices:\n  Vulkan7: NVIDIA Fixture (8192 MiB, 7000 MiB free)")
+if "doctor" in sys.argv:
+    print("mistralrs doctor\nDevices:\n  Vulkan0: NVIDIA Fixture (8192 MiB, 7000 MiB free)")
     sys.exit(0)
 
 def option(name):
     return sys.argv[sys.argv.index(name) + 1]
 
+assert "serve" in sys.argv
 assert option("--host") == "127.0.0.1"
-assert option("--parallel") == "1"
-assert option("--fit") == "off"
+assert option("--max-seqs") == "1"
+assert "--no-ui" in sys.argv and "--disable-metrics" in sys.argv and "--disable-access-log" in sys.argv
+assert "-f" in sys.argv or "--quantized-file" in sys.argv
 if scenario == "threads_explicit":
-    assert option("--threads") == "8" and option("--threads-batch") == "8"
-    assert os.environ.get("OMP_NUM_THREADS") == "8"
-    assert option("--ctx-size") == "16384"
+    assert os.environ.get("RAYON_NUM_THREADS") == "8"
+    assert option("--max-model-len") == "16384"
 elif scenario == "threads_automatic":
-    assert option("--threads") == "-1" and option("--threads-batch") == "-1"
-    assert "OMP_NUM_THREADS" not in os.environ
-gpu = int(option("--gpu-layers")) > 0
-assert option("--device") == ("Vulkan7" if gpu else "none")
+    assert "RAYON_NUM_THREADS" not in os.environ
+gpu = "--cpu" not in sys.argv
 if gpu:
-    assert option("--split-mode") == "none"
+    if "-n" in sys.argv:
+        assert option("-n") == "0:16"
     if "startup_fail" in scenario:
         sys.exit(1)
     if "unverified" not in scenario:
-        print("load_tensors: offloaded 16/16 layers to GPU", file=sys.stderr, flush=True)
-key = Path(option("--api-key-file")).read_text()
+        print("mistralrs: offloaded 16/16 layers to GPU", file=sys.stderr, flush=True)
+else:
+    assert "--cpu" in sys.argv
 
 class Handler(http.server.BaseHTTPRequestHandler):
-    def auth(self):
-        if "noauth" in scenario or self.headers.get("Authorization") == "Bearer " + key:
-            return True
-        self.reply(401, {"error": "unauthorized"})
-        return False
-
     def reply(self, code, value):
         data = json.dumps(value).encode()
         self.send_response(code)
@@ -60,27 +59,19 @@ class Handler(http.server.BaseHTTPRequestHandler):
         self.wfile.write(data)
 
     def do_GET(self):
-        if self.auth():
+        # mistral.rs ignores Authorization headers; no authentication exists.
+        if self.path == "/health" or self.path == "/":
+            self.reply(200, {"status": "ok"})
+        elif self.path == "/v1/models":
             self.reply(200, {"data": [{"id": "pearl-local"}]})
+        else:
+            self.reply(404, {"error": "not found"})
 
     def do_POST(self):
-        if not self.auth():
-            return
         payload = json.loads(self.rfile.read(int(self.headers.get("Content-Length", "0"))))
         if scenario.startswith("benchmark_"):
             with Path(sys.argv[0] + ".requests.jsonl").open("a") as log:
                 log.write(json.dumps({"path": self.path, "payload": payload}) + "\n")
-        if self.path == "/apply-template":
-            # Preserve both inputs so token accounting can be checked against
-            # the actual completion, without counting this as inference.
-            self.server.prompt = json.dumps({"messages": payload["messages"], "tools": payload.get("tools")})
-            self.reply(200, {"prompt": self.server.prompt})
-            return
-        if self.path == "/tokenize":
-            if payload["content"] != "Pearl local compatibility check":
-                assert payload["content"] == self.server.prompt
-            self.reply(200, {"tokens": [1] * 20})
-            return
         assert self.path == "/v1/chat/completions", self.path
         messages = payload.get("messages", [])
         if scenario.startswith("benchmark_"):
@@ -142,7 +133,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
     def stream(self, delta, finish="stop", telemetry=False):
         frames = [{"choices": [{"delta": {"reasoning_content": "Internal test reasoning, never a visible answer."}}]}, {"choices": [{"delta": delta, "finish_reason": finish}]}]
         if telemetry:
-            frames.append({"choices": [], "usage": {"prompt_tokens": 40, "completion_tokens": 30, "completion_tokens_details": {"reasoning_tokens": 10}}, "timings": {"prompt_ms": 2.0, "predicted_ms": 50.0}})
+            frames.append({"choices": [], "usage": {"prompt_tokens": 40, "completion_tokens": 30, "completion_tokens_details": {"reasoning_tokens": 10}, "avg_tok_per_sec": 30.0}, "timings": {"prompt_ms": 2.0, "predicted_ms": 50.0}})
         data = ("".join("data: " + json.dumps(frame) + "\n\n" for frame in frames) + "data: [DONE]\n\n").encode()
         self.send_response(200)
         self.send_header("Content-Type", "text/event-stream")

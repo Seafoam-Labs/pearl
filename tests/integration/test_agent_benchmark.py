@@ -14,34 +14,12 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 def completion_requests(path):
-    """Check real prompt accounting and return only inference requests."""
+    """Return only inference requests (no template/tokenize endpoints in mistral.rs)."""
     requests = [json.loads(line) for line in path.read_text().splitlines()]
-    completions, template, tokenized = [], None, False
+    completions = []
     for request in requests:
-        payload = request["payload"]
-        if request["path"] == "/apply-template":
-            template, tokenized = payload, False
-        elif request["path"] == "/tokenize":
-            if payload["content"] == "Pearl local compatibility check":
-                assert template is None, request
-                continue
-            assert template is not None, request
-            assert json.loads(payload["content"]) == {"messages": template["messages"], "tools": template.get("tools")}
-            tokenized = True
-        else:
-            assert request["path"] == "/v1/chat/completions", request
-            if len(completions) >= 3:
-                # Qualification probes (chat health, tool check) don't use prompt
-                # accounting; only conversational turns require it.
-                system = next((m.get("content", "") for m in payload.get("messages", []) if m.get("role") == "system"), "")
-                if system.startswith("You are Pearl"):
-                    assert template is not None, ("inference skipped prompt accounting", request)
-            if template is not None:
-                assert tokenized, request
-                assert payload["messages"] == template["messages"], request
-                assert payload.get("tools") == template.get("tools"), request
-                template, tokenized = None, False
-            completions.append(payload)
+        if request["path"] == "/v1/chat/completions":
+            completions.append(request["payload"])
     return completions
 
 
@@ -116,7 +94,7 @@ def main():
                 if scenario == "benchmark_repair":
                     assert sum(not r.get("tools") for r in measured) == 8, measured
                 checks["prior_evidence_does_not_force_followup_search_or_citations"] = True
-            checks["template_and_completion_messages_and_tools_match"] = True
+            checks["prompt_budget_uses_byte_estimator"] = True
             checks[scenario] = True
         for scenario, outcome in [("benchmark_invalid", "results_only"), ("benchmark_truncated", "truncated")]:
             report, _ = run(scenario)

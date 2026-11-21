@@ -1,7 +1,7 @@
 # Launcher assistant
 
 The [GPU and runtime update](ASSISTANT_GPU_RUNTIME_PLAN.md) adds selectable
-llama.cpp installations and experimental Vulkan/CUDA execution. See the
+mistral.rs installations and experimental Vulkan/CUDA execution. See the
 [interaction mockups](mockups/assistant-gpu/README.md) and
 [validation evidence](../artifacts/assistant/gpu-runtime/README.md).
 
@@ -123,13 +123,13 @@ Choose **Runtime & acceleration** in Assistant settings:
 
 - **Set up runtime (install if needed)** checks the chosen runtime, then existing
   system/private runtimes. It reuses one with the required capabilities. Otherwise
-  it opens a terminal to install `llama-cpp` using `shelly install standard
+  it opens a terminal to install `mistralrs` using `shelly install standard
   --needed` on Devario, or `sudo pacman -S --needed` on Arch and Arch derivatives.
   GPU setup adds `ggml-vulkan` for Automatic/Vulkan or `ggml-cuda` for CUDA;
-  CPU setup needs only `llama-cpp`. Existing usable GPU backends are reused.
+  CPU setup needs only `mistralrs`. GPU backends are bundled.
   These are repository-selected versions, not a hard-coded release. See the
-  [Arch runtime package](https://archlinux.org/packages/extra/x86_64/llama-cpp/)
-  and [backend packages](https://archlinux.org/packages/extra/x86_64/ggml/).
+  [Arch runtime package](https://archlinux.org/packages/extra/x86_64/mistralrs/)
+  and [backend packages](https://docs.mistralrs.dev).
   Devario is detected before Arch ancestry and always uses Shelly.
   The package manager handles authentication, transaction confirmation, signatures
   and dependencies. No AUR builds, repositories, forced downgrades, database-only
@@ -144,8 +144,8 @@ Choose **Runtime & acceleration** in Assistant settings:
   Settings does not kill an active package transaction. Failed/cancelled installs
   or an incompatible repository version leave the runtime selection unchanged;
   fix the package-manager error or update the repository and retry setup.
-- **System installation** searches `/usr/bin/llama-server`, then
-  `/usr/local/bin/llama-server`, and resolves the actual executable.
+- **System installation** searches `/usr/bin/mistralrs`, then
+  `/usr/local/bin/mistralrs`, and resolves the actual executable.
 - **Pearl runtime package** uses the private optional installation.
 - **Custom executable** accepts an absolute path or file chooser selection.
   Paths with spaces work; shell commands and extra arguments are not accepted.
@@ -171,7 +171,7 @@ Build the optional inference runtime from an explicitly selected source:
 
 ```sh
 zig build build-assistant-runtime \
-  -Dassistant-runtime-source=/path/to/llama.cpp \
+  -Dassistant-runtime-source=/path/to/mistral.rs \
   -Dassistant-runtime-backend=vulkan
 # Or verify a caller-selected source archive:
 zig build build-assistant-runtime \
@@ -184,7 +184,7 @@ Backend choices are `cpu`, `vulkan` and `cuda`. The target stages actual build
 libraries and SONAME files under `zig-out/libexec/pearl/assistant` with `$ORIGIN`
 lookup. Optional provenance records the source kind, archive hash and backend;
 it does not restrict which runtime the app accepts. Normal Pearl builds do not
-build or download llama.cpp. Upstream CMake and the requested GPU development
+build or download mistral.rs. Upstream Cargo and the requested GPU development
 dependencies must already be available.
 
 The optional [distribution recipe](../packaging/assistant/PKGBUILD) keeps its
@@ -205,7 +205,7 @@ file with its default application. See
 [implementation plan](SEMANTIC_SEARCH_IMPLEMENTATION_PLAN.md) for architecture.
 
 Turning the switch on immediately sets the feature up: it reuses a compatible
-installed runtime or installs llama.cpp through the distribution package
+installed runtime or installs mistral.rs through the distribution package
 manager (a terminal opens for authentication and confirmation), then downloads
 the embedding model. Both are immediate operations that survive Discard, with
 progress, cancellation of the download phase, and clear errors;
@@ -245,7 +245,7 @@ disabling the feature keeps it for cheap re-enable. A model or chunker change
 invalidates the index and requires an explicit reindex.
 
 Semantic search reuses the runtime and acceleration selected for the assistant.
-The embedding server is a second, separately locked `llama-server` started with
+The embedding server is a second, separately locked `mistralrs` started with
 `--embeddings` and mean pooling; runtimes without embedding support are
 rejected with an actionable error. Readiness verifies a probe embedding is
 768 finite, non-zero values before any document is indexed. The runtime unloads
@@ -438,7 +438,7 @@ are in `tests/integration/test_agent_model.py`, `test_agent_ui.py` and
 `test_agent_runtime.py` uses an executable protocol fixture to simulate GPU
 enumeration, verified/unverified offload, device failure, version changes and
 missing authentication. Its passing results do not establish real GPU support
-on a particular driver. Use `test_agent_ui.py --runtime /absolute/llama-server`
+on a particular driver. Use `test_agent_ui.py --runtime /absolute/mistralrs`
 to exercise a custom installation with the real local model.
 
 `zig build test-agent-model-settings` checks the model selector, draft isolation,
@@ -449,7 +449,7 @@ fixtures, supply their existing GGUF files and a compatible runtime:
 ```sh
 zig build build-agent-test
 python3 tests/integration/test_agent_models.py --models-dir /path/to/models \
-    --runtime /absolute/llama-server --output /tmp/pearl-model-check
+    --runtime /absolute/mistralrs --output /tmp/pearl-model-check
 ```
 
 This is a compatibility smoke test. The implemented comparative benchmark has

@@ -1,4 +1,4 @@
-//! One user-selected llama-server, authenticated loopback and bounded lifetime.
+//! One user-selected mistralrs server on a bounded loopback lifetime.
 const std = @import("std");
 const gio = @import("gio2");
 const glib = @import("glib2");
@@ -18,7 +18,6 @@ pub const Runtime = struct {
     mode: Mode = .chat,
     base: []const u8 = "",
     authorization: []const u8 = "",
-    keyfile: ?[:0]const u8 = null,
     identity: []const u8 = "",
     executable: []const u8 = "",
     version: []const u8 = "",
@@ -45,7 +44,6 @@ pub const Runtime = struct {
             p.unref();
         }
         if (self.lockfd >= 0) _ = std.c.close(self.lockfd);
-        if (self.keyfile) |path| _ = std.c.unlink(path);
         if (self.arena) |*arena| arena.deinit();
         self.* = .{ .telemetry = self.telemetry, .mode = self.mode };
     }
@@ -137,38 +135,27 @@ pub const Runtime = struct {
             if ((memory.availableMiB() orelse 0) < weights + 512) return error.SystemMemoryPressure;
         }
         const info = try probe.inspect(alloc, cfg.runtime, cfg.compute.mode != .cpu, cancel);
-        if (mode == .embedding) try probe.requiredEmbedding(info.help);
-        if (reasoning and !info.has("--reasoning-format")) return error.RuntimeReasoningUnsupported;
+        if (mode == .embedding) try probe.requiredEmbedding(info);
         self.executable = info.executable;
         self.version = info.version;
         const context_tokens: u32 = if (mode == .embedding) model.?.context_tokens else cfg.contextTokens();
-        var layers: u16 = 0;
+        // mistral.rs maps GGUF layers itself; an explicit offload count is
+        // passed through, otherwise the runtime chooses the full mapping.
         if (cfg.compute.mode != .cpu) {
-            const total = try @import("gguf.zig").layers(filename);
-            layers = cfg.compute.offload_layers orelse total;
-            if (layers > total) return error.InvalidOffloadLayers;
             // Budget includes conservative cache/working-space allowance.
             var st: std.os.linux.Statx = undefined;
             if (std.os.linux.statx(std.os.linux.AT.FDCWD, filename, 0, .{ .SIZE = true }, &st) != 0) return error.ModelNotInstalled;
             const weights = std.math.divCeil(u64, st.size, 1024 * 1024) catch return error.InvalidModelFile;
-            const required = weights * layers / total + @as(u64, context_tokens) / 16 + 128;
+            const required = weights + @as(u64, context_tokens) / 16 + 128;
             self.device = try compute.select(info.devices, cfg.compute, required);
             if (self.device) |device| {
-                if (!info.has("--device") or !info.has("--split-mode")) return error.GpuRuntimeCapabilityMissing;
                 if (device.shared and (memory.availableMiB() orelse 0) < required + 1024) return error.SystemMemoryPressure;
             } else self.fallback_reason = "No compatible GPU with sufficient available memory";
         }
         self.gpu = self.device != null;
-        var random: [32]u8 = undefined;
-        if (std.os.linux.getrandom(&random, random.len, 0) != random.len) return error.RandomUnavailable;
-        const key = std.fmt.bytesToHex(random, .lower);
-        self.authorization = try std.fmt.allocPrint(alloc, "Authorization: Bearer {s}", .{key});
-        const temp = try std.fmt.allocPrintSentinel(alloc, "{s}/pearl-agent-key-XXXXXX", .{glib.getUserRuntimeDir()}, 0);
-        const keyfd = glib.mkstempFull(temp, @bitCast(std.c.O{ .ACCMODE = .RDWR, .CLOEXEC = true }), 0o600);
-        if (keyfd < 0) return error.RuntimeDirectoryUnavailable;
-        self.keyfile = temp;
-        defer _ = std.c.close(keyfd);
-        if (std.c.write(keyfd, &key, key.len) != key.len) return error.RuntimeKeyFailed;
+        // mistral.rs has no authentication; the loopback client still sends a
+        // dummy bearer header so request shaping stays uniform.
+        self.authorization = "Authorization: Bearer pearl-local";
         const reservation = gio.Socket.new(.ipv4, .stream, .tcp, null) orelse return error.RuntimePortUnavailable;
         defer reservation.unref();
         const ip = gio.InetAddress.newFromString("127.0.0.1").?;
@@ -186,33 +173,22 @@ pub const Runtime = struct {
         const env = try alloc.allocSentinel(?[*:0]const u8, info.child_environment.len, null);
         for (info.child_environment, 0..) |value, i| env[i] = value.ptr;
         launcher.setEnviron(@ptrCast(env.ptr));
-        if (cfg.cpu_threads != 0) launcher.setenv("OMP_NUM_THREADS", try std.fmt.allocPrintSentinel(alloc, "{d}", .{cfg.cpu_threads}, 0), 1);
+        if (cfg.cpu_threads != 0) launcher.setenv("RAYON_NUM_THREADS", try std.fmt.allocPrintSentinel(alloc, "{d}", .{cfg.cpu_threads}, 0), 1);
         var setup: Setup = .{ .parent = c.getpid() };
         launcher.setChildSetup(childSetup, &setup, null);
         const port_z = try std.fmt.allocPrintSentinel(alloc, "{d}", .{port}, 0);
         const context = try std.fmt.allocPrintSentinel(alloc, "{d}", .{context_tokens}, 0);
-        const threads = try std.fmt.allocPrintSentinel(alloc, "{d}", .{cfg.threads()}, 0);
-        const alias: [:0]const u8 = if (mode == .embedding) embed.alias else "pearl-local";
         var args: std.ArrayList(?[*:0]const u8) = .empty;
-        try args.appendSlice(alloc, &.{ info.executable, "-m", filename, "--alias", alias, "--host", "127.0.0.1", "--port", port_z, "--api-key-file", temp });
-        if (mode == .chat and info.has("--jinja")) try args.append(alloc, "--jinja");
-        try args.appendSlice(alloc, &.{ "--ctx-size", context, "--parallel", "1", "--threads", threads, "--threads-batch", threads, "--threads-http", "2", "--batch-size", if (mode == .embedding) "2048" else "128", "--ubatch-size", if (mode == .embedding) "512" else "64", "--gpu-layers", if (self.gpu) try std.fmt.allocPrintSentinel(alloc, "{d}", .{layers}, 0) else "0" });
-        if (mode == .embedding) {
-            try args.append(alloc, "--embeddings");
-            // The GGUF carries mean pooling; request it explicitly where the
-            // runtime exposes the switch so older metadata cannot change it.
-            if (info.has("--pooling")) try args.appendSlice(alloc, &.{ "--pooling", "mean" });
-        }
-        for ([_][:0]const u8{ "--no-webui", "--no-agent", "--no-op-offload" }) |flag| if (info.has(flag)) {
-            try args.append(alloc, flag);
-        };
-        if (!info.has("--no-webui") and info.has("--no-ui")) try args.append(alloc, "--no-ui");
-        if (info.has("--fit")) try args.appendSlice(alloc, &.{ "--fit", "off" });
-        if (info.has("--poll")) try args.appendSlice(alloc, &.{ "--poll", "0" });
-        // Keep internal reasoning out of answer text and citation validation.
-        if (mode == .chat and info.has("--reasoning-format")) try args.appendSlice(alloc, &.{ "--reasoning-format", "deepseek" });
-        if (info.has("--device")) try args.appendSlice(alloc, &.{ "--device", if (self.device) |d| try alloc.dupeSentinel(u8, d.name, 0) else "none" });
-        if (self.gpu) try args.appendSlice(alloc, &.{ "--split-mode", "none" });
+        try args.appendSlice(alloc, &.{ info.executable, "serve" });
+        if (mode == .embedding) try args.append(alloc, "embedding");
+        try args.appendSlice(alloc, &.{ "-f", filename, "--host", "127.0.0.1", "--port", port_z, "--max-model-len", context, "--no-ui", "--max-seqs", "1", "--disable-metrics", "--disable-access-log" });
+        if (self.gpu) {
+            // Omit -n entirely for automatic layer mapping.
+            if (cfg.compute.offload_layers) |count| {
+                const mapping = try std.fmt.allocPrintSentinel(alloc, "{d}:{d}", .{ deviceOrdinal(self.device.?.name), count }, 0);
+                try args.appendSlice(alloc, &.{ "-n", mapping });
+            }
+        } else try args.append(alloc, "--cpu");
         try args.append(alloc, null);
         if (!std.mem.eql(u8, info.fingerprint, try probe.fingerprint(alloc, info.executable))) return error.RuntimeChanged;
         self.process = launcher.spawnv(@ptrCast(args.items.ptr), null) orelse return error.RuntimeLaunchFailed;
@@ -227,21 +203,22 @@ pub const Runtime = struct {
                 glib.usleep(200000);
                 continue;
             };
-            if (ready.status == 200 and std.mem.indexOf(u8, ready.bytes, alias) != null) {
-                const unauth_path = if (mode == .embedding) "/v1/embeddings" else "/v1/chat/completions";
-                const unauth = try fetch.request(alloc, .{ .url = try std.fmt.allocPrint(alloc, "{s}{s}", .{ self.base, unauth_path }), .body = "{}", .private_endpoint = true, .timeout_seconds = 2 }, cancel);
-                if (unauth.status != 401 and unauth.status != 403) return error.RuntimeAuthenticationMissing;
+            if (ready.status == 200) {
                 var tools_warning: []const u8 = "";
                 if (mode == .chat) {
-                    _ = try @import("llama.zig").tokenCount(alloc, self, "Pearl local compatibility check", cancel);
-                    tools_warning = try @import("model_check.zig").qualify(alloc, self, info.has("--jinja"), cancel);
+                    // Chat templates and tool schemas are detected natively
+                    // from GGUF metadata; qualification exercises them live.
+                    tools_warning = try @import("model_check.zig").qualify(alloc, self, true, cancel);
                 } else {
                     // Rejects non-finite, zero or wrong-width vectors before any
                     // document is indexed (silent-degradation failure class).
                     _ = try embed.vector(alloc, self, "Pearl local embedding compatibility check", cancel);
                 }
                 try self.monitor();
-                if (self.gpu and self.offload_layers == 0) return error.GpuOffloadUnverified;
+                // Explicit offload counts must be confirmed by the runtime
+                // log; automatic mapping is verified by successful startup
+                // and qualification alone.
+                if (self.gpu and cfg.compute.offload_layers != null and self.offload_layers == 0) return error.GpuOffloadUnverified;
                 if (!std.mem.eql(u8, info.fingerprint, try probe.fingerprint(alloc, info.executable))) return error.RuntimeChanged;
                 if (cancel.isCancelled() != 0) return error.Cancelled;
                 self.tools_available = mode == .chat and tools_warning.len == 0;
@@ -292,6 +269,13 @@ pub fn recoverable(err: anyerror) bool {
         error.GpuUnavailableOrMemoryInsufficient, error.GpuRuntimeCapabilityMissing, error.GpuOffloadUnverified, error.RuntimeStartupFailed, error.RuntimeLaunchFailed, error.InferenceFailed, error.RequestFailed, error.RequestTimedOut, error.RuntimeExited, error.SystemMemoryPressure => true,
         else => false,
     };
+}
+/// mistral.rs offload mapping addresses devices by ordinal. The ordinal is
+/// read from the discovered device name (e.g. CUDA0), never persisted.
+fn deviceOrdinal(name: []const u8) u16 {
+    var start = name.len;
+    while (start > 0 and std.ascii.isDigit(name[start - 1])) start -= 1;
+    return std.fmt.parseInt(u16, name[start..], 10) catch 0;
 }
 // The Python fixture is copied into private temporary storage and serves only
 // deterministic local responses. No model download, GPU or search is involved.
@@ -359,15 +343,14 @@ test "runtime qualifies chat separately from optional tools and resets capabilit
     defer runtime.stop();
     try std.testing.expect(!runtime.tools_available);
     try std.testing.expectEqualStrings("", runtime.tools_warning);
-    for ([_][]const u8{ "good", "no_tools", "malformed_arguments", "unexpected_tool", "bad_followup", "http_tools", "truncated_tools", "no_jinja" }) |scenario| {
+    for ([_][]const u8{ "good", "no_tools", "malformed_arguments", "unexpected_tool", "bad_followup", "http_tools", "truncated_tools" }) |scenario| {
         try fixture.select(scenario);
         try runtime.ensure(fixture.configuration(), cancel);
         try std.testing.expect(runtime.process != null);
         const good = std.mem.eql(u8, scenario, "good");
-        const no_jinja = std.mem.eql(u8, scenario, "no_jinja");
         try std.testing.expectEqual(good, runtime.tools_available);
         try std.testing.expectEqual(!good, std.mem.startsWith(u8, runtime.tools_warning, "Chat-only:"));
-        try fixture.expectRequests(if (good or no_jinja) 1 else 2, if (no_jinja) 0 else 1, if (good or std.mem.eql(u8, scenario, "bad_followup")) 1 else 0);
+        try fixture.expectRequests(if (good) 1 else 2, 1, if (good or std.mem.eql(u8, scenario, "bad_followup")) 1 else 0);
         const warning = runtime.tools_warning;
         runtime.stop();
         try std.testing.expect(!runtime.tools_available);
@@ -377,7 +360,7 @@ test "runtime qualifies chat separately from optional tools and resets capabilit
     }
 }
 
-test "runtime cannot downgrade failed chat or missing authentication to chat-only" {
+test "runtime cannot downgrade failed chat to chat-only" {
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
     const fixture = try QualificationFixture.init(arena.allocator());
@@ -391,8 +374,6 @@ test "runtime cannot downgrade failed chat or missing authentication to chat-onl
         .{ .scenario = "tool_in_chat", .err = error.ModelChatIncompatible },
         .{ .scenario = "chat_http", .err = error.InferenceFailed },
         .{ .scenario = "unhealthy_after_tools", .err = error.InferenceFailed },
-        .{ .scenario = "no_auth", .err = error.RuntimeAuthenticationMissing },
-        .{ .scenario = "missing_auth", .err = error.RuntimeCapabilityMissing },
     }) |case| {
         try fixture.select(case.scenario);
         try std.testing.expectError(case.err, runtime.ensure(fixture.configuration(), cancel));

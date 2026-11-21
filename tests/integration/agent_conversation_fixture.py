@@ -3,8 +3,9 @@
 
 The native tests copy this executable beside a JSON plan in a private temporary
 folder. Only synthetic requests are logged; authentication headers are never
-persisted. Replies and token counts are supplied by Zig, not inferred from the
-question, so the tests check controller contracts rather than model quality.
+persisted. Replies are supplied by Zig, not inferred from the question, so the
+tests check controller contracts rather than model quality. Prompt budgets are
+estimated natively from message bytes; mistral.rs has no template/tokenize API.
 """
 import http.server
 import json
@@ -15,9 +16,12 @@ import time
 
 executable = Path(sys.argv[0])
 plan = json.loads(Path(str(executable) + ".plan").read_text())
-flags = "--host --port --api-key-file --alias --ctx-size --parallel --threads --threads-batch --threads-http --batch-size --ubatch-size --gpu-layers --jinja"
+serve_flags = "-f, --quantized-file --host --port --max-model-len --no-ui --cpu --max-seqs --disable-metrics --disable-access-log -n"
 if "--help" in sys.argv:
-    print(flags)
+    if "serve" in sys.argv:
+        print(serve_flags)
+    else:
+        print("Commands: serve run doctor tune\n  serve [embedding]")
     sys.exit(0)
 if "--version" in sys.argv:
     print("pearl-offline-conversation-fixture-v1")
@@ -28,10 +32,11 @@ def option(name):
     return sys.argv[sys.argv.index(name) + 1]
 
 
+assert "serve" in sys.argv
 assert option("--host") == "127.0.0.1"
-assert option("--gpu-layers") == "0"
-assert option("--parallel") == "1"
-key = Path(option("--api-key-file")).read_text()
+assert option("--max-seqs") == "1"
+assert option("--max-model-len") == "4096"
+assert "--cpu" in sys.argv
 log_path = Path(str(executable) + ".requests.jsonl")
 release = Path(str(executable) + ".release")
 
@@ -54,47 +59,16 @@ class Handler(http.server.BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(data)
 
-    def authorized(self):
-        if self.headers.get("Authorization") == "Bearer " + key:
-            return True
-        self.reply(401, {"error": "unauthorized"})
-        return False
-
     def do_GET(self):
-        if self.authorized():
-            assert self.path == "/v1/models"
-            self.reply(200, {"data": [{"id": "pearl-local"}]})
+        # mistral.rs ignores Authorization headers; no authentication exists.
+        if self.path == "/health" or self.path == "/":
+            self.reply(200, {"status": "ok"})
+            return
+        assert self.path == "/v1/models"
+        self.reply(200, {"data": [{"id": "pearl-local"}]})
 
     def do_POST(self):
-        if not self.authorized():
-            return
         payload = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
-        if self.path == "/apply-template":
-            self.record("template", payload)
-            assert payload["add_generation_prompt"] is True
-            self.server.template = payload
-            # Deliberately distinguish the rendered prompt from message JSON.
-            self.server.prompt = "<|fixture-template|>" + json.dumps(
-                {"messages": payload["messages"], "tools": payload.get("tools")},
-                sort_keys=True, ensure_ascii=False) + "<|assistant|>"
-            self.reply(200, {"prompt": self.server.prompt})
-            return
-        if self.path == "/tokenize":
-            self.record("tokenize", payload)
-            assert payload["parse_special"] is True
-            assert payload["add_special"] is False
-            if self.server.template is None:
-                assert payload["content"] == "Pearl local compatibility check"
-                count = 8
-            else:
-                assert payload["content"] == self.server.prompt
-                counts = plan["token_counts"]
-                index = self.server.tokenizations
-                assert index < len(counts), "unexpected prompt measurement"
-                count = counts[index]
-                self.server.tokenizations += 1
-            self.reply(200, {"tokens": [1] * count})
-            return
         assert self.path == "/v1/chat/completions"
         assert payload["stream"] is True and payload["temperature"] == 0
         index = self.server.completions
@@ -120,9 +94,6 @@ class Handler(http.server.BaseHTTPRequestHandler):
                     self.stream({"content": "RAM is temporary; storage retains data. [1]"})
             return
         self.record("completion", payload)
-        assert self.server.template is not None
-        assert payload["messages"] == self.server.template["messages"], "template/message mismatch"
-        assert payload.get("tools") == self.server.template.get("tools"), "template/tool mismatch"
         assert index - 3 < len(plan["replies"]), "unexpected extra inference"
         reply = plan["replies"][index - 3]
         if reply["status"] != 200:
@@ -163,7 +134,4 @@ class Handler(http.server.BaseHTTPRequestHandler):
 
 server = http.server.HTTPServer(("127.0.0.1", int(option("--port"))), Handler)
 server.completions = 0
-server.tokenizations = 0
-server.template = None
-server.prompt = None
 server.serve_forever()

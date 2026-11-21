@@ -27,15 +27,10 @@ const cited: Reply = .{ .text = "The current journey takes 47 minutes. [1]" };
 const Plan = struct {
     qualification: enum { full, chat_only, failed } = .full,
     replies: []const Reply,
-    token_counts: []const usize = &.{ 64, 64, 64, 64, 64, 64, 64, 64 },
 };
 const Payload = struct {
     messages: []const llama.Message = &.{},
     tools: ?std.json.Value = null,
-    content: []const u8 = "",
-    add_generation_prompt: bool = false,
-    parse_special: bool = false,
-    add_special: bool = false,
     max_tokens: u32 = 0,
 };
 const Request = struct { kind: []const u8, payload: Payload };
@@ -212,7 +207,7 @@ test "conversation: missing and disabled providers allow chat without advertisin
     }
 }
 
-test "conversation: current search is cited and templating matches actual messages and tools" {
+test "conversation: current search is cited with matching tools and budget" {
     var arena = std.heap.ArenaAllocator.init(t.allocator);
     defer arena.deinit();
     const a = arena.allocator();
@@ -225,18 +220,9 @@ test "conversation: current search is cited and templating matches actual messag
     try t.expectEqualStrings(source.url, answer.sources[0].url);
     try t.expect(controller.citations(answer.text, answer.sources));
     const requests = try f.log("completion");
-    const templates = try f.log("template");
-    const tokens = try f.log("tokenize");
-    try t.expectEqual(@as(usize, 2), templates.len);
-    try t.expectEqual(@as(usize, 3), tokens.len); // Startup token check plus two prompts.
-    for (requests, templates, tokens[1..]) |request, template, token| {
-        try t.expect(template.add_generation_prompt);
-        try t.expectEqualDeep(request.messages, template.messages);
+    try t.expectEqual(@as(usize, 2), requests.len);
+    for (requests) |request| {
         try t.expectEqualStrings(try std.json.Stringify.valueAlloc(a, (try llama.toolsForConfig(a, f.config, false)).?, .{}), try std.json.Stringify.valueAlloc(a, request.tools.?, .{}));
-        try t.expectEqualStrings(try std.json.Stringify.valueAlloc(a, request.tools, .{}), try std.json.Stringify.valueAlloc(a, template.tools, .{}));
-        try t.expect(token.parse_special and !token.add_special);
-        try t.expect(std.mem.startsWith(u8, token.content, "<|fixture-template|>"));
-        try t.expect(std.mem.endsWith(u8, token.content, "<|assistant|>"));
         try t.expectEqual(f.config.answerTokens(), request.max_tokens);
     }
     const messages = requests[1].messages;
@@ -264,7 +250,6 @@ test "conversation: invalid citations receive exactly one correction with tools 
         const requests = try f.log("completion");
         try t.expect(requests[1].tools != null);
         try t.expect(requests[2].tools == null);
-        try t.expect((try f.log("template"))[2].tools == null);
         try contains(requests[2].messages[requests[2].messages.len - 1].content, "Rewrite that answer");
         try t.expectEqual(@as(usize, 1), answer.sources.len);
     }
@@ -359,68 +344,66 @@ test "conversation: long history is complete then pruned by whole pairs and opti
     var arena = std.heap.ArenaAllocator.init(t.allocator);
     defer arena.deinit();
     const a = arena.allocator();
-    // Fit exactly at context - answer - 32, then force another pruning round
-    // after a tool call. Neither the question nor the call/result may be clipped.
-    var f = try Fixture.init(a, .{ .replies = &.{ search_call, cited }, .token_counts = &.{ 3681, 3681, 3680, 3681, 3681, 3680 } });
+    // Sizes are calibrated against the native byte estimator (content/3 plus
+    // template/tool overhead): the first fit prunes the two oldest history
+    // pairs, and the post-search fit prunes the newest pair then the evidence.
+    // Neither the question nor the call/result pair may ever be clipped.
+    var f = try Fixture.init(a, .{ .replies = &.{ search_call, cited } });
     defer f.deinit();
-    const question = "Check the current timetable and preserve this entire request: " ++ @as([3000]u8, @splat('q')) ++ " END-QUESTION";
+    const question = "Check the current timetable and preserve this entire request: " ++ @as([5000]u8, @splat('q')) ++ " END-QUESTION";
+    const previous: controller.Source = .{ .id = 1, .title = "Local timetable", .url = source.url, .snippet = &@as([1000]u8, @splat('s')), .provider = "offline" };
     const history = [_]controller.Turn{
         .{ .question = "oldest question", .answer = @as([5000]u8, @splat('a')) ++ " END-OLDEST" },
         .{ .question = "middle question", .answer = @as([5000]u8, @splat('b')) ++ " END-MIDDLE" },
-        .{ .question = "newest question", .answer = @as([5000]u8, @splat('c')) ++ " END-NEWEST" },
+        .{ .question = "newest question", .answer = @as([1200]u8, @splat('c')) ++ " END-NEWEST" },
     };
-    const answer = try f.run(question, &history, &.{source}, true);
+    const answer = try f.run(question, &history, &.{previous}, true);
     try completed(answer, cited.text);
     try f.expectCounts(2, 1, 0);
-    const templates = try f.log("template");
-    try t.expectEqual(@as(usize, 6), templates.len);
-    for (history, 0..) |turn, i| {
-        try t.expectEqualStrings(turn.question, templates[0].messages[1 + i * 2].content);
-        try t.expectEqualStrings(turn.answer, templates[0].messages[2 + i * 2].content);
-    }
-    try t.expectEqualStrings(history[1].question, templates[1].messages[1].content);
-    try t.expectEqualStrings(history[1].answer, templates[1].messages[2].content);
-    for (templates[2..4]) |template| {
-        try t.expectEqualStrings(history[2].question, template.messages[1].content);
-        try t.expectEqualStrings(history[2].answer, template.messages[2].content);
-        try contains(template.messages[3].content, "Previous search evidence");
-    }
-    try contains(templates[4].messages[1].content, "Previous search evidence");
-    const lengths = [_]usize{ 9, 7, 5, 7, 5, 4 };
-    for (templates, lengths, 0..) |template, len, i| {
-        try t.expectEqual(len, template.messages.len);
-        try t.expectEqualStrings("system", template.messages[0].role);
-        const question_index = if (i < 3) len - 1 else len - 3;
-        try t.expectEqualStrings(question, template.messages[question_index].content);
-        if (i >= 3) {
-            try t.expectEqualStrings("assistant", template.messages[len - 2].role);
-            try t.expectEqualStrings(search_call.id, template.messages[len - 2].tool_calls.?[0].id);
-            try t.expectEqualStrings("tool", template.messages[len - 1].role);
-            try t.expectEqualStrings(search_call.id, template.messages[len - 1].tool_call_id.?);
-            try t.expectEqualStrings(templates[3].messages[6].content, template.messages[len - 1].content);
-        }
-    }
     const requests = try f.log("completion");
-    try t.expectEqualDeep(templates[2].messages, requests[0].messages);
-    try t.expectEqualDeep(templates[5].messages, requests[1].messages);
+    try t.expectEqual(@as(usize, 2), requests.len);
+    // First completion keeps only the newest history pair plus the evidence.
+    try t.expectEqual(@as(usize, 5), requests[0].messages.len);
+    try t.expectEqualStrings("system", requests[0].messages[0].role);
+    try t.expectEqualStrings(history[2].question, requests[0].messages[1].content);
+    try t.expectEqualStrings(history[2].answer, requests[0].messages[2].content);
+    try contains(requests[0].messages[3].content, "Previous search evidence");
+    try t.expectEqualStrings(question, requests[0].messages[4].content);
+    // Second completion drops the evidence but keeps the call/result pair.
+    try t.expectEqual(@as(usize, 4), requests[1].messages.len);
+    try t.expectEqualStrings("system", requests[1].messages[0].role);
+    try t.expectEqualStrings(question, requests[1].messages[1].content);
+    try t.expectEqualStrings("assistant", requests[1].messages[2].role);
+    try t.expectEqualStrings(search_call.id, requests[1].messages[2].tool_calls.?[0].id);
+    try t.expectEqualStrings("tool", requests[1].messages[3].role);
+    try t.expectEqualStrings(search_call.id, requests[1].messages[3].tool_call_id.?);
+    const result = try toolResult(a, requests[1], 3);
+    try t.expectEqualStrings(previous.snippet, result.array.items[0].object.get("evidence").?.string);
 }
 
 test "conversation: context overflow returns an explicit outcome without dropping current tool pairs" {
     for ([_]bool{ false, true }) |after_search| {
         var arena = std.heap.ArenaAllocator.init(t.allocator);
         defer arena.deinit();
-        var f = try Fixture.init(arena.allocator(), .{ .replies = if (after_search) &.{search_call} else &.{}, .token_counts = if (after_search) &.{ 64, 3681 } else &.{3681} });
+        var f = try Fixture.init(arena.allocator(), .{ .replies = if (after_search) &.{search_call} else &.{} });
         defer f.deinit();
-        const question = "Never truncate this question: " ++ @as([3000]u8, @splat('x')) ++ " END";
+        // Without a search the question alone must exceed the budget; with a
+        // search it fits first, then the evidence prompt plus tool result push
+        // the second fit over while the call/result pair stays intact.
+        var buffer: [9100]u8 = undefined;
+        const xs = if (after_search) @as(usize, 7240) else 9000;
+        @memset(buffer[0..xs], 'x');
+        const question = try std.fmt.allocPrint(arena.allocator(), "Never truncate this question: {s} END", .{buffer[0..xs]});
         const answer = try f.run(question, &.{}, &.{}, true);
         try t.expectEqual(if (after_search) controller.Outcome.partial else .failed, answer.outcome);
         try t.expectEqualStrings("QuestionExceedsContext", answer.error_code);
         try f.expectCounts(if (after_search) 1 else 0, if (after_search) 1 else 0, 0);
-        const templates = try f.log("template");
-        const last = templates[templates.len - 1];
-        try t.expectEqualStrings(question, last.messages[1].content);
-        try t.expectEqual(@as(usize, if (after_search) 4 else 2), last.messages.len);
-        if (after_search) try t.expectEqualStrings(search_call.id, last.messages[3].tool_call_id.?);
+        if (after_search) {
+            const requests = try f.log("completion");
+            try t.expectEqual(@as(usize, 1), requests.len);
+            try t.expectEqual(@as(usize, 2), requests[0].messages.len);
+            try t.expectEqualStrings(question, requests[0].messages[1].content);
+        }
         try t.expect(f.runtime.process == null);
     }
 }
