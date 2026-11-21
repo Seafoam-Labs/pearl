@@ -2,6 +2,7 @@ const std = @import("std");
 const u = @import("ui.zig");
 const gtk = u.gtk;
 const gio = u.gio;
+const giounix = @import("giounix2");
 const glib = u.glib;
 const object = u.object;
 const gdk = @import("gdk4");
@@ -174,7 +175,6 @@ pub const Window = struct {
         content.as(gtk.Widget).setHexpand(1);
         browser.append(content.as(gtk.Widget));
         const paned = gtk.Paned.new(.horizontal);
-        paned.setWideHandle(1);
         paned.setShrinkStartChild(1);
         paned.setShrinkEndChild(1);
         paned.as(gtk.Widget).setHexpand(1);
@@ -324,6 +324,11 @@ pub const Window = struct {
             right.as(gtk.GestureSingle).setButton(3);
             _ = gtk.GestureClick.signals.pressed.connect(right, *Tab, tabContext, tab, .{});
             b.as(gtk.Widget).addController(right.as(gtk.EventController));
+            const middle = gtk.GestureClick.new();
+            middle.as(gtk.GestureSingle).setButton(2);
+            _ = gtk.GestureClick.signals.pressed.connect(middle, *Tab, tabMiddlePressed, tab, .{});
+            b.as(gtk.Widget).addController(middle.as(gtk.EventController));
+            @import("dnd.zig").attachTabButton(self, b, tab);
             p.tabs_row.append(b.as(gtk.Widget));
         }
         const add = u.iconButton("list-add-symbolic", @import("i18n").dtr("phyto", "New tab · Ctrl+T"));
@@ -370,6 +375,7 @@ pub const Window = struct {
         right.as(gtk.GestureSingle).setButton(3);
         _ = gtk.GestureClick.signals.pressed.connect(right, *Window, placeContext, self, .{});
         button.as(gtk.Widget).addController(right.as(gtk.EventController));
+        @import("dnd.zig").attachPlace(self, button);
         container.append(button.as(gtk.Widget));
     }
     fn unrefFile(data: ?*anyopaque) callconv(.c) void {
@@ -411,6 +417,7 @@ pub const Window = struct {
             }
         }
         self.network_ui.fillPlaces(container);
+        var devices_shown = false;
         const mounts = g_volume_monitor_get_mounts(self.volume_monitor);
         if (mounts) |head| {
             defer head.free();
@@ -425,7 +432,24 @@ pub const Window = struct {
                 defer f.unref();
                 const name_ = mount_.getName();
                 defer glib.free(name_);
-                self.place(container, name_, "drive-removable-media-symbolic", f);
+                const path = f.getPath();
+                const remote = path == null;
+                if (path) |p| glib.free(p);
+                if (remote) {
+                    // An unsaved GVfs mount belongs with the network devices.
+                    self.place(container, name_, "network-workgroup-symbolic", f);
+                } else {
+                    // OS mounts (/, /boot, fstab internals) are not user devices.
+                    if (systemMount(f)) {
+                        mount_.unref();
+                        continue;
+                    }
+                    if (!devices_shown) {
+                        container.append(u.label(@import("i18n").dtr("phyto", "DEVICES"), "section-label").as(gtk.Widget));
+                        devices_shown = true;
+                    }
+                    self.place(container, name_, "drive-removable-media-symbolic", f);
+                }
                 container.as(gtk.Widget).getLastChild().?.as(object.Object).setDataFull("phyto-mount", mount_, unrefObject);
             }
         }
@@ -444,10 +468,24 @@ pub const Window = struct {
                 defer f.unref();
                 const name_ = v.getName();
                 defer glib.free(name_);
+                if (!devices_shown) {
+                    container.append(u.label(@import("i18n").dtr("phyto", "DEVICES"), "section-label").as(gtk.Widget));
+                    devices_shown = true;
+                }
                 self.place(container, name_, "drive-removable-media-symbolic", f);
                 container.as(gtk.Widget).getLastChild().?.as(object.Object).setDataFull("phyto-volume", v, unrefObject);
             }
         }
+    }
+    /// GLib's own heuristic for OS-internal mounts (fstab entries without user
+    /// options, mounts outside /media, /mnt and /run/media): the same filter
+    /// GVfs uses to decide what is a user-visible device.
+    fn systemMount(root: *gio.File) bool {
+        const path = root.getPath() orelse return false;
+        defer glib.free(path);
+        const entry = giounix.MountEntry.at(path, null) orelse return false;
+        defer entry.free();
+        return entry.isSystemInternal() != 0;
     }
     fn locationContext(gesture: *gtk.GestureClick, _: c_int, x: f64, y: f64, self: *Window) callconv(.c) void {
         var c = @import("context.zig").Context.init(self.current(), .location);
@@ -459,6 +497,12 @@ pub const Window = struct {
         const c = @import("context.zig").Context.init(tab, .tab);
         tab.owner.context.show(c, gesture.as(gtk.EventController).getWidget().?, x, y);
         _ = gesture.as(gtk.Gesture).setState(.claimed);
+    }
+    fn tabMiddlePressed(gesture: *gtk.GestureClick, count: c_int, _: f64, _: f64, tab: *Tab) callconv(.c) void {
+        if (count != 1) return;
+        _ = gesture.as(gtk.Gesture).setState(.claimed);
+        // Same path as Ctrl+W: closing the last tab un-splits or closes the window.
+        tab.owner.tabCommand(tab, .close_tab);
     }
     fn placeContext(gesture: *gtk.GestureClick, _: c_int, x: f64, y: f64, self: *Window) callconv(.c) void {
         const widget = gesture.as(gtk.EventController).getWidget().?;
@@ -533,6 +577,18 @@ pub const Window = struct {
         self.preferences.save();
         self.queueUpdate();
     }
+    /// Drop every tab of a pane that is not currently visible. Used when a
+    /// split is created so the revealed pane starts fresh; the active pane is
+    /// never cleared here.
+    fn clearPane(self: *Window, pane: usize) void {
+        const p = &self.panes[pane];
+        for (p.tabs.items) |t| {
+            p.stack.remove(t.root.as(gtk.Widget));
+            t.destroy();
+        }
+        p.tabs.clearRetainingCapacity();
+        p.selected = 0;
+    }
     pub fn tabCommand(self: *Window, tab: *Tab, command: Command) void {
         self.context.close();
         const pane = tab.pane;
@@ -554,7 +610,14 @@ pub const Window = struct {
                 if (p.selected == index) p.selected = other else if (p.selected == other) p.selected = index;
             },
             .tab_other => {
-                if (!self.split or self.panes[1 - pane].tabs.items.len >= 32) return;
+                if (self.split and self.panes[1 - pane].tabs.items.len >= 32) return;
+                // From an unsplit window this creates the split, placing the
+                // tab next to the current one instead of requiring F3 first.
+                if (!self.split) {
+                    self.split = true;
+                    self.paned.setPosition(@divTrunc(@max(400, self.width - 256), 2));
+                    self.clearPane(1 - pane);
+                }
                 if (p.tabs.items.len == 1) self.addTab(pane, self.home);
                 _ = p.tabs.orderedRemove(index);
                 p.stack.remove(tab.root.as(gtk.Widget));
@@ -946,7 +1009,13 @@ pub const Window = struct {
             },
             .split => {
                 self.split = !self.split;
-                if (!self.split) self.active = 0;
+                if (!self.split) self.active = 0 else {
+                    // A new split starts the revealed pane with a single fresh
+                    // Home tab instead of exposing placeholder tabs duplicated
+                    // from the window's initial location.
+                    self.clearPane(1 - self.active);
+                    self.addTab(1 - self.active, self.home);
+                }
                 self.paned.setPosition(@divTrunc(@max(400, self.width - 256), 2));
                 self.sync();
             },

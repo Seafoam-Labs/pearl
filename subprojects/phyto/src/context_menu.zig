@@ -309,7 +309,7 @@ pub const Menu = struct {
             .mount => if (c.volume) |v| v.canMount() != 0 else false,
             .unmount => if (c.mount) |m| m.canUnmount() != 0 else false,
             .eject => if (c.mount) |m| m.canEject() != 0 else if (c.volume) |v| v.canEject() != 0 else false,
-            .tab_other => self.owner.split,
+            .tab_other => !self.owner.split or self.owner.panes[1 - c.pane].tabs.items.len < 32,
             .tab_left, .tab_right => blk: {
                 const t = self.owner.findTab(c.tab_id) orelse break :blk false;
                 const p = &self.owner.panes[t.pane];
@@ -376,7 +376,7 @@ pub const Menu = struct {
             const second = gio.Menu.new();
             self.add(second, @import("i18n").dtr("phyto", "Move tab left"), .tab_left);
             self.add(second, @import("i18n").dtr("phyto", "Move tab right"), .tab_right);
-            if (self.owner.split) self.add(second, @import("i18n").dtr("phyto", "Move to other pane"), .tab_other);
+            self.add(second, if (self.owner.split) @import("i18n").dtr("phyto", "Move to other pane") else @import("i18n").dtr("phyto", "Split with this tab"), .tab_other);
             self.section(menu, second);
             const end = gio.Menu.new();
             self.add(end, @import("i18n").dtr("phyto", "Close tab"), .close_tab);

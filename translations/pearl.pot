@@ -119,6 +119,10 @@ msgstr ""
 msgid ":"
 msgstr ""
 
+#: src/settings/assistant_tools_view.zig:161
+msgid "A grant covers a very broad location, such as the whole home folder. This is not recommended; grant only the folders you need."
+msgstr ""
+
 #: src/ui/i18n.zig:6
 msgid "A little less noise. A little more space for what matters."
 msgstr ""
@@ -139,7 +143,7 @@ msgstr ""
 msgid "A unique application identity is needed. Existing choices can be removed in Settings."
 msgstr ""
 
-#: src/settings/assistant_view.zig:204
+#: src/settings/assistant_view.zig:205
 msgid "API key (never included in preferences)"
 msgstr ""
 
@@ -170,7 +174,7 @@ msgstr ""
 msgid "Aa     +1"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:950
+#: src/ui/surfaces/manager.zig:991
 msgid "About {0} h {1} min left"
 msgstr ""
 
@@ -274,7 +278,7 @@ msgstr ""
 msgid "Add filter"
 msgstr ""
 
-#: src/settings/semantic_view.zig:109
+#: src/settings/assistant_tools_view.zig:55 src/settings/semantic_view.zig:109
 msgid "Add folder…"
 msgstr ""
 
@@ -303,7 +307,7 @@ msgstr ""
 msgid "Add scheduler profile"
 msgstr ""
 
-#: src/settings/assistant_view.zig:185
+#: src/settings/assistant_view.zig:186
 msgid "Add search engine"
 msgstr ""
 
@@ -438,6 +442,10 @@ msgstr ""
 #: tests/fixtures/aqueous-master/snapshot.json
 msgctxt "aqueous.layout.options.scrolling.allow_overscroll.label"
 msgid "Allow overscroll"
+msgstr ""
+
+#: src/settings/assistant_tools_view.zig:49
+msgid "Allow the assistant to open applications you ask for. Opening apps is separate from file access."
 msgstr ""
 
 #: src/desktop/icons/view.zig:480
@@ -751,7 +759,7 @@ msgstr ""
 msgid "Automatic follows the theme and blur availability. Custom changes only the bar background, including when blur is unavailable."
 msgstr ""
 
-#: src/settings/assistant_view.zig:713
+#: src/settings/assistant_view.zig:719
 msgid "Automatic installation supports Devario and Arch-based systems. Install llama.cpp with your distribution's package manager, then discover the runtime."
 msgstr ""
 
@@ -890,7 +898,7 @@ msgstr ""
 msgid "Battery service unavailable"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:940
+#: src/ui/surfaces/manager.zig:981
 msgid "Battery very low"
 msgstr ""
 
@@ -1051,7 +1059,7 @@ msgstr ""
 msgid "Brightness unavailable · an active session is required"
 msgstr ""
 
-#: src/settings/assistant_view.zig:144
+#: src/settings/assistant_view.zig:145
 msgid "Browse for llama-server…"
 msgstr ""
 
@@ -1095,7 +1103,7 @@ msgstr ""
 msgid "CPU Scheduler"
 msgstr ""
 
-#: src/settings/assistant_view.zig:222
+#: src/settings/assistant_view.zig:225
 msgid "CPU threads (0 = runtime automatic)"
 msgstr ""
 
@@ -1103,7 +1111,7 @@ msgstr ""
 msgid "Calculation · Enter to copy · = to continue"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:775 src/desktop/clipboard_capture.zig:146 src/desktop/connectivity.zig:117 src/desktop/services.zig:296 src/desktop/wallpaper_crop.zig:243 src/services/polkit.zig:315 src/settings/autostart_view.zig:266 src/settings/bar_view.zig:1144 src/settings/notification_filters_view.zig:437 src/settings/scheduler_view.zig:387 src/settings/scheduler_view.zig:440 src/settings/semantic_view.zig:285
+#: src/desktop/aqueous_settings.zig:775 src/desktop/clipboard_capture.zig:146 src/desktop/connectivity.zig:117 src/desktop/services.zig:296 src/desktop/wallpaper_crop.zig:243 src/services/polkit.zig:315 src/settings/assistant_tools_view.zig:250 src/settings/autostart_view.zig:266 src/settings/bar_view.zig:1144 src/settings/notification_filters_view.zig:437 src/settings/scheduler_view.zig:387 src/settings/scheduler_view.zig:440 src/settings/semantic_view.zig:285
 msgid "Cancel"
 msgstr ""
 
@@ -1115,15 +1123,15 @@ msgstr ""
 msgid "Cancel download"
 msgstr ""
 
-#: src/settings/assistant_view.zig:213
+#: src/settings/assistant_view.zig:214
 msgid "Cancel engine operation"
 msgstr ""
 
-#: src/settings/assistant_view.zig:133
+#: src/settings/assistant_view.zig:134
 msgid "Cancel model operation"
 msgstr ""
 
-#: src/settings/assistant_view.zig:108
+#: src/settings/assistant_view.zig:109
 msgid "Cancel operation"
 msgstr ""
 
@@ -1131,7 +1139,7 @@ msgstr ""
 msgid "Cancel request"
 msgstr ""
 
-#: src/settings/assistant_view.zig:175
+#: src/settings/assistant_view.zig:176
 msgid "Cancel runtime check"
 msgstr ""
 
@@ -1254,7 +1262,7 @@ msgctxt "aqueous.input.repeat_rate.description"
 msgid "Characters per second; zero disables repeat."
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:957
+#: src/ui/surfaces/manager.zig:998
 msgid "Charge is running low."
 msgstr ""
 
@@ -1282,7 +1290,7 @@ msgstr ""
 msgid "Check Qt 6"
 msgstr ""
 
-#: src/settings/assistant_view.zig:150
+#: src/settings/assistant_view.zig:151
 msgid "Check runtime and model now"
 msgstr ""
 
@@ -1294,7 +1302,7 @@ msgstr ""
 msgid "Checking PNG…"
 msgstr ""
 
-#: src/settings/assistant_view.zig:600
+#: src/settings/assistant_view.zig:606
 msgid "Checking installed runtimes… If installation is needed, complete the package manager prompts in the terminal. Setup continues until the terminal exits."
 msgstr ""
 
@@ -1306,7 +1314,7 @@ msgstr ""
 msgid "Checking the scheduler..."
 msgstr ""
 
-#: src/settings/semantic_view.zig:285
+#: src/settings/assistant_tools_view.zig:250 src/settings/semantic_view.zig:285
 msgid "Choose"
 msgstr ""
 
@@ -1316,6 +1324,10 @@ msgstr ""
 
 #: src/settings/preferences_view.zig:922
 msgid "Choose a folder stored on this computer."
+msgstr ""
+
+#: src/settings/assistant_tools_view.zig:250
+msgid "Choose a folder to grant"
 msgstr ""
 
 #: src/settings/semantic_view.zig:285
@@ -1562,7 +1574,7 @@ msgctxt "aqueous.game_mode.remainder_layout.label"
 msgid "Companion layout"
 msgstr ""
 
-#: src/settings/assistant_view.zig:131
+#: src/settings/assistant_view.zig:132
 msgid "Compare models on CPU and GPU…"
 msgstr ""
 
@@ -1587,7 +1599,7 @@ msgctxt "aqueous.display.identify_by.description"
 msgid "Compatibility identity field retained by Aqueous."
 msgstr ""
 
-#: src/settings/assistant_view.zig:721
+#: src/settings/assistant_view.zig:727
 msgid "Compatibility not confirmed. Review the operation error and retry setup or the runtime check."
 msgstr ""
 
@@ -1670,7 +1682,7 @@ msgstr ""
 msgid "Connect and manage your wireless devices."
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:953
+#: src/ui/surfaces/manager.zig:994
 msgid "Connect power now to avoid losing unsaved work."
 msgstr ""
 
@@ -1722,7 +1734,7 @@ msgstr ""
 msgid "Connecting…"
 msgstr ""
 
-#: src/settings/assistant_view.zig:190
+#: src/settings/assistant_view.zig:191
 msgid "Connection"
 msgstr ""
 
@@ -1742,7 +1754,7 @@ msgstr ""
 msgid "Contains"
 msgstr ""
 
-#: src/settings/assistant_view.zig:223
+#: src/settings/assistant_view.zig:226
 msgid "Context tokens (0 = model profile)"
 msgstr ""
 
@@ -1855,7 +1867,7 @@ msgstr ""
 msgid "Cover"
 msgstr ""
 
-#: src/settings/palette_editor.zig:54
+#: src/settings/assistant_tools_view.zig:299 src/settings/palette_editor.zig:54
 msgid "Create"
 msgstr ""
 
@@ -1871,11 +1883,15 @@ msgstr ""
 msgid "Create folder"
 msgstr ""
 
+#: src/settings/assistant_tools_view.zig:52
+msgid "Creating or deleting a file always shows a native confirmation with the exact change first. Deletes go to the Trash when available; permanent deletion happens only when Trash is unsupported and you explicitly confirm it."
+msgstr ""
+
 #: src/settings/notification_filters_view.zig:104 src/settings/notification_filters_view.zig:394
 msgid "Critical"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:941
+#: src/ui/surfaces/manager.zig:982
 msgid "Critical battery level"
 msgstr ""
 
@@ -1919,7 +1935,7 @@ msgstr ""
 msgid "Current mode, or 1920x1080@60"
 msgstr ""
 
-#: src/settings/assistant_view.zig:105
+#: src/settings/assistant_view.zig:106
 msgid "Current operation"
 msgstr ""
 
@@ -1949,11 +1965,11 @@ msgstr ""
 msgid "Custom - scx_{0} is running outside these profiles."
 msgstr ""
 
-#: src/settings/assistant_view.zig:119
+#: src/settings/assistant_view.zig:120
 msgid "Custom GGUF absolute path"
 msgstr ""
 
-#: src/settings/assistant_view.zig:441
+#: src/settings/assistant_view.zig:446
 msgid "Custom GGUF: verify compatibility before use."
 msgstr ""
 
@@ -1969,7 +1985,7 @@ msgstr ""
 msgid "Custom layout · choose a preset to start from one"
 msgstr ""
 
-#: src/settings/assistant_view.zig:143
+#: src/settings/assistant_view.zig:144
 msgid "Custom llama-server absolute path"
 msgstr ""
 
@@ -2009,7 +2025,7 @@ msgstr ""
 msgid "Cycle windows requires updated Aqueous"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:1678
+#: src/ui/surfaces/manager.zig:1720
 msgid "Cycle →"
 msgstr ""
 
@@ -2079,7 +2095,7 @@ msgstr ""
 msgid "Default, e.g. %a %d %b"
 msgstr ""
 
-#: src/desktop/clipboard_capture.zig:352
+#: src/desktop/clipboard_capture.zig:352 src/settings/assistant_tools_view.zig:300
 msgid "Delete"
 msgstr ""
 
@@ -2256,7 +2272,7 @@ msgstr ""
 msgid "Discover"
 msgstr ""
 
-#: src/settings/assistant_view.zig:149
+#: src/settings/assistant_view.zig:150
 msgid "Discover runtime and GPU devices"
 msgstr ""
 
@@ -2313,7 +2329,7 @@ msgstr ""
 msgid "Display mode"
 msgstr ""
 
-#: src/settings/assistant_view.zig:189
+#: src/settings/assistant_view.zig:190
 msgid "Display name"
 msgstr ""
 
@@ -2397,7 +2413,7 @@ msgstr ""
 msgid "Download embedding model"
 msgstr ""
 
-#: src/settings/assistant_view.zig:128
+#: src/settings/assistant_view.zig:129
 msgid "Download selected model"
 msgstr ""
 
@@ -2524,7 +2540,7 @@ msgstr ""
 msgid "Edit colors"
 msgstr ""
 
-#: src/settings/assistant_view.zig:183
+#: src/settings/assistant_view.zig:184
 msgid "Edit engine"
 msgstr ""
 
@@ -2635,6 +2651,10 @@ msgstr ""
 msgid "Enable filter"
 msgstr ""
 
+#: src/settings/assistant_tools_view.zig:44
+msgid "Enable local file tools"
+msgstr ""
+
 #: src/settings/notification_filters_view.zig:72
 msgid "Enable notification filters"
 msgstr ""
@@ -2667,7 +2687,7 @@ msgstr ""
 msgid "End minute"
 msgstr ""
 
-#: src/settings/assistant_view.zig:197
+#: src/settings/assistant_view.zig:198
 msgid "Engine enabled"
 msgstr ""
 
@@ -2889,6 +2909,10 @@ msgstr ""
 msgid "Fog"
 msgstr ""
 
+#: src/settings/assistant_tools_view.zig:50
+msgid "Folder grants"
+msgstr ""
+
 #: src/settings/preferences_view.zig:288
 msgid "Follow Pearl"
 msgstr ""
@@ -2991,19 +3015,19 @@ msgstr ""
 msgid "GENERAL"
 msgstr ""
 
-#: src/settings/assistant_view.zig:158
+#: src/settings/assistant_view.zig:159
 msgid "GPU backend"
 msgstr ""
 
-#: src/settings/assistant_view.zig:164
+#: src/settings/assistant_view.zig:165
 msgid "GPU device"
 msgstr ""
 
-#: src/settings/assistant_view.zig:168
+#: src/settings/assistant_view.zig:169
 msgid "GPU layers (0 = automatic)"
 msgstr ""
 
-#: src/settings/assistant_view.zig:169
+#: src/settings/assistant_view.zig:170
 msgid "GPU memory target MiB (0 = automatic)"
 msgstr ""
 
@@ -3037,7 +3061,7 @@ msgctxt "aqueous.game_mode.gaps_inner.description"
 msgid "Gap between anchor and companion columns."
 msgstr ""
 
-#: src/settings/assistant_view.zig:224
+#: src/settings/assistant_view.zig:227
 msgid "Generation tokens (0 = model profile)"
 msgstr ""
 
@@ -3071,12 +3095,16 @@ msgstr ""
 msgid "Good signal"
 msgstr ""
 
-#: src/settings/assistant_view.zig:193
+#: src/settings/assistant_view.zig:194
 msgid "Google API search engine ID"
 msgstr ""
 
-#: src/settings/assistant_view.zig:195
+#: src/settings/assistant_view.zig:196
 msgid "Google's direct JSON API is closed to new customers and retires January 1, 2027. Existing accounts require an API key and engine ID."
+msgstr ""
+
+#: src/settings/assistant_tools_view.zig:51
+msgid "Grants take effect only after Apply & save. Symbolic links and hidden files are skipped, and existing files are never overwritten."
 msgstr ""
 
 #: src/settings/bar_view.zig:599
@@ -3281,7 +3309,7 @@ msgstr ""
 msgid "Installation failed or was cancelled. Check the package manager's repository, network or database-lock error, then retry Set up now."
 msgstr ""
 
-#: src/settings/assistant_view.zig:716
+#: src/settings/assistant_view.zig:722
 msgid "Installation failed or was cancelled. Check the package manager's repository, network or database-lock error, then retry Set up runtime. No repository was added or version pinned."
 msgstr ""
 
@@ -3383,7 +3411,7 @@ msgstr ""
 msgid "Keep existing setting"
 msgstr ""
 
-#: src/settings/assistant_view.zig:205
+#: src/settings/assistant_view.zig:206
 msgid "Keep key in Secret Service session collection only"
 msgstr ""
 
@@ -3472,7 +3500,7 @@ msgstr ""
 msgid "Launch and session"
 msgstr ""
 
-#: src/settings/assistant_view.zig:110
+#: src/settings/assistant_view.zig:111
 msgid "Launcher assistant"
 msgstr ""
 
@@ -3509,7 +3537,7 @@ msgstr ""
 msgid "Layout behavior"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:2867
+#: src/ui/surfaces/manager.zig:2909
 msgid "Layout change unavailable"
 msgstr ""
 
@@ -3745,7 +3773,7 @@ msgstr ""
 msgid "Low"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:939
+#: src/ui/surfaces/manager.zig:980
 msgid "Low battery"
 msgstr ""
 
@@ -3968,7 +3996,7 @@ msgstr ""
 msgid "Mirror target connector"
 msgstr ""
 
-#: src/settings/assistant_view.zig:113
+#: src/settings/assistant_view.zig:114
 msgid "Model"
 msgstr ""
 
@@ -4364,7 +4392,7 @@ msgstr ""
 msgid "Normalized geometry and source inventory"
 msgstr ""
 
-#: src/settings/assistant_view.zig:348
+#: src/settings/assistant_view.zig:353
 msgid "Not checked for this draft. Check the runtime and model before use."
 msgstr ""
 
@@ -4429,7 +4457,7 @@ msgstr ""
 msgid "Off"
 msgstr ""
 
-#: src/settings/assistant_view.zig:353
+#: src/settings/assistant_view.zig:358
 msgid "Off · Configure the assistant before enabling it"
 msgstr ""
 
@@ -4461,7 +4489,7 @@ msgstr ""
 msgid "On · Not connected"
 msgstr ""
 
-#: src/settings/assistant_view.zig:353
+#: src/settings/assistant_view.zig:358
 msgid "On · Open with Super + Space"
 msgstr ""
 
@@ -4540,6 +4568,10 @@ msgstr ""
 msgid "Open a media player to get started"
 msgstr ""
 
+#: src/settings/assistant_tools_view.zig:48
+msgid "Open apps"
+msgstr ""
+
 #: src/settings/palette_editor.zig:58
 msgid "Open file"
 msgstr ""
@@ -4590,7 +4622,7 @@ msgstr ""
 msgid "Operation complete."
 msgstr ""
 
-#: src/settings/assistant_view.zig:720
+#: src/settings/assistant_view.zig:726
 msgid "Operation complete. Apply saves your configuration selection."
 msgstr ""
 
@@ -4691,7 +4723,7 @@ msgstr ""
 msgid "Package exported."
 msgstr ""
 
-#: src/settings/assistant_view.zig:714 src/settings/semantic_view.zig:459
+#: src/settings/assistant_view.zig:720 src/settings/semantic_view.zig:459
 msgid "Package manager unavailable. Devario requires /usr/bin/shelly; Arch requires /usr/bin/pacman and /usr/bin/sudo."
 msgstr ""
 
@@ -4776,7 +4808,7 @@ msgstr ""
 msgid "Pause automatic idle"
 msgstr ""
 
-#: src/core/application.zig:179 src/ui/surfaces/manager.zig:1472
+#: src/core/application.zig:179 src/ui/surfaces/manager.zig:1514
 msgid "Pearl"
 msgstr ""
 
@@ -5173,7 +5205,7 @@ msgstr ""
 msgid "Preview only · committed appearance is unchanged. To select a package, choose Use theme, then Apply & save."
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:1677
+#: src/ui/surfaces/manager.zig:1719
 msgid "Previous"
 msgstr ""
 
@@ -5298,7 +5330,11 @@ msgstr ""
 msgid "Raw edits are retained as you type, including invalid TOML. A file cannot have both raw and structured edits; resolve overlaps in the request below."
 msgstr ""
 
-#: src/settings/assistant_view.zig:221
+#: src/settings/assistant_tools_view.zig:298
+msgid "Read"
+msgstr ""
+
+#: src/settings/assistant_view.zig:224
 msgid "Read search result pages"
 msgstr ""
 
@@ -5402,7 +5438,7 @@ msgstr ""
 msgid "Remainder layout, fallback and spacing"
 msgstr ""
 
-#: src/settings/autostart_view.zig:145 src/settings/notification_filters_view.zig:380 src/settings/semantic_view.zig:244 src/settings/window_rules_view.zig:284
+#: src/settings/assistant_tools_view.zig:173 src/settings/assistant_tools_view.zig:174 src/settings/autostart_view.zig:145 src/settings/notification_filters_view.zig:380 src/settings/semantic_view.zig:244 src/settings/window_rules_view.zig:284
 msgid "Remove"
 msgstr ""
 
@@ -5426,15 +5462,15 @@ msgstr ""
 msgid "Remove repository"
 msgstr ""
 
-#: src/settings/assistant_view.zig:209
+#: src/settings/assistant_view.zig:210
 msgid "Remove saved key now"
 msgstr ""
 
-#: src/settings/assistant_view.zig:130
+#: src/settings/assistant_view.zig:131
 msgid "Remove selected download"
 msgstr ""
 
-#: src/settings/assistant_view.zig:186
+#: src/settings/assistant_view.zig:187
 msgid "Remove this engine"
 msgstr ""
 
@@ -5744,7 +5780,7 @@ msgstr ""
 msgid "Running applications ({0})"
 msgstr ""
 
-#: src/settings/assistant_view.zig:135
+#: src/settings/assistant_view.zig:136
 msgid "Runtime & acceleration"
 msgstr ""
 
@@ -5752,15 +5788,15 @@ msgstr ""
 msgid "Runtime missing after setup. Use Set up runtime in Runtime & acceleration, then retry."
 msgstr ""
 
-#: src/settings/assistant_view.zig:712
+#: src/settings/assistant_view.zig:718
 msgid "Runtime missing. Use Set up runtime (install if needed)."
 msgstr ""
 
-#: src/settings/assistant_view.zig:151
+#: src/settings/assistant_view.zig:152
 msgid "Runtime not checked. Discovery and testing run only when requested."
 msgstr ""
 
-#: src/settings/assistant_view.zig:140
+#: src/settings/assistant_view.zig:141
 msgid "Runtime source"
 msgstr ""
 
@@ -5780,7 +5816,7 @@ msgstr ""
 msgid "SYSTEM"
 msgstr ""
 
-#: src/settings/assistant_view.zig:199
+#: src/settings/assistant_view.zig:200
 msgid "Safe search"
 msgstr ""
 
@@ -5813,7 +5849,7 @@ msgstr ""
 msgid "Save PNG"
 msgstr ""
 
-#: src/settings/assistant_view.zig:208
+#: src/settings/assistant_view.zig:209
 msgid "Save or replace key now"
 msgstr ""
 
@@ -5932,7 +5968,7 @@ msgctxt "aqueous.layout.options.scrolling.focus_follows_mouse_delay_ms.label"
 msgid "Scrolling pointer focus delay"
 msgstr ""
 
-#: src/settings/assistant_view.zig:191
+#: src/settings/assistant_view.zig:192
 msgid "SearXNG base URL"
 msgstr ""
 
@@ -5944,7 +5980,7 @@ msgstr ""
 msgid "Search actions or shortcuts…"
 msgstr ""
 
-#: src/settings/assistant_view.zig:178
+#: src/settings/assistant_view.zig:179
 msgid "Search all enabled engines (maximum 3)"
 msgstr ""
 
@@ -5976,7 +6012,7 @@ msgstr ""
 msgid "Search is unavailable"
 msgstr ""
 
-#: src/settings/assistant_view.zig:196
+#: src/settings/assistant_view.zig:197
 msgid "Search language"
 msgstr ""
 
@@ -6058,7 +6094,7 @@ msgstr ""
 msgid "Selected"
 msgstr ""
 
-#: src/settings/assistant_view.zig:117
+#: src/settings/assistant_view.zig:118
 msgid "Selected model"
 msgstr ""
 
@@ -6143,7 +6179,7 @@ msgstr ""
 msgid "Set up now (runtime and model)"
 msgstr ""
 
-#: src/settings/assistant_view.zig:148
+#: src/settings/assistant_view.zig:149
 msgid "Set up runtime (install if needed)"
 msgstr ""
 
@@ -6191,7 +6227,7 @@ msgstr ""
 msgid "Setup complete. Apply & save to start indexing."
 msgstr ""
 
-#: src/settings/assistant_view.zig:715 src/settings/semantic_view.zig:460
+#: src/settings/assistant_view.zig:721 src/settings/semantic_view.zig:460
 msgid "Setup needs a terminal: foot, Ghostty, kitty, alacritty, konsole or xterm. Install one and retry."
 msgstr ""
 
@@ -7032,7 +7068,7 @@ msgstr ""
 msgid "Stop indexing"
 msgstr ""
 
-#: src/settings/assistant_view.zig:502
+#: src/settings/assistant_view.zig:508
 msgid "Stop the current answer?"
 msgstr ""
 
@@ -7196,7 +7232,7 @@ msgctxt "aqueous.layout.slots.tertiary.label"
 msgid "Tertiary slot"
 msgstr ""
 
-#: src/settings/assistant_view.zig:211
+#: src/settings/assistant_view.zig:212
 msgid "Test connection now"
 msgstr ""
 
@@ -7218,6 +7254,10 @@ msgstr ""
 
 #: src/settings/autostart_view.zig:295
 msgid "That application could not be resolved. It may have been uninstalled."
+msgstr ""
+
+#: src/settings/assistant_tools_view.zig:273
+msgid "That folder is already granted."
 msgstr ""
 
 #: src/desktop/wallpapers.zig:265
@@ -7252,11 +7292,11 @@ msgstr ""
 msgid "The default profiles could not be restored."
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:1446
+#: src/ui/surfaces/manager.zig:1488
 msgid "The desktop action could not be completed."
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:1442
+#: src/ui/surfaces/manager.zig:1484
 msgid "The desktop action could not be confirmed."
 msgstr ""
 
@@ -7377,7 +7417,7 @@ msgstr ""
 msgid "The shared draft or snapshot changed. Your input is retained. Cancel and reopen the rule to review the latest version."
 msgstr ""
 
-#: src/settings/assistant_view.zig:704
+#: src/settings/assistant_view.zig:710
 msgid "The tested draft has changed. Check the new selection before use."
 msgstr ""
 
@@ -7477,7 +7517,7 @@ msgstr ""
 msgid "This profile's scheduler is not installed."
 msgstr ""
 
-#: src/settings/assistant_view.zig:717
+#: src/settings/assistant_view.zig:723
 msgid "This runtime lacks required capabilities. Use Set up runtime to install the repository version. If it still fails, your repository needs a compatible llama.cpp update."
 msgstr ""
 
@@ -7485,7 +7525,7 @@ msgstr ""
 msgid "This session does not support notification filters."
 msgstr ""
 
-#: src/settings/assistant_view.zig:718
+#: src/settings/assistant_view.zig:724
 msgid "This thinking model needs a runtime with reasoning-format support. Update llama.cpp or choose an Instruct model."
 msgstr ""
 
@@ -7679,7 +7719,7 @@ msgstr ""
 msgid "Unknown function or constant"
 msgstr ""
 
-#: src/settings/assistant_view.zig:226
+#: src/settings/assistant_view.zig:229
 msgid "Unload after idle seconds"
 msgstr ""
 
@@ -7728,7 +7768,7 @@ msgstr ""
 msgid "Usage: pearlctl status | report | quit | lock\n       pearlctl assistant status|show|stop|clear|release|cancel\n       pearlctl semantic status|index|stop|delete\n       pearlctl night-light status|on|off|toggle|resume|retry\n       pearlctl clipboard status|show|toggle|clear\n       pearlctl clipboard select|delete --generation ENTRY_ID\n       pearlctl migrate dms --input SETTINGS [--session-file SESSION] [--base PEARL_JSON] [--bundle NEW_DIRECTORY]\n       pearlctl preferences apply --revision N --file PREFERENCES_JSON\n       pearlctl dock show|hide [--output ID]\n       pearlctl dock pin|unpin --text DESKTOP_ID [--output ID]\n       pearlctl capture status|show|cancel\n       pearlctl wm action --text ACTION_JSON\n       pearlctl capture windows [--offset N]\n       pearlctl capture window --text TOPLEVEL_ID\n       pearlctl capture output [--output ID]\n       pearlctl capture region --text X,Y,WIDTH,HEIGHT [--output ID]\n       pearlctl capture copy --generation N\n       pearlctl capture save --generation N [--path /absolute/new.png]\n       pearlctl lifecycle status\n       pearlctl lifecycle action --text lock|suspend|hibernate|logout|cancel|inhibit|uninhibit\n       pearlctl lifecycle action --text confirm --generation N\n       pearlctl aqueous show [--section SECTION] (legacy --text SECTION accepted)\n       pearlctl aqueous status|refresh|validate|apply|discard|rebase|reload\n       pearlctl aqueous keep|revert\n       pearlctl aqueous record --text FIELD_ID\n       pearlctl aqueous draft --text JSON\n       pearlctl settings show [--page PAGE] [--section AQUEOUS_SECTION] [--output ID]\n       Settings pages: overview, appearance, network, bluetooth, sound, power,\n                       bar, notifications, session, aqueous, advanced\n       Aqueous sections: appearance, layouts, input, keybinds, rules, displays\n                       (advanced opens the shared Advanced page)\n       Repeated settings launches activate the window; they never toggle it closed.\n       pearlctl plugins refresh\n       pearlctl plugins list [--offset N]\n       pearlctl plugins inspect|reload --path ID\n       pearlctl plugins enable --path ID --text PACKAGE_SHA256 --revision N\n       pearlctl plugins disable --path ID --revision N\n       pearlctl preferences status|reload\n       pearlctl preferences apply --revision N --text JSON\n       pearlctl popup show|toggle [--output ID]\n       pearlctl popup hide\n       pearlctl bar set --output ID --edge top|right|bottom|left --size 32..160\n       pearlctl frame set --output ID --edge EDGE --size 0..160\n       pearlctl osd show --text TEXT [--output ID] [--duration 100..10000]\n\n       pearlctl launcher show|hide|toggle [--output ID]\n       pearlctl control-center show|toggle [--output ID] [--page PAGE]\n       PAGE: overview (default), sound, network, bluetooth, power\n       Opens the compact flyout. Toggle closes the same page or switches to another.\n       Status popup.page reports its route; invalid pages leave the flyout unchanged.\n       pearlctl window-switcher next|previous|dismiss [--output ID]\n         Cycle all workspaces/displays on updated Aqueous; output anchors the switcher.\n       pearlctl running-apps show [--output ID]\n       pearlctl desktop focus [--output ID]\n       pearlctl calendar toggle [--output ID]\n       pearlctl overview toggle [--output ID]\n       pearlctl layout get|set --output ID [--layout NAME]\n       pearlctl bar groups --output ID --left ITEMS --center ITEMS --right ITEMS\n       ITEMS: comma-separated launcher,workspaces,title,clock,keyboard,overview,control,audio,battery,network,bluetooth,notifications,media,tray,clipboard\n       Also clock:ID for instances defined in the output's effective bar.clocks preferences.\n\n       pearlctl notifications|media|tray toggle [--output ID]\n       pearlctl session status [--offset N]\n       pearlctl session action --command COMMAND [--generation N] [--notification ID]\n                               [--position MICROSECONDS] [--menu-id ID --revision N] [--text ACTION_KEY]\n       See docs/SESSION_SERVICES.md for commands and identity fields.\n\n       pearlctl connectivity status [--offset N]\n       pearlctl connectivity action --service network|bluetooth --action ACTION --generation N [--path PATH]\n       pearlctl services status [--offset N]\n       pearlctl audio set --kind sink|source|playback|recording [--generation N --device ID]\n                          [--volume 0..100] [--mute true|false] [--default true] [--target ID]\n       pearlctl brightness set --percent 0..100 [--output NAME_OR_DEVICE_ID]\n       pearlctl brightness adjust --delta -100..100 [--output NAME_OR_DEVICE_ID]\n       pearlctl profile set --profile power-saver|balanced|performance\n\n       pearlctl report: write a bounded support report (environment, status,\n       recent journal lines) to ~/.local/state/pearl/report-*.log and print\n       its path. Contents and retention: docs/LOGGING.md.\n\nUses the current AQUEOUS_SOCKET, WAYLAND_DISPLAY and XDG_RUNTIME_DIR.\nOutput IDs come from `pearlctl status`. Replies are Pearl control v1 JSON.\n\nAny command also accepts --log-level error|warning|info|debug and\n--log-scopes LIST (all, or comma-separated scopes; ~scope excludes one).\n"
 msgstr ""
 
-#: src/settings/assistant_view.zig:165
+#: src/settings/assistant_view.zig:166
 msgid "Use CPU if the selected GPU is unavailable"
 msgstr ""
 
@@ -7749,7 +7789,7 @@ msgctxt "aqueous.input.touchpad.tap.description"
 msgid "Use a tap as a primary click."
 msgstr ""
 
-#: src/settings/assistant_view.zig:198
+#: src/settings/assistant_view.zig:199
 msgid "Use as default engine"
 msgstr ""
 
@@ -7887,7 +7927,7 @@ msgstr ""
 msgid "Verify embedding model"
 msgstr ""
 
-#: src/settings/assistant_view.zig:129
+#: src/settings/assistant_view.zig:130
 msgid "Verify model and test tools locally"
 msgstr ""
 
@@ -8037,6 +8077,10 @@ msgstr ""
 msgid "When a notification matches"
 msgstr ""
 
+#: src/settings/assistant_tools_view.zig:45
+msgid "When enabled and saved, the assistant can read and, with permission, create or delete files only inside the folders you grant below. It can never run shell commands or programs."
+msgstr ""
+
 #: tests/fixtures/aqueous-master/snapshot.json
 msgctxt "aqueous.layout.options.scrolling.new_window_position.description"
 msgid "Where new windows are placed relative to the focused window; any explicit position overrides portrait stacking."
@@ -8152,11 +8196,11 @@ msgstr ""
 msgid "Windows, columns and viewport"
 msgstr ""
 
-#: src/settings/assistant_view.zig:600 src/settings/semantic_view.zig:352 src/settings/themes_view.zig:152
+#: src/settings/assistant_view.zig:606 src/settings/semantic_view.zig:352 src/settings/themes_view.zig:152
 msgid "Working…"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:1759
+#: src/ui/surfaces/manager.zig:1801
 msgid "Workspace"
 msgstr ""
 
@@ -8694,7 +8738,7 @@ msgctxt "aqueous.layout.options.reverse-dwindle.start_axis.option"
 msgid "horizontal"
 msgstr ""
 
-#: src/settings/assistant_view.zig:192
+#: src/settings/assistant_view.zig:193
 msgid "https://search.example.org"
 msgstr ""
 
@@ -9638,7 +9682,7 @@ msgstr ""
 msgid "{0} with its own defaults"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:956
+#: src/ui/surfaces/manager.zig:997
 msgid "{0} {1}"
 msgstr ""
 
@@ -9650,7 +9694,7 @@ msgstr ""
 msgid "{0} {1}{2}{3}"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:961
+#: src/ui/surfaces/manager.zig:1002
 msgid "{0} · {1}%"
 msgstr ""
 
@@ -9658,11 +9702,11 @@ msgstr ""
 msgid "{0} — {1} {2}, all workspaces{3}{4}"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:948
+#: src/ui/surfaces/manager.zig:989
 msgid "{0}% charge remaining"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:948
+#: src/ui/surfaces/manager.zig:989
 msgid "{0}% remaining · about {1} h {2} min left"
 msgstr ""
 
