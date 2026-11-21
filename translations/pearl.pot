@@ -174,7 +174,7 @@ msgstr ""
 msgid "Aa     +1"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:991
+#: src/ui/surfaces/manager.zig:1002
 msgid "About {0} h {1} min left"
 msgstr ""
 
@@ -246,7 +246,7 @@ msgstr ""
 msgid "Add another clock…"
 msgstr ""
 
-#: src/desktop/icons/view.zig:457
+#: src/desktop/icons/view.zig:473
 msgid "Add application shortcut…"
 msgstr ""
 
@@ -315,7 +315,7 @@ msgstr ""
 msgid "Add setting"
 msgstr ""
 
-#: src/desktop/icons/view.zig:501
+#: src/desktop/icons/view.zig:517
 msgid "Add shortcut"
 msgstr ""
 
@@ -431,11 +431,11 @@ msgstr ""
 msgid "Allow keyboard and mouse activity"
 msgstr ""
 
-#: src/desktop/icons/view.zig:481
+#: src/desktop/icons/view.zig:497
 msgid "Allow launching"
 msgstr ""
 
-#: src/desktop/icons/view.zig:454
+#: src/desktop/icons/view.zig:470
 msgid "Allow launching…"
 msgstr ""
 
@@ -448,7 +448,7 @@ msgstr ""
 msgid "Allow the assistant to open applications you ask for. Opening apps is separate from file access."
 msgstr ""
 
-#: src/desktop/icons/view.zig:480
+#: src/desktop/icons/view.zig:496
 msgid "Allow this exact launcher to start applications?"
 msgstr ""
 
@@ -558,7 +558,7 @@ msgstr ""
 msgid "Applications appear here when they play or record audio."
 msgstr ""
 
-#: src/desktop/icons/view.zig:487
+#: src/desktop/icons/view.zig:503
 msgid "Applications are still loading. Retry shortly."
 msgstr ""
 
@@ -654,7 +654,7 @@ msgstr ""
 msgid "Aqueous · Sample desktop"
 msgstr ""
 
-#: src/desktop/icons/view.zig:458
+#: src/desktop/icons/view.zig:474
 msgid "Arrange by name"
 msgstr ""
 
@@ -898,7 +898,7 @@ msgstr ""
 msgid "Battery service unavailable"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:981
+#: src/ui/surfaces/manager.zig:992
 msgid "Battery very low"
 msgstr ""
 
@@ -1262,7 +1262,7 @@ msgctxt "aqueous.input.repeat_rate.description"
 msgid "Characters per second; zero disables repeat."
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:998
+#: src/ui/surfaces/manager.zig:1009
 msgid "Charge is running low."
 msgstr ""
 
@@ -1682,7 +1682,7 @@ msgstr ""
 msgid "Connect and manage your wireless devices."
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:994
+#: src/ui/surfaces/manager.zig:1005
 msgid "Connect power now to avoid losing unsaved work."
 msgstr ""
 
@@ -1839,7 +1839,7 @@ msgstr ""
 msgid "Could not retain this edit. The shared draft has not been overwritten; reopen settings to load it."
 msgstr ""
 
-#: src/desktop/icons/view.zig:180
+#: src/desktop/icons/view.zig:191
 msgid "Could not save desktop positions. Changes remain in memory; try arranging again."
 msgstr ""
 
@@ -1851,11 +1851,11 @@ msgstr ""
 msgid "Could not save the launcher choice. Try again."
 msgstr ""
 
-#: src/desktop/icons/view.zig:603
+#: src/desktop/icons/view.zig:617
 msgid "Could not start file operation."
 msgstr ""
 
-#: src/desktop/icons/view.zig:410
+#: src/desktop/icons/view.zig:426
 msgid "Could not store position."
 msgstr ""
 
@@ -1871,7 +1871,7 @@ msgstr ""
 msgid "Create"
 msgstr ""
 
-#: src/desktop/icons/view.zig:459
+#: src/desktop/icons/view.zig:475
 msgid "Create Desktop folder"
 msgstr ""
 
@@ -1879,7 +1879,7 @@ msgstr ""
 msgid "Create a palette or choose Edit colors on a local palette."
 msgstr ""
 
-#: src/desktop/icons/view.zig:508
+#: src/desktop/icons/view.zig:524
 msgid "Create folder"
 msgstr ""
 
@@ -1891,7 +1891,7 @@ msgstr ""
 msgid "Critical"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:982
+#: src/ui/surfaces/manager.zig:993
 msgid "Critical battery level"
 msgstr ""
 
@@ -2025,7 +2025,7 @@ msgstr ""
 msgid "Cycle windows requires updated Aqueous"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:1720
+#: src/ui/surfaces/manager.zig:1731
 msgid "Cycle →"
 msgstr ""
 
@@ -2147,7 +2147,7 @@ msgstr ""
 msgid "Desktop behavior"
 msgstr ""
 
-#: src/desktop/icons/view.zig:70
+#: src/desktop/icons/view.zig:72
 msgid "Desktop files"
 msgstr ""
 
@@ -2193,7 +2193,7 @@ msgstr ""
 msgid "Desktop preview"
 msgstr ""
 
-#: src/desktop/icons/view.zig:463
+#: src/desktop/icons/view.zig:479
 msgid "Desktop settings…"
 msgstr ""
 
@@ -3537,7 +3537,7 @@ msgstr ""
 msgid "Layout behavior"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:2909
+#: src/ui/surfaces/manager.zig:2930
 msgid "Layout change unavailable"
 msgstr ""
 
@@ -3688,7 +3688,7 @@ msgstr ""
 msgid "Load the next 50 items"
 msgstr ""
 
-#: src/desktop/icons/view.zig:154
+#: src/desktop/icons/view.zig:165
 msgid "Loading Desktop…"
 msgstr ""
 
@@ -3773,7 +3773,7 @@ msgstr ""
 msgid "Low"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:980
+#: src/ui/surfaces/manager.zig:991
 msgid "Low battery"
 msgstr ""
 
@@ -4079,7 +4079,7 @@ msgctxt "aqueous.input.mouse_follows_focus.description"
 msgid "Move the pointer into newly focused windows, including keyboard and wheel bindings. Hover and click focus do not move it. Output navigation still moves the pointer when disabled."
 msgstr ""
 
-#: src/desktop/icons/view.zig:452
+#: src/desktop/icons/view.zig:468
 msgid "Move to Trash"
 msgstr ""
 
@@ -4108,7 +4108,7 @@ msgstr ""
 msgid "Mystify"
 msgstr ""
 
-#: src/desktop/icons/view.zig:505 src/settings/scheduler_view.zig:408
+#: src/desktop/icons/view.zig:521 src/settings/scheduler_view.zig:408
 msgid "Name"
 msgstr ""
 
@@ -4166,7 +4166,7 @@ msgstr ""
 msgid "Never"
 msgstr ""
 
-#: src/desktop/icons/view.zig:456
+#: src/desktop/icons/view.zig:472
 msgid "New folder…"
 msgstr ""
 
@@ -4528,7 +4528,7 @@ msgstr ""
 msgid "Opaque"
 msgstr ""
 
-#: src/desktop/icons/view.zig:450 src/portal/notification.zig:456
+#: src/desktop/icons/view.zig:466 src/portal/notification.zig:456
 msgid "Open"
 msgstr ""
 
@@ -4544,7 +4544,7 @@ msgstr ""
 msgid "Open CPU scheduler profiles"
 msgstr ""
 
-#: src/desktop/icons/view.zig:461
+#: src/desktop/icons/view.zig:477
 msgid "Open Desktop folder"
 msgstr ""
 
@@ -4808,7 +4808,7 @@ msgstr ""
 msgid "Pause automatic idle"
 msgstr ""
 
-#: src/core/application.zig:179 src/ui/surfaces/manager.zig:1514
+#: src/core/application.zig:179 src/ui/surfaces/manager.zig:1525
 msgid "Pearl"
 msgstr ""
 
@@ -5205,7 +5205,7 @@ msgstr ""
 msgid "Preview only · committed appearance is unchanged. To select a package, choose Use theme, then Apply & save."
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:1719
+#: src/ui/surfaces/manager.zig:1730
 msgid "Previous"
 msgstr ""
 
@@ -5478,11 +5478,11 @@ msgstr ""
 msgid "Remove trust"
 msgstr ""
 
-#: src/desktop/icons/view.zig:508
+#: src/desktop/icons/view.zig:524
 msgid "Rename"
 msgstr ""
 
-#: src/desktop/icons/view.zig:451
+#: src/desktop/icons/view.zig:467
 msgid "Rename…"
 msgstr ""
 
@@ -5612,7 +5612,7 @@ msgstr ""
 msgid "Resume saved policy"
 msgstr ""
 
-#: src/desktop/icons/view.zig:462 src/settings/bar_view.zig:1244 src/settings/window.zig:186
+#: src/desktop/icons/view.zig:478 src/settings/bar_view.zig:1244 src/settings/window.zig:186
 msgid "Retry"
 msgstr ""
 
@@ -5897,7 +5897,7 @@ msgstr ""
 msgid "Saved networks"
 msgstr ""
 
-#: src/desktop/icons/view.zig:180
+#: src/desktop/icons/view.zig:191
 msgid "Saved positions could not be read. Automatic positions are shown; the old file will be kept for recovery."
 msgstr ""
 
@@ -6969,7 +6969,7 @@ msgstr ""
 msgid "Some changes have not reached Pearl. Keep this window open to recover them, or close and discard only those untransferred changes. Drafts already retained by Pearl remain in the session."
 msgstr ""
 
-#: src/desktop/icons/view.zig:623
+#: src/desktop/icons/view.zig:637
 msgid "Some desktop actions succeeded; others failed. Check the Desktop folder before retrying."
 msgstr ""
 
@@ -7292,11 +7292,11 @@ msgstr ""
 msgid "The default profiles could not be restored."
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:1488
+#: src/ui/surfaces/manager.zig:1499
 msgid "The desktop action could not be completed."
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:1484
+#: src/ui/surfaces/manager.zig:1495
 msgid "The desktop action could not be confirmed."
 msgstr ""
 
@@ -7477,7 +7477,7 @@ msgstr ""
 msgid "This kernel does not support sched_ext schedulers."
 msgstr ""
 
-#: src/desktop/icons/view.zig:562
+#: src/desktop/icons/view.zig:576
 msgid "This launcher is invalid or a symbolic link. Open Desktop folder to inspect it."
 msgstr ""
 
@@ -8200,7 +8200,7 @@ msgstr ""
 msgid "Working…"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:1801
+#: src/ui/surfaces/manager.zig:1812
 msgid "Workspace"
 msgstr ""
 
@@ -9682,7 +9682,7 @@ msgstr ""
 msgid "{0} with its own defaults"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:997
+#: src/ui/surfaces/manager.zig:1008
 msgid "{0} {1}"
 msgstr ""
 
@@ -9694,7 +9694,7 @@ msgstr ""
 msgid "{0} {1}{2}{3}"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:1002
+#: src/ui/surfaces/manager.zig:1013
 msgid "{0} · {1}%"
 msgstr ""
 
@@ -9702,11 +9702,11 @@ msgstr ""
 msgid "{0} — {1} {2}, all workspaces{3}{4}"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:989
+#: src/ui/surfaces/manager.zig:1000
 msgid "{0}% charge remaining"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:989
+#: src/ui/surfaces/manager.zig:1000
 msgid "{0}% remaining · about {1} h {2} min left"
 msgstr ""
 

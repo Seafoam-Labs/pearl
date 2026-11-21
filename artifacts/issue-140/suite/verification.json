@@ -1,0 +1,14 @@
+{
+  "status": "failed",
+  "checks": {
+    "fresh-install-enabled-localized-desktop": true,
+    "pointer-select-background-focus": true,
+    "keyboard-navigation": true,
+    "folders-and-documents-use-default-handler": true,
+    "unapproved-launcher-does-not-execute": true,
+    "context-menu-open-retains-approval-prompt": true,
+    "explicit-desktop-keyboard-focus": true,
+    "explicit-approval-content-bound-and-launch": true
+  },
+  "error": "private session condition timed out"
+}

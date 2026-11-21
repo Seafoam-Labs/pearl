@@ -1,0 +1,80 @@
+ts=2026-11-21T22:20:20Z pid=213353 info(platform): event=background-effect-owner owner=gtk gtk=4.24.1
+ts=2026-11-21T22:20:20Z pid=213353 info(desktop): event=steam-library-sync games=0 created=0 removed=0
+ts=2026-11-21T22:20:20Z pid=213353 info(platform): event=blur-capability available=false
+ts=2026-11-21T22:20:20Z pid=213353 info(services): event=sched-profile-systemd result=polling
+ts=2026-11-21T22:20:20Z pid=213353 info(pearl): event=aqueous-availability state=connecting
+ts=2026-11-21T22:20:20Z pid=213353 info(pearl): event=ready mode=session
+ts=2026-11-21T22:20:20Z pid=213353 info(desktop): event=app-index-ready entries=79 truncated=false
+ts=2026-11-21T22:20:20Z pid=213353 debug(aqueous): event=ipc-request op=hello
+ts=2026-11-21T22:20:20Z pid=213353 debug(aqueous): event=ipc-request op=hello
+ts=2026-11-21T22:20:20Z pid=213353 debug(aqueous): event=ipc-response op=hello
+ts=2026-11-21T22:20:20Z pid=213353 debug(aqueous): event=ipc-response op=hello
+ts=2026-11-21T22:20:20Z pid=213353 info(pearl): event=aqueous-availability state=subscribing
+ts=2026-11-21T22:20:20Z pid=213353 debug(aqueous): event=ipc-request op=subscribe
+ts=2026-11-21T22:20:20Z pid=213353 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-21T22:20:20Z pid=213353 debug(aqueous): event=ipc-response op=subscribe
+ts=2026-11-21T22:20:20Z pid=213353 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-21T22:20:20Z pid=213353 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-21T22:20:20Z pid=213353 info(pearl): event=aqueous-availability state=ready
+ts=2026-11-21T22:20:20Z pid=213353 info(services): event=autostart-run entries=4 launched=0 reason=session-already-launched
+ts=2026-11-21T22:20:20Z pid=213353 info(ui): event=output-mapped id=1 connector=HEADLESS-2 scale=1 renderer=GskCairoRenderer gpu_agreement=unverified session_hash=6ea877ab3f3b38d9
+ts=2026-11-21T22:20:20Z pid=213353 info(ui): event=output-mapped id=2 connector=HEADLESS-1 scale=1 renderer=GskCairoRenderer gpu_agreement=unverified session_hash=6ea877ab3f3b38d9
+ts=2026-11-21T22:20:20Z pid=213353 info(pearl): event=settings-backend-ready session_hash=6ea877ab3f3b38d9
+ts=2026-11-21T22:20:20Z pid=213353 info(pearl): event=control-ready session_hash=6ea877ab3f3b38d9
+ts=2026-11-21T22:20:20Z pid=213353 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to get properties: Process org.freedesktop.systemd1 exited with status 1"
+ts=2026-11-21T22:20:20Z pid=213353 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-21T22:20:20Z pid=213353 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-21T22:20:20Z pid=213353 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-21T22:20:20Z pid=213353 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-21T22:20:21Z pid=213353 info(config): event=preferences-applied revision=1 mode=static cache=false
+ts=2026-11-21T22:20:21Z pid=213353 info(config): event=wallpaper-applications-applied generation=2 elapsed_us=80592 success=true
+ts=2026-11-21T22:20:21Z pid=213353 info(config): event=preferences-applied revision=2 mode=static cache=false
+ts=2026-11-21T22:20:21Z pid=213353 info(config): event=wallpaper-applications-applied generation=3 elapsed_us=73422 success=true
+ts=2026-11-21T22:20:21Z pid=213353 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-21T22:20:21Z pid=213353 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-21T22:20:21Z pid=213353 debug(ui): event=popup-close-reason reason=show-pane
+ts=2026-11-21T22:20:21Z pid=213353 debug(ui): event=popup-opened output=1
+ts=2026-11-21T22:20:21Z pid=213353 debug(desktop): event=launcher-results count=53 shown=53 publish_us=7569
+ts=2026-11-21T22:20:21Z pid=213353 debug(desktop): event=launcher-results count=53 shown=53 publish_us=2137
+ts=2026-11-21T22:20:21Z pid=213353 debug(desktop): event=launcher-painted latency_us=13683
+ts=2026-11-21T22:20:21Z pid=213353 debug(ui): event=popup-close-reason reason=other-output-click
+ts=2026-11-21T22:20:21Z pid=213353 debug(ui): event=popup-closed
+ts=2026-11-21T22:20:21Z pid=213353 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-21T22:20:21Z pid=213353 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-21T22:20:22Z pid=213353 info(config): event=preferences-applied revision=3 mode=static cache=false
+ts=2026-11-21T22:20:22Z pid=213353 info(config): event=wallpaper-applications-applied generation=5 elapsed_us=73573 success=true
+ts=2026-11-21T22:20:22Z pid=213353 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to get properties: Process org.freedesktop.systemd1 exited with status 1"
+ts=2026-11-21T22:20:22Z pid=213353 info(config): event=preferences-applied revision=4 mode=static cache=false
+ts=2026-11-21T22:20:22Z pid=213353 info(config): event=wallpaper-applications-applied generation=7 elapsed_us=82643 success=true
+ts=2026-11-21T22:20:23Z pid=213353 info(config): event=preferences-applied revision=5 mode=static cache=false
+ts=2026-11-21T22:20:23Z pid=213353 info(config): event=wallpaper-applications-applied generation=9 elapsed_us=82482 success=true
+ts=2026-11-21T22:20:23Z pid=213353 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-21T22:20:23Z pid=213353 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-21T22:20:23Z pid=213353 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-21T22:20:23Z pid=213353 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-21T22:20:23Z pid=213353 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-21T22:20:23Z pid=213353 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-21T22:20:23Z pid=213353 info(config): event=preferences-applied revision=6 mode=static cache=false
+ts=2026-11-21T22:20:24Z pid=213353 info(config): event=wallpaper-applications-applied generation=11 elapsed_us=82833 success=true
+ts=2026-11-21T22:20:24Z pid=213353 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to get properties: Process org.freedesktop.systemd1 exited with status 1"
+ts=2026-11-21T22:20:25Z pid=213353 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-21T22:20:26Z pid=213353 info(config): event=preferences-applied revision=7 mode=static cache=false
+ts=2026-11-21T22:20:26Z pid=213353 info(config): event=wallpaper-applications-applied generation=13 elapsed_us=94626 success=true
+ts=2026-11-21T22:20:26Z pid=213353 info(config): event=preferences-applied revision=8 mode=static cache=false
+ts=2026-11-21T22:20:26Z pid=213353 info(config): event=wallpaper-applications-applied generation=15 elapsed_us=226566 success=true
+ts=2026-11-21T22:20:26Z pid=213353 info(config): event=preferences-applied revision=9 mode=gtk cache=false
+ts=2026-11-21T22:20:26Z pid=213353 info(config): event=wallpaper-applications-applied generation=17 elapsed_us=59851 success=false
+ts=2026-11-21T22:20:27Z pid=213353 info(config): event=preferences-applied revision=10 mode=static cache=false
+ts=2026-11-21T22:20:27Z pid=213353 info(config): event=wallpaper-applications-applied generation=19 elapsed_us=151216 success=true
+ts=2026-11-21T22:20:27Z pid=213353 info(config): event=preferences-applied revision=11 mode=static cache=false
+ts=2026-11-21T22:20:27Z pid=213353 info(config): event=wallpaper-applications-applied generation=21 elapsed_us=73977 success=true
+ts=2026-11-21T22:20:27Z pid=213353 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-11-21T22:20:27Z pid=213353 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-11-21T22:20:27Z pid=213353 info(desktop): event=app-index-ready entries=79 truncated=false
+ts=2026-11-21T22:20:28Z pid=213353 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to get properties: Process org.freedesktop.systemd1 exited with status 1"
+ts=2026-11-21T22:20:28Z pid=213353 info(config): event=preferences-applied revision=12 mode=static cache=false
+ts=2026-11-21T22:20:28Z pid=213353 info(config): event=wallpaper-applications-applied generation=23 elapsed_us=73861 success=true
+ts=2026-11-21T22:20:29Z pid=213353 info(pearl): event=stopping reason=control-quit pending=false
+ts=2026-11-21T22:20:29Z pid=213353 info(pearl): event=aqueous-availability state=stopped
+ts=2026-11-21T22:20:29Z pid=213353 info(pearl): event=cleanup pending=false watched_objects=0
+ts=2026-11-21T22:20:29Z pid=213353 info(pearl): event=stopped

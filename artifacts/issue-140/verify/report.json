@@ -1,0 +1,15 @@
+{
+  "issue": "Seafoam-Labs/pearl#140",
+  "checks": {
+    "primary_menu": true,
+    "secondary_no_icons": true,
+    "secondary_menu": true,
+    "primary_menu_untouched": true,
+    "secondary_shortcut_action": true,
+    "arrange_from_secondary": true,
+    "locked_secondary": true,
+    "locked_no_menu": true,
+    "disabled_secondary": true,
+    "disabled_no_menu": true
+  }
+}
