@@ -111,11 +111,12 @@ def main():
                     runtime=dict(source="custom", executable=str(args.runtime.resolve())) if args.runtime else dict(source="packaged"),
                     providers=[dict(id="google", kind="google", name="Google", endpoint=f"http://127.0.0.1:{server.server_port}")])
                 started = time.monotonic()
-                request("ask", question="What is the difference between RAM and storage?", config=config)
+                request("ask", question="Search for the difference between RAM and storage and explain it with source citations.", config=config)
                 result = wait_for(lambda: (v if not (v := state())["busy"] else False), 90)
                 assert len(result["turns"]) == 1 and result["sources"] == 1, result
                 assert Search.requests, result
                 assert "[1]" in result["turns"][0]["answer"], result
+                assert not result["error_code"] and result["status"].startswith("Answer complete."), result
                 checks["real_model_google_tool_round_trip"] = result
                 report["fixture_measurements"] = {"cold_answer_seconds": round(time.monotonic() - started, 3), "processes_after_answer": memory_snapshot(process.pid), "scope": "Local search fixture on this test host; not low-end hardware qualification."}
                 ipc = IPC(session)
@@ -127,8 +128,12 @@ def main():
                 capture(session, args.output / "conversation")
                 request("test_submit", question="Will adding RAM give me more space for saved files?")
                 followup = wait_for(lambda: (v if not (v := state())["busy"] else False), 90)
-                assert len(followup["turns"]) == 2, followup
+                assert len(followup["turns"]) == 2 and followup["turns"][1]["answer"].strip(), followup
+                assert not followup["error_code"] and followup["status"].startswith("Answer complete."), followup
+                # Existing sources are session data, not a requirement to search
+                # again or cite a general-knowledge follow-up.
                 checks["followup_preserves_session_history"] = followup
+                checks["completed_status_is_neutral"] = True
                 request("test_hide")
                 assert not state()["visible"]
                 request("resume", config=config)
@@ -142,7 +147,9 @@ def main():
                 request("resume", config=config)
                 assert not state()["suspended"]
                 request("clear")
-                assert not state()["turns"] and not state()["runtime"]
+                cleared = state()
+                assert not cleared["turns"] and not cleared["runtime"]
+                assert cleared["status"] == "Conversation history cleared.", cleared
                 checks["clear_erases_history"] = True
                 request("ask", question="What is RAM?", config=config)
                 wait_for(lambda: state()["busy"], 5)

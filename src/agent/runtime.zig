@@ -26,6 +26,8 @@ pub const Runtime = struct {
     gpu: bool = false,
     offload_layers: u16 = 0,
     fallback_reason: []const u8 = "",
+    tools_available: bool = false,
+    tools_warning: []const u8 = "",
     inference_seconds: u16 = 60,
     check_tokens: u32 = 256,
     lockfd: c_int = -1,
@@ -193,7 +195,7 @@ pub const Runtime = struct {
         const alias: [:0]const u8 = if (mode == .embedding) embed.alias else "pearl-local";
         var args: std.ArrayList(?[*:0]const u8) = .empty;
         try args.appendSlice(alloc, &.{ info.executable, "-m", filename, "--alias", alias, "--host", "127.0.0.1", "--port", port_z, "--api-key-file", temp });
-        if (mode == .chat) try args.append(alloc, "--jinja");
+        if (mode == .chat and info.has("--jinja")) try args.append(alloc, "--jinja");
         try args.appendSlice(alloc, &.{ "--ctx-size", context, "--parallel", "1", "--threads", threads, "--threads-batch", threads, "--threads-http", "2", "--batch-size", if (mode == .embedding) "2048" else "128", "--ubatch-size", if (mode == .embedding) "512" else "64", "--gpu-layers", if (self.gpu) try std.fmt.allocPrintSentinel(alloc, "{d}", .{layers}, 0) else "0" });
         if (mode == .embedding) {
             try args.append(alloc, "--embeddings");
@@ -229,9 +231,10 @@ pub const Runtime = struct {
                 const unauth_path = if (mode == .embedding) "/v1/embeddings" else "/v1/chat/completions";
                 const unauth = try fetch.request(alloc, .{ .url = try std.fmt.allocPrint(alloc, "{s}{s}", .{ self.base, unauth_path }), .body = "{}", .private_endpoint = true, .timeout_seconds = 2 }, cancel);
                 if (unauth.status != 401 and unauth.status != 403) return error.RuntimeAuthenticationMissing;
+                var tools_warning: []const u8 = "";
                 if (mode == .chat) {
                     _ = try @import("llama.zig").tokenCount(alloc, self, "Pearl local compatibility check", cancel);
-                    try @import("model_check.zig").check(alloc, self, cancel);
+                    tools_warning = try @import("model_check.zig").qualify(alloc, self, info.has("--jinja"), cancel);
                 } else {
                     // Rejects non-finite, zero or wrong-width vectors before any
                     // document is indexed (silent-degradation failure class).
@@ -240,6 +243,9 @@ pub const Runtime = struct {
                 try self.monitor();
                 if (self.gpu and self.offload_layers == 0) return error.GpuOffloadUnverified;
                 if (!std.mem.eql(u8, info.fingerprint, try probe.fingerprint(alloc, info.executable))) return error.RuntimeChanged;
+                if (cancel.isCancelled() != 0) return error.Cancelled;
+                self.tools_available = mode == .chat and tools_warning.len == 0;
+                self.tools_warning = tools_warning;
                 self.deadline = 0;
                 return;
             }
@@ -287,6 +293,147 @@ pub fn recoverable(err: anyerror) bool {
         else => false,
     };
 }
+// The Python fixture is copied into private temporary storage and serves only
+// deterministic local responses. No model download, GPU or search is involved.
+const QualificationFixture = struct {
+    directory: [:0]const u8,
+    executable: [:0]const u8,
+    scenario: [:0]const u8,
+    requests: [:0]const u8,
+    model: [:0]const u8,
+    fn write(path: [:0]const u8, bytes: []const u8) !void {
+        const fd = std.c.open(path, .{ .ACCMODE = .WRONLY, .CREAT = true, .TRUNC = true, .CLOEXEC = true }, @as(c_uint, 0o700));
+        if (fd < 0) return error.FixtureWriteFailed;
+        defer _ = std.c.close(fd);
+        var offset: usize = 0;
+        while (offset < bytes.len) {
+            const n = std.c.write(fd, bytes[offset..].ptr, bytes.len - offset);
+            if (n <= 0) return error.FixtureWriteFailed;
+            offset += @intCast(n);
+        }
+    }
+    fn init(alloc: std.mem.Allocator) !QualificationFixture {
+        var pattern = "/tmp/pearl-runtime-qualification-XXXXXX".*;
+        const directory = glib.mkdtemp(&pattern) orelse return error.FixtureDirectoryFailed;
+        const self: QualificationFixture = .{
+            .directory = try alloc.dupeSentinel(u8, std.mem.span(directory), 0),
+            .executable = try std.fmt.allocPrintSentinel(alloc, "{s}/qualification-fixture", .{directory}, 0),
+            .scenario = try std.fmt.allocPrintSentinel(alloc, "{s}/qualification-fixture.scenario", .{directory}, 0),
+            .requests = try std.fmt.allocPrintSentinel(alloc, "{s}/qualification-fixture.requests.jsonl", .{directory}, 0),
+            .model = try std.fmt.allocPrintSentinel(alloc, "{s}/fixture.gguf", .{directory}, 0),
+        };
+        errdefer self.deinit();
+        var buffer: [65536]u8 = undefined;
+        try write(self.executable, try memory.read("tests/integration/test_agent_runtime.py", &buffer));
+        try write(self.model, "GGUF\x03\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00");
+        return self;
+    }
+    fn deinit(self: QualificationFixture) void {
+        for ([_][:0]const u8{ self.executable, self.scenario, self.requests, self.model }) |path| _ = std.c.unlink(path);
+        _ = std.c.rmdir(self.directory);
+    }
+    fn select(self: QualificationFixture, scenario: []const u8) !void {
+        try write(self.scenario, scenario);
+        _ = std.c.unlink(self.requests);
+    }
+    fn configuration(self: QualificationFixture) config.Config {
+        return .{ .enabled = true, .model_id = "custom", .custom_model = self.model, .runtime = .{ .source = .custom, .executable = self.executable } };
+    }
+    fn expectRequests(self: QualificationFixture, chat: usize, tools: usize, followup: usize) !void {
+        var buffer: [32768]u8 = undefined;
+        const bytes = try memory.read(self.requests, &buffer);
+        try std.testing.expectEqual(chat, std.mem.count(u8, bytes, "\"kind\": \"chat\""));
+        try std.testing.expectEqual(tools, std.mem.count(u8, bytes, "\"kind\": \"tools\""));
+        try std.testing.expectEqual(followup, std.mem.count(u8, bytes, "\"kind\": \"followup\""));
+    }
+};
+
+test "runtime qualifies chat separately from optional tools and resets capabilities" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const fixture = try QualificationFixture.init(arena.allocator());
+    defer fixture.deinit();
+    const cancel = gio.Cancellable.new();
+    defer cancel.unref();
+    var runtime: Runtime = .{};
+    defer runtime.stop();
+    try std.testing.expect(!runtime.tools_available);
+    try std.testing.expectEqualStrings("", runtime.tools_warning);
+    for ([_][]const u8{ "good", "no_tools", "malformed_arguments", "unexpected_tool", "bad_followup", "http_tools", "truncated_tools", "no_jinja" }) |scenario| {
+        try fixture.select(scenario);
+        try runtime.ensure(fixture.configuration(), cancel);
+        try std.testing.expect(runtime.process != null);
+        const good = std.mem.eql(u8, scenario, "good");
+        const no_jinja = std.mem.eql(u8, scenario, "no_jinja");
+        try std.testing.expectEqual(good, runtime.tools_available);
+        try std.testing.expectEqual(!good, std.mem.startsWith(u8, runtime.tools_warning, "Chat-only:"));
+        try fixture.expectRequests(if (good or no_jinja) 1 else 2, if (no_jinja) 0 else 1, if (good or std.mem.eql(u8, scenario, "bad_followup")) 1 else 0);
+        const warning = runtime.tools_warning;
+        runtime.stop();
+        try std.testing.expect(!runtime.tools_available);
+        try std.testing.expectEqualStrings("", runtime.tools_warning);
+        // Warning storage must not point into a released scratch/runtime arena.
+        if (!good) try std.testing.expect(std.mem.startsWith(u8, warning, "Chat-only:"));
+    }
+}
+
+test "runtime cannot downgrade failed chat or missing authentication to chat-only" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const fixture = try QualificationFixture.init(arena.allocator());
+    defer fixture.deinit();
+    const cancel = gio.Cancellable.new();
+    defer cancel.unref();
+    var runtime: Runtime = .{};
+    defer runtime.stop();
+    for ([_]struct { scenario: []const u8, err: anyerror }{
+        .{ .scenario = "empty_chat", .err = error.ModelChatIncompatible },
+        .{ .scenario = "tool_in_chat", .err = error.ModelChatIncompatible },
+        .{ .scenario = "chat_http", .err = error.InferenceFailed },
+        .{ .scenario = "unhealthy_after_tools", .err = error.InferenceFailed },
+        .{ .scenario = "no_auth", .err = error.RuntimeAuthenticationMissing },
+        .{ .scenario = "missing_auth", .err = error.RuntimeCapabilityMissing },
+    }) |case| {
+        try fixture.select(case.scenario);
+        try std.testing.expectError(case.err, runtime.ensure(fixture.configuration(), cancel));
+        try std.testing.expect(runtime.process == null);
+        try std.testing.expect(!runtime.tools_available);
+        try std.testing.expectEqualStrings("", runtime.tools_warning);
+    }
+    cancel.cancel();
+    try std.testing.expectError(error.Cancelled, runtime.ensure(fixture.configuration(), cancel));
+    try std.testing.expect(runtime.process == null);
+    try std.testing.expect(!runtime.tools_available);
+}
+
+test "runtime CPU retries requalify tools in both directions" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const fixture = try QualificationFixture.init(arena.allocator());
+    defer fixture.deinit();
+    const cancel = gio.Cancellable.new();
+    defer cancel.unref();
+    var runtime: Runtime = .{};
+    defer runtime.stop();
+    try fixture.select("good");
+    const cfg = fixture.configuration();
+    try runtime.ensure(cfg, cancel);
+    try std.testing.expect(runtime.tools_available);
+    try fixture.select("no_tools");
+    try runtime.retryCpu(cfg, cancel);
+    try std.testing.expect(!runtime.tools_available);
+    try std.testing.expect(std.mem.startsWith(u8, runtime.tools_warning, "Chat-only:"));
+    try fixture.expectRequests(2, 1, 0);
+    // A live, unchanged runtime reuses qualification until explicitly retried.
+    try runtime.ensure(cfg, cancel);
+    try fixture.expectRequests(2, 1, 0);
+    try fixture.select("good");
+    try runtime.retryCpu(cfg, cancel);
+    try std.testing.expect(runtime.tools_available);
+    try std.testing.expectEqualStrings("", runtime.tools_warning);
+    try fixture.expectRequests(1, 1, 1);
+}
+
 const Setup = struct { parent: c_int };
 fn childSetup(data: ?*anyopaque) callconv(.c) void {
     const setup: *Setup = @ptrCast(@alignCast(data.?));

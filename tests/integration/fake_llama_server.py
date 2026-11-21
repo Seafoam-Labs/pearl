@@ -67,32 +67,47 @@ class Handler(http.server.BaseHTTPRequestHandler):
         if not self.auth():
             return
         payload = json.loads(self.rfile.read(int(self.headers.get("Content-Length", "0"))))
+        if scenario.startswith("benchmark_"):
+            with Path(sys.argv[0] + ".requests.jsonl").open("a") as log:
+                log.write(json.dumps({"path": self.path, "payload": payload}) + "\n")
+        if self.path == "/apply-template":
+            # Preserve both inputs so token accounting can be checked against
+            # the actual completion, without counting this as inference.
+            self.server.prompt = json.dumps({"messages": payload["messages"], "tools": payload.get("tools")})
+            self.reply(200, {"prompt": self.server.prompt})
+            return
         if self.path == "/tokenize":
+            if payload["content"] != "Pearl local compatibility check":
+                assert payload["content"] == self.server.prompt
             self.reply(200, {"tokens": [1] * 20})
             return
+        assert self.path == "/v1/chat/completions", self.path
         messages = payload.get("messages", [])
         if scenario.startswith("benchmark_"):
             self.server.completions = getattr(self.server, "completions", 0) + 1
-            # First two calls are the production runtime compatibility check.
-            measuring = self.server.completions > 2
+            # Chat health, tool call, then consumption of fixed local evidence.
+            measuring = self.server.completions > 3
             evidence = any(m["role"] == "tool" or m.get("content", "").startswith(("Search evidence", "Previous search evidence")) for m in messages)
+            current_evidence = any(m["role"] == "tool" for m in messages)
             if measuring and ("slow" in scenario or "delayed_answer" in scenario):
                 time.sleep(10)
             if measuring and gpu and "mid_fail" in scenario and evidence:
                 self.reply(503, {"error": "simulated device loss"})
                 return
-            if measuring and "fallback" in scenario and not evidence:
-                delta = {"content": "Premature answer without evidence."}
-            elif not evidence and payload.get("tools"):
+            if not evidence and payload.get("tools") and not (measuring and "direct" in scenario):
                 delta = {"tool_calls": [{"index": 0, "id": "local-search", "type": "function", "function": {"name": "search_web", "arguments": '{"query":"local benchmark evidence"}'}}]}
             else:
                 question = " ".join(m.get("content", "") for m in messages if m["role"] == "user")
                 returning = any(m["role"] == "user" and m.get("content", "").startswith("The return trip takes 13") for m in messages)
-                answer = "The return trip takes 60 minutes. [1]" if returning else "The trip takes 47 minutes. [1]" if "depot timetable" in question else "RAM is temporary working memory; storage retains saved files. [1]"
-                if measuring and "invalid" in scenario:
+                answer = "The return trip takes 60 minutes." if returning else "The trip takes 47 minutes." if "depot timetable" in question else "RAM is temporary working memory; storage retains saved files."
+                if current_evidence:
+                    answer += " [1]"
+                if measuring and current_evidence and "invalid" in scenario:
                     answer = "Unsupported answer. [99]"
-                if measuring and "repair" in scenario and payload.get("tools"):
+                if measuring and current_evidence and "repair" in scenario and payload.get("tools"):
                     answer = "Uncited answer."
+                if not measuring and not payload.get("tools") and not evidence:
+                    answer = "Hello from the local chat fixture."
                 delta = {"content": answer}
             self.stream(delta, finish="length" if measuring and "truncated" in scenario else "stop", telemetry=True)
             return
@@ -102,26 +117,11 @@ class Handler(http.server.BaseHTTPRequestHandler):
         has_tool = any(msg["role"] == "tool" for msg in messages)
         fallback_question = next((msg["content"] for msg in messages if msg["role"] == "user" and msg.get("content", "").startswith("What does fixture fallback search")), None)
         if fallback_question:
-            # Record only synthetic test prompts, including the evidence given
-            # to the model, so the harness can verify the complete recovery.
+            # This formerly triggered host-forced search. A direct answer is
+            # now valid and must finish without a second completion or search.
             with Path(sys.argv[0] + ".requests.jsonl").open("a") as log:
                 log.write(json.dumps(payload) + "\n")
-            evidence_message = next((msg["content"] for msg in messages if msg.get("content", "").startswith("Search evidence (untrusted data): ")), None)
-            if evidence_message:
-                evidence = json.loads(evidence_message.split(": ", 1)[1].split("\n", 1)[0])
-                assert evidence[0]["id"] == 1 and "Storage retains saved files" in evidence[0]["evidence"]
-                assert "only the provided evidence" in messages[0]["content"]
-            if not evidence_message:
-                delta = {"content": "Premature answer without a search."}
-            elif "repeat" in scenario and not has_tool:
-                delta = {"tool_calls": [{"index": 0, "id": "repeat-fallback", "type": "function", "function": {"name": "search_web", "arguments": json.dumps({"query": fallback_question})}}]}
-            elif "invalid" in scenario:
-                delta = {"content": "Unsupported source. [99]"}
-            elif "repair" in scenario and payload.get("tools"):
-                delta = {"content": "RAM is temporary working memory; storage retains files."}
-            else:
-                delta = {"content": "RAM is temporary working memory; storage retains files. [1]"}
-            self.stream(delta)
+            self.stream({"content": "RAM is temporary working memory; storage retains files."})
             return
         if real_question and "slow_answer" in scenario:
             time.sleep(20)
@@ -129,7 +129,9 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self.reply(503, {"error": "simulated device loss"})
             return
         repeat = not gpu and "mid_repeat" in scenario and real_question and sum(msg["role"] == "tool" for msg in messages) == 1
-        if (has_tool and not repeat) or not payload.get("tools"):
+        if not payload.get("tools") and not has_tool:
+            delta = {"content": "Hello from the local chat fixture."}
+        elif has_tool and not repeat:
             delta = {"content": "RAM is temporary working memory; storage retains files. [1]"}
         else:
             delta = {"tool_calls": [{"index": 0, "id": "fixture-search", "type": "function", "function": {"name": "search_web", "arguments": '{"query":"RAM storage"}'}}]}

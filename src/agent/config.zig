@@ -90,7 +90,7 @@ pub const Config = struct {
             if (p.enabled) active += 1;
             for (self.providers[0..i]) |other| if (std.mem.eql(u8, p.id, other.id)) return error.DuplicateSearchProvider;
         }
-        if (self.default_provider_id.len > 0 and self.provider(self.default_provider_id) == null) return error.UnknownSearchProvider;
+        try text(self.default_provider_id, 64);
         if (self.search_mode == .all and active > 3) return error.TooManyEnabledProviders;
         if (self.contextTokens() > std.math.maxInt(c_int) or self.contextTokens() <= @as(u64, self.answerTokens()) + 700) return error.InvalidAssistantContext;
         if (self.cpu_threads > std.math.maxInt(c_int) or self.idle_unload_seconds < 15 or self.idle_unload_seconds > 300) return error.InvalidAssistantBudget;
@@ -113,6 +113,14 @@ pub const Config = struct {
     pub fn provider(self: Config, id: []const u8) ?Provider {
         for (self.providers) |p| if (std.mem.eql(u8, id, p.id)) return p;
         return null;
+    }
+    pub fn hasSearch(self: Config) bool {
+        for (self.providers) |p| if (self.selected(p)) return true;
+        return false;
+    }
+    pub fn validateSearch(self: Config) !void {
+        if (self.search_mode == .default and self.default_provider_id.len > 0 and self.provider(self.default_provider_id) == null) return error.UnknownSearchProvider;
+        if (!self.hasSearch()) return error.SearchProviderRequired;
     }
     pub fn selected(self: Config, p: Provider) bool {
         return p.enabled and (self.search_mode == .all or std.mem.eql(u8, p.id, self.default_provider_id));
@@ -174,7 +182,10 @@ test "provider identity and endpoints are validated without a CPU thread cap" {
     try (Config{ .cpu_threads = 8 }).validate();
     try (Config{ .cpu_threads = 1024, .context_tokens = 131072, .answer_tokens = 8192 }).validate();
     try std.testing.expectError(error.InvalidSearchEndpoint, (Provider{ .endpoint = "https://user:secret@host" }).validate());
-    try std.testing.expectError(error.UnknownSearchProvider, (Config{ .providers = &.{} }).validate());
+    try (Config{ .providers = &.{} }).validate();
+    try std.testing.expectError(error.UnknownSearchProvider, (Config{ .providers = &.{} }).validateSearch());
+    try std.testing.expectError(error.SearchProviderRequired, (Config{ .providers = &.{.{ .enabled = false }} }).validateSearch());
+    try std.testing.expect(!(Config{ .providers = &.{} }).hasSearch());
     try (Config{ .providers = &.{}, .default_provider_id = "" }).validate();
 }
 test "saved configured providers retain their explicit default" {

@@ -68,6 +68,7 @@ pub const Host = struct {
     pub fn ask(self: *Host, cfg: config.Config, question: []const u8, activation: []const u8) !void {
         if (!cfg.enabled or self.locked) return error.AssistantUnavailable;
         if (self.pending != 0) return error.AssistantBusy;
+        if (question.len > 0) try @import("intent.zig").validateQuestion(question);
         if (self.process == null) try self.start();
         const id = self.next();
         try self.send(.{ .id = id, .op = if (question.len == 0) .@"resume" else .ask, .config = cfg, .question = question, .activation = activation, .palette = self.palette });
@@ -100,7 +101,7 @@ pub const Host = struct {
         errdefer self.stop();
         self.transport = wire.Transport.init(self, event);
         self.transport.?.secure = true;
-        self.transport.?.framer.limit = 32768;
+        self.transport.?.framer.limit = protocol.max_frame_bytes;
         const socket = gio.Socket.newFromFd(pair[0], null) orelse return error.AssistantSocket;
         parent_owned = false;
         try self.transport.?.adopt(socket);
@@ -108,6 +109,7 @@ pub const Host = struct {
     fn send(self: *Host, request: protocol.Request) !void {
         const text = try std.json.Stringify.valueAlloc(a, request, .{ .emit_null_optional_fields = false });
         defer a.free(text);
+        if (text.len > protocol.max_frame_bytes) return error.AgentRequestTooLarge;
         const frame = try std.fmt.allocPrint(a, "{s}\n", .{text});
         if (self.transport.?.output != null) {
             // Config/lock changes coalesce; asks cannot replace an outstanding handoff.

@@ -80,7 +80,9 @@ pub fn sanitized(a: std.mem.Allocator, bytes: []const u8, limit: usize) ![]const
     return std.mem.trim(u8, out, " ");
 }
 pub fn required(help: []const u8) !void {
-    for ([_][]const u8{ "--host", "--port", "--api-key-file", "--alias", "--jinja", "--ctx-size", "--parallel", "--threads", "--threads-batch", "--threads-http", "--batch-size", "--ubatch-size", "--gpu-layers" }) |flag| if (!hasFlag(help, flag)) return error.RuntimeCapabilityMissing;
+    for ([_][]const u8{ "--host", "--port", "--api-key-file", "--alias", "--ctx-size", "--parallel", "--threads", "--threads-batch", "--threads-http", "--batch-size", "--ubatch-size", "--gpu-layers" }) |flag| if (!hasFlag(help, flag)) return error.RuntimeCapabilityMissing;
+    // Jinja/tool support is optional; chat and tool behavior are qualified
+    // separately after launch. Authentication and agent isolation are not.
     // Old runtimes without a web UI or built-in agent need no disabling switch.
     if ((hasFlag(help, "--webui") or hasFlag(help, "--ui")) and !hasFlag(help, "--no-webui") and !hasFlag(help, "--no-ui")) return error.RuntimeCapabilityMissing;
     if ((hasFlag(help, "--agent") or hasFlag(help, "--mcp-servers-config")) and !hasFlag(help, "--no-agent")) return error.RuntimeCapabilityMissing;
@@ -95,5 +97,9 @@ test "option discovery uses exact tokens, not versions or prefix matches" {
     try std.testing.expect(hasFlag("-ngl, --gpu-layers N\n--fit [on|off]", "--gpu-layers"));
     try std.testing.expect(!hasFlag("--device-draft X", "--device"));
     try std.testing.expectError(error.RuntimeCapabilityMissing, required("--version arbitrary-new-release"));
+    const chat_only = "--host --port --api-key-file --alias --ctx-size --parallel --threads --threads-batch --threads-http --batch-size --ubatch-size --gpu-layers";
+    try required(chat_only);
+    try std.testing.expectError(error.RuntimeCapabilityMissing, required(chat_only ++ " --agent"));
+    try std.testing.expectError(error.RuntimeCapabilityMissing, required(chat_only ++ " --webui"));
     try std.testing.expectError(error.RuntimeEmbeddingUnsupported, requiredEmbedding("--host --port --api-key-file --alias --jinja --ctx-size --parallel --threads --threads-batch --threads-http --batch-size --ubatch-size --gpu-layers --no-webui --no-agent"));
 }

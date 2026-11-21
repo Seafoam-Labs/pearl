@@ -29,8 +29,17 @@ fn feed(context: *anyopaque, bytes: []const u8) !void {
     const stream: *@import("sse.zig").Stream = @ptrCast(@alignCast(context));
     try stream.feed(bytes);
 }
+/// Measure the runtime's actual chat template, including tool schemas and the
+/// assistant generation prefix, rather than tokenizing JSON message envelopes.
+pub fn promptTokens(a: std.mem.Allocator, runtime: *Runtime, messages: []const Message, use_tools: bool, cancel: *gio.Cancellable) !usize {
+    const tools = if (use_tools) try std.json.parseFromSliceLeaky(std.json.Value, a, tools_json, .{}) else null;
+    const body = try std.json.Stringify.valueAlloc(a, .{ .messages = messages, .tools = tools, .add_generation_prompt = true }, .{ .emit_null_optional_fields = false });
+    const bytes = try runtime.post(a, "/apply-template", body, cancel);
+    const rendered = try std.json.parseFromSliceLeaky(struct { prompt: []const u8 }, a, bytes, .{ .ignore_unknown_fields = true });
+    return tokenCount(a, runtime, rendered.prompt, cancel);
+}
 pub fn tokenCount(a: std.mem.Allocator, runtime: *Runtime, text: []const u8, cancel: *gio.Cancellable) !usize {
-    const body = try std.json.Stringify.valueAlloc(a, .{ .content = text, .add_special = false }, .{});
+    const body = try std.json.Stringify.valueAlloc(a, .{ .content = text, .add_special = false, .parse_special = true }, .{});
     const bytes = try runtime.post(a, "/tokenize", body, cancel);
     const v = try std.json.parseFromSliceLeaky(struct { tokens: []const u32 }, a, bytes, .{ .ignore_unknown_fields = true });
     return v.tokens.len;

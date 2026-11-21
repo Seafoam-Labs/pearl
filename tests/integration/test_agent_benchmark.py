@@ -13,6 +13,34 @@ import time
 ROOT = Path(__file__).resolve().parents[2]
 
 
+def completion_requests(path):
+    """Check real prompt accounting and return only inference requests."""
+    requests = [json.loads(line) for line in path.read_text().splitlines()]
+    completions, template, tokenized = [], None, False
+    for request in requests:
+        payload = request["payload"]
+        if request["path"] == "/apply-template":
+            template, tokenized = payload, False
+        elif request["path"] == "/tokenize":
+            if payload["content"] == "Pearl local compatibility check":
+                assert template is None, request
+                continue
+            assert template is not None, request
+            assert json.loads(payload["content"]) == {"messages": template["messages"], "tools": template.get("tools")}
+            tokenized = True
+        else:
+            assert request["path"] == "/v1/chat/completions", request
+            if len(completions) >= 3:
+                assert template is not None, ("inference skipped prompt accounting", request)
+            if template is not None:
+                assert tokenized, request
+                assert payload["messages"] == template["messages"], request
+                assert payload.get("tools") == template.get("tools"), request
+                template, tokenized = None, False
+            completions.append(payload)
+    return completions
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--driver", type=Path, default=ROOT / "zig-out/test/pearl-benchmark-check")
@@ -54,7 +82,7 @@ def main():
             assert not list(Path(env["XDG_RUNTIME_DIR"]).glob("pearl-agent-key-*"))
             return report, time.monotonic() - started
 
-        for scenario in ["benchmark_ok", "benchmark_fallback", "benchmark_repair"]:
+        for scenario in ["benchmark_ok", "benchmark_direct", "benchmark_repair"]:
             report, _ = run(scenario)
             result = report["results"][0]
             assert result["complete"] and not result["error_code"], result
@@ -63,11 +91,40 @@ def main():
             assert sum(not s["warmup"] for s in result["samples"]) == 12
             assert all(s["tokens"]["reasoning"] > 0 and "Internal test" not in s["answer"] for s in result["samples"])
             assert result["peak_rss_kib"] > 0 and result["verification_ms"] > 0
-            assert all(s["first_visible_ms"] <= s["complete_ms"] for s in result["samples"])
+            assert all(s["first_visible_ms"] is not None and s["first_visible_ms"] <= s["complete_ms"] for s in result["samples"])
+            requests = completion_requests(root / (scenario + ".requests.jsonl"))
+            # Qualification itself never dispatches a host search.
+            assert not requests[0].get("tools") and requests[1].get("tools")
+            assert not requests[2].get("tools") and requests[2]["messages"][-1]["role"] == "tool"
+            measured = requests[3:]
+            expected = 16 if scenario == "benchmark_direct" else 32 if scenario == "benchmark_repair" else 24
+            assert len(measured) == expected, (scenario, measured)
+            assert all(r["messages"][0]["role"] == "system" and r["messages"][0]["content"].startswith("You are Pearl, a helpful conversational assistant.") for r in measured)
+            assert all(sum(m["role"] == "system" for m in r["messages"]) == 1 for r in measured)
+            assert all(m["role"] == "user" for r in measured for m in r["messages"] if m.get("content", "").startswith("Previous search evidence"))
+            if scenario == "benchmark_direct":
+                assert all(s["searches"] == 0 and s["reads"] == 0 and "[1]" not in s["answer"] for s in result["samples"]), result
+                checks["direct_answers_do_not_force_search_or_citations"] = True
+            else:
+                assert all(s["searches"] == (0 if s["followup"] else 1) for s in result["samples"]), result
+                assert all("[1]" not in s["answer"] for s in result["samples"] if s["followup"]), result
+                assert all("[1]" in s["answer"] for s in result["samples"] if not s["followup"]), result
+                if scenario == "benchmark_repair":
+                    assert sum(not r.get("tools") for r in measured) == 8, measured
+                checks["prior_evidence_does_not_force_followup_search_or_citations"] = True
+            checks["template_and_completion_messages_and_tools_match"] = True
             checks[scenario] = True
         for scenario, outcome in [("benchmark_invalid", "results_only"), ("benchmark_truncated", "truncated")]:
             report, _ = run(scenario)
-            assert any(s["outcome"] == outcome for s in report["results"][0]["samples"]), report
+            result = report["results"][0]
+            assert result["samples"] and all(s["outcome"] == outcome for s in result["samples"]), report
+            requests = completion_requests(root / (scenario + ".requests.jsonl"))[3:]
+            if scenario == "benchmark_invalid":
+                assert len(result["samples"]) == 8 and len(requests) == 24, report
+                assert sum(not r.get("tools") for r in requests) == 8, requests
+                assert all("[99]" not in s["answer"] for s in result["samples"]), report
+            else:
+                assert all(s["error_code"] == "GenerationTruncated" for s in result["samples"]), report
             checks[scenario] = True
         report, _ = run("benchmark_startup_fail", mode="cpu_gpu")
         assert len(report["results"]) == 3

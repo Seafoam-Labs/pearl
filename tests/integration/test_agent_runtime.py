@@ -12,6 +12,110 @@ import sys
 import threading
 import time
 
+def qualification_fixture():
+    """Offline server used by runtime.zig tests; never executes returned tools."""
+    executable = Path(sys.argv[0])
+    scenario = Path(str(executable) + ".scenario").read_text()
+    flags = "--host --port --api-key-file --alias --ctx-size --parallel --threads --threads-batch --threads-http --batch-size --ubatch-size --gpu-layers --jinja --reasoning-format"
+    if "--help" in sys.argv:
+        if scenario == "no_jinja":
+            flags = flags.replace(" --jinja", "")
+        if scenario == "missing_auth":
+            flags = flags.replace("--api-key-file", "--unsupported-auth")
+        print(flags)
+        return
+    if "--version" in sys.argv:
+        print("deterministic-chat-tool-qualification")
+        return
+    def option(name):
+        return sys.argv[sys.argv.index(name) + 1]
+    assert option("--host") == "127.0.0.1"
+    assert ("--jinja" in sys.argv) == (scenario != "no_jinja")
+    key = Path(option("--api-key-file")).read_text()
+    log_path = Path(str(executable) + ".requests.jsonl")
+    class Handler(http.server.BaseHTTPRequestHandler):
+        def reply(self, status, value):
+            data = json.dumps(value).encode()
+            self.send_response(status)
+            self.send_header("Content-Length", str(len(data)))
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(data)
+        def authorized(self):
+            if scenario == "no_auth" or self.headers.get("Authorization") == "Bearer " + key:
+                return True
+            self.reply(401, {"error": "unauthorized"})
+            return False
+        def do_GET(self):
+            if self.authorized():
+                self.reply(200, {"data": [{"id": "pearl-local"}]})
+        def do_POST(self):
+            if not self.authorized():
+                return
+            payload = json.loads(self.rfile.read(int(self.headers.get("Content-Length", "0"))))
+            if self.path == "/tokenize":
+                self.reply(200, {"tokens": [1, 2, 3]})
+                return
+            if scenario == "no_auth":
+                self.reply(200, {})
+                return
+            assert self.path == "/v1/chat/completions", self.path
+            messages = payload["messages"]
+            followup = any(m["role"] == "tool" for m in messages)
+            kind = "followup" if followup else "tools" if payload.get("tools") else "chat"
+            with log_path.open("a") as log:
+                log.write(json.dumps({"kind": kind, "payload": payload}) + "\n")
+            call = {"index": 0, "id": "fixture-search", "type": "function", "function": {"name": "search_web", "arguments": '{"query":"RAM storage"}'}}
+            finish = "stop"
+            if kind == "chat":
+                assert "tools" not in payload
+                assert all(m.get("tool_calls") is None for m in messages)
+                if scenario == "chat_http" or (scenario == "unhealthy_after_tools" and self.server.tool_attempted):
+                    self.reply(503, {"error": "chat unavailable"})
+                    return
+                delta = {"tool_calls": [call]} if scenario == "tool_in_chat" else {"content": " \t\n" if scenario == "empty_chat" else "Hello from the local chat fixture."}
+                self.server.chat_checked = True
+            else:
+                assert self.server.chat_checked, "tools were checked before chat"
+                self.server.tool_attempted = True
+                if kind == "followup":
+                    assert "tools" not in payload
+                    assert messages[-1]["tool_call_id"] == "fixture-search"
+                    assert json.loads(messages[-1]["content"])[0]["id"] == 1
+                    delta = {"content": "" if scenario == "bad_followup" else "RAM is temporary; storage retains files. [1]"}
+                elif scenario in ("http_tools", "unhealthy_after_tools"):
+                    self.reply(400, {"error": "tools unsupported"})
+                    return
+                elif scenario == "no_tools":
+                    delta = {"content": "I can chat but cannot call tools."}
+                else:
+                    if scenario == "malformed_arguments":
+                        call["function"]["arguments"] = "{broken"
+                    elif scenario == "unexpected_tool":
+                        call["function"]["name"] = "execute_shell"
+                    elif scenario == "truncated_tools":
+                        finish = "length"
+                    delta = {"tool_calls": [call]}
+            frames = [{"choices": [{"delta": delta, "finish_reason": finish}]}]
+            data = ("".join("data: " + json.dumps(frame) + "\n\n" for frame in frames) + "data: [DONE]\n\n").encode()
+            self.send_response(200)
+            self.send_header("Content-Type", "text/event-stream")
+            self.send_header("Content-Length", str(len(data)))
+            self.end_headers()
+            self.wfile.write(data)
+        def log_message(self, *_):
+            pass
+    server = http.server.HTTPServer(("127.0.0.1", int(option("--port"))), Handler)
+    server.chat_checked = False
+    server.tool_attempted = False
+    server.serve_forever()
+
+# Native tests copy this file to a private executable with a scenario sidecar.
+# Dispatch before importing the UI harness: qualification needs no compositor.
+if __name__ == "__main__" and Path(sys.argv[0]).name == "qualification-fixture":
+    qualification_fixture()
+    sys.exit(0)
+
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "scripts"))
 from pearl_session import PrivateSession, wait_for
@@ -93,7 +197,9 @@ def main():
                     assert not latest["enforced_memory"], latest
                     checks[scenario] = True
                     request("release_runtime")
-                for scenario, expected_calls in [("fallback_search", 3), ("fallback_repair", 4), ("fallback_invalid", 4), ("fallback_empty", 2), ("fallback_repeat", 4)]:
+                # Former forced-search cases must now accept the model's direct
+                # answer, even while search tools are available to the model.
+                for scenario in ("fallback_search", "fallback_repair", "fallback_invalid", "fallback_empty", "fallback_repeat"):
                     selected = config(scenario, mode="cpu")
                     question = "What does fixture fallback search say about RAM and storage?"
                     if scenario == "fallback_empty":
@@ -102,21 +208,18 @@ def main():
                     request("ask", config=selected, question=question)
                     state = idle()
                     assert not state["error_code"] and len(state["turns"]) == 1, state
-                    answer = state["turns"][0]["answer"]
-                    if scenario == "fallback_empty":
-                        assert "No usable search results" in answer, state
-                    elif scenario == "fallback_invalid":
-                        assert "could not produce a valid source-cited summary" in answer and "[99]" not in answer, state
-                    else:
-                        assert answer == "RAM is temporary working memory; storage retains files. [1]", state
-                    assert len(Search.requests) == before + 1, (scenario, Search.requests)
+                    assert state["turns"][0]["answer"] == "RAM is temporary working memory; storage retains files.", state
+                    assert state["sources"] == 0, state
+                    assert len(Search.requests) == before, (scenario, Search.requests)
+                    # The fixture logs only completions for this question, not
+                    # runtime qualification or template/tokenization requests.
                     requests = [json.loads(line) for line in Path(selected["runtime"]["executable"] + ".requests.jsonl").read_text().splitlines()]
-                    assert len(requests) == expected_calls, (scenario, requests)
-                    assert any("Call search_web now" in msg.get("content", "") for msg in requests[1]["messages"])
-                    if scenario != "fallback_empty":
-                        assert any(msg.get("content", "").startswith("Search evidence (untrusted data): ") for msg in requests[2]["messages"])
-                        assert any(msg.get("content") == question for msg in requests[2]["messages"])
-                    checks[scenario] = {"inference_requests": len(requests), "search_requests": 1}
+                    assert len(requests) == 1, (scenario, requests)
+                    assert requests[0].get("tools"), (scenario, requests)
+                    messages = requests[0]["messages"]
+                    assert [msg["content"] for msg in messages if msg["role"] == "user"] == [question], (scenario, messages)
+                    assert not any(msg["role"] == "tool" or msg.get("tool_calls") for msg in messages), (scenario, messages)
+                    checks["direct_answer_" + scenario.removeprefix("fallback_")] = {"inference_requests": 1, "search_requests": 0, "sources": 0}
                     request("release_runtime")
                 for scenario, expected_gpu, expected_fallback in [
                     ("unlisted_one", True, False), ("unlisted_two", True, False),
@@ -130,6 +233,15 @@ def main():
                     checks[scenario] = {"compute": latest, "search_requests": 1}
                     request("release_runtime")
                     assert not request("test_state")["runtime"]
+                before = len(Search.requests)
+                request("ask", config=config("mid_fail", fallback=False), question="Find fixture GPU failure evidence?")
+                failed = idle()
+                assert failed["error_code"] == "InferenceFailed" and not failed["runtime"], failed
+                assert failed["cpu_retry_available"] and failed["draft_chars"] > 0, failed
+                assert len(failed["turns"]) == 1 and failed["sources"] == 1, failed
+                assert not failed["status"].startswith("Answer complete."), failed
+                assert len(Search.requests) == before + 1, Search.requests
+                checks["mid_answer_failure_preserves_cpu_retry_and_sources"] = True
                 mutable = config("mutable", mode="cpu")
                 request("ask", config=mutable, question="Find fixture GPU failure evidence?")
                 assert len(idle()["turns"]) == 1

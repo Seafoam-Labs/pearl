@@ -648,7 +648,7 @@ pub const View = struct {
                     };
                     break;
                 }
-                job.details = try std.fmt.allocPrint(alloc, "{s}\n{s}\nCompatible · {s}\n{s}", .{ runtime.executable, runtime.version, if (runtime.gpu) "GPU offload verified" else "CPU", runtime.fallback_reason });
+                job.details = try std.fmt.allocPrint(alloc, "{s}\n{s}\nChat compatible · {s}\n{s}\n{s}", .{ runtime.executable, runtime.version, if (runtime.gpu) "GPU offload verified" else "CPU", if (runtime.tools_available) "Web tool compatibility checks passed" else runtime.tools_warning, runtime.fallback_reason });
             },
             .test_provider => {
                 _ = try @import("../agent/providers.zig").search(alloc, job.provider, "Pearl desktop", cancel);

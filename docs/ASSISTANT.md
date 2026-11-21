@@ -9,8 +9,48 @@ Pearl's experimental assistant is opt-in and disabled by default. In Settings �
 Assistant, choose a local model, explicitly download it, enable the assistant
 and Apply. Bing search works without provider setup. Type a question in Super+Space and
 activate **Ask Pearl**. Pearl opens a
-separate native chat window and searches only the selected engine(s). Typing
-does not start a model or make a network request.
+separate native chat window. It can answer directly on device or request web
+search from the selected engine(s). Typing does not start a model or make a
+network request. Submitting a question no longer forces a search.
+
+## Conversation and optional tools
+
+Ordinary chat, explanations, writing, and coding help do not require sources or
+an enabled search provider. Responses stream even without search results. Search
+is model-selected, guided by the system prompt to use it for current information,
+verification, or explicit requests, not routine conversation. A model can still
+make mistakes about when to search.
+
+A successful search/page read in the current turn requires source references in
+the resulting answer. Unknown source IDs trigger one tools-disabled correction;
+failed correction is labeled incomplete. Prior sources do not force citations on
+an unrelated follow-up such as “thanks.” Citation checks validate IDs and syntax,
+not factual truth or whether a source supports every claim. Source links remain
+host-owned. Tool errors, denied page reads, and empty searches are returned to the
+model as structured results so it can explain the limitation instead of inventing
+results. Cancellation still stops work rather than becoming a recoverable tool
+failure.
+
+Questions accept up to **32 KiB of UTF-8 text**. Recent questions and answers are
+kept whole within the context budget rather than clipped to fixed byte prefixes.
+Pearl uses the runtime's `/apply-template` and `/tokenize` endpoints to measure
+messages, tool schemas, and the assistant prefix, reserving the configured
+completion allowance plus a safety margin. Oldest complete turns are removed
+first, then optional previous evidence; the current question and active tool
+call/result groups are never clipped. A request that still cannot fit fails
+explicitly. The UI retains at most 20 turns and 128 KiB per conversation.
+
+Completed, incomplete, cancelled, and failed responses have distinct outcomes;
+a truncated draft is not presented as complete. Runtime/model combinations that
+pass ordinary chat but fail tool qualification remain usable in **chat-only**
+mode, with a visible warning and no tool execution. Settings reports chat and
+web-tool compatibility separately. Authentication and runtime isolation checks
+remain mandatory.
+
+Phase 1 of the [conversational assistant and local tools plan](ASSISTANT_CHAT_TOOLS_IMPLEMENTATION_PLAN.md)
+is implemented. Filesystem permissions, file creation/deletion, explicit deletion
+confirmation, and requested application launching remain planned; **no local tools
+are enabled by this change**.
 
 ## Bing and other engines
 
@@ -51,7 +91,8 @@ Each entry has its own immutable repository revision, exact byte count, SHA256
 and license link in [`model_registry.zig`](../src/agent/model_registry.zig).
 Interrupted downloads resume from `.part` files against that revision; the
 complete hash must match before atomic installation. Custom local GGUFs have no
-Pearl file-size ceiling and are checked for tool-call compatibility before use.
+Pearl file-size ceiling and are checked for chat health and optional tool-call
+compatibility before use.
 Models are not bundled with Pearl. Model/runtime tests use
 draft settings and local fixtures. Stop a current answer before testing; Pearl
 unloads an idle runtime first and an exclusive session lock prevents a second
@@ -122,7 +163,8 @@ distributions retain manual system/custom runtime selection.
 **Discover runtime and GPU devices** reads version/help/device information.
 **Check runtime and model now** additionally tests authentication, token counting,
 streaming and tool/result continuation with the selected model. Tests make no web
-searches. Required capabilities must pass even for an unlisted release. Changed
+searches. Failed optional tool checks fall back to chat-only mode only after a
+fresh chat probe succeeds. Required capabilities must pass even for an unlisted release. Changed
 executable/model metadata invalidates a loaded profile; full checks run on each
 new load. There is no persistent compatibility cache across driver/library
 updates. Runtime changes during a check are rejected.
@@ -388,7 +430,10 @@ These controls use Pearl's existing authenticated session control channel.
 
 ## Validation and remaining qualification
 
-Run policy/native tests with `zig build test-agent`. Build the instrumented
+Run policy/native tests with `zig build test-agent`. This includes offline HTTP/SSE
+fixtures for direct chat, optional search, provider failure, chat-only capability
+gating, citation correction, whole-turn context pruning, streaming, truncation,
+and cancellation; these need Python but no real model or web access. Build the instrumented
 frontend with `zig build build-agent-test`. Real-model and private-desktop tests
 are in `tests/integration/test_agent_model.py`, `test_agent_ui.py` and
 `test_agent_launcher.py`; none downloads models or uses live search credentials.
