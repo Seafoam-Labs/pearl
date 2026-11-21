@@ -22,6 +22,7 @@ const Host = struct {
         const self: *Host = @ptrCast(@alignCast(data.?));
         if (!self.stopping) {
             self.stopping = true;
+            log.info("event=greeter-host-stop", .{});
             _ = std.c.kill(-self.pid, std.c.SIG.TERM);
             self.stop_timer = glib.timeoutAdd(5000, force, self);
         }
