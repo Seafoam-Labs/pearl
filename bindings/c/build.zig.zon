@@ -1,7 +1,7 @@
 .{
     .name = .pearl_ffi,
     .fingerprint = 0x61b5b5c8115ba4f7,
-    .version = "0.3.12",
+    .version = "0.4.0",
     .minimum_zig_version = "0.17.1",
     .dependencies = .{
         .translate_c = .{
