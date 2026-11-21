@@ -7,106 +7,106 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: src/greeter/screen.zig:1074
+#: src/greeter/screen.zig:1088
 msgid "Account"
 msgstr ""
 
-#: src/greeter/screen.zig:1127
+#: src/greeter/screen.zig:1141
 msgid "Available when requested"
 msgstr ""
 
-#: src/greeter/screen.zig:1201
+#: src/greeter/screen.zig:1215
 msgid "Cancel"
 msgstr ""
 
-#: src/greeter/screen.zig:1149
+#: src/greeter/screen.zig:1163
 msgid "Cancel authentication"
 msgstr ""
 
-#: src/greeter/screen.zig:1131
+#: src/greeter/screen.zig:1145
 msgid "Caps Lock is on"
 msgstr ""
 
-#: src/greeter/screen.zig:1199
+#: src/greeter/screen.zig:1213
 msgid "Confirm"
 msgstr ""
 
-#: src/greeter/screen.zig:242
+#: src/greeter/screen.zig:256
 msgid "Continue"
 msgstr ""
 
-#: src/greeter/screen.zig:1098
+#: src/greeter/screen.zig:1112
 msgid "Desktop session"
 msgstr ""
 
-#: src/greeter/screen.zig:1140
+#: src/greeter/screen.zig:1154
 msgid "Fingerprint login is available when configured"
 msgstr ""
 
-#: src/greeter/screen.zig:1173 src/greeter/screen.zig:1174
+#: src/greeter/screen.zig:1187 src/greeter/screen.zig:1188
 msgid "High contrast"
 msgstr ""
 
-#: src/greeter/screen.zig:1167 src/greeter/screen.zig:1168
+#: src/greeter/screen.zig:1181 src/greeter/screen.zig:1182
 msgid "Larger text"
 msgstr ""
 
-#: src/greeter/screen.zig:1135
+#: src/greeter/screen.zig:1149
 msgid "Loading installed desktops…"
 msgstr ""
 
-#: src/greeter/screen.zig:1070
+#: src/greeter/screen.zig:1084
 msgid "Other user"
 msgstr ""
 
-#: src/greeter/screen.zig:708
+#: src/greeter/screen.zig:722
 msgid "Other user…"
 msgstr ""
 
-#: src/greeter/screen.zig:236 src/greeter/screen.zig:237 src/greeter/screen.zig:241 src/greeter/screen.zig:1120
+#: src/greeter/screen.zig:250 src/greeter/screen.zig:251 src/greeter/screen.zig:255 src/greeter/screen.zig:1134
 msgid "Password"
 msgstr ""
 
-#: src/greeter/screen.zig:879
+#: src/greeter/screen.zig:893
 msgid "Pearl · Sign in"
 msgstr ""
 
-#: src/greeter/screen.zig:1188
+#: src/greeter/screen.zig:1202
 msgid "Power off"
 msgstr ""
 
-#: src/greeter/screen.zig:255
+#: src/greeter/screen.zig:269
 msgid "Power off?"
 msgstr ""
 
-#: src/greeter/screen.zig:1100
+#: src/greeter/screen.zig:1114
 msgid "Refresh desktops"
 msgstr ""
 
-#: src/greeter/screen.zig:236
+#: src/greeter/screen.zig:250
 msgid "Response"
 msgstr ""
 
-#: src/greeter/screen.zig:1187
+#: src/greeter/screen.zig:1201
 msgid "Restart"
 msgstr ""
 
-#: src/greeter/screen.zig:255 src/greeter/screen.zig:1194
+#: src/greeter/screen.zig:269 src/greeter/screen.zig:1208
 msgid "Restart?"
 msgstr ""
 
-#: src/greeter/screen.zig:1179 src/greeter/screen.zig:1180
+#: src/greeter/screen.zig:1193 src/greeter/screen.zig:1194
 msgid "Screen reader"
 msgstr ""
 
-#: src/greeter/screen.zig:242 src/greeter/screen.zig:1146
+#: src/greeter/screen.zig:256 src/greeter/screen.zig:1160
 msgid "Sign in"
 msgstr ""
 
-#: src/greeter/screen.zig:242
+#: src/greeter/screen.zig:256
 msgid "Signing in…"
 msgstr ""
 
-#: src/greeter/screen.zig:1109 src/greeter/screen.zig:1110 src/greeter/screen.zig:1113
+#: src/greeter/screen.zig:1123 src/greeter/screen.zig:1124 src/greeter/screen.zig:1127
 msgid "Username"
 msgstr ""
