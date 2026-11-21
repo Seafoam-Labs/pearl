@@ -75,7 +75,7 @@ def main():
         with PrivateSession(args.output / "session", aqueous=args.aqueous) as session:
             model_dir = Path(session.env["XDG_DATA_HOME"]) / "pearl/assistant/models"
             model_dir.mkdir(parents=True)
-            os.link(args.model.resolve(), model_dir / "LFM2.5-350M-Q4_K_M.gguf")
+            os.link(args.model.resolve(), model_dir / "LFM3-1.7B-Q4_K_M.gguf")
             parent, child = socket.socketpair()
             parent.settimeout(10)
             log = (args.output / "agent.log").open("w")

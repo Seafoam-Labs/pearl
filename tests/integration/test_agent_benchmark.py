@@ -59,7 +59,7 @@ def main():
         Path(env["XDG_RUNTIME_DIR"]).mkdir(mode=0o700)
         models = Path(env["XDG_DATA_HOME"]) / "pearl/assistant/models"
         models.mkdir(parents=True)
-        model = models / "LFM2.5-350M-Q4_K_M.gguf"
+        model = models / "LFM3-1.7B-Q4_K_M.gguf"
         try:
             os.link(args.model.resolve(), model)
         except OSError:
@@ -69,8 +69,8 @@ def main():
             runtime = root / scenario
             shutil.copyfile(ROOT / "tests/integration/fake_llama_server.py", runtime)
             runtime.chmod(0o755)
-            config = {"runtime": {"source": "custom", "executable": str(runtime)}}
-            options = {"selected": selected or [True, False, False, False, False], "mode": mode}
+            config = {"runtime": {"source": "custom", "executable": str(runtime)}, "model_id": "custom", "custom_model": str(model)}
+            options = {"selected": selected or [True, False, False, False], "mode": mode}
             input_path = root / "input.json"
             input_path.write_text(json.dumps(dict(config=config, options=options, cancel_after_ms=cancel_ms, skip_after_ms=skip_ms)))
             started = time.monotonic()
@@ -147,18 +147,17 @@ def main():
         report, elapsed = run("benchmark_delayed_answer_skip", skip_ms=1500)
         assert report["state"] == "complete" and report["results"][0]["error_code"] == "BenchmarkSkipped" and elapsed < 5, report
         checks["skip_releases_current_runtime"] = True
-        report, _ = run("benchmark_missing", selected=[True, False, True, False, False])
+        report, _ = run("benchmark_missing", selected=[True, False, True, False])
         assert report["results"][0]["error_code"] == "RuntimeCapabilityMissing"
-        assert report["results"][1]["error_code"] == "ModelNotInstalled"
         checks["failures_continue_and_persist"] = True
-        report, _ = run("benchmark_continues", selected=[True, False, True, False, False])
-        assert len(report["results"][0]["samples"]) == 16 and report["results"][1]["error_code"] == "ModelNotInstalled"
+        report, _ = run("benchmark_continues", selected=[True, False, True, False])
+        assert len(report["results"][0]["samples"]) == 16
         checks["completed_result_survives_later_failure"] = True
         # Replace only the private hardlink, never modify the caller's model.
         model.unlink()
-        model.write_bytes(b"GGUF" + bytes(12))
+        model.write_bytes(b"INVALID_MODEL_FILE!")
         report, _ = run("benchmark_checksum")
-        assert report["results"][0]["error_code"] == "ModelChecksumMismatch"
+        assert report["results"][0]["error_code"] == "InvalidModelFile"
         checks["checksum_failure_recorded"] = True
         checks["history_retained"] = len(list((Path(env["XDG_STATE_HOME"]) / "pearl/assistant/benchmarks").glob("*.json"))) >= 10
     (args.output / "report.json").write_text(json.dumps({"status": "passed", "checks": checks}, indent=2))

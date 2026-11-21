@@ -82,10 +82,8 @@ The model selector includes these managed GGUF downloads:
 
 | Model | Quantization | Download |
 | --- | --- | --- |
-| LFM2.5-350M | Q4_K_M / Q8_0 | 229 MB / 379 MB |
+| LFM3-1.7B | Q4_K_M / Q5_K_M / Q8_0 | 1.10 GB / 1.26 GB / 1.85 GB |
 | Qwen3-4B-Instruct-2507 | Q4_K_M | 2.50 GB |
-| LFM2.5-2.6B | Q4_K_M | 1.67 GB |
-| LFM2.5-1.2B-Instruct | Q4_K_M | 731 MB |
 
 Each entry has its own immutable repository revision, exact byte count, SHA256
 and license link in [`model_registry.zig`](../src/agent/model_registry.zig).
@@ -106,7 +104,7 @@ draft. Existing saved token settings remain explicit until changed. Context must
 leave room for generation and prompt overhead; the selected runtime/model still
 determines which context sizes work.
 
-The LFM2.5-2.6B profile uses 8,192 context tokens and 4,096 generation tokens,
+The LFM3-1.7B profile uses 32,768 context tokens and 4,096 generation tokens,
 including reasoning. It requires `--reasoning-format` support; Pearl requests
 separate reasoning fields and displays only the final answer. The two new
 Instruct profiles use 4,096 context tokens and 512 generation tokens. Larger
@@ -459,7 +457,7 @@ separate integration checks:
 
 ```sh
 zig build test-agent-benchmark test-agent-benchmark-settings -- \
-    --model /path/to/LFM2.5-350M-Q4_K_M.gguf
+    --model /path/to/LFM3-1.7B-Q4_K_M.gguf
 zig build build-benchmark-check
 ```
 
@@ -482,7 +480,7 @@ After staging the runtime and supplying an existing model, run the real
 launcher/settings test with:
 
 ```sh
-zig build test-agent-launcher -- --model /path/to/LFM2.5-350M-Q4_K_M.gguf \
+zig build test-agent-launcher -- --model /path/to/LFM3-1.7B-Q4_K_M.gguf \
     --aqueous /path/to/patched/aqueous
 ```
 

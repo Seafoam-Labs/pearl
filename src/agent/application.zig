@@ -268,7 +268,7 @@ const App = struct {
         const header = gtk.HeaderBar.new();
         const title = w.column(2);
         title.append(w.label(@import("i18n").dtr("pearl-agent", "Pearl Assistant"), "title").as(gtk.Widget));
-        self.model_label = w.label(@import("i18n").dtr("pearl-agent", "LFM2.5-350M · On device"), "dim-label");
+        self.model_label = w.label(@import("i18n").dtr("pearl-agent", "LFM3-1.7B · On device"), "dim-label");
         self.model_label.setEllipsize(.end);
         self.model_label.setMaxWidthChars(22);
         title.append(self.model_label.as(gtk.Widget));

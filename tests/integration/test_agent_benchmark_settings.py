@@ -38,7 +38,7 @@ def main():
         runtime.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(ROOT / "tests/integration/fake_llama_server.py", runtime)
         runtime.chmod(0o755)
-        model = runtime.parent / "pearl/assistant/models/LFM2.5-350M-Q4_K_M.gguf"
+        model = runtime.parent / "pearl/assistant/models/LFM3-1.7B-Q4_K_M.gguf"
         model.parent.mkdir(parents=True)
         try:
             os.link(args.model.resolve(), model)

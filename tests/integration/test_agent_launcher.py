@@ -65,7 +65,7 @@ def main():
             desktop(s, "Question", "What is RAM?", command="/usr/bin/true")
             model_dir = Path(s.env["XDG_DATA_HOME"]) / "pearl/assistant/models"
             model_dir.mkdir(parents=True)
-            local_model = model_dir / "LFM2.5-350M-Q4_K_M.gguf"
+            local_model = model_dir / "LFM3-1.7B-Q4_K_M.gguf"
             try:
                 os.link(args.model.resolve(), local_model)
             except OSError:

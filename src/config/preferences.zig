@@ -475,7 +475,7 @@ test "semantic search stays disabled when older preferences omit it" {
     const encoded = try std.json.Stringify.valueAlloc(a, saved, .{});
     const round = try parse(a, encoded);
     try std.testing.expectEqualStrings("/home/zoey/Documents", round.assistant.semantic.folders[0]);
-    try std.testing.expectError(error.UnknownEmbeddingModel, parse(a, "{\"assistant\":{\"semantic\":{\"model_id\":\"liquid-lfm25-350m-q4km\"}}}"));
+    try std.testing.expectError(error.UnknownEmbeddingModel, parse(a, "{\"assistant\":{\"semantic\":{\"model_id\":\"liquid-lfm3-17b-q4km\"}}}"));
     try std.testing.expectError(error.AbsoluteFolderPathRequired, parse(a, "{\"assistant\":{\"semantic\":{\"folders\":[\"Documents\"]}}}"));
 }
 

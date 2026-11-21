@@ -14,13 +14,14 @@ pub const Mode = enum { cpu, current, cpu_gpu };
 pub const Outcome = enum { answer, results_only, truncated, timeout, cancelled, skipped, incompatible, tool_error, runtime_error, incorrect };
 pub const Settings = struct {
     model_id: []const u8,
+    custom_model: []const u8 = "",
     runtime: cfg.RuntimeConfig,
     compute: cfg.Compute,
     threads: u32,
     context: u32,
     generation: u32,
     pub fn config(self: Settings) cfg.Config {
-        return .{ .enabled = true, .model_id = self.model_id, .runtime = self.runtime, .compute = self.compute, .cpu_threads = self.threads, .context_tokens = self.context, .answer_tokens = self.generation, .read_pages = true };
+        return .{ .enabled = true, .model_id = self.model_id, .custom_model = self.custom_model, .runtime = self.runtime, .compute = self.compute, .cpu_threads = self.threads, .context_tokens = self.context, .answer_tokens = self.generation, .read_pages = true };
     }
     pub fn adopt(self: Settings, current: *cfg.Config) void {
         current.model_id = self.model_id;
@@ -104,9 +105,24 @@ pub fn hardware(a: std.mem.Allocator) !Hardware {
     result.fingerprint = try a.dupe(u8, &io.digest(stable));
     return result;
 }
-pub const Options = struct { selected: [registry.models.len]bool = .{ false, false, true, true, true }, mode: Mode = .cpu, detailed: bool = false };
+pub const Options = struct { selected: [registry.models.len]bool = .{ true, false, true, true }, mode: Mode = .cpu, detailed: bool = false };
 pub fn candidates(a: std.mem.Allocator, base: cfg.Config, options: Options, host: Hardware, devices: []const @import("compute.zig").Device) ![]Settings {
     var result: std.ArrayList(Settings) = .empty;
+    // Custom model: benchmark a single user-supplied GGUF without registry lookup.
+    if (std.mem.eql(u8, base.model_id, "custom")) {
+        var seed: Settings = .{ .model_id = "custom", .custom_model = base.custom_model, .runtime = base.runtime, .compute = if (options.mode == .current) base.compute else .{}, .threads = if (options.mode == .current) base.cpu_threads else 0, .context = base.contextTokens(), .generation = base.answerTokens() };
+        try appendUnique(a, &result, seed);
+        if (options.mode == .cpu_gpu) {
+            seed.compute = .{ .mode = .auto, .backend = base.compute.backend };
+            try appendUnique(a, &result, seed);
+            for (devices) |device| {
+                if (device.ambiguous or (base.compute.backend != .auto and device.backend != base.compute.backend)) continue;
+                seed.compute = .{ .mode = .gpu, .backend = device.backend, .device_id = device.id, .allow_cpu_fallback = base.compute.allow_cpu_fallback };
+                try appendUnique(a, &result, seed);
+            }
+        }
+        return result.items;
+    }
     for (registry.models, options.selected) |model, selected| {
         if (!selected) continue;
         var seed: Settings = .{ .model_id = model.id, .runtime = base.runtime, .compute = if (options.mode == .current) base.compute else .{}, .threads = if (options.mode == .current) base.cpu_threads else 0, .context = if (options.mode == .current and base.context_tokens != 0) base.context_tokens else model.context_tokens, .generation = if (options.mode == .current and base.answer_tokens != 0) base.answer_tokens else model.answer_tokens };
@@ -258,9 +274,11 @@ pub const Progress = struct {
     skip: std.atomic.Value(bool) = .init(false),
 };
 pub fn execute(a: std.mem.Allocator, base: cfg.Config, options: Options, cancel: *gio.Cancellable, progress: *Progress) !Run {
-    for (options.selected) |selected| {
-        if (selected) break;
-    } else return error.SelectBenchmarkModels;
+    if (!std.mem.eql(u8, base.model_id, "custom")) {
+        for (options.selected) |selected| {
+            if (selected) break;
+        } else return error.SelectBenchmarkModels;
+    }
     const host = try hardware(a);
     var run: Run = .{ .id = try std.fmt.allocPrint(a, "{d}-{d}", .{ glib.getRealTime(), std.c.getpid() }), .started_us = glib.getRealTime(), .hardware = host, .options = options };
     try save(a, run);
@@ -301,9 +319,10 @@ pub fn execute(a: std.mem.Allocator, base: cfg.Config, options: Options, cancel:
 fn measure(a: std.mem.Allocator, result: *Result, cancel: *gio.Cancellable, progress: *Progress) !void {
     const config = result.settings.config();
     try config.validate();
-    const model = registry.find(config.model_id) orelse return error.UnknownAssistantModel;
-    result.model_hash = model.sha256;
-    result.model_identity = probe.fingerprint(a, try @import("downloads.zig").path(a, model)) catch return error.ModelNotInstalled;
+    const model = registry.find(config.model_id);
+    const model_path = if (model) |m| try @import("downloads.zig").path(a, m) else try a.dupeSentinel(u8, config.custom_model, 0);
+    result.model_hash = if (model) |m| m.sha256 else "";
+    result.model_identity = probe.fingerprint(a, model_path) catch return error.ModelNotInstalled;
     var metrics: telemetry.Metrics = .{ .skip = &progress.skip };
     var runtime: @import("runtime.zig").Runtime = .{ .telemetry = &metrics };
     defer runtime.stop();
@@ -574,7 +593,7 @@ test "unfinished, truncated and fallback runs cannot be recommended" {
     defer arena.deinit();
     const a = arena.allocator();
     const host = try hardware(a);
-    const choices = try candidates(a, .{ .cpu_threads = 7 }, .{ .selected = .{ false, false, false, false, true }, .detailed = true }, host, &.{});
+    const choices = try candidates(a, .{ .cpu_threads = 7 }, .{ .selected = .{ false, false, false, true }, .detailed = true }, host, &.{});
     try std.testing.expect(choices.len > 1);
     var samples: [fixtures.len * 8]Sample = undefined;
     for (&samples, 0..) |*sample, i| sample.* = .{ .fixture = "memory", .followup = false, .warmup = i < 4, .outcome = .answer, .complete_ms = 10 };

@@ -100,7 +100,7 @@ pub const Config = struct {
     enabled: bool = false,
     runtime: RuntimeConfig = .{},
     compute: Compute = .{},
-    model_id: []const u8 = "liquid-lfm25-350m-q4km",
+    model_id: []const u8 = "liquid-lfm3-17b-q4km",
     custom_model: []const u8 = "",
     providers: []const Provider = &default_providers,
     default_provider_id: []const u8 = "bing",
@@ -197,7 +197,7 @@ test "semantic search stays opt-in with explicit absolute folders" {
     try std.testing.expect(!cfg.semantic.enabled);
     try std.testing.expectEqual(@as(usize, 0), cfg.semantic.folders.len);
     try (Config{ .semantic = .{ .enabled = true, .folders = &.{"/home/zoey/Documents"} } }).validate();
-    try std.testing.expectError(error.UnknownEmbeddingModel, (Config{ .semantic = .{ .model_id = "liquid-lfm25-350m-q4km" } }).validate());
+    try std.testing.expectError(error.UnknownEmbeddingModel, (Config{ .semantic = .{ .model_id = "liquid-lfm3-17b-q4km" } }).validate());
     try std.testing.expectError(error.UnknownAssistantModel, (Config{ .model_id = "embeddinggemma-2-q8_0" }).validate());
     try std.testing.expectError(error.AbsoluteFolderPathRequired, (Config{ .semantic = .{ .folders = &.{"Documents"} } }).validate());
     try std.testing.expectError(error.DuplicateSemanticFolder, (Config{ .semantic = .{ .folders = &.{ "/tmp/a", "/tmp/a" } } }).validate());

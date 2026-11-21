@@ -150,7 +150,7 @@ def main():
         with PrivateSession(args.output / "session", aqueous=args.aqueous) as session:
             models = Path(session.env["XDG_DATA_HOME"]) / "pearl/assistant/models"
             models.mkdir(parents=True)
-            os.link(args.model.resolve(), models / "LFM2.5-350M-Q4_K_M.gguf")
+            os.link(args.model.resolve(), models / "LFM3-1.7B-Q4_K_M.gguf")
             parent, child = socket.socketpair()
             parent.settimeout(15)
             log = (args.output / "agent.log").open("w")
@@ -181,7 +181,7 @@ def main():
                 executable = location / scenario
                 shutil.copyfile(Path(__file__).with_name("fake_llama_server.py"), executable)
                 executable.chmod(0o755)
-                return dict(enabled=True, read_pages=False, default_provider_id="google", runtime=dict(source="custom", executable=str(executable)),
+                return dict(enabled=True, read_pages=False, default_provider_id="google", model_id="custom", custom_model=str(models / "LFM3-1.7B-Q4_K_M.gguf"), runtime=dict(source="custom", executable=str(executable)),
                     compute=dict(mode=mode, backend="vulkan", device_id="vulkan:NVIDIA Fixture:8192", allow_cpu_fallback=fallback),
                     providers=[dict(id="google", kind="google", endpoint=f"http://127.0.0.1:{server.server_port}")])
             try:
