@@ -13,6 +13,16 @@ import time
 ROOT = Path(__file__).resolve().parents[2]
 
 
+def completion_requests(path):
+    """Return only inference requests (no template/tokenize endpoints in mistral.rs)."""
+    requests = [json.loads(line) for line in path.read_text().splitlines()]
+    completions = []
+    for request in requests:
+        if request["path"] == "/v1/chat/completions":
+            completions.append(request["payload"])
+    return completions
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--driver", type=Path, default=ROOT / "zig-out/test/pearl-benchmark-check")
@@ -27,7 +37,7 @@ def main():
         Path(env["XDG_RUNTIME_DIR"]).mkdir(mode=0o700)
         models = Path(env["XDG_DATA_HOME"]) / "pearl/assistant/models"
         models.mkdir(parents=True)
-        model = models / "LFM2.5-350M-Q4_K_M.gguf"
+        model = models / "LFM3-1.7B-Q4_K_M.gguf"
         try:
             os.link(args.model.resolve(), model)
         except OSError:
@@ -37,8 +47,8 @@ def main():
             runtime = root / scenario
             shutil.copyfile(ROOT / "tests/integration/fake_llama_server.py", runtime)
             runtime.chmod(0o755)
-            config = {"runtime": {"source": "custom", "executable": str(runtime)}}
-            options = {"selected": selected or [True, False, False, False, False], "mode": mode}
+            config = {"runtime": {"source": "custom", "executable": str(runtime)}, "model_id": "custom", "custom_model": str(model)}
+            options = {"selected": selected or [True, False, False, False], "mode": mode}
             input_path = root / "input.json"
             input_path.write_text(json.dumps(dict(config=config, options=options, cancel_after_ms=cancel_ms, skip_after_ms=skip_ms)))
             started = time.monotonic()
@@ -54,7 +64,7 @@ def main():
             assert not list(Path(env["XDG_RUNTIME_DIR"]).glob("pearl-agent-key-*"))
             return report, time.monotonic() - started
 
-        for scenario in ["benchmark_ok", "benchmark_fallback", "benchmark_repair"]:
+        for scenario in ["benchmark_ok", "benchmark_direct", "benchmark_repair"]:
             report, _ = run(scenario)
             result = report["results"][0]
             assert result["complete"] and not result["error_code"], result
@@ -63,11 +73,40 @@ def main():
             assert sum(not s["warmup"] for s in result["samples"]) == 12
             assert all(s["tokens"]["reasoning"] > 0 and "Internal test" not in s["answer"] for s in result["samples"])
             assert result["peak_rss_kib"] > 0 and result["verification_ms"] > 0
-            assert all(s["first_visible_ms"] <= s["complete_ms"] for s in result["samples"])
+            assert all(s["first_visible_ms"] is not None and s["first_visible_ms"] <= s["complete_ms"] for s in result["samples"])
+            requests = completion_requests(root / (scenario + ".requests.jsonl"))
+            # Qualification itself never dispatches a host search.
+            assert not requests[0].get("tools") and requests[1].get("tools")
+            assert not requests[2].get("tools") and requests[2]["messages"][-1]["role"] == "tool"
+            measured = requests[3:]
+            expected = 16 if scenario == "benchmark_direct" else 32 if scenario == "benchmark_repair" else 24
+            assert len(measured) == expected, (scenario, measured)
+            assert all(r["messages"][0]["role"] == "system" and r["messages"][0]["content"].startswith("You are Pearl, a helpful conversational assistant.") for r in measured)
+            assert all(sum(m["role"] == "system" for m in r["messages"]) == 1 for r in measured)
+            assert all(m["role"] == "user" for r in measured for m in r["messages"] if m.get("content", "").startswith("Previous search evidence"))
+            if scenario == "benchmark_direct":
+                assert all(s["searches"] == 0 and s["reads"] == 0 and "[1]" not in s["answer"] for s in result["samples"]), result
+                checks["direct_answers_do_not_force_search_or_citations"] = True
+            else:
+                assert all(s["searches"] == (0 if s["followup"] else 1) for s in result["samples"]), result
+                assert all("[1]" not in s["answer"] for s in result["samples"] if s["followup"]), result
+                assert all("[1]" in s["answer"] for s in result["samples"] if not s["followup"]), result
+                if scenario == "benchmark_repair":
+                    assert sum(not r.get("tools") for r in measured) == 8, measured
+                checks["prior_evidence_does_not_force_followup_search_or_citations"] = True
+            checks["prompt_budget_uses_byte_estimator"] = True
             checks[scenario] = True
         for scenario, outcome in [("benchmark_invalid", "results_only"), ("benchmark_truncated", "truncated")]:
             report, _ = run(scenario)
-            assert any(s["outcome"] == outcome for s in report["results"][0]["samples"]), report
+            result = report["results"][0]
+            assert result["samples"] and all(s["outcome"] == outcome for s in result["samples"]), report
+            requests = completion_requests(root / (scenario + ".requests.jsonl"))[3:]
+            if scenario == "benchmark_invalid":
+                assert len(result["samples"]) == 8 and len(requests) == 24, report
+                assert sum(not r.get("tools") for r in requests) == 8, requests
+                assert all("[99]" not in s["answer"] for s in result["samples"]), report
+            else:
+                assert all(s["error_code"] == "GenerationTruncated" for s in result["samples"]), report
             checks[scenario] = True
         report, _ = run("benchmark_startup_fail", mode="cpu_gpu")
         assert len(report["results"]) == 3
@@ -86,18 +125,17 @@ def main():
         report, elapsed = run("benchmark_delayed_answer_skip", skip_ms=1500)
         assert report["state"] == "complete" and report["results"][0]["error_code"] == "BenchmarkSkipped" and elapsed < 5, report
         checks["skip_releases_current_runtime"] = True
-        report, _ = run("benchmark_missing", selected=[True, False, True, False, False])
+        report, _ = run("benchmark_missing", selected=[True, False, True, False])
         assert report["results"][0]["error_code"] == "RuntimeCapabilityMissing"
-        assert report["results"][1]["error_code"] == "ModelNotInstalled"
         checks["failures_continue_and_persist"] = True
-        report, _ = run("benchmark_continues", selected=[True, False, True, False, False])
-        assert len(report["results"][0]["samples"]) == 16 and report["results"][1]["error_code"] == "ModelNotInstalled"
+        report, _ = run("benchmark_continues", selected=[True, False, True, False])
+        assert len(report["results"][0]["samples"]) == 16
         checks["completed_result_survives_later_failure"] = True
         # Replace only the private hardlink, never modify the caller's model.
         model.unlink()
-        model.write_bytes(b"GGUF" + bytes(12))
+        model.write_bytes(b"INVALID_MODEL_FILE!")
         report, _ = run("benchmark_checksum")
-        assert report["results"][0]["error_code"] == "ModelChecksumMismatch"
+        assert report["results"][0]["error_code"] == "InvalidModelFile"
         checks["checksum_failure_recorded"] = True
         checks["history_retained"] = len(list((Path(env["XDG_STATE_HOME"]) / "pearl/assistant/benchmarks").glob("*.json"))) >= 10
     (args.output / "report.json").write_text(json.dumps({"status": "passed", "checks": checks}, indent=2))

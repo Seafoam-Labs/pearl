@@ -1,9 +1,9 @@
-//! Immutable publisher revisions and LFS SHA256 values, verified 2026-10-15.
+//! Immutable publisher revisions and LFS SHA256 values, verified 2026-11-21.
 //! EmbeddingGemma 2 text-backbone profiles verified 2026-11-16 (issue #46).
 const std = @import("std");
-pub const revision = "657e078c94084481950a2d555a941481f715536b";
-pub const base_url = "https://huggingface.co/LiquidAI/LFM2.5-350M-GGUF/resolve/" ++ revision ++ "/";
-pub const license_url = "https://huggingface.co/LiquidAI/LFM2.5-350M-GGUF/blob/" ++ revision ++ "/LICENSE";
+pub const revision = "cd0c74c575b5c416f3011b5b4c298077f26ca8c2";
+pub const base_url = "https://huggingface.co/LiquidAI/LFM3-1.7B-GGUF/resolve/" ++ revision ++ "/";
+pub const license_url = "https://huggingface.co/LiquidAI/LFM3-1.7B-GGUF/blob/" ++ revision ++ "/LICENSE";
 pub const Model = struct {
     id: []const u8,
     name: [:0]const u8,
@@ -18,8 +18,39 @@ pub const Model = struct {
     inference_seconds: u16 = 60,
 };
 pub const models = [_]Model{
-    .{ .id = "liquid-lfm25-350m-q4km", .name = "LFM2.5-350M · Q4_K_M · 229 MB", .filename = "LFM2.5-350M-Q4_K_M.gguf", .bytes = 229312224, .sha256 = "7e6f72643caafc9a68256686638c4d7916f2cec76d1df478d4c3ddcd95a6aed4" },
-    .{ .id = "liquid-lfm25-350m-q8", .name = "LFM2.5-350M · Q8_0 · 379 MB", .filename = "LFM2.5-350M-Q8_0.gguf", .bytes = 379217632, .sha256 = "be036a757295e550098b85e13f6af2735d0fa73b41e1156a40c7d8e8e32a5766" },
+    .{
+        .id = "liquid-lfm3-17b-q4km",
+        .name = "LFM3-1.7B · Q4_K_M · 1.10 GB",
+        .filename = "LFM3-1.7B-Q4_K_M.gguf",
+        .bytes = 1099627808,
+        .sha256 = "3793e1e6e2266919d6e015287221b41100175a98eddaba92e111aed3b05c93c4",
+        .context_tokens = 32768,
+        .answer_tokens = 4096,
+        .reasoning = true,
+        .inference_seconds = 300,
+    },
+    .{
+        .id = "liquid-lfm3-17b-q5km",
+        .name = "LFM3-1.7B · Q5_K_M · 1.26 GB",
+        .filename = "LFM3-1.7B-Q5_K_M.gguf",
+        .bytes = 1258663200,
+        .sha256 = "41e51fb0be5f472d323055f2734d986d5a2429570973508fa6322f3f07f6d7f3",
+        .context_tokens = 32768,
+        .answer_tokens = 4096,
+        .reasoning = true,
+        .inference_seconds = 300,
+    },
+    .{
+        .id = "liquid-lfm3-17b-q8",
+        .name = "LFM3-1.7B · Q8_0 · 1.85 GB",
+        .filename = "LFM3-1.7B-Q8_0.gguf",
+        .bytes = 1846238496,
+        .sha256 = "8f6b24182258205e9e01e21f1f24a1f208c1e8115578825d202ce39976af20b6",
+        .context_tokens = 32768,
+        .answer_tokens = 4096,
+        .reasoning = true,
+        .inference_seconds = 300,
+    },
     .{
         .id = "qwen3-4b-instruct-2507-q4km",
         .name = "Qwen3-4B-Instruct-2507 · Q4_K_M · 2.50 GB",
@@ -30,30 +61,6 @@ pub const models = [_]Model{
         .license_url = "https://huggingface.co/Qwen/Qwen3-4B-Instruct-2507/blob/main/LICENSE",
         .answer_tokens = 512,
         .inference_seconds = 180,
-    },
-    .{
-        .id = "liquid-lfm25-26b-q4km",
-        .name = "LFM2.5-2.6B · Q4_K_M · 1.67 GB",
-        .filename = "LFM2.5-2.6B-Q4_K_M.gguf",
-        .bytes = 1674455040,
-        .sha256 = "02a8b7e17487d326e46d68ce0ba24211e1b80a14c4cd0597fa73c1cd697f52ed",
-        .base_url = "https://huggingface.co/LiquidAI/LFM2.5-2.6B-GGUF/resolve/e7caca5d835a3901a8e0d63e94009429bafafdfc/",
-        .license_url = "https://huggingface.co/LiquidAI/LFM2.5-2.6B-GGUF/blob/e7caca5d835a3901a8e0d63e94009429bafafdfc/LICENSE",
-        .context_tokens = 8192,
-        .answer_tokens = 4096,
-        .reasoning = true,
-        .inference_seconds = 300,
-    },
-    .{
-        .id = "liquid-lfm25-12b-instruct-q4km",
-        .name = "LFM2.5-1.2B-Instruct · Q4_K_M · 731 MB",
-        .filename = "LFM2.5-1.2B-Instruct-Q4_K_M.gguf",
-        .bytes = 730895168,
-        .sha256 = "b1b3de114215d9507409a662a501a631095a479a419584e8a2ded6304b19b4f5",
-        .base_url = "https://huggingface.co/LiquidAI/LFM2.5-1.2B-Instruct-GGUF/resolve/8ed288026e23958ad9dfa92d53ed773a8eee7125/",
-        .license_url = "https://huggingface.co/LiquidAI/LFM2.5-1.2B-Instruct-GGUF/blob/8ed288026e23958ad9dfa92d53ed773a8eee7125/LICENSE",
-        .answer_tokens = 512,
-        .inference_seconds = 120,
     },
 };
 /// Semantic search loads only the text backbone; the multimodal `mmproj`

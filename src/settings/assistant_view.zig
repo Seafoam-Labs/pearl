@@ -98,6 +98,7 @@ pub const View = struct {
     buttons: [10]*gtk.Button = undefined,
     comparison: ?*@import("benchmark_view.zig").View = null,
     semantic: ?*@import("semantic_view.zig").View = null,
+    tools: ?*@import("assistant_tools_view.zig").View = null,
     pub fn create(host: *gtk.Box, editor: *Editor) !*View {
         const self = try a.create(View);
         host.as(gtk.Widget).addCssClass("assistant-view");
@@ -216,6 +217,8 @@ pub const View = struct {
         host.append(comparison_host.as(gtk.Widget));
         const semantic_host = w.column(0);
         host.append(semantic_host.as(gtk.Widget));
+        const tools_host = w.column(0);
+        host.append(tools_host.as(gtk.Widget));
         const resources_section = layout.Section.create(host, "Resources & behavior", "Automatic model profile and idle unload");
         const resources = resources_section.body;
         const read_pages = toggle(resources, @import("i18n").dtr("pearl", "Read search result pages"));
@@ -242,6 +245,7 @@ pub const View = struct {
         _ = object.Object.signals.notify.connect(device.as(object.Object), *View, deviceSelected, self, .{ .detail = "selected" });
         self.comparison = try @import("benchmark_view.zig").View.create(comparison_host, editor, self, comparisonAvailable);
         self.semantic = try @import("semantic_view.zig").View.create(semantic_host, editor, self, comparisonAvailable);
+        self.tools = try @import("assistant_tools_view.zig").View.create(tools_host, editor);
         self.timer = glib.timeoutAdd(250, tick, self);
         self.update();
         return self;
@@ -250,6 +254,7 @@ pub const View = struct {
         self.dead = true;
         if (self.comparison) |comparison| comparison.destroy();
         if (self.semantic) |semantic| semantic.destroy();
+        if (self.tools) |tools| tools.destroy();
         if (self.timer != 0) _ = glib.Source.remove(self.timer);
         self.timer = 0;
         if (self.cancel) |cancel| cancel.cancel();
@@ -446,6 +451,7 @@ pub const View = struct {
         self.buttons[@backingInt(Action.store_key)].as(gtk.Widget).setSensitive(@intFromBool(available and needs_key));
         self.buttons[@backingInt(Action.remove_key)].as(gtk.Widget).setSensitive(@intFromBool(available and needs_key));
         self.feedback();
+        if (self.tools) |tools| tools.update();
     }
     fn providerSelected(_: *object.Object, _: *object.ParamSpec, self: *View) callconv(.c) void {
         if (self.filling) return;
@@ -648,7 +654,7 @@ pub const View = struct {
                     };
                     break;
                 }
-                job.details = try std.fmt.allocPrint(alloc, "{s}\n{s}\nCompatible · {s}\n{s}", .{ runtime.executable, runtime.version, if (runtime.gpu) "GPU offload verified" else "CPU", runtime.fallback_reason });
+                job.details = try std.fmt.allocPrint(alloc, "{s}\n{s}\nChat compatible · {s}\n{s}\n{s}", .{ runtime.executable, runtime.version, if (runtime.gpu) "GPU offload verified" else "CPU", if (runtime.tools_available) "Web tool compatibility checks passed" else runtime.tools_warning, runtime.fallback_reason });
             },
             .test_provider => {
                 _ = try @import("../agent/providers.zig").search(alloc, job.provider, "Pearl desktop", cancel);

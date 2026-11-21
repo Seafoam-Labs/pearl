@@ -25,6 +25,8 @@ pub const Provider = struct {
     }
 };
 pub const default_providers = [_]Provider{.{}};
+/// Provenance of the mistralrs inference binary: a distribution package on
+/// PATH, the bundled libexec copy, or a user-selected custom executable.
 pub const RuntimeSource = enum { system, packaged, custom };
 pub const Backend = enum { auto, vulkan, cuda };
 pub const RuntimeConfig = struct { source: RuntimeSource = .system, executable: []const u8 = "" };
@@ -56,17 +58,58 @@ pub const Semantic = struct {
         }
     }
 };
+pub const FolderGrant = struct {
+    id: []const u8,
+    path: []const u8,
+    read: bool = false,
+    create: bool = false,
+    delete: bool = false,
+    pub fn validate(self: FolderGrant) !void {
+        try identifier(self.id);
+        try text(self.path, 4096);
+        if (self.path.len == 0 or !std.fs.path.isAbsolute(self.path)) return error.AbsoluteFolderPathRequired;
+        if (!self.read and !self.create and !self.delete) return error.EmptyFolderGrant;
+        // Reject paths that would grant access to credential stores, system
+        // configuration, or execution-triggering locations.
+        const protected = [_][]const u8{ "/etc/", "/usr/", "/bin/", "/sbin/", "/lib/", "/boot/", "/dev/", "/proc/", "/sys/", "/run/" };
+        for (protected) |prefix| {
+            const bare = prefix[0 .. prefix.len - 1];
+            if (std.mem.eql(u8, self.path, bare) or std.mem.startsWith(u8, self.path, prefix)) return error.ProtectedFolderGrant;
+        }
+        // Reject home-directory credential/config subdirectories.
+        if (std.mem.indexOf(u8, self.path, "/.ssh") != null or
+            std.mem.indexOf(u8, self.path, "/.gnupg") != null or
+            std.mem.indexOf(u8, self.path, "/.config/autostart") != null or
+            std.mem.indexOf(u8, self.path, "/.local/share/applications") != null) return error.ProtectedFolderGrant;
+    }
+};
+pub const Local = struct {
+    enabled: bool = false,
+    open_apps: bool = false,
+    roots: []const FolderGrant = &.{},
+    pub fn validate(self: Local) !void {
+        if (self.roots.len > 16) return error.TooManyFolderGrants;
+        for (self.roots, 0..) |grant, i| {
+            try grant.validate();
+            for (self.roots[0..i]) |other| {
+                if (std.mem.eql(u8, grant.id, other.id)) return error.DuplicateFolderGrant;
+                if (std.mem.eql(u8, grant.path, other.path)) return error.DuplicateFolderPath;
+            }
+        }
+    }
+};
 pub const Config = struct {
     enabled: bool = false,
     runtime: RuntimeConfig = .{},
     compute: Compute = .{},
-    model_id: []const u8 = "liquid-lfm25-350m-q4km",
+    model_id: []const u8 = "liquid-lfm3-17b-q4km",
     custom_model: []const u8 = "",
     providers: []const Provider = &default_providers,
     default_provider_id: []const u8 = "bing",
     search_mode: enum { default, all } = .default,
     read_pages: bool = true,
     semantic: Semantic = .{},
+    local: Local = .{},
     // Zero selects the model profile or the runtime's CPU thread detection.
     context_tokens: u32 = 0,
     answer_tokens: u32 = 0,
@@ -90,11 +133,12 @@ pub const Config = struct {
             if (p.enabled) active += 1;
             for (self.providers[0..i]) |other| if (std.mem.eql(u8, p.id, other.id)) return error.DuplicateSearchProvider;
         }
-        if (self.default_provider_id.len > 0 and self.provider(self.default_provider_id) == null) return error.UnknownSearchProvider;
+        try text(self.default_provider_id, 64);
         if (self.search_mode == .all and active > 3) return error.TooManyEnabledProviders;
         if (self.contextTokens() > std.math.maxInt(c_int) or self.contextTokens() <= @as(u64, self.answerTokens()) + 700) return error.InvalidAssistantContext;
         if (self.cpu_threads > std.math.maxInt(c_int) or self.idle_unload_seconds < 15 or self.idle_unload_seconds > 300) return error.InvalidAssistantBudget;
         try self.semantic.validate();
+        try self.local.validate();
     }
     pub fn contextTokens(self: Config) u32 {
         if (self.context_tokens != 0) return self.context_tokens;
@@ -113,6 +157,14 @@ pub const Config = struct {
     pub fn provider(self: Config, id: []const u8) ?Provider {
         for (self.providers) |p| if (std.mem.eql(u8, id, p.id)) return p;
         return null;
+    }
+    pub fn hasSearch(self: Config) bool {
+        for (self.providers) |p| if (self.selected(p)) return true;
+        return false;
+    }
+    pub fn validateSearch(self: Config) !void {
+        if (self.search_mode == .default and self.default_provider_id.len > 0 and self.provider(self.default_provider_id) == null) return error.UnknownSearchProvider;
+        if (!self.hasSearch()) return error.SearchProviderRequired;
     }
     pub fn selected(self: Config, p: Provider) bool {
         return p.enabled and (self.search_mode == .all or std.mem.eql(u8, p.id, self.default_provider_id));
@@ -147,7 +199,7 @@ test "semantic search stays opt-in with explicit absolute folders" {
     try std.testing.expect(!cfg.semantic.enabled);
     try std.testing.expectEqual(@as(usize, 0), cfg.semantic.folders.len);
     try (Config{ .semantic = .{ .enabled = true, .folders = &.{"/home/zoey/Documents"} } }).validate();
-    try std.testing.expectError(error.UnknownEmbeddingModel, (Config{ .semantic = .{ .model_id = "liquid-lfm25-350m-q4km" } }).validate());
+    try std.testing.expectError(error.UnknownEmbeddingModel, (Config{ .semantic = .{ .model_id = "liquid-lfm3-17b-q4km" } }).validate());
     try std.testing.expectError(error.UnknownAssistantModel, (Config{ .model_id = "embeddinggemma-2-q8_0" }).validate());
     try std.testing.expectError(error.AbsoluteFolderPathRequired, (Config{ .semantic = .{ .folders = &.{"Documents"} } }).validate());
     try std.testing.expectError(error.DuplicateSemanticFolder, (Config{ .semantic = .{ .folders = &.{ "/tmp/a", "/tmp/a" } } }).validate());
@@ -174,7 +226,10 @@ test "provider identity and endpoints are validated without a CPU thread cap" {
     try (Config{ .cpu_threads = 8 }).validate();
     try (Config{ .cpu_threads = 1024, .context_tokens = 131072, .answer_tokens = 8192 }).validate();
     try std.testing.expectError(error.InvalidSearchEndpoint, (Provider{ .endpoint = "https://user:secret@host" }).validate());
-    try std.testing.expectError(error.UnknownSearchProvider, (Config{ .providers = &.{} }).validate());
+    try (Config{ .providers = &.{} }).validate();
+    try std.testing.expectError(error.UnknownSearchProvider, (Config{ .providers = &.{} }).validateSearch());
+    try std.testing.expectError(error.SearchProviderRequired, (Config{ .providers = &.{.{ .enabled = false }} }).validateSearch());
+    try std.testing.expect(!(Config{ .providers = &.{} }).hasSearch());
     try (Config{ .providers = &.{}, .default_provider_id = "" }).validate();
 }
 test "saved configured providers retain their explicit default" {
@@ -186,6 +241,32 @@ test "saved configured providers retain their explicit default" {
     try cfg.validate();
     try std.testing.expect(cfg.selected(cfg.providers[0]));
     try std.testing.expectEqual(ProviderKind.google, cfg.providers[0].kind);
+}
+
+test "local tools stay opt-in with validated folder grants" {
+    const cfg: Config = .{};
+    try cfg.validate();
+    try std.testing.expect(!cfg.local.enabled);
+    try std.testing.expect(!cfg.local.open_apps);
+    try std.testing.expectEqual(@as(usize, 0), cfg.local.roots.len);
+    try (Config{ .local = .{ .enabled = true, .roots = &.{.{ .id = "docs", .path = "/home/zoey/Documents", .read = true }} } }).validate();
+    try std.testing.expectError(error.EmptyFolderGrant, (FolderGrant{ .id = "x", .path = "/tmp" }).validate());
+    try std.testing.expectError(error.AbsoluteFolderPathRequired, (FolderGrant{ .id = "x", .path = "relative", .read = true }).validate());
+    try std.testing.expectError(error.ProtectedFolderGrant, (FolderGrant{ .id = "x", .path = "/etc", .read = true }).validate());
+    try std.testing.expectError(error.ProtectedFolderGrant, (FolderGrant{ .id = "x", .path = "/home/zoey/.ssh", .read = true }).validate());
+    try std.testing.expectError(error.DuplicateFolderGrant, (Local{ .roots = &.{ .{ .id = "a", .path = "/tmp/a", .read = true }, .{ .id = "a", .path = "/tmp/b", .read = true } } }).validate());
+    try std.testing.expectError(error.DuplicateFolderPath, (Local{ .roots = &.{ .{ .id = "a", .path = "/tmp/a", .read = true }, .{ .id = "b", .path = "/tmp/a", .read = true } } }).validate());
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    const saved: Config = .{ .local = .{ .enabled = true, .open_apps = true, .roots = &.{.{ .id = "work", .path = "/home/zoey/Projects", .read = true, .create = true }} } };
+    const copy = try std.json.parseFromSliceLeaky(Config, a, try std.json.Stringify.valueAlloc(a, saved, .{}), .{});
+    try copy.validate();
+    try std.testing.expect(copy.local.enabled);
+    try std.testing.expect(copy.local.open_apps);
+    try std.testing.expectEqualStrings("work", copy.local.roots[0].id);
+    try std.testing.expect(copy.local.roots[0].create);
+    try std.testing.expect(!copy.local.roots[0].delete);
 }
 
 test "automatic model profiles and explicit resource choices survive round trips" {

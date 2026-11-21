@@ -58,7 +58,7 @@ def main():
             wait_for(ready)
         try:
             original = json.loads(peer.document("committed"))["assistant"]
-            for index, model_id in [(2, "qwen3-4b-instruct-2507-q4km"), (3, "liquid-lfm25-26b-q4km"), (4, "liquid-lfm25-12b-instruct-q4km"), (5, "custom")]:
+            for index, model_id in [(3, "qwen3-4b-instruct-2507-q4km"), (4, "custom")]:
                 settled()
                 click_widget(session, ipc, reach("model")["bounds"])
                 keys(session, "Home", *(["Down"] * index), "Return")

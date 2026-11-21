@@ -11,30 +11,38 @@ const controller = @import("controller.zig");
 const Config = @import("config.zig").Config;
 const RuntimeModule = @import("runtime.zig");
 const Runtime = RuntimeModule.Runtime;
+const files_mod = @import("files.zig");
+const confirmation = @import("confirmation.zig");
 const w = @import("../ui/components/widgets.zig");
 const a = std.heap.c_allocator;
 const Conversation = struct {
     arena: std.heap.ArenaAllocator = .init(a),
     turns: std.ArrayList(controller.Turn) = .empty,
     sources: []controller.Source = &.{},
+    outcome: @FieldType(controller.Answer, "outcome") = .completed,
+    warning: []const u8 = "",
+    capability_warning: []const u8 = "",
     bytes: usize = 0,
     fn clear(self: *Conversation) void {
         self.arena.deinit();
         self.* = .{};
     }
-    fn append(self: *Conversation, question: []const u8, answer: []const u8, sources: []const controller.Source) !void {
+    fn append(self: *Conversation, question: []const u8, answer: controller.Answer) !void {
         var replacement: Conversation = .{};
         errdefer replacement.clear();
         const alloc = replacement.arena.allocator();
-        const source_json = try std.json.Stringify.valueAlloc(alloc, sources, .{});
-        if (source_json.len + question.len + answer.len > 128 * 1024) return error.ConversationTooLarge;
+        const source_json = try std.json.Stringify.valueAlloc(alloc, answer.sources, .{});
+        var bytes = source_json.len + question.len + answer.text.len + answer.warning.len + answer.capability_warning.len;
+        if (bytes > 128 * 1024) return error.ConversationTooLarge;
         replacement.sources = try std.json.parseFromSliceLeaky([]controller.Source, alloc, source_json, .{});
+        replacement.outcome = answer.outcome;
+        replacement.warning = try alloc.dupe(u8, answer.warning);
+        replacement.capability_warning = try alloc.dupe(u8, answer.capability_warning);
         var first = self.turns.items.len - @min(self.turns.items.len, 19);
-        var bytes = source_json.len + question.len + answer.len;
         for (self.turns.items[first..]) |turn| bytes += turn.question.len + turn.answer.len;
         while (bytes > 128 * 1024 and first < self.turns.items.len) : (first += 1) bytes -= self.turns.items[first].question.len + self.turns.items[first].answer.len;
         for (self.turns.items[first..]) |turn| try replacement.turns.append(alloc, .{ .question = try alloc.dupe(u8, turn.question), .answer = try alloc.dupe(u8, turn.answer) });
-        try replacement.turns.append(alloc, .{ .question = try alloc.dupe(u8, question), .answer = try alloc.dupe(u8, answer) });
+        try replacement.turns.append(alloc, .{ .question = try alloc.dupe(u8, question), .answer = try alloc.dupe(u8, answer.text) });
         replacement.bytes = bytes;
         self.clear();
         self.* = replacement;
@@ -92,9 +100,22 @@ const App = struct {
     compute_dirty: bool = false,
     cpu_once: bool = false,
     cpu_button: *gtk.Button = undefined,
+    // Local tools confirmation state.
+    conf_channel: confirmation.Channel = .{},
+    conf_card: ?*gtk.Box = null,
+    conf_label: ?*gtk.Label = null,
+    conf_detail: ?*gtk.Label = null,
+    conf_approve: ?*gtk.Button = null,
+    conf_deny: ?*gtk.Button = null,
+    local_files: ?*files_mod.Tools = null,
     fn cancelWork(self: *App) void {
         self.generation += 1;
-        if (self.cancel) |cancel| cancel.cancel() else self.runtime.stop();
+        self.conf_channel.cancel();
+        self.hideConfirmation();
+        if (self.cancel) |cancel| {
+            cancel.cancel();
+            if (self.window != null) self.status.setText(@import("i18n").dtr("pearl-agent", "Stopping…"));
+        } else self.runtime.stop();
         self.compute_dirty = true;
         if (self.unload != 0) _ = glib.Source.remove(self.unload);
         self.unload = 0;
@@ -127,11 +148,23 @@ const App = struct {
                 var arena = std.heap.ArenaAllocator.init(a);
                 defer arena.deinit();
                 const req = protocol.parse(arena.allocator(), bytes) catch {
-                    self.shutdown();
+                    // Try parsing as a launch reply from the shell.
+                    const shell_reply = std.json.parseFromSliceLeaky(protocol.Reply, arena.allocator(), bytes, .{}) catch {
+                        self.shutdown();
+                        return;
+                    };
+                    if (shell_reply.id != 0 and shell_reply.launch == null) {
+                        // Launch result: unblock the confirmation channel.
+                        if (shell_reply.ok) {
+                            self.conf_channel.respond(.approved, "");
+                        } else {
+                            self.conf_channel.respond(.failed, shell_reply.err orelse "LaunchFailed");
+                        }
+                    }
                     return;
                 };
                 if (@import("build_options").test_hooks and req.op == .test_state) {
-                    self.reply(.{ .id = req.id, .state = .{ .visible = if (self.window) |win| win.as(gtk.Widget).getVisible() != 0 else false, .busy = self.job != null, .suspended = self.suspended, .runtime = self.job != null or self.runtime.process != null, .conversations = self.count, .turns = self.conversations[self.current].turns.items, .sources = self.conversations[self.current].sources.len, .status = if (self.window != null) std.mem.span(self.status.getText()) else "", .error_code = self.last_error, .draft_chars = if (self.window != null) @intCast(self.composer.getBuffer().getCharCount()) else 0 } });
+                    self.reply(.{ .id = req.id, .state = .{ .visible = if (self.window) |win| win.as(gtk.Widget).getVisible() != 0 else false, .busy = self.job != null, .suspended = self.suspended, .runtime = self.job != null or self.runtime.process != null, .conversations = self.count, .turns = self.conversations[self.current].turns.items, .sources = self.conversations[self.current].sources.len, .status = if (self.window != null) std.mem.span(self.status.getText()) else "", .error_code = self.last_error, .draft_chars = if (self.window != null) @intCast(self.composer.getBuffer().getCharCount()) else 0, .cpu_retry_available = self.window != null and self.cpu_button.as(gtk.Widget).getVisible() != 0 and self.cpu_button.as(gtk.Widget).getSensitive() != 0 } });
                     return;
                 }
                 self.handle(req) catch |err| {
@@ -235,7 +268,7 @@ const App = struct {
         const header = gtk.HeaderBar.new();
         const title = w.column(2);
         title.append(w.label(@import("i18n").dtr("pearl-agent", "Pearl Assistant"), "title").as(gtk.Widget));
-        self.model_label = w.label(@import("i18n").dtr("pearl-agent", "LFM2.5-350M · On device"), "dim-label");
+        self.model_label = w.label(@import("i18n").dtr("pearl-agent", "LFM3-1.7B · On device"), "dim-label");
         self.model_label.setEllipsize(.end);
         self.model_label.setMaxWidthChars(22);
         title.append(self.model_label.as(gtk.Widget));
@@ -255,7 +288,7 @@ const App = struct {
         self.body = w.column(12);
         self.scroll.setChild(self.body.as(gtk.Widget));
         root.append(self.scroll.as(gtk.Widget));
-        self.status = w.label(@import("i18n").dtr("pearl-agent", "Ask a question to search your configured engine."), "dim-label");
+        self.status = w.label(@import("i18n").dtr("pearl-agent", "Ask a question to start a conversation."), "dim-label");
         self.status.setWrap(1);
         root.append(self.status.as(gtk.Widget));
         self.compute_label = w.label(@import("i18n").dtr("pearl-agent", "Model unloaded"), "dim-label");
@@ -275,6 +308,33 @@ const App = struct {
         self.cpu_button.as(gtk.Widget).setVisible(0);
         root.append(self.cpu_button.as(gtk.Widget));
         _ = gtk.Button.signals.clicked.connect(self.cpu_button, *App, cpuClicked, self, .{});
+        // Confirmation card for local tool mutations.
+        const conf_card = w.column(6);
+        conf_card.as(gtk.Widget).addCssClass("pearl-agent-confirmation");
+        conf_card.as(gtk.Widget).setVisible(0);
+        const conf_label = w.label("", "title");
+        conf_card.append(conf_label.as(gtk.Widget));
+        const conf_detail = w.label("", "dim-label");
+        conf_detail.setWrap(1);
+        conf_detail.setWrapMode(.word_char);
+        conf_detail.setSelectable(1);
+        conf_card.append(conf_detail.as(gtk.Widget));
+        const conf_actions = w.row(8);
+        const conf_deny = gtk.Button.newWithLabel("Cancel");
+        conf_actions.append(conf_deny.as(gtk.Widget));
+        const conf_approve = gtk.Button.newWithLabel("Confirm");
+        conf_approve.as(gtk.Widget).addCssClass("destructive-action");
+        conf_approve.as(gtk.Widget).setHexpand(1);
+        conf_actions.append(conf_approve.as(gtk.Widget));
+        conf_card.append(conf_actions.as(gtk.Widget));
+        root.append(conf_card.as(gtk.Widget));
+        self.conf_card = conf_card;
+        self.conf_label = conf_label;
+        self.conf_detail = conf_detail;
+        self.conf_approve = conf_approve;
+        self.conf_deny = conf_deny;
+        _ = gtk.Button.signals.clicked.connect(conf_approve, *App, confApproveClicked, self, .{});
+        _ = gtk.Button.signals.clicked.connect(conf_deny, *App, confDenyClicked, self, .{});
         self.composer = gtk.TextView.new();
         self.composer.setWrapMode(.word_char);
         self.composer.setAcceptsTab(0);
@@ -385,7 +445,7 @@ const App = struct {
         self.start(question) catch |err| self.showError(err, question);
     }
     fn start(self: *App, question: []const u8) !void {
-        if (question.len > 2048) return error.QuestionTooLong;
+        try @import("intent.zig").validateQuestion(question);
         self.last_error = "";
         if (self.job != null) return error.AssistantBusy;
         self.erase_cancelled = false;
@@ -431,10 +491,32 @@ const App = struct {
     }
     fn work(task: *gio.Task, _: ?*object.Object, data: ?*anyopaque, cancel: ?*gio.Cancellable) callconv(.c) void {
         const job: *Job = @ptrCast(@alignCast(data.?));
-        job.result = controller.run(job.arena.allocator(), &job.owner.runtime, job.config, job.question, job.history, job.sources, cancel.?, &job.owner.phase, &job.owner.live) catch |err| blk: {
+        const self = job.owner;
+        // Initialize local filesystem tools when enabled.
+        var local_ctx: ?controller.LocalContext = null;
+        if (job.config.local.enabled and job.config.local.roots.len > 0) {
+            self.local_files = a.create(files_mod.Tools) catch null;
+            if (self.local_files) |ft| {
+                if (files_mod.Tools.init(job.arena.allocator(), job.config.local)) |initialized| {
+                    ft.* = initialized;
+                    self.conf_channel.notify = confirmationNotify;
+                    self.conf_channel.context = self;
+                    local_ctx = .{ .files = ft, .confirmation = &self.conf_channel, .transport = &self.transport };
+                } else |_| {
+                    a.destroy(ft);
+                    self.local_files = null;
+                }
+            }
+        }
+        job.result = controller.runWithLocal(job.arena.allocator(), &self.runtime, job.config, job.question, job.history, job.sources, cancel.?, &self.phase, &self.live, null, local_ctx) catch |err| blk: {
             job.failure = err;
             break :blk null;
         };
+        if (self.local_files) |ft| {
+            ft.deinit();
+            a.destroy(ft);
+            self.local_files = null;
+        }
         task.returnPointer(job, null);
     }
     fn completed(_: ?*object.Object, result: *gio.AsyncResult, data: ?*anyopaque) callconv(.c) void {
@@ -454,14 +536,21 @@ const App = struct {
             self.runtime.stop();
             if (!self.erase_cancelled) self.showError(error.Cancelled, job.question);
         } else if (job.failure) |err| self.showError(err, job.question) else if (job.result) |answer| {
-            self.conversations[job.conversation].append(job.question, answer.text, answer.sources) catch |err| {
-                self.showError(err, job.question);
+            if (answer.outcome == .cancelled) {
                 self.runtime.stop();
-                self.updateControls();
-                return;
-            };
-            self.render();
-            self.status.setText(if (answer.warning.len > 0) @import("i18n").dtr("pearl-agent", "Some selected searches failed; available results are shown.") else if (answer.summarized) @import("i18n").dtr("pearl-agent", "Answer complete. Check the sources for important details.") else @import("i18n").dtr("pearl-agent", "Search results available; summary unavailable."));
+                self.showError(error.Cancelled, job.question);
+            } else saved: {
+                self.conversations[job.conversation].append(job.question, answer) catch |err| {
+                    self.showError(err, job.question);
+                    self.runtime.stop();
+                    break :saved;
+                };
+                self.render();
+                if (answer.failure) |err| {
+                    self.showError(err, job.question);
+                    self.addStatusWarnings(answer.warning, answer.capability_warning);
+                } else if (answer.outcome != .completed) self.restoreQuestion(job.question);
+            }
         }
         if (self.exiting) {
             self.app.as(gio.Application).quit();
@@ -477,7 +566,8 @@ const App = struct {
             error.ModelNotInstalled => "Download the selected model in Settings, then Send to retry.",
             error.AssistantRuntimeNotInstalled => "Install the runtime with Settings → Runtime & acceleration → Set up runtime (install if needed), then Apply and retry.",
             error.RuntimeCapabilityMissing, error.RuntimeAuthenticationMissing, error.ModelToolsIncompatible => "This runtime/model did not pass compatibility checks. Choose another runtime or model in Settings.",
-            error.RuntimeReasoningUnsupported => "This thinking model needs a newer runtime with reasoning-format support. Update llama.cpp or choose an Instruct model in Settings.",
+            error.ModelChatIncompatible => "This model could not produce a chat reply. Choose another model or runtime in Settings, then retry.",
+            error.RuntimeReasoningUnsupported => "This thinking model needs a newer runtime. Update mistral.rs or choose an Instruct model in Settings.",
             error.AssistantRuntimeBusy => "Another local model test or answer is using the runtime. Stop it or wait, then retry.",
             error.GpuUnavailableOrMemoryInsufficient, error.GpuOffloadUnverified, error.GpuRuntimeCapabilityMissing, error.AmbiguousGpuDevice => "The selected GPU could not be used. Choose a device or enable CPU fallback in Settings, then retry.",
             error.SystemMemoryPressure => "Available memory is too low for the selected shared-memory GPU. Close other applications or select CPU in Settings, then retry.",
@@ -491,12 +581,63 @@ const App = struct {
         if (self.window == null) return;
         self.status.setText(message);
         self.cpu_button.as(gtk.Widget).setVisible(@intFromBool(self.config.compute.mode == .gpu and !self.config.compute.fallback() and (RuntimeModule.recoverable(err) or err == error.AmbiguousGpuDevice)));
+        self.restoreQuestion(question);
+    }
+    fn addStatusWarnings(self: *App, warning: []const u8, capability_warning: []const u8) void {
+        if (warning.len == 0 and capability_warning.len == 0) return;
+        const status = std.fmt.allocPrintSentinel(a, "{s}{s}{s}{s}{s}", .{ self.status.getText(), if (warning.len > 0) "\n" else "", warning, if (capability_warning.len > 0) "\n" else "", capability_warning }, 0) catch return;
+        defer a.free(status);
+        self.status.setText(status);
+    }
+    fn restoreQuestion(self: *App, question: []const u8) void {
         // Do not replace a follow-up the user has already started typing.
         if (self.composer.getBuffer().getCharCount() == 0) {
             const text = a.dupeSentinel(u8, question, 0) catch return;
             defer a.free(text);
             self.composer.getBuffer().setText(text, @intCast(text.len));
         }
+    }
+    fn confirmationNotify(context: *anyopaque) void {
+        const self: *App = @ptrCast(@alignCast(context));
+        _ = glib.idleAdd(showConfirmationIdle, self);
+    }
+    fn showConfirmationIdle(data: ?*anyopaque) callconv(.c) c_int {
+        const self: *App = @ptrCast(@alignCast(data.?));
+        const preview = self.conf_channel.pending() orelse return 0;
+        if (self.conf_card == null) return 0;
+        const title: [:0]const u8 = switch (preview.kind) {
+            .create_file => "Create file?",
+            .delete_file => "Move to Trash?",
+            .delete_file_permanent => "Permanently delete?",
+            .open_application => "Open application?",
+        };
+        self.conf_label.?.setText(title);
+        const detail = std.fmt.allocPrintSentinel(a, "{s}{s}", .{
+            preview.target,
+            if (preview.bytes > 0) std.fmt.allocPrint(a, "\n{d} bytes", .{preview.bytes}) catch "" else "",
+        }, 0) catch "Unknown target";
+        defer a.free(detail);
+        self.conf_detail.?.setText(detail);
+        self.conf_approve.?.setLabel(switch (preview.kind) {
+            .create_file => "Create",
+            .delete_file => "Move to Trash",
+            .delete_file_permanent => "Delete permanently",
+            .open_application => "Open",
+        });
+        self.conf_card.?.as(gtk.Widget).setVisible(1);
+        self.status.setText("Waiting for your confirmation…");
+        return 0;
+    }
+    fn hideConfirmation(self: *App) void {
+        if (self.conf_card) |card| card.as(gtk.Widget).setVisible(0);
+    }
+    fn confApproveClicked(_: *gtk.Button, self: *App) callconv(.c) void {
+        self.hideConfirmation();
+        self.conf_channel.respond(.approved, "");
+    }
+    fn confDenyClicked(_: *gtk.Button, self: *App) callconv(.c) void {
+        self.hideConfirmation();
+        self.conf_channel.respond(.denied, "");
     }
     fn bubble(self: *App, text: []const u8, user: bool) void {
         const label = gtk.Label.new(null);
@@ -517,7 +658,19 @@ const App = struct {
         while (self.body.as(gtk.Widget).getFirstChild()) |child| self.body.remove(child);
         self.partial = null;
         const conv = &self.conversations[self.current];
-        if (conv.turns.items.len == 0) self.bubble("Ask a question here or in Super+Space. Answers use your configured search engine. This small local model can make mistakes.", false);
+        if (conv.turns.items.len == 0) {
+            self.bubble("Ask a question here or in Super+Space. Pearl can chat on device and use web search when available. This local model can make mistakes.", false);
+            self.status.setText(@import("i18n").dtr("pearl-agent", "Ask a question to start a conversation."));
+        } else {
+            const message = @import("i18n").dtr("pearl-agent", switch (conv.outcome) {
+                .completed => "Answer complete.",
+                .partial => "Answer incomplete. You can continue or retry.",
+                .cancelled => "Stopped. Your question is preserved; Send retries it.",
+                .failed => "The answer could not be completed. Check Settings and retry.",
+            });
+            self.status.setText(message);
+            self.addStatusWarnings(conv.warning, conv.capability_warning);
+        }
         for (conv.turns.items) |turn| {
             self.bubble(turn.question, true);
             self.bubble(turn.answer, false);
@@ -589,14 +742,17 @@ const App = struct {
             self.compute_dirty = false;
             self.reply(.{ .id = 0, .compute = self.computeStatus() });
         }
+        // The worker still owns the job/runtime until completed; do not replace
+        // the stopping/cleared status or display more draft text in the meantime.
+        if (self.job != null and self.cancel.?.isCancelled() != 0) return 1;
         if (self.job != null and self.window != null) self.status.setText(switch (self.phase.load(.monotonic)) {
             .preparing => @import("i18n").dtr("pearl-agent", "Preparing local model…"),
             .checking => @import("i18n").dtr("pearl-agent", "Checking runtime and preparing local model…"),
-            .fallback => @import("i18n").dtr("pearl-agent", "GPU unavailable. Continuing on CPU with your search results…"),
+            .fallback => @import("i18n").dtr("pearl-agent", "GPU unavailable. Continuing on CPU…"),
             .deciding => @import("i18n").dtr("pearl-agent", "Working on your question…"),
             .searching => @import("i18n").dtr("pearl-agent", "Searching configured engines…"),
             .reading => @import("i18n").dtr("pearl-agent", "Reading a source page…"),
-            .answering => @import("i18n").dtr("pearl-agent", "Checking the answer and sources…"),
+            .answering => @import("i18n").dtr("pearl-agent", "Preparing the answer…"),
         });
         if (self.job != null) if (self.partial) |partial| {
             var buffer: [16384]u8 = undefined;
@@ -604,7 +760,7 @@ const App = struct {
                 const value = a.dupeSentinel(u8, text, 0) catch return 1;
                 defer a.free(value);
                 partial.setText(value);
-                if (text.len > 0) self.status.setText(@import("i18n").dtr("pearl-agent", "Writing a draft… sources will be checked when complete."));
+                if (text.len > 0) self.status.setText(@import("i18n").dtr("pearl-agent", "Writing a draft…"));
             }
         };
         return 1;
@@ -630,7 +786,7 @@ pub fn run() !u8 {
     var state: App = .{ .app = application };
     state.transport = wire.Transport.init(&state, App.event);
     state.transport.secure = true;
-    state.transport.framer.limit = 32768;
+    state.transport.framer.limit = protocol.max_frame_bytes;
     defer {
         if (state.timer != 0) _ = glib.Source.remove(state.timer);
         if (state.unload != 0) _ = glib.Source.remove(state.unload);
