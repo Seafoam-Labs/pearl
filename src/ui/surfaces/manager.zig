@@ -547,6 +547,7 @@ pub const Manager = struct {
         self.agent.palette = if (self.preferences.live) |live| live.palette else @import("../../theme/theme.zig").dark;
         self.agent.acknowledge = assistantAcknowledged;
         self.agent.open_settings = assistantSettings;
+        self.agent.launch_application = assistantLaunch;
         const launch = self.display.getAppLaunchContext();
         defer launch.unref();
         const info = @import("../../settings/launch.zig").activationInfo("/proc/self/exe", "Pearl Assistant") catch null;
@@ -562,6 +563,46 @@ pub const Manager = struct {
     fn assistantSettings(context: *anyopaque) void {
         const self: *Manager = @ptrCast(@alignCast(context));
         self.openSettings(.{ .page = .assistant }, null) catch {};
+    }
+    fn assistantLaunch(context: *anyopaque, request: @import("../../agent/protocol.zig").LaunchRequest) void {
+        const self: *Manager = @ptrCast(@alignCast(context));
+        const applications = @import("../../agent/applications.zig");
+        if (!applications.openAppsEnabled(self.preferences.prefs().assistant)) {
+            self.agent.launchResult(request.request_id, false, "AppLaunchDisabled");
+            return;
+        }
+        const id = a.dupeSentinel(u8, request.application_id, 0) catch {
+            self.agent.launchResult(request.request_id, false, "LaunchFailed");
+            return;
+        };
+        defer a.free(id);
+        const desktop = @import("giounix2").DesktopAppInfo.new(id) orelse {
+            self.agent.launchResult(request.request_id, false, "ApplicationNotFound");
+            return;
+        };
+        defer desktop.unref();
+        applications.checkLaunchable(desktop) catch |err| {
+            self.agent.launchResult(request.request_id, false, @errorName(err));
+            return;
+        };
+        const launch = self.display.getAppLaunchContext();
+        defer launch.unref();
+        const info = @import("../../settings/launch.zig").activationInfo("/proc/self/exe", "Pearl Assistant") catch null;
+        defer if (info) |i| i.unref();
+        const token = if (info) |i| launch.as(gio.AppLaunchContext).getStartupNotifyId(i.as(gio.AppInfo), null) else null;
+        defer if (token) |t| glib.free(t);
+        if (token) |t| {
+            launch.as(gio.AppLaunchContext).setenv("XDG_ACTIVATION_TOKEN", std.mem.span(t));
+            launch.as(gio.AppLaunchContext).setenv("DESKTOP_STARTUP_ID", std.mem.span(t));
+        }
+        var err: ?*glib.Error = null;
+        defer if (err) |e| e.free();
+        if (desktop.as(gio.AppInfo).launch(null, launch.as(gio.AppLaunchContext), &err) == 0) {
+            self.agent.launchResult(request.request_id, false, "LaunchFailed");
+            return;
+        }
+        self.index.remember(request.application_id);
+        self.agent.launchResult(request.request_id, true, null);
     }
     fn semanticQuery(context: *anyopaque, alloc: std.mem.Allocator, query: []const u8, cancel: *gio.Cancellable) anyerror![]@import("../../search/service.zig").Document {
         const self: *Manager = @ptrCast(@alignCast(context));

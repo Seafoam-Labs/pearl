@@ -13,16 +13,22 @@ pub const Host = struct {
     sequence: u64 = 0,
     pending: u64 = 0,
     deadline: c_uint = 0,
+    launch_pending: u64 = 0,
+    launch_timeout: c_uint = 0,
     locked: bool = true,
     palette: @import("../theme/theme.zig").Palette = @import("../theme/theme.zig").dark,
     context: ?*anyopaque = null,
     acknowledge: ?*const fn (*anyopaque, bool) void = null,
     open_settings: ?*const fn (*anyopaque) void = null,
+    launch_application: ?*const fn (*anyopaque, protocol.LaunchRequest) void = null,
     queued: ?[]u8 = null,
     compute: protocol.ComputeStatus = .{},
     pub fn stop(self: *Host) void {
         if (self.deadline != 0) _ = glib.Source.remove(self.deadline);
         self.deadline = 0;
+        if (self.launch_timeout != 0) _ = glib.Source.remove(self.launch_timeout);
+        self.launch_timeout = 0;
+        self.launch_pending = 0;
         if (self.transport) |*t| t.deinit();
         self.transport = null;
         if (self.process) |p| {
@@ -74,6 +80,19 @@ pub const Host = struct {
         try self.send(.{ .id = id, .op = if (question.len == 0) .@"resume" else .ask, .config = cfg, .question = question, .activation = activation, .palette = self.palette });
         self.pending = id;
         self.deadline = glib.timeoutAdd(5000, expired, self);
+    }
+    /// Narrow ok/err answer to a child launch request; a lost reply must never
+    /// take the agent down, so send failures are swallowed.
+    pub fn launchResult(self: *Host, request_id: u64, ok: bool, error_code: ?[]const u8) void {
+        if (self.launch_timeout != 0) _ = glib.Source.remove(self.launch_timeout);
+        self.launch_timeout = 0;
+        self.launch_pending = 0;
+        if (self.transport == null) return;
+        const text = std.json.Stringify.valueAlloc(a, protocol.Reply{ .id = request_id, .ok = ok, .err = error_code }, .{ .emit_null_optional_fields = false }) catch return;
+        defer a.free(text);
+        const frame = std.fmt.allocPrint(a, "{s}\n", .{text}) catch return;
+        defer a.free(frame);
+        self.transport.?.send(frame) catch {};
     }
     fn start(self: *Host) !void {
         var arena = std.heap.ArenaAllocator.init(a);
@@ -146,6 +165,17 @@ pub const Host = struct {
                 }
                 if (reply.value.settings) if (self.open_settings) |open| open(self.context.?);
                 if (reply.value.compute) |compute_status| self.compute = compute_status;
+                if (reply.value.launch) |launch| {
+                    launch.validate() catch {
+                        self.launchResult(launch.request_id, false, "InvalidLaunchRequest");
+                        return;
+                    };
+                    if (self.launch_timeout != 0) _ = glib.Source.remove(self.launch_timeout);
+                    self.launch_pending = launch.request_id;
+                    self.launch_timeout = glib.timeoutAdd(5000, launchExpired, self);
+                    if (self.launch_application) |notify| notify(self.context.?, launch);
+                    return;
+                }
                 if (reply.value.id == self.pending) {
                     self.pending = 0;
                     if (self.deadline != 0) _ = glib.Source.remove(self.deadline);
@@ -160,6 +190,14 @@ pub const Host = struct {
         self.deadline = 0;
         self.stop();
         if (self.acknowledge) |notify| notify(self.context.?, false);
+        return 0;
+    }
+    fn launchExpired(data: ?*anyopaque) callconv(.c) c_int {
+        const self: *Host = @ptrCast(@alignCast(data.?));
+        self.launch_timeout = 0;
+        const request_id = self.launch_pending;
+        self.launch_pending = 0;
+        if (request_id != 0) self.launchResult(request_id, false, "LaunchTimeout");
         return 0;
     }
 };

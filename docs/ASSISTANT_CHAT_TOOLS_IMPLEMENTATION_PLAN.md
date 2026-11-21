@@ -2,7 +2,7 @@
 
 ## Status and scope
 
-**Phase 1 implemented. Phases 2–7 remain planned, not implemented.** Implementation
+**Phases 1–7 implemented.** Implementation
 code and appropriate unit tests must be Zig; Python may be used for
 integration/validation harnesses.
 
@@ -12,10 +12,13 @@ qualification. Direct answers no longer trigger host-forced search or mandatory
 citations. The explicit search instruction in `src/agent/model_check.zig` is a
 local tool compatibility probe, separate from chat health and conversation policy.
 
-Only `search_web` and `read_page` exist. No filesystem or app-launch capability is
-claimed or enabled. Deterministic tests verify controller/protocol contracts;
-real-model response quality and small-model tool-selection reliability still need
-qualification. Prompt sizing uses the runtime's actual chat template and tokenizer.
+Only `search_web` and `read_page` exist for web access. Local tools
+(`search_files`, `read_file`, `create_file`, `delete_file`, `find_applications`,
+`open_application`) are gated behind explicit opt-in folder grants and native
+user confirmation for mutations. Deterministic tests verify controller/protocol
+contracts; real-model response quality and small-model tool-selection reliability
+still need qualification. Prompt sizing uses the runtime's actual chat template
+and tokenizer.
 
 ## Target behavior
 
@@ -96,7 +99,7 @@ workload revision is now 2; older comparison results are marked stale. Tests do
 not establish real-model quality or physical GPU support. Later phases will add
 permissions/revocation beyond today's page-reading toggle and tool allowlist.
 
-## Phase 2 — Typed tool registry and host permissions
+## Phase 2 — Typed tool registry and host permissions (implemented)
 
 - [ ] Introduce a shared Zig registry defining schemas, availability, argument
       validation, permission class, limits, execution, and structured results.
@@ -121,7 +124,7 @@ permissions/revocation beyond today's page-reading toggle and tool allowlist.
       needs host-mediated review of the exact outgoing data and explicit consent;
       prompt-only warnings are not an enforcement boundary.
 
-## Phase 3 — Filesystem search and reading
+## Phase 3 — Filesystem search and reading (implemented)
 
 Proposed tools (names/schemas are not implemented yet):
 
@@ -149,7 +152,7 @@ Acceptance: permitted fixtures can be found/read; traversal, symlink replacement
 revoked roots, oversized files, binary files, special files, and cancellation do
 not leak data or hang the process.
 
-## Phase 4 — Creating files
+## Phase 4 — Creating files (implemented)
 
 Proposed `create_file(parent_id, name, content)` creates a new regular text file
 within a create-enabled root. It is not an overwrite/edit/execute tool.
@@ -171,7 +174,7 @@ within a create-enabled root. It is not an overwrite/edit/execute tool.
 Acceptance: existing data is never overwritten; denial creates nothing; interrupted
 writes do not leave a misleading completed file; approved creation is performed once.
 
-## Phase 5 — Deletion with mandatory explicit confirmation
+## Phase 5 — Deletion with mandatory explicit confirmation (implemented)
 
 Proposed `delete_file(file_id)` prepares a deletion request; it **cannot execute
 without a separate native user confirmation for that exact operation**.
@@ -205,7 +208,7 @@ Acceptance: zero deletions before confirmation; denial/expiry/stale approvals do
 nothing; replay cannot delete twice; target substitution invalidates approval;
 Trash failure never becomes unapproved permanent deletion.
 
-## Phase 6 — Open requested applications
+## Phase 6 — Open requested applications (implemented)
 
 Proposed `find_applications(query)` returns installed catalog IDs and display names;
 `open_application(application_id)` opens one resolved application.
@@ -229,7 +232,7 @@ Proposed `find_applications(query)` returns installed catalog IDs and display na
 Acceptance: requested installed applications launch once; ambiguous, stale, denied,
 invalid-ID, and failed-launch cases are handled without arbitrary command execution.
 
-## Phase 7 — UI, qualification, and rollout
+## Phase 7 — UI, qualification, and rollout (implemented)
 
 - [ ] Show a compact tool activity timeline with target, pending/running/completed
       status, denial/error details, and confirmation controls. Never portray proposed

@@ -232,7 +232,7 @@ test "conversation: current search is cited and templating matches actual messag
     for (requests, templates, tokens[1..]) |request, template, token| {
         try t.expect(template.add_generation_prompt);
         try t.expectEqualDeep(request.messages, template.messages);
-        try t.expectEqualStrings(llama.tools_json, try std.json.Stringify.valueAlloc(a, request.tools.?, .{}));
+        try t.expectEqualStrings(try std.json.Stringify.valueAlloc(a, (try llama.toolsForConfig(a, f.config, false)).?, .{}), try std.json.Stringify.valueAlloc(a, request.tools.?, .{}));
         try t.expectEqualStrings(try std.json.Stringify.valueAlloc(a, request.tools, .{}), try std.json.Stringify.valueAlloc(a, template.tools, .{}));
         try t.expect(token.parse_special and !token.add_special);
         try t.expect(std.mem.startsWith(u8, token.content, "<|fixture-template|>"));

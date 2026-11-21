@@ -17,7 +17,26 @@ pub const Request = struct {
 pub const State = struct { visible: bool, busy: bool, suspended: bool, runtime: bool, conversations: usize, turns: []const @import("controller.zig").Turn, sources: usize, status: []const u8, error_code: []const u8 = "", draft_chars: usize = 0, cpu_retry_available: bool = false };
 // enforced_memory remains false for compatibility with existing status clients.
 pub const ComputeStatus = struct { busy: bool = false, loaded: bool = false, gpu: bool = false, backend: @import("config.zig").Backend = .auto, layers: u16 = 0, fallback: bool = false, enforced_memory: bool = false };
-pub const Reply = struct { agent: u8 = 1, id: u64, ok: bool = true, err: ?[]const u8 = null, settings: bool = false, compute: ?ComputeStatus = null, state: ?State = null };
+/// Phase 6 app-open request, child -> shell. It rides a Reply with id 0 on the
+/// private authenticated socket; there is no public launch endpoint and no
+/// command/argument/URI surface. The shell answers with a narrow Reply whose
+/// id is request_id (ok/err only). request_id is chosen by the child and must
+/// not be 0; application_id must be a resolved installed desktop-entry id.
+pub const LaunchRequest = struct {
+    request_id: u64,
+    application_id: []const u8,
+    pub fn validate(self: LaunchRequest) !void {
+        if (self.request_id == 0) return error.InvalidLaunchRequest;
+        const id = self.application_id;
+        // Same character policy as dock_policy.desktopId, capped at 256 bytes:
+        // a desktop id, never a path, command line or URI.
+        if (id.len < 9 or id.len > 256 or !std.mem.endsWith(u8, id, ".desktop")) return error.InvalidLaunchRequest;
+        if (!std.unicode.utf8ValidateSlice(id)) return error.InvalidLaunchRequest;
+        var chars = std.unicode.Utf8View.initUnchecked(id).iterator();
+        while (chars.nextCodepoint()) |ch| if (ch < 32 or (ch >= 127 and ch <= 159) or ch == '/' or ch == '\\') return error.InvalidLaunchRequest;
+    }
+};
+pub const Reply = struct { agent: u8 = 1, id: u64, ok: bool = true, err: ?[]const u8 = null, settings: bool = false, compute: ?ComputeStatus = null, state: ?State = null, launch: ?LaunchRequest = null };
 pub fn parse(a: std.mem.Allocator, bytes: []const u8) !Request {
     try @import("../config/preferences.zig").boundedJson(bytes, max_frame_bytes, 8);
     const request = try std.json.parseFromSliceLeaky(Request, a, bytes, .{});
@@ -152,6 +171,71 @@ test "agent frame budget covers escaped maximum questions and configuration but 
     @memset(oversized, ' ');
     try std.testing.expectError(error.InvalidConfig, parse(a, oversized));
     try std.testing.expectError(error.FrameTooLarge, framer.push(oversized));
+}
+
+test "launch requests ride zero-id replies and validate resolved desktop ids" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    const request: LaunchRequest = .{ .request_id = 7, .application_id = "org.example.App.desktop" };
+    try request.validate();
+    const json = try std.json.Stringify.valueAlloc(a, Reply{ .id = 0, .launch = request }, .{ .emit_null_optional_fields = false });
+    try std.testing.expect(std.mem.indexOf(u8, json, "\"err\"") == null);
+    try std.testing.expect(std.mem.indexOf(u8, json, "\"state\"") == null);
+    const decoded = try std.json.parseFromSliceLeaky(Reply, a, json, .{});
+    try std.testing.expectEqual(@as(u64, 0), decoded.id);
+    try std.testing.expectEqual(@as(u64, 7), decoded.launch.?.request_id);
+    try std.testing.expectEqualStrings(request.application_id, decoded.launch.?.application_id);
+    // Replies without the field keep parsing for older children.
+    const legacy = try std.json.parseFromSliceLeaky(Reply, a, "{\"agent\":1,\"id\":3,\"ok\":true}", .{});
+    try std.testing.expect(legacy.launch == null);
+    try (LaunchRequest{ .request_id = 1, .application_id = "a.desktop" }).validate();
+    try (LaunchRequest{ .request_id = 1, .application_id = "kde-konsole.desktop" }).validate();
+    try (LaunchRequest{ .request_id = 1, .application_id = "caf\u{e9}.desktop" }).validate();
+    const longest = try std.fmt.allocPrint(a, "{s}.desktop", .{try repeated(a, "a", 248)});
+    try std.testing.expectEqual(@as(usize, 256), longest.len);
+    try (LaunchRequest{ .request_id = 1, .application_id = longest }).validate();
+    const over = try std.fmt.allocPrint(a, "{s}.desktop", .{try repeated(a, "a", 249)});
+    try std.testing.expectError(error.InvalidLaunchRequest, (LaunchRequest{ .request_id = 1, .application_id = over }).validate());
+    for ([_][]const u8{ "", ".desktop", "org.example.App", "../escape.desktop", "a\\b.desktop", "line\nbreak.desktop", "\xff.desktop", "a b/../../etc.desktop" }) |bad| {
+        try std.testing.expectError(error.InvalidLaunchRequest, (LaunchRequest{ .request_id = 1, .application_id = bad }).validate());
+    }
+    try std.testing.expectError(error.InvalidLaunchRequest, (LaunchRequest{ .request_id = 0, .application_id = "org.example.App.desktop" }).validate());
+}
+
+test "launch results are narrow replies matched by request id" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    const json = try std.json.Stringify.valueAlloc(a, Reply{ .id = 7, .ok = false, .err = "LaunchFailed" }, .{ .emit_null_optional_fields = false });
+    try std.testing.expect(std.mem.indexOf(u8, json, "\"launch\"") == null);
+    try std.testing.expect(std.mem.indexOf(u8, json, "\"compute\"") == null);
+    try std.testing.expect(std.mem.indexOf(u8, json, "\"state\"") == null);
+    const decoded = try std.json.parseFromSliceLeaky(Reply, a, json, .{});
+    try std.testing.expectEqual(@as(u64, 7), decoded.id);
+    try std.testing.expect(!decoded.ok);
+    try std.testing.expectEqualStrings("LaunchFailed", decoded.err.?);
+    try std.testing.expect(decoded.launch == null);
+    const ok_json = try std.json.Stringify.valueAlloc(a, Reply{ .id = 9 }, .{ .emit_null_optional_fields = false });
+    try std.testing.expect(std.mem.indexOf(u8, ok_json, "\"err\"") == null);
+    const ok_decoded = try std.json.parseFromSliceLeaky(Reply, a, ok_json, .{});
+    try std.testing.expect(ok_decoded.ok);
+    try std.testing.expect(ok_decoded.err == null);
+    // A launch request frame stays inside the shared frame budget.
+    var framer = try @import("../aqueous/codec.zig").Framer.init(a, max_frame_bytes);
+    defer framer.deinit();
+    const framed = try framer.push(try std.fmt.allocPrint(a, "{s}\n", .{try std.json.Stringify.valueAlloc(a, Reply{ .id = 0, .launch = .{ .request_id = 1, .application_id = "org.example.App.desktop" } }, .{})}));
+    const parsed = try std.json.parseFromSliceLeaky(Reply, a, framed.frame.?, .{});
+    try std.testing.expectEqual(@as(u64, 1), parsed.launch.?.request_id);
+    try framer.finish();
+}
+
+// Test-only hook: the shell host and launch policy live outside the child's
+// import graph, so the native agent test build reaches them through here.
+// Ignored outside test builds; agent_tests provides their gio/glib imports.
+test {
+    _ = @import("host.zig");
+    _ = @import("applications.zig");
 }
 
 fn repeated(a: std.mem.Allocator, text: []const u8, count: usize) ![]u8 {

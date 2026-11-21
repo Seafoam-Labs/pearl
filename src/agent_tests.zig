@@ -6,6 +6,7 @@ test {
     _ = @import("agent/fetch.zig");
     _ = @import("agent/controller.zig");
     _ = @import("agent/conversation_tests.zig");
+    _ = @import("agent/files_tests.zig");
     _ = @import("agent/protocol.zig");
     _ = @import("agent/sse.zig");
     _ = @import("agent/runtime_probe.zig");

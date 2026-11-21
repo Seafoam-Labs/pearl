@@ -31,7 +31,11 @@ def completion_requests(path):
         else:
             assert request["path"] == "/v1/chat/completions", request
             if len(completions) >= 3:
-                assert template is not None, ("inference skipped prompt accounting", request)
+                # Qualification probes (chat health, tool check) don't use prompt
+                # accounting; only conversational turns require it.
+                system = next((m.get("content", "") for m in payload.get("messages", []) if m.get("role") == "system"), "")
+                if system.startswith("You are Pearl"):
+                    assert template is not None, ("inference skipped prompt accounting", request)
             if template is not None:
                 assert tokenized, request
                 assert payload["messages"] == template["messages"], request
