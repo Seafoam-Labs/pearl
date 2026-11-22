@@ -77,8 +77,8 @@ pkgname = pearl-git
 	depends = uwsm>=0.26.7
 	optdepends = ddcutil: brightness control for compatible external monitors
 	optdepends = pearl-lang-de: German interface translations (partial coverage)
-	optdepends = pearl-assistant-runtime: optional local launcher answers; system or custom llama-server also supported
-	optdepends = llama-cpp: system runtime for launcher assistant setup
+	optdepends = pearl-assistant-runtime: optional private mistral.rs runtime; system mistralrs or custom executable also supported
+	optdepends = mistralrs: system runtime for launcher assistant setup
 	optdepends = sudo: authentication for assistant runtime installation with pacman
 	optdepends = foot: terminal for interactive assistant runtime installation
 	optdepends = gvfs: Trash, SFTP connections, and administrative filesystems in Phyto

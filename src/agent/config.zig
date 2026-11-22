@@ -171,8 +171,8 @@ pub const Config = struct {
     }
 };
 test "runtime selection and compute budgets are explicit" {
-    try std.testing.expectError(error.AbsoluteRuntimePathRequired, (Config{ .runtime = .{ .source = .custom, .executable = "llama-server --flag" } }).validate());
-    try (Config{ .runtime = .{ .source = .custom, .executable = "/opt/local build/llama-server" } }).validate();
+    try std.testing.expectError(error.AbsoluteRuntimePathRequired, (Config{ .runtime = .{ .source = .custom, .executable = "mistralrs --flag" } }).validate());
+    try (Config{ .runtime = .{ .source = .custom, .executable = "/opt/local build/mistralrs" } }).validate();
     try std.testing.expectError(error.SelectGpuDevice, (Config{ .compute = .{ .mode = .gpu } }).validate());
     try std.testing.expect((Compute{ .mode = .auto, .allow_cpu_fallback = false }).fallback());
     try std.testing.expect(!(Compute{ .mode = .gpu, .allow_cpu_fallback = false }).fallback());

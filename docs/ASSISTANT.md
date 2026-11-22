@@ -125,11 +125,17 @@ Choose **Runtime & acceleration** in Assistant settings:
   system/private runtimes. It reuses one with the required capabilities. Otherwise
   it opens a terminal to install `mistralrs` using `shelly install standard
   --needed` on Devario, or `sudo pacman -S --needed` on Arch and Arch derivatives.
-  GPU setup adds `ggml-vulkan` for Automatic/Vulkan or `ggml-cuda` for CUDA;
-  CPU setup needs only `mistralrs`. GPU backends are bundled.
+  The package must exist in the configured repositories: Devario core ships the
+  prebuilt CPU release. GPU acceleration needs a CUDA-enabled mistral.rs build
+  selected as a custom executable; there are no separate backend packages.
   These are repository-selected versions, not a hard-coded release. See the
-  [Arch runtime package](https://archlinux.org/packages/extra/x86_64/mistralrs/)
-  and [backend packages](https://docs.mistralrs.dev).
+  [upstream releases](https://github.com/EricLBuehler/mistral.rs/releases)
+  and [documentation](https://docs.mistralrs.dev).
+  Where no repository carries the package, setup fails without changing the
+  selection; install a prebuilt release or source build manually and choose
+  Custom executable. Without Shelly or pacman, setup instead opens a terminal
+  for `cargo install mistralrs-cli`, the crate that ships the binary; the
+  post-install probe rejects releases lacking required flags.
   Devario is detected before Arch ancestry and always uses Shelly.
   The package manager handles authentication, transaction confirmation, signatures
   and dependencies. No AUR builds, repositories, forced downgrades, database-only
@@ -145,10 +151,16 @@ Choose **Runtime & acceleration** in Assistant settings:
   or an incompatible repository version leave the runtime selection unchanged;
   fix the package-manager error or update the repository and retry setup.
 - **System installation** searches `/usr/bin/mistralrs`, then
-  `/usr/local/bin/mistralrs`, and resolves the actual executable.
+  `/usr/local/bin/mistralrs`, then `~/.cargo/bin/mistralrs`, and resolves the
+  actual executable.
 - **Pearl runtime package** uses the private optional installation.
 - **Custom executable** accepts an absolute path or file chooser selection.
   Paths with spaces work; shell commands and extra arguments are not accepted.
+- **Semantic search** runs its GGUF embedding backbone on a separate
+  `llama-server`, resolved from `/usr/bin/llama-server`,
+  `/usr/local/bin/llama-server`, the private package directory, or a custom
+  llama-server path. Its setup installs `llama-cpp` (plus `ggml-cuda` or
+  `ggml-vulkan` for GPU); the chat runtime selection is never reused for it.
 
 Fresh preferences use System + CPU. Existing assistant preferences without a
 runtime field migrate to Pearl runtime package + CPU. No exact upstream version,
@@ -167,30 +179,28 @@ executable/model metadata invalidates a loaded profile; full checks run on each
 new load. There is no persistent compatibility cache across driver/library
 updates. Runtime changes during a check are rejected.
 
-Build the optional inference runtime from an explicitly selected source:
+Stage the optional private inference runtime from an explicitly selected
+prebuilt mistral.rs executable or release archive:
 
 ```sh
 zig build build-assistant-runtime \
-  -Dassistant-runtime-source=/path/to/mistral.rs \
-  -Dassistant-runtime-backend=vulkan
-# Or verify a caller-selected source archive:
+  -Dassistant-runtime-binary=/path/to/mistralrs
+# Or verify a caller-selected prebuilt release archive:
 zig build build-assistant-runtime \
-  -Dassistant-runtime-archive=/path/to/llama.tar.gz \
-  -Dassistant-runtime-sha256=EXPECTED_SHA256 \
-  -Dassistant-runtime-backend=cpu
+  -Dassistant-runtime-archive=/path/to/mistralrs-cpu-x86_64-unknown-linux-gnu.tar.gz \
+  -Dassistant-runtime-sha256=EXPECTED_SHA256
 ```
 
-Backend choices are `cpu`, `vulkan` and `cuda`. The target stages actual build
-libraries and SONAME files under `zig-out/libexec/pearl/assistant` with `$ORIGIN`
-lookup. Optional provenance records the source kind, archive hash and backend;
+The target stages the `mistralrs` server binary under
+`zig-out/libexec/pearl/assistant`, where the Pearl runtime package source
+resolves it. Optional provenance records the source kind and archive hash;
 it does not restrict which runtime the app accepts. Normal Pearl builds do not
-build or download mistral.rs. Upstream Cargo and the requested GPU development
-dependencies must already be available.
+build or download mistral.rs. The prebuilt release is CPU-only; GPU acceleration
+requires a CUDA-enabled build supplied as a custom executable.
 
 The optional [distribution recipe](../packaging/assistant/PKGBUILD) keeps its
-own reproducible release/checksum independently of Pearl. It defaults to CPU;
-`PEARL_ASSISTANT_BACKEND=vulkan makepkg` or `PEARL_ASSISTANT_BACKEND=cuda makepkg`
-builds the corresponding alternative package. A system/custom runtime can be
+own reproducible release/checksum independently of Pearl and installs the same
+prebuilt CPU binary as `pearl-assistant-runtime`. A system/custom runtime can be
 used without that package. Model download integrity checks remain mandatory.
 
 ## Semantic search
@@ -211,8 +221,10 @@ the embedding model. Both are immediate operations that survive Discard, with
 progress, cancellation of the download phase, and clear errors;
 **Set up now (runtime and model)** retries them. The package manager owns its
 transaction — Pearl never kills it, and closing Settings does not stop it.
-Setup verifies the runtime supports `--embeddings` before and after installing;
-a repository release without embedding support is reported, not used.
+Setup verifies the llama-server runtime supports `--embeddings` before and
+after installing; a repository release without embedding support is reported,
+not used. The chat runtime (mistralrs) is installed separately by the assistant
+setup and is never reused for embeddings.
 
 The embedding model is **EmbeddingGemma 2** (Google DeepMind, Apache-2.0), text
 backbone only. Two managed profiles are pinned with immutable revisions, exact
@@ -244,8 +256,10 @@ exports, the raw JSON editor and `pearlctl report`. **Delete index** removes it;
 disabling the feature keeps it for cheap re-enable. A model or chunker change
 invalidates the index and requires an explicit reindex.
 
-Semantic search reuses the runtime and acceleration selected for the assistant.
-The embedding server is a second, separately locked `mistralrs` started with
+Semantic search reuses the acceleration preference selected for the assistant,
+but runs its own llama-server embedding runtime: mistral.rs releases reject
+GGUF/GGML embedding backbones at load time, while the pinned backbone is GGUF.
+The embedding server is a second, separately locked `llama-server` started with
 `--embeddings` and mean pooling; runtimes without embedding support are
 rejected with an actionable error. Readiness verifies a probe embedding is
 768 finite, non-zero values before any document is indexed. The runtime unloads

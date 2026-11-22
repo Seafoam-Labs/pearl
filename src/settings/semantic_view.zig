@@ -24,7 +24,6 @@ const Job = struct {
     failure: ?anyerror = null,
     details: [:0]const u8 = "",
     snapshot: ?Snapshot = null,
-    selected_runtime: ?cfg.RuntimeConfig = null,
 };
 const Snapshot = struct {
     state: []const u8 = "disabled",
@@ -393,7 +392,6 @@ pub const View = struct {
             .setup => {
                 job.phase.store(0, .monotonic);
                 const setup = try @import("../agent/runtime_install.zig").ensureEmbedding(alloc, job.config, cancel);
-                job.selected_runtime = setup.runtime;
                 job.phase.store(1, .monotonic);
                 const model = registry.findEmbedding(job.config.semantic.model_id) orelse return error.SelectEmbeddingModel;
                 const path = try downloads.path(alloc, model);
@@ -429,22 +427,6 @@ pub const View = struct {
             if (job.snapshot) |snapshot| self.showStatus(snapshot) else self.index_status.setText(@import("i18n").dtr("pearl", "Pearl is not running. Start Pearl to index and search."));
             self.update();
             return;
-        }
-        if (job.failure == null) {
-            if (job.selected_runtime) |runtime| {
-                // Preserve edits made while the package manager was open; adopt
-                // setup's runtime selection only if that selection is unchanged.
-                const alloc = job.arena.allocator();
-                if (self.document(alloc)) |value_| {
-                    var value = value_;
-                    const unchanged = value.assistant.runtime.source == job.config.runtime.source and std.mem.eql(u8, value.assistant.runtime.executable, job.config.runtime.executable);
-                    const different = value.assistant.runtime.source != runtime.source or !std.mem.eql(u8, value.assistant.runtime.executable, runtime.executable);
-                    if (unchanged and different) {
-                        value.assistant.runtime = runtime;
-                        self.commit(value, alloc) catch |err| self.editor.error_code.set(@errorName(err));
-                    }
-                } else |_| {}
-            }
         }
         self.status.setText(if (job.failure) |err| switch (err) {
             error.SemanticControlUnavailable => @import("i18n").dtr("pearl", "Pearl must be running to control the index. Start Pearl and retry."),

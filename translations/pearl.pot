@@ -258,7 +258,7 @@ msgstr ""
 msgid "Add at least one condition and one setting for a new rule. Scope alone is not a condition."
 msgstr ""
 
-#: src/settings/semantic_view.zig:452
+#: src/settings/semantic_view.zig:434
 msgid "Add at least one folder before indexing."
 msgstr ""
 
@@ -278,7 +278,7 @@ msgstr ""
 msgid "Add filter"
 msgstr ""
 
-#: src/settings/assistant_tools_view.zig:55 src/settings/semantic_view.zig:109
+#: src/settings/assistant_tools_view.zig:55 src/settings/semantic_view.zig:108
 msgid "Add folder…"
 msgstr ""
 
@@ -695,7 +695,7 @@ msgstr ""
 msgid "At home in your bar. Or out on your desktop."
 msgstr ""
 
-#: src/settings/semantic_view.zig:308
+#: src/settings/semantic_view.zig:307
 msgid "At most 16 folders can be indexed."
 msgstr ""
 
@@ -759,19 +759,19 @@ msgstr ""
 msgid "Automatic follows the theme and blur availability. Custom changes only the bar background, including when blur is unavailable."
 msgstr ""
 
-#: src/settings/assistant_view.zig:719
-msgid "Automatic installation supports Devario and Arch-based systems. Install llama.cpp with your distribution's package manager, then discover the runtime."
+#: src/settings/semantic_view.zig:440
+msgid "Automatic installation supports Devario and Arch-based systems. Install llama.cpp with your distribution's package manager, then retry Set up now."
 msgstr ""
 
-#: src/settings/semantic_view.zig:458
-msgid "Automatic installation supports Devario and Arch-based systems. Install llama.cpp with your distribution's package manager, then retry Set up now."
+#: src/settings/assistant_view.zig:719
+msgid "Automatic installation supports Devario and Arch-based systems. Install mistralrs with your distribution's package manager, then discover the runtime."
 msgstr ""
 
 #: src/settings/window.zig:883
 msgid "Automatic locking and sleep"
 msgstr ""
 
-#: src/settings/semantic_view.zig:90
+#: src/settings/semantic_view.zig:89
 msgid "Automatic passes run in short bursts when the computer is idle or in low use, and pause when you return. On battery they wait for idle while charging or above 50%. Index now always runs immediately."
 msgstr ""
 
@@ -809,7 +809,7 @@ msgstr ""
 msgid "Background color"
 msgstr ""
 
-#: src/settings/semantic_view.zig:89
+#: src/settings/semantic_view.zig:88
 msgid "Background indexing"
 msgstr ""
 
@@ -1060,7 +1060,7 @@ msgid "Brightness unavailable · an active session is required"
 msgstr ""
 
 #: src/settings/assistant_view.zig:145
-msgid "Browse for llama-server…"
+msgid "Browse for mistralrs…"
 msgstr ""
 
 #: src/desktop/calendar.zig:129
@@ -1111,7 +1111,7 @@ msgstr ""
 msgid "Calculation · Enter to copy · = to continue"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:775 src/desktop/clipboard_capture.zig:146 src/desktop/connectivity.zig:117 src/desktop/services.zig:296 src/desktop/wallpaper_crop.zig:243 src/services/polkit.zig:315 src/settings/assistant_tools_view.zig:250 src/settings/autostart_view.zig:266 src/settings/bar_view.zig:1144 src/settings/notification_filters_view.zig:437 src/settings/scheduler_view.zig:387 src/settings/scheduler_view.zig:440 src/settings/semantic_view.zig:285
+#: src/desktop/aqueous_settings.zig:775 src/desktop/clipboard_capture.zig:146 src/desktop/connectivity.zig:117 src/desktop/services.zig:296 src/desktop/wallpaper_crop.zig:243 src/services/polkit.zig:315 src/settings/assistant_tools_view.zig:250 src/settings/autostart_view.zig:266 src/settings/bar_view.zig:1144 src/settings/notification_filters_view.zig:437 src/settings/scheduler_view.zig:387 src/settings/scheduler_view.zig:440 src/settings/semantic_view.zig:284
 msgid "Cancel"
 msgstr ""
 
@@ -1143,7 +1143,7 @@ msgstr ""
 msgid "Cancel runtime check"
 msgstr ""
 
-#: src/settings/semantic_view.zig:117
+#: src/settings/semantic_view.zig:116
 msgid "Cancel semantic operation"
 msgstr ""
 
@@ -1314,7 +1314,7 @@ msgstr ""
 msgid "Checking the scheduler..."
 msgstr ""
 
-#: src/settings/assistant_tools_view.zig:250 src/settings/semantic_view.zig:285
+#: src/settings/assistant_tools_view.zig:250 src/settings/semantic_view.zig:284
 msgid "Choose"
 msgstr ""
 
@@ -1330,7 +1330,7 @@ msgstr ""
 msgid "Choose a folder to grant"
 msgstr ""
 
-#: src/settings/semantic_view.zig:285
+#: src/settings/semantic_view.zig:284
 msgid "Choose a folder to index"
 msgstr ""
 
@@ -1986,7 +1986,7 @@ msgid "Custom layout · choose a preset to start from one"
 msgstr ""
 
 #: src/settings/assistant_view.zig:144
-msgid "Custom llama-server absolute path"
+msgid "Custom mistralrs absolute path"
 msgstr ""
 
 #: src/desktop/aqueous_display_setup.zig:167
@@ -2103,7 +2103,7 @@ msgstr ""
 msgid "Delete filter"
 msgstr ""
 
-#: src/settings/semantic_view.zig:113
+#: src/settings/semantic_view.zig:112
 msgid "Delete index"
 msgstr ""
 
@@ -2215,7 +2215,7 @@ msgctxt "aqueous.layout.options.dwindle.start_axis.description"
 msgid "Direction of the first recursive split."
 msgstr ""
 
-#: src/settings/semantic_view.zig:454
+#: src/settings/semantic_view.zig:436
 msgid "Disable semantic search and Apply before removing its model."
 msgstr ""
 
@@ -2409,7 +2409,7 @@ msgstr ""
 msgid "Download a community theme, choose Use theme, then Apply & save. Preview shows a sample without selecting it. Use colors and Use style let you mix themes."
 msgstr ""
 
-#: src/settings/semantic_view.zig:101
+#: src/settings/semantic_view.zig:100
 msgid "Download embedding model"
 msgstr ""
 
@@ -2417,7 +2417,7 @@ msgstr ""
 msgid "Download selected model"
 msgstr ""
 
-#: src/settings/semantic_view.zig:451
+#: src/settings/semantic_view.zig:433
 msgid "Download the embedding model first."
 msgstr ""
 
@@ -2596,11 +2596,11 @@ msgstr ""
 msgid "Eight clocks are supported. Delete an unused saved clock to add another."
 msgstr ""
 
-#: src/settings/semantic_view.zig:95
+#: src/settings/semantic_view.zig:94
 msgid "Embedding model"
 msgstr ""
 
-#: src/settings/semantic_view.zig:96
+#: src/settings/semantic_view.zig:95
 msgid "Embedding model license"
 msgstr ""
 
@@ -2659,7 +2659,7 @@ msgstr ""
 msgid "Enable notification filters"
 msgstr ""
 
-#: src/settings/semantic_view.zig:84
+#: src/settings/semantic_view.zig:83
 msgid "Enable semantic search"
 msgstr ""
 
@@ -3211,11 +3211,11 @@ msgstr ""
 msgid "Idle notifications unavailable"
 msgstr ""
 
-#: src/settings/semantic_view.zig:86
+#: src/settings/semantic_view.zig:85
 msgid "Idle only"
 msgstr ""
 
-#: src/settings/semantic_view.zig:86
+#: src/settings/semantic_view.zig:85
 msgid "Idle or low use"
 msgstr ""
 
@@ -3251,19 +3251,19 @@ msgstr ""
 msgid "Independent scrolling and tapping preferences"
 msgstr ""
 
-#: src/settings/semantic_view.zig:111
+#: src/settings/semantic_view.zig:110
 msgid "Index now"
 msgstr ""
 
-#: src/settings/semantic_view.zig:114
+#: src/settings/semantic_view.zig:113
 msgid "Index status is available while Pearl is running."
 msgstr ""
 
-#: src/settings/semantic_view.zig:105
+#: src/settings/semantic_view.zig:104
 msgid "Indexed folders"
 msgstr ""
 
-#: src/settings/semantic_view.zig:453
+#: src/settings/semantic_view.zig:435
 msgid "Indexing is already running. Stop it first."
 msgstr ""
 
@@ -3305,7 +3305,7 @@ msgstr ""
 msgid "Install this GTK theme system-wide before syncing."
 msgstr ""
 
-#: src/settings/semantic_view.zig:461
+#: src/settings/semantic_view.zig:443
 msgid "Installation failed or was cancelled. Check the package manager's repository, network or database-lock error, then retry Set up now."
 msgstr ""
 
@@ -3834,7 +3834,7 @@ msgstr ""
 msgid "Manual arrangement"
 msgstr ""
 
-#: src/settings/semantic_view.zig:86
+#: src/settings/semantic_view.zig:85
 msgid "Manual only"
 msgstr ""
 
@@ -4400,11 +4400,11 @@ msgstr ""
 msgid "Not in range"
 msgstr ""
 
-#: src/settings/semantic_view.zig:499
+#: src/settings/semantic_view.zig:481
 msgid "Not indexed. Add folders and run Index now."
 msgstr ""
 
-#: src/settings/semantic_view.zig:499
+#: src/settings/semantic_view.zig:481
 msgid "Not indexed. Download the embedding model, add folders, then Index now."
 msgstr ""
 
@@ -4412,7 +4412,7 @@ msgstr ""
 msgid "Not installed"
 msgstr ""
 
-#: src/settings/semantic_view.zig:106
+#: src/settings/semantic_view.zig:105
 msgid "Nothing is indexed until you add a folder. The first index pass starts automatically once enabling is saved; Index now re-runs it. Hidden files, symlinks and common cache directories are skipped."
 msgstr ""
 
@@ -4723,7 +4723,7 @@ msgstr ""
 msgid "Package exported."
 msgstr ""
 
-#: src/settings/assistant_view.zig:720 src/settings/semantic_view.zig:459
+#: src/settings/assistant_view.zig:720 src/settings/semantic_view.zig:441
 msgid "Package manager unavailable. Devario requires /usr/bin/shelly; Arch requires /usr/bin/pacman and /usr/bin/sudo."
 msgstr ""
 
@@ -4860,11 +4860,11 @@ msgstr ""
 msgid "Pearl is busy. Your changes are retained; try again when the current work completes."
 msgstr ""
 
-#: src/settings/semantic_view.zig:429
+#: src/settings/semantic_view.zig:427
 msgid "Pearl is not running. Start Pearl to index and search."
 msgstr ""
 
-#: src/settings/semantic_view.zig:450
+#: src/settings/semantic_view.zig:432
 msgid "Pearl must be running to control the index. Start Pearl and retry."
 msgstr ""
 
@@ -5438,7 +5438,7 @@ msgstr ""
 msgid "Remainder layout, fallback and spacing"
 msgstr ""
 
-#: src/settings/assistant_tools_view.zig:173 src/settings/assistant_tools_view.zig:174 src/settings/autostart_view.zig:145 src/settings/notification_filters_view.zig:380 src/settings/semantic_view.zig:244 src/settings/window_rules_view.zig:284
+#: src/settings/assistant_tools_view.zig:173 src/settings/assistant_tools_view.zig:174 src/settings/autostart_view.zig:145 src/settings/notification_filters_view.zig:380 src/settings/semantic_view.zig:243 src/settings/window_rules_view.zig:284
 msgid "Remove"
 msgstr ""
 
@@ -5450,7 +5450,7 @@ msgstr ""
 msgid "Remove condition"
 msgstr ""
 
-#: src/settings/semantic_view.zig:103
+#: src/settings/semantic_view.zig:102
 msgid "Remove embedding download"
 msgstr ""
 
@@ -5784,7 +5784,7 @@ msgstr ""
 msgid "Runtime & acceleration"
 msgstr ""
 
-#: src/settings/semantic_view.zig:457
+#: src/settings/semantic_view.zig:439
 msgid "Runtime missing after setup. Use Set up runtime in Runtime & acceleration, then retry."
 msgstr ""
 
@@ -6111,11 +6111,11 @@ msgstr ""
 msgid "Selection matches saved preferences."
 msgstr ""
 
-#: src/settings/semantic_view.zig:501
+#: src/settings/semantic_view.zig:483
 msgid "Semantic search is off in the saved preferences."
 msgstr ""
 
-#: src/settings/semantic_view.zig:119
+#: src/settings/semantic_view.zig:118
 msgid "Semantic search uses the runtime and acceleration selected above. PDF indexing requires Poppler (pdftotext); text documents work without it. The index stays in your user data directory and is never exported."
 msgstr ""
 
@@ -6175,7 +6175,7 @@ msgstr ""
 msgid "Set explicit value"
 msgstr ""
 
-#: src/settings/semantic_view.zig:104
+#: src/settings/semantic_view.zig:103
 msgid "Set up now (runtime and model)"
 msgstr ""
 
@@ -6187,11 +6187,11 @@ msgstr ""
 msgid "Set up…"
 msgstr ""
 
-#: src/settings/semantic_view.zig:352
+#: src/settings/semantic_view.zig:351
 msgid "Setting up semantic search… If llama.cpp must be installed, complete the package manager prompts in the terminal; setup continues until the terminal exits."
 msgstr ""
 
-#: src/settings/semantic_view.zig:516
+#: src/settings/semantic_view.zig:498
 msgid "Setting up the runtime… Complete any package manager prompts in the terminal."
 msgstr ""
 
@@ -6223,11 +6223,11 @@ msgstr ""
 msgid "Settings sections"
 msgstr ""
 
-#: src/settings/semantic_view.zig:474
+#: src/settings/semantic_view.zig:456
 msgid "Setup complete. Apply & save to start indexing."
 msgstr ""
 
-#: src/settings/assistant_view.zig:721 src/settings/semantic_view.zig:460
+#: src/settings/assistant_view.zig:721 src/settings/semantic_view.zig:442
 msgid "Setup needs a terminal: foot, Ghostty, kitty, alacritty, konsole or xterm. Install one and retry."
 msgstr ""
 
@@ -7064,7 +7064,7 @@ msgstr ""
 msgid "Stop discovery"
 msgstr ""
 
-#: src/settings/semantic_view.zig:112
+#: src/settings/semantic_view.zig:111
 msgid "Stop indexing"
 msgstr ""
 
@@ -7401,7 +7401,7 @@ msgstr ""
 msgid "The screen must turn off before or at the suspend timeout. This change was not saved."
 msgstr ""
 
-#: src/settings/semantic_view.zig:456
+#: src/settings/semantic_view.zig:438
 msgid "The selected file is not an EmbeddingGemma 2 text backbone."
 msgstr ""
 
@@ -7485,7 +7485,7 @@ msgstr ""
 msgid "This list is incomplete. The service reported more networks than it can expose."
 msgstr ""
 
-#: src/settings/semantic_view.zig:455
+#: src/settings/semantic_view.zig:437
 msgid "This llama-server build does not support embeddings. Update the runtime in Runtime & acceleration."
 msgstr ""
 
@@ -7518,7 +7518,7 @@ msgid "This profile's scheduler is not installed."
 msgstr ""
 
 #: src/settings/assistant_view.zig:723
-msgid "This runtime lacks required capabilities. Use Set up runtime to install the repository version. If it still fails, your repository needs a compatible llama.cpp update."
+msgid "This runtime lacks required capabilities. Use Set up runtime to install the repository version. If it still fails, your repository needs a compatible mistralrs update."
 msgstr ""
 
 #: src/settings/notification_filters_view.zig:182
@@ -7526,7 +7526,7 @@ msgid "This session does not support notification filters."
 msgstr ""
 
 #: src/settings/assistant_view.zig:724
-msgid "This thinking model needs a runtime with reasoning-format support. Update llama.cpp or choose an Instruct model."
+msgid "This thinking model needs a runtime with reasoning-format support. Update mistral.rs or choose an Instruct model."
 msgstr ""
 
 #: src/services/scheduling.zig:693
@@ -7686,7 +7686,7 @@ msgstr ""
 msgid "Turn screen off after"
 msgstr ""
 
-#: src/settings/semantic_view.zig:85
+#: src/settings/semantic_view.zig:84
 msgid "Turning this on sets up llama.cpp if needed (a terminal opens for package-manager confirmation) and downloads the embedding model. Setup is immediate and survives Discard. Indexing and search run on this device; nothing is uploaded."
 msgstr ""
 
@@ -7923,7 +7923,7 @@ msgstr ""
 msgid "Value"
 msgstr ""
 
-#: src/settings/semantic_view.zig:102
+#: src/settings/semantic_view.zig:101
 msgid "Verify embedding model"
 msgstr ""
 
@@ -8196,7 +8196,7 @@ msgstr ""
 msgid "Windows, columns and viewport"
 msgstr ""
 
-#: src/settings/assistant_view.zig:606 src/settings/semantic_view.zig:352 src/settings/themes_view.zig:152
+#: src/settings/assistant_view.zig:606 src/settings/semantic_view.zig:351 src/settings/themes_view.zig:152
 msgid "Working…"
 msgstr ""
 
