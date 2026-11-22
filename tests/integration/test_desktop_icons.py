@@ -228,6 +228,41 @@ def main():
             prefs['desktop_icons']['output'] = 'disconnected-output'; apply(s, args.ctl, prefs)
             wait_for(lambda: probe()['output'] == min(outputs, key=lambda o: o['connector'])['id'])
             passed('chosen-output-and-stable-fallback')
+            # Issue #140: every output offers the desktop context menu while
+            # icons keep rendering on the configured output only.
+            secondary = next(o for o in outputs if o['id'] != probe()['output'])
+            def secondary_probe():
+                return ctl(s, args.ctl, 'aqueous', 'status', '--text', 'test-desktop-icons:' + secondary['id'])['result']
+            def secondary_menu_button(name):
+                wait_for(lambda: any(b['name'] == name for b in secondary_probe().get('buttons', [])))
+                time.sleep(.2)
+                b = next(b for b in secondary_probe()['buttons'] if b['name'] == name)
+                click(s, round(b['x']) + secondary['bounds']['x'], round(b['y']) + secondary['bounds']['y'], ipc.outputs())
+            def secondary_background_menu():
+                b = secondary['bounds']
+                click(s, b['x'] + b['width'] // 2, b['y'] + b['height'] // 2, ipc.outputs())
+                s.run(['wlrctl', 'pointer', 'click', 'right'])
+                wait_for(lambda: secondary_probe()['menu'])
+            assert secondary_probe()['count'] == 0 and secondary_probe()['widgets'] == 0
+            secondary_background_menu()
+            assert not probe()['menu']
+            assert [b['name'] for b in secondary_probe()['buttons']] == ['New folder…', 'Add application shortcut…', 'Arrange by name', 'Open Desktop folder', 'Retry', 'Desktop settings…']
+            capture(s, 'secondary-desktop-menu', secondary['connector'])
+            key('Escape')
+            wait_for(lambda: not secondary_probe()['menu'])
+            passed('secondary-output-desktop-menu')
+            manual = copy.deepcopy(base); manual['desktop_icons']['arrangement'] = 'manual'
+            apply(s, args.ctl, manual)
+            original = select('Projects')
+            time.sleep(.5)
+            drag_pointer(s, 224, 212)
+            wait_for(lambda: row('Projects')['slot'] != original['slot'])
+            # Arranging from the secondary monitor must use the icon grid.
+            secondary_background_menu()
+            secondary_menu_button('Arrange by name')
+            wait_for(lambda: row('Projects')['slot'] == 0 and sorted(r['slot'] for r in probe()['rows']) == list(range(len(probe()['rows']))))
+            apply(s, args.ctl, base)
+            passed('arrange-from-secondary-uses-icon-grid')
             for mode in ('light', 'gtk', 'dark'):
                 themed = copy.deepcopy(prefs)
                 themed['theme']['mode'] = 'gtk' if mode == 'gtk' else 'static'
@@ -240,8 +275,10 @@ def main():
             authority.proc.stdin.write('{"active":false}\n'); authority.proc.stdin.flush()
             wait_for(lambda: not probe()['allowed'])
             assert probe()['keyboard_mode'] == 'none'
+            assert not secondary_probe()['allowed'] and secondary_probe()['keyboard_mode'] == 'none'
             authority.proc.stdin.write('{"active":true}\n'); authority.proc.stdin.flush()
             wait_for(lambda: probe()['allowed'])
+            wait_for(lambda: secondary_probe()['allowed'])
             passed('inactive-session-revokes-input')
             config.write_text('XDG_DESKTOP_DIR="$HOME"\n')
             wait_for(lambda: probe()['count'] == 0)

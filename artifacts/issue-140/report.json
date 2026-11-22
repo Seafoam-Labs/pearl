@@ -1,0 +1,41 @@
+{
+  "issue": "Seafoam-Labs/pearl#140",
+  "checks": {
+    "primary_output_menu": true,
+    "secondary_output_menu": true,
+    "secondary_renders_no_icons": true,
+    "primary_menu_not_opened": true,
+    "menu_follows_configured_output": true
+  },
+  "outputs": {
+    "HEADLESS-2": {
+      "x": 0,
+      "y": 0,
+      "width": 1280,
+      "height": 720
+    },
+    "HEADLESS-1": {
+      "x": 1280,
+      "y": 0,
+      "width": 1280,
+      "height": 720
+    }
+  },
+  "icons_on": "HEADLESS-1",
+  "primary_menu_buttons": [
+    "New folder\u2026",
+    "Add application shortcut\u2026",
+    "Arrange by name",
+    "Open Desktop folder",
+    "Retry",
+    "Desktop settings\u2026"
+  ],
+  "secondary_menu_buttons": [
+    "New folder\u2026",
+    "Add application shortcut\u2026",
+    "Arrange by name",
+    "Open Desktop folder",
+    "Retry",
+    "Desktop settings\u2026"
+  ]
+}

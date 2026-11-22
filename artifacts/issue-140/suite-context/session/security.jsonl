@@ -1,0 +1,31 @@
+{"event": "ready"}
+{"event": "session-lookup", "method": "GetSessionByPID", "compositor": false}
+{"event": "delay-acquired", "lease": 1}
+{"event": "registered", "sender": ":1.2", "session": "test"}
+{"event": "delay-released", "lease": 1, "locked": false}
+{"event": "unregistered"}
+{"event": "session-lookup", "method": "GetSessionByPID", "compositor": false}
+{"event": "delay-acquired", "lease": 2}
+{"event": "registered", "sender": ":1.12", "session": "test"}
+{"event": "delay-released", "lease": 2, "locked": false}
+{"event": "unregistered"}
+{"event": "session-lookup", "method": "GetSessionByPID", "compositor": false}
+{"event": "delay-acquired", "lease": 3}
+{"event": "registered", "sender": ":1.22", "session": "test"}
+{"event": "delay-released", "lease": 3, "locked": false}
+{"event": "unregistered"}
+{"event": "session-lookup", "method": "GetSessionByPID", "compositor": false}
+{"event": "delay-acquired", "lease": 4}
+{"event": "registered", "sender": ":1.26", "session": "test"}
+{"event": "delay-released", "lease": 4, "locked": false}
+{"event": "unregistered"}
+{"event": "session-lookup", "method": "GetSessionByPID", "compositor": false}
+{"event": "delay-acquired", "lease": 5}
+{"event": "registered", "sender": ":1.30", "session": "test"}
+{"event": "delay-released", "lease": 5, "locked": false}
+{"event": "unregistered"}
+{"event": "session-lookup", "method": "GetSessionByPID", "compositor": false}
+{"event": "delay-acquired", "lease": 6}
+{"event": "registered", "sender": ":1.34", "session": "test"}
+{"event": "delay-released", "lease": 6, "locked": false}
+{"event": "unregistered"}

@@ -1,0 +1,8 @@
+event=ready
+event=session-lookup
+event=delay-acquired
+event=registered
+command={"active": false}
+command={"active": true}
+event=delay-released
+event=unregistered

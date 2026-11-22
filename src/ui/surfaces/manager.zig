@@ -755,10 +755,21 @@ pub const Manager = struct {
         const path = surface.manager.preferences.prefs().wallpaperForOutput(surface.output.connector).path;
         if (path.len != 0) surface.manager.openCrop(surface.window, surface.output, path, surface.output.connector);
     }
+    fn desktopArrange(context: *anyopaque) void {
+        const surface: *Surface = @ptrCast(@alignCast(context));
+        const self = surface.manager;
+        for (self.outputs.items) |o| if (o.wallpaper) |s| if (s.desktop_icons) |view| {
+            if (!view.menu_only) {
+                view.arrangeByName();
+                return;
+            }
+        };
+    }
     fn syncDesktop(self: *Manager) !void {
         const store = self.desktop_directory orelse return;
         const prefs = self.preferences.prefs();
         store.enable(prefs.desktop_icons.enabled);
+        // Icons render on one output; every enabled output keeps the desktop menu.
         var desktop_output: ?*Output = null;
         for (self.outputs.items) |o| {
             if (std.mem.eql(u8, o.connector, prefs.desktop_icons.output)) {
@@ -768,7 +779,7 @@ pub const Manager = struct {
             if (desktop_output == null or std.mem.order(u8, o.connector, desktop_output.?.connector) == .lt) desktop_output = o;
         }
         for (self.outputs.items) |o| if (o.wallpaper) |surface| {
-            const enabled = prefs.desktop_icons.enabled and desktop_output == o;
+            const enabled = prefs.desktop_icons.enabled;
             if (!enabled) {
                 if (surface.desktop_icons) |view| {
                     surface.wallpaper_overlay.?.removeOverlay(view.root.as(gtk.Widget));
@@ -779,7 +790,7 @@ pub const Manager = struct {
                 continue;
             }
             if (surface.desktop_icons == null) {
-                surface.desktop_icons = try DesktopIcons.View.create(surface.window, store, &self.index, surface, desktopSettings, desktopCrop);
+                surface.desktop_icons = try DesktopIcons.View.create(surface.window, store, &self.index, surface, desktopSettings, desktopCrop, desktopArrange);
                 surface.wallpaper_overlay.?.addOverlay(surface.desktop_icons.?.root.as(gtk.Widget));
             }
             const view = surface.desktop_icons.?;
@@ -807,7 +818,7 @@ pub const Manager = struct {
             widget.setMarginEnd(right);
             widget.setMarginTop(top);
             widget.setMarginBottom(bottom);
-            view.configure(prefs.desktop_icons, prefs.font_size, o.bounds.width - left - right, o.bounds.height - top - bottom, !self.barInhibited() and self.popup == null);
+            view.configure(prefs.desktop_icons, prefs.font_size, o.bounds.width - left - right, o.bounds.height - top - bottom, !self.barInhibited() and self.popup == null, desktop_output != o);
             layer.setKeyboardMode(surface.window, if (view.allowed) .on_demand else .none);
         };
     }
@@ -2025,7 +2036,7 @@ pub const Manager = struct {
         for (self.outputs.items) |output| if (output.wallpaper) |wallpaper| {
             if (wallpaper.desktop_icons) |view| {
                 const allowed = !self.barInhibited() and self.popup == null;
-                view.configure(view.config, view.font, view.width, view.height, allowed);
+                view.configure(view.config, view.font, view.width, view.height, allowed, view.menu_only);
                 layer.setKeyboardMode(wallpaper.window, if (allowed) .on_demand else .none);
             }
             const input: @FieldType(native.Surface, "input") = if (!self.barInhibited() and (wallpaper.desktop_icons != null or (self.popup != null and self.preferences.prefs().popup.dismiss_outside))) .full else .empty;
@@ -2185,6 +2196,7 @@ pub const Manager = struct {
         if (request.op == .desktop_focus) {
             if (self.barInhibited()) return error.Locked;
             for (self.outputs.items) |output| if (output.wallpaper) |surface| if (surface.desktop_icons) |view| {
+                if (view.menu_only) continue;
                 if (request.output) |id| if (!std.mem.eql(u8, output.id, id)) return error.InvalidOutput;
                 self.hidePopup();
                 // Aqueous grants nonexclusive focus when an on-demand layer
@@ -2283,8 +2295,17 @@ pub const Manager = struct {
             const viewport = if (popup.viewport) |v| v.as(gtk.Widget) else popup.panel;
             return std.json.Stringify.valueAlloc(alloc, .{ .focus = @import("../../desktop/aqueous_settings.zig").View.focusName(popup.window), .width = viewport.getWidth(), .height = viewport.getHeight(), .content_width = popup.panel.getWidth(), .limit = self.popup_rect }, .{});
         }
-        if (@import("build_options").test_hooks and request.op == .aqueous_status and std.mem.eql(u8, request.text orelse "", "test-desktop-icons")) {
-            for (self.outputs.items) |output| if (output.wallpaper) |surface| if (surface.desktop_icons) |view| return view.report(alloc, output.id, @tagName(layer.getKeyboardMode(surface.window)));
+        if (@import("build_options").test_hooks and request.op == .aqueous_status and std.mem.startsWith(u8, request.text orelse "", "test-desktop-icons")) {
+            const suffix = request.text.?["test-desktop-icons".len..];
+            if (suffix.len > 0 and suffix[0] == ':') {
+                const output = try self.selected(suffix[1..]);
+                const surface = output.wallpaper orelse return error.Unavailable;
+                const view = surface.desktop_icons orelse return alloc.dupe(u8, "{\"enabled\":false}");
+                return view.report(alloc, output.id, @tagName(layer.getKeyboardMode(surface.window)));
+            }
+            for (self.outputs.items) |output| if (output.wallpaper) |surface| if (surface.desktop_icons) |view| {
+                if (!view.menu_only) return view.report(alloc, output.id, @tagName(layer.getKeyboardMode(surface.window)));
+            };
             return alloc.dupe(u8, "{\"enabled\":false}");
         }
         if (@import("build_options").test_hooks and request.op == .aqueous_status and std.mem.startsWith(u8, request.text orelse "", "test-bar-autohide:")) {
