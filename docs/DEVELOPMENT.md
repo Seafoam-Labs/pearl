@@ -61,7 +61,7 @@ These checks need GLib development files, pkg-config, Python 3 and timezone data
 GTK binding tests and desktop integration tests use the `native` and `integration`
 groups. Their prerequisites and preparation commands are in [TESTING.md](TESTING.md).
 
-Use **Zig 0.17.0** and the packages in [COMPATIBILITY.md](COMPATIBILITY.md).
+Use **Zig 0.17.1** and the packages in [COMPATIBILITY.md](COMPATIBILITY.md).
 `glib-compile-resources` is also required for ordinary application builds.
 
 Use an ASCII-only checkout path with the pinned Zig toolchain. A path containing

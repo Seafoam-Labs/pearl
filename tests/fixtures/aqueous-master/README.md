@@ -1,7 +1,7 @@
 # Pinned master contracts
 
-Source: Seafoam-Labs/Aqueous-clean, commit
-`b3d486920c42e24d45bed0a79e68915fe11c4815`, helper 0.8.2, protocol 1.
+Source: Seafoam-Labs/Aqueous, commit
+`e32ab7fc8f6510b393780b811ef92fe1bac6438e`, helper 1.0.18, protocol 1.
 `provenance.json` records exact production compositor/helper/aqueousctl and patched
 wlroots hashes, build flags and fixture hashes. JSON schemas are copied from that
 commit under GPL-3.0-only; the license is included. Live replies were captured in

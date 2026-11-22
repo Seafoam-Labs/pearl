@@ -43,11 +43,11 @@ msgstr ""
 msgid "No matching files in this folder."
 msgstr ""
 
-#: src/portal/file_chooser.zig:134
+#: src/portal/file_chooser.zig:154
 msgid "Open"
 msgstr ""
 
-#: src/files/chooser.zig:1335
+#: src/files/chooser.zig:1336
 msgid "Open files"
 msgstr ""
 
@@ -55,11 +55,15 @@ msgstr ""
 msgid "Places"
 msgstr ""
 
-#: src/files/chooser.zig:1104 src/portal/file_chooser.zig:134
+#: src/portal/file_chooser.zig:153
+msgid "Requested by {0}"
+msgstr ""
+
+#: src/files/chooser.zig:1104 src/portal/file_chooser.zig:154
 msgid "Save"
 msgstr ""
 
-#: src/files/chooser.zig:1335
+#: src/files/chooser.zig:1336
 msgid "Save document"
 msgstr ""
 

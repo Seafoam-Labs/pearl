@@ -1,9 +1,10 @@
+const std = @import("std");
 const chooser = @import("file_chooser");
 const ffi = @import("ffi.zig");
 const identity = @import("identity.zig");
 const Portal = @import("types.zig").Portal;
 const Request = @import("types.zig").Request;
-const portal_app_name = @import("backend.zig").portal_app_name;
+const portal_caller_name = @import("backend.zig").portal_caller_name;
 const portal_boolean = @import("backend.zig").portal_boolean;
 const portal_complete = @import("backend.zig").portal_complete;
 const portal_option = @import("backend.zig").portal_option;
@@ -24,13 +25,27 @@ fn empty_folder(value: ?*ffi.GVariant) bool {
     return n == 0 or (n == 1 and bytes[0] == 0);
 }
 
+// gtk backtracks on each star run and overreads a trailing escape. overcounting is deliberate.
+fn unsafe_glob(pattern: [*c]const u8) bool {
+    const glob = std.mem.span(pattern);
+    if ((glob.len - std.mem.trimEnd(u8, glob, "\\").len) % 2 == 1) return true;
+    var stars: usize = 0;
+    var i: usize = 0;
+    while (i < glob.len) : (i += 1) {
+        if (glob[i] != '*') continue;
+        stars += 1;
+        while (i + 1 < glob.len and (glob[i + 1] == '*' or glob[i + 1] == '?')) i += 1;
+    }
+    return stars > 2;
+}
+
 pub fn make_filter(value: ?*ffi.GVariant) callconv(.c) ?*ffi.GtkFileFilter {
     var name: [*c]const u8 = undefined;
     var rules: ?*ffi.GVariant = undefined;
     ffi.g_variant_get(value, "(&s@a(us))", &name, &rules);
     const owned: ?*ffi.GVariant = rules;
     defer if (owned != null) ffi.g_variant_unref(@ptrCast(owned));
-    if ((ffi.strlen(name) > @as(usize, 512)) or (ffi.g_variant_n_children(rules) > @as(ffi.gsize, 128))) return null;
+    if ((ffi.strlen(name) > @as(usize, 512)) or (ffi.g_variant_n_children(rules) > @as(ffi.gsize, 2048))) return null;
     const filter: ?*ffi.GtkFileFilter = ffi.gtk_file_filter_new();
     ffi.gtk_file_filter_set_name(filter, name);
     var iter: ffi.GVariantIter = undefined;
@@ -38,7 +53,7 @@ pub fn make_filter(value: ?*ffi.GVariant) callconv(.c) ?*ffi.GtkFileFilter {
     var @"type": ffi.guint = undefined;
     var pattern: [*c]const u8 = undefined;
     while (ffi.g_variant_iter_next(&iter, "(u&s)", &@"type", &pattern) != 0) {
-        if ((ffi.strlen(pattern) > @as(usize, 1024)) or (@"type" > @as(ffi.guint, 1))) {
+        if ((ffi.strlen(pattern) > @as(usize, 1024)) or (@"type" > @as(ffi.guint, 1)) or (@"type" == @as(ffi.guint, 0) and unsafe_glob(pattern))) {
             ffi.g_object_unref(@ptrCast(@alignCast(filter)));
             return null;
         }
@@ -50,6 +65,12 @@ pub fn make_filter(value: ?*ffi.GVariant) callconv(.c) ?*ffi.GtkFileFilter {
     }
     ffi.g_object_set_data_full(ffi.cast([*c]ffi.GObject, filter), "portal-filter", @ptrCast(@alignCast(ffi.g_variant_ref(value))), @ptrCast(@alignCast(@constCast(&ffi.g_variant_unref))));
     return filter;
+}
+
+fn reject_filters(r: [*c]Request) void {
+    const id: [*c]const u8 = if (r.*.app_id != null and r.*.app_id[0] != 0) r.*.app_id else "unknown app";
+    ffi.g_printerr("Rejected file filters from %s: invalid or over the portal limits\n", id);
+    portal_complete(r, 2, null);
 }
 
 pub fn response(dialog: [*c]ffi.GtkDialog, code: c_int, data: ffi.gpointer) callconv(.c) void {
@@ -126,11 +147,10 @@ pub fn portal_files(r: [*c]Request, params: ?*ffi.GVariant) callconv(.c) void {
     defer if (state_key != null) ffi.g_free(@ptrCast(state_key));
     chooser.setStateKey(r.*.dialog, state_key);
     chooser.setMultiple(r.*.dialog, @intFromBool((open != 0) and (portal_boolean(r.*.options, "multiple", 0) != 0)));
-    const name: [*c]u8 = portal_app_name(r.*.app_id);
+    const name: [*c]u8 = portal_caller_name(r.*.app_id);
     defer if (name != null) ffi.g_free(@ptrCast(name));
-    const caller: [*c]u8 = ffi.g_strdup_printf("Requested by %s", name);
-    defer if (caller != null) ffi.g_free(@ptrCast(caller));
-    chooser.setCaller(r.*.dialog, caller);
+    var caller: [1024]u8 = undefined;
+    chooser.setCaller(r.*.dialog, @import("i18n").dfmt("pearl-files", &caller, "Requested by {s}", .{std.mem.span(name)}));
     chooser.setAcceptLabel(r.*.dialog, portal_string(r.*.options, "accept_label", if (open != 0) @constCast(@import("i18n").dtr("pearl-files", "Open").ptr) else @constCast(@import("i18n").dtr("pearl-files", "Save").ptr)));
     chooser.setName(r.*.dialog, portal_string(r.*.options, "current_name", "Untitled"));
     const filters: ?*ffi.GVariant = portal_option(r.*.options, "filters", "a(sa(us))");
@@ -140,7 +160,7 @@ pub fn portal_files(r: [*c]Request, params: ?*ffi.GVariant) callconv(.c) void {
     var selected: ffi.gboolean = 0;
     if (filters != null) {
         if (ffi.g_variant_n_children(filters) > @as(ffi.gsize, 64)) {
-            portal_complete(r, 2, null);
+            reject_filters(r);
             return;
         }
         {
@@ -151,7 +171,7 @@ pub fn portal_files(r: [*c]Request, params: ?*ffi.GVariant) callconv(.c) void {
                 const f: ?*ffi.GtkFileFilter = make_filter(raw);
                 defer if (f != null) ffi.g_object_unref(@ptrCast(f));
                 if (f == null) {
-                    portal_complete(r, 2, null);
+                    reject_filters(r);
                     return;
                 }
                 chooser.addFilter(r.*.dialog, f.?);
@@ -166,7 +186,7 @@ pub fn portal_files(r: [*c]Request, params: ?*ffi.GVariant) callconv(.c) void {
         const f: ?*ffi.GtkFileFilter = make_filter(current);
         defer if (f != null) ffi.g_object_unref(@ptrCast(f));
         if (f == null) {
-            portal_complete(r, 2, null);
+            reject_filters(r);
             return;
         }
         chooser.addFilter(r.*.dialog, f.?);

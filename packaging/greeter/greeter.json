@@ -18,5 +18,7 @@
   "remember_session": false,
   "fingerprint_hint": false,
   "allow_uwsm": true,
-  "x11": false
+  "x11": false,
+  "handoff_hold": true,
+  "handoff_timeout_seconds": 15
 }

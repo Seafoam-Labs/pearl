@@ -1,0 +1,121 @@
+{
+  "version": 2,
+  "source": "/etc/scx/catalog.json",
+  "customized": true,
+  "recommended": [
+    {
+      "id": "default",
+      "label": "Default",
+      "description": "The kernel's own scheduler.",
+      "available": true
+    },
+    {
+      "id": "scx_cosmos",
+      "label": "Cosmos",
+      "description": "",
+      "path": "/usr/bin/scx_cosmos",
+      "available": true
+    },
+    {
+      "id": "latency",
+      "label": "Low latency",
+      "description": "EEVDF with a short slice.",
+      "sched": "scx_eevdf",
+      "args": [
+        "--slice-us",
+        "1600",
+        "--disable-cgroups"
+      ],
+      "available": false
+    },
+    {
+      "id": "server",
+      "label": "Server",
+      "description": "",
+      "sched": "scx_eevdf",
+      "args": [
+        "--slice-us",
+        "20000"
+      ],
+      "available": false
+    },
+    {
+      "id": "gaming-layered",
+      "label": "Gaming (layered)",
+      "description": "A hidden scheduler with the configuration it needs.",
+      "sched": "scx_layered",
+      "args": [
+        "--run-example"
+      ],
+      "path": "/usr/bin/scx_layered",
+      "available": true
+    }
+  ],
+  "all": [
+    {
+      "name": "scx_cosmos",
+      "path": "/usr/bin/scx_cosmos",
+      "recommended": true,
+      "featured": true,
+      "tier": "stable"
+    },
+    {
+      "name": "scx_lavd",
+      "path": "/usr/bin/scx_lavd",
+      "recommended": false,
+      "featured": true,
+      "tier": "stable"
+    },
+    {
+      "name": "scx_bpfland",
+      "path": "/usr/bin/scx_bpfland",
+      "recommended": false,
+      "featured": false,
+      "tier": "stable"
+    },
+    {
+      "name": "scx_flow",
+      "path": "/usr/bin/scx_flow",
+      "recommended": false,
+      "featured": false,
+      "tier": "experimental"
+    },
+    {
+      "name": "scx_rake",
+      "path": "/usr/local/bin/scx_rake",
+      "recommended": false,
+      "featured": false,
+      "tier": "unknown"
+    },
+    {
+      "name": "scx_rusty",
+      "path": "/usr/bin/scx_rusty",
+      "recommended": false,
+      "featured": false,
+      "tier": "unknown"
+    }
+  ],
+  "config": "/etc/default/scx",
+  "current": {
+    "version": 2,
+    "scheduler": "scx_cosmos",
+    "unit": {
+      "active": true,
+      "enabled": true
+    },
+    "running": {
+      "sched": "scx_cosmos",
+      "args": []
+    },
+    "next": {
+      "sched": "/usr/bin/scx_cosmos",
+      "args": [],
+      "override": false
+    },
+    "kernel": {
+      "state": "enabled",
+      "ops": "cosmos"
+    },
+    "failure": null
+  }
+}

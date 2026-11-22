@@ -5,6 +5,8 @@ test {
     _ = @import("agent/extract.zig");
     _ = @import("agent/fetch.zig");
     _ = @import("agent/controller.zig");
+    _ = @import("agent/conversation_tests.zig");
+    _ = @import("agent/files_tests.zig");
     _ = @import("agent/protocol.zig");
     _ = @import("agent/sse.zig");
     _ = @import("agent/runtime_probe.zig");
@@ -15,4 +17,13 @@ test {
     _ = @import("agent/downloads.zig");
     _ = @import("agent/benchmark.zig");
     _ = @import("agent/telemetry.zig");
+    _ = @import("agent/embed.zig");
+    _ = @import("search/chunk.zig");
+    _ = @import("search/store.zig");
+    _ = @import("search/extract.zig");
+    _ = @import("search/sandbox.zig");
+    _ = @import("search/indexer.zig");
+    _ = @import("search/service.zig");
+    _ = @import("search/schedule.zig");
+    _ = @import("search/watch.zig");
 }

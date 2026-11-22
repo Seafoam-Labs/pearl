@@ -38,6 +38,9 @@
 .pearl-root.$scope listview row { padding: 0; border-radius: 12px; margin: 2px 3px; }
 .pearl-root.$scope listview row:hover { background: $high$; }
 .pearl-root.$scope listview row:selected { background: $primary_container$; color: $on_container$; }
+/* The scroller clips at its own edge, so reserve the room a row focus ring
+   needs beyond its margin or the first and last rings lose a side. */
+.pearl-root.$scope .pearl-launcher-list { padding: 2px 1px; }
 .pearl-root.$scope .pearl-launcher-choices { background: transparent; color: $text$; }
 .pearl-root.$scope .pearl-launcher-choices row { padding: 8px 10px; border-radius: 12px; margin: 2px 3px; }
 .pearl-root.$scope .pearl-launcher-choices row:hover { background: $high$; }
@@ -235,9 +238,16 @@
 /* The grabbed icon hides: its slot travels to the landing spot as an empty gap. */
 .pearl-root.$scope .pearl-dock button.pearl-dragging { opacity: 0; }
 .pearl-root.$scope .pearl-dock-ghost { filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.45)); }
+@keyframes pearl-dock-pickup { 0% { opacity: 0.5; transform: scale(0.65); } 55% { opacity: 1; transform: scale(1.12); } 100% { opacity: 1; transform: scale(1); } }
+.pearl-root.$scope .pearl-dock-ghost.pearl-drag-pickup { animation: pearl-dock-pickup 220ms ease-out; }
 @keyframes pearl-dock-landed { from { opacity: 0.35; transform: scale(1.15); } to { opacity: 1; transform: scale(1); } }
 .pearl-root.$scope .pearl-dock > box.pearl-drop-landed { animation: pearl-dock-landed 240ms ease-out; }
 .pearl-root.$scope .pearl-dock-indicator { color: $primary$; font-size: 0.75em; margin-top: -3px; margin-bottom: -2px; }
+/* Embedded bar widget: tighter chrome so the strip fits the bar thickness. */
+.pearl-root.$scope.pearl-shell .pearl-dock-embedded { padding: 2px; }
+.pearl-root.$scope.pearl-shell .pearl-dock-embedded button { padding: 1px 3px 0; min-height: 0; }
+/* Keep the running dots at their natural height; negative margins squash them. */
+.pearl-root.$scope.pearl-shell .pearl-dock-embedded .pearl-dock-indicator { font-size: 0.65em; margin-top: 0; margin-bottom: 0; }
 
 .pearl-root.$scope popover > contents { background: $container$; color: $text$; border: 1px solid alpha($outline$, 0.3); border-radius: 14px; padding: 8px; }
 

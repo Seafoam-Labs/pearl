@@ -38,7 +38,7 @@ report=dict(recorded_utc=datetime.datetime.now(datetime.timezone.utc).isoformat(
 rows='\n'.join(f'| {name} | {s["checks"]} passed |' for name,s in suites.items())
 (VERIFY/'README.md').write_text(f'''# T11 verification — September 13, 2026
 
-Zig 0.17.0 safe and pinned Ghostty bindings. All suites use the same final
+Zig 0.17.1 safe and pinned Ghostty bindings. All suites use the same final
 production/instrumented binaries; `scripts/t11-evidence.py` checks their hashes.
 See [summary.json](summary.json) and [source checksums](source-manifest.json).
 

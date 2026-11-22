@@ -18,6 +18,9 @@ def main():
  def save(name,v):
   (a.output/(name+'.json')).write_text(json.dumps(v,indent=2)+'\n')
  with PrivateSession(a.output/'session',tool_prefix=a.prefix) as s:
+  # Keep every canonical source private; absent sidecars can resolve to /etc.
+  for name in ('layout','input','outputs','rules','appearance'):
+   (Path(s.env['XDG_CONFIG_HOME'])/'aqueous'/f'{name}.toml').touch()
   ipc=CapturedIPC(s)
   def helper(op,req=None,flags=(),expect_ok=True):
    end=time.monotonic()+8

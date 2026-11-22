@@ -1,7 +1,7 @@
 {
   "ok": true,
   "protocol": 1,
-  "helper_version": "0.8.3",
+  "helper_version": "1.0.18",
   "capabilities": [
     "schema_fields",
     "validate",
@@ -36,11 +36,11 @@
     "collection_preconditions_v2",
     "display_declaration_mutations_v1"
   ],
-  "generation": "7e892b132ca1a1c9",
+  "generation": "26b9306071111f34",
   "candidate_review": {
     "version": 1,
-    "original_generation": "edb2f0f0d802b8d7",
-    "candidate_digest": "2b8a0531c704203f3cb559e607e6f9335e2b3ee4c472e6abe079208a46e74252",
+    "original_generation": "52cca446bb7a1eef",
+    "candidate_digest": "4c6d614c460f2efb49c59918a343704c764d10243473807732f51dc416037861",
     "changed_files": [
       "wm",
       "layout",
@@ -56,8 +56,8 @@
   },
   "candidate_impact": {
     "version": 1,
-    "original_generation": "edb2f0f0d802b8d7",
-    "candidate_digest": "2b8a0531c704203f3cb559e607e6f9335e2b3ee4c472e6abe079208a46e74252",
+    "original_generation": "52cca446bb7a1eef",
+    "candidate_digest": "4c6d614c460f2efb49c59918a343704c764d10243473807732f51dc416037861",
     "changed_files": [
       "wm",
       "layout",
@@ -146,7 +146,7 @@
   },
   "display_model": {
     "version": 2,
-    "generation": "7e892b132ca1a1c9",
+    "generation": "26b9306071111f34",
     "candidate": true,
     "declarations": [],
     "configured": {
@@ -245,6 +245,7 @@
           "auto",
           "l100",
           "l400",
+          "l600",
           "l1000"
         ],
         "auto_hdr_boost": {
@@ -261,8 +262,8 @@
     },
     "live": {
       "version": 1,
-      "config_generation": "edb2f0f0d802b8d7",
-      "session": "5ca4f8f659417a60bc8819cef1539fca",
+      "config_generation": "38825972baa73237",
+      "session": "150810f6a2bf22029cb9896861121a56",
       "display_revision": "6",
       "observation": "current",
       "active_profile": "",
@@ -332,6 +333,7 @@
             "y": 0,
             "mirror_of": "",
             "adaptive_sync": false,
+            "fullscreen_only_adaptive_sync": false,
             "hdr": false,
             "hdr_level": 1000,
             "sdr_white_level": 200,
@@ -340,6 +342,8 @@
           },
           "actual_hdr": false,
           "actual_vrr": false,
+          "effective_adaptive_sync": false,
+          "adaptive_sync_error": null,
           "primary": false,
           "configured": {
             "enabled": {
@@ -385,6 +389,13 @@
               "inherit_runtime": true
             },
             "adaptive_sync": {
+              "value": null,
+              "declaration": null,
+              "source": null,
+              "fold_order": null,
+              "inherit_runtime": true
+            },
+            "fullscreen_only_adaptive_sync": {
               "value": null,
               "declaration": null,
               "source": null,
@@ -534,6 +545,7 @@
             "y": 0,
             "mirror_of": "",
             "adaptive_sync": false,
+            "fullscreen_only_adaptive_sync": false,
             "hdr": false,
             "hdr_level": 1000,
             "sdr_white_level": 200,
@@ -542,6 +554,8 @@
           },
           "actual_hdr": false,
           "actual_vrr": false,
+          "effective_adaptive_sync": false,
+          "adaptive_sync_error": null,
           "primary": false,
           "configured": {
             "enabled": {
@@ -587,6 +601,13 @@
               "inherit_runtime": true
             },
             "adaptive_sync": {
+              "value": null,
+              "declaration": null,
+              "source": null,
+              "fold_order": null,
+              "inherit_runtime": true
+            },
+            "fullscreen_only_adaptive_sync": {
               "value": null,
               "declaration": null,
               "source": null,
@@ -713,8 +734,8 @@
   },
   "display_observation": {
     "version": 1,
-    "config_generation": "edb2f0f0d802b8d7",
-    "session": "5ca4f8f659417a60bc8819cef1539fca",
+    "config_generation": "38825972baa73237",
+    "session": "150810f6a2bf22029cb9896861121a56",
     "display_revision": "6",
     "observation": "current",
     "active_profile": "",
@@ -784,6 +805,7 @@
           "y": 0,
           "mirror_of": "",
           "adaptive_sync": false,
+          "fullscreen_only_adaptive_sync": false,
           "hdr": false,
           "hdr_level": 1000,
           "sdr_white_level": 200,
@@ -792,6 +814,8 @@
         },
         "actual_hdr": false,
         "actual_vrr": false,
+        "effective_adaptive_sync": false,
+        "adaptive_sync_error": null,
         "primary": false,
         "configured": {
           "enabled": {
@@ -837,6 +861,13 @@
             "inherit_runtime": true
           },
           "adaptive_sync": {
+            "value": null,
+            "declaration": null,
+            "source": null,
+            "fold_order": null,
+            "inherit_runtime": true
+          },
+          "fullscreen_only_adaptive_sync": {
             "value": null,
             "declaration": null,
             "source": null,
@@ -986,6 +1017,7 @@
           "y": 0,
           "mirror_of": "",
           "adaptive_sync": false,
+          "fullscreen_only_adaptive_sync": false,
           "hdr": false,
           "hdr_level": 1000,
           "sdr_white_level": 200,
@@ -994,6 +1026,8 @@
         },
         "actual_hdr": false,
         "actual_vrr": false,
+        "effective_adaptive_sync": false,
+        "adaptive_sync_error": null,
         "primary": false,
         "configured": {
           "enabled": {
@@ -1039,6 +1073,13 @@
             "inherit_runtime": true
           },
           "adaptive_sync": {
+            "value": null,
+            "declaration": null,
+            "source": null,
+            "fold_order": null,
+            "inherit_runtime": true
+          },
+          "fullscreen_only_adaptive_sync": {
             "value": null,
             "declaration": null,
             "source": null,
@@ -1258,6 +1299,7 @@
         "auto",
         "l100",
         "l400",
+        "l600",
         "l1000"
       ],
       "auto_hdr_boost": {
@@ -1291,40 +1333,40 @@
     "schema": "aqueous-config-additions-v1.schema.json#/$defs/display_declaration_changes"
   },
   "display_source_ids": {
-    "wm": "display-v1:8122c7d207bf2ec462ba1118e71a559209e1cb84dc69f0dfbe8f8ce89587da41",
-    "outputs": "display-v1:7e58f8ae35aaddaf5ae9e49dbab6684f5aa93a18f601a6d6f2e32a899574378f"
+    "wm": "display-v1:5f9145a6cf034d5e4390a1c6da82eacdf9038cabe763c803fce847e0ff531f2e",
+    "outputs": "display-v1:6e40f9dbebe2a72e155065fa6f16f42580dcf86f519fe007acdf12e62ca0c37e"
   },
   "collection_identity": {
     "version": 1,
     "scope": "generation",
-    "generation": "7e892b132ca1a1c9",
+    "generation": "26b9306071111f34",
     "precondition": "expected_generation",
     "stale_edit": "external_change",
     "raw_and_structured_same_collection": "conflicting_edits",
     "rebase": "unsupported"
   },
   "collection_preconditions": {
-    "wm": "681f8a87b731b3a2f21e1d5f64a0aee1d88fdcd598624e2d7924679ea2c17e59",
-    "rules": "3dbecd061020a4d380732f70d72aa882428d2f8398cb5ca35eb5650e0174be2f",
-    "layout": "8ecfa29772e9ceb88c35cf75c8cc3ecf9726963ab204af04603485102adc46c3"
+    "wm": "29572e3c4acc2fb8f2cd496e1e61d77afe2335845925ab53ad47aec36c8d8152",
+    "rules": "5ed822b75502d193286f895f923f9b82a4d755887ab758508d52370fb633fc76",
+    "layout": "88cc45e11bb1fc8165bb7b5636186e92ca84e615cc7aa7fd4f4cd9c7b91d8e59"
   },
   "collection_preconditions_v2": {
     "version": 2,
     "sources": {
       "wm": {
-        "path": "/tmp/pearl-dev-bl5f9m4v/config/aqueous/wm.toml",
+        "path": "/tmp/pearl-dev-e1exhnd3/config/aqueous/wm.toml",
         "exists": true,
-        "digest": "da04ec94c4c760dcf17d2b4af1800b7de8c36facd54b05973f18acb6dc4a3427"
+        "digest": "13aa119ce3d66f28a0cd194f30a3c2cf954d5f2d9c7ab926785f2268d7f0c6c8"
       },
       "rules": {
-        "path": "/tmp/pearl-dev-bl5f9m4v/config/aqueous/rules.toml",
-        "exists": false,
-        "digest": "07a49bb1c7379ec80c3c605f1de064f9d561788667e92e5b7645eb0b6020a863"
+        "path": "/tmp/pearl-dev-e1exhnd3/config/aqueous/rules.toml",
+        "exists": true,
+        "digest": "fced86c028b44440e83511e2eedd138ca693a8dfb9d62a5d53e3d8c410728813"
       },
       "layout": {
-        "path": "/tmp/pearl-dev-bl5f9m4v/config/aqueous/layout.toml",
-        "exists": false,
-        "digest": "906c324433577c92c9f2e5eacaebb8e0f52356283357896c40f9a124bf5f75c8"
+        "path": "/tmp/pearl-dev-e1exhnd3/config/aqueous/layout.toml",
+        "exists": true,
+        "digest": "ca062374bcdf554832f8806f98e4f687c022d02ffb653037097baea7c4f7cb21"
       }
     }
   },
@@ -1700,6 +1742,55 @@
           "matcher": null,
           "range": null,
           "exclusive_minimum": false
+        },
+        {
+          "key": "scope",
+          "type": "string",
+          "default": null,
+          "options": [
+            "managed",
+            "override_redirect"
+          ],
+          "matcher": null,
+          "range": null,
+          "exclusive_minimum": false
+        },
+        {
+          "key": "window_type",
+          "type": "string",
+          "default": null,
+          "options": [
+            "desktop",
+            "dock",
+            "toolbar",
+            "menu",
+            "utility",
+            "splash",
+            "dialog",
+            "dropdown_menu",
+            "popup_menu",
+            "tooltip",
+            "notification",
+            "combo",
+            "dnd",
+            "normal"
+          ],
+          "matcher": null,
+          "range": null,
+          "exclusive_minimum": false
+        },
+        {
+          "key": "matching",
+          "type": "string",
+          "default": null,
+          "options": [
+            "always",
+            "once",
+            "startup"
+          ],
+          "matcher": null,
+          "range": null,
+          "exclusive_minimum": false
         }
       ]
     },
@@ -1792,39 +1883,39 @@
   "stacking_alias_count": 0,
   "files": {
     "wm": {
-      "path": "/tmp/pearl-dev-bl5f9m4v/config/aqueous/wm.toml",
+      "path": "/tmp/pearl-dev-e1exhnd3/config/aqueous/wm.toml",
       "writable": true,
       "exists": true,
       "size": 216
     },
     "layout": {
-      "path": "/tmp/pearl-dev-bl5f9m4v/config/aqueous/layout.toml",
+      "path": "/tmp/pearl-dev-e1exhnd3/config/aqueous/layout.toml",
       "writable": true,
-      "exists": false,
+      "exists": true,
       "size": 177
     },
     "input": {
-      "path": "/tmp/pearl-dev-bl5f9m4v/config/aqueous/input.toml",
+      "path": "/tmp/pearl-dev-e1exhnd3/config/aqueous/input.toml",
       "writable": true,
-      "exists": false,
+      "exists": true,
       "size": 0
     },
     "outputs": {
-      "path": "/tmp/pearl-dev-bl5f9m4v/config/aqueous/outputs.toml",
+      "path": "/tmp/pearl-dev-e1exhnd3/config/aqueous/outputs.toml",
       "writable": true,
-      "exists": false,
+      "exists": true,
       "size": 0
     },
     "rules": {
-      "path": "/tmp/pearl-dev-bl5f9m4v/config/aqueous/rules.toml",
+      "path": "/tmp/pearl-dev-e1exhnd3/config/aqueous/rules.toml",
       "writable": true,
-      "exists": false,
+      "exists": true,
       "size": 66
     },
     "appearance": {
-      "path": "/tmp/pearl-dev-bl5f9m4v/config/aqueous/appearance.toml",
+      "path": "/tmp/pearl-dev-e1exhnd3/config/aqueous/appearance.toml",
       "writable": true,
-      "exists": false,
+      "exists": true,
       "size": 0
     }
   },
@@ -2122,6 +2213,24 @@
       "value": false,
       "default": false,
       "raw": "false"
+    },
+    {
+      "id": "decoration.corner_radius",
+      "category": "appearance",
+      "label": "Window corner radius",
+      "description": "Window rounding in logical pixels; zero disables compositor rounding. Requires Vulkan effects. Application-drawn transparent corners remain.",
+      "file": "wm",
+      "section": "decoration",
+      "key": "corner_radius",
+      "type": "integer",
+      "configured": false,
+      "inherited": false,
+      "advanced": false,
+      "value": 15,
+      "default": 15,
+      "raw": "15",
+      "min": 0,
+      "max": 128
     },
     {
       "id": "blur.radius",
@@ -2527,6 +2636,204 @@
       "max": 64
     },
     {
+      "id": "layout.center_single_window",
+      "category": "layouts",
+      "label": "Center single window",
+      "description": "Center a lone tile in tile, grid, rows and both dwindle layouts. Floating windows and dialogs do not count.",
+      "file": "layout",
+      "section": "layout",
+      "key": "center_single_window",
+      "type": "boolean",
+      "configured": false,
+      "inherited": false,
+      "advanced": false,
+      "value": false,
+      "default": false,
+      "raw": "false"
+    },
+    {
+      "id": "layout.single_window_aspect_ratio",
+      "category": "layouts",
+      "label": "Single window aspect ratio",
+      "description": "Maximum width divided by height for a centered single tile; 1.778 is approximately 16:9. Must be greater than zero.",
+      "file": "layout",
+      "section": "layout",
+      "key": "single_window_aspect_ratio",
+      "type": "double",
+      "configured": false,
+      "inherited": false,
+      "advanced": false,
+      "value": 1.7777777777777777,
+      "default": 1.7777777777777777,
+      "raw": "1.7777777777777777",
+      "min": 0
+    },
+    {
+      "id": "layout.options.tile.center_single_window",
+      "category": "layouts",
+      "label": "Tile: Center single window",
+      "description": "Center a lone tile in tile, grid, rows and both dwindle layouts. Floating windows and dialogs do not count.",
+      "file": "layout",
+      "section": "layout.options.tile",
+      "key": "center_single_window",
+      "type": "boolean",
+      "configured": false,
+      "inherited": false,
+      "advanced": false,
+      "value": false,
+      "default": false,
+      "raw": "false"
+    },
+    {
+      "id": "layout.options.tile.single_window_aspect_ratio",
+      "category": "layouts",
+      "label": "Tile: Single window aspect ratio",
+      "description": "Maximum width divided by height for a centered single tile; 1.778 is approximately 16:9. Must be greater than zero.",
+      "file": "layout",
+      "section": "layout.options.tile",
+      "key": "single_window_aspect_ratio",
+      "type": "double",
+      "configured": false,
+      "inherited": false,
+      "advanced": false,
+      "value": 1.7777777777777777,
+      "default": 1.7777777777777777,
+      "raw": "1.7777777777777777",
+      "min": 0
+    },
+    {
+      "id": "layout.options.grid.center_single_window",
+      "category": "layouts",
+      "label": "Grid: Center single window",
+      "description": "Center a lone tile in tile, grid, rows and both dwindle layouts. Floating windows and dialogs do not count.",
+      "file": "layout",
+      "section": "layout.options.grid",
+      "key": "center_single_window",
+      "type": "boolean",
+      "configured": false,
+      "inherited": false,
+      "advanced": false,
+      "value": false,
+      "default": false,
+      "raw": "false"
+    },
+    {
+      "id": "layout.options.grid.single_window_aspect_ratio",
+      "category": "layouts",
+      "label": "Grid: Single window aspect ratio",
+      "description": "Maximum width divided by height for a centered single tile; 1.778 is approximately 16:9. Must be greater than zero.",
+      "file": "layout",
+      "section": "layout.options.grid",
+      "key": "single_window_aspect_ratio",
+      "type": "double",
+      "configured": false,
+      "inherited": false,
+      "advanced": false,
+      "value": 1.7777777777777777,
+      "default": 1.7777777777777777,
+      "raw": "1.7777777777777777",
+      "min": 0
+    },
+    {
+      "id": "layout.options.rows.center_single_window",
+      "category": "layouts",
+      "label": "Rows: Center single window",
+      "description": "Center a lone tile in tile, grid, rows and both dwindle layouts. Floating windows and dialogs do not count.",
+      "file": "layout",
+      "section": "layout.options.rows",
+      "key": "center_single_window",
+      "type": "boolean",
+      "configured": false,
+      "inherited": false,
+      "advanced": false,
+      "value": false,
+      "default": false,
+      "raw": "false"
+    },
+    {
+      "id": "layout.options.rows.single_window_aspect_ratio",
+      "category": "layouts",
+      "label": "Rows: Single window aspect ratio",
+      "description": "Maximum width divided by height for a centered single tile; 1.778 is approximately 16:9. Must be greater than zero.",
+      "file": "layout",
+      "section": "layout.options.rows",
+      "key": "single_window_aspect_ratio",
+      "type": "double",
+      "configured": false,
+      "inherited": false,
+      "advanced": false,
+      "value": 1.7777777777777777,
+      "default": 1.7777777777777777,
+      "raw": "1.7777777777777777",
+      "min": 0
+    },
+    {
+      "id": "layout.options.dwindle.center_single_window",
+      "category": "layouts",
+      "label": "Dwindle: Center single window",
+      "description": "Center a lone tile in tile, grid, rows and both dwindle layouts. Floating windows and dialogs do not count.",
+      "file": "layout",
+      "section": "layout.options.dwindle",
+      "key": "center_single_window",
+      "type": "boolean",
+      "configured": false,
+      "inherited": false,
+      "advanced": false,
+      "value": false,
+      "default": false,
+      "raw": "false"
+    },
+    {
+      "id": "layout.options.dwindle.single_window_aspect_ratio",
+      "category": "layouts",
+      "label": "Dwindle: Single window aspect ratio",
+      "description": "Maximum width divided by height for a centered single tile; 1.778 is approximately 16:9. Must be greater than zero.",
+      "file": "layout",
+      "section": "layout.options.dwindle",
+      "key": "single_window_aspect_ratio",
+      "type": "double",
+      "configured": false,
+      "inherited": false,
+      "advanced": false,
+      "value": 1.7777777777777777,
+      "default": 1.7777777777777777,
+      "raw": "1.7777777777777777",
+      "min": 0
+    },
+    {
+      "id": "layout.options.reverse-dwindle.center_single_window",
+      "category": "layouts",
+      "label": "Reverse-Dwindle: Center single window",
+      "description": "Center a lone tile in tile, grid, rows and both dwindle layouts. Floating windows and dialogs do not count.",
+      "file": "layout",
+      "section": "layout.options.reverse-dwindle",
+      "key": "center_single_window",
+      "type": "boolean",
+      "configured": false,
+      "inherited": false,
+      "advanced": false,
+      "value": false,
+      "default": false,
+      "raw": "false"
+    },
+    {
+      "id": "layout.options.reverse-dwindle.single_window_aspect_ratio",
+      "category": "layouts",
+      "label": "Reverse-Dwindle: Single window aspect ratio",
+      "description": "Maximum width divided by height for a centered single tile; 1.778 is approximately 16:9. Must be greater than zero.",
+      "file": "layout",
+      "section": "layout.options.reverse-dwindle",
+      "key": "single_window_aspect_ratio",
+      "type": "double",
+      "configured": false,
+      "inherited": false,
+      "advanced": false,
+      "value": 1.7777777777777777,
+      "default": 1.7777777777777777,
+      "raw": "1.7777777777777777",
+      "min": 0
+    },
+    {
       "id": "layout.border_width",
       "category": "layouts",
       "label": "Border width",
@@ -2771,20 +3078,27 @@
       "raw": "true"
     },
     {
-      "id": "layout.options.scrolling.open_new_windows_to_right",
+      "id": "layout.options.scrolling.new_window_position",
       "category": "layouts",
-      "label": "Open new windows to the right",
-      "description": "Insert new columns immediately after the focused column; overrides portrait stacking.",
+      "label": "New window position",
+      "description": "Where new windows are placed relative to the focused window; any explicit position overrides portrait stacking.",
       "file": "layout",
       "section": "layout.options.scrolling",
-      "key": "open_new_windows_to_right",
-      "type": "boolean",
+      "key": "new_window_position",
+      "type": "select",
       "configured": false,
       "inherited": false,
       "advanced": false,
-      "value": false,
-      "default": false,
-      "raw": "false"
+      "value": "append",
+      "default": "append",
+      "raw": "append",
+      "options": [
+        "append",
+        "right",
+        "left",
+        "above",
+        "below"
+      ]
     },
     {
       "id": "layout.options.scrolling.prefer_vertical_on_portrait",
@@ -2891,6 +3205,22 @@
       ]
     },
     {
+      "id": "layout.options.dwindle.split_focused",
+      "category": "layouts",
+      "label": "Dwindle: Split focused window",
+      "description": "Open new windows by splitting the focused window along its longer side instead of the last window.",
+      "file": "layout",
+      "section": "layout.options.dwindle",
+      "key": "split_focused",
+      "type": "boolean",
+      "configured": false,
+      "inherited": false,
+      "advanced": false,
+      "value": false,
+      "default": false,
+      "raw": "false"
+    },
+    {
       "id": "layout.options.reverse-dwindle.split_ratio",
       "category": "layouts",
       "label": "Reverse dwindle split",
@@ -2927,6 +3257,22 @@
         "vertical",
         "horizontal"
       ]
+    },
+    {
+      "id": "layout.options.reverse-dwindle.split_focused",
+      "category": "layouts",
+      "label": "Reverse dwindle: Split focused window",
+      "description": "Open new windows by splitting the focused window along its longer side instead of the last window.",
+      "file": "layout",
+      "section": "layout.options.reverse-dwindle",
+      "key": "split_focused",
+      "type": "boolean",
+      "configured": false,
+      "inherited": false,
+      "advanced": false,
+      "value": false,
+      "default": false,
+      "raw": "false"
     },
     {
       "id": "layout.options.monocle.hide_others",
@@ -3144,7 +3490,7 @@
       "id": "input.mouse_follows_focus",
       "category": "input",
       "label": "Move pointer with focus",
-      "description": "Move the pointer into newly focused windows, except for pointer interactions. Output navigation still moves the pointer when disabled.",
+      "description": "Move the pointer into newly focused windows, including keyboard and wheel bindings. Hover and click focus do not move it. Output navigation still moves the pointer when disabled.",
       "file": "input",
       "section": "input",
       "key": "mouse_follows_focus",
@@ -3171,6 +3517,22 @@
       "value": false,
       "default": false,
       "raw": "false"
+    },
+    {
+      "id": "input.focus_crosses_workspaces",
+      "category": "input",
+      "label": "Focus across workspaces",
+      "description": "Moving focus left or right past the last window continues into the previous or next workspace, wrapping between the last workspace and workspace 1.",
+      "file": "input",
+      "section": "input",
+      "key": "focus_crosses_workspaces",
+      "type": "boolean",
+      "configured": false,
+      "inherited": false,
+      "advanced": false,
+      "value": true,
+      "default": true,
+      "raw": "true"
     },
     {
       "id": "input.raise_on_focus",
@@ -3838,12 +4200,84 @@
       "inherited": false,
       "advanced": false,
       "value": [
-        "Super+Tab"
+        "Super+Tab",
+        "Alt+Tab"
       ],
       "default": [
-        "Super+Tab"
+        "Super+Tab",
+        "Alt+Tab"
       ],
-      "raw": "Super+Tab"
+      "raw": "[\"Super+Tab\", \"Alt+Tab\"]"
+    },
+    {
+      "id": "cycle_focus_reverse",
+      "category": "keybinds",
+      "label": "cycle_focus_reverse",
+      "description": "Shortcut for this built-in action.",
+      "file": "wm",
+      "section": "keybinds",
+      "key": "cycle_focus_reverse",
+      "type": "string_list",
+      "configured": false,
+      "inherited": false,
+      "advanced": false,
+      "value": [
+        "Super+Shift+Tab",
+        "Alt+Shift+Tab"
+      ],
+      "default": [
+        "Super+Shift+Tab",
+        "Alt+Shift+Tab"
+      ],
+      "raw": "[\"Super+Shift+Tab\", \"Alt+Shift+Tab\"]"
+    },
+    {
+      "id": "window_switcher_next",
+      "category": "keybinds",
+      "label": "window_switcher_next",
+      "description": "Shortcut for this built-in action.",
+      "file": "wm",
+      "section": "keybinds",
+      "key": "window_switcher_next",
+      "type": "string_list",
+      "configured": false,
+      "inherited": false,
+      "advanced": false,
+      "value": [],
+      "default": [],
+      "raw": ""
+    },
+    {
+      "id": "window_switcher_previous",
+      "category": "keybinds",
+      "label": "window_switcher_previous",
+      "description": "Shortcut for this built-in action.",
+      "file": "wm",
+      "section": "keybinds",
+      "key": "window_switcher_previous",
+      "type": "string_list",
+      "configured": false,
+      "inherited": false,
+      "advanced": false,
+      "value": [],
+      "default": [],
+      "raw": ""
+    },
+    {
+      "id": "window_switcher_dismiss",
+      "category": "keybinds",
+      "label": "window_switcher_dismiss",
+      "description": "Shortcut for this built-in action.",
+      "file": "wm",
+      "section": "keybinds",
+      "key": "window_switcher_dismiss",
+      "type": "string_list",
+      "configured": false,
+      "inherited": false,
+      "advanced": false,
+      "value": [],
+      "default": [],
+      "raw": ""
     },
     {
       "id": "focus_left",
@@ -5874,6 +6308,17 @@
         "y": 0
       },
       "transform": "normal",
+      "xwayland_scaling": {
+        "mode": "disabled",
+        "dpi_status": "unmanaged",
+        "target_dpi": null,
+        "published_dpi": null,
+        "source_output": null
+      },
+      "fullscreen_only_adaptive_sync": false,
+      "effective_adaptive_sync": false,
+      "actual_vrr": false,
+      "adaptive_sync_error": null,
       "mirror_of": "",
       "mirror_status": "extended",
       "mirror_error": null,
@@ -5906,6 +6351,17 @@
         "y": 0
       },
       "transform": "normal",
+      "xwayland_scaling": {
+        "mode": "disabled",
+        "dpi_status": "unmanaged",
+        "target_dpi": null,
+        "published_dpi": null,
+        "source_output": null
+      },
+      "fullscreen_only_adaptive_sync": false,
+      "effective_adaptive_sync": false,
+      "actual_vrr": false,
+      "adaptive_sync_error": null,
       "mirror_of": "",
       "mirror_status": "extended",
       "mirror_error": null,
@@ -6004,51 +6460,17 @@
     "families": [
       "Adwaita Mono",
       "Adwaita Sans",
-      "Bitstream Vera Sans",
-      "Bitstream Vera Sans Mono",
-      "Bitstream Vera Serif",
-      "C059",
-      "Cantarell",
-      "D050000L",
       "DejaVu Math TeX Gyre",
       "DejaVu Sans",
       "DejaVu Sans Mono",
       "DejaVu Serif",
-      "FantasqueSansM Nerd Font",
-      "FantasqueSansM Nerd Font Mono",
-      "FantasqueSansM Nerd Font Propo",
-      "FiraCode Nerd Font",
-      "FiraCode Nerd Font Mono",
-      "FiraCode Nerd Font Propo",
-      "FontAwesome",
-      "icomoon",
+      "Inter",
+      "Inter Display",
+      "Inter Variable",
       "Liberation Mono",
       "Liberation Sans",
       "Liberation Serif",
-      "MesloLGL Nerd Font",
-      "MesloLGL Nerd Font Mono",
-      "MesloLGL Nerd Font Propo",
-      "MesloLGLDZ Nerd Font",
-      "MesloLGLDZ Nerd Font Mono",
-      "MesloLGLDZ Nerd Font Propo",
-      "MesloLGM Nerd Font",
-      "MesloLGM Nerd Font Mono",
-      "MesloLGM Nerd Font Propo",
-      "MesloLGMDZ Nerd Font",
-      "MesloLGMDZ Nerd Font Mono",
-      "MesloLGMDZ Nerd Font Propo",
-      "MesloLGS Nerd Font",
-      "MesloLGS Nerd Font Mono",
-      "MesloLGS Nerd Font Propo",
-      "MesloLGSDZ Nerd Font",
-      "MesloLGSDZ Nerd Font Mono",
-      "MesloLGSDZ Nerd Font Propo",
-      "MonoLisa script",
       "monospace",
-      "Nimbus Mono PS",
-      "Nimbus Roman",
-      "Nimbus Sans",
-      "Nimbus Sans Narrow",
       "Noto Color Emoji",
       "Noto Fangsong KSS Rotated",
       "Noto Fangsong KSS Vertical",
@@ -6291,21 +6713,10 @@
       "Noto Serif Yezidi",
       "Noto Traditional Nushu",
       "Noto Znamenny Musical Notation",
-      "octicons",
-      "Open Sans",
-      "P052",
-      "Pomodoro",
-      "PowerlineSymbols",
       "sans-serif",
       "serif",
-      "Standard Symbols PS",
-      "Symbols Nerd Font",
-      "URW Bookman",
-      "URW Gothic",
-      "WenQuanYi Zen Hei",
-      "WenQuanYi Zen Hei Mono",
-      "WenQuanYi Zen Hei Sharp",
-      "Z003"
+      "Terminus",
+      "xos4 Terminus"
     ],
     "style": "",
     "weight": 400,
@@ -6468,146 +6879,6 @@
         "width": "normal"
       },
       {
-        "family": "Bitstream Vera Sans",
-        "style": "Bold",
-        "weight": 700,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "Bitstream Vera Sans",
-        "style": "Bold Oblique",
-        "weight": 700,
-        "slant": "oblique",
-        "width": "normal"
-      },
-      {
-        "family": "Bitstream Vera Sans",
-        "style": "Oblique",
-        "weight": 400,
-        "slant": "oblique",
-        "width": "normal"
-      },
-      {
-        "family": "Bitstream Vera Sans",
-        "style": "Roman",
-        "weight": 400,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "Bitstream Vera Sans Mono",
-        "style": "Bold",
-        "weight": 700,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "Bitstream Vera Sans Mono",
-        "style": "Bold Oblique",
-        "weight": 700,
-        "slant": "oblique",
-        "width": "normal"
-      },
-      {
-        "family": "Bitstream Vera Sans Mono",
-        "style": "Oblique",
-        "weight": 400,
-        "slant": "oblique",
-        "width": "normal"
-      },
-      {
-        "family": "Bitstream Vera Sans Mono",
-        "style": "Roman",
-        "weight": 400,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "Bitstream Vera Serif",
-        "style": "Bold",
-        "weight": 700,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "Bitstream Vera Serif",
-        "style": "Roman",
-        "weight": 400,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "C059",
-        "style": "Bold",
-        "weight": 700,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "C059",
-        "style": "Bold Italic",
-        "weight": 700,
-        "slant": "italic",
-        "width": "normal"
-      },
-      {
-        "family": "C059",
-        "style": "Italic",
-        "weight": 400,
-        "slant": "italic",
-        "width": "normal"
-      },
-      {
-        "family": "C059",
-        "style": "Roman",
-        "weight": 400,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "Cantarell",
-        "style": "Bold",
-        "weight": 700,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "Cantarell",
-        "style": "Extra Bold",
-        "weight": 800,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "Cantarell",
-        "style": "Light",
-        "weight": 300,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "Cantarell",
-        "style": "Regular",
-        "weight": 400,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "Cantarell",
-        "style": "Thin",
-        "weight": 100,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "D050000L",
-        "style": "Regular",
-        "weight": 400,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
         "family": "DejaVu Math TeX Gyre",
         "style": "Regular",
         "weight": 400,
@@ -6762,1054 +7033,466 @@
         "width": "normal"
       },
       {
-        "family": "FantasqueSansM Nerd Font",
-        "style": "Bold",
-        "weight": 700,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "FantasqueSansM Nerd Font",
-        "style": "Bold Italic",
-        "weight": 700,
-        "slant": "italic",
-        "width": "normal"
-      },
-      {
-        "family": "FantasqueSansM Nerd Font",
-        "style": "Italic",
-        "weight": 400,
-        "slant": "italic",
-        "width": "normal"
-      },
-      {
-        "family": "FantasqueSansM Nerd Font",
-        "style": "Regular",
-        "weight": 400,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "FantasqueSansM Nerd Font Mono",
-        "style": "Bold",
-        "weight": 700,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "FantasqueSansM Nerd Font Mono",
-        "style": "Bold Italic",
-        "weight": 700,
-        "slant": "italic",
-        "width": "normal"
-      },
-      {
-        "family": "FantasqueSansM Nerd Font Mono",
-        "style": "Italic",
-        "weight": 400,
-        "slant": "italic",
-        "width": "normal"
-      },
-      {
-        "family": "FantasqueSansM Nerd Font Mono",
-        "style": "Regular",
-        "weight": 400,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "FantasqueSansM Nerd Font Propo",
-        "style": "Bold",
-        "weight": 700,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "FantasqueSansM Nerd Font Propo",
-        "style": "Bold Italic",
-        "weight": 700,
-        "slant": "italic",
-        "width": "normal"
-      },
-      {
-        "family": "FantasqueSansM Nerd Font Propo",
-        "style": "Italic",
-        "weight": 400,
-        "slant": "italic",
-        "width": "normal"
-      },
-      {
-        "family": "FantasqueSansM Nerd Font Propo",
-        "style": "Regular",
-        "weight": 400,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "FiraCode Nerd Font",
-        "style": "Bold",
-        "weight": 700,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "FiraCode Nerd Font",
-        "style": "Light",
-        "weight": 300,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "FiraCode Nerd Font",
-        "style": "Medium",
-        "weight": 500,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "FiraCode Nerd Font",
-        "style": "Regular",
-        "weight": 400,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "FiraCode Nerd Font",
-        "style": "Retina",
-        "weight": 400,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "FiraCode Nerd Font",
-        "style": "SemiBold",
-        "weight": 600,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "FiraCode Nerd Font Mono",
-        "style": "Bold",
-        "weight": 700,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "FiraCode Nerd Font Mono",
-        "style": "Light",
-        "weight": 300,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "FiraCode Nerd Font Mono",
-        "style": "Medium",
-        "weight": 500,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "FiraCode Nerd Font Mono",
-        "style": "Regular",
-        "weight": 400,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "FiraCode Nerd Font Mono",
-        "style": "Retina",
-        "weight": 400,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "FiraCode Nerd Font Mono",
-        "style": "SemiBold",
-        "weight": 600,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "FiraCode Nerd Font Propo",
-        "style": "Bold",
-        "weight": 700,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "FiraCode Nerd Font Propo",
-        "style": "Light",
-        "weight": 300,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "FiraCode Nerd Font Propo",
-        "style": "Medium",
-        "weight": 500,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "FiraCode Nerd Font Propo",
-        "style": "Regular",
-        "weight": 400,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "FiraCode Nerd Font Propo",
-        "style": "Retina",
-        "weight": 400,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "FiraCode Nerd Font Propo",
-        "style": "SemiBold",
-        "weight": 600,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "FontAwesome",
-        "style": "Regular",
-        "weight": 400,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "icomoon",
-        "style": "Regular",
-        "weight": 400,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "Liberation Mono",
-        "style": "Bold",
-        "weight": 700,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "Liberation Mono",
-        "style": "Bold Italic",
-        "weight": 700,
-        "slant": "italic",
-        "width": "normal"
-      },
-      {
-        "family": "Liberation Mono",
-        "style": "Italic",
-        "weight": 400,
-        "slant": "italic",
-        "width": "normal"
-      },
-      {
-        "family": "Liberation Mono",
-        "style": "Regular",
-        "weight": 400,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "Liberation Sans",
-        "style": "Bold",
-        "weight": 700,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "Liberation Sans",
-        "style": "Bold Italic",
-        "weight": 700,
-        "slant": "italic",
-        "width": "normal"
-      },
-      {
-        "family": "Liberation Sans",
-        "style": "Italic",
-        "weight": 400,
-        "slant": "italic",
-        "width": "normal"
-      },
-      {
-        "family": "Liberation Sans",
-        "style": "Regular",
-        "weight": 400,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "Liberation Serif",
-        "style": "Bold",
-        "weight": 700,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "Liberation Serif",
-        "style": "Bold Italic",
-        "weight": 700,
-        "slant": "italic",
-        "width": "normal"
-      },
-      {
-        "family": "Liberation Serif",
-        "style": "Italic",
-        "weight": 400,
-        "slant": "italic",
-        "width": "normal"
-      },
-      {
-        "family": "Liberation Serif",
-        "style": "Regular",
-        "weight": 400,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "MesloLGL Nerd Font",
-        "style": "Bold",
-        "weight": 700,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "MesloLGL Nerd Font",
-        "style": "Bold Italic",
-        "weight": 700,
-        "slant": "italic",
-        "width": "normal"
-      },
-      {
-        "family": "MesloLGL Nerd Font",
-        "style": "Italic",
-        "weight": 400,
-        "slant": "italic",
-        "width": "normal"
-      },
-      {
-        "family": "MesloLGL Nerd Font",
-        "style": "Regular",
-        "weight": 400,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "MesloLGL Nerd Font Mono",
-        "style": "Bold",
-        "weight": 700,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "MesloLGL Nerd Font Mono",
-        "style": "Bold Italic",
-        "weight": 700,
-        "slant": "italic",
-        "width": "normal"
-      },
-      {
-        "family": "MesloLGL Nerd Font Mono",
-        "style": "Italic",
-        "weight": 400,
-        "slant": "italic",
-        "width": "normal"
-      },
-      {
-        "family": "MesloLGL Nerd Font Mono",
-        "style": "Regular",
-        "weight": 400,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "MesloLGL Nerd Font Propo",
-        "style": "Bold",
-        "weight": 700,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "MesloLGL Nerd Font Propo",
-        "style": "Bold Italic",
-        "weight": 700,
-        "slant": "italic",
-        "width": "normal"
-      },
-      {
-        "family": "MesloLGL Nerd Font Propo",
-        "style": "Italic",
-        "weight": 400,
-        "slant": "italic",
-        "width": "normal"
-      },
-      {
-        "family": "MesloLGL Nerd Font Propo",
-        "style": "Regular",
-        "weight": 400,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "MesloLGLDZ Nerd Font",
-        "style": "Bold",
-        "weight": 700,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "MesloLGLDZ Nerd Font",
-        "style": "Bold Italic",
-        "weight": 700,
-        "slant": "italic",
-        "width": "normal"
-      },
-      {
-        "family": "MesloLGLDZ Nerd Font",
-        "style": "Italic",
-        "weight": 400,
-        "slant": "italic",
-        "width": "normal"
-      },
-      {
-        "family": "MesloLGLDZ Nerd Font",
-        "style": "Regular",
-        "weight": 400,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "MesloLGLDZ Nerd Font Mono",
-        "style": "Bold",
-        "weight": 700,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "MesloLGLDZ Nerd Font Mono",
-        "style": "Bold Italic",
-        "weight": 700,
-        "slant": "italic",
-        "width": "normal"
-      },
-      {
-        "family": "MesloLGLDZ Nerd Font Mono",
-        "style": "Italic",
-        "weight": 400,
-        "slant": "italic",
-        "width": "normal"
-      },
-      {
-        "family": "MesloLGLDZ Nerd Font Mono",
-        "style": "Regular",
-        "weight": 400,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "MesloLGLDZ Nerd Font Propo",
-        "style": "Bold",
-        "weight": 700,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "MesloLGLDZ Nerd Font Propo",
-        "style": "Bold Italic",
-        "weight": 700,
-        "slant": "italic",
-        "width": "normal"
-      },
-      {
-        "family": "MesloLGLDZ Nerd Font Propo",
-        "style": "Italic",
-        "weight": 400,
-        "slant": "italic",
-        "width": "normal"
-      },
-      {
-        "family": "MesloLGLDZ Nerd Font Propo",
-        "style": "Regular",
-        "weight": 400,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "MesloLGM Nerd Font",
-        "style": "Bold",
-        "weight": 700,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "MesloLGM Nerd Font",
-        "style": "Bold Italic",
-        "weight": 700,
-        "slant": "italic",
-        "width": "normal"
-      },
-      {
-        "family": "MesloLGM Nerd Font",
-        "style": "Italic",
-        "weight": 400,
-        "slant": "italic",
-        "width": "normal"
-      },
-      {
-        "family": "MesloLGM Nerd Font",
-        "style": "Regular",
-        "weight": 400,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "MesloLGM Nerd Font Mono",
-        "style": "Bold",
-        "weight": 700,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "MesloLGM Nerd Font Mono",
-        "style": "Bold Italic",
-        "weight": 700,
-        "slant": "italic",
-        "width": "normal"
-      },
-      {
-        "family": "MesloLGM Nerd Font Mono",
-        "style": "Italic",
-        "weight": 400,
-        "slant": "italic",
-        "width": "normal"
-      },
-      {
-        "family": "MesloLGM Nerd Font Mono",
-        "style": "Regular",
-        "weight": 400,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "MesloLGM Nerd Font Propo",
-        "style": "Bold",
-        "weight": 700,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "MesloLGM Nerd Font Propo",
-        "style": "Bold Italic",
-        "weight": 700,
-        "slant": "italic",
-        "width": "normal"
-      },
-      {
-        "family": "MesloLGM Nerd Font Propo",
-        "style": "Italic",
-        "weight": 400,
-        "slant": "italic",
-        "width": "normal"
-      },
-      {
-        "family": "MesloLGM Nerd Font Propo",
-        "style": "Regular",
-        "weight": 400,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "MesloLGMDZ Nerd Font",
-        "style": "Bold",
-        "weight": 700,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "MesloLGMDZ Nerd Font",
-        "style": "Bold Italic",
-        "weight": 700,
-        "slant": "italic",
-        "width": "normal"
-      },
-      {
-        "family": "MesloLGMDZ Nerd Font",
-        "style": "Italic",
-        "weight": 400,
-        "slant": "italic",
-        "width": "normal"
-      },
-      {
-        "family": "MesloLGMDZ Nerd Font",
-        "style": "Regular",
-        "weight": 400,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "MesloLGMDZ Nerd Font Mono",
-        "style": "Bold",
-        "weight": 700,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "MesloLGMDZ Nerd Font Mono",
-        "style": "Bold Italic",
-        "weight": 700,
-        "slant": "italic",
-        "width": "normal"
-      },
-      {
-        "family": "MesloLGMDZ Nerd Font Mono",
-        "style": "Italic",
-        "weight": 400,
-        "slant": "italic",
-        "width": "normal"
-      },
-      {
-        "family": "MesloLGMDZ Nerd Font Mono",
-        "style": "Regular",
-        "weight": 400,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "MesloLGMDZ Nerd Font Propo",
-        "style": "Bold",
-        "weight": 700,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "MesloLGMDZ Nerd Font Propo",
-        "style": "Bold Italic",
-        "weight": 700,
-        "slant": "italic",
-        "width": "normal"
-      },
-      {
-        "family": "MesloLGMDZ Nerd Font Propo",
-        "style": "Italic",
-        "weight": 400,
-        "slant": "italic",
-        "width": "normal"
-      },
-      {
-        "family": "MesloLGMDZ Nerd Font Propo",
-        "style": "Regular",
-        "weight": 400,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "MesloLGS Nerd Font",
-        "style": "Bold",
-        "weight": 700,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "MesloLGS Nerd Font",
-        "style": "Bold Italic",
-        "weight": 700,
-        "slant": "italic",
-        "width": "normal"
-      },
-      {
-        "family": "MesloLGS Nerd Font",
-        "style": "Italic",
-        "weight": 400,
-        "slant": "italic",
-        "width": "normal"
-      },
-      {
-        "family": "MesloLGS Nerd Font",
-        "style": "Regular",
-        "weight": 400,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "MesloLGS Nerd Font Mono",
-        "style": "Bold",
-        "weight": 700,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "MesloLGS Nerd Font Mono",
-        "style": "Bold Italic",
-        "weight": 700,
-        "slant": "italic",
-        "width": "normal"
-      },
-      {
-        "family": "MesloLGS Nerd Font Mono",
-        "style": "Italic",
-        "weight": 400,
-        "slant": "italic",
-        "width": "normal"
-      },
-      {
-        "family": "MesloLGS Nerd Font Mono",
-        "style": "Regular",
-        "weight": 400,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "MesloLGS Nerd Font Propo",
-        "style": "Bold",
-        "weight": 700,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "MesloLGS Nerd Font Propo",
-        "style": "Bold Italic",
-        "weight": 700,
-        "slant": "italic",
-        "width": "normal"
-      },
-      {
-        "family": "MesloLGS Nerd Font Propo",
-        "style": "Italic",
-        "weight": 400,
-        "slant": "italic",
-        "width": "normal"
-      },
-      {
-        "family": "MesloLGS Nerd Font Propo",
-        "style": "Regular",
-        "weight": 400,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "MesloLGSDZ Nerd Font",
-        "style": "Bold",
-        "weight": 700,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "MesloLGSDZ Nerd Font",
-        "style": "Bold Italic",
-        "weight": 700,
-        "slant": "italic",
-        "width": "normal"
-      },
-      {
-        "family": "MesloLGSDZ Nerd Font",
-        "style": "Italic",
-        "weight": 400,
-        "slant": "italic",
-        "width": "normal"
-      },
-      {
-        "family": "MesloLGSDZ Nerd Font",
-        "style": "Regular",
-        "weight": 400,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "MesloLGSDZ Nerd Font Mono",
-        "style": "Bold",
-        "weight": 700,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "MesloLGSDZ Nerd Font Mono",
-        "style": "Bold Italic",
-        "weight": 700,
-        "slant": "italic",
-        "width": "normal"
-      },
-      {
-        "family": "MesloLGSDZ Nerd Font Mono",
-        "style": "Italic",
-        "weight": 400,
-        "slant": "italic",
-        "width": "normal"
-      },
-      {
-        "family": "MesloLGSDZ Nerd Font Mono",
-        "style": "Regular",
-        "weight": 400,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "MesloLGSDZ Nerd Font Propo",
-        "style": "Bold",
-        "weight": 700,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "MesloLGSDZ Nerd Font Propo",
-        "style": "Bold Italic",
-        "weight": 700,
-        "slant": "italic",
-        "width": "normal"
-      },
-      {
-        "family": "MesloLGSDZ Nerd Font Propo",
-        "style": "Italic",
-        "weight": 400,
-        "slant": "italic",
-        "width": "normal"
-      },
-      {
-        "family": "MesloLGSDZ Nerd Font Propo",
-        "style": "Regular",
-        "weight": 400,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "MonoLisa script",
+        "family": "Inter",
         "style": "Black",
         "weight": 900,
         "slant": "normal",
         "width": "normal"
       },
       {
-        "family": "MonoLisa script",
+        "family": "Inter",
         "style": "Black Italic",
         "weight": 900,
         "slant": "italic",
         "width": "normal"
       },
       {
-        "family": "MonoLisa script",
+        "family": "Inter",
         "style": "Bold",
         "weight": 700,
         "slant": "normal",
         "width": "normal"
       },
       {
-        "family": "MonoLisa script",
+        "family": "Inter",
         "style": "Bold Italic",
         "weight": 700,
         "slant": "italic",
         "width": "normal"
       },
       {
-        "family": "MonoLisa script",
+        "family": "Inter",
         "style": "ExtraBold",
         "weight": 800,
         "slant": "normal",
         "width": "normal"
       },
       {
-        "family": "MonoLisa script",
+        "family": "Inter",
         "style": "ExtraBold Italic",
         "weight": 800,
         "slant": "italic",
         "width": "normal"
       },
       {
-        "family": "MonoLisa script",
+        "family": "Inter",
         "style": "ExtraLight",
         "weight": 200,
         "slant": "normal",
         "width": "normal"
       },
       {
-        "family": "MonoLisa script",
+        "family": "Inter",
         "style": "ExtraLight Italic",
         "weight": 200,
         "slant": "italic",
         "width": "normal"
       },
       {
-        "family": "MonoLisa script",
+        "family": "Inter",
         "style": "Italic",
         "weight": 400,
         "slant": "italic",
         "width": "normal"
       },
       {
-        "family": "MonoLisa script",
+        "family": "Inter",
         "style": "Light",
         "weight": 300,
         "slant": "normal",
         "width": "normal"
       },
       {
-        "family": "MonoLisa script",
+        "family": "Inter",
         "style": "Light Italic",
         "weight": 300,
         "slant": "italic",
         "width": "normal"
       },
       {
-        "family": "MonoLisa script",
+        "family": "Inter",
         "style": "Medium",
         "weight": 500,
         "slant": "normal",
         "width": "normal"
       },
       {
-        "family": "MonoLisa script",
+        "family": "Inter",
         "style": "Medium Italic",
         "weight": 500,
         "slant": "italic",
         "width": "normal"
       },
       {
-        "family": "MonoLisa script",
+        "family": "Inter",
         "style": "Regular",
         "weight": 400,
         "slant": "normal",
         "width": "normal"
       },
       {
-        "family": "MonoLisa script",
+        "family": "Inter",
         "style": "SemiBold",
         "weight": 600,
         "slant": "normal",
         "width": "normal"
       },
       {
-        "family": "MonoLisa script",
+        "family": "Inter",
         "style": "SemiBold Italic",
         "weight": 600,
         "slant": "italic",
         "width": "normal"
       },
       {
-        "family": "MonoLisa script",
+        "family": "Inter",
         "style": "Thin",
         "weight": 100,
         "slant": "normal",
         "width": "normal"
       },
       {
-        "family": "MonoLisa script",
+        "family": "Inter",
         "style": "Thin Italic",
         "weight": 100,
         "slant": "italic",
         "width": "normal"
       },
       {
-        "family": "Nimbus Mono PS",
+        "family": "Inter Display",
+        "style": "Black",
+        "weight": 900,
+        "slant": "normal",
+        "width": "normal"
+      },
+      {
+        "family": "Inter Display",
+        "style": "Black Italic",
+        "weight": 900,
+        "slant": "italic",
+        "width": "normal"
+      },
+      {
+        "family": "Inter Display",
         "style": "Bold",
         "weight": 700,
         "slant": "normal",
         "width": "normal"
       },
       {
-        "family": "Nimbus Mono PS",
+        "family": "Inter Display",
         "style": "Bold Italic",
         "weight": 700,
         "slant": "italic",
         "width": "normal"
       },
       {
-        "family": "Nimbus Mono PS",
+        "family": "Inter Display",
+        "style": "ExtraBold",
+        "weight": 800,
+        "slant": "normal",
+        "width": "normal"
+      },
+      {
+        "family": "Inter Display",
+        "style": "ExtraBold Italic",
+        "weight": 800,
+        "slant": "italic",
+        "width": "normal"
+      },
+      {
+        "family": "Inter Display",
+        "style": "ExtraLight",
+        "weight": 200,
+        "slant": "normal",
+        "width": "normal"
+      },
+      {
+        "family": "Inter Display",
+        "style": "ExtraLight Italic",
+        "weight": 200,
+        "slant": "italic",
+        "width": "normal"
+      },
+      {
+        "family": "Inter Display",
         "style": "Italic",
         "weight": 400,
         "slant": "italic",
         "width": "normal"
       },
       {
-        "family": "Nimbus Mono PS",
+        "family": "Inter Display",
+        "style": "Light",
+        "weight": 300,
+        "slant": "normal",
+        "width": "normal"
+      },
+      {
+        "family": "Inter Display",
+        "style": "Light Italic",
+        "weight": 300,
+        "slant": "italic",
+        "width": "normal"
+      },
+      {
+        "family": "Inter Display",
+        "style": "Medium",
+        "weight": 500,
+        "slant": "normal",
+        "width": "normal"
+      },
+      {
+        "family": "Inter Display",
+        "style": "Medium Italic",
+        "weight": 500,
+        "slant": "italic",
+        "width": "normal"
+      },
+      {
+        "family": "Inter Display",
         "style": "Regular",
         "weight": 400,
         "slant": "normal",
         "width": "normal"
       },
       {
-        "family": "Nimbus Roman",
+        "family": "Inter Display",
+        "style": "SemiBold",
+        "weight": 600,
+        "slant": "normal",
+        "width": "normal"
+      },
+      {
+        "family": "Inter Display",
+        "style": "SemiBold Italic",
+        "weight": 600,
+        "slant": "italic",
+        "width": "normal"
+      },
+      {
+        "family": "Inter Display",
+        "style": "Thin",
+        "weight": 100,
+        "slant": "normal",
+        "width": "normal"
+      },
+      {
+        "family": "Inter Display",
+        "style": "Thin Italic",
+        "weight": 100,
+        "slant": "italic",
+        "width": "normal"
+      },
+      {
+        "family": "Inter Variable",
+        "style": "Black",
+        "weight": 900,
+        "slant": "normal",
+        "width": "normal"
+      },
+      {
+        "family": "Inter Variable",
+        "style": "Black Italic",
+        "weight": 900,
+        "slant": "italic",
+        "width": "normal"
+      },
+      {
+        "family": "Inter Variable",
         "style": "Bold",
         "weight": 700,
         "slant": "normal",
         "width": "normal"
       },
       {
-        "family": "Nimbus Roman",
+        "family": "Inter Variable",
         "style": "Bold Italic",
         "weight": 700,
         "slant": "italic",
         "width": "normal"
       },
       {
-        "family": "Nimbus Roman",
+        "family": "Inter Variable",
+        "style": "ExtraBold",
+        "weight": 800,
+        "slant": "normal",
+        "width": "normal"
+      },
+      {
+        "family": "Inter Variable",
+        "style": "ExtraBold Italic",
+        "weight": 800,
+        "slant": "italic",
+        "width": "normal"
+      },
+      {
+        "family": "Inter Variable",
+        "style": "ExtraLight",
+        "weight": 200,
+        "slant": "normal",
+        "width": "normal"
+      },
+      {
+        "family": "Inter Variable",
+        "style": "ExtraLight Italic",
+        "weight": 200,
+        "slant": "italic",
+        "width": "normal"
+      },
+      {
+        "family": "Inter Variable",
         "style": "Italic",
         "weight": 400,
         "slant": "italic",
         "width": "normal"
       },
       {
-        "family": "Nimbus Roman",
+        "family": "Inter Variable",
+        "style": "Light",
+        "weight": 300,
+        "slant": "normal",
+        "width": "normal"
+      },
+      {
+        "family": "Inter Variable",
+        "style": "Light Italic",
+        "weight": 300,
+        "slant": "italic",
+        "width": "normal"
+      },
+      {
+        "family": "Inter Variable",
+        "style": "Medium",
+        "weight": 500,
+        "slant": "normal",
+        "width": "normal"
+      },
+      {
+        "family": "Inter Variable",
+        "style": "Medium Italic",
+        "weight": 500,
+        "slant": "italic",
+        "width": "normal"
+      },
+      {
+        "family": "Inter Variable",
         "style": "Regular",
         "weight": 400,
         "slant": "normal",
         "width": "normal"
       },
       {
-        "family": "Nimbus Sans",
+        "family": "Inter Variable",
+        "style": "SemiBold",
+        "weight": 600,
+        "slant": "normal",
+        "width": "normal"
+      },
+      {
+        "family": "Inter Variable",
+        "style": "SemiBold Italic",
+        "weight": 600,
+        "slant": "italic",
+        "width": "normal"
+      },
+      {
+        "family": "Inter Variable",
+        "style": "Thin",
+        "weight": 100,
+        "slant": "normal",
+        "width": "normal"
+      },
+      {
+        "family": "Inter Variable",
+        "style": "Thin Italic",
+        "weight": 100,
+        "slant": "italic",
+        "width": "normal"
+      },
+      {
+        "family": "Liberation Mono",
         "style": "Bold",
         "weight": 700,
         "slant": "normal",
         "width": "normal"
       },
       {
-        "family": "Nimbus Sans",
+        "family": "Liberation Mono",
         "style": "Bold Italic",
         "weight": 700,
         "slant": "italic",
         "width": "normal"
       },
       {
-        "family": "Nimbus Sans",
+        "family": "Liberation Mono",
         "style": "Italic",
         "weight": 400,
         "slant": "italic",
         "width": "normal"
       },
       {
-        "family": "Nimbus Sans",
+        "family": "Liberation Mono",
         "style": "Regular",
         "weight": 400,
         "slant": "normal",
         "width": "normal"
       },
       {
-        "family": "Nimbus Sans Narrow",
+        "family": "Liberation Sans",
         "style": "Bold",
         "weight": 700,
         "slant": "normal",
-        "width": "semi-condensed"
+        "width": "normal"
       },
       {
-        "family": "Nimbus Sans Narrow",
-        "style": "Bold Oblique",
+        "family": "Liberation Sans",
+        "style": "Bold Italic",
         "weight": 700,
-        "slant": "oblique",
-        "width": "semi-condensed"
+        "slant": "italic",
+        "width": "normal"
       },
       {
-        "family": "Nimbus Sans Narrow",
-        "style": "Oblique",
+        "family": "Liberation Sans",
+        "style": "Italic",
         "weight": 400,
-        "slant": "oblique",
-        "width": "semi-condensed"
+        "slant": "italic",
+        "width": "normal"
       },
       {
-        "family": "Nimbus Sans Narrow",
+        "family": "Liberation Sans",
         "style": "Regular",
         "weight": 400,
         "slant": "normal",
-        "width": "semi-condensed"
+        "width": "normal"
+      },
+      {
+        "family": "Liberation Serif",
+        "style": "Bold",
+        "weight": 700,
+        "slant": "normal",
+        "width": "normal"
+      },
+      {
+        "family": "Liberation Serif",
+        "style": "Bold Italic",
+        "weight": 700,
+        "slant": "italic",
+        "width": "normal"
+      },
+      {
+        "family": "Liberation Serif",
+        "style": "Italic",
+        "weight": 400,
+        "slant": "italic",
+        "width": "normal"
+      },
+      {
+        "family": "Liberation Serif",
+        "style": "Regular",
+        "weight": 400,
+        "slant": "normal",
+        "width": "normal"
       },
       {
         "family": "Noto Color Emoji",
@@ -12726,290 +12409,31 @@
         "width": "normal"
       },
       {
-        "family": "octicons",
-        "style": "Medium",
-        "weight": 500,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "Open Sans",
+        "family": "Terminus",
         "style": "Bold",
         "weight": 700,
         "slant": "normal",
         "width": "normal"
       },
       {
-        "family": "Open Sans",
-        "style": "Bold Italic",
-        "weight": 700,
-        "slant": "italic",
-        "width": "normal"
-      },
-      {
-        "family": "Open Sans",
-        "style": "Condensed Bold",
-        "weight": 700,
-        "slant": "normal",
-        "width": "condensed"
-      },
-      {
-        "family": "Open Sans",
-        "style": "Condensed Bold Italic",
-        "weight": 700,
-        "slant": "italic",
-        "width": "condensed"
-      },
-      {
-        "family": "Open Sans",
-        "style": "Condensed ExtraBold",
-        "weight": 800,
-        "slant": "normal",
-        "width": "condensed"
-      },
-      {
-        "family": "Open Sans",
-        "style": "Condensed ExtraBold Italic",
-        "weight": 800,
-        "slant": "italic",
-        "width": "condensed"
-      },
-      {
-        "family": "Open Sans",
-        "style": "Condensed Italic",
-        "weight": 400,
-        "slant": "italic",
-        "width": "condensed"
-      },
-      {
-        "family": "Open Sans",
-        "style": "Condensed Light",
-        "weight": 300,
-        "slant": "normal",
-        "width": "condensed"
-      },
-      {
-        "family": "Open Sans",
-        "style": "Condensed Light Italic",
-        "weight": 300,
-        "slant": "italic",
-        "width": "condensed"
-      },
-      {
-        "family": "Open Sans",
-        "style": "Condensed Regular",
-        "weight": 400,
-        "slant": "normal",
-        "width": "condensed"
-      },
-      {
-        "family": "Open Sans",
-        "style": "Condensed SemiBold",
-        "weight": 600,
-        "slant": "normal",
-        "width": "condensed"
-      },
-      {
-        "family": "Open Sans",
-        "style": "Condensed SemiBold Italic",
-        "weight": 600,
-        "slant": "italic",
-        "width": "condensed"
-      },
-      {
-        "family": "Open Sans",
-        "style": "ExtraBold",
-        "weight": 800,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "Open Sans",
-        "style": "ExtraBold Italic",
-        "weight": 800,
-        "slant": "italic",
-        "width": "normal"
-      },
-      {
-        "family": "Open Sans",
-        "style": "Italic",
-        "weight": 400,
-        "slant": "italic",
-        "width": "normal"
-      },
-      {
-        "family": "Open Sans",
-        "style": "Light",
-        "weight": 300,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "Open Sans",
-        "style": "Light Italic",
-        "weight": 300,
-        "slant": "italic",
-        "width": "normal"
-      },
-      {
-        "family": "Open Sans",
+        "family": "Terminus",
         "style": "Regular",
         "weight": 400,
         "slant": "normal",
         "width": "normal"
       },
       {
-        "family": "Open Sans",
-        "style": "SemiBold",
-        "weight": 600,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "Open Sans",
-        "style": "SemiBold Italic",
-        "weight": 600,
-        "slant": "italic",
-        "width": "normal"
-      },
-      {
-        "family": "P052",
+        "family": "xos4 Terminus",
         "style": "Bold",
         "weight": 700,
         "slant": "normal",
         "width": "normal"
       },
       {
-        "family": "P052",
-        "style": "Bold Italic",
-        "weight": 700,
-        "slant": "italic",
-        "width": "normal"
-      },
-      {
-        "family": "P052",
-        "style": "Italic",
-        "weight": 400,
-        "slant": "italic",
-        "width": "normal"
-      },
-      {
-        "family": "P052",
-        "style": "Roman",
-        "weight": 400,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "Pomodoro",
+        "family": "xos4 Terminus",
         "style": "Regular",
         "weight": 400,
         "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "PowerlineSymbols",
-        "style": "Medium",
-        "weight": 500,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "Standard Symbols PS",
-        "style": "Regular",
-        "weight": 400,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "Symbols Nerd Font",
-        "style": "Regular",
-        "weight": 400,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "URW Bookman",
-        "style": "Demi",
-        "weight": 600,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "URW Bookman",
-        "style": "Demi Italic",
-        "weight": 600,
-        "slant": "italic",
-        "width": "normal"
-      },
-      {
-        "family": "URW Bookman",
-        "style": "Light",
-        "weight": 300,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "URW Bookman",
-        "style": "Light Italic",
-        "weight": 300,
-        "slant": "italic",
-        "width": "normal"
-      },
-      {
-        "family": "URW Gothic",
-        "style": "Book",
-        "weight": 400,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "URW Gothic",
-        "style": "Book Oblique",
-        "weight": 400,
-        "slant": "oblique",
-        "width": "normal"
-      },
-      {
-        "family": "URW Gothic",
-        "style": "Demi",
-        "weight": 600,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "URW Gothic",
-        "style": "Demi Oblique",
-        "weight": 600,
-        "slant": "oblique",
-        "width": "normal"
-      },
-      {
-        "family": "WenQuanYi Zen Hei",
-        "style": "Regular",
-        "weight": 500,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "WenQuanYi Zen Hei Mono",
-        "style": "Regular",
-        "weight": 500,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "WenQuanYi Zen Hei Sharp",
-        "style": "Regular",
-        "weight": 500,
-        "slant": "normal",
-        "width": "normal"
-      },
-      {
-        "family": "Z003",
-        "style": "Medium Italic",
-        "weight": 500,
-        "slant": "italic",
         "width": "normal"
       }
     ],
@@ -13046,17 +12470,17 @@
       },
       {
         "id": "qt5ct",
-        "available": true,
+        "available": false,
         "active": false,
         "synced": false,
-        "state": "drifted"
+        "state": "unavailable"
       },
       {
         "id": "qt6ct",
-        "available": true,
+        "available": false,
         "active": false,
         "synced": false,
-        "state": "drifted"
+        "state": "unavailable"
       }
     ]
   },
@@ -13073,7 +12497,8 @@
     "themes": [
       "Adwaita",
       "default",
-      "Pop"
+      "Vimix",
+      "Vimix-white"
     ],
     "targets": [
       {

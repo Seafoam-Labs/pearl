@@ -84,11 +84,13 @@ pub const Controller = struct {
         if (self.timer != 0) _ = glib.Source.remove(self.timer);
         self.timer = 0;
     }
-    pub fn configure(self: *Controller, mode: p.Mode, edge: Edge, thickness: i32, inhibited: bool, fullscreen: bool) void {
+    pub fn configure(self: *Controller, mode: p.Mode, edge: Edge, thickness: i32, inhibited: bool, fullscreen: bool, saver: bool, off: bool) void {
         const geometry_changed = self.state.mode != mode or self.edge != edge or self.thickness != thickness;
-        const reset = self.state.mode != mode or self.edge != edge or self.state.inhibited != inhibited;
+        const reset = self.state.mode != mode or self.edge != edge or self.state.inhibited != inhibited or self.state.off != off;
         self.state.mode = mode;
         self.state.inhibited = inhibited;
+        self.state.saver = saver;
+        self.state.off = off;
         self.edge = edge;
         self.thickness = thickness;
         self.fullscreen = fullscreen;
@@ -118,8 +120,8 @@ pub const Controller = struct {
         self.apply();
         if (geometry_changed) self.changed(self.context);
     }
-    pub fn inhibit(self: *Controller, inhibited: bool) void {
-        self.configure(self.state.mode, self.edge, self.thickness, inhibited, self.fullscreen);
+    pub fn inhibit(self: *Controller, inhibited: bool, saver: bool) void {
+        self.configure(self.state.mode, self.edge, self.thickness, inhibited, self.fullscreen, saver, self.state.off);
     }
     pub fn holdPopup(self: *Controller, held: bool) void {
         self.state.popup = held;

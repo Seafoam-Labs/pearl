@@ -165,7 +165,7 @@ pub fn For(comptime View: type) type {
                 const custom = (level != .null and !std.mem.eql(u8, m.str(level), "auto") and (m.get(m.get(m.get(out, "configured"), "hdr_level"), "value") != .null or staged(f, "hdr_level"))) or (f.val("sdr_white_level") != .null and (m.get(m.get(m.get(out, "configured"), "sdr_white_level"), "value") != .null or staged(f, "sdr_white_level")));
                 const white_value = f.val("sdr_white_level");
                 f.hdr_help.setText(if (!head.enabled) @import("i18n").dtr("pearl", "Turn on this display to use HDR.") else if (!hdr_supported) (if (reason.len > 0) if (std.mem.eql(u8, reason, "hdr_unsupported")) "This display does not support HDR." else "HDR preview is not available for this display." else "HDR support is unknown.") else if (custom) @import("i18n").dtr("pearl", "Custom settings in More display options.") else @import("i18n").dtr("pearl", "Uses automatic settings."));
-                f.hdr_level.setSelected(if (std.mem.eql(u8, m.str(level), "100") or (custom and model.num(level, 0) == 100)) 1 else if (std.mem.eql(u8, m.str(level), "400") or (custom and model.num(level, 0) == 400)) 2 else if (std.mem.eql(u8, m.str(level), "1000") or (custom and model.num(level, 0) == 1000)) 3 else 0);
+                f.hdr_level.setSelected(if (std.mem.eql(u8, m.str(level), "100") or (custom and model.num(level, 0) == 100)) 1 else if (std.mem.eql(u8, m.str(level), "400") or (custom and model.num(level, 0) == 400)) 2 else if (std.mem.eql(u8, m.str(level), "600") or (custom and model.num(level, 0) == 600)) 3 else if (std.mem.eql(u8, m.str(level), "1000") or (custom and model.num(level, 0) == 1000)) 4 else 0);
                 const white_explicit = white_value != .null and (m.get(m.get(m.get(out, "configured"), "sdr_white_level"), "value") != .null or staged(f, "sdr_white_level"));
                 try numericOptions(f, f.sdr_white, &f.whites, &.{ 0, 100, 200, 300 }, if (white_explicit) model.num(white_value, 200) else 0, false);
                 for ([_]*gtk.Widget{ f.hdr_level.as(gtk.Widget), f.sdr_white.as(gtk.Widget), f.level_reset.as(gtk.Widget) }) |widget| widget.setSensitive(@intFromBool(head.enabled and hdr_supported and hdr));
@@ -483,7 +483,7 @@ pub fn For(comptime View: type) type {
             field(advanced, @import("i18n").dtr("pearl", "Display mode"), mirror.as(gtk.Widget));
             advanced.append(w.label(@import("i18n").dtr("pearl", "HDR adjustments"), "pearl-title").as(gtk.Widget));
             const hdr_pair = pair(advanced);
-            const level = options(&[_:null]?[*:0]const u8{ "Automatic (recommended)", "100 nits", "400 nits", "1000 nits" });
+            const level = options(&[_:null]?[*:0]const u8{ "Automatic (recommended)", "100 nits", "400 nits", "600 nits", "1000 nits" });
             field(hdr_pair[0], @import("i18n").dtr("pearl", "HDR brightness"), level.as(gtk.Widget));
             const white = dropdown();
             field(hdr_pair[1], @import("i18n").dtr("pearl", "SDR content brightness"), white.as(gtk.Widget));
@@ -647,7 +647,7 @@ pub fn For(comptime View: type) type {
                     if (i > f.mirror_targets.len) return error.SelectAnotherDisplay;
                     try f.stage("mirror_of", .{ .string = if (i == 0) "" else model.connector(f.heads[f.mirror_targets[i - 1]].output) });
                 },
-                .hdr_level => try f.stage("hdr_level", .{ .string = ([_][]const u8{ "auto", "100", "400", "1000" })[@min(3, f.hdr_level.getSelected())] }),
+                .hdr_level => try f.stage("hdr_level", .{ .string = ([_][]const u8{ "auto", "100", "400", "600", "1000" })[@min(4, f.hdr_level.getSelected())] }),
                 .sdr_white => {
                     const white = f.whites[@min(f.whites.len - 1, f.sdr_white.getSelected())];
                     try f.stage("sdr_white_level", if (white == 0) .null else .{ .float = white });

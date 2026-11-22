@@ -1,0 +1,5 @@
+event=ready
+event=session-lookup
+event=delay-acquired
+event=registered
+event=delay-released

@@ -1,6 +1,6 @@
 {
-  "revision": "88587243059d58d72dd0fe2146d0ebdb64f26474",
-  "helper": "0.8.2",
+  "revision": "e32ab7fc8f6510b393780b811ef92fe1bac6438e",
+  "helper": "1.0.18",
   "inventory_complete": true,
   "acceptance_evidence": "artifacts/aqueous-082/README.md",
   "rows": [
@@ -918,6 +918,18 @@
     },
     {
       "kind": "scalar-field",
+      "name": "decoration.corner_radius",
+      "source": "settingsApplication/src/backend/schema.zig",
+      "consumer": "src/desktop/aqueous_settings.zig",
+      "owner": "src/desktop/aqueous_settings.zig",
+      "entry": "appearance / Window corner radius",
+      "test": "scripts/aqueous-inventory.py",
+      "status": "implemented",
+      "required_capability": "schema_fields",
+      "note": "integer; canonical helper validates the full request."
+    },
+    {
+      "kind": "scalar-field",
       "name": "blur.radius",
       "source": "settingsApplication/src/backend/schema.zig",
       "consumer": "src/desktop/aqueous_settings.zig",
@@ -1182,6 +1194,150 @@
     },
     {
       "kind": "scalar-field",
+      "name": "layout.center_single_window",
+      "source": "settingsApplication/src/backend/schema.zig",
+      "consumer": "src/desktop/aqueous_settings.zig",
+      "owner": "src/desktop/aqueous_settings.zig",
+      "entry": "layouts / Center single window",
+      "test": "scripts/aqueous-inventory.py",
+      "status": "implemented",
+      "required_capability": "schema_fields",
+      "note": "boolean; canonical helper validates the full request."
+    },
+    {
+      "kind": "scalar-field",
+      "name": "layout.single_window_aspect_ratio",
+      "source": "settingsApplication/src/backend/schema.zig",
+      "consumer": "src/desktop/aqueous_settings.zig",
+      "owner": "src/desktop/aqueous_settings.zig",
+      "entry": "layouts / Single window aspect ratio",
+      "test": "scripts/aqueous-inventory.py",
+      "status": "implemented",
+      "required_capability": "schema_fields",
+      "note": "double; canonical helper validates the full request."
+    },
+    {
+      "kind": "scalar-field",
+      "name": "layout.options.tile.center_single_window",
+      "source": "settingsApplication/src/backend/schema.zig",
+      "consumer": "src/desktop/aqueous_settings.zig",
+      "owner": "src/desktop/aqueous_settings.zig",
+      "entry": "layouts / Tile: Center single window",
+      "test": "scripts/aqueous-inventory.py",
+      "status": "implemented",
+      "required_capability": "schema_fields",
+      "note": "boolean; canonical helper validates the full request."
+    },
+    {
+      "kind": "scalar-field",
+      "name": "layout.options.tile.single_window_aspect_ratio",
+      "source": "settingsApplication/src/backend/schema.zig",
+      "consumer": "src/desktop/aqueous_settings.zig",
+      "owner": "src/desktop/aqueous_settings.zig",
+      "entry": "layouts / Tile: Single window aspect ratio",
+      "test": "scripts/aqueous-inventory.py",
+      "status": "implemented",
+      "required_capability": "schema_fields",
+      "note": "double; canonical helper validates the full request."
+    },
+    {
+      "kind": "scalar-field",
+      "name": "layout.options.grid.center_single_window",
+      "source": "settingsApplication/src/backend/schema.zig",
+      "consumer": "src/desktop/aqueous_settings.zig",
+      "owner": "src/desktop/aqueous_settings.zig",
+      "entry": "layouts / Grid: Center single window",
+      "test": "scripts/aqueous-inventory.py",
+      "status": "implemented",
+      "required_capability": "schema_fields",
+      "note": "boolean; canonical helper validates the full request."
+    },
+    {
+      "kind": "scalar-field",
+      "name": "layout.options.grid.single_window_aspect_ratio",
+      "source": "settingsApplication/src/backend/schema.zig",
+      "consumer": "src/desktop/aqueous_settings.zig",
+      "owner": "src/desktop/aqueous_settings.zig",
+      "entry": "layouts / Grid: Single window aspect ratio",
+      "test": "scripts/aqueous-inventory.py",
+      "status": "implemented",
+      "required_capability": "schema_fields",
+      "note": "double; canonical helper validates the full request."
+    },
+    {
+      "kind": "scalar-field",
+      "name": "layout.options.rows.center_single_window",
+      "source": "settingsApplication/src/backend/schema.zig",
+      "consumer": "src/desktop/aqueous_settings.zig",
+      "owner": "src/desktop/aqueous_settings.zig",
+      "entry": "layouts / Rows: Center single window",
+      "test": "scripts/aqueous-inventory.py",
+      "status": "implemented",
+      "required_capability": "schema_fields",
+      "note": "boolean; canonical helper validates the full request."
+    },
+    {
+      "kind": "scalar-field",
+      "name": "layout.options.rows.single_window_aspect_ratio",
+      "source": "settingsApplication/src/backend/schema.zig",
+      "consumer": "src/desktop/aqueous_settings.zig",
+      "owner": "src/desktop/aqueous_settings.zig",
+      "entry": "layouts / Rows: Single window aspect ratio",
+      "test": "scripts/aqueous-inventory.py",
+      "status": "implemented",
+      "required_capability": "schema_fields",
+      "note": "double; canonical helper validates the full request."
+    },
+    {
+      "kind": "scalar-field",
+      "name": "layout.options.dwindle.center_single_window",
+      "source": "settingsApplication/src/backend/schema.zig",
+      "consumer": "src/desktop/aqueous_settings.zig",
+      "owner": "src/desktop/aqueous_settings.zig",
+      "entry": "layouts / Dwindle: Center single window",
+      "test": "scripts/aqueous-inventory.py",
+      "status": "implemented",
+      "required_capability": "schema_fields",
+      "note": "boolean; canonical helper validates the full request."
+    },
+    {
+      "kind": "scalar-field",
+      "name": "layout.options.dwindle.single_window_aspect_ratio",
+      "source": "settingsApplication/src/backend/schema.zig",
+      "consumer": "src/desktop/aqueous_settings.zig",
+      "owner": "src/desktop/aqueous_settings.zig",
+      "entry": "layouts / Dwindle: Single window aspect ratio",
+      "test": "scripts/aqueous-inventory.py",
+      "status": "implemented",
+      "required_capability": "schema_fields",
+      "note": "double; canonical helper validates the full request."
+    },
+    {
+      "kind": "scalar-field",
+      "name": "layout.options.reverse-dwindle.center_single_window",
+      "source": "settingsApplication/src/backend/schema.zig",
+      "consumer": "src/desktop/aqueous_settings.zig",
+      "owner": "src/desktop/aqueous_settings.zig",
+      "entry": "layouts / Reverse-Dwindle: Center single window",
+      "test": "scripts/aqueous-inventory.py",
+      "status": "implemented",
+      "required_capability": "schema_fields",
+      "note": "boolean; canonical helper validates the full request."
+    },
+    {
+      "kind": "scalar-field",
+      "name": "layout.options.reverse-dwindle.single_window_aspect_ratio",
+      "source": "settingsApplication/src/backend/schema.zig",
+      "consumer": "src/desktop/aqueous_settings.zig",
+      "owner": "src/desktop/aqueous_settings.zig",
+      "entry": "layouts / Reverse-Dwindle: Single window aspect ratio",
+      "test": "scripts/aqueous-inventory.py",
+      "status": "implemented",
+      "required_capability": "schema_fields",
+      "note": "double; canonical helper validates the full request."
+    },
+    {
+      "kind": "scalar-field",
       "name": "layout.border_width",
       "source": "settingsApplication/src/backend/schema.zig",
       "consumer": "src/desktop/aqueous_settings.zig",
@@ -1326,15 +1482,15 @@
     },
     {
       "kind": "scalar-field",
-      "name": "layout.options.scrolling.open_new_windows_to_right",
+      "name": "layout.options.scrolling.new_window_position",
       "source": "settingsApplication/src/backend/schema.zig",
       "consumer": "src/desktop/aqueous_settings.zig",
       "owner": "src/desktop/aqueous_settings.zig",
-      "entry": "layouts / Open new windows to the right",
+      "entry": "layouts / New window position",
       "test": "scripts/aqueous-inventory.py",
       "status": "implemented",
       "required_capability": "schema_fields",
-      "note": "boolean; canonical helper validates the full request."
+      "note": "select; canonical helper validates the full request."
     },
     {
       "kind": "scalar-field",
@@ -1410,6 +1566,18 @@
     },
     {
       "kind": "scalar-field",
+      "name": "layout.options.dwindle.split_focused",
+      "source": "settingsApplication/src/backend/schema.zig",
+      "consumer": "src/desktop/aqueous_settings.zig",
+      "owner": "src/desktop/aqueous_settings.zig",
+      "entry": "layouts / Dwindle: Split focused window",
+      "test": "scripts/aqueous-inventory.py",
+      "status": "implemented",
+      "required_capability": "schema_fields",
+      "note": "boolean; canonical helper validates the full request."
+    },
+    {
+      "kind": "scalar-field",
       "name": "layout.options.reverse-dwindle.split_ratio",
       "source": "settingsApplication/src/backend/schema.zig",
       "consumer": "src/desktop/aqueous_settings.zig",
@@ -1431,6 +1599,18 @@
       "status": "implemented",
       "required_capability": "schema_fields",
       "note": "select; canonical helper validates the full request."
+    },
+    {
+      "kind": "scalar-field",
+      "name": "layout.options.reverse-dwindle.split_focused",
+      "source": "settingsApplication/src/backend/schema.zig",
+      "consumer": "src/desktop/aqueous_settings.zig",
+      "owner": "src/desktop/aqueous_settings.zig",
+      "entry": "layouts / Reverse dwindle: Split focused window",
+      "test": "scripts/aqueous-inventory.py",
+      "status": "implemented",
+      "required_capability": "schema_fields",
+      "note": "boolean; canonical helper validates the full request."
     },
     {
       "kind": "scalar-field",
@@ -1595,6 +1775,18 @@
       "consumer": "src/desktop/aqueous_settings.zig",
       "owner": "src/desktop/aqueous_settings.zig",
       "entry": "input / Focus new windows",
+      "test": "scripts/aqueous-inventory.py",
+      "status": "implemented",
+      "required_capability": "schema_fields",
+      "note": "boolean; canonical helper validates the full request."
+    },
+    {
+      "kind": "scalar-field",
+      "name": "input.focus_crosses_workspaces",
+      "source": "settingsApplication/src/backend/schema.zig",
+      "consumer": "src/desktop/aqueous_settings.zig",
+      "owner": "src/desktop/aqueous_settings.zig",
+      "entry": "input / Focus across workspaces",
       "test": "scripts/aqueous-inventory.py",
       "status": "implemented",
       "required_capability": "schema_fields",
@@ -2039,6 +2231,54 @@
       "consumer": "src/desktop/aqueous_settings.zig",
       "owner": "src/desktop/aqueous_settings.zig",
       "entry": "keybinds / cycle_focus",
+      "test": "scripts/aqueous-inventory.py",
+      "status": "implemented",
+      "required_capability": "schema_fields",
+      "note": "string_list; canonical helper validates the full request."
+    },
+    {
+      "kind": "scalar-field",
+      "name": "cycle_focus_reverse",
+      "source": "settingsApplication/src/backend/schema.zig",
+      "consumer": "src/desktop/aqueous_settings.zig",
+      "owner": "src/desktop/aqueous_settings.zig",
+      "entry": "keybinds / cycle_focus_reverse",
+      "test": "scripts/aqueous-inventory.py",
+      "status": "implemented",
+      "required_capability": "schema_fields",
+      "note": "string_list; canonical helper validates the full request."
+    },
+    {
+      "kind": "scalar-field",
+      "name": "window_switcher_next",
+      "source": "settingsApplication/src/backend/schema.zig",
+      "consumer": "src/desktop/aqueous_settings.zig",
+      "owner": "src/desktop/aqueous_settings.zig",
+      "entry": "keybinds / window_switcher_next",
+      "test": "scripts/aqueous-inventory.py",
+      "status": "implemented",
+      "required_capability": "schema_fields",
+      "note": "string_list; canonical helper validates the full request."
+    },
+    {
+      "kind": "scalar-field",
+      "name": "window_switcher_previous",
+      "source": "settingsApplication/src/backend/schema.zig",
+      "consumer": "src/desktop/aqueous_settings.zig",
+      "owner": "src/desktop/aqueous_settings.zig",
+      "entry": "keybinds / window_switcher_previous",
+      "test": "scripts/aqueous-inventory.py",
+      "status": "implemented",
+      "required_capability": "schema_fields",
+      "note": "string_list; canonical helper validates the full request."
+    },
+    {
+      "kind": "scalar-field",
+      "name": "window_switcher_dismiss",
+      "source": "settingsApplication/src/backend/schema.zig",
+      "consumer": "src/desktop/aqueous_settings.zig",
+      "owner": "src/desktop/aqueous_settings.zig",
+      "entry": "keybinds / window_switcher_dismiss",
       "test": "scripts/aqueous-inventory.py",
       "status": "implemented",
       "required_capability": "schema_fields",
@@ -3989,6 +4229,42 @@
       "note": "string; inheritance distinct from false/zero; canonical classification and protected save."
     },
     {
+      "kind": "collection-field",
+      "name": "window_rules.scope",
+      "source": "settingsApplication/src/backend/schema.zig; operations.zig",
+      "consumer": "src/settings/window_rules_view.zig",
+      "owner": "src/settings/window_rules_view.zig",
+      "entry": "Rules: scope",
+      "test": "src/config/aqueous_rule_editor.zig; tests/integration/test_window_rules.py",
+      "status": "implemented",
+      "required_capability": "collection_schema_v1 + collection_identity_v1 + collection_preconditions_v1",
+      "note": "string; inheritance distinct from false/zero; canonical classification and protected save."
+    },
+    {
+      "kind": "collection-field",
+      "name": "window_rules.window_type",
+      "source": "settingsApplication/src/backend/schema.zig; operations.zig",
+      "consumer": "src/settings/window_rules_view.zig",
+      "owner": "src/settings/window_rules_view.zig",
+      "entry": "Rules: window_type",
+      "test": "src/config/aqueous_rule_editor.zig; tests/integration/test_window_rules.py",
+      "status": "implemented",
+      "required_capability": "collection_schema_v1 + collection_identity_v1 + collection_preconditions_v1",
+      "note": "string; inheritance distinct from false/zero; canonical classification and protected save."
+    },
+    {
+      "kind": "collection-field",
+      "name": "window_rules.matching",
+      "source": "settingsApplication/src/backend/schema.zig; operations.zig",
+      "consumer": "src/settings/window_rules_view.zig",
+      "owner": "src/settings/window_rules_view.zig",
+      "entry": "Rules: matching",
+      "test": "src/config/aqueous_rule_editor.zig; tests/integration/test_window_rules.py",
+      "status": "implemented",
+      "required_capability": "collection_schema_v1 + collection_identity_v1 + collection_preconditions_v1",
+      "note": "string; inheritance distinct from false/zero; canonical classification and protected save."
+    },
+    {
       "kind": "collection-operation",
       "name": "custom_bindings.add",
       "source": "settingsApplication/src/backend/operations.zig",
@@ -4886,7 +5162,7 @@
       "test": "tests/integration/test_capture_master.py",
       "status": "implemented",
       "required_capability": "aqueous_capture_color_manager_v1",
-      "note": "Registry version 1"
+      "note": "Registry version 2"
     },
     {
       "kind": "wayland-global",
@@ -5018,7 +5294,7 @@
       "test": "tests/integration/test_surfaces.py",
       "status": "implemented",
       "required_capability": "aqueous_window_info_manager_v1",
-      "note": "Registry version 8"
+      "note": "Registry version 9"
     },
     {
       "kind": "wayland-global",
@@ -5114,6 +5390,18 @@
       "test": "tests/integration/test_surfaces.py",
       "status": "application-owned",
       "required_capability": "zwlr_output_power_manager_v1",
+      "note": "Registry version 1"
+    },
+    {
+      "kind": "wayland-global",
+      "name": "aqueous_output_warming_manager_v1",
+      "source": "Captured matching-master registry; XML where vendored",
+      "consumer": "GTK/GDK, compositor or application client",
+      "owner": "GTK/GDK, compositor or application client",
+      "entry": "Protocol service; no additional standalone shell control",
+      "test": "tests/integration/test_surfaces.py",
+      "status": "application-owned",
+      "required_capability": "aqueous_output_warming_manager_v1",
       "note": "Registry version 1"
     },
     {
@@ -5318,7 +5606,7 @@
       "test": "tests/integration/test_surfaces.py",
       "status": "implemented",
       "required_capability": "aqueous_shell_manager_v1",
-      "note": "Registry version 2"
+      "note": "Registry version 3"
     },
     {
       "kind": "wayland-global",
@@ -5443,6 +5731,18 @@
     {
       "kind": "display-control",
       "name": "adaptive_sync",
+      "source": "settingsApplication/src/backend/display_mutations.zig; helper schema display_fields",
+      "consumer": "src/desktop/aqueous_display_editor.zig",
+      "owner": "src/desktop/aqueous_display_editor.zig",
+      "entry": "Displays: declaration fields; Keep / Set / Inherit",
+      "test": "tests/integration/test_aqueous_master.py; tests/integration/test_master_ui.py",
+      "status": "implemented",
+      "required_capability": "display_declaration_mutations_v1 + display_model_v2 + display_observation_v1 + display_preview_commit_v1",
+      "note": "Typed draft control. Native lease and per-feature support govern apply; physical HDR/VRR remain gated."
+    },
+    {
+      "kind": "display-control",
+      "name": "fullscreen_only_adaptive_sync",
       "source": "settingsApplication/src/backend/display_mutations.zig; helper schema display_fields",
       "consumer": "src/desktop/aqueous_display_editor.zig",
       "owner": "src/desktop/aqueous_display_editor.zig",

@@ -561,6 +561,20 @@
     "options": []
   },
   {
+    "id": "test-clipboard-history",
+    "description": "Verify clipboard JSON, private filesystem persistence, history and opt-in GTK panel behavior",
+    "groups": ["native"],
+    "cwd": ".",
+    "targets": ["test-clipboard-history"],
+    "capabilities": ["zig", "native"],
+    "fixture": null,
+    "output": "none",
+    "timeout": 900,
+    "sources": [],
+    "args": [],
+    "options": []
+  },
+  {
     "id": "test-notification-filters",
     "description": "Verify notification Unicode matching and policy lifetime",
     "groups": [
@@ -613,6 +627,48 @@
     "cwd": ".",
     "targets": [
       "test-night-light-clock"
+    ],
+    "capabilities": [
+      "zig",
+      "glib"
+    ],
+    "fixture": null,
+    "output": "none",
+    "timeout": 900,
+    "sources": [],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-catalog-watch",
+    "description": "Verify the scheduler catalog is noticed when it or its directory appears later",
+    "groups": [
+      "fast"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-catalog-watch"
+    ],
+    "capabilities": [
+      "zig",
+      "glib"
+    ],
+    "fixture": null,
+    "output": "none",
+    "timeout": 900,
+    "sources": [],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-steam-library",
+    "description": "Verify Steam library scanning, shortcut generation and stale-entry pruning",
+    "groups": [
+      "fast"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-steam-library"
     ],
     "capabilities": [
       "zig",
@@ -820,6 +876,32 @@
     "timeout": 900,
     "sources": [
       "tests/integration/test_settings_appearance.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
+    "id": "test-settings-field-search",
+    "description": "Verify field-level search across Aqueous schema fields and the Pearl manifest",
+    "groups": [
+      "integration"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-settings-field-search"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "session",
+      "aqueous",
+      "native-input"
+    ],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 900,
+    "sources": [
+      "tests/integration/test_settings_field_search.py"
     ],
     "args": [],
     "options": []

@@ -7,7 +7,7 @@ const wl = @import("wayland").client.wl;
 const ext = @import("wayland").client.ext;
 const zwlr = @import("wayland").client.zwlr;
 const Timeouts = @import("../../services/idle_policy.zig").Timeouts;
-pub const Event = enum { lock, sleep, dim, screen_off, display_changed, resumed, unavailable };
+pub const Event = enum { lock, sleep, dim, screen_off, display_changed, resumed, unavailable, maintenance_idle, maintenance_resumed };
 pub const Output = struct {
     name: @import("../../services/policy.zig").Text(128) = .{},
     owner: ?*Idle = null,
@@ -35,6 +35,29 @@ pub const Idle = struct {
     outputs: [32]Output = @splat(.{}),
     timeouts: Timeouts = .{},
     manual_wake: ?*ext.IdleNotificationV1 = null,
+    maintenance: ?*ext.IdleNotificationV1 = null,
+    maintenance_seconds: u32 = 0,
+    /// Maintenance windows (background indexing) need an unambiguous seat and
+    /// a live notifier; otherwise callers degrade to load-based low use.
+    pub fn available(self: *const Idle) bool {
+        return self.notifier != null and self.seat != null and !self.ambiguous;
+    }
+    pub fn configureMaintenance(self: *Idle, seconds: u32) void {
+        self.maintenance_seconds = seconds;
+        self.refreshMaintenance();
+    }
+    fn refreshMaintenance(self: *Idle) void {
+        if (self.maintenance) |m| {
+            m.destroy();
+            self.maintenance = null;
+        }
+        const notifier = self.notifier orelse return;
+        const seat = self.seat orelse return;
+        if (self.maintenance_seconds == 0) return;
+        self.maintenance = notifier.getIdleNotification(self.maintenance_seconds * 1000, seat) catch return;
+        self.maintenance.?.setListener(*Idle, notify, self);
+        self.display.flush();
+    }
     pub fn start(self: *Idle) !void {
         const wayland = object.ext.cast(backend.WaylandDisplay, self.display) orelse return error.NotWayland;
         const connection: *wl.Display = @ptrCast(wayland.getWlDisplay().?);
@@ -66,6 +89,10 @@ pub const Idle = struct {
     pub fn stop(self: *Idle) void {
         self.setScreenOff(false);
         self.clear();
+        if (self.maintenance) |m| {
+            m.destroy();
+            self.maintenance = null;
+        }
         for (&self.outputs) |*output| closeOutput(output);
         if (self.power_manager) |manager| manager.destroy();
         self.power_manager = null;
@@ -104,6 +131,7 @@ pub const Idle = struct {
                     self.selectSeat();
                 }
                 self.configure(self.timeouts);
+                self.refreshMaintenance();
             },
             .global_remove => |g| {
                 for (&self.outputs) |*output| if (output.id == g.name) closeOutput(output);
@@ -126,9 +154,14 @@ pub const Idle = struct {
                 };
                 if (self.notifier_name == g.name) {
                     self.clear();
+                    if (self.maintenance) |m| {
+                        m.destroy();
+                        self.maintenance = null;
+                    }
                     self.notifier.?.destroy();
                     self.notifier = null;
                     self.notifier_name = null;
+                    self.event(self.context, .maintenance_resumed);
                     self.event(self.context, .unavailable);
                 }
                 self.event(self.context, .display_changed);
@@ -148,9 +181,14 @@ pub const Idle = struct {
         self.seat_name = self.seats[0];
         self.seat.?.setListener(*Idle, seatEvent, self);
         self.configure(self.timeouts);
+        self.refreshMaintenance();
     }
     fn seatEvent(_: *wl.Seat, _: wl.Seat.Event, _: *Idle) void {}
     fn notify(n: *ext.IdleNotificationV1, event: ext.IdleNotificationV1.Event, self: *Idle) void {
+        if (n == self.maintenance) {
+            self.event(self.context, if (event == .resumed) .maintenance_resumed else .maintenance_idle);
+            return;
+        }
         if (event == .resumed) {
             self.setScreenOff(false);
             self.event(self.context, .resumed);

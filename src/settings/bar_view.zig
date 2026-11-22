@@ -22,11 +22,15 @@ const w = @import("../ui/components/widgets.zig");
 const a = std.heap.c_allocator;
 const Group = model.Group;
 const Icon = @import("../ui/components/launcher_icon.zig");
-const Intent = union(enum) { clock_new, clock_open, clock_save, clock_cancel, clock_delete, clock_zone, picker: Group, actions, change: model.Action, workspace_mode: prefs.WorkspaceMode, resource_mode: prefs.ResourceMode, resource_series: resource_model.Series, weather_units: weather_policy.Units, weather_search, weather_place: struct { location: []const u8, latitude: f64, longitude: f64 }, focus: Group, advanced, plugins, icon_open, icon_theme, icon_file, icon_reset, icon_retry, icon_preset };
+const Intent = union(enum) { clock_new, clock_open, clock_save, clock_cancel, clock_delete, clock_zone, picker: Group, actions, change: model.Action, workspace_mode: prefs.WorkspaceMode, resource_mode: prefs.ResourceMode, resource_series: resource_model.Series, media_art: bool, weather_units: weather_policy.Units, weather_search, weather_place: struct { location: []const u8, latitude: f64, longitude: f64 }, focus: Group, advanced, plugins, icon_open, icon_theme, icon_file, icon_reset, icon_retry, icon_preset };
 const Binding = struct { view: *View, id: []const u8, intent: Intent };
 /// G_TYPE_STRING: fundamental type index 16 (2 is G_TYPE_INTERFACE) shifted into GType space.
 const g_type_string: usize = 16 << 2;
-const DragBinding = struct { view: *View, id: [*:0]const u8, widget: *gtk.Widget };
+const DragBinding = struct { view: *View, id: [*:0]const u8, widget: *gtk.Widget, press_time: i64 = 0 };
+
+/// Hold time before a press may turn into a drag, so plain clicks on widget
+/// rows are not instantly picked up. Microseconds, per glib.getMonotonicTime.
+const drag_debounce_us: i64 = 500 * std.time.us_per_ms;
 const RowDrop = struct { view: *View, group: Group, index: usize, widget: *gtk.Widget };
 const CardDrop = struct { view: *View, group: Group, widget: *gtk.Widget };
 pub const Control = struct { id: []const u8, widget: *gtk.Widget };
@@ -373,6 +377,23 @@ pub const View = struct {
                 drag_binding.* = .{ .view = self, .id = try alloc.dupeSentinel(u8, id, 0), .widget = row.as(gtk.Widget) };
                 const source = gtk.DragSource.new();
                 source.setActions(.{ .move = true });
+                // GtkGesture begin/end are not exposed in the bindings; connect them
+                // directly to stamp when the press started. ("pressed" does not exist
+                // on GestureSingle in GTK 4.24 — the lookup silently returns 0.)
+                _ = object.signalConnectClosureById(
+                    @ptrCast(@alignCast(source)),
+                    object.signalLookup("begin", gtk.DragSource.getGObjectType()),
+                    glib.quarkFromString(null),
+                    object.CClosure.new(@ptrCast(&dragGestureBegin), drag_binding, null),
+                    0,
+                );
+                _ = object.signalConnectClosureById(
+                    @ptrCast(@alignCast(source)),
+                    object.signalLookup("end", gtk.DragSource.getGObjectType()),
+                    glib.quarkFromString(null),
+                    object.CClosure.new(@ptrCast(&dragGestureEnd), drag_binding, null),
+                    0,
+                );
                 _ = gtk.DragSource.signals.prepare.connect(source, *DragBinding, dragPrepare, drag_binding, .{});
                 _ = gtk.DragSource.signals.drag_begin.connect(source, *DragBinding, dragBegin, drag_binding, .{});
                 _ = gtk.DragSource.signals.drag_end.connect(source, *DragBinding, dragEnd, drag_binding, .{});
@@ -401,6 +422,7 @@ pub const View = struct {
                 }
                 if (builtin == .workspaces) labels.append(w.label(document.bar.workspace_mode.label(), "pearl-secondary").as(gtk.Widget));
                 if (builtin == .resources) labels.append(w.label(document.bar.resource_mode.label(), "pearl-secondary").as(gtk.Widget));
+                if (builtin == .media and document.bar.media_art) labels.append(w.label(@import("i18n").dtr("pearl", "Album art"), "pearl-secondary").as(gtk.Widget));
                 if (builtin == .weather) {
                     const detail = w.label(try alloc.dupeSentinel(u8, document.weather.location, 0), "pearl-secondary");
                     detail.setMaxWidthChars(18);
@@ -412,7 +434,7 @@ pub const View = struct {
                     labels.append(detail.as(gtk.Widget));
                 }
                 row.append(labels.as(gtk.Widget));
-                if (clock_policy.reference(id) != null or std.mem.eql(u8, id, "launcher") or std.mem.eql(u8, id, "workspaces") or std.mem.eql(u8, id, "resources") or std.mem.eql(u8, id, "weather")) {
+                if (clock_policy.reference(id) != null or std.mem.eql(u8, id, "launcher") or std.mem.eql(u8, id, "workspaces") or std.mem.eql(u8, id, "resources") or std.mem.eql(u8, id, "media") or std.mem.eql(u8, id, "weather")) {
                     const b = try self.button(row, @import("i18n").dtr("pearl", "⋯"), try std.fmt.allocPrint(alloc, "bar.widget.{s}", .{id}), id, .actions, false);
                     w.name(b.as(gtk.Widget), try std.fmt.allocPrintSentinel(alloc, "Actions for {s}, {s}, position {d} of {d}", .{ title, model.groupLabel(group, document.bar.edge), i + 1, layout.items[g].items.len }, 0));
                     b.as(gtk.Widget).setTooltipText(try std.fmt.allocPrintSentinel(alloc, "Actions for {s}", .{title}, 0));
@@ -590,6 +612,22 @@ pub const View = struct {
                     try self.menu_controls.append(a, .{ .id = try std.fmt.allocPrint(alloc, "bar.resource.series.{s}", .{@tagName(kind)}), .widget = choice_.as(gtk.Widget) });
                 }
             }
+            if (std.mem.eql(u8, id, "media")) {
+                box.append(w.label(@import("i18n").dtr("pearl", "Widget icon"), "settings-row-title").as(gtk.Widget));
+                const choice_ = gtk.CheckButton.new();
+                const label = w.label(@import("i18n").dtr("pearl", "Show the playing track's album art"), null);
+                label.setMaxWidthChars(28);
+                label.as(gtk.Widget).setCanTarget(0);
+                choice_.as(gtk.Widget).setSizeRequest(-1, 32);
+                choice_.setChild(label.as(gtk.Widget));
+                choice_.setActive(@intFromBool(document.bar.media_art));
+                box.append(choice_.as(gtk.Widget));
+                w.name(choice_.as(gtk.Widget), @import("i18n").dtr("pearl", "Show album art instead of the media icon"));
+                const binding = try alloc.create(Binding);
+                binding.* = .{ .view = self, .id = "media", .intent = .{ .media_art = true } };
+                _ = gtk.CheckButton.signals.toggled.connect(choice_, *Binding, mediaArtToggled, binding, .{});
+                try self.menu_controls.append(a, .{ .id = "bar.media.art", .widget = choice_.as(gtk.Widget) });
+            }
             if (std.mem.eql(u8, id, "weather")) {
                 box.append(w.label(@import("i18n").dtr("pearl", "Temperature units"), "settings-row-title").as(gtk.Widget));
                 self.popup_weather_units = document.weather.units;
@@ -734,7 +772,17 @@ pub const View = struct {
         const document = prefs.parse(alloc, self.editor.text()) catch return;
         self.popup_hash = barHash(alloc, document.bar) catch return;
     }
+    fn dragGestureBegin(_: *gtk.DragSource, _: ?*gdk.EventSequence, binding: *DragBinding) callconv(.c) void {
+        binding.press_time = glib.getMonotonicTime();
+    }
+    fn dragGestureEnd(_: *gtk.DragSource, _: ?*gdk.EventSequence, binding: *DragBinding) callconv(.c) void {
+        binding.press_time = 0;
+    }
     fn dragPrepare(_: *gtk.DragSource, _: f64, _: f64, binding: *DragBinding) callconv(.c) ?*gdk.ContentProvider {
+        // Returning null declines the drag; GTK re-emits prepare on later motion,
+        // so holding past the debounce still starts the drag.
+        if (binding.press_time == 0) binding.press_time = glib.getMonotonicTime();
+        if (glib.getMonotonicTime() - binding.press_time < drag_debounce_us) return null;
         binding.view.syncBarHash();
         // g_value_init requires zero-filled memory; stack garbage faults inside gobject.
         var value: object.Value = std.mem.zeroes(object.Value);
@@ -827,6 +875,22 @@ pub const View = struct {
         try self.editor.edit(next);
         self.host.as(gtk.Accessible).announce(try std.fmt.allocPrintSentinel(alloc, "Resource monitor: {s}. Unsaved changes.", .{mode.label()}, 0), .medium);
         self.rememberFocus("bar.widget.resources");
+        self.popup.?.popdown();
+        self.queue();
+    }
+    fn mutateMediaArt(self: *View, enabled: bool) !void {
+        if (!self.editor.editable() or self.editor.target.page != .bar) return error.Unavailable;
+        var temp = std.heap.ArenaAllocator.init(a);
+        defer temp.deinit();
+        const alloc = temp.allocator();
+        const document = try prefs.parse(alloc, self.editor.text());
+        if (!std.mem.eql(u8, &self.popup_hash, &try barHash(alloc, document.bar))) return error.StaleBar;
+        const next = try model.patchMediaArt(alloc, self.editor.text(), enabled);
+        self.editing = true;
+        defer self.editing = false;
+        try self.editor.edit(next);
+        self.host.as(gtk.Accessible).announce(try std.fmt.allocPrintSentinel(alloc, "Media widget icon: {s}. Unsaved changes.", .{if (enabled) "album art" else "media icon"}, 0), .medium);
+        self.rememberFocus("bar.widget.media");
         self.popup.?.popdown();
         self.queue();
     }
@@ -1315,6 +1379,12 @@ pub const View = struct {
         if (self.editing) return;
         self.mutateResourceSeries(binding.intent.resource_series, choice_.getActive() != 0) catch |err| self.report(err);
     }
+    fn mediaArtToggled(choice_: *gtk.CheckButton, binding: *Binding) callconv(.c) void {
+        const self = binding.view;
+        // A checkbox fires on both edges, so the new state decides the patch.
+        if (self.editing) return;
+        self.mutateMediaArt(choice_.getActive() != 0) catch |err| self.report(err);
+    }
     fn weatherUnitsToggled(choice_: *gtk.CheckButton, binding: *Binding) callconv(.c) void {
         const self = binding.view;
         if (choice_.getActive() == 0 or self.editing) return;
@@ -1362,6 +1432,7 @@ pub const View = struct {
             .resource_mode => |mode| self.mutateResourceMode(mode) catch |err| self.report(err),
             // Checkboxes drive the graph picker through `toggled`, never a click.
             .resource_series => {},
+            .media_art => {},
             .weather_units => {},
             .weather_search => self.startWeatherSearch(),
             .weather_place => |place| self.mutateWeatherPlace(place.location, place.latitude, place.longitude) catch |err| self.report(err),

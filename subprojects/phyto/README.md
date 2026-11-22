@@ -1,13 +1,13 @@
 # Phyto
 
-A native **Zig 0.17.0 / GTK4** file explorer following Pearl's design, with
+A native **Zig 0.17.1 / GTK4** file explorer following Pearl's design, with
 Nemo-inspired navigation. The revised layout is implemented: one navigation
 and view toolbar, per-pane tabs, file content and an optional details sidebar.
 There is no large Home/location heading or subtitle.
 
 ## Build and run
 
-Use Zig 0.17.0 and GTK4/GLib development packages (verified with GTK 4.22.5 and
+Use Zig 0.17.1 and GTK4/GLib development packages (verified with GTK 4.22.5 and
 GLib 2.88.3). The manifest pins Pearl's Ghostty-generated GObject bindings.
 
 ```sh
@@ -47,17 +47,33 @@ application identity so release and Git installs can coexist.
   or device click, native authentication and persistent disconnected Places rows.
 - XDG Places, Home, local paths, supported GIO URIs, editable location, back,
   forward, parent and refresh. Missing/empty locations retain navigation.
+  Removable drives and unmounted volumes list under Devices; OS-internal mounts
+  stay hidden, and unsaved GVfs mounts stay with the network devices.
 - Multiple tabs in each pane, split view, active-pane targeting and independent
   view, location, history and selection state. Narrow windows retain both panes.
+  Creating a split starts the second pane with a single fresh tab: Home for F3,
+  or just the clicked tab for “Split with this tab” in the tab menu.
 - Unicode case-insensitive filename filtering of the **current directory**, hidden
   files, native multi-selection, opening files through the default application,
   metadata details and Properties.
 - Native right-click, Menu-key and Shift+F10 menus for files, background,
   Places/bookmarks, devices, location and tabs. Targets remain tied to the clicked
   files and originating tab; multi-selection works in grid and list views.
+- Drag and drop in grid and list views: drag selections onto folder items, the
+  background, Places rows (including Trash) and tab headers; hovering a tab
+  reveals it. The drag image is a card showing the held file's thumbnail (or
+  MIME icon), its name, and a count badge for multi-selection. Files exchange
+  with other applications through text/uri-list.
+  Drops reuse the batch operation engine, so collisions, progress, receipts and
+  undo match Paste. Ctrl forces copy, Shift forces move, Ctrl+Shift asks
+  (copy/move/link); without modifiers a drop moves within one filesystem and
+  copies across filesystems. A move accepted by another application trashes the
+  originals so they stay recoverable.
 - System Copy/Cut/Paste, folder-specific paste, recursive batch copy/move,
-  collision Skip/Keep both, cancellation, duplicate/link, and guarded session
-  undo/redo. Existing destinations are never silently overwritten.
+  collision Skip/Replace/Keep both, cancellation, duplicate/link, and guarded
+  session undo/redo. Existing destinations are never silently overwritten:
+  Replace moves the previous item to Trash first. Keep both and pasting onto the
+  source's own folder write numbered copies such as “Folder (2)”.
 - Open with, terminal, empty documents/templates, aggregate Properties, Trash
   restore and permanent deletion with confirmation. GIO capabilities govern
   availability; optional integrations depend on installed providers.
@@ -82,11 +98,13 @@ application identity so release and Git installs can coexist.
 | Ctrl+F; Escape | Filter the current folder; clear search/location editor |
 | Ctrl+H | Show/hide hidden files |
 | Ctrl+T / Ctrl+W | New / close tab; last tab closes window |
+| Middle-click tab | Close that tab |
 | Ctrl+Tab / Ctrl+Shift+Tab | Next / previous tab in current pane |
 | Ctrl+N | New window |
 | F3 / F6 | Toggle split / switch active pane |
 | Ctrl+Shift+N; F2 | Create folder; rename selected item |
 | Ctrl+C / Ctrl+X / Ctrl+V | System clipboard Copy / Cut / Paste |
+| Drag; Ctrl / Shift / Ctrl+Shift | Move or copy by filesystem; force copy / force move / ask (copy, move, link) |
 | Ctrl+Z / Ctrl+Shift+Z | Undo / redo completed reversible operations |
 | Menu / Shift+F10 | Context menu for the focused target |
 | Shift+F4 | Open local folder in an available terminal |
@@ -134,7 +152,7 @@ its own display and D-Bus with disposable home/config/data directories. The app
 itself has no such test dependencies. `integration` builds a separate instrumented
 binary; the normal build contains no F12 test inspection shortcut.
 
-Recursive search, drag/drop, replacement/merge, localization and
+Recursive search, replacement/merge, localization and
 FileManager1 remain future work. Optional
 Trash/network/admin support requires the relevant GIO/GVfs backends; file-roller
 provides archive actions. Preferences live in

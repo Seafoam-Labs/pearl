@@ -1,51 +1,22 @@
-# Optional inference dependency. CMake/PKGBUILD are the required upstream and
-# distribution integration boundaries; Pearl's application code remains Zig.
-_backend=${PEARL_ASSISTANT_BACKEND:-cpu}
+# Optional inference dependency. The prebuilt upstream release is the required
+# distribution integration boundary; Pearl's application code remains Zig.
 pkgname=pearl-assistant-runtime
-if [[ $_backend != cpu ]]; then
-    pkgname+="-$_backend"
-    provides=('pearl-assistant-runtime')
-    conflicts=('pearl-assistant-runtime')
-fi
-pkgver=0.6.0
-pkgrel=3
-pkgdesc="Optional $_backend llama.cpp runtime for Pearl (system or custom builds also supported)"
-arch=('x86_64' 'aarch64')
-url='https://github.com/ggml-org/llama.cpp'
+pkgver=0.9.5
+pkgrel=1
+pkgdesc="Optional prebuilt mistral.rs CPU runtime for Pearl (system mistralrs or custom builds also supported)"
+arch=('x86_64')
+url='https://github.com/EricLBuehler/mistral.rs'
 license=('MIT')
-depends=('glibc' 'gcc-libs' 'openssl')
-makedepends=('cmake' 'gcc')
-case $_backend in
-    cpu) ;;
-    vulkan) depends+=('vulkan-icd-loader'); makedepends+=('vulkan-headers' 'glslc') ;;
-    cuda) depends+=('cuda'); makedepends+=('cuda') ;;
-    *) error 'PEARL_ASSISTANT_BACKEND must be cpu, vulkan or cuda'; return 1 ;;
-esac
-_commit=d81235049384534c167caea52b85a694f6103d14
-source=("llama-$_commit.tar.gz::$url/archive/$_commit.tar.gz")
-sha256sums=('6b58785f0a82898f4c3442417ff962e2d4b231b1bee5d033902ad90b27901e14')
-
-build() {
-    local cuda=OFF vulkan=OFF
-    [[ $_backend == cuda ]] && cuda=ON
-    [[ $_backend == vulkan ]] && vulkan=ON
-    cmake -S "llama.cpp-$_commit" -B build \
-        -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON \
-        -DGGML_NATIVE=OFF -DGGML_BACKEND_DL=ON -DGGML_CPU_ALL_VARIANTS=ON \
-        -DGGML_CUDA="$cuda" -DGGML_VULKAN="$vulkan" -DGGML_METAL=OFF \
-        -DLLAMA_BUILD_SERVER=ON -DLLAMA_BUILD_TESTS=OFF \
-        -DLLAMA_BUILD_UI=OFF -DLLAMA_USE_PREBUILT_UI=OFF \
-        '-DCMAKE_BUILD_RPATH=$ORIGIN' '-DCMAKE_INSTALL_RPATH=$ORIGIN' \
-        -DCMAKE_BUILD_WITH_INSTALL_RPATH=ON
-    cmake --build build --target llama-server --parallel 2
-}
+depends=('glibc' 'libgcc')
+options=('!strip' '!debug')
+source=("mistralrs-cpu-x86_64-unknown-linux-gnu.tar.gz::$url/releases/download/v$pkgver/mistralrs-cpu-x86_64-unknown-linux-gnu.tar.gz")
+sha256sums=('9b542da90b6541abd599ff275e3246fa6e144885bdcd67d1f0aefdba1729f7b5')
 
 package() {
     local target="$pkgdir/usr/libexec/pearl/assistant"
     install -d "$target"
-    install -m755 build/bin/llama-server "$target/llama-server"
-    cp -a build/bin/*.so* "$target/"
-    printf '{"version":"v0.6.0","commit":"%s","source_sha256":"%s","backend":"%s"}\n' \
-        "$_commit" "${sha256sums[0]}" "$_backend" > "$target/runtime.json"
-    install -Dm644 "llama.cpp-$_commit/LICENSE" "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+    install -m755 mistralrs "$target/mistralrs"
+    printf '{"version":"v%s","source_sha256":"%s","backend":"cpu","source_kind":"prebuilt-release"}\n' \
+        "$pkgver" "${sha256sums[0]}" > "$target/runtime.json"
+    install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE" 2>/dev/null || true
 }

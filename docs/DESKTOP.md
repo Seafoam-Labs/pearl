@@ -385,6 +385,26 @@ proof that an application's eventual startup succeeded; GIO's desktop-action
 API itself returns no completion result. Synchronous failure remains in the
 launcher. Rejected/dropped/unknown compositor actions show a non-focusable OSD.
 
+### Semantic document search
+
+With the opt-in [Assistant semantic search](ASSISTANT.md#semantic-search)
+enabled and indexed, the launcher adds a second, debounced result stage: up to
+four document rows whose detail line shows the folder and the best matching
+passage. Instant application/window/calculator results never wait on a model;
+document rows merge in about 200 ms after typing stops, only for the current
+edit revision, generation and session. Calculator results, exact matches and
+explicit `?`/`=` modes keep their precedence; document scores sit below
+application substring matches and above the implicit Ask Pearl row.
+
+Enter opens the file with its default application through
+`GAppInfo.launchDefaultForUri` on a GIO `file://` URI. The path is re-stat'ed at
+activation, so a vanished file returns a stale result instead of launching.
+Rows use the bundled `pearl-document-symbolic` icon and keep accessible
+labels/descriptions. Not-installed, not-indexed and locked states are silent in
+the launcher and actionable in Settings. See the
+[implementation plan](SEMANTIC_SEARCH_IMPLEMENTATION_PLAN.md) for architecture
+and remaining acceptance gates.
+
 ### Calculator
 
 Type an expression such as `12*(3+4)` into the launcher to see `84` before any

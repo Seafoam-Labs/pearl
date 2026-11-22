@@ -38,12 +38,14 @@ pub fn commands(app: Application) []const [:0]const u8 {
         .steam => &.{"steam"},
         .fluxer => &.{"fluxer"},
         .fcitx5 => &.{"fcitx5"},
+        .sonora => &.{"sonora"},
     };
 }
 pub fn flatpaks(app: Application) []const []const u8 {
     return switch (app) {
         .vesktop => &.{"dev.vencord.Vesktop"},
         .vencord => &.{ "com.discordapp.Discord", "com.discordapp.DiscordCanary" },
+        .sonora => &.{"io.github.nolight132.sonora"},
         else => &.{},
     };
 }
@@ -98,6 +100,7 @@ pub fn root(a: std.mem.Allocator, config: []const u8, app: Application) ![]const
         .fcitx5 => "fcitx5/themes/pearl-material",
         .pywalfox => "wal",
         .vscode => "pearl/vscode",
+        .sonora => "sonora/themes",
         else => return error.ManualProfileActivation,
     };
     return std.fmt.allocPrint(a, "{s}/{s}", .{ base, suffix });
@@ -124,6 +127,7 @@ pub fn name(a: std.mem.Allocator, app: Application, id: []const u8, output: []co
         },
         .pywalfox => "colors.json",
         .vscode => "pearl-material.vsix",
+        .sonora => if (index == 0) "pearl-material/dark.json" else "pearl-material/light.json",
         else => std.fmt.allocPrint(a, "pearl-{s}-{s}", .{ id, output }),
     };
 }
@@ -137,6 +141,7 @@ pub fn allowed(app: Application, path: []const u8) bool {
         .fcitx5 => std.mem.eql(u8, path, "theme.conf") or std.mem.eql(u8, path, "panel.svg") or std.mem.eql(u8, path, "highlight.svg"),
         .pywalfox => std.mem.eql(u8, path, "colors.json"),
         .starship => std.mem.eql(u8, path, "starship.toml"),
+        .sonora => std.mem.eql(u8, path, "pearl-material/dark.json") or std.mem.eql(u8, path, "pearl-material/light.json"),
         else => std.mem.startsWith(u8, path, "pearl-") and std.mem.indexOfScalar(u8, path, '/') == null,
     };
 }
@@ -163,5 +168,6 @@ pub fn instructions(app: Application) []const u8 {
         .starship => "Review and install the generated prompt configuration below before Pearl manages starship.toml. Custom STARSHIP_CONFIG paths require manual setup.",
         .fluxer => "Import the generated CSS in Fluxer's custom theme settings. This profile supports dark mode.",
         .steam => "Use the generated CSS with AdwSteamGtk. Run your installed theme tool to activate updates. This profile supports dark mode.",
+        .sonora => "In Sonora choose Settings → Appearance → Theme → Pearl Material, then click it to pick the Dark or Light variant; or set appearance.theme to pearl-material/dark or pearl-material/light in settings.json. Themes reload on save. Disable Adaptive theme, which only allows System/Dark/Light. For Flatpak io.github.nolight132.sonora, Pearl also updates its existing sandbox config/sonora/themes directory; activate the theme there.",
     };
 }

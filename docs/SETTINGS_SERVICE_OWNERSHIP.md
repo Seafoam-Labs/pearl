@@ -116,6 +116,6 @@ including edits arriving through other frontends or Advanced.
 
 The shell and Settings each run a scheduler service that watches `scx.service`
 over systemd's D-Bus API; neither takes a lease. Both change the scheduler only
-through `pearl-scheduling-helper`, so a profile chosen in either place shows in
-the other. Page departure, Settings exit and shell shutdown never stop an
+through scx's `scxcli`, so a profile chosen in either place, or with `scxcli`
+or scxtui, shows in the other. Page departure, Settings exit and shell shutdown never stop an
 applied scheduler. See [CPU scheduler profiles](SCHEDULING_PROFILES.md).

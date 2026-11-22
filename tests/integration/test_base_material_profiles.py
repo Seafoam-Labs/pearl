@@ -43,7 +43,7 @@ def main():
             assert not bad, bad
         successful(result)
         assert gtk.read_bytes() == original + b'@import url("pearl-material.css");\n'
-        checks.append('all-23-targets-and-gtk-preservation')
+        checks.append('all-24-targets-and-gtk-preservation')
         rendered = root/'config/pearl/matugen/outputs'
         def validate(variant):
             for app in coverage['targets']:

@@ -41,6 +41,13 @@ def main():
             rejected=fixture/'filtered-out.jpg';rejected.write_text('not selected')
             result=session.run([args.chooser.resolve(),'filtered',fixture,rejected.name,'accept'],check=False,G_DEBUG='fatal-warnings',GIO_USE_VFS='local')
             assert result.returncode==2 and not result.stdout,(result.stdout,result.stderr)
+            mnemonic=session.child('mnemonic',[args.chooser.resolve(),'mnemonic',fixture,original.name],G_DEBUG='fatal-warnings',GIO_USE_VFS='local')
+            for _ in range(50):
+                time.sleep(.2)
+                session.run(['wtype','-s','100','-M','alt','-k','p','-m','alt'])
+                if mnemonic.proc.poll() is not None: break
+            assert mnemonic.wait()==0,mnemonic.lines
+            assert any(original.as_uri() in line for line in mnemonic.lines),mnemonic.lines
             overwrite=session.child('overwrite-cancel',[args.chooser.resolve(),'save',fixture,original.name,'accept'],G_DEBUG='fatal-warnings',GIO_USE_VFS='local')
             time.sleep(1)
             session.run(['wtype','-s','100','-k','Escape'])

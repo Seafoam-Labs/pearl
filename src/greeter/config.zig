@@ -35,6 +35,8 @@ pub const Config = struct {
     screen_reader: bool = false,
     fingerprint_hint: bool = false,
     auth_timeout_seconds: u16 = 120,
+    handoff_hold: bool = true,
+    handoff_timeout_seconds: u16 = 15,
     pub fn validate(self: Config) !void {
         if (self.language.len > 0 and !@import("i18n").locale.valid(self.language)) return error.InvalidLanguage;
         if (self.preferred_output_edid) |value| _ = try @import("output_identity.zig").parseHash(value);
@@ -42,7 +44,7 @@ pub const Config = struct {
             if (color.len != 7 or color[0] != '#') return error.InvalidBackgroundColor;
             for (color[1..]) |c| if (!std.ascii.isHex(c)) return error.InvalidBackgroundColor;
         }
-        if (self.version != 1 or self.font_size < 12 or self.font_size > 32 or self.auth_timeout_seconds < 30 or self.auth_timeout_seconds > 300 or self.roots.len > 16 or self.roots.len == 0 or self.allow.len > 256 or self.deny.len > 256) return error.InvalidConfig;
+        if (self.version != 1 or self.font_size < 12 or self.font_size > 32 or self.auth_timeout_seconds < 30 or self.auth_timeout_seconds > 300 or self.handoff_timeout_seconds < 5 or self.handoff_timeout_seconds > 60 or self.roots.len > 16 or self.roots.len == 0 or self.allow.len > 256 or self.deny.len > 256) return error.InvalidConfig;
         if (self.surface_opacity) |value| if (value > 100) return error.InvalidConfig;
         for (self.roots) |root| if (root.path.len == 0 or root.path[0] != '/' or !p.validText(root.path, 4096)) return error.InvalidRoot;
         for ([_]?[]const u8{ self.gtk_theme, self.wallpaper, self.preferred_output, self.default_session, self.force_session }) |value| if (value) |v| if (!p.validText(v, 4096)) return error.InvalidConfig;

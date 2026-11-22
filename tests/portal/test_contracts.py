@@ -113,6 +113,40 @@ def client(binary):
             assert not isinstance(result[0], GLib.Error), result
             assert result[0].unpack() == (2, {}), result[0]
         print('PASS empty folder hints across open/save/batch and strict nonempty/file path validation', flush=True)
+        def rules(*patterns, kind=0):
+            return ('Filter', [(kind, pattern) for pattern in patterns])
+        def listed(*filters):
+            return {'filters': GLib.Variant('a(sa(us))', list(filters))}
+        def current(rule_filter):
+            return {'current_filter': GLib.Variant('(sa(us))', rule_filter)}
+        filter_cases = [
+            ('two_stars', listed(rules('*a*b')), False),
+            ('star_run', listed(rules('****.txt')), False),
+            ('wildcard_run', listed(rules('*?*?*.txt')), False),
+            ('three_stars', listed(rules('*a*a*b')), True),
+            ('literal_stars', listed(rules('[*]a[*]b[*]c')), True),
+            ('bracket_star_bypass', listed(rules(r'[\a[]*a*a*a*b]')), True),
+            ('trailing_escape', listed(rules('*.txt\\')), True),
+            ('escaped_backslash', listed(rules('*.txt\\\\')), False),
+            ('odd_trailing_escape', listed(rules('*.txt\\\\\\')), True),
+            ('mime_rule', listed(rules('*a*a*b', kind=1)), False),
+            ('most_rules', listed(rules(*('*.x%d' % i for i in range(2048)))), False),
+            ('too_many_rules', listed(rules(*('*.x%d' % i for i in range(2049)))), True),
+            ('too_many_filters', listed(*[rules('*.x')] * 65), True),
+            ('current_too_many_rules', current(rules(*('*.x%d' % i for i in range(2049)))), True),
+            ('current_three_stars', current(rules('*a*a*b')), True),
+        ]
+        for label, options, rejected in filter_cases:
+            handle = path + '/request/test/filter_' + label
+            result = request('FileChooser', 'OpenFile', GLib.Variant('(osssa{sv})',
+                (handle, 'org.example.Test', '', 'Filter limit test', options)))
+            if not rejected:
+                time.sleep(.3)
+                call('org.freedesktop.impl.portal.Request', 'Close', object_path=handle)
+            pump_until(lambda: result)
+            assert not isinstance(result[0], GLib.Error), (label, result)
+            assert result[0].unpack() == (2 if rejected else 1, {}), (label, result[0])
+        print('PASS file filter rule and glob limits', flush=True)
         cases=[
             ('FileChooser','OpenFile','(osssa{sv})',('org.example.Test','','Select files',{})),
             ('FileChooser','SaveFile','(osssa{sv})',('org.example.Test','','Save files',{})),

@@ -12,17 +12,31 @@ const w = @import("../ui/components/widgets.zig");
 const tr = @import("text.zig").tr;
 const chargeState = @import("text.zig").chargeState;
 const presentation = @import("../services/power_presentation.zig");
+const network_presentation = @import("../services/network_presentation.zig");
 const a = std.heap.c_allocator;
+/// Matches the theme CSS; preferences at this value leave the theme in control.
+const default_radius: u8 = 14;
 const clocks = @import("clock_policy.zig");
 const Clock = @import("clock_view.zig").View;
 const Running = @import("running_apps.zig");
 pub const Pane = enum { launcher_picker, running_apps, clipboard_capture, aqueous_settings, settings, launcher, calendar, control, notifications, media, tray, wallpapers, resources, scheduling, weather };
-pub const Event = union(enum) { running_apps: Running.Event, pane: Pane, settings: @import("settings_navigation.zig").Route, workspace: []const u8, keyboard, overview, window_switcher };
+pub const Event = union(enum) { running_apps: Running.Event, pane: Pane, settings: @import("settings_navigation.zig").Route, workspace: []const u8, keyboard, overview, window_switcher, toggle_theme };
 const Button = struct { owner: *Bar, event: Event, id: ?[]u8 = null };
+/// Manager wiring the optional `dock` widget needs to behave like the
+/// standalone dock: preferences, task matching, and the launcher picker.
+pub const DockDeps = struct {
+    preferences: *@import("../config/service.zig").Service,
+    tasks: *@import("task_apps.zig").Store,
+    context: *anyopaque,
+    changed: *const fn (*anyopaque) void,
+    choose_launcher: *const fn (*anyopaque, []const u8, @import("launcher_picker.zig").Request) anyerror!void,
+};
 pub const Bar = struct {
     background_opacity: @import("bar_opacity.zig").Config = .{},
     background_css: ?*gtk.CssProvider = null,
     background_color: ?gdk.RGBA = null,
+    radius: u8 = default_radius,
+    radius_css: ?*gtk.CssProvider = null,
     launcher_icon: @import("../ui/components/launcher_icon.zig").Renderer = .{},
     host: *gtk.Box,
     tasks: *const @import("task_model.zig").Snapshot,
@@ -36,12 +50,22 @@ pub const Bar = struct {
     plugins: ?*@import("../plugins/manager.zig").Manager = null,
     plugin_views: std.ArrayList(*@import("../plugins/view.zig").View) = .empty,
     tray: ?*@import("tray.zig").Bar = null,
+    dock_widget: ?*@import("dock.zig").Dock = null,
+    dock_deps: ?DockDeps = null,
     resources: ?*@import("resource_view.zig").View = null,
     /// Geometry of the widget that last opened a pane, in bar-window coordinates.
     pane_anchor: ?struct { x: i32, y: i32, width: i32, height: i32 } = null,
     notification_label: ?*gtk.Label = null,
     media_label: ?*gtk.Label = null,
+    /// Media widget glyph; swapped between the icon and the loaded album art.
+    media_icon: ?*gtk.Image = null,
+    media_art: bool = false,
+    /// Viewer registration on the media service, held only while art is shown.
+    media_art_viewing: bool = false,
+    media_art_image: ?*@import("gdkpixbuf2").Pixbuf = null,
     network_label: ?*gtk.Label = null,
+    /// Swapped between wired, wireless and offline glyphs as the link changes.
+    network_icon: ?*gtk.Image = null,
     bluetooth_label: ?*gtk.Label = null,
     audio_label: ?*gtk.Label = null,
     /// Speaker glyph tracking mute state and volume level.
@@ -56,6 +80,10 @@ pub const Bar = struct {
     weather_service: ?*@import("../services/weather.zig").Service = null,
     weather_icon: ?*gtk.Image = null,
     weather_label: ?*gtk.Label = null,
+    /// Sun/moon glyph for the theme widget: moon while dark is active, sun
+    /// while light is active. `theme_dark` is set by the manager, never here.
+    theme_icon: ?*gtk.Image = null,
+    theme_dark: bool = true,
     client: *Client,
     output: []const u8,
     context: *anyopaque,
@@ -92,6 +120,10 @@ pub const Bar = struct {
             self.host.as(gtk.Widget).getStyleContext().removeProvider(provider.as(gtk.StyleProvider));
             provider.unref();
         }
+        if (self.radius_css) |provider| {
+            self.host.as(gtk.Widget).getStyleContext().removeProvider(provider.as(gtk.StyleProvider));
+            provider.unref();
+        }
         self.launcher_icon.deinit();
         self.clock_arena.deinit();
         for (self.groups) |g| a.free(g);
@@ -119,10 +151,19 @@ pub const Bar = struct {
         self.sections = @splat(null);
         if (self.tray) |tray| tray.destroy();
         self.tray = null;
+        // Before the host children go: destroy() unparents the dock overlay.
+        if (self.dock_widget) |dock| dock.destroy();
+        self.dock_widget = null;
         if (self.resources) |view| view.destroy();
         self.resources = null;
         self.notification_label = null;
         self.media_label = null;
+        if (self.media_art_viewing) {
+            self.session_services.media.view(false);
+            self.media_art_viewing = false;
+        }
+        self.media_icon = null;
+        self.media_art_image = null;
         while (self.host.as(gtk.Widget).getFirstChild()) |child| self.host.remove(child);
         freeHandlers(&self.handlers);
         freeHandlers(&self.workspace_handlers);
@@ -139,6 +180,7 @@ pub const Bar = struct {
         self.scheduler_dot = null;
         self.weather_icon = null;
         self.weather_label = null;
+        self.theme_icon = null;
         self.workspace_hash = null;
     }
     pub fn configure(self: *Bar, groups: policy.Groups, definitions: []const clocks.Definition) !void {
@@ -182,6 +224,39 @@ pub const Bar = struct {
     pub fn setResourceMode(self: *Bar, mode: @import("resource_model.zig").Mode) void {
         self.resource_mode = mode;
     }
+    /// Opt-in album art on the media widget. The bar only registers as an
+    /// artwork viewer on the media service while the art is actually shown,
+    /// so the icon-only default never triggers artwork loading.
+    pub fn setMediaArt(self: *Bar, enabled: bool) void {
+        if (self.media_art == enabled) return;
+        self.media_art = enabled;
+        self.syncMediaArt();
+        self.update();
+    }
+    fn syncMediaArt(self: *Bar) void {
+        const want = self.media_art and self.media_icon != null;
+        if (want == self.media_art_viewing) return;
+        self.session_services.media.view(want);
+        self.media_art_viewing = want;
+    }
+    /// Tracks the active light/dark variant so the theme widget shows the moon
+    /// while dark is active and the sun while light is active. The tooltip and
+    /// accessible name describe the variant a click switches to.
+    pub fn setThemeVariant(self: *Bar, dark: bool) void {
+        self.theme_dark = dark;
+        self.refreshTheme();
+    }
+    fn refreshTheme(self: *Bar) void {
+        const widget = self.widgets[@backingInt(policy.Item.theme)] orelse return;
+        if (self.theme_icon) |glyph| glyph.setFromIconName(if (self.theme_dark) "pearl-weather-clear-night-symbolic" else "pearl-weather-clear-symbolic");
+        const tip = if (self.theme_dark) @import("i18n").dtr("pearl", "Switch to the light theme") else @import("i18n").dtr("pearl", "Switch to the dark theme");
+        widget.setTooltipText(tip);
+        w.name(widget, tip);
+    }
+    /// Must be set before configure() when a group contains the `dock` widget.
+    pub fn setDockDeps(self: *Bar, deps: DockDeps) void {
+        self.dock_deps = deps;
+    }
     pub fn setBackgroundOpacity(self: *Bar, config: @import("bar_opacity.zig").Config, color: gdk.RGBA) !void {
         const alpha = config.alpha();
         var resolved = color;
@@ -199,6 +274,24 @@ pub const Bar = struct {
         } else if (self.background_css) |provider| provider.loadFromString("");
         self.background_color = if (alpha != null) resolved else null;
         self.background_opacity = config;
+    }
+    /// Overrides the theme's 14px corner radius. The default injects nothing so
+    /// community themes keep control; a custom value wins via provider priority.
+    pub fn setBorderRadius(self: *Bar, radius: u8) !void {
+        if (self.radius == radius) return;
+        self.radius = radius;
+        if (radius == default_radius) {
+            if (self.radius_css) |provider| provider.loadFromString("");
+            return;
+        }
+        const css = try std.fmt.allocPrintSentinel(a, ".pearl-bar-panel {{ border-radius: {0d}px; }} .pearl-island {{ border-radius: {0d}px; }} .pearl-bar-attached.pearl-bar-top, .pearl-bar-attached.pearl-bar-top .pearl-island {{ border-radius: 0 0 {0d}px {0d}px; }} .pearl-bar-attached.pearl-bar-bottom, .pearl-bar-attached.pearl-bar-bottom .pearl-island {{ border-radius: {0d}px {0d}px 0 0; }} .pearl-bar-attached.pearl-bar-left, .pearl-bar-attached.pearl-bar-left .pearl-island {{ border-radius: 0 {0d}px {0d}px 0; }} .pearl-bar-attached.pearl-bar-right, .pearl-bar-attached.pearl-bar-right .pearl-island {{ border-radius: {0d}px 0 0 {0d}px; }}", .{radius}, 0);
+        defer a.free(css);
+        if (self.radius_css == null) {
+            self.radius_css = gtk.CssProvider.new();
+            self.host.as(gtk.Widget).getStyleContext().addProvider(self.radius_css.?.as(gtk.StyleProvider), 602);
+            for (self.sections) |section| if (section) |widget| widget.getStyleContext().addProvider(self.radius_css.?.as(gtk.StyleProvider), 602);
+        }
+        self.radius_css.?.loadFromString(css);
     }
     pub fn setIslands(self: *Bar, enabled: bool) void {
         if (self.islands != enabled) {
@@ -252,6 +345,7 @@ pub const Bar = struct {
             const box = gtk.Box.new(if (self.vertical) .vertical else .horizontal, 4);
             self.sections[section] = if (group.len != 0) box.as(gtk.Widget) else null;
             if (self.background_css) |provider| box.as(gtk.Widget).getStyleContext().addProvider(provider.as(gtk.StyleProvider), 602);
+            if (self.radius_css) |provider| box.as(gtk.Widget).getStyleContext().addProvider(provider.as(gtk.StyleProvider), 602);
             if (self.vertical) box.as(gtk.Widget).setVexpand(@intFromBool(!self.islands and section != 1)) else box.as(gtk.Widget).setHexpand(@intFromBool(!self.islands and section != 1));
             box.as(gtk.Widget).setHalign(if (self.vertical) .fill else if (section == 2) .end else .fill);
             box.as(gtk.Widget).setValign(if (self.vertical and section == 2) .end else .fill);
@@ -295,6 +389,15 @@ pub const Bar = struct {
                         self.running_apps = try Running.Strip.create(host, self.tasks, self.app_index, self.client, self.vertical, self, runningAction);
                         break :blk host.as(gtk.Widget);
                     },
+                    .dock => blk: {
+                        const host = gtk.Box.new(if (self.vertical) .vertical else .horizontal, 2);
+                        if (self.dock_deps) |deps| {
+                            const dock = try @import("dock.zig").Dock.createEmbedded(host, self.client, self.app_index, deps.tasks, deps.preferences, self.output, deps.context, deps.changed);
+                            dock.choose_launcher = deps.choose_launcher;
+                            self.dock_widget = dock;
+                        }
+                        break :blk host.as(gtk.Widget);
+                    },
                     .tray => blk: {
                         const tray_host = gtk.Box.new(if (self.vertical) .vertical else .horizontal, 2);
                         self.tray = try @import("tray.zig").Bar.create(tray_host, &self.session_services.tray, self, openTray);
@@ -312,7 +415,9 @@ pub const Bar = struct {
                     .notifications, .media => blk: {
                         const button = try self.makeButton(.{ .pane = if (item == .media) .media else .notifications }, null, "", false);
                         const content = gtk.Box.new(if (self.vertical) .vertical else .horizontal, if (self.vertical) 0 else 4);
-                        content.append(w.icon(if (item == .media) "pearl-media-symbolic" else "pearl-notifications-symbolic").as(gtk.Widget));
+                        const glyph = w.icon(if (item == .media) "pearl-media-symbolic" else "pearl-notifications-symbolic");
+                        if (item == .media) self.media_icon = glyph;
+                        content.append(glyph.as(gtk.Widget));
                         const label = gtk.Label.new("");
                         label.setEllipsize(.end);
                         label.setMaxWidthChars(if (self.vertical) 2 else if (item == .media) 16 else 4);
@@ -351,6 +456,13 @@ pub const Bar = struct {
                     .clipboard => (try self.makeButton(.{ .pane = .clipboard_capture }, "pearl-edit-copy-symbolic", @import("i18n").dtr("pearl", "Clipboard & capture"), false)).as(gtk.Widget),
                     .wallpaper => (try self.makeButton(.{ .pane = .wallpapers }, "pearl-image-symbolic", @import("i18n").dtr("pearl", "Wallpaper"), false)).as(gtk.Widget),
                     .control => (try self.makeButton(.{ .settings = .overview }, "pearl-emblem-system-symbolic", @import("i18n").dtr("pearl", "Open settings Overview"), false)).as(gtk.Widget),
+                    .theme => blk: {
+                        const button = try self.makeButton(.toggle_theme, null, "", false);
+                        const glyph = w.icon(if (self.theme_dark) "pearl-weather-clear-night-symbolic" else "pearl-weather-clear-symbolic");
+                        self.theme_icon = glyph;
+                        button.setChild(glyph.as(gtk.Widget));
+                        break :blk button.as(gtk.Widget);
+                    },
                     .clock => unreachable,
                     .audio, .battery, .network, .bluetooth, .scheduler => blk: {
                         const button = try self.makeButton(if (item == .scheduler) .{ .pane = .scheduling } else .{ .settings = switch (item) {
@@ -364,13 +476,14 @@ pub const Bar = struct {
                         const glyph = w.icon(switch (item) {
                             .audio => "pearl-audio-volume-high-symbolic",
                             .battery => "pearl-battery-symbolic",
-                            .network => "pearl-network-wireless-symbolic",
+                            .network => network_presentation.icon(self.network_service),
                             .bluetooth => "pearl-bluetooth-active-symbolic",
                             .scheduler => "pearl-scheduler-symbolic",
                             else => unreachable,
                         });
                         if (item == .battery) self.battery_icon = glyph;
                         if (item == .audio) self.audio_icon = glyph;
+                        if (item == .network) self.network_icon = glyph;
                         const symbol = glyph.as(gtk.Widget);
                         if (item == .scheduler) {
                             // Right-click opens the profiles in Settings.
@@ -444,6 +557,7 @@ pub const Bar = struct {
                 box.append(widget);
             }
         }
+        self.syncMediaArt();
         self.update();
         self.tick();
         self.styleIslands();
@@ -546,6 +660,7 @@ pub const Bar = struct {
         self.action(self.context, .{ .pane = .tray });
     }
     pub fn update(self: *Bar) void {
+        self.refreshTheme();
         if (self.widgets[@backingInt(policy.Item.window_switcher)]) |widget| {
             const all = self.client.capabilities.global_window_switcher_v1;
             const n = @import("window_switcher.zig").count(&self.client.model, self.output, all);
@@ -567,6 +682,15 @@ pub const Bar = struct {
             label.setText(std.mem.printSentinel(&buf, "{s}{d}", .{ if (self.session_services.notifications.model.dnd) "− " else "", count }, 0) catch "");
         }
         if (self.media_label) |label| label.setText(if (self.session_services.media.current()) |p| p.title.z() else "");
+        if (self.media_icon) |glyph| {
+            // Opt-in album art; until it loads (or with the toggle off) the
+            // widget keeps its symbolic icon.
+            const image = if (self.media_art) self.session_services.media.art.image else null;
+            if (image != self.media_art_image) {
+                self.media_art_image = image;
+                if (image) |art| glyph.setFromPixbuf(art) else glyph.setFromIconName("pearl-media-symbolic");
+            }
+        }
         var service_buffer: [256]u8 = undefined;
         if (self.audio_label) |label| {
             const device = self.audio_service.default(.sink);
@@ -593,26 +717,27 @@ pub const Bar = struct {
         }
         if (self.scheduler_label) |label| {
             const service = self.scheduling_service;
-            const profile: ?sched_profiles.Profile = if (service.config) |config| if (service.status.profile) |i| config.profiles[i] else null else null;
+            const profile: ?sched_profiles.Profile = service.profile(service.status.profile);
             const name = if (profile) |value| value.label else "";
             label.setText(switch (service.status.kind) {
                 .running, .off => std.mem.printSentinel(&service_buffer, "{s}", .{if (profile) |value| value.label else @import("i18n").dtr("pearl", "Default")}, 0) catch "",
                 .starting => @import("i18n").dtr("pearl", "..."),
+                .stopped => @import("i18n").dtr("pearl", "Stopped"),
                 .failed => @import("i18n").dtr("pearl", "Failed"),
                 .custom => @import("i18n").dtr("pearl", "Custom"),
                 .unavailable => @import("i18n").dtr("pearl", "-"),
             });
             const widget = self.widgets[@backingInt(policy.Item.scheduler)].?;
-            // Hidden without profiles, sched_ext support or scx.service.
+            // Hidden without scxcli, sched_ext support or scx.service.
             widget.setVisible(@intFromBool(service.configured() and service.status.kind != .unavailable));
             var detail: [512]u8 = undefined;
             serviceName(widget, @import("i18n").dtr("pearl", "Open CPU scheduler profiles"), if (service.status.kind == .running) std.mem.printSentinel(&detail, "{s} - {s}", .{ name, service.describe(&service_buffer) }, 0) catch "" else service.describe(&detail));
             if (self.scheduler_dot) |dot| {
                 // Red after a fallback to Default, until a profile is chosen;
-                // amber while starting or a scheduler outside the profiles runs.
-                const state: ?[:0]const u8 = if (service.applying != null) "pearl-status-pending" else if (service.notice != .none) "pearl-status-failed" else switch (service.status.kind) {
+                // amber while starting, stopped or a scheduler outside the profiles runs.
+                const state: ?[:0]const u8 = if (service.applying != null or service.status.stale) "pearl-status-pending" else if (service.notice != .none) "pearl-status-failed" else switch (service.status.kind) {
                     .running => "pearl-status-ok",
-                    .starting, .custom => "pearl-status-pending",
+                    .starting, .stopped, .custom => "pearl-status-pending",
                     .failed => "pearl-status-failed",
                     else => null,
                 };
@@ -623,6 +748,7 @@ pub const Bar = struct {
         }
         if (self.network_label) |label| {
             const n = self.network_service;
+            if (self.network_icon) |glyph| glyph.setFromIconName(network_presentation.icon(n));
             var connected = false;
             for (n.devices[0..n.device_count]) |dev| if (dev.state == 100) {
                 connected = true;

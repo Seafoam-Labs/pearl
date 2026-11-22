@@ -8,10 +8,21 @@ pub const Limits = struct {
     pub const component = 16 * 1024 * 1024;
     pub const frame = 65536;
     pub const nodes = 32;
+    pub const artwork = 8;
+    pub const artwork_files = 16;
+    pub const artwork_bytes = 2 * 1024 * 1024;
 };
 pub const PackageSource = struct { source: []const u8, path: []const u8, digest: []const u8 };
 pub const Grants = struct { input_activity: bool = false, overlay: bool = false };
 pub const Setting = struct { key: []const u8, value: []const u8 };
+/// User replacement art for one declared asset. `file` is a bare PNG name inside
+/// Pearl's artwork folder, never a path, so a selection cannot escape it.
+/// Artwork is host-owned presentation and deliberately outside the package
+/// digest: choosing a picture must not revoke package approval.
+pub const Artwork = struct { asset: []const u8, file: []const u8 };
+/// Replacement art offered for one declared asset: the sprite geometry a
+/// candidate must keep and the size-matching PNG names Pearl found for it.
+pub const ArtworkChoice = struct { asset: []const u8, width: u16 = 0, height: u16 = 0, files: []const []const u8 = &.{} };
 pub const Schema = struct { key: []const u8, label: []const u8, kind: enum { text, number, toggle } = .text, default: []const u8 = "", min: i32 = 0, max: i32 = 86400 };
 pub const Placement = struct { mode: enum { bar, overlay } = .bar, output: []const u8 = "", x: u16 = 16, y: u16 = 16, width: u16 = 128, height: u16 = 96, interactive: bool = false, locked: bool = true, hide_fullscreen: bool = true };
 pub const Config = struct {
@@ -21,6 +32,7 @@ pub const Config = struct {
     grants: Grants = .{},
     placement: Placement = .{},
     settings: []const Setting = &.{},
+    artwork: []const Artwork = &.{},
     pub fn validate(self: Config) !void {
         if (!identifier(self.id)) return error.InvalidPluginId;
         if (self.digest.len != 0 and !digestValid(self.digest)) return error.InvalidPluginDigest;
@@ -33,6 +45,15 @@ pub const Config = struct {
             try text(s.value, 256);
             for (self.settings[0..i]) |old| if (std.mem.eql(u8, old.key, s.key)) return error.DuplicatePluginSetting;
         }
+        if (self.artwork.len > Limits.artwork) return error.TooManyPluginArtwork;
+        for (self.artwork, 0..) |art, i| {
+            if (!identifier(art.asset) or !artworkFile(art.file)) return error.InvalidPluginArtwork;
+            for (self.artwork[0..i]) |old| if (std.mem.eql(u8, old.asset, art.asset)) return error.DuplicatePluginArtwork;
+        }
+    }
+    pub fn artworkFor(self: Config, asset: []const u8) ?[]const u8 {
+        for (self.artwork) |art| if (std.mem.eql(u8, art.asset, asset)) return art.file;
+        return null;
     }
 };
 pub const Preferences = struct {
@@ -122,6 +143,7 @@ pub const Manifest = struct {
             };
             if (!found) return error.UnknownPluginSetting;
         }
+        for (cfg.artwork) |art| if (self.findAsset(art.asset) == null) return error.UnknownPluginAsset;
     }
 };
 pub const Node = struct { id: u32, kind: enum { label, button, image }, text: []const u8 = "", asset: []const u8 = "", clip: []const u8 = "" };
@@ -165,6 +187,11 @@ pub fn digestValid(value: []const u8) bool {
     for (value) |ch| if (!std.ascii.isHex(ch)) return false;
     return true;
 }
+/// A bare artwork file name. Slashes are rejected by `identifier`, so a stored
+/// selection can never address anything outside its own artwork folder.
+pub fn artworkFile(value: []const u8) bool {
+    return value.len > 4 and identifier(value) and std.ascii.endsWithIgnoreCase(value, ".png");
+}
 pub fn text(value: []const u8, max: usize) !void {
     if (value.len > max or !std.unicode.utf8ValidateSlice(value)) return error.InvalidPluginText;
     for (value) |ch| if (ch == 0 or ch == 127 or (ch < 32 and ch != '\n' and ch != '\t')) return error.InvalidPluginText;
@@ -200,4 +227,24 @@ test "scene nodes cannot refer to foreign assets or reuse event identities" {
     try std.testing.expectError(error.DuplicatePluginNode, (Scene{ .nodes = &.{ .{ .id = 1, .kind = .button }, .{ .id = 1, .kind = .button } } }).validate(manifest));
     try std.testing.expectError(error.InvalidPluginNode, (Scene{ .nodes = &.{.{ .id = 1, .kind = .button, .clip = "idle" }} }).validate(manifest));
     try std.testing.expectError(error.PluginOverlayDenied, manifest.config(.{ .id = "demo", .placement = .{ .mode = .overlay } }));
+}
+
+test "user artwork names are bounded, unique per asset and must be declared" {
+    const t = std.testing;
+    const manifest: Manifest = .{ .id = "pearl.companion", .name = "Pearl Cat", .version = "1", .assets = &.{.{ .id = "cat", .path = "cat.png", .license = "CC0", .width = 384, .height = 96 }} };
+    try t.expect(artworkFile("bunny.png"));
+    try (Config{ .id = "pearl.companion", .artwork = &.{.{ .asset = "cat", .file = "bunny.png" }} }).validate();
+    try manifest.config(.{ .id = "pearl.companion", .artwork = &.{.{ .asset = "cat", .file = "bunny.png" }} });
+    try t.expectEqualStrings("bunny.png", (Config{ .id = "pearl.companion", .artwork = &.{.{ .asset = "cat", .file = "bunny.png" }} }).artworkFor("cat").?);
+    try t.expect((Config{ .id = "pearl.companion" }).artworkFor("cat") == null);
+    for ([_]Artwork{ .{ .asset = "cat", .file = "../../etc/passwd" }, .{ .asset = "cat", .file = "/home/user/cat.png" }, .{ .asset = "cat", .file = "cat.svg" }, .{ .asset = "cat", .file = ".png" }, .{ .asset = "cat", .file = "" }, .{ .asset = "../cat", .file = "cat.png" } }) |art| {
+        try t.expectError(error.InvalidPluginArtwork, (Config{ .id = "pearl.companion", .artwork = &.{art} }).validate());
+    }
+    try t.expectError(error.DuplicatePluginArtwork, (Config{ .id = "pearl.companion", .artwork = &.{ .{ .asset = "cat", .file = "a.png" }, .{ .asset = "cat", .file = "b.png" } } }).validate());
+    var arena = std.heap.ArenaAllocator.init(t.allocator);
+    defer arena.deinit();
+    var many: [Limits.artwork + 1]Artwork = undefined;
+    for (&many, 0..) |*art, i| art.* = .{ .asset = try std.fmt.allocPrint(arena.allocator(), "asset{d}", .{i}), .file = "cat.png" };
+    try t.expectError(error.TooManyPluginArtwork, (Config{ .id = "pearl.companion", .artwork = &many }).validate());
+    try t.expectError(error.UnknownPluginAsset, manifest.config(.{ .id = "pearl.companion", .artwork = &.{.{ .asset = "dog", .file = "dog.png" }} }));
 }

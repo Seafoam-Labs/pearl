@@ -1,4 +1,5 @@
 //! Shared native sync button for the standalone application and settings flyout.
+const files = @import("file_chooser");
 const std = @import("std");
 const gtk = @import("gtk4");
 const gio = @import("gio2");
@@ -10,14 +11,25 @@ const writer = @import("../greeter/appearance_sync.zig");
 const w = @import("../ui/components/widgets.zig");
 const log = std.log.scoped(.settings);
 const a = std.heap.c_allocator;
+/// Bounds the user's source image only. What crosses the privileged boundary is
+/// a re-encoded 3840x2160 PNG, still capped by `writer.max_image`.
+const max_source_image = 64 * 1024 * 1024;
+/// A layer-shell host must raise the chooser onto its own layer and hand the
+/// keyboard back afterwards. Only the shell links layer-shell, so it supplies
+/// both steps; the standalone application passes null.
+pub const Layering = struct {
+    prepare: *const fn (context: *anyopaque, picker: *gtk.Window, parent: *gtk.Window) void,
+    restore: *const fn (context: *anyopaque, parent: *gtk.Window) void,
+};
 pub const View = struct {
     choose: *gtk.Button,
-    picker: ?*gtk.FileChooserNative = null,
+    picker: ?*gtk.Dialog = null,
+    layering: ?Layering = null,
     status: *gtk.Label,
     context: *anyopaque,
     get: *const fn (*anyopaque, std.mem.Allocator) anyerror!model.Preferences,
     job: ?*Job = null,
-    pub fn create(host: *gtk.Box, context: *anyopaque, get: @FieldType(View, "get")) !*View {
+    pub fn create(host: *gtk.Box, context: *anyopaque, get: @FieldType(View, "get"), layering: ?Layering) !*View {
         const self = try a.create(View);
         const box = w.column(8);
         box.as(gtk.Widget).setMarginTop(12);
@@ -30,7 +42,7 @@ pub const View = struct {
         const status = w.label(@import("i18n").dtr("pearl", "Copies this background and theme. Administrator authentication is required."), "pearl-secondary");
         status.setWrap(1);
         box.append(status.as(gtk.Widget));
-        self.* = .{ .choose = choose, .status = status, .context = context, .get = get };
+        self.* = .{ .choose = choose, .status = status, .context = context, .get = get, .layering = layering };
         if (glib.fileTest(helper(), .{ .is_executable = true }) == 0) {
             choose.as(gtk.Widget).setSensitive(0);
             status.setText(@import("i18n").dtr("pearl", "Install Pearl Greeter to sync its appearance."));
@@ -40,31 +52,55 @@ pub const View = struct {
     }
     pub fn destroy(self: *View) void {
         if (self.job) |job| job.owner = null;
+        self.closePicker(false);
         a.destroy(self);
     }
     fn chooseClicked(_: *gtk.Button, self: *View) callconv(.c) void {
         if (self.job != null or self.picker != null) return;
         const root = self.choose.as(gtk.Widget).getRoot() orelse return;
         const parent = object.ext.cast(gtk.Window, root) orelse return;
-        const picker = gtk.FileChooserNative.new(@import("i18n").dtr("pearl", "Login screen background"), parent, .open, @import("i18n").dtr("pearl", "Choose"), @import("i18n").dtr("pearl", "Cancel"));
+        // A native dialog cannot be parented to a layer-shell popup: it never
+        // gains the seat, and the popup's focus-loss dismissal would free this
+        // view while the dialog's response handler still points at it.
+        const picker = files.create(@import("i18n").dtr("pearl", "Login screen background"), .open);
+        files.setStateKey(picker, "first-party/greeter-sync-image");
+        self.picker = picker;
+        _ = picker.ref();
+        const window = picker.as(gtk.Window);
+        window.setTransientFor(parent);
+        window.setModal(1);
+        window.setDefaultSize(1040, 680);
+        files.setLocalOnly(picker, 1);
+        if (self.layering) |layering| layering.prepare(self.context, window, parent);
         const filter = gtk.FileFilter.new();
         filter.addMimeType("image/png");
         filter.addMimeType("image/jpeg");
         filter.setName(@import("i18n").dtr("pearl", "Images"));
-        picker.as(gtk.FileChooser).setFilter(filter);
-        self.picker = picker;
-        _ = gtk.NativeDialog.signals.response.connect(picker.as(gtk.NativeDialog), *View, picked, self, .{});
-        picker.as(gtk.NativeDialog).show();
+        files.addFilter(picker, filter);
+        filter.unref();
+        _ = gtk.Dialog.signals.response.connect(picker, *View, picked, self, .{});
+        window.present();
     }
-    fn picked(_: *gtk.NativeDialog, response: c_int, self: *View) callconv(.c) void {
+    fn closePicker(self: *View, restore_parent: bool) void {
         const picker = self.picker orelse return;
         self.picker = null;
-        defer {
-            picker.as(gtk.NativeDialog).destroy();
-            picker.unref();
+        const window = picker.as(gtk.Window);
+        const layering = if (restore_parent) self.layering else null;
+        const parent = if (layering != null) window.getTransientFor() else null;
+        if (parent) |value| value.as(gtk.Widget).setVisible(0);
+        window.destroy();
+        window.unref();
+        if (parent) |value| {
+            // Mapping an on-demand layer restores focus without retaining a
+            // permanent exclusive keyboard grab after the chooser closes.
+            layering.?.restore(self.context, value);
+            value.present();
         }
+    }
+    fn picked(dialog: *gtk.Dialog, response: c_int, self: *View) callconv(.c) void {
+        defer self.closePicker(true);
         if (response != @backingInt(gtk.ResponseType.accept)) return;
-        const file = picker.as(gtk.FileChooser).getFile() orelse return;
+        const file = files.getFile(dialog) orelse return;
         defer file.unref();
         const path = file.getPath() orelse return;
         defer glib.free(path);
@@ -173,7 +209,10 @@ fn readWallpaper(alloc: std.mem.Allocator, path: []const u8) ![]u8 {
     defer _ = std.c.close(fd);
     var stat: std.os.linux.Statx = undefined;
     if (std.os.linux.statx(fd, "", std.os.linux.AT.EMPTY_PATH, .{ .TYPE = true }, &stat) != 0 or !std.c.S.ISREG(stat.mode)) return error.InvalidImage;
-    return writer.read(fd, writer.max_image);
+    return writer.read(fd, max_source_image) catch |err| switch (err) {
+        error.TooLarge => error.SourceTooLarge,
+        else => err,
+    };
 }
 const Job = struct {
     owner: ?*View,
@@ -246,7 +285,7 @@ const Job = struct {
             var png_len: usize = 0;
             if (image.saveToBufferv(&png, &png_len, "png", null, null, null) == 0) return error.InvalidImage;
             defer glib.free(png);
-            if (png_len > writer.max_image) return error.TooLarge;
+            if (png_len > writer.max_image) return error.ResultTooLarge;
             const encoded = try alloc.alloc(u8, std.base64.standard.Encoder.calcSize(png_len));
             request.image = std.base64.standard.Encoder.encode(encoded, png[0..png_len]);
         }
@@ -329,7 +368,9 @@ const Job = struct {
             const message: [:0]const u8 = if (self.denied)
                 (@import("i18n").dtr("pearl", "Sync cancelled or not authorized."))
             else if (self.err) |err| switch (err) {
-                error.InvalidImage, error.ImageUnavailable, error.TooLarge => @import("i18n").dtr("pearl", "Choose a readable PNG/JPEG (up to 16 MiB and 64 megapixels)."),
+                error.SourceTooLarge => @import("i18n").dtr("pearl", "Choose an image smaller than 64 MiB."),
+                error.ResultTooLarge => @import("i18n").dtr("pearl", "The resized login screen copy is still larger than 16 MiB. Choose a simpler image."),
+                error.InvalidImage, error.ImageUnavailable => @import("i18n").dtr("pearl", "Choose a readable PNG/JPEG up to 64 megapixels."),
                 error.SystemThemeRequired => @import("i18n").dtr("pearl", "Install this GTK theme system-wide before syncing."),
                 else => @import("i18n").dtr("pearl", "Could not sync. Check that Pearl Greeter is installed and authentication completed."),
             } else @import("i18n").dtr("pearl", "Synced. The login screen will use this appearance next time it starts.");

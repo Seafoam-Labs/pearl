@@ -1,6 +1,6 @@
 {
   "source_url": "https://github.com/Seafoam-Labs/Aqueous.git",
-  "revision": "debc0353e745890f205cd399613f942f83e34986",
-  "helper": "0.8.2",
-  "prefix": ".cache/aqueous-zig17-debc035"
+  "revision": "e32ab7fc8f6510b393780b811ef92fe1bac6438e",
+  "helper": "1.0.18",
+  "prefix": ".cache/aqueous-zig17-e32ab7f"
 }

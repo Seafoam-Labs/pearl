@@ -391,6 +391,24 @@ pub const App = struct {
                 }
             }
         }
+        const canonical_z = u.z(canonical);
+        defer a.free(canonical_z);
+        if (c.g_file_test(canonical_z, c.G_FILE_TEST_EXISTS) == 0) {
+            if (std.fs.path.dirname(canonical)) |dir| {
+                const dir_z = u.z(dir);
+                defer a.free(dir_z);
+                _ = c.g_mkdir_with_parents(dir_z, 0o755);
+            }
+            const new_file = c.g_file_new_for_path(canonical_z).?;
+            defer c.g_object_unref(new_file);
+            var create_err: ?*c.GError = null;
+            const created = c.g_file_create(new_file, c.G_FILE_CREATE_NONE, null, &create_err);
+            if (create_err) |e| c.g_error_free(e);
+            if (created == null) {
+                self.message(@import("i18n").dtr("coral", "Could not create the file."));
+                return;
+            }
+        }
         const d = self.newDocument();
         d.path = u.z(canonical);
         self.load(d, false);
@@ -768,7 +786,7 @@ pub const App = struct {
         }
         c.gtk_text_buffer_get_start_iter(d.buffer, &start);
         if (c.gtk_text_iter_has_tag(&start, d.tag) != 0) count += 1;
-        c.g_print("CORAL_PROBE {\"tabs\":%zu,\"id\":%llu,\"dirty\":%s,\"busy\":%s,\"revision\":%llu,\"chars\":%d,\"spelling\":%zu,\"dictionary\":%s,\"enumerated\":%s,\"search\":%d,\"dialog\":%d,\"popover\":%s,\"theme\":%d,\"font\":%d,\"lines\":%s,\"bom\":%s,\"newline\":%d,\"check_from\":%d,\"inflight\":%s,\"checking_enabled\":%s,\"large\":%s,\"max_spell_tick_us\":%lld}\n", self.docs.items.len, @as(c_ulonglong, d.id), boolZ(d.dirty()), boolZ(d.busy), @as(c_ulonglong, d.revision), c.gtk_text_buffer_get_char_count(d.buffer), count, boolZ(self.dictionary), boolZ(self.enumerated), c.gtk_source_search_context_get_occurrences_count(d.search), @as(c_int, if (self.dialog != null) @intCast(@intFromEnum(self.dialog_kind)) else -1), boolZ(self.popover != null), self.settings.theme, self.settings.font, boolZ(self.settings.lines), boolZ(d.bom), @as(c_int, @intCast(@intFromEnum(d.newline))), d.check_from, boolZ(d.inflight), boolZ(self.spellingEnabled(d)), boolZ(d.large), @as(c_longlong, self.max_spell_tick_us));
+        c.g_print("CORAL_PROBE {\"tabs\":%zu,\"id\":%llu,\"dirty\":%s,\"busy\":%s,\"revision\":%llu,\"chars\":%d,\"spelling\":%zu,\"dictionary\":%s,\"enumerated\":%s,\"search\":%d,\"dialog\":%d,\"popover\":%s,\"theme\":%d,\"font\":%d,\"lines\":%s,\"bom\":%s,\"newline\":%d,\"check_from\":%d,\"inflight\":%s,\"checking_enabled\":%s,\"large\":%s,\"max_spell_tick_us\":%lld}\n", self.docs.items.len, @as(c_ulonglong, d.id), boolZ(d.dirty()), boolZ(d.busy), @as(c_ulonglong, d.revision), c.gtk_text_buffer_get_char_count(d.buffer), count, boolZ(self.dictionary), boolZ(self.enumerated), c.gtk_source_search_context_get_occurrences_count(d.search), @as(c_int, if (self.dialog != null) @intCast(@backingInt(self.dialog_kind)) else -1), boolZ(self.popover != null), self.settings.theme, self.settings.font, boolZ(self.settings.lines), boolZ(d.bom), @as(c_int, @intCast(@backingInt(d.newline))), d.check_from, boolZ(d.inflight), boolZ(self.spellingEnabled(d)), boolZ(d.large), @as(c_longlong, self.max_spell_tick_us));
     }
 };
 const DialogKind = enum { close, mixed, conflict, large, reload, preferences, goto };
@@ -1360,7 +1378,7 @@ fn onAction(action: ?*c.GSimpleAction, _: ?*c.GVariant, data: ?*anyopaque) callc
         if (self.active()) |d| self.requestSuggestions(d);
     } else if (std.mem.eql(u8, name, "preferences")) self.preferences() else if (std.mem.eql(u8, name, "close")) {
         if (self.active()) |d| self.closeDocument(d);
-    } else if (std.mem.eql(u8, name, "quit")) self.quit() else if (std.mem.eql(u8, name, "about")) c.gtk_show_about_dialog(u.cast(c.GtkWindow, self.window), "program-name", @as([*:0]const u8, "Coral"), "version", @as([*:0]const u8, "0.1.1"), "comments", @as([*:0]const u8, "A focused Zig and GTK4 text editor with offline spelling."), @as(?*anyopaque, null));
+    } else if (std.mem.eql(u8, name, "quit")) self.quit() else if (std.mem.eql(u8, name, "about")) c.gtk_show_about_dialog(u.cast(c.GtkWindow, self.window), "program-name", @as([*:0]const u8, "Coral"), "version", @as([*:0]const u8, "0.1.2"), "comments", @as([*:0]const u8, "A focused Zig and GTK4 text editor with offline spelling."), @as(?*anyopaque, null));
 }
 fn onKey(_: ?*c.GtkEventControllerKey, key: c_uint, _: c_uint, state: c.GdkModifierType, data: ?*anyopaque) callconv(.c) c_int {
     const self = u.cast(App, data.?);

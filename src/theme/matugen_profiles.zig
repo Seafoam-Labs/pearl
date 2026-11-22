@@ -2,7 +2,7 @@
 //! destination paths; a contributed manifest cannot execute commands.
 const std = @import("std");
 const model = @import("package_model.zig");
-pub const Application = enum { zed, equibop, fluxer, starship, steam, gtk, qt5ct, qt6ct, kcolorscheme, ghostty, kitty, foot, alacritty, wezterm, nvim, vscode, emacs, firefox, zenbrowser, pywalfox, vesktop, vencord, fcitx5 };
+pub const Application = enum { zed, equibop, fluxer, starship, steam, gtk, qt5ct, qt6ct, kcolorscheme, ghostty, kitty, foot, alacritty, wezterm, nvim, vscode, emacs, firefox, zenbrowser, pywalfox, vesktop, vencord, fcitx5, sonora };
 pub const count = std.enums.values(Application).len;
 pub const legacy_applications = [_]Application{ .zed, .equibop, .fluxer, .starship, .steam };
 pub const defaults_revision: u32 = 1;
@@ -32,7 +32,7 @@ pub const Descriptor = struct {
             try model.relative(t.path);
             try model.identifier(t.output);
             const suffix: []const u8 = switch (self.application) {
-                .zed, .vscode, .pywalfox => ".json",
+                .zed, .vscode, .pywalfox, .sonora => ".json",
                 .starship, .alacritty, .wezterm => ".toml",
                 .qt5ct, .qt6ct, .ghostty, .kitty => ".conf",
                 .kcolorscheme => ".colors",
@@ -47,7 +47,7 @@ pub const Descriptor = struct {
         }
         const expected: ?usize = switch (self.application) {
             .gtk, .qt5ct, .qt6ct, .ghostty, .foot, .alacritty, .wezterm, .emacs, .pywalfox, .starship => 1,
-            .kitty, .nvim => 2,
+            .kitty, .nvim, .sonora => 2,
             .kcolorscheme, .vscode, .fcitx5 => 3,
             else => null,
         };
@@ -57,6 +57,9 @@ pub const Descriptor = struct {
         }
         if (self.application == .vscode) {
             for (self.templates, [_][]const u8{ "vscode-color-theme-dark.json", "vscode-color-theme-light.json", "package.json" }) |t, role| if (!std.mem.eql(u8, t.output, role)) return error.InvalidProfileOutputName;
+        }
+        if (self.application == .sonora) {
+            for (self.templates, [_][]const u8{ "dark.json", "light.json" }) |t, role| if (!std.mem.eql(u8, t.output, role)) return error.InvalidProfileOutputName;
         }
     }
 };

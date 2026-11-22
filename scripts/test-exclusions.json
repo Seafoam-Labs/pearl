@@ -3,6 +3,7 @@
   "subprojects/dome/tests/soak.py": "Manual resource measurement with duration-specific acceptance; use documented Dome soak procedure.",
   "subprojects/phyto/tests/network_protocols.py": "Manual SMB/SFTP qualification; requires an operator-supplied server root, rootlesskit and OpenSSH fixtures via --server-root and --rootlesskit.",
   "subprojects/phyto/tests/previews_helper.py": "Fixture subprocess used by the registered preview-provider tests.",
+  "tests/integration/agent_conversation_fixture.py": "Fixture subprocess used by the native agent conversation tests.",
   "tests/integration/background_effect_trace.py": "Shared harness helper; exercised by its importing suites.",
   "tests/integration/bar_clocks.py": "Shared harness helper; exercised by its importing suites.",
   "tests/integration/bar_opacity.py": "Shared harness helper; exercised by its importing suites.",

@@ -37,6 +37,19 @@ def main():
    checks['helper-and-config-bound-to-compositor-despite-conflicting-pearl-environment']=True
    assert v['capabilities']['apply'] and v['capabilities']['display'],v
    checks['matching-toolchain-negotiation']=True
+   # Exercise the schema-driven placement select through Pearl's real draft,
+   # validation, persistence and refresh path against the pinned helper.
+   position_id='layout.options.scrolling.new_window_position'
+   for position in ('right','left','above','below','append'):
+    stage(s,args.ctl,changes=[dict(id=position_id,value=position)])
+    ctl(s,args.ctl,'aqueous','validate');v=settled(s,args.ctl)
+    assert v['outcome']=='validated',v
+    ctl(s,args.ctl,'aqueous','apply');v=settled(s,args.ctl)
+    assert v['outcome']=='saved',v
+    assert state(s,args.ctl,position_id)['value']==position
+    layout=Path(s.env['XDG_CONFIG_HOME'])/'aqueous/layout.toml'
+    assert f'new_window_position = "{position}"' in layout.read_text()
+   checks['scrolling-placement-five-options-roundtrip']=True
    # Exercise the new bounded CLI entry point against authoritative IPC state.
    ws=next(e for e in ipc.state() if e['kind']=='workspace')
    ctl(s,args.ctl,'wm','action','--text',json.dumps(dict(workspace_rename=dict(id=ws['id'],name='Master test'))))

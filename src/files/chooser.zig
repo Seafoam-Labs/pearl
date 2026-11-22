@@ -1187,6 +1187,7 @@ pub fn setLocalOnly(d: *gtk.Dialog, value: c_int) callconv(.c) void {
 }
 pub fn setAcceptLabel(d: *gtk.Dialog, text: [*:0]const u8) callconv(.c) void {
     cast(gtk.Button, state(d).accept_button).setLabel(text);
+    cast(gtk.Button, state(d).accept_button).setUseUnderline(1);
 }
 pub fn setCaller(d: *gtk.Dialog, name: [*:0]const u8) callconv(.c) void {
     const s = state(d);

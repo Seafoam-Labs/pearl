@@ -59,10 +59,14 @@ test "custom patterns override the built-in time and date formats" {
     const shortcuts = try clock.format(a, .{ .id = "u", .time_format = "%R", .date_format = "%F %-d %b" }, utc, zone, false);
     try std.testing.expectEqualStrings("07:00", shortcuts.time);
     try std.testing.expectEqualStrings("2026-03-08 8 Mar", shortcuts.date);
-    // Custom patterns are used verbatim; only built-ins stack on vertical bars.
+    // Custom patterns are used in both orientations; only built-ins stack on vertical bars.
     const vertical = try clock.format(a, .{ .id = "u", .time_format = "%H:%M" }, utc, zone, true);
     try std.testing.expectEqualStrings("07:00", vertical.time);
     try std.testing.expectEqualStrings("Sun\n08\nMar", vertical.date);
+    // A literal backslash-n and a raw newline both stack lines in any orientation.
+    const stacked = try clock.format(a, .{ .id = "u", .time_format = "%H\\n%M", .date_format = "%a\n%d" }, utc, zone, false);
+    try std.testing.expectEqualStrings("07\n00", stacked.time);
+    try std.testing.expectEqualStrings("Sun\n08", stacked.date);
 }
 test "discovery and resolution reject expressions and paths while retaining aliases" {
     try std.testing.expect(!clock.available("NoSuch/Zone"));

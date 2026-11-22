@@ -9,18 +9,19 @@ const probe = @import("runtime_probe.zig");
 const io = @import("../config/io.zig");
 const telemetry = @import("telemetry.zig");
 const memory = @import("memory.zig");
-pub const fixture_revision: u32 = 1;
+pub const fixture_revision: u32 = 2;
 pub const Mode = enum { cpu, current, cpu_gpu };
 pub const Outcome = enum { answer, results_only, truncated, timeout, cancelled, skipped, incompatible, tool_error, runtime_error, incorrect };
 pub const Settings = struct {
     model_id: []const u8,
+    custom_model: []const u8 = "",
     runtime: cfg.RuntimeConfig,
     compute: cfg.Compute,
     threads: u32,
     context: u32,
     generation: u32,
     pub fn config(self: Settings) cfg.Config {
-        return .{ .enabled = true, .model_id = self.model_id, .runtime = self.runtime, .compute = self.compute, .cpu_threads = self.threads, .context_tokens = self.context, .answer_tokens = self.generation, .read_pages = true };
+        return .{ .enabled = true, .model_id = self.model_id, .custom_model = self.custom_model, .runtime = self.runtime, .compute = self.compute, .cpu_threads = self.threads, .context_tokens = self.context, .answer_tokens = self.generation, .read_pages = true };
     }
     pub fn adopt(self: Settings, current: *cfg.Config) void {
         current.model_id = self.model_id;
@@ -104,9 +105,24 @@ pub fn hardware(a: std.mem.Allocator) !Hardware {
     result.fingerprint = try a.dupe(u8, &io.digest(stable));
     return result;
 }
-pub const Options = struct { selected: [registry.models.len]bool = .{ false, false, true, true, true }, mode: Mode = .cpu, detailed: bool = false };
+pub const Options = struct { selected: [registry.models.len]bool = .{ true, false, true, true }, mode: Mode = .cpu, detailed: bool = false };
 pub fn candidates(a: std.mem.Allocator, base: cfg.Config, options: Options, host: Hardware, devices: []const @import("compute.zig").Device) ![]Settings {
     var result: std.ArrayList(Settings) = .empty;
+    // Custom model: benchmark a single user-supplied GGUF without registry lookup.
+    if (std.mem.eql(u8, base.model_id, "custom")) {
+        var seed: Settings = .{ .model_id = "custom", .custom_model = base.custom_model, .runtime = base.runtime, .compute = if (options.mode == .current) base.compute else .{}, .threads = if (options.mode == .current) base.cpu_threads else 0, .context = base.contextTokens(), .generation = base.answerTokens() };
+        try appendUnique(a, &result, seed);
+        if (options.mode == .cpu_gpu) {
+            seed.compute = .{ .mode = .auto, .backend = base.compute.backend };
+            try appendUnique(a, &result, seed);
+            for (devices) |device| {
+                if (device.ambiguous or (base.compute.backend != .auto and device.backend != base.compute.backend)) continue;
+                seed.compute = .{ .mode = .gpu, .backend = device.backend, .device_id = device.id, .allow_cpu_fallback = base.compute.allow_cpu_fallback };
+                try appendUnique(a, &result, seed);
+            }
+        }
+        return result.items;
+    }
     for (registry.models, options.selected) |model, selected| {
         if (!selected) continue;
         var seed: Settings = .{ .model_id = model.id, .runtime = base.runtime, .compute = if (options.mode == .current) base.compute else .{}, .threads = if (options.mode == .current) base.cpu_threads else 0, .context = if (options.mode == .current and base.context_tokens != 0) base.context_tokens else model.context_tokens, .generation = if (options.mode == .current and base.answer_tokens != 0) base.answer_tokens else model.answer_tokens };
@@ -159,8 +175,8 @@ fn appendUnique(a: std.mem.Allocator, result: *std.ArrayList(Settings), item: Se
 }
 pub const Fixture = struct { id: []const u8, question: []const u8, followup: []const u8, evidence: []const u8, expected: ?[]const u8 = null, followup_expected: ?[]const u8 = null };
 pub const fixtures = [_]Fixture{
-    .{ .id = "memory", .question = "What is the difference between RAM and storage?", .followup = "Will adding RAM give me more space for saved files? Use the existing evidence.", .evidence = "RAM holds active working data temporarily and loses its contents when power is removed. Storage retains saved files between sessions. Adding RAM does not increase storage space." },
-    .{ .id = "timetable", .question = "In the supplied depot timetable, how many minutes is the trip from Alder to Birch?", .followup = "The return trip takes 13 minutes longer. How many minutes is the return trip?", .evidence = "The fictional depot timetable lists the Alder departure at 09:00 and the Birch arrival at 09:47. This outward trip takes 47 minutes. The return trip takes 13 minutes longer, or 60 minutes.", .expected = "47", .followup_expected = "60" },
+    .{ .id = "memory", .question = "Search the supplied sources for the difference between RAM and storage, then explain it with citations.", .followup = "Will adding RAM give me more space for saved files? Use the existing evidence.", .evidence = "RAM holds active working data temporarily and loses its contents when power is removed. Storage retains saved files between sessions. Adding RAM does not increase storage space." },
+    .{ .id = "timetable", .question = "Search for the supplied depot timetable. Using that evidence, how many minutes is the trip from Alder to Birch? Cite the source.", .followup = "The return trip takes 13 minutes longer. How many minutes is the return trip?", .evidence = "The fictional depot timetable lists the Alder departure at 09:00 and the Birch arrival at 09:47. This outward trip takes 47 minutes. The return trip takes 13 minutes longer, or 60 minutes.", .expected = "47", .followup_expected = "60" },
 };
 const Local = struct {
     fixture: Fixture,
@@ -219,7 +235,7 @@ pub const Result = struct {
     samples: []const Sample = &.{},
     pub fn successful(self: Result) bool {
         if (!self.complete or self.error_code.len > 0 or self.samples.len != fixtures.len * 8) return false;
-        for (self.samples) |sample| if (sample.outcome != .answer or sample.fallback.len > 0 or (self.settings.compute.mode != .cpu and !sample.gpu)) return false;
+        for (self.samples) |sample| if (sample.outcome != .answer or sample.error_code.len > 0 or sample.fallback.len > 0 or (self.settings.compute.mode != .cpu and !sample.gpu)) return false;
         return true;
     }
     pub fn actualCompute(self: Result) []const u8 {
@@ -258,9 +274,11 @@ pub const Progress = struct {
     skip: std.atomic.Value(bool) = .init(false),
 };
 pub fn execute(a: std.mem.Allocator, base: cfg.Config, options: Options, cancel: *gio.Cancellable, progress: *Progress) !Run {
-    for (options.selected) |selected| {
-        if (selected) break;
-    } else return error.SelectBenchmarkModels;
+    if (!std.mem.eql(u8, base.model_id, "custom")) {
+        for (options.selected) |selected| {
+            if (selected) break;
+        } else return error.SelectBenchmarkModels;
+    }
     const host = try hardware(a);
     var run: Run = .{ .id = try std.fmt.allocPrint(a, "{d}-{d}", .{ glib.getRealTime(), std.c.getpid() }), .started_us = glib.getRealTime(), .hardware = host, .options = options };
     try save(a, run);
@@ -301,9 +319,10 @@ pub fn execute(a: std.mem.Allocator, base: cfg.Config, options: Options, cancel:
 fn measure(a: std.mem.Allocator, result: *Result, cancel: *gio.Cancellable, progress: *Progress) !void {
     const config = result.settings.config();
     try config.validate();
-    const model = registry.find(config.model_id) orelse return error.UnknownAssistantModel;
-    result.model_hash = model.sha256;
-    result.model_identity = probe.fingerprint(a, try @import("downloads.zig").path(a, model)) catch return error.ModelNotInstalled;
+    const model = registry.find(config.model_id);
+    const model_path = if (model) |m| try @import("downloads.zig").path(a, m) else try a.dupeSentinel(u8, config.custom_model, 0);
+    result.model_hash = if (model) |m| m.sha256 else "";
+    result.model_identity = probe.fingerprint(a, model_path) catch return error.ModelNotInstalled;
     var metrics: telemetry.Metrics = .{ .skip = &progress.skip };
     var runtime: @import("runtime.zig").Runtime = .{ .telemetry = &metrics };
     defer runtime.stop();
@@ -349,9 +368,10 @@ fn measure(a: std.mem.Allocator, result: *Result, cancel: *gio.Cancellable, prog
             const first_us = live.first_visible_us.load(.monotonic);
             if (first_us > 0) sample.first_visible_ms = milliseconds(first_us - started);
             sample.answer = try a.dupe(u8, answer.text);
-            sample.outcome = if (answer.summarized) .answer else .results_only;
+            sample.outcome = classifyAnswer(answer);
+            sample.error_code = try a.dupe(u8, answer.error_code);
             const expected = if (turn_index == 0) fixture.expected else fixture.followup_expected;
-            if (answer.summarized and expected != null and std.mem.indexOf(u8, answer.text, expected.?) == null) sample.outcome = .incorrect;
+            if (sample.outcome == .answer and expected != null and std.mem.indexOf(u8, answer.text, expected.?) == null) sample.outcome = .incorrect;
             sample.searches = local.searches - before_searches;
             sample.reads = local.reads - before_reads;
             sample.tokens = metrics.tokens;
@@ -359,7 +379,15 @@ fn measure(a: std.mem.Allocator, result: *Result, cancel: *gio.Cancellable, prog
             sample.fallback = try a.dupe(u8, runtime.fallback_reason);
             try samples.append(a, sample);
             progress.sample.store(@intCast(samples.items.len), .monotonic);
-            if (!answer.summarized) break;
+            switch (answer.outcome) {
+                .completed => {},
+                .partial => break,
+                .cancelled => return error.Cancelled,
+                .failed => {
+                    result.error_code = if (sample.error_code.len > 0) sample.error_code else "AnswerFailed";
+                    return;
+                },
+            }
             turn[0] = .{ .question = fixture.question, .answer = answer.text };
             turns = &turn;
             previous = answer.sources;
@@ -367,14 +395,36 @@ fn measure(a: std.mem.Allocator, result: *Result, cancel: *gio.Cancellable, prog
     };
 }
 pub fn classify(err: anyerror) Outcome {
-    return switch (err) {
-        error.Cancelled => .cancelled,
-        error.BenchmarkSkipped => .skipped,
-        error.GenerationTruncated => .truncated,
-        error.TurnTimedOut, error.RuntimeCheckTimedOut, error.RequestTimedOut => .timeout,
-        error.ModelToolsIncompatible, error.RuntimeReasoningUnsupported, error.RuntimeCapabilityMissing, error.RuntimeAuthenticationMissing => .incompatible,
-        error.ToolBudgetExceeded, error.InvalidToolCall, error.UnknownSource => .tool_error,
-        else => .runtime_error,
+    return classifyCode(@errorName(err));
+}
+fn classifyCode(code: []const u8) Outcome {
+    const codes = .{
+        .{ "Cancelled", Outcome.cancelled },
+        .{ "BenchmarkSkipped", Outcome.skipped },
+        .{ "GenerationTruncated", Outcome.truncated },
+        .{ "TurnTimedOut", Outcome.timeout },
+        .{ "RuntimeCheckTimedOut", Outcome.timeout },
+        .{ "RequestTimedOut", Outcome.timeout },
+        .{ "ModelChatIncompatible", Outcome.incompatible },
+        .{ "ModelToolsIncompatible", Outcome.incompatible },
+        .{ "RuntimeReasoningUnsupported", Outcome.incompatible },
+        .{ "RuntimeCapabilityMissing", Outcome.incompatible },
+        .{ "RuntimeAuthenticationMissing", Outcome.incompatible },
+        .{ "ToolBudgetExceeded", Outcome.tool_error },
+        .{ "InvalidToolCall", Outcome.tool_error },
+        .{ "UnknownSource", Outcome.tool_error },
+    };
+    inline for (codes) |entry| if (std.mem.eql(u8, code, entry[0])) return entry[1];
+    return .runtime_error;
+}
+pub fn classifyAnswer(answer: controller.Answer) Outcome {
+    if (answer.outcome == .cancelled) return .cancelled;
+    if (answer.error_code.len > 0) return classifyCode(answer.error_code);
+    return switch (answer.outcome) {
+        .completed => .answer,
+        .partial => .results_only,
+        .cancelled => .cancelled,
+        .failed => .runtime_error,
     };
 }
 fn milliseconds(us: i64) f64 {
@@ -393,7 +443,7 @@ pub fn summarize(result: Result) Summary {
         if (sample.warmup or summary.measured == values.len) continue;
         values[summary.measured] = sample.complete_ms;
         summary.measured += 1;
-        if (sample.outcome == .answer) summary.passed += 1;
+        if (sample.outcome == .answer and sample.error_code.len == 0) summary.passed += 1;
         if (sample.first_visible_ms) |ms| {
             firsts[first_count] = ms;
             first_count += 1;
@@ -506,6 +556,29 @@ pub fn remove(a: std.mem.Allocator, id: []const u8) !void {
     if (std.c.unlink(try path(a, id)) != 0) return error.BenchmarkDeleteFailed;
 }
 
+test "benchmark classifies explicit answers without requiring sources" {
+    const answer: controller.Answer = .{ .text = "A direct conversational answer.", .sources = &.{} };
+    try std.testing.expectEqual(.answer, classifyAnswer(answer));
+    var changed = answer;
+    changed.outcome = .partial;
+    try std.testing.expectEqual(.results_only, classifyAnswer(changed));
+    changed.outcome = .cancelled;
+    try std.testing.expectEqual(.cancelled, classifyAnswer(changed));
+    changed.outcome = .failed;
+    try std.testing.expectEqual(.runtime_error, classifyAnswer(changed));
+    changed.error_code = "GenerationTruncated";
+    try std.testing.expectEqual(.truncated, classifyAnswer(changed));
+    changed.outcome = .partial;
+    try std.testing.expectEqual(.truncated, classifyAnswer(changed));
+    changed.error_code = "RequestTimedOut";
+    try std.testing.expectEqual(.timeout, classifyAnswer(changed));
+    changed.outcome = .completed;
+    try std.testing.expectEqual(.timeout, classifyAnswer(changed));
+    try std.testing.expectEqual(.truncated, classify(error.GenerationTruncated));
+    try std.testing.expectEqual(.incompatible, classify(error.ModelChatIncompatible));
+    try std.testing.expectEqual(.tool_error, classify(error.UnknownSource));
+}
+
 test "benchmark adoption preserves providers and enable choice" {
     var config: cfg.Config = .{};
     const settings: Settings = .{ .model_id = registry.models[2].id, .runtime = .{}, .compute = .{}, .threads = 8, .context = 16384, .generation = 2048 };
@@ -520,15 +593,22 @@ test "unfinished, truncated and fallback runs cannot be recommended" {
     defer arena.deinit();
     const a = arena.allocator();
     const host = try hardware(a);
-    const choices = try candidates(a, .{ .cpu_threads = 7 }, .{ .selected = .{ false, false, false, false, true }, .detailed = true }, host, &.{});
+    const choices = try candidates(a, .{ .cpu_threads = 7 }, .{ .selected = .{ false, false, false, true }, .detailed = true }, host, &.{});
     try std.testing.expect(choices.len > 1);
     var samples: [fixtures.len * 8]Sample = undefined;
     for (&samples, 0..) |*sample, i| sample.* = .{ .fixture = "memory", .followup = false, .warmup = i < 4, .outcome = .answer, .complete_ms = 10 };
     var result: Result = .{ .settings = choices[0], .complete = true, .samples = &samples, .group = "same", .peak_rss_kib = 100 };
     try std.testing.expectEqual(@as(?usize, 0), recommend(&.{result}, "same", &.{false}).fastest);
-    samples[4].outcome = .truncated;
-    try std.testing.expectEqual(@as(?usize, null), recommend(&.{result}, "same", &.{false}).fastest);
+    for ([_]Outcome{ .results_only, .truncated, .cancelled, .runtime_error, .tool_error, .incorrect }) |outcome| {
+        samples[4].outcome = outcome;
+        try std.testing.expectEqual(@as(?usize, null), recommend(&.{result}, "same", &.{false}).fastest);
+        try std.testing.expectEqual(@as(usize, 11), summarize(result).passed);
+    }
     samples[4].outcome = .answer;
+    samples[4].error_code = "GenerationTruncated";
+    try std.testing.expect(!result.successful());
+    try std.testing.expectEqual(@as(usize, 11), summarize(result).passed);
+    samples[4].error_code = "";
     samples[4].fallback = "GPU failed";
     try std.testing.expect(!result.successful());
     samples[4].fallback = "";

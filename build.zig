@@ -7,8 +7,8 @@ var pearl_version: *std.Build.Module = undefined;
 pub fn build(b: *std.Build) void {
     defer @import("pearl_ffi").attach(b, b.path("bindings/c"));
     @import("packaging/assistant/build.zig").add(b);
-    if (!std.mem.eql(u8, builtin.zig_version_string, "0.17.0"))
-        @panic("Pearl requires Zig 0.17.0; see .zigversion");
+    if (!std.mem.eql(u8, builtin.zig_version_string, "0.17.1"))
+        @panic("Pearl requires Zig 0.17.1; see .zigversion");
     const plugin_examples = b.option([]const u8, "plugin-examples", "Prebuilt plugin examples and failure fixtures") orelse ".cache/plugin-examples";
     const wasm_plugins = b.option(bool, "wasm-plugins", "Build the experimental WebAssembly plugin helper") orelse false;
     const community_theme_repository = b.option(bool, "community-theme-repository", "Include the Seafoam GitHub community repository by default") orelse true;
@@ -438,6 +438,8 @@ pub fn build(b: *std.Build) void {
     const pure_module = createModule(b, .{ .root_source_file = b.path("src/tests.zig"), .target = target, .optimize = optimize });
     pure_module.addAnonymousImport("aqueous_presentation_fixture", .{ .root_source_file = b.path("tests/fixtures/aqueous-master/snapshot.json") });
     pure_module.addImport("aqueous_fixtures", createModule(b, .{ .root_source_file = b.path("tests/fixtures/aqueous/fixtures.zig"), .target = target, .optimize = optimize }));
+    // scx's contract fixtures for scxcli's clients.
+    pure_module.addImport("scx_fixtures", createModule(b, .{ .root_source_file = b.path("tests/fixtures/scx/fixtures.zig"), .target = target, .optimize = optimize }));
     const pure = b.addTest(.{ .root_module = pure_module });
     const filter_module = createModule(b, .{ .root_source_file = b.path("src/notification_filter_tests.zig"), .target = target, .optimize = optimize, .link_libc = true });
     filter_module.linkSystemLibrary("glib-2.0", .{ .use_pkg_config = .yes });
@@ -455,7 +457,19 @@ pub fn build(b: *std.Build) void {
     bar_clock.setEnvironmentVariable("LC_ALL", "C");
     b.step("test-bar-clock", "Verify time-zone clocks, DST, formatting and zone discovery").dependOn(&bar_clock.step);
     b.step("test-night-light-clock", "Verify Night Light schedules across timezone and DST transitions").dependOn(&night_clock.step);
-    const test_step = b.step("test", "Run model, clipboard and Unicode policy tests");
+    // GIO's file monitor on a private temporary directory, no session needed.
+    const catalog_watch_module = createModule(b, .{ .root_source_file = b.path("src/services/catalog_watch.zig"), .target = target, .optimize = optimize, .link_libc = true });
+    for ([_][]const u8{ "gio2", "glib2", "gobject2" }) |name| catalog_watch_module.addImport(name, bindings.module(name));
+    catalog_watch_module.linkSystemLibrary("gio-2.0", .{ .use_pkg_config = .yes });
+    const catalog_watch = b.addRunArtifact(b.addTest(.{ .root_module = catalog_watch_module }));
+    b.step("test-catalog-watch", "Verify the scheduler catalog is noticed when it or its directory appears later").dependOn(&catalog_watch.step);
+    // Steam library scanning against private temporary directories, no session needed.
+    const steam_library_module = createModule(b, .{ .root_source_file = b.path("src/desktop/steam_library.zig"), .target = target, .optimize = optimize, .link_libc = true });
+    for ([_][]const u8{ "gio2", "glib2", "gobject2" }) |name| steam_library_module.addImport(name, bindings.module(name));
+    steam_library_module.linkSystemLibrary("gio-2.0", .{ .use_pkg_config = .yes });
+    const steam_library_tests = b.addRunArtifact(b.addTest(.{ .root_module = steam_library_module }));
+    b.step("test-steam-library", "Verify Steam library scanning, shortcut generation and stale-entry pruning").dependOn(&steam_library_tests.step);
+    const test_step = b.step("test", "Run model and Unicode policy tests without GTK or a compositor");
     const clipboard_module = gtkModule(b, bindings, target, optimize, "src/clipboard_json_tests.zig", pulse_module);
     clipboard_module.addImport("wayland", native);
     configureApp(b, clipboard_module, resources, false, false, community_theme_repository, false, portal_variant == .git);
@@ -463,9 +477,10 @@ pub fn build(b: *std.Build) void {
     clipboard_core_tests.has_side_effects = true;
     clipboard_core_tests.setEnvironmentVariable("LC_ALL", "C");
     b.step("test-clipboard-history", "Verify clipboard JSON, private filesystem persistence, history and GTK panel behavior").dependOn(&clipboard_core_tests.step);
-    test_step.dependOn(&clipboard_core_tests.step);
     test_step.dependOn(&b.addRunArtifact(pure).step);
     test_step.dependOn(&filter_tests.step);
+    test_step.dependOn(&catalog_watch.step);
+    test_step.dependOn(&steam_library_tests.step);
     const i18n_tests = b.addSystemCommand(&.{ b.graph.zig_exe, "build", "--build-file", "translations/build.zig", "test", "check-templates" });
     i18n_tests.setCwd(b.path("."));
     i18n_tests.has_side_effects = true;
@@ -507,12 +522,6 @@ pub fn build(b: *std.Build) void {
     const ctl = b.addExecutable(.{ .name = "pearlctl", .root_module = ctl_module });
     b.installArtifact(ctl);
     b.step("build-ctl", "Stage the Pearl command-line client").dependOn(&b.addInstallArtifact(ctl, .{}).step);
-
-    // Root helper for scheduling profiles; packaging installs it in lib/pearl.
-    const scheduling_helper_module = createModule(b, .{ .root_source_file = b.path("src/scheduling_helper_main.zig"), .target = target, .optimize = optimize, .link_libc = true });
-    for ([_][]const u8{ "gio2", "glib2", "gobject2" }) |name| scheduling_helper_module.addImport(name, bindings.module(name));
-    scheduling_helper_module.strip = release;
-    b.installArtifact(b.addExecutable(.{ .name = "pearl-scheduling-helper", .root_module = scheduling_helper_module }));
 
     if (wasm_plugins) {
         const check = b.addSystemCommand(&.{ "python3", "tests/integration/test_plugins.py", "--pearl" });
@@ -614,6 +623,15 @@ pub fn build(b: *std.Build) void {
     settings_services.addArtifactArg(spike);
     settings_services.addPassthruArgs();
     b.step("test-settings-services", "Verify standalone live pages and complete Aqueous editor boundary").dependOn(&settings_services.step);
+
+    const settings_field_search = b.addSystemCommand(&.{ "python3", "tests/integration/test_settings_field_search.py", "--settings" });
+    settings_field_search.addArtifactArg(settings_test_app);
+    settings_field_search.addArg("--pearl");
+    settings_field_search.addArtifactArg(app);
+    settings_field_search.addArg("--ctl");
+    settings_field_search.addArtifactArg(ctl);
+    settings_field_search.addPassthruArgs();
+    b.step("test-settings-field-search", "Verify field-level search across Aqueous schema fields and the Pearl manifest").dependOn(&settings_field_search.step);
 
     const settings_displays = b.addSystemCommand(&.{ "python3", "tests/integration/test_settings_displays.py", "--settings" });
     settings_displays.addArtifactArg(settings_test_app);
@@ -806,6 +824,12 @@ pub fn build(b: *std.Build) void {
     settings_integration.addArtifactArg(production_locker);
     settings_integration.addArg("--themes");
     settings_integration.addArtifactArg(themes_tool);
+    settings_integration.addArg("--portal");
+    settings_integration.addArtifactArg(portal);
+    settings_integration.addArg("--capture-picker");
+    settings_integration.addArtifactArg(capture);
+    settings_integration.addArg("--preview-helper");
+    settings_integration.addArtifactArg(preview_helper);
     settings_integration.addPassthruArgs();
     b.step("test-settings-integration", "Verify staged Settings desktop, CLI and flyout launch integration").dependOn(&settings_integration.step);
 

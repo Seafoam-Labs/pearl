@@ -363,9 +363,21 @@ fn collectJournal(alloc: std.mem.Allocator, owner: *Server) !report.Journal {
     defer cancel.unref();
     var boot_storage: [64]u8 = undefined;
     const boot = std.mem.trim(u8, procText("/proc/sys/kernel/random/boot_id", &boot_storage) orelse return error.BootIdentityUnavailable, "\r\n");
-    const boot_arg = try alloc.dupeSentinel(u8, boot, 0);
+    // journalctl's boot descriptor is dashless 32-hex only, and --boot must
+    // carry its value attached; a detached dashed UUID falls through to
+    // match parsing ("Failed to add match … Invalid argument").
+    var boot_hex: [32]u8 = undefined;
+    var hex_len: usize = 0;
+    for (boot) |ch| {
+        if (ch == '-') continue;
+        if (hex_len == boot_hex.len or !std.ascii.isHex(ch)) return error.BootIdentityUnavailable;
+        boot_hex[hex_len] = ch;
+        hex_len += 1;
+    }
+    if (hex_len != boot_hex.len) return error.BootIdentityUnavailable;
+    const boot_arg = try std.fmt.allocPrintSentinel(alloc, "--boot={s}", .{boot_hex}, 0);
     var argv: std.ArrayList([:0]const u8) = .empty;
-    try argv.appendSlice(alloc, &.{ "journalctl", "--user", "-b", boot_arg, "--no-pager", "-o", "json", "-n", "501", "--output-fields=MESSAGE,_PID,_SYSTEMD_INVOCATION_ID,__REALTIME_TIMESTAMP" });
+    try argv.appendSlice(alloc, &.{ "journalctl", "--user", boot_arg, "--no-pager", "-o", "json", "-n", "501", "--output-fields=MESSAGE,_PID,_SYSTEMD_INVOCATION_ID,__REALTIME_TIMESTAMP" });
     try argv.append(alloc, try std.fmt.allocPrintSentinel(alloc, "--since=@{d}", .{since}, 0));
     const until = glib.getRealTime();
     try argv.append(alloc, try std.fmt.allocPrintSentinel(alloc, "--until=@{d}.{d:0>6}", .{ @as(u64, @intCast(@divTrunc(until, 1_000_000))), @as(u32, @intCast(@mod(until, 1_000_000))) }, 0));

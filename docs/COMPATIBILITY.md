@@ -14,7 +14,7 @@ Qt Quick/Kirigami palette inheritance is partial; Dolphin/Kate, KDE-runtime Flat
 and physical login remain unverified. See [Qt theming](QT_THEMING.md) and
 [current evidence](../artifacts/qtengine/README.md).
 
-The current integration pins Zig **0.17.0**, Aqueous
+The current integration pins Zig **0.17.1**, Aqueous
 `debc0353e745890f205cd399613f942f83e34986`, whose aqueous-config is **1.0.12**.
 The supported helper version floor remains **0.8.2**.
 The fixture builder uses `.cache/aqueous-zig17-debc035`; its `metadata.json`

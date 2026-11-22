@@ -28,7 +28,10 @@ const Owner = @import("../../services/view_ownership.zig").Owner;
 const Layout = @import("../../platform/wayland/layout.zig").Layout;
 const Groups = @import("../../desktop/policy.zig").Groups;
 const slideshow_policy = @import("../../config/slideshow_policy.zig");
+const crop_policy = @import("../../config/crop_policy.zig");
+const prefs_model = @import("../../config/preferences.zig");
 const Crop = @import("../../desktop/wallpaper_crop.zig");
+const pixbuf = @import("gdkpixbuf2");
 const tr = @import("../../desktop/text.zig").tr;
 const power_presentation = @import("../../services/power_presentation.zig");
 const log = std.log.scoped(.ui);
@@ -55,6 +58,9 @@ const Surface = struct {
     switcher_spoken: ?[:0]u8 = null,
     bar: ?*Bar.Bar = null,
     autohide: ?*BarAutohide = null,
+    /// Bar switched off for this output; guards exclusive-zone writes on the
+    /// rare path where the autohide controller is unavailable.
+    bar_off: bool = false,
     launcher: ?*Launcher = null,
     launcher_picker: ?*LauncherPicker.View = null,
     running_apps: ?*Running.Chooser = null,
@@ -76,6 +82,14 @@ const Surface = struct {
     wallpaper_pictures: [2]?*gtk.Picture = .{ null, null },
     wallpaper_index: u8 = 0,
     wallpaper_texture: ?*gdk.Texture = null,
+    /// This output's own wallpaper, decoded and cropped here instead of sharing
+    /// the service's single global texture. `override_key` (path + crop) gates a
+    /// re-decode so an unrelated preference change does not reload the image;
+    /// `override_css`/`override_color` repaint the background for a solid fit.
+    override_texture: ?*gdk.Texture = null,
+    override_key: ?[:0]u8 = null,
+    override_css: ?*gtk.CssProvider = null,
+    override_color: ?[:0]u8 = null,
     appearance_revision: u64 = std.math.maxInt(u64),
     measure_signal: c_ulong = 0,
     measure_clock: ?*gdk.FrameClock = null,
@@ -106,6 +120,13 @@ const Surface = struct {
         }
         self.effects.deinit();
 
+        if (self.override_texture) |texture| texture.unref();
+        if (self.override_key) |key| a.free(key);
+        if (self.override_css) |provider| {
+            self.window.as(gtk.Widget).getStyleContext().removeProvider(provider.as(gtk.StyleProvider));
+            provider.unref();
+        }
+        if (self.override_color) |color| a.free(color);
         self.window.destroy();
         self.window.unref();
         self.panel.unref();
@@ -166,6 +187,8 @@ pub const Manager = struct {
     network: @import("../../services/network.zig").Network = undefined,
     bluetooth: @import("../../services/bluetooth.zig").Bluetooth = undefined,
     session_services: @import("../../services/session.zig").Session = undefined,
+    autostart: @import("../../services/autostart.zig").Service = undefined,
+    autostart_launched: bool = false,
     clipboard: @import("../../services/clipboard.zig").Clipboard = undefined,
     capture: @import("../../services/capture.zig").Capture = undefined,
     capture_hide: bool = false,
@@ -178,6 +201,8 @@ pub const Manager = struct {
     aqueous_settings: @import("../../config/aqueous_client.zig").Client = undefined,
     preferences: @import("../../config/service.zig").Service = undefined,
     agent: @import("../../agent/host.zig").Host = .{},
+    semantic: @import("../../search/service.zig").Service = .{},
+    power_profile: ?*gio.PowerProfileMonitor = null,
     slideshow: @import("../../config/slideshow.zig").Engine = undefined,
     border_theme: @import("../../config/border_theme.zig").Sync = .{},
     identifiers: std.ArrayList(*Surface) = .empty,
@@ -236,6 +261,7 @@ pub const Manager = struct {
         self.layout = try Layout.init(self.display, self, layoutChanged);
         self.layout.?.start();
         self.index.start();
+        @import("../../desktop/steam_library.zig").startAsync(self.app.as(gio.Application));
         self.desktop_directory = try DesktopDirectory.Store.create(self.app.as(gio.Application));
         self.desktop_directory.?.context = self;
         self.desktop_directory.?.changed = desktopChanged;
@@ -273,6 +299,8 @@ pub const Manager = struct {
         self.network.start();
         self.bluetooth.start();
         try self.session_services.start(if (self.preferences.live != null) self.preferences.prefs().notifications else null);
+        self.autostart = .{ .app = self.app.as(gio.Application), .context = self, .changed = autostartChanged };
+        self.autostart.start() catch |err| log.warn("event=autostart-unavailable error={s}", .{@errorName(err)});
         try self.clipboard.start();
         try self.capture.start();
         self.plugins = try @import("../../plugins/manager.zig").Manager.create(self.app.as(gio.Application), self, pluginsChanged);
@@ -285,10 +313,22 @@ pub const Manager = struct {
         self.monitor_signal = gio.ListModel.signals.items_changed.connect(self.display.getMonitors(), *Manager, monitorsChanged, self, .{});
         self.gtk_settings_signal = object.Object.signals.notify.connect(gtk.Settings.getForDisplay(self.display).as(object.Object), *Manager, gtkSettingsChanged, self, .{});
         self.watchMonitors();
+        self.semantic.chat_busy = chatBusy;
+        self.semantic.chat_context = self;
+        self.semantic.host = semanticHostSignals;
+        self.semantic.host_context = self;
+        self.lifecycle.maintenance = semanticMaintenance;
+        self.lifecycle.maintenance_context = self;
+        self.lifecycle.configureMaintenance(if (self.preferences.prefs().assistant.semantic.enabled) @import("../../search/schedule.zig").maintenance_idle_seconds else 0);
+        self.semantic.start();
+        self.semantic.configure(self.preferences.prefs().assistant);
         self.schedule();
     }
     pub fn deinit(self: *Manager) void {
         self.agent.stop();
+        self.semantic.deinit();
+        if (self.power_profile) |monitor| monitor.unref();
+        self.power_profile = null;
         if (!self.running) return;
         self.running = false;
         if (self.desktop_directory) |store| {
@@ -329,6 +369,7 @@ pub const Manager = struct {
             self.clipboard.stop();
             self.capture.stop();
             self.session_services.stop();
+            self.autostart.stop();
             self.services_started = false;
         }
         if (self.osd_flush != 0) _ = glib.Source.remove(self.osd_flush);
@@ -347,11 +388,13 @@ pub const Manager = struct {
         self.schedule();
     }
     /// Opens the crop editor for one image against the output it has to fill.
+    /// `save_connector` names the output whose override receives the crop, or
+    /// null to edit the global wallpaper (the bar picker is a global control).
     /// A second request is dropped: the editor is modal, so whatever is behind
     /// it is already unreachable.
-    pub fn openCrop(self: *Manager, parent: *gtk.Window, output: *Output, path: []const u8) void {
+    pub fn openCrop(self: *Manager, parent: *gtk.Window, output: *Output, path: []const u8, save_connector: ?[]const u8) void {
         if (self.crop != null) return;
-        self.crop = Crop.Window.open(parent, &self.preferences, &self.effects, path, output.bounds.width, output.bounds.height, .{ .context = self, .closed = cropClosed }) catch |err| {
+        self.crop = Crop.Window.open(parent, &self.preferences, &self.effects, path, save_connector, output.bounds.width, output.bounds.height, .{ .context = self, .closed = cropClosed }) catch |err| {
             log.warn("event=wallpaper-crop-open-failed path={s} error={s}", .{ path, @errorName(err) });
             return;
         };
@@ -379,15 +422,16 @@ pub const Manager = struct {
     fn wallpaperPressed(_: *gtk.GestureClick, presses: c_int, _: f64, _: f64, s: *Surface) callconv(.c) void {
         if (s.desktop_icons != null) return;
         if (presses != 2) return;
-        const path = s.manager.preferences.prefs().wallpaper.path;
+        const path = s.manager.preferences.prefs().wallpaperForOutput(s.output.connector).path;
         if (path.len == 0) return;
-        s.manager.openCrop(s.window, s.output, path);
+        s.manager.openCrop(s.window, s.output, path, s.output.connector);
     }
-    /// The picker names an image; the popup's own output decides its shape.
+    /// The picker names an image; the popup's own output decides its shape. The
+    /// picker is a global control, so its crop edits the global wallpaper.
     fn pickerCrop(context: *anyopaque, path: []const u8) void {
         const self: *Manager = @ptrCast(@alignCast(context));
         const s = self.popup orelse return;
-        self.openCrop(s.window, s.output, path);
+        self.openCrop(s.window, s.output, path, null);
     }
     pub fn clear(self: *Manager) void {
         // The editor is transient for a surface window, so it goes first.
@@ -503,6 +547,7 @@ pub const Manager = struct {
         self.agent.palette = if (self.preferences.live) |live| live.palette else @import("../../theme/theme.zig").dark;
         self.agent.acknowledge = assistantAcknowledged;
         self.agent.open_settings = assistantSettings;
+        self.agent.launch_application = assistantLaunch;
         const launch = self.display.getAppLaunchContext();
         defer launch.unref();
         const info = @import("../../settings/launch.zig").activationInfo("/proc/self/exe", "Pearl Assistant") catch null;
@@ -519,6 +564,72 @@ pub const Manager = struct {
         const self: *Manager = @ptrCast(@alignCast(context));
         self.openSettings(.{ .page = .assistant }, null) catch {};
     }
+    fn assistantLaunch(context: *anyopaque, request: @import("../../agent/protocol.zig").LaunchRequest) void {
+        const self: *Manager = @ptrCast(@alignCast(context));
+        const applications = @import("../../agent/applications.zig");
+        if (!applications.openAppsEnabled(self.preferences.prefs().assistant)) {
+            self.agent.launchResult(request.request_id, false, "AppLaunchDisabled");
+            return;
+        }
+        const id = a.dupeSentinel(u8, request.application_id, 0) catch {
+            self.agent.launchResult(request.request_id, false, "LaunchFailed");
+            return;
+        };
+        defer a.free(id);
+        const desktop = @import("giounix2").DesktopAppInfo.new(id) orelse {
+            self.agent.launchResult(request.request_id, false, "ApplicationNotFound");
+            return;
+        };
+        defer desktop.unref();
+        applications.checkLaunchable(desktop) catch |err| {
+            self.agent.launchResult(request.request_id, false, @errorName(err));
+            return;
+        };
+        const launch = self.display.getAppLaunchContext();
+        defer launch.unref();
+        const info = @import("../../settings/launch.zig").activationInfo("/proc/self/exe", "Pearl Assistant") catch null;
+        defer if (info) |i| i.unref();
+        const token = if (info) |i| launch.as(gio.AppLaunchContext).getStartupNotifyId(i.as(gio.AppInfo), null) else null;
+        defer if (token) |t| glib.free(t);
+        if (token) |t| {
+            launch.as(gio.AppLaunchContext).setenv("XDG_ACTIVATION_TOKEN", std.mem.span(t));
+            launch.as(gio.AppLaunchContext).setenv("DESKTOP_STARTUP_ID", std.mem.span(t));
+        }
+        var err: ?*glib.Error = null;
+        defer if (err) |e| e.free();
+        if (desktop.as(gio.AppInfo).launch(null, launch.as(gio.AppLaunchContext), &err) == 0) {
+            self.agent.launchResult(request.request_id, false, "LaunchFailed");
+            return;
+        }
+        self.index.remember(request.application_id);
+        self.agent.launchResult(request.request_id, true, null);
+    }
+    fn semanticQuery(context: *anyopaque, alloc: std.mem.Allocator, query: []const u8, cancel: *gio.Cancellable) anyerror![]@import("../../search/service.zig").Document {
+        const self: *Manager = @ptrCast(@alignCast(context));
+        return self.semantic.query(alloc, query, cancel);
+    }
+    fn chatBusy(context: *anyopaque) bool {
+        const self: *Manager = @ptrCast(@alignCast(context));
+        return self.agent.compute.busy or self.agent.pending != 0;
+    }
+    fn semanticMaintenance(context: *anyopaque, idle: bool) void {
+        const self: *Manager = @ptrCast(@alignCast(context));
+        self.semantic.noteIdle(idle);
+    }
+    fn semanticHostSignals(context: *anyopaque) @import("../../search/service.zig").HostSignals {
+        const self: *Manager = @ptrCast(@alignCast(context));
+        if (self.power_profile == null) self.power_profile = gio.PowerProfileMonitor.dupDefault();
+        return .{
+            .inhibited = if (self.activity) |broker| broker.inhibited() else false,
+            .on_battery = self.power.on_battery,
+            .battery_present = self.power.battery_present,
+            .battery_charging = self.power.battery_state == 1 or self.power.battery_state == 4,
+            .battery_percent = if (self.power.percentage_valid) @intFromFloat(std.math.clamp(self.power.percentage, 0, 100)) else 0,
+            .power_saver = if (self.power_profile) |monitor| monitor.getPowerSaverEnabled() != 0 else false,
+            .sleep_pending = self.lifecycle.gate.sleep_pending or self.lifecycle.gate.preparing,
+            .idle_available = self.lifecycle.idleAvailable(),
+        };
+    }
     fn copyCalculator(context: *anyopaque, text: []const u8) anyerror!void {
         const self: *Manager = @ptrCast(@alignCast(context));
         self.syncClipboardPrivacy();
@@ -534,7 +645,7 @@ pub const Manager = struct {
         const gate = self.lifecycle.gate;
         const matched = if (self.effects.display_session) |identity| std.mem.eql(u8, &identity, self.client.model.session) else false;
         const locked = (if (self.activity) |broker| broker.inhibited() else false) or !matched or self.client.availability != .ready or !gate.available or !gate.active or gate.locked or gate.requesting or gate.preparing or self.auth.request != null or (if (self.client.model.get(.session, "session")) |session| session.locked else true);
-        for (self.outputs.items) |output| if (output.bar) |surface| if (surface.autohide) |controller| controller.inhibit(self.barInhibited());
+        for (self.outputs.items) |output| if (output.bar) |surface| if (surface.autohide) |controller| controller.inhibit(self.barInhibited(), self.lifecycle.saver_on);
         // A lock request may originate inside a flyout button callback. Revoke
         // reveal immediately, but destroy that callback's view from syncIdle.
         if (self.barInhibited() and self.popup != null) self.schedule();
@@ -545,6 +656,7 @@ pub const Manager = struct {
             if (locked) popup.window.as(gtk.Widget).setVisible(0);
         };
         self.agent.setLocked(locked);
+        self.semantic.setLocked(locked);
         self.capture.setLocked(locked);
         if (self.plugins) |plugins| plugins.setLocked(locked);
         if (locked) for (self.outputs.items) |output| {
@@ -592,6 +704,7 @@ pub const Manager = struct {
         const self: *Manager = @ptrCast(@alignCast(context));
         if (!self.running) return;
         self.syncClipboardPrivacy();
+        self.semantic.noteInput();
         if (self.plugins) |plugins| plugins.noteActivity(mask, epoch);
     }
     fn pluginsChanged(context: *anyopaque) void {
@@ -603,8 +716,13 @@ pub const Manager = struct {
         if (!self.running) return;
         self.agent.palette = if (self.preferences.live) |live| live.palette else @import("../../theme/theme.zig").dark;
         self.agent.configure(self.preferences.prefs().assistant);
+        self.semantic.configure(self.preferences.prefs().assistant);
+        self.lifecycle.configureMaintenance(if (self.preferences.prefs().assistant.semantic.enabled) @import("../../search/schedule.zig").maintenance_idle_seconds else 0);
         self.weather.configure(self.preferences.prefs().weather);
-        if (self.popup) |surface| if (surface.launcher) |view| view.configureAssistant(self.preferences.prefs().assistant.enabled, askAssistant);
+        if (self.popup) |surface| if (surface.launcher) |view| {
+            view.configureAssistant(self.preferences.prefs().assistant.enabled, askAssistant);
+            view.configureSemantic(self.preferences.prefs().assistant.semantic.enabled, semanticQuery);
+        };
         if (self.session_services.started and self.preferences.live != null) {
             self.session_services.notifications.configure(self.preferences.prefs().notifications) catch |err| {
                 log.err("event=notification-filter-config error={s}", .{@errorName(err)});
@@ -638,13 +756,24 @@ pub const Manager = struct {
     }
     fn desktopCrop(context: *anyopaque) void {
         const surface: *Surface = @ptrCast(@alignCast(context));
-        const path = surface.manager.preferences.prefs().wallpaper.path;
-        if (path.len != 0) surface.manager.openCrop(surface.window, surface.output, path);
+        const path = surface.manager.preferences.prefs().wallpaperForOutput(surface.output.connector).path;
+        if (path.len != 0) surface.manager.openCrop(surface.window, surface.output, path, surface.output.connector);
+    }
+    fn desktopArrange(context: *anyopaque) void {
+        const surface: *Surface = @ptrCast(@alignCast(context));
+        const self = surface.manager;
+        for (self.outputs.items) |o| if (o.wallpaper) |s| if (s.desktop_icons) |view| {
+            if (!view.menu_only) {
+                view.arrangeByName();
+                return;
+            }
+        };
     }
     fn syncDesktop(self: *Manager) !void {
         const store = self.desktop_directory orelse return;
         const prefs = self.preferences.prefs();
         store.enable(prefs.desktop_icons.enabled);
+        // Icons render on one output; every enabled output keeps the desktop menu.
         var desktop_output: ?*Output = null;
         for (self.outputs.items) |o| {
             if (std.mem.eql(u8, o.connector, prefs.desktop_icons.output)) {
@@ -654,7 +783,7 @@ pub const Manager = struct {
             if (desktop_output == null or std.mem.order(u8, o.connector, desktop_output.?.connector) == .lt) desktop_output = o;
         }
         for (self.outputs.items) |o| if (o.wallpaper) |surface| {
-            const enabled = prefs.desktop_icons.enabled and desktop_output == o;
+            const enabled = prefs.desktop_icons.enabled;
             if (!enabled) {
                 if (surface.desktop_icons) |view| {
                     surface.wallpaper_overlay.?.removeOverlay(view.root.as(gtk.Widget));
@@ -665,7 +794,7 @@ pub const Manager = struct {
                 continue;
             }
             if (surface.desktop_icons == null) {
-                surface.desktop_icons = try DesktopIcons.View.create(surface.window, store, &self.index, surface, desktopSettings, desktopCrop);
+                surface.desktop_icons = try DesktopIcons.View.create(surface.window, store, &self.index, surface, desktopSettings, desktopCrop, desktopArrange);
                 surface.wallpaper_overlay.?.addOverlay(surface.desktop_icons.?.root.as(gtk.Widget));
             }
             const view = surface.desktop_icons.?;
@@ -693,7 +822,7 @@ pub const Manager = struct {
             widget.setMarginEnd(right);
             widget.setMarginTop(top);
             widget.setMarginBottom(bottom);
-            view.configure(prefs.desktop_icons, prefs.font_size, o.bounds.width - left - right, o.bounds.height - top - bottom, !self.barInhibited() and self.popup == null);
+            view.configure(prefs.desktop_icons, prefs.font_size, o.bounds.width - left - right, o.bounds.height - top - bottom, !self.barInhibited() and self.popup == null, desktop_output != o);
             layer.setKeyboardMode(surface.window, if (view.allowed) .on_demand else .none);
         };
     }
@@ -716,9 +845,18 @@ pub const Manager = struct {
         if (surface.bar) |bar| bar.styleIslands();
         if (surface.wallpaper_stack) |stack| {
             const prefs = self.preferences.prefs();
+            const connector = surface.output.connector;
+            const wp = prefs.wallpaperForOutput(connector);
+            const override = prefs.hasWallpaperOverride(connector);
             const transition = prefs.wallpaper.slideshow.transition;
-            const image = if (self.preferences.live) |live| live.texture else null;
-            const shown = image != null and (prefs.wallpaper.mode == .cover or prefs.wallpaper.mode == .contain);
+            // An output with its own wallpaper decodes and crops that image here;
+            // every other output shares the service's single global texture.
+            const image = if (override) overrideWallpaperTexture(surface, wp) else blk: {
+                releaseOverride(surface);
+                break :blk if (self.preferences.live) |live| live.texture else null;
+            };
+            styleWallpaperBackground(surface, wp, override);
+            const shown = image != null and (wp.mode == .cover or wp.mode == .contain);
             // Only a replacement image animates; the first paint must not.
             const animated = shown and !prefs.reduced_motion and
                 surface.wallpaper_texture != null and image.? != surface.wallpaper_texture.?;
@@ -735,7 +873,7 @@ pub const Manager = struct {
                 const index: u8 = if (animated) surface.wallpaper_index ^ 1 else surface.wallpaper_index;
                 const picture = surface.wallpaper_pictures[index].?;
                 picture.setPaintable(image.?.as(gdk.Paintable));
-                picture.setContentFit(if (prefs.wallpaper.mode == .cover) .cover else .contain);
+                picture.setContentFit(if (wp.mode == .cover) .cover else .contain);
                 if (animated) {
                     surface.wallpaper_index = index;
                     stack.setVisibleChildName(if (index == 0) "a" else "b");
@@ -753,6 +891,10 @@ pub const Manager = struct {
     fn schedulingChanged(context: *anyopaque) void {
         const self: *Manager = @ptrCast(@alignCast(context));
         self.servicesChanged();
+    }
+    fn autostartChanged(_: *anyopaque) void {
+        // The shell only launches entries once per session; Settings keeps
+        // its own service instance and does not observe this copy.
     }
     fn servicesChanged(self: *Manager) void {
         if (!self.running) return;
@@ -796,6 +938,14 @@ pub const Manager = struct {
         const gate = self.lifecycle.gate;
         const matched = if (self.effects.display_session) |identity| std.mem.eql(u8, &identity, self.client.model.session) else false;
         return (if (self.activity) |broker| broker.inhibited() else false) or !matched or self.client.availability != .ready or (self.lifecycle.session_id.len != 0 and (!gate.available or !gate.active)) or gate.locked or gate.requesting or gate.preparing or self.auth.request != null or (if (self.client.model.get(.session, "session")) |session| session.locked else true);
+    }
+    /// The bar is switched off for this output. A hand-edited draft hiding
+    /// every output still keeps the first bar, so the shell never disappears.
+    fn barOff(self: *Manager, o: *const Output) bool {
+        const prefs = self.preferences.prefs();
+        if (!prefs.barHidden(o.connector)) return false;
+        for (self.outputs.items) |other| if (!prefs.barHidden(other.connector)) return true;
+        return self.outputs.items.len != 0 and self.outputs.items[0] != o;
     }
     fn osdAllowed(self: *Manager) bool {
         if (!self.running or self.client.availability != .ready) return false;
@@ -1085,7 +1235,7 @@ pub const Manager = struct {
     }
     fn sync(self: *Manager) !void {
         if (self.popup) |popup| {
-            const picker_open = if (popup.settings) |view| view.wallpaper_picker != null else false;
+            const picker_open = if (popup.settings) |view| view.wallpaper_picker != null or view.greeter_sync.picker != null else false;
             // The crop editor is a layer-shell window of its own, so while it is
             // open it holds the activation the popup would otherwise keep; that
             // is the editor working, not the popup being dismissed.
@@ -1133,6 +1283,17 @@ pub const Manager = struct {
         if (!std.mem.eql(u8, &identity, self.client.model.session)) {
             self.clear();
             return error.SessionDisplayMismatch;
+        }
+        // Autostart runs once per login session, after the compositor session
+        // is verified and unlocked; a session that starts locked defers to the
+        // first unlocked sync. The service claims a session-scoped marker so a
+        // shell restarted within the same session does not launch again.
+        if (!self.autostart_launched) {
+            const locked = if (self.client.model.get(.session, "session")) |session| session.locked else true;
+            if (!locked) {
+                self.autostart_launched = true;
+                self.autostart.launch(self.display, self.client.model.session);
+            }
         }
         try self.tasks.update(&self.client.model, &self.index, self.preferences.prefs().application_launchers, self.preferences.prefs().pinned_apps);
         for (self.outputs.items) |o| o.seen = false;
@@ -1204,6 +1365,7 @@ pub const Manager = struct {
                 o.bar.?.bar.?.setWorkspaceMode(pref.workspace_mode);
                 o.bar.?.bar.?.running_apps_per_window = pref.running_apps_per_window;
                 o.bar.?.bar.?.setResourceMode(pref.resource_mode);
+                o.bar.?.bar.?.setMediaArt(pref.media_art);
                 if (o.bar.?.bar.?.islands != pref.islands) if (o.bar.?.autohide) |controller| controller.clearGesture();
                 o.bar.?.bar.?.setIslands(pref.islands);
                 const content_hash = try self.barContentHash(pref);
@@ -1218,7 +1380,9 @@ pub const Manager = struct {
                 }
                 self.preferences.style(o.bar.?.window.as(gtk.Widget), o.bar.?.panel);
                 o.bar.?.bar.?.styleIslands();
+                try o.bar.?.bar.?.setBorderRadius(pref.radius);
                 o.bar.?.effects.islands = if (pref.islands) &o.bar.?.bar.?.sections else null;
+                o.bar.?.effects.radius = pref.radius;
                 o.preferences_revision = self.preferences.appearance;
             }
             const changed = !std.meta.eql(o.bounds, bounds) or !std.meta.eql(o.usable, usable);
@@ -1230,15 +1394,18 @@ pub const Manager = struct {
                 const vertical = s.edge == .left or s.edge == .right;
                 bar.geometry(vertical, if (vertical) bounds.height else bounds.width);
                 try bar.setBackgroundOpacity(self.preferences.prefs().forOutput(o.connector).background_opacity, self.preferences.barBackgroundColor(s.panel));
+                bar.setThemeVariant(self.preferences.prefs().theme.variant == .dark);
                 bar.update();
             };
             const gate = self.lifecycle.gate;
-            const dock_locked = self.client.model.get(.session, "session").?.locked or gate.locked or gate.requesting or gate.preparing or self.auth.request != null or (self.lifecycle.session_id.slice().len != 0 and (!gate.available or !gate.active));
+            const dock_locked = self.client.model.get(.session, "session").?.locked or gate.locked or gate.requesting or gate.preparing or self.auth.request != null or (self.lifecycle.session_id.slice().len != 0 and (!gate.available or !gate.active)) or self.lifecycle.saver_on;
             if (dock_locked and (self.pane == .running_apps or self.pane == .launcher_picker)) {
                 log.info("event=popup-close-reason reason=dock-locked", .{});
                 self.hidePopup();
             }
             if (suspendTasks(o)) |host| host.setSensitive(@intFromBool(!dock_locked));
+            const off = self.barOff(o);
+            o.bar.?.bar_off = off;
             if (o.bar.?.autohide) |controller| {
                 var fullscreen = false;
                 var windows = self.client.model.entities.valueIterator();
@@ -1246,13 +1413,35 @@ pub const Manager = struct {
                     const win = entity_.window;
                     if (win.visible and !win.minimized and win.fullscreen and win.output != null and std.mem.eql(u8, win.output.?, o.id)) fullscreen = true;
                 };
-                controller.configure(self.preferences.prefs().forOutput(o.connector).mode, o.bar.?.edge, o.reservations.bar_size, self.barInhibited(), fullscreen);
+                controller.configure(self.preferences.prefs().forOutput(o.connector).mode, o.bar.?.edge, o.reservations.bar_size, self.barInhibited(), fullscreen, self.lifecycle.saver_on, off);
+            } else {
+                o.bar.?.window.as(gtk.Widget).setVisible(@intFromBool(!off));
+                layer.setExclusiveZone(o.bar.?.window, if (off) -1 else o.reservations.bar_size);
             }
             if (o.dock) |dock| {
                 const dock_prefs = self.preferences.prefs().dockForOutput(o.connector);
                 const opacity: BarOpacity.Config = if (dock_prefs.opacity_sync) self.preferences.prefs().forOutput(o.connector).background_opacity else .{ .mode = .custom, .percent = dock_prefs.background_opacity.percent };
                 try dock.setBackgroundOpacity(opacity, self.preferences.barBackgroundColor(dock.scroll.as(gtk.Widget)));
                 try dock.update(dock_prefs, o.reservations.bar_edge, bounds, dock_locked);
+            }
+            // The bar-widget dock shares the standalone dock's preferences;
+            // the bar itself owns background, blur and visibility. Icons stay
+            // at the configured dock size, only shrinking when the bar is
+            // thinner (embedded chrome: 4px padding + 1px button padding +
+            // ~10px indicator), and the scrolled window clamps the strip's
+            // request to the bar thickness so the bar never resizes.
+            if (o.bar.?.bar.?.dock_widget) |widget| {
+                var dock_prefs = self.preferences.prefs().dockForOutput(o.connector);
+                // Use the configured size, not reservations.bar_size: the bar's
+                // measured height is written back there after each paint, so a
+                // stretched bar would otherwise feed its own oversize icons.
+                const bar_thickness = @as(i32, self.preferences.prefs().forOutput(o.connector).size);
+                const fit = @min(64, @max(16, bar_thickness - 15));
+                dock_prefs.icon_size = @intCast(@min(@as(i32, dock_prefs.icon_size), fit));
+                try widget.update(dock_prefs, o.reservations.bar_edge, bounds, dock_locked);
+                const vertical = o.reservations.bar_edge == .left or o.reservations.bar_edge == .right;
+                widget.scroll.setMaxContentWidth(if (vertical) bar_thickness else -1);
+                widget.scroll.setMaxContentHeight(if (vertical) -1 else bar_thickness);
             }
             try self.syncPluginOverlays(o, dock_locked);
             if (self.osd) |surface| if (surface.output == o) positionOsd(surface);
@@ -1429,6 +1618,8 @@ pub const Manager = struct {
                 if (bar_pref.attached) panel_widget.addCssClass("pearl-bar-attached");
                 inline for ([_]fn (*gtk.Widget, c_int) callconv(.c) void{ gtk.Widget.setMarginStart, gtk.Widget.setMarginEnd, gtk.Widget.setMarginTop, gtk.Widget.setMarginBottom }) |set| set(panel_widget, if (bar_pref.attached) 0 else 4);
                 s.bar = try Bar.Bar.create(panel, self.client, output.id, s, barAction, &self.audio, &self.power, &self.network, &self.bluetooth, &self.session_services, self.plugins, &self.tasks.snapshot, &self.index, &self.scheduling, &self.weather);
+                s.bar.?.setDockDeps(.{ .preferences = &self.preferences, .tasks = &self.tasks, .context = self, .changed = appsChanged, .choose_launcher = chooseLauncher });
+                s.bar.?.setThemeVariant(self.preferences.prefs().theme.variant == .dark);
                 window.setChild(panel_widget);
                 s.edge = output.reservations.bar_edge;
                 sizeEdge(s, s.edge, output.reservations.bar_size);
@@ -1475,6 +1666,7 @@ pub const Manager = struct {
                     .launcher => {
                         s.launcher = try Launcher.create(panel, self.app.as(gio.Application), self.display, &self.index, self.client, self, dismiss, copyCalculator);
                         s.launcher.?.configureAssistant(self.preferences.prefs().assistant.enabled, askAssistant);
+                        s.launcher.?.configureSemantic(self.preferences.prefs().assistant.semantic.enabled, semanticQuery);
                     },
                     .calendar => s.calendar = try @import("../../desktop/calendar.zig").View.create(panel),
                     .wallpapers => s.wallpapers = try @import("../../desktop/wallpapers.zig").View.create(panel, &self.preferences, .{ .context = self, .open = pickerCrop }),
@@ -1562,17 +1754,21 @@ pub const Manager = struct {
         self.styleSurface(s);
         const effect_panel = if (kind == .switcher) s.switcher_controls.? else if (kind == .popup and s.viewport != null) s.viewport.?.as(gtk.Widget) else panel_widget;
         try s.effects.init(&self.effects, window, effect_panel, kind == .bar or kind == .popup or kind == .osd or kind == .notification or kind == .switcher, if (kind == .popup) .full else if (kind == .bar or kind == .notification or kind == .switcher) .panel else .empty);
-        if (s.bar) |bar| s.effects.islands = if (bar.islands) &bar.sections else null;
+        if (s.bar) |bar| {
+            s.effects.islands = if (bar.islands) &bar.sections else null;
+            s.effects.radius = self.preferences.prefs().forOutput(output.connector).radius;
+        }
         if (kind == .bar) {
             _ = gtk.Widget.signals.map.connect(window.as(gtk.Widget), *Surface, barMapped, s, .{});
+            s.bar_off = self.barOff(output);
             s.autohide = BarAutohide.create(window, output.monitor, s, barVisibilityChanged) catch |err| blk: {
                 log.err("event=bar-autohide-unavailable error={s}", .{@errorName(err)});
                 break :blk null;
             };
             if (s.autohide) |controller| {
                 self.styleReveal(controller);
-                controller.configure(self.preferences.prefs().forOutput(output.connector).mode, s.edge, output.reservations.bar_size, self.barInhibited(), false);
-            } else window.present();
+                controller.configure(self.preferences.prefs().forOutput(output.connector).mode, s.edge, output.reservations.bar_size, self.barInhibited(), false, self.lifecycle.saver_on, s.bar_off);
+            } else if (s.bar_off) layer.setExclusiveZone(window, -1) else window.present();
         } else if (kind != .popup and kind != .osd and kind != .frame and kind != .notification and kind != .switcher) window.present();
         return s;
     }
@@ -1845,7 +2041,7 @@ pub const Manager = struct {
         for (self.outputs.items) |output| if (output.wallpaper) |wallpaper| {
             if (wallpaper.desktop_icons) |view| {
                 const allowed = !self.barInhibited() and self.popup == null;
-                view.configure(view.config, view.font, view.width, view.height, allowed);
+                view.configure(view.config, view.font, view.width, view.height, allowed, view.menu_only);
                 layer.setKeyboardMode(wallpaper.window, if (allowed) .on_demand else .none);
             }
             const input: @FieldType(native.Surface, "input") = if (!self.barInhibited() and (wallpaper.desktop_icons != null or (self.popup != null and self.preferences.prefs().popup.dismiss_outside))) .full else .empty;
@@ -2005,6 +2201,7 @@ pub const Manager = struct {
         if (request.op == .desktop_focus) {
             if (self.barInhibited()) return error.Locked;
             for (self.outputs.items) |output| if (output.wallpaper) |surface| if (surface.desktop_icons) |view| {
+                if (view.menu_only) continue;
                 if (request.output) |id| if (!std.mem.eql(u8, output.id, id)) return error.InvalidOutput;
                 self.hidePopup();
                 // Aqueous grants nonexclusive focus when an on-demand layer
@@ -2026,6 +2223,7 @@ pub const Manager = struct {
             .runtime_source = self.preferences.prefs().assistant.runtime.source,
             .compute_mode = self.preferences.prefs().assistant.compute.mode,
         }, .{});
+        if (request.op == .semantic_status) return std.json.Stringify.valueAlloc(alloc, self.semantic.status(), .{});
         if (request.op == .clipboard_status) return self.clipboard.pageStatus(alloc, .{
             .offset = request.offset orelse 0,
             .limit = request.limit orelse 20,
@@ -2109,8 +2307,17 @@ pub const Manager = struct {
             const viewport = if (popup.viewport) |v| v.as(gtk.Widget) else popup.panel;
             return std.json.Stringify.valueAlloc(alloc, .{ .focus = @import("../../desktop/aqueous_settings.zig").View.focusName(popup.window), .width = viewport.getWidth(), .height = viewport.getHeight(), .content_width = popup.panel.getWidth(), .limit = self.popup_rect }, .{});
         }
-        if (@import("build_options").test_hooks and request.op == .aqueous_status and std.mem.eql(u8, request.text orelse "", "test-desktop-icons")) {
-            for (self.outputs.items) |output| if (output.wallpaper) |surface| if (surface.desktop_icons) |view| return view.report(alloc, output.id, @tagName(layer.getKeyboardMode(surface.window)));
+        if (@import("build_options").test_hooks and request.op == .aqueous_status and std.mem.startsWith(u8, request.text orelse "", "test-desktop-icons")) {
+            const suffix = request.text.?["test-desktop-icons".len..];
+            if (suffix.len > 0 and suffix[0] == ':') {
+                const output = try self.selected(suffix[1..]);
+                const surface = output.wallpaper orelse return error.Unavailable;
+                const view = surface.desktop_icons orelse return alloc.dupe(u8, "{\"enabled\":false}");
+                return view.report(alloc, output.id, @tagName(layer.getKeyboardMode(surface.window)));
+            }
+            for (self.outputs.items) |output| if (output.wallpaper) |surface| if (surface.desktop_icons) |view| {
+                if (!view.menu_only) return view.report(alloc, output.id, @tagName(layer.getKeyboardMode(surface.window)));
+            };
             return alloc.dupe(u8, "{\"enabled\":false}");
         }
         if (@import("build_options").test_hooks and request.op == .aqueous_status and std.mem.startsWith(u8, request.text orelse "", "test-bar-autohide:")) {
@@ -2162,12 +2369,15 @@ pub const Manager = struct {
         if (@import("build_options").test_hooks and request.op == .aqueous_draft and std.mem.startsWith(u8, request.text orelse "", "{\"test_owner\":"))
             return self.owner_probe.command(alloc, request.text.?, &self.network, &self.bluetooth, &self.power);
         switch (request.op) {
-            .desktop_focus, .assistant_status => unreachable,
+            .desktop_focus, .assistant_status, .semantic_status => unreachable,
             .assistant_show => try askAssistant(self, ""),
             .assistant_stop => self.agent.stop(),
             .assistant_release => try self.agent.releaseRuntime(),
             .assistant_cancel => try self.agent.cancelAnswer(),
             .assistant_clear => try self.agent.clear(),
+            .semantic_index => try self.semantic.indexNow(),
+            .semantic_stop => self.semantic.stopIndexing(),
+            .semantic_delete => try self.semantic.deleteIndex(),
             .night_light_action => {
                 self.syncClipboardPrivacy();
                 try self.night_light.act(std.meta.stringToEnum(@import("../../services/night_light_policy.zig").Action, request.text.?).?);
@@ -2397,7 +2607,7 @@ pub const Manager = struct {
                 const s = o.bar.?;
                 s.edge = request.edge.?;
                 sizeEdge(s, s.edge, request.size.?);
-                if (s.autohide) |controller| controller.configure(controller.state.mode, s.edge, request.size.?, controller.state.inhibited, controller.fullscreen);
+                if (s.autohide) |controller| controller.configure(controller.state.mode, s.edge, request.size.?, controller.state.inhibited, controller.fullscreen, controller.state.saver, controller.state.off);
             },
             .frame_set => {
                 const o = try self.selected(request.output);
@@ -2468,6 +2678,79 @@ pub const Manager = struct {
         return std.json.Stringify.valueAlloc(alloc, .{ .services = try self.serviceStatus(alloc, null), .apps = .{ .ready = self.index.catalog != null, .truncated = if (self.index.catalog) |c| c.truncated else false, .count = if (self.index.catalog) |c| c.entries.items.len else 0, .generation = self.index.generation }, .layout = .{ .available = self.layout.?.global != null, .pending = self.layout.?.manager != null, .output = self.layout.?.output[0..self.layout.?.output_len], .value = self.layout.?.value[0..self.layout.?.value_len], .workspace = self.layout.?.workspace, .err = self.layout.?.err }, .session = self.client.model.session, .availability = self.client.availability, .graphics = .{ .renderer = if (self.outputs.items.len > 0) rendererName(self.outputs.items[0].bar.?.window) else "unrealized", .gpu_agreement = "unverified" }, .blur = self.effects.available, .outputs = items.items, .popup = if (self.popup) |s| @as(?struct { output: []const u8, rect: Rect, pane: Bar.Pane, page: ?navigation.Route, results: usize, latency_us: i64 }, .{ .output = s.output.id, .rect = self.popup_rect.?, .pane = self.pane, .page = self.settings_page, .results = if (s.launcher) |l| l.count else 0, .latency_us = if (s.launcher) |l| l.latency_us else 0 }) else null, .notification = self.notification != null, .media_views = self.session_services.media.viewers, .artwork = self.session_services.media.art.image != null, .artwork_pending = self.session_services.media.art.job != null, .identifying = self.identifiers.items.len, .osd = self.osd != null, .osd_text = self.osd_text.slice(), .osd_detail = self.osdStatus(), .window_switcher = if (self.switcher) |surface| @as(?struct { output: []const u8, keyboard_mode: []const u8, text: []const u8, serial: u64, rect: Rect }, .{ .output = surface.output.id, .keyboard_mode = @tagName(layer.getKeyboardMode(surface.window)), .text = surface.switcher_spoken orelse "", .serial = self.switcher_serial, .rect = .{ .x = surface.output.usable.x + @divTrunc(surface.output.usable.width - surface.window.as(gtk.Widget).getWidth(), 2), .y = surface.output.usable.y + surface.output.usable.height - layer.getMargin(surface.window, .bottom) - surface.window.as(gtk.Widget).getHeight(), .width = surface.window.as(gtk.Widget).getWidth(), .height = surface.window.as(gtk.Widget).getHeight() } }) else null }, .{});
     }
 };
+/// Drops a surface's cached override wallpaper, so the texture lives exactly
+/// while the output has an override of its own.
+fn releaseOverride(surface: *Surface) void {
+    if (surface.override_texture) |old| old.unref();
+    surface.override_texture = null;
+    if (surface.override_key) |old| a.free(old);
+    surface.override_key = null;
+}
+/// The texture for one output's own wallpaper, decoded and cropped on demand and
+/// cached on the surface until its path or crop changes. Returns null when the
+/// fit shows no image or the file cannot be decoded, so the surface falls back to
+/// its background color. Outputs without an override keep using the service's
+/// single global texture instead.
+fn overrideWallpaperTexture(surface: *Surface, wp: prefs_model.Wallpaper) ?*gdk.Texture {
+    if (wp.mode != .cover and wp.mode != .contain) return null;
+    if (wp.path.len == 0) return null;
+    const saved = crop_policy.find(wp.crops, wp.path);
+    // Key on path + crop so an unrelated preference edit does not re-decode.
+    const key = std.fmt.allocPrintSentinel(a, "{s}|{d}|{d}|{d}|{d}", .{
+        wp.path,
+        if (saved) |c| c.x else @as(f32, 0),
+        if (saved) |c| c.y else @as(f32, 0),
+        if (saved) |c| c.width else @as(f32, 1),
+        if (saved) |c| c.height else @as(f32, 1),
+    }, 0) catch return null;
+    defer a.free(key);
+    if (surface.override_key) |current| if (std.mem.eql(u8, current, key)) return surface.override_texture;
+    releaseOverride(surface);
+    const path = a.dupeSentinel(u8, wp.path, 0) catch return null;
+    defer a.free(path);
+    const image = pixbuf.Pixbuf.newFromFile(path.ptr, null) orelse {
+        log.warn("event=wallpaper-override-decode-failed path={s}", .{wp.path});
+        return null;
+    };
+    defer image.unref();
+    // Mirrors the service's global wallpaperTexture: a saved crop sub-sets the
+    // image, otherwise the whole frame is used.
+    const texture = if (saved) |c| blk: {
+        if (crop_policy.pixels(c, image.getWidth(), image.getHeight())) |rect| {
+            const part = image.newSubpixbuf(rect.x, rect.y, rect.width, rect.height);
+            defer part.unref();
+            break :blk gdk.Texture.newForPixbuf(part);
+        }
+        break :blk gdk.Texture.newForPixbuf(image);
+    } else gdk.Texture.newForPixbuf(image);
+    surface.override_texture = texture;
+    surface.override_key = a.dupeSentinel(u8, key, 0) catch null;
+    return texture;
+}
+/// Repaints one output's wallpaper background when it overrides the global
+/// color. Gradient mode derives from the theme and stays global, so only a solid
+/// or image fit carries an explicit color; the rule matches the global selector
+/// and wins on provider priority, scoped to this surface's window alone.
+fn styleWallpaperBackground(surface: *Surface, wp: prefs_model.Wallpaper, override: bool) void {
+    const want: ?[]const u8 = if (override and wp.mode != .gradient and wp.color.len > 0) wp.color else null;
+    if (want == null and surface.override_color == null) return;
+    if (want != null and surface.override_color != null and std.mem.eql(u8, surface.override_color.?, want.?)) return;
+    if (want) |color| {
+        const css = std.fmt.allocPrintSentinel(a, ".pearl-root.pearl-shell.pearl-wallpaper {{ background: {s}; }}", .{color}, 0) catch return;
+        defer a.free(css);
+        if (surface.override_css == null) {
+            surface.override_css = gtk.CssProvider.new();
+            surface.window.as(gtk.Widget).getStyleContext().addProvider(surface.override_css.?.as(gtk.StyleProvider), 602);
+        }
+        surface.override_css.?.loadFromString(css);
+        if (surface.override_color) |old| a.free(old);
+        surface.override_color = a.dupeSentinel(u8, color, 0) catch null;
+    } else {
+        if (surface.override_css) |provider| provider.loadFromString("");
+        if (surface.override_color) |old| a.free(old);
+        surface.override_color = null;
+    }
+}
 fn rectangle(r: anytype) !Rect {
     return .{ .x = std.math.cast(i32, r.x) orelse return error.InvalidGeometry, .y = std.math.cast(i32, r.y) orelse return error.InvalidGeometry, .width = std.math.cast(i32, r.width) orelse return error.InvalidGeometry, .height = std.math.cast(i32, r.height) orelse return error.InvalidGeometry };
 }
@@ -2521,7 +2804,7 @@ fn sizeEdge(s: *Surface, edge: Edge, size: u16) void {
     s.window.setDefaultSize(if (horizontal) 1 else size, if (horizontal) size else 1);
     const content = if (s.kind == .frame) size else size -| 8;
     s.panel.setSizeRequest(if (horizontal) -1 else content, if (horizontal) content else -1);
-    if (s.autohide) |controller| controller.measured(size) else layer.setExclusiveZone(s.window, size);
+    if (s.autohide) |controller| controller.measured(size) else layer.setExclusiveZone(s.window, if (s.bar_off) -1 else size);
 }
 fn serviceProbe(_: *gdk.FrameClock, s: *Surface) callconv(.c) void {
     if (s.settings) |view| view.probe(s.window);
@@ -2558,7 +2841,7 @@ fn measured(_: *gdk.FrameClock, s: *Surface) callconv(.c) void {
     const horizontal = s.edge == .top or s.edge == .bottom;
     const size = if (horizontal) s.window.as(gtk.Widget).getHeight() else s.window.as(gtk.Widget).getWidth();
     if (size > 0 and size <= 65535) {
-        if (s.autohide) |controller| controller.measured(size) else layer.setExclusiveZone(s.window, size);
+        if (s.autohide) |controller| controller.measured(size) else layer.setExclusiveZone(s.window, if (s.bar_off) -1 else size);
         if (s.output.reservations.bar_size != size) {
             s.output.reservations.bar_size = @intCast(size);
             barVisibilityChanged(s);
@@ -2600,6 +2883,20 @@ fn barAction(context: *anyopaque, event: Bar.Event) void {
         .overview => {
             self.enqueueAction(.{ .overview_toggle = .{ .output = s.output.id } });
             self.hidePopup();
+        },
+        .toggle_theme => {
+            // Same lever the Settings "Color variant" dropdown edits: flip the
+            // theme variant and apply it live through the preferences service.
+            var arena = std.heap.ArenaAllocator.init(a);
+            defer arena.deinit();
+            const alloc = arena.allocator();
+            var p = self.preferences.prefs();
+            p.theme.variant = if (p.theme.variant == .dark) .light else .dark;
+            const json = std.json.Stringify.valueAlloc(alloc, p, .{}) catch |err| {
+                log.warn("event=toggle-theme result={s}", .{@errorName(err)});
+                return;
+            };
+            self.preferences.apply(json, self.preferences.revision) catch |err| log.warn("event=toggle-theme result={s}", .{@errorName(err)});
         },
     }
 }

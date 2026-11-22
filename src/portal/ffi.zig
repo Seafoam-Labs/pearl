@@ -777,6 +777,7 @@ pub extern fn g_print(format: [*c]const gchar, ...) void;
 pub extern fn g_unix_input_stream_new(fd: gint, close_fd: gboolean) [*c]GInputStream;
 
 pub extern fn g_utf8_validate(str: [*c]const gchar, max_len: gssize, end: [*c][*c]const gchar) gboolean;
+pub extern fn g_utf8_truncate_middle(string: [*c]const gchar, truncate_length: gsize) [*c]gchar;
 
 pub const gssize = c_long;
 
