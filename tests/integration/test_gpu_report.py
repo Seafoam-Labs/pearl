@@ -33,8 +33,28 @@ def main():
         tools = session.base / 'tools'
         tools.mkdir()
         command = tools / 'journalctl'
-        command.write_text('#!/usr/bin/python3\nimport json, pathlib, sys, time\n'
+        command.write_text('#!/usr/bin/python3\nimport json, pathlib, re, sys, time\n'
                            f'pathlib.Path({str(recorded)!r}).write_text(json.dumps(sys.argv[1:]))\n'
+                           # Mirror journalctl: boot descriptors are 32-hex/offset/all and
+                           # must be attached to --boot= (or a valid next word after -b);
+                           # bare positionals are matches and require FIELD=value.
+                           # Attached -bXXXX is not validated (Pearl never emits it).
+                           'BOOT = re.compile(r"(?:[0-9a-fA-F]{32}(?:[+-][0-9]+)?|[+-]?[0-9]+|all)")\n'
+                           'args = sys.argv[1:]\n'
+                           'i = 0\n'
+                           'while i < len(args):\n'
+                           '    a = args[i]\n'
+                           '    if a.startswith("--boot="):\n'
+                           '        if not BOOT.fullmatch(a[7:]):\n'
+                           '            print("Failed to parse boot descriptor \'" + a[7:] + "\'", file=sys.stderr); sys.exit(1)\n'
+                           '    elif a in ("-o", "-n"):\n'
+                           '        i += 1  # detached option value, not a match\n'
+                           '    elif a == "-b":\n'
+                           '        if i + 1 < len(args) and BOOT.fullmatch(args[i + 1]):\n'
+                           '            i += 1  # next-word boot fallback consumes only valid descriptors\n'
+                           '    elif not a.startswith("-") and a != "+" and "=" not in a:\n'
+                           '        print("Failed to add match \'" + a + "\': Invalid argument", file=sys.stderr); sys.exit(1)\n'
+                           '    i += 1\n'
                            f'spec = json.loads(pathlib.Path({str(fixture)!r}).read_text())\n'
                            'time.sleep(spec.get("delay", 0))\n'
                            'print(spec.get("stderr", ""), file=sys.stderr)\n'
@@ -81,7 +101,8 @@ def main():
         assert 'attribution=unverified unattributed startup failure' in text
         assert 'excluded-other-session=2' in text
         argv = json.loads(recorded.read_text())
-        assert argv[argv.index('-b') + 1] == Path('/proc/sys/kernel/random/boot_id').read_text().strip()
+        boot_id = Path('/proc/sys/kernel/random/boot_id').read_text().strip().replace('-', '')
+        assert f'--boot={boot_id}' in argv, argv
         assert any(value.startswith('--since=@') for value in argv)
         assert any(re.fullmatch(r'--until=@[0-9]+\.[0-9]{6}', value) for value in argv), argv
         assert f'_PID={session.compositor.proc.pid}' in argv
