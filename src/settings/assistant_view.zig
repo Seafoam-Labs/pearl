@@ -141,9 +141,9 @@ pub const View = struct {
         const runtime_source = choice(runtime_body, @import("i18n").dtr("pearl", "Runtime source"), &.{ "System installation", "Pearl runtime package", "Custom executable" });
         const custom_runtime = w.column(8);
         runtime_body.append(custom_runtime.as(gtk.Widget));
-        const runtime_path = entry(custom_runtime, @import("i18n").dtr("pearl", "Custom llama-server absolute path"), 4096);
-        const browse = button(custom_runtime, @import("i18n").dtr("pearl", "Browse for llama-server…"));
-        note(runtime_body, "Setup reuses a compatible runtime or installs llama.cpp with Shelly on Devario and pacman on Arch. Complete authentication and package confirmation in the terminal.");
+        const runtime_path = entry(custom_runtime, @import("i18n").dtr("pearl", "Custom mistralrs absolute path"), 4096);
+        const browse = button(custom_runtime, @import("i18n").dtr("pearl", "Browse for mistralrs…"));
+        note(runtime_body, "Setup reuses a compatible runtime or installs mistralrs with Shelly on Devario and pacman on Arch. Complete authentication and package confirmation in the terminal.");
         note(runtime_body, "Packages install immediately; Apply saves the runtime selection. Closing Settings does not stop installation. Setup includes ggml-vulkan for Automatic/Vulkan or ggml-cuda for CUDA.");
         const runtime_actions = layout.actions(runtime_body);
         const setup_runtime = layout.button(runtime_actions, @import("i18n").dtr("pearl", "Set up runtime (install if needed)"));
@@ -472,7 +472,7 @@ pub const View = struct {
     fn browseClicked(_: *gtk.Button, self: *View) callconv(.c) void {
         if (self.picker != null or !self.editor.editable()) return;
         const parent = object.ext.cast(gtk.Window, self.host.as(gtk.Widget).getRoot().?).?;
-        const picker = gtk.FileChooserNative.new("Choose llama-server", parent, .open, "Choose", "Cancel");
+        const picker = gtk.FileChooserNative.new("Choose mistralrs", parent, .open, "Choose", "Cancel");
         self.picker = picker;
         _ = gtk.NativeDialog.signals.response.connect(picker.as(gtk.NativeDialog), *View, picked, self, .{});
         picker.as(gtk.NativeDialog).show();
@@ -716,12 +716,12 @@ pub const View = struct {
         }
         self.status.setText(if (job.failure) |err| switch (err) {
             error.AssistantRuntimeNotInstalled => @import("i18n").dtr("pearl", "Runtime missing. Use Set up runtime (install if needed)."),
-            error.RuntimeInstallationUnsupportedDistribution => @import("i18n").dtr("pearl", "Automatic installation supports Devario and Arch-based systems. Install llama.cpp with your distribution's package manager, then discover the runtime."),
+            error.RuntimeInstallationUnsupportedDistribution => @import("i18n").dtr("pearl", "Automatic installation supports Devario and Arch-based systems. Install mistralrs with your distribution's package manager, then discover the runtime."),
             error.RuntimePackageManagerUnavailable => @import("i18n").dtr("pearl", "Package manager unavailable. Devario requires /usr/bin/shelly; Arch requires /usr/bin/pacman and /usr/bin/sudo."),
             error.RuntimeInstallTerminalUnavailable => @import("i18n").dtr("pearl", "Setup needs a terminal: foot, Ghostty, kitty, alacritty, konsole or xterm. Install one and retry."),
             error.RuntimePackageInstallationFailed => @import("i18n").dtr("pearl", "Installation failed or was cancelled. Check the package manager's repository, network or database-lock error, then retry Set up runtime. No repository was added or version pinned."),
-            error.RuntimeCapabilityMissing => @import("i18n").dtr("pearl", "This runtime lacks required capabilities. Use Set up runtime to install the repository version. If it still fails, your repository needs a compatible llama.cpp update."),
-            error.RuntimeReasoningUnsupported => @import("i18n").dtr("pearl", "This thinking model needs a runtime with reasoning-format support. Update llama.cpp or choose an Instruct model."),
+            error.RuntimeCapabilityMissing => @import("i18n").dtr("pearl", "This runtime lacks required capabilities. Use Set up runtime to install the repository version. If it still fails, your repository needs a compatible mistralrs update."),
+            error.RuntimeReasoningUnsupported => @import("i18n").dtr("pearl", "This thinking model needs a runtime with reasoning-format support. Update mistral.rs or choose an Instruct model."),
             else => @errorName(err),
         } else @import("i18n").dtr("pearl", "Operation complete. Apply saves your configuration selection."));
         if (job.failure != null and (job.action == .runtime_check or job.action == .verify or job.action == .discover or job.action == .setup_runtime)) self.runtime_details.setText(@import("i18n").dtr("pearl", "Compatibility not confirmed. Review the operation error and retry setup or the runtime check."));

@@ -24,8 +24,8 @@ depends=('xdg-desktop-portal' 'libcups' 'xdg-utils' 'glycin' 'matugen>=4.2.0' 'c
 makedepends=('git' 'zig=0.17.1' 'pkgconf' 'gcc' 'qt5-base' 'qt6-base' 'python>=3.14'
              'rust' 'rust-wasm' 'librsvg')
 optdepends=('ddcutil: brightness control for compatible external monitors'
-            'pearl-lang-de: German interface translations (partial coverage)' 'pearl-assistant-runtime: optional local launcher answers; system or custom llama-server also supported'
-            'llama-cpp: system runtime for launcher assistant setup'
+            'pearl-lang-de: German interface translations (partial coverage)' 'pearl-assistant-runtime: optional private mistral.rs runtime; system mistralrs or custom executable also supported'
+            'mistralrs: system runtime for launcher assistant setup'
             'sudo: authentication for assistant runtime installation with pacman'
             'foot: terminal for interactive assistant runtime installation'
             'gvfs: Trash, SFTP connections, and administrative filesystems in Phyto'

@@ -109,8 +109,8 @@ package_pearl-git() {
     # Required by the Aqueous session dispatcher.
     provides=("pearl=$epoch:$pkgver-$pkgrel" 'pearl-capture-picker=1')
     optdepends=('ddcutil: brightness control for compatible external monitors'
-            'pearl-lang-de: German interface translations (partial coverage)' 'pearl-assistant-runtime: optional local launcher answers; system or custom llama-server also supported'
-                'llama-cpp: system runtime for launcher assistant setup'
+            'pearl-lang-de: German interface translations (partial coverage)' 'pearl-assistant-runtime: optional private mistral.rs runtime; system mistralrs or custom executable also supported'
+                'mistralrs: system runtime for launcher assistant setup'
                 'shelly: assistant runtime installation on Devario'
                 'ghostty: terminal for interactive assistant runtime installation'
                 'gvfs: Trash, SFTP connections, and administrative filesystems in Phyto'

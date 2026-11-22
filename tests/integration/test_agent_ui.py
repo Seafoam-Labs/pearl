@@ -61,7 +61,7 @@ def main():
     p = argparse.ArgumentParser()
     p.add_argument("--agent", type=Path, default=ROOT / "zig-out/test/pearl-agent-test")
     p.add_argument("--model", type=Path, required=True)
-    p.add_argument("--runtime", type=Path, help="Use this local llama-server instead of the Pearl package")
+    p.add_argument("--runtime", type=Path, help="Use this local mistralrs instead of the Pearl package")
     p.add_argument("--aqueous", type=Path)
     p.add_argument("--output", type=Path, default=ROOT / "artifacts/assistant/latest")
     args = p.parse_args()
