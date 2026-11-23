@@ -168,6 +168,8 @@ fn propertiesWorker(task: *gio.Task, _: *u.object.Object, data: ?*anyopaque, _: 
     if (c.items.items.len == 0) c.add(c.directory, c.directory_info);
     var bytes: u64 = 0;
     var folders: usize = 0;
+    var unmeasured: usize = 0;
+    var partial: usize = 0;
     for (c.items.items, 0..) |item, index| {
         if (r.owner.background_cancel.isCancelled() != 0) break;
         var err: ?*glib.Error = null;
@@ -177,9 +179,19 @@ fn propertiesWorker(task: *gio.Task, _: *u.object.Object, data: ?*anyopaque, _: 
         const path = item.file.getParseName();
         defer glib.free(path);
         if (info) |i| {
-            if (i.getFileType() == .directory) folders += 1 else bytes += @intCast(@max(i.getSize(), 0));
+            var folder_size: ?u64 = null;
+            if (i.getFileType() == .directory) {
+                folders += 1;
+                // Enumeration-based recursion works on network backends too;
+                // unreadable subtrees are skipped and reported as partial.
+                if (@import("measure.zig").folderSize(item.file, r.owner.background_cancel)) |m| {
+                    folder_size = m.bytes;
+                    bytes += m.bytes;
+                    if (!m.complete) partial += 1;
+                } else unmeasured += 1;
+            } else bytes += @intCast(@max(i.getSize(), 0));
             if (index < 20) {
-                const size = u.sizeText(i);
+                const size = if (folder_size) |s| glib.formatSize(s) else u.sizeText(i);
                 defer glib.free(size);
                 const date = u.dateText(i);
                 defer glib.free(date);
@@ -196,7 +208,8 @@ fn propertiesWorker(task: *gio.Task, _: *u.object.Object, data: ?*anyopaque, _: 
     }
     const size = glib.formatSize(bytes);
     defer glib.free(size);
-    const total = u.format("{d} selected · {d} folders · {s} in selected files\nFolder contents are not included in this size.", .{ c.items.items.len, folders, size });
+    const skipped = unmeasured + partial;
+    const total = if (skipped > 0) u.format("{d} selected · {d} folders · {s} total\n{d} folders could not be fully measured.", .{ c.items.items.len, folders, size, skipped }) else u.format("{d} selected · {d} folders · {s} total", .{ c.items.items.len, folders, size });
     defer a.free(total);
     r.text.appendSlice(a, total) catch unreachable;
     r.text.append(a, 0) catch unreachable;
