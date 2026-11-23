@@ -11,7 +11,7 @@ msgstr ""
 msgid "Cancel"
 msgstr ""
 
-#: src/files/chooser.zig:396
+#: src/files/chooser.zig:397
 msgid "Choose a location stored on this computer."
 msgstr ""
 
@@ -19,27 +19,27 @@ msgstr ""
 msgid "Choose the source you want to share."
 msgstr ""
 
-#: src/files/chooser.zig:795
+#: src/files/chooser.zig:805
 msgid "Could not create that folder. Check its name and permissions."
 msgstr ""
 
-#: src/files/chooser.zig:1083
+#: src/files/chooser.zig:1103
 msgid "Filename"
 msgstr ""
 
-#: src/files/chooser.zig:825
+#: src/files/chooser.zig:835
 msgid "Folder name"
 msgstr ""
 
-#: src/files/chooser.zig:323
+#: src/files/chooser.zig:324
 msgid "Loading files…"
 msgstr ""
 
-#: src/files/chooser.zig:818
+#: src/files/chooser.zig:828
 msgid "New folder"
 msgstr ""
 
-#: src/files/chooser.zig:323
+#: src/files/chooser.zig:324
 msgid "No matching files in this folder."
 msgstr ""
 
@@ -47,11 +47,11 @@ msgstr ""
 msgid "Open"
 msgstr ""
 
-#: src/files/chooser.zig:1336
+#: src/files/chooser.zig:1356
 msgid "Open files"
 msgstr ""
 
-#: src/files/chooser.zig:984
+#: src/files/chooser.zig:1002
 msgid "Places"
 msgstr ""
 
@@ -59,15 +59,15 @@ msgstr ""
 msgid "Requested by {0}"
 msgstr ""
 
-#: src/files/chooser.zig:1104 src/portal/file_chooser.zig:154
+#: src/files/chooser.zig:1124 src/portal/file_chooser.zig:154
 msgid "Save"
 msgstr ""
 
-#: src/files/chooser.zig:1336
+#: src/files/chooser.zig:1356
 msgid "Save document"
 msgstr ""
 
-#: src/files/chooser.zig:1104
+#: src/files/chooser.zig:1124
 msgid "Select"
 msgstr ""
 
@@ -79,25 +79,25 @@ msgstr ""
 msgid "Share source"
 msgstr ""
 
-#: src/files/chooser.zig:1016 src/files/chooser.zig:1019
+#: src/files/chooser.zig:1034 src/files/chooser.zig:1037
 msgid "Sort by"
 msgstr ""
 
-#: src/files/chooser.zig:323
+#: src/files/chooser.zig:324
 msgid "This location is unavailable. Choose another location or retry."
 msgstr ""
 
-#: src/files/chooser.zig:1010
+#: src/files/chooser.zig:1028
 msgid "View"
 msgstr ""
 
-#: src/files/chooser.zig:328
+#: src/files/chooser.zig:329
 #. Number of files selected in the file chooser.
 msgid "{count} file selected"
 msgid_plural "{count} files selected"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/files/chooser.zig:387
+#: src/files/chooser.zig:388
 msgid "›"
 msgstr ""
