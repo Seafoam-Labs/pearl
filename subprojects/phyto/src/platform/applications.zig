@@ -119,7 +119,22 @@ pub fn spawn(owner: *Window, args: []const [*:0]const u8, directory: ?*gio.File)
 }
 pub fn terminal(owner: *Window, directory: *gio.File) void {
     const program = terminalProgram() orelse return;
+    const path = directory.getPath();
+    defer if (path) |p| glib.free(p);
+    // Single-instance terminals hand off to a running process that keeps its
+    // own cwd, so the launcher's cwd alone never reaches the new window.
+    if (path) |p| if (terminalDirectoryFlag(program)) |flag| {
+        const arg = u.format("{s}={s}", .{ flag, p });
+        defer a.free(arg);
+        spawn(owner, &.{ program, arg }, directory);
+        return;
+    };
     spawn(owner, &.{program}, directory);
+}
+fn terminalDirectoryFlag(program: [:0]const u8) ?[:0]const u8 {
+    if (std.mem.eql(u8, program, "konsole")) return "--workdir";
+    inline for (.{ "ghostty", "gnome-terminal", "foot" }) |p| if (std.mem.eql(u8, program, p)) return "--working-directory";
+    return null;
 }
 pub fn follow(owner: *Window, c: *const Context) void {
     if (c.items.items.len != 1) return;
