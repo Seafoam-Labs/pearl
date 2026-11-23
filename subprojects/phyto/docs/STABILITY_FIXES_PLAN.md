@@ -5,6 +5,25 @@ Two pre-existing defects found while verifying the issue #166 folder-size fix
 unmodified `master` (62f7ec88) with GTK 4.24.1 / GLib 2.90.1. They are
 independent of the folder-size change and should be fixed separately.
 
+## Implementation status
+
+- **Issue 1 — FIXED & verified.** The two sorter `ref()` calls are applied in
+  `src/tab.zig`. Close reproducer exits 0 ×5 (was always SIGABRT); the native
+  suite now passes the tab-close and "Window closes cleanly" checks plus 11
+  total checks (previously died at line 146).
+- **Issue 2 — hardening applied; residual flake is compositor-side.** The
+  signal-refreshed mount cache is applied in `src/platform/network_mounts.zig`
+  (removes synchronous D-Bus from the `connect()`/`reconcile()` hot path).
+  SFTP measurement still works (4/5 runs; unchanged flake rate). New evidence
+  rules out a Phyto main-thread stall and focus-steal — see below. The
+  remaining load-dependent input-delivery race needs Aqueous-fixture-side
+  investigation and is not fully fixable from Phyto.
+- **Newly exposed (separate, out of scope):** with the close crash fixed, the
+  native suite now reaches line 319 and fails a split-pane view-preference
+  assertion (`assert_view(False, False)` after F3/F6 sees list+hidden on the
+  second pane). Confirmed pre-existing: it still fails with only the
+  behavior-neutral sorter fix applied (mount cache reverted). Track separately.
+
 ---
 
 ## Issue 1 — Window/tab close crash (`g_object_unref` CRITICAL)
@@ -103,11 +122,13 @@ Resulting balanced accounting for `sorter`: created floating (1) → `ref` (2)
 sorted's ref (2: multi 1, Tab 1) → `Tab.destroy` unref (1) → multi dispose
 unref (0). ✔
 
-**Also fix the selection ref leak found during the audit:** `selection.ref()`
-is called twice (lines 59 and 67, one per view constructor) but
-`Tab.destroy()` unrefs it only once (line 160). Either unref twice in
-`destroy()` or restructure to a single owned ref. (Leak, not crash — fix in
-the same pass.)
+**Also audited (no change needed):** an earlier NULL-model reproducer
+suggested a `selection` ref leak and leaked intermediate models
+(`filtered`/`sorted`). A full mirror of `create()`/`destroy()` with
+weak-pointer leak detection (`/tmp/opencode/full_repro.c`) disproved both:
+with just the two sorter refs the whole graph finalizes with **zero leaks**,
+and removing the `selection` refs or unref'ing the intermediates *crashes*.
+So the selection/intermediate handling is correct as-is — do not touch it.
 
 ### Ownership audit (same pass)
 
@@ -175,6 +196,23 @@ pending queries complete / disconnecting the `notify` handler before unref.
   `connected`, masking any terminal failure state.
 
 ### Hypotheses (ranked) and diagnostics
+
+**Update after implementation — two hypotheses ruled out:**
+- *Focus steal by an extra toplevel:* at the failure instant the IPC window
+  dump shows **exactly one window, `focused: true`** — no mount dialog, no
+  second toplevel. Ruled out.
+- *Phyto main-thread sync-D-Bus stall:* strace of a failing run shows the main
+  thread iterating continuously for 10 s with **no gap > 0.2 s** (the 10 ms
+  cadence is the preview heartbeat). The loop never blocks. Ruled out as the
+  flake's cause (the mount cache is still worthwhile hardening, but it does
+  not change the flake rate).
+
+Remaining leading hypothesis: **compositor-fixture input routing under load**
+— the focused, responsive client stops receiving virtual-keyboard events
+during the startup mount. This is outside Phyto's direct control; reproduce
+with the Aqueous fixture under parallel load and inspect compositor focus /
+virtual-keyboard routing. The flake is suppressed by `strace` overhead (8/8)
+and appears ~1/5 under load, consistent with a timing race in the fixture.
 
 Tooling already built and reusable:
 `/tmp/opencode/sftp_strace_run.py` (strace-wrapped launch + MOUNT_POLL state
