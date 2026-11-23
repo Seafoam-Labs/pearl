@@ -51,6 +51,7 @@ pub const Window = struct {
     show_details: bool = true,
     quick_preview: ?*@import("preview.zig").Quick = null,
     details_key: ?[:0]u8 = null,
+    details_measure_cancel: ?*gio.Cancellable = null,
     width: c_int = 1180,
     closed: bool = false,
     syncing: bool = false,
@@ -816,6 +817,11 @@ pub const Window = struct {
             a.free(old);
         }
         self.details_key = key;
+        if (self.details_measure_cancel) |c| {
+            c.cancel();
+            c.unref();
+            self.details_measure_cancel = null;
+        }
         u.clear(self.details_body);
         if (!visible) return;
         const top = u.box(.horizontal, 8, null);
@@ -845,21 +851,23 @@ pub const Window = struct {
         self.details_body.append(name.as(gtk.Widget));
         const type_ = if (info.getContentType()) |t| gio.contentTypeGetDescription(t) else glib.strdup("File");
         defer glib.free(type_);
-        self.detail(@import("i18n").dtr("phyto", "Type"), type_);
-        self.detail(@import("i18n").dtr("phyto", "Location"), self.current().title);
+        _ = self.detail(@import("i18n").dtr("phyto", "Type"), type_);
+        _ = self.detail(@import("i18n").dtr("phyto", "Location"), self.current().title);
+        const is_directory = info.getFileType() == .directory;
         const size = u.sizeText(info);
         defer glib.free(size);
-        self.detail(@import("i18n").dtr("phyto", "Size"), size);
+        const size_label = self.detail(@import("i18n").dtr("phyto", "Size"), if (is_directory) "Calculating…" else size);
+        if (is_directory) self.measureDetails(info, size_label);
         const date = u.dateText(info);
         defer glib.free(date);
-        self.detail(@import("i18n").dtr("phyto", "Modified"), date);
-        self.detail(@import("i18n").dtr("phyto", "Access"), if (info.hasAttribute("access::can-write") == 0) "Not reported" else if (info.getAttributeBoolean("access::can-write") != 0) "You can read and write" else "Read only");
+        _ = self.detail(@import("i18n").dtr("phyto", "Modified"), date);
+        _ = self.detail(@import("i18n").dtr("phyto", "Access"), if (info.hasAttribute("access::can-write") == 0) "Not reported" else if (info.getAttributeBoolean("access::can-write") != 0) "You can read and write" else "Read only");
         const properties = gtk.Button.newWithLabel(@import("i18n").dtr("phyto", "Properties"));
         properties.as(gtk.Widget).addCssClass("tonal");
         self.connect(properties, .properties);
         self.details_body.append(properties.as(gtk.Widget));
     }
-    fn detail(self: *Window, title: [*:0]const u8, value: [*:0]const u8) void {
+    fn detail(self: *Window, title: [*:0]const u8, value: [*:0]const u8) *gtk.Label {
         const row = u.box(.vertical, 4, "metadata");
         row.append(u.label(title, "secondary").as(gtk.Widget));
         const text = u.label(value, null);
@@ -869,6 +877,49 @@ pub const Window = struct {
         text.setSelectable(1);
         row.append(text.as(gtk.Widget));
         self.details_body.append(row.as(gtk.Widget));
+        return text;
+    }
+    const MeasureRequest = struct { owner: *Window, key: [:0]u8, label: *gtk.Label, file: *gio.File, bytes: u64 = 0, ok: bool = false };
+    fn measureDetails(self: *Window, info: *gio.FileInfo, label: *gtk.Label) void {
+        const cancel = gio.Cancellable.new();
+        self.details_measure_cancel = cancel;
+        self.app.as(gio.Application).hold();
+        const request = a.create(MeasureRequest) catch unreachable;
+        const file = u.file(info);
+        file.ref();
+        request.* = .{ .owner = self, .key = a.dupeSentinel(u8, self.details_key.?, 0) catch unreachable, .label = label, .file = file };
+        // Keep the value label alive even if the pane is cleared before the
+        // measurement lands; the key check below decides whether to use it.
+        _ = label.as(object.Object).ref();
+        const task = gio.Task.new(null, cancel, detailsMeasured, request);
+        defer task.unref();
+        task.setTaskData(request, null);
+        task.runInThread(measureWorker);
+    }
+    fn measureWorker(task: *gio.Task, _: *object.Object, data: ?*anyopaque, cancel: ?*gio.Cancellable) callconv(.c) void {
+        const request: *MeasureRequest = @ptrCast(@alignCast(data.?));
+        if (@import("platform/measure.zig").folderSize(request.file, cancel)) |m| {
+            request.bytes = m.bytes;
+            request.ok = true;
+        }
+        task.returnBoolean(1);
+    }
+    fn detailsMeasured(_: ?*object.Object, _: *gio.AsyncResult, data: ?*anyopaque) callconv(.c) void {
+        const request: *MeasureRequest = @ptrCast(@alignCast(data.?));
+        const self = request.owner;
+        defer {
+            self.app.as(gio.Application).release();
+            request.label.as(object.Object).unref();
+            request.file.unref();
+            a.free(request.key);
+            a.destroy(request);
+        }
+        if (self.closed) return;
+        const key = self.details_key orelse return;
+        if (!std.mem.eql(u8, key, request.key)) return;
+        const text = if (request.ok) glib.formatSize(request.bytes) else glib.strdup("Unavailable");
+        defer glib.free(text);
+        request.label.setText(text);
     }
     fn layout(self: *Window) void {
         @import("preview.zig").schedule();
@@ -1261,9 +1312,13 @@ pub const Window = struct {
         var operation_widgets: std.ArrayList(ProbeWidget) = .empty;
         defer operation_widgets.deinit(a);
         if (self.operations.dialog) |d| self.probeWidgetsAt(d.as(gtk.Widget), d.as(gtk.Widget), &operation_widgets);
+        var message_widgets: std.ArrayList(ProbeWidget) = .empty;
+        defer message_widgets.deinit(a);
+        if (self.message_dialog) |d| self.probeWidgetsAt(d.as(gtk.Widget), d.as(gtk.Widget), &message_widgets);
         const json = std.json.Stringify.valueAlloc(a, .{
             .network_dialog_widgets = dialog_widgets.items,
             .operation_dialog_widgets = operation_widgets.items,
+            .message_dialog_widgets = message_widgets.items,
             .network_profiles = @import("platform/network_mounts.zig").shared.?.store.profiles.items,
             .network_states = @import("platform/network_mounts.zig").shared.?.entries.items,
             .network_attempts = @import("platform/network_mounts.zig").shared.?.attempts,
@@ -1361,11 +1416,23 @@ pub const Window = struct {
         body.append(scroll.as(gtk.Widget));
         _ = dialog.addButton("Close", @backingInt(gtk.ResponseType.close));
         _ = gtk.Dialog.signals.response.connect(dialog, *Window, messageResponse, self, .{});
+        if (@import("build_options").test_hooks) {
+            const keys = gtk.EventControllerKey.new();
+            _ = gtk.EventControllerKey.signals.key_pressed.connect(keys, *Window, messageKey, self, .{});
+            dialog.as(gtk.Widget).addController(keys.as(gtk.EventController));
+        }
         dialog.as(gtk.Window).present();
     }
     fn messageResponse(dialog: *gtk.Dialog, _: c_int, self: *Window) callconv(.c) void {
         self.message_dialog = null;
         dialog.as(gtk.Window).destroy();
+    }
+    fn messageKey(_: *gtk.EventControllerKey, key: c_uint, _: c_uint, _: gdk.ModifierType, self: *Window) callconv(.c) c_int {
+        if (key == gdk.KEY_F12) {
+            self.probe();
+            return 1;
+        }
+        return 0;
     }
     const ExtractAsk = struct { owner: *Window, file: *gio.File, tool: @import("platform/applications.zig").Extractor };
     fn askExtract(self: *Window, file: *gio.File, info: *gio.FileInfo, tool: @import("platform/applications.zig").Extractor) void {
@@ -1497,6 +1564,11 @@ pub const Window = struct {
         self.context.stop();
         self.clipboard.stop();
         self.background_cancel.cancel();
+        if (self.details_measure_cancel) |c| {
+            c.cancel();
+            c.unref();
+            self.details_measure_cancel = null;
+        }
         for (self.volume_signals) |signal| object.signalHandlerDisconnect(self.volume_monitor.as(object.Object), signal);
         self.closed = true;
         if (self.quick_preview) |q| q.window.close();
@@ -1549,6 +1621,7 @@ pub const Window = struct {
         self.clipboard.deinit();
         self.preferences.release();
         if (self.details_key) |key| a.free(key);
+        if (self.details_measure_cancel) |c| c.unref();
         self.volume_monitor.unref();
         self.background_cancel.unref();
         if (self.status_message) |msg| a.free(msg);

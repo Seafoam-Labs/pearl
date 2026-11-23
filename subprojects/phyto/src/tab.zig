@@ -83,7 +83,14 @@ pub const Tab = struct {
         // The column view's sorter drives header-click sorting in the list; the
         // preferences sorter keeps grid view (and unsorted headers) in order.
         const multi = gtk.MultiSorter.new();
-        if (list.getSorter()) |view_sorter| multi.append(view_sorter);
+        // append() is transfer-full: hand it an owned ref. The column view's
+        // sorter is borrowed (get_sorter is transfer-none), and the preferences
+        // sorter's Tab-owned ref must survive for destroy(), so ref both first.
+        if (list.getSorter()) |view_sorter| {
+            view_sorter.ref();
+            multi.append(view_sorter);
+        }
+        sorter.ref();
         multi.append(sorter.as(gtk.Sorter));
         sorted.setSorter(multi.as(gtk.Sorter));
         multi.unref();
