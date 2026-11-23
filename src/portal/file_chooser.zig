@@ -159,13 +159,17 @@ pub fn portal_files(r: [*c]Request, params: ?*ffi.GVariant) callconv(.c) void {
     defer if (current != null) ffi.g_variant_unref(@ptrCast(current));
     var selected: ffi.gboolean = 0;
     if (filters != null) {
-        if (ffi.g_variant_n_children(filters) > @as(ffi.gsize, 64)) {
-            reject_filters(r);
-            return;
+        const count: ffi.gsize = ffi.g_variant_n_children(filters);
+        // filters are only selection hints; keep the first 128 so long accept
+        // lists (GitHub attachments in Firefox send 70) still open the chooser.
+        if (count > @as(ffi.gsize, 128)) {
+            const id: [*c]const u8 = if (r.*.app_id != null and r.*.app_id[0] != 0) r.*.app_id else "unknown app";
+            ffi.g_printerr("Truncated file filters from %s: %zu offered, over the portal limit of 128\n", id, count);
         }
+        const kept: ffi.gsize = @min(count, @as(ffi.gsize, 128));
         {
             var i: ffi.guint = 0;
-            while (@as(ffi.gsize, i) < ffi.g_variant_n_children(filters)) : (i +%= 1) {
+            while (@as(ffi.gsize, i) < kept) : (i +%= 1) {
                 const raw: ?*ffi.GVariant = ffi.g_variant_get_child_value(filters, i);
                 defer if (raw != null) ffi.g_variant_unref(@ptrCast(raw));
                 const f: ?*ffi.GtkFileFilter = make_filter(raw);
