@@ -116,7 +116,7 @@ msgstr ""
 msgid "Could not open file"
 msgstr ""
 
-#: subprojects/phyto/src/platform/applications.zig:213 subprojects/phyto/src/platform/applications.zig:219
+#: subprojects/phyto/src/platform/applications.zig:228 subprojects/phyto/src/platform/applications.zig:234
 msgid "Could not run file"
 msgstr ""
 
@@ -596,7 +596,7 @@ msgstr ""
 msgid "The existing item will be kept."
 msgstr ""
 
-#: subprojects/phyto/src/platform/applications.zig:213
+#: subprojects/phyto/src/platform/applications.zig:228
 msgid "The file could not be read."
 msgstr ""
 
