@@ -1,0 +1,15 @@
+{
+  "status": "passed",
+  "checks": {
+    "progress-capability-advertised": true,
+    "progress-replacement-updates-one-card": true,
+    "progress-updates-do-not-pin-the-toast": true,
+    "invalid-progress-hints-are-ignored": true,
+    "cancel-action-invokes-and-resident-card-survives": true,
+    "final-result-clears-progress-and-re-toasts": true,
+    "dismissal-closes-the-result": true,
+    "clean-shutdown": true
+  },
+  "pearl_sha256": "ced4512b72a2462e84620f6ab571bddc785ed05e079373e76afb3cefd31a17dc",
+  "ctl_sha256": "757957c693af6e019c5e81bf485620e436dde51aebd1a2f365e60897237771b9"
+}

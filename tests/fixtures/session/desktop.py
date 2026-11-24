@@ -88,6 +88,7 @@ bus.signal_subscribe(None,nn,None,np,None,Gio.DBusSignalFlags.NONE,lambda c,s,p,
 def send_notification(data):
     hints={k:V('b',data[k]) for k in ('resident','transient') if k in data}
     if 'urgency' in data: hints['urgency']=V('y',data['urgency'])
+    if 'progress' in data: hints['x-pearl-progress']=V('d',data['progress'])
     if 'desktop_entry' in data: hints['desktop-entry']=V('s',data['desktop_entry'])
     if 'image_path' in data: hints['image-path']=V('s',data['image_path'])
     if 'icon_data' in data: hints['icon_data']=raw(*data['icon_data'])

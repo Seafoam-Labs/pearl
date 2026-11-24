@@ -8,7 +8,7 @@ const tr = @import("text.zig").tr;
 const log = std.log.scoped(.desktop);
 const a = std.heap.c_allocator;
 const Action = struct { view: *View, id: u32 = 0, key: service.policy.Action = .{}, button: *gtk.Button, dismiss: bool = false };
-const Card = struct { view: *View, icon: *gtk.Image, box: *gtk.Box, header: *gtk.Label, title: *gtk.Label, body: *gtk.Label, actions: [9]Action = undefined, id: u32 = 0 };
+const Card = struct { view: *View, icon: *gtk.Image, box: *gtk.Box, header: *gtk.Label, title: *gtk.Label, body: *gtk.Label, progress: *gtk.ProgressBar, actions: [9]Action = undefined, id: u32 = 0 };
 pub const View = struct {
     probe_focus: ?*gtk.Widget = null,
     service: *service.Notifications,
@@ -64,7 +64,11 @@ pub const View = struct {
             box.append(heading.as(gtk.Widget));
             box.append(title.as(gtk.Widget));
             box.append(body.as(gtk.Widget));
-            row.* = .{ .view = self, .icon = icon, .box = box, .header = header, .title = title, .body = body };
+            const progress = gtk.ProgressBar.new();
+            progress.as(gtk.Widget).addCssClass("pearl-notification-progress");
+            progress.as(gtk.Widget).setVisible(0);
+            box.append(progress.as(gtk.Widget));
+            row.* = .{ .view = self, .icon = icon, .box = box, .header = header, .title = title, .body = body, .progress = progress };
             // Pressing the card itself is the reserved action's activation route; a child
             // button claims its own sequence, so a pill press never reaches here.
             const press = gtk.GestureClick.new();
@@ -142,6 +146,21 @@ pub const View = struct {
             row.title.setText(r.summary.z());
             row.body.setText(r.body.z());
             row.body.as(gtk.Widget).setVisible(@intFromBool(r.body.len != 0));
+            if (r.progress) |value| {
+                row.progress.as(gtk.Widget).setVisible(1);
+                if (value < 0) {
+                    // Unknown total: a full trough pulsing via CSS, honest about
+                    // not knowing the fraction while the body carries the bytes.
+                    row.progress.setFraction(1);
+                    row.progress.as(gtk.Widget).addCssClass("pearl-progress-indeterminate");
+                } else {
+                    row.progress.as(gtk.Widget).removeCssClass("pearl-progress-indeterminate");
+                    row.progress.setFraction(value);
+                }
+            } else {
+                row.progress.as(gtk.Widget).setVisible(0);
+                row.progress.as(gtk.Widget).removeCssClass("pearl-progress-indeterminate");
+            }
             for (&row.actions, 0..) |*action, j| {
                 action.id = r.id;
                 if (j < r.action_count) {

@@ -79,6 +79,11 @@
 .pearl-root.$scope.pearl-shell .pearl-volume-osd progressbar trough { min-height: 6px; border-radius: 999px; background: $high$; border: none; box-shadow: none; }
 .pearl-root.$scope.pearl-shell .pearl-volume-osd progressbar progress { min-height: 6px; min-width: 0; margin: 0; padding: 0; border-radius: 999px; background: $primary$; border: none; box-shadow: none; }
 .pearl-root.$scope.pearl-shell .pearl-volume-muted progressbar { opacity: 0.45; }
+/* Transfer progress on notification cards mirrors the volume OSD bar. */
+.pearl-root.$scope.pearl-shell .pearl-notification-progress trough { min-height: 6px; border-radius: 999px; background: $high$; border: none; box-shadow: none; }
+.pearl-root.$scope.pearl-shell .pearl-notification-progress progress { min-height: 6px; min-width: 0; margin: 0; padding: 0; border-radius: 999px; background: $primary$; border: none; box-shadow: none; }
+@keyframes pearl-progress-indeterminate { from { opacity: 0.35; } to { opacity: 1; } }
+.pearl-root.$scope.pearl-shell .pearl-progress-indeterminate progress { animation: pearl-progress-indeterminate 1s ease-in-out infinite alternate; }
 .pearl-root.$scope.pearl-shell .pearl-bar-panel button { padding: 2px 12px; min-height: 24px; background: transparent; }
 .pearl-root.$scope.pearl-shell .pearl-bar-panel button:hover { background: $high$; }
 

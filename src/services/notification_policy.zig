@@ -26,6 +26,9 @@ pub const Record = struct {
     urgency: u8 = 1,
     deadline: i64 = 0,
     toast_until: i64 = 0,
+    /// Transfer progress carried by the x-pearl-progress hint: a fraction in
+    /// [0, 1], or -1 when the total is unknown. Null is an ordinary record.
+    progress: ?f64 = null,
 };
 pub const Model = struct {
     records: [64]Record = @splat(.{}),
@@ -55,6 +58,12 @@ pub const Model = struct {
             slot = oldest orelse return error.Limit;
         }
         const replacing = slot.?.active;
+        // A progress update replaces a progress record: keep the original toast
+        // expiry and deadline so a long transfer neither pins nor re-triggers the
+        // toast. The final replacement drops the hint and toasts normally again.
+        const progress_update = replacing and slot.?.progress != null and input.progress != null;
+        const kept_toast = slot.?.toast_until;
+        const kept_deadline = slot.?.deadline;
         var id = slot.?.id;
         if (!replacing) {
             id = self.allocateId();
@@ -68,6 +77,11 @@ pub const Model = struct {
         const ms: i64 = if (timeout < 0) (if (r.urgency == 2) 0 else 5000) else timeout;
         r.deadline = if (ms == 0) 0 else now + ms * 1000;
         r.toast_until = if (self.dnd or self.locked or r.history_only) 0 else now + @min(if (ms == 0) 8000 else ms, 8000) * 1000;
+        if (progress_update) {
+            r.deadline = kept_deadline;
+            // DND, lock and history-only suppression still win over the kept toast.
+            if (r.toast_until != 0) r.toast_until = kept_toast;
+        }
         return r;
     }
     fn allocateId(self: *Model) u32 {
@@ -287,4 +301,54 @@ test "history only replacements preserve protocol deadlines and can return to no
     try t.expectEqual(@as(i64, 300100), quiet.deadline);
     r.history_only = false;
     try t.expect((try m.add(r, id, 300, 100)).toast_until > 0);
+}
+
+test "progress replacements keep the original toast and the final result toasts again" {
+    const t = std.testing;
+    var m: Model = .{};
+    var r: Record = .{};
+    r.owner.set(":1.7");
+    r.progress = -1;
+    const first = try m.add(r, 0, 0, 1000);
+    const id = first.id;
+    const first_serial = first.serial;
+    try t.expectEqual(@as(?f64, -1), first.progress);
+    try t.expectEqual(@as(i64, 0), first.deadline);
+    try t.expectEqual(@as(i64, 8001000), first.toast_until);
+    // Updates arrive later with the same persistent timeout: the toast expiry
+    // must not move, but the serial still advances so views refresh.
+    r.progress = 0.5;
+    r.body.set("45.2 MB · item 3 of 12");
+    const mid = try m.add(r, id, 0, 5000);
+    try t.expectEqual(id, mid.id);
+    try t.expectEqual(@as(i64, 8001000), mid.toast_until);
+    try t.expectEqual(@as(i64, 0), mid.deadline);
+    try t.expect(mid.serial > first_serial);
+    // Even after the original toast expired, an update never re-toasts.
+    const late = try m.add(r, id, 0, 20_000_000);
+    try t.expectEqual(@as(i64, 8001000), late.toast_until);
+    // The final replacement drops the hint: normal toast and deadline return.
+    r.progress = null;
+    const final = try m.add(r, id, -1, 21_000_000);
+    try t.expectEqual(id, final.id);
+    try t.expectEqual(@as(?f64, null), final.progress);
+    try t.expect(final.toast_until > 21_000_000);
+    try t.expect(final.deadline > 21_000_000);
+}
+
+test "progress updates respect DND suppression and sender isolation" {
+    const t = std.testing;
+    var m: Model = .{};
+    var r: Record = .{};
+    r.owner.set(":1.7");
+    r.progress = 0.25;
+    const id = (try m.add(r, 0, 0, 1000)).id;
+    m.dnd = true;
+    m.suppress();
+    const quiet = try m.add(r, id, 0, 2000);
+    try t.expectEqual(@as(i64, 0), quiet.toast_until);
+    m.dnd = false;
+    // A different sender cannot replace the progress record.
+    r.owner.set(":1.8");
+    try t.expect(id != (try m.add(r, id, 0, 3000)).id);
 }

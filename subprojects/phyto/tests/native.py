@@ -305,7 +305,8 @@ def main():
                 assert assert_view(list_mode, hidden)["count"] == (2 if hidden else 1)
             passed("All four view/hidden combinations survive process restarts and preserve unrelated preferences")
 
-            # The original tab and pre-created second pane retain grid/hidden-off.
+            # The original tab keeps its own view; the split's fresh Home tab
+            # inherits the saved defaults like any new tab.
             key("t", "ctrl")
             key("2", "ctrl"); key("h", "ctrl")
             key("t", "ctrl")
@@ -316,11 +317,14 @@ def main():
             before = config.stat().st_mtime_ns
             navigate(home); key("F5")
             key("F3"); key("F6")
-            assert_view(False, False)
+            assert_view(True, True)
             key("F6"); key("F3")
             assert config.stat().st_mtime_ns == before
             # Reaffirming the current view must replace another tab's default.
             key("1", "ctrl")
+            # Key delivery is async: let the app process the press (and its
+            # synchronous preference write) before reading the saved file.
+            probe()
             assert_saved(False, True)
             before = config.stat().st_mtime_ns
             key("1", "ctrl")
@@ -359,6 +363,91 @@ def main():
             assert_view(False, True)
             close()
             passed("Save failure is visible, preserves usable state, and retries successfully")
+
+            # Transfer progress notifications against a real sink on the private
+            # bus. Earlier checks ran without any notification owner, covering
+            # the inert fallback; here the sink records the whole Notify chain.
+            sink_log = output / "notifications.jsonl"
+            sink_log.write_text("")
+            sink = s.child("notify-sink", ["python3", str(PROJECT / "tests/notification_sink.py")],
+                           input_pipe=True, PHYTO_TEST_NOTIFY_LOG=str(sink_log))
+            sink.expect("event=ready")
+
+            def notes():
+                return [json.loads(x) for x in sink_log.read_text().splitlines()]
+
+            def sink_command(**data):
+                payload = json.dumps(data, sort_keys=True)
+                reply = "command=" + payload
+                count = sum(reply in line for line in sink.lines)
+                sink.proc.stdin.write(payload + "\n"); sink.proc.stdin.flush()
+                wait_for(lambda: sum(reply in line for line in sink.lines) > count)
+
+            launch()
+            navigate(home)
+            key("n", "ctrl", "shift")
+            text("Progress")
+            key("Return")
+            wait_for(lambda: (home / "Progress").is_dir())
+            navigate(home / "Documents")
+            key("Home")
+            key("c", "ctrl")
+            navigate(home / "Progress")
+            # Pre-create a collision so the first batch pauses deterministically;
+            # the pause also guarantees the notification owner is discovered before
+            # any fast copy is attempted.
+            (home / "Progress/Renamed.md").write_bytes(source_bytes)
+            key("v", "ctrl")
+            paused = wait_for(lambda: next((n for n in notes() if n["kind"] == "notify"
+                                            and n["body"] == "Waiting for a decision…"), False))
+            # By the pause the capability probe has answered, so the live card
+            # carries the progress hint and is persistent and cancellable.
+            assert "x-pearl-progress" in paused["hints"], paused
+            assert paused["timeout"] == 0 and "cancel" in paused["actions"]
+            sink_command(action=[paused["id"], "cancel"])
+            cancelled = wait_for(lambda: next((n for n in notes() if n["kind"] == "notify"
+                                               and n["replaces"] == paused["id"]
+                                               and "x-pearl-progress" not in n["hints"]), False))
+            assert cancelled["summary"] == "Copy cancelled", cancelled
+            assert not probe()["busy"] and not probe()["conflict"]
+            assert (home / "Progress/Renamed.md").read_bytes() == source_bytes
+            passed("The notification Cancel action stops a paused batch and reports cancellation")
+
+            # The owner is discovered now, so a clean fast copy reports start + result.
+            (home / "Progress/Renamed.md").unlink()
+            base = len(notes())
+            key("v", "ctrl")
+            wait_for(lambda: (home / "Progress/Renamed.md").exists())
+
+            def result_note():
+                rows = [n for n in notes()[base:] if n["kind"] == "notify" and n["app"] == "Phyto"]
+                if not rows or rows[0]["replaces"] != 0:
+                    return False
+                if rows[0]["timeout"] != 0 or "cancel" not in rows[0]["actions"]:
+                    return False
+                return next((n for n in rows[1:] if n["replaces"] == rows[0]["id"]
+                             and "x-pearl-progress" not in n["hints"]), False)
+
+            final = wait_for(result_note)
+            assert final["summary"] == "Copy complete", final
+            assert all(n["replaces"] in (0, final["id"]) for n in notes()[base:] if n["kind"] == "notify")
+            passed("Transfer progress announces one persistent card and replaces it with the result")
+
+            # Dismissing the card detaches updates but never cancels the batch:
+            # resolving the collision afterwards produces no further Notify.
+            key("v", "ctrl")
+            paused2 = wait_for(lambda: next((n for n in notes()[base:] if n["kind"] == "notify"
+                                             and n["body"] == "Waiting for a decision…"), False))
+            sink_command(close=paused2["id"])
+            count_before = len(notes())
+            time.sleep(.3)
+            key("Return")  # the modal conflict dialog defaults to Skip
+            wait_for(lambda: not probe()["busy"])
+            time.sleep(.6)
+            assert len(notes()) == count_before, notes()[count_before:]
+            assert (home / "Progress/Renamed.md").read_bytes() == source_bytes
+            passed("Dismissing the progress card detaches updates without cancelling the transfer")
+            close()
             ipc.close()
         report["status"] = "passed"
     except Exception as error:
