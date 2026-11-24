@@ -174,7 +174,7 @@ msgstr ""
 msgid "Aa     +1"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:1002
+#: src/ui/surfaces/manager.zig:1093
 msgid "About {0} h {1} min left"
 msgstr ""
 
@@ -898,7 +898,7 @@ msgstr ""
 msgid "Battery service unavailable"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:992
+#: src/ui/surfaces/manager.zig:1083
 msgid "Battery very low"
 msgstr ""
 
@@ -1262,7 +1262,7 @@ msgctxt "aqueous.input.repeat_rate.description"
 msgid "Characters per second; zero disables repeat."
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:1009
+#: src/ui/surfaces/manager.zig:1100
 msgid "Charge is running low."
 msgstr ""
 
@@ -1470,7 +1470,7 @@ msgstr ""
 msgid "Clock saved to draft. Apply & save to update the bar."
 msgstr ""
 
-#: src/settings/window.zig:1276
+#: src/desktop/window_menu.zig:134 src/settings/window.zig:1276
 msgid "Close"
 msgstr ""
 
@@ -1682,7 +1682,7 @@ msgstr ""
 msgid "Connect and manage your wireless devices."
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:1005
+#: src/ui/surfaces/manager.zig:1096
 msgid "Connect power now to avoid losing unsaved work."
 msgstr ""
 
@@ -1891,7 +1891,7 @@ msgstr ""
 msgid "Critical"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:993
+#: src/ui/surfaces/manager.zig:1084
 msgid "Critical battery level"
 msgstr ""
 
@@ -2025,7 +2025,7 @@ msgstr ""
 msgid "Cycle windows requires updated Aqueous"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:1731
+#: src/ui/surfaces/manager.zig:1838
 msgid "Cycle →"
 msgstr ""
 
@@ -2739,6 +2739,10 @@ msgstr ""
 msgid "Example error message"
 msgstr ""
 
+#: src/desktop/window_menu.zig:105
+msgid "Exit fullscreen"
+msgstr ""
+
 #: src/core/application.zig:185
 msgid "Explore Pearl’s appearance with sample content."
 msgstr ""
@@ -2996,6 +3000,10 @@ msgstr ""
 
 #: src/desktop/panels.zig:106 src/desktop/panels.zig:223 src/desktop/panels.zig:468
 msgid "Full settings is not installed."
+msgstr ""
+
+#: src/desktop/window_menu.zig:105
+msgid "Fullscreen"
 msgstr ""
 
 #: tests/fixtures/aqueous-master/snapshot.json
@@ -3537,7 +3545,7 @@ msgstr ""
 msgid "Layout behavior"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:2930
+#: src/ui/surfaces/manager.zig:3037
 msgid "Layout change unavailable"
 msgstr ""
 
@@ -3773,7 +3781,7 @@ msgstr ""
 msgid "Low"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:991
+#: src/ui/surfaces/manager.zig:1082
 msgid "Low battery"
 msgstr ""
 
@@ -3896,6 +3904,10 @@ msgstr ""
 msgid "Matugen scheme"
 msgstr ""
 
+#: src/desktop/window_menu.zig:104
+msgid "Maximize"
+msgstr ""
+
 #: tests/fixtures/aqueous-master/snapshot.json
 msgctxt "aqueous.state.maximize_full_output.label"
 msgid "Maximize to full output"
@@ -3982,6 +3994,10 @@ msgstr ""
 #: tests/fixtures/aqueous-master/snapshot.json
 msgctxt "aqueous.input.raise_on_focus_delay_ms.description"
 msgid "Milliseconds to wait before raising a newly focused freeform window."
+msgstr ""
+
+#: src/desktop/window_menu.zig:103
+msgid "Minimize"
 msgstr ""
 
 #: src/desktop/launcher.zig:315
@@ -4085,6 +4101,10 @@ msgstr ""
 
 #: src/desktop/services.zig:93 src/settings/sound_view.zig:196
 msgid "Move to default"
+msgstr ""
+
+#: src/desktop/window_menu.zig:128
+msgid "Move to workspace"
 msgstr ""
 
 #: src/settings/scheduler_view.zig:195
@@ -4808,7 +4828,7 @@ msgstr ""
 msgid "Pause automatic idle"
 msgstr ""
 
-#: src/core/application.zig:179 src/ui/surfaces/manager.zig:1525
+#: src/core/application.zig:179 src/ui/surfaces/manager.zig:1632
 msgid "Pearl"
 msgstr ""
 
@@ -5205,7 +5225,7 @@ msgstr ""
 msgid "Preview only · committed appearance is unchanged. To select a package, choose Use theme, then Apply & save."
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:1730
+#: src/ui/surfaces/manager.zig:1837
 msgid "Previous"
 msgstr ""
 
@@ -5574,6 +5594,10 @@ msgstr ""
 
 #: src/desktop/panels.zig:114 src/desktop/services.zig:287 src/desktop/services.zig:321
 msgid "Restart…"
+msgstr ""
+
+#: src/desktop/window_menu.zig:103 src/desktop/window_menu.zig:104
+msgid "Restore"
 msgstr ""
 
 #: src/settings/scheduler_view.zig:382
@@ -6129,6 +6153,11 @@ msgstr ""
 
 #: src/settings/preferences_view.zig:260
 msgid "Sequential"
+msgstr ""
+
+#: tests/fixtures/aqueous-master/snapshot.json
+msgctxt "aqueous.decoration.renderer.label"
+msgid "Server-side decoration renderer"
 msgstr ""
 
 #: src/settings/window.zig:1096
@@ -7292,11 +7321,11 @@ msgstr ""
 msgid "The default profiles could not be restored."
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:1499
+#: src/ui/surfaces/manager.zig:1606
 msgid "The desktop action could not be completed."
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:1495
+#: src/ui/surfaces/manager.zig:1602
 msgid "The desktop action could not be confirmed."
 msgstr ""
 
@@ -8086,6 +8115,11 @@ msgctxt "aqueous.layout.options.scrolling.new_window_position.description"
 msgid "Where new windows are placed relative to the focused window; any explicit position overrides portrait stacking."
 msgstr ""
 
+#: tests/fixtures/aqueous-master/snapshot.json
+msgctxt "aqueous.decoration.renderer.description"
+msgid "Who draws server-side window decorations: the compositor's built-in borders, or the Pearl shell's themed titlebars. Pearl must be running for shell rendering; otherwise borders remain."
+msgstr ""
+
 #: src/ui/i18n.zig:17 src/desktop/bar.zig:756 src/desktop/connectivity.zig:75 src/ui/components/network.zig:89 src/ui/components/network.zig:92
 msgid "Wi-Fi"
 msgstr ""
@@ -8156,6 +8190,10 @@ msgstr ""
 msgid "Window effects"
 msgstr ""
 
+#: src/desktop/window_menu.zig:84
+msgid "Window menu"
+msgstr ""
+
 #: tests/fixtures/aqueous-master/snapshot.json
 msgctxt "aqueous.opacity.enabled.label"
 msgid "Window opacity"
@@ -8200,7 +8238,7 @@ msgstr ""
 msgid "Working…"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:1812
+#: src/ui/surfaces/manager.zig:1919
 msgid "Workspace"
 msgstr ""
 
@@ -8384,6 +8422,12 @@ msgstr ""
 #. Display label only; the underlying Aqueous option value is unchanged.
 msgctxt "aqueous.layout.slots.tertiary.option"
 msgid "composable"
+msgstr ""
+
+#: tests/fixtures/aqueous-master/snapshot.json
+#. Display label only; the underlying Aqueous option value is unchanged.
+msgctxt "aqueous.decoration.renderer.option"
+msgid "compositor"
 msgstr ""
 
 #: tests/fixtures/aqueous-master/snapshot.json
@@ -9286,6 +9330,12 @@ msgid "set_layout_tertiary"
 msgstr ""
 
 #: tests/fixtures/aqueous-master/snapshot.json
+#. Display label only; the underlying Aqueous option value is unchanged.
+msgctxt "aqueous.decoration.renderer.option"
+msgid "shell"
+msgstr ""
+
+#: tests/fixtures/aqueous-master/snapshot.json
 msgctxt "aqueous.shrink_floating_down.label"
 msgid "shrink_floating_down"
 msgstr ""
@@ -9682,7 +9732,7 @@ msgstr ""
 msgid "{0} with its own defaults"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:1008
+#: src/ui/surfaces/manager.zig:1099
 msgid "{0} {1}"
 msgstr ""
 
@@ -9694,7 +9744,7 @@ msgstr ""
 msgid "{0} {1}{2}{3}"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:1013
+#: src/ui/surfaces/manager.zig:1104
 msgid "{0} · {1}%"
 msgstr ""
 
@@ -9702,11 +9752,11 @@ msgstr ""
 msgid "{0} — {1} {2}, all workspaces{3}{4}"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:1000
+#: src/ui/surfaces/manager.zig:1091
 msgid "{0}% charge remaining"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:1000
+#: src/ui/surfaces/manager.zig:1091
 msgid "{0}% remaining · about {1} h {2} min left"
 msgstr ""
 

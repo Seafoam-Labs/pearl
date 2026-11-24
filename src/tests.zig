@@ -10,6 +10,7 @@ test {
     _ = @import("desktop/calculator.zig");
     _ = @import("services/notification_filter_policy.zig");
     _ = @import("desktop/window_switcher.zig");
+    _ = @import("desktop/window_menu.zig");
     _ = @import("services/audio_feedback.zig");
     _ = @import("services/brightness_feedback.zig");
     _ = @import("services/brightness_model.zig");

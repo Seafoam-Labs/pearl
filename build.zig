@@ -202,11 +202,13 @@ pub fn build(b: *std.Build) void {
     const scanner = Scanner.create(b, .{ .wayland_xml = b.path("bindings/protocols/wayland.xml"), .wayland_protocols = b.path("bindings/protocols") });
     scanner.addCustomProtocol(b.path("bindings/protocols/ext-background-effect-v1.xml"));
     scanner.addCustomProtocol(b.path("bindings/protocols/aqueous-shell-v1.xml"));
+    scanner.addCustomProtocol(b.path("bindings/protocols/cursor-shape-v1.xml"));
     scanner.addCustomProtocol(b.path("bindings/protocols/ext-workspace-v1.xml"));
     scanner.addCustomProtocol(b.path("bindings/protocols/aqueous-window-info-v1.xml"));
     scanner.addCustomProtocol(b.path("bindings/protocols/ext-foreign-toplevel-list-v1.xml"));
     scanner.generate("aqueous_window_info_manager_v1", 3);
-    scanner.generate("aqueous_shell_manager_v1", 2);
+    scanner.generate("aqueous_shell_manager_v1", 4);
+    scanner.generate("wp_cursor_shape_manager_v1", 1);
     scanner.addCustomProtocol(b.path("bindings/protocols/aqueous-output-warming-v1.xml"));
     scanner.generate("aqueous_output_warming_manager_v1", 1);
     scanner.addCustomProtocol(b.path("bindings/protocols/aqueous-input-activity-v1.xml"));

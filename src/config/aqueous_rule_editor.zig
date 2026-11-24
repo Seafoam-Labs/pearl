@@ -10,7 +10,7 @@ pub fn matcher(name: []const u8) bool {
 /// The v1 compatibility map deliberately does not classify unknown keys.
 pub fn known(name: []const u8) bool {
     if (std.mem.eql(u8, name, "matching")) return true;
-    for ([_][]const u8{ "app_id", "class", "title", "content_type", "layout", "output", "workspace", "floating", "fullscreen", "ignore_struts", "width", "height", "x", "y", "placement_policy", "anchor", "size", "scale", "blur", "opacity", "buffer_scale_policy", "hdr_expand", "overlay_plane", "stack_layer", "focus", "fixed_position", "skip_switcher", "skip_taskbar", "scrolling_full_width", "scrolling_width", "tag", "scope", "window_type", "keep_render" }) |k| if (std.mem.eql(u8, name, k)) return true;
+    for ([_][]const u8{ "app_id", "class", "title", "content_type", "layout", "output", "workspace", "floating", "fullscreen", "ignore_struts", "width", "height", "x", "y", "placement_policy", "anchor", "size", "scale", "blur", "opacity", "buffer_scale_policy", "hdr_expand", "overlay_plane", "decoration", "stack_layer", "focus", "fixed_position", "skip_switcher", "skip_taskbar", "scrolling_full_width", "scrolling_width", "tag", "scope", "window_type", "keep_render" }) |k| if (std.mem.eql(u8, name, k)) return true;
     return false;
 }
 pub fn overlay(a: std.mem.Allocator, original: m.Value, patch: m.Value) !m.Value {

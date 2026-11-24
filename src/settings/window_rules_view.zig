@@ -474,7 +474,7 @@ pub fn For(comptime Parent: type) type {
 }
 fn labelFor(key: []const u8) []const u8 {
     if (std.mem.eql(u8, key, "matching")) return "Matching timing";
-    const labels = .{ .{ "app_id", "Application ID" }, .{ "class", "X11 class" }, .{ "title", "Title" }, .{ "tag", "Launch tag" }, .{ "content_type", "Content type" }, .{ "window_type", "X11 window type" }, .{ "scope", "Scope" }, .{ "floating", "Floating" }, .{ "fullscreen", "Fullscreen" }, .{ "workspace", "Workspace (1-based)" }, .{ "output", "Output connector" }, .{ "stack_layer", "Stack layer" }, .{ "width", "Width" }, .{ "height", "Height" }, .{ "opacity", "Opacity" }, .{ "blur", "Blur" }, .{ "keep_render", "Keep rendering while hidden" }, .{ "placement_policy", "Placement" } };
+    const labels = .{ .{ "app_id", "Application ID" }, .{ "class", "X11 class" }, .{ "title", "Title" }, .{ "tag", "Launch tag" }, .{ "content_type", "Content type" }, .{ "window_type", "X11 window type" }, .{ "scope", "Scope" }, .{ "floating", "Floating" }, .{ "fullscreen", "Fullscreen" }, .{ "workspace", "Workspace (1-based)" }, .{ "output", "Output connector" }, .{ "stack_layer", "Stack layer" }, .{ "width", "Width" }, .{ "height", "Height" }, .{ "opacity", "Opacity" }, .{ "blur", "Blur" }, .{ "decoration", "Decorations" }, .{ "keep_render", "Keep rendering while hidden" }, .{ "placement_policy", "Placement" } };
     inline for (labels) |pair| if (std.mem.eql(u8, key, pair[0])) return pair[1];
     return key;
 }
