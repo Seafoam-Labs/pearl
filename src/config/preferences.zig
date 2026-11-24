@@ -658,6 +658,12 @@ test "dock preferences preserve inherited settings and reject duplicate or unsaf
     try t.expectError(error.InvalidDesktopId, p.validate());
     p.pinned_apps = &.{"org.example.App.desktop"};
     try p.validate();
+    var arena = std.heap.ArenaAllocator.init(t.allocator);
+    defer arena.deinit();
+    try t.expect((try parse(arena.allocator(), "{}")).dock.running_indicators);
+    const off = try parse(arena.allocator(), "{\"dock\":{\"running_indicators\":false}}");
+    try t.expect(!off.dock.running_indicators);
+    try t.expect(!(try parse(arena.allocator(), try std.json.Stringify.valueAlloc(arena.allocator(), off, .{}))).dock.running_indicators);
 }
 
 test "the recorded bar and dock preset roundtrips and rejects unsafe identifiers" {

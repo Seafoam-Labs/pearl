@@ -2454,6 +2454,7 @@ pub const Manager = struct {
             .aqueous_keep => try self.aqueous_settings.choose(true),
             .aqueous_revert => try self.aqueous_settings.choose(false),
             .aqueous_rebase => try self.aqueous_settings.rebase(),
+            .aqueous_resolve => try self.aqueous_settings.resolve(),
             .aqueous_record => {
                 const view = if (self.popup) |p| p.aqueous_settings else null;
                 try (view orelse return error.Unavailable).record(request.text.?);

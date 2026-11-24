@@ -581,6 +581,11 @@ pub const Backend = struct {
             if (self.preview_owner != peer) return error.NotOwner;
             return c.choose(false);
         }
+        if (v.action == .resolve) {
+            try c.resolve();
+            entry.aqueous_job = c.jobs;
+            return;
+        }
         try c.checkDraft(try p.number(v.expected_draft_revision), try p.number(v.version));
         switch (v.action) {
             .refresh, .validate, .apply => {
@@ -606,7 +611,7 @@ pub const Backend = struct {
                 if (self.preview_owner != peer) return error.NotOwner;
                 try c.choose(true);
             },
-            .revert => unreachable,
+            .revert, .resolve => unreachable,
         }
     }
 };

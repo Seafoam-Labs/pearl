@@ -92,9 +92,14 @@ The [preferred-launcher fix](DOCK_LAUNCH_ATTRIBUTION_PLAN.md) uses the existing
 Aqueous protocol and requires no compositor update.
 
 Dots indicate running windows; a filled dot and highlighted button indicate
-focus. Accessible button labels and tooltips include the application name,
-running count, focus, minimized state and pin status. Native GTK buttons
-and popovers supply roles and standard keyboard interaction.
+focus. A dim dot marks an application whose windows all live on other outputs,
+so pinned apps stay visibly running across monitors; groups and primary-click
+activation remain per-output. The **Running app indicators** dock setting
+(Settings → Bar & dock → Dock, on by default) turns these dots off.
+Accessible button labels and tooltips include the application name,
+running count, focus, minimized state, windows on other displays and pin
+status. Native GTK buttons and popovers supply roles and standard keyboard
+interaction.
 
 The dock supports these visibility modes:
 
