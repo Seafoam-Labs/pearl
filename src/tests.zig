@@ -53,6 +53,7 @@ test {
     _ = @import("config/aqueous_presentation.zig");
     _ = @import("config/aqueous_draft.zig");
     _ = @import("config/border_theme.zig");
+    _ = @import("config/decoration_mode.zig");
     _ = @import("config/aqueous_contract.zig");
     _ = @import("config/aqueous_instance.zig");
     _ = @import("config/aqueous_collections.zig");

@@ -7,8 +7,23 @@ input routing, transitions).
 
 ## Enable
 
-Set the compositor configuration field `decoration.renderer` to `shell`
-(Settings → Appearance → Window appearance, or `wm.toml`):
+The simplest control is the unified **Window decorations** dropdown in
+Settings → Aqueous → Appearance → Window appearance. It derives from and
+writes both underlying settings atomically:
+
+| Selection | `decoration.renderer` | `layout.force_ssd` |
+| --- | --- | --- |
+| Off — applications draw their own | `compositor` | `false` |
+| Compositor borders — all capable apps | `compositor` | `true` |
+| Pearl titlebars — apps that request them | `shell` | `false` |
+| Pearl titlebars — all capable apps | `shell` | `true` |
+
+The two underlying fields remain editable in raw configuration; the dropdown
+always reflects their current combination. The mapping is unit-tested
+(`src/config/decoration_mode.zig`) and the full UI round-trip is covered by
+`tests/integration/test_decoration_mode.py` (`zig build test-decoration-mode`).
+
+For direct configuration, set the compositor fields in `wm.toml`:
 
 ```toml
 [decoration]
