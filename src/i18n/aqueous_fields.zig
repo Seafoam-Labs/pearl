@@ -32,6 +32,10 @@ pub const fields = [_]Field{
     .{ .id = "state.maximize_full_output", .label = "Maximize to full output", .description = "Maximized windows ignore reserved struts.", .options = &.{} },
     .{ .id = "blur.enabled", .label = "Backdrop blur", .description = "Blur content behind eligible windows.", .options = &.{} },
     .{ .id = "decoration.corner_radius", .label = "Window corner radius", .description = "Window rounding in logical pixels; zero disables compositor rounding. Requires Vulkan effects. Application-drawn transparent corners remain.", .options = &.{} },
+    .{ .id = "decoration.renderer", .label = "Server-side decoration renderer", .description = "Who draws server-side window decorations: the compositor's built-in borders, or the Pearl shell's themed titlebars. Pearl must be running for shell rendering; otherwise borders remain.", .options = &.{
+        "compositor",
+        "shell",
+    } },
     .{ .id = "blur.radius", .label = "Blur radius", .description = "Backdrop blur radius in pixels.", .options = &.{} },
     .{ .id = "blur.passes", .label = "Blur passes", .description = "Higher values increase blur and GPU cost.", .options = &.{} },
     .{ .id = "blur.noise", .label = "Blur noise", .description = "Stable screen-space noise added to the blurred backdrop.", .options = &.{} },

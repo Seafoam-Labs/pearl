@@ -202,11 +202,13 @@ pub fn build(b: *std.Build) void {
     const scanner = Scanner.create(b, .{ .wayland_xml = b.path("bindings/protocols/wayland.xml"), .wayland_protocols = b.path("bindings/protocols") });
     scanner.addCustomProtocol(b.path("bindings/protocols/ext-background-effect-v1.xml"));
     scanner.addCustomProtocol(b.path("bindings/protocols/aqueous-shell-v1.xml"));
+    scanner.addCustomProtocol(b.path("bindings/protocols/cursor-shape-v1.xml"));
     scanner.addCustomProtocol(b.path("bindings/protocols/ext-workspace-v1.xml"));
     scanner.addCustomProtocol(b.path("bindings/protocols/aqueous-window-info-v1.xml"));
     scanner.addCustomProtocol(b.path("bindings/protocols/ext-foreign-toplevel-list-v1.xml"));
     scanner.generate("aqueous_window_info_manager_v1", 3);
-    scanner.generate("aqueous_shell_manager_v1", 2);
+    scanner.generate("aqueous_shell_manager_v1", 4);
+    scanner.generate("wp_cursor_shape_manager_v1", 1);
     scanner.addCustomProtocol(b.path("bindings/protocols/aqueous-output-warming-v1.xml"));
     scanner.generate("aqueous_output_warming_manager_v1", 1);
     scanner.addCustomProtocol(b.path("bindings/protocols/aqueous-input-activity-v1.xml"));
@@ -770,6 +772,12 @@ pub fn build(b: *std.Build) void {
     aqueous_layout.addArtifactArg(integration_app);
     aqueous_layout.addPassthruArgs();
     b.step("test-aqueous-layout", "Verify Aqueous cards, search, shared review and responsive layout in a private session").dependOn(&aqueous_layout.step);
+    const decoration_mode = b.addSystemCommand(&.{ "python3", "tests/integration/test_decoration_mode.py", "--settings" });
+    decoration_mode.addArtifactArg(settings_test_app);
+    decoration_mode.addArg("--pearl");
+    decoration_mode.addArtifactArg(integration_app);
+    decoration_mode.addPassthruArgs();
+    b.step("test-decoration-mode", "Verify the unified Window decorations dropdown maps renderer and force_ssd in a private session").dependOn(&decoration_mode.step);
     const settings_devices = b.addSystemCommand(&.{ "python3", "tests/integration/test_settings_devices.py", "--settings" });
     settings_devices.addArtifactArg(settings_test_app);
     settings_devices.addArg("--pearl");

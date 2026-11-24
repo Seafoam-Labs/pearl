@@ -472,6 +472,46 @@ test "window lists preserve minimized windows and respect independent skip flags
     try t.expectEqual(0, other_output.len);
 }
 
+test "window decoration fields decode additively and default on older compositors" {
+    const parsed = try std.json.parseFromSlice(std.json.Value, a,
+        \\{"kind":"window","id":"7","backend":"xdg","app_id":"org.test.App","class":null,
+        \\"title":"Title","workspace":"1","output":"1","layout":"tile",
+        \\"geometry":{"x":0,"y":0,"width":800,"height":600},
+        \\"outer_geometry":{"x":-2,"y":-2,"width":804,"height":604},
+        \\"focused":true,"visible":true,"floating":false,"minimized":false,"maximized":false,
+        \\"fullscreen":false,"skip_taskbar":false,"skip_switcher":false,"always_above":false,
+        \\"always_below":false,"snapped":false,"fixed_position":false,
+        \\"can_minimize":true,"can_maximize":true,"can_activate":true,
+        \\"decoration":{"capability":"xdg-decoration","requested":"server-side","effective":"server-side","configure_pending":false},
+        \\"ssd_renderer":"shell"}
+    , .{});
+    defer parsed.deinit();
+    const window = try e.read(e.Window, a, parsed.value);
+    try t.expectEqualStrings("shell", window.ssd_renderer.?);
+    try t.expectEqualStrings("xdg-decoration", window.decoration.?.capability);
+    try t.expectEqualStrings("server-side", window.decoration.?.effective);
+    try t.expect(!window.decoration.?.configure_pending);
+    // Cloning preserves the additive fields for the owned model.
+    var arena = std.heap.ArenaAllocator.init(a);
+    defer arena.deinit();
+    const owned = try e.clone(e.Window, arena.allocator(), window);
+    try t.expectEqualStrings("shell", owned.ssd_renderer.?);
+    // Older compositors omit the fields entirely.
+    const legacy = try std.json.parseFromSlice(std.json.Value, a,
+        \\{"kind":"window","id":"7","backend":"xdg","app_id":null,"class":null,
+        \\"title":null,"workspace":null,"output":null,"layout":"tile",
+        \\"geometry":{"x":0,"y":0,"width":1,"height":1},
+        \\"outer_geometry":{"x":0,"y":0,"width":1,"height":1},
+        \\"focused":false,"visible":true,"floating":false,"minimized":false,"maximized":false,
+        \\"fullscreen":false,"skip_taskbar":false,"skip_switcher":false,"always_above":false,
+        \\"always_below":false,"snapped":false,"fixed_position":false,
+        \\"can_minimize":false,"can_maximize":false,"can_activate":true}
+    , .{});
+    defer legacy.deinit();
+    const old = try e.read(e.Window, a, legacy.value);
+    try t.expect(old.ssd_renderer == null and old.decoration == null);
+}
+
 test "invalid snapshot identities and graph references preserve the accepted snapshot" {
     var m = try model();
     defer m.deinit();

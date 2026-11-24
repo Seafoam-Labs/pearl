@@ -189,11 +189,24 @@ pub fn For(comptime View: type) type {
                     }
                 }
             }
+            var decorations_unified = false;
+            for (m.list(m.get(snapshot, "fields"))) |field| {
+                if (std.mem.eql(u8, m.str(m.get(field, "id")), "decoration.renderer")) decorations_unified = true;
+            }
             for (std.enums.values(map.Group)) |id| {
                 if (!std.mem.eql(u8, map.spec(id).page, category)) continue;
                 var body: ?*gtk.Box = null;
+                if (id == .borders and decorations_unified) {
+                    body = try group(view, scalar_host, id);
+                    try preview(view, body.?, false);
+                    try view.decorationModeEditor(body.?, snapshot, draft);
+                }
                 for (m.list(m.get(snapshot, "fields"))) |field| {
                     if (!std.mem.eql(u8, m.fieldCategory(field), category) or map.group(field) != id) continue;
+                    const field_id = m.str(m.get(field, "id"));
+                    // The derived "Window decorations" dropdown replaces these
+                    // two separate editors; raw config still exposes them.
+                    if (decorations_unified and (std.mem.eql(u8, field_id, "decoration.renderer") or std.mem.eql(u8, field_id, "layout.force_ssd"))) continue;
                     if (body == null) {
                         body = try group(view, scalar_host, id);
                         if (id == .borders or id == .layout) try preview(view, body.?, id == .layout);
