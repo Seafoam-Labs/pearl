@@ -106,7 +106,12 @@ pub const Job = struct {
     kind: Kind,
     pairs: std.ArrayList(Pair) = .empty,
     cancel: *gio.Cancellable,
-    index: usize = 0,
+    /// Current top-level item. The worker advances it; the main thread reads it
+    /// for progress reporting and advances it while a conflict pauses the batch.
+    index: std.atomic.Value(usize) = .init(0),
+    /// Total bytes of a single regular-file transfer, measured once by the
+    /// worker. maxInt means the total is unknown (trees, batches, remote sizes).
+    total_bytes: std.atomic.Value(u64) = .init(std.math.maxInt(u64)),
     error_message: ?[:0]u8 = null,
     failures: std.ArrayList(u8) = .empty,
     conflict: bool = false,
@@ -163,8 +168,9 @@ pub const Job = struct {
     }
     pub fn run(self: *Job) void {
         self.conflict = false;
-        while (self.index < self.pairs.items.len) : (self.index += 1) {
-            const p = &self.pairs.items[self.index];
+        self.measure();
+        while (self.index.load(.monotonic) < self.pairs.items.len) {
+            const p = &self.pairs.items[self.index.load(.monotonic)];
             self.perform(p) catch |err| {
                 if (err == error.Conflict) {
                     self.conflict = true;
@@ -181,6 +187,7 @@ pub const Job = struct {
                 defer a.free(line);
                 self.failures.appendSlice(a, line) catch unreachable;
                 self.failed += 1;
+                self.index.store(self.index.load(.monotonic) + 1, .monotonic);
                 continue;
             };
             p.completed = true;
@@ -191,7 +198,24 @@ pub const Job = struct {
             if (p.destination) |dest| {
                 if (p.fingerprint == null) p.fingerprint = self.digest(dest) catch null;
             }
+            self.index.store(self.index.load(.monotonic) + 1, .monotonic);
         }
+    }
+    /// A single regular file has a cheap known total; trees, batches and remote
+    /// sources stay unknown rather than paying for a recursive pre-scan. Runs on
+    /// the worker before the first item; a failed query leaves the total unknown.
+    fn measure(self: *Job) void {
+        if (self.total_bytes.load(.monotonic) != std.math.maxInt(u64)) return;
+        if (self.kind != .copy and self.kind != .move and self.kind != .restore) return;
+        if (self.pairs.items.len != 1) return;
+        const p = &self.pairs.items[0];
+        var err: ?*glib.Error = null;
+        const info = p.source.queryInfo("standard::type,standard::size", .{ .nofollow_symlinks = true }, self.cancel, &err) orelse {
+            if (err) |e| e.free();
+            return;
+        };
+        defer info.unref();
+        if (info.getFileType() == .regular) self.total_bytes.store(@intCast(@max(0, info.getSize())), .monotonic);
     }
     fn perform(self: *Job, p: *Pair) Failure!void {
         if (self.error_message) |m| {
@@ -524,7 +548,7 @@ pub const Job = struct {
     /// offers it only for transfers, never for undo/redo: a collision there
     /// means the destination changed underneath the journal.
     pub fn replace(self: *Job) void {
-        self.pairs.items[self.index].replace = true;
+        self.pairs.items[self.index.load(.monotonic)].replace = true;
     }
     /// Replace is recoverable: the existing destination is moved to Trash before
     /// the transfer writes anything, so the previous item can be restored. When
@@ -589,7 +613,7 @@ pub const Job = struct {
         return error.Limit;
     }
     pub fn keepBoth(self: *Job) void {
-        const p = &self.pairs.items[self.index];
+        const p = &self.pairs.items[self.index.load(.monotonic)];
         const old = p.destination orelse return;
         const renamed = self.numberedSibling(old) catch return;
         p.destination = renamed;
@@ -849,6 +873,48 @@ test "batch outcome distinguishes cancellation, conflict, partial and total fail
     try t.expectEqual(Outcome.failed, outcome(false, 0, 0, 2));
     // Cancellation wins even when items also failed.
     try t.expectEqual(Outcome.cancelled, outcome(true, 0, 0, 1));
+}
+
+test "a single regular file measures its total; trees and batches stay unknown" {
+    var f = Fixture.init();
+    defer f.deinit();
+    const t = std.testing;
+    const file = f.child("sized.bin");
+    defer file.unref();
+    writeFixture(file, "0123456789");
+    const dest = f.child("sized-copy");
+    defer dest.unref();
+    const single = Job.create(.copy);
+    defer single.destroy();
+    single.add(file, dest);
+    single.run();
+    try t.expect(single.pairs.items[0].completed);
+    try t.expectEqual(@as(u64, 10), single.total_bytes.load(.monotonic));
+    try t.expectEqual(@as(u64, 10), single.bytes.load(.monotonic));
+    try t.expectEqual(@as(usize, 1), single.index.load(.monotonic));
+    // A directory source has no cheap total.
+    const tree = f.child("tree");
+    defer tree.unref();
+    try t.expect(tree.makeDirectory(null, null) != 0);
+    const tree_dest = f.child("tree-copy");
+    defer tree_dest.unref();
+    const dir_job = Job.create(.copy);
+    defer dir_job.destroy();
+    dir_job.add(tree, tree_dest);
+    dir_job.run();
+    try t.expectEqual(std.math.maxInt(u64), dir_job.total_bytes.load(.monotonic));
+    // A multi-item batch does not pre-scan either.
+    const second = f.child("second.bin");
+    defer second.unref();
+    writeFixture(second, "abc");
+    const batch_dest = f.child("batch-copy");
+    defer batch_dest.unref();
+    const batch = Job.create(.copy);
+    defer batch.destroy();
+    batch.add(file, batch_dest);
+    batch.add(second, f.child("second-copy"));
+    batch.run();
+    try t.expectEqual(std.math.maxInt(u64), batch.total_bytes.load(.monotonic));
 }
 
 test "the batch event payload carries counts and no path, uri or content" {

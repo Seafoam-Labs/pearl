@@ -482,7 +482,7 @@ msgstr ""
 msgid "Another color service is active"
 msgstr ""
 
-#: src/desktop/notifications.zig:108
+#: src/desktop/notifications.zig:112
 msgid "Another notification service is active."
 msgstr ""
 
@@ -502,7 +502,7 @@ msgstr ""
 msgid "Appearance: font synchronization"
 msgstr ""
 
-#: src/desktop/apps.zig:39 src/desktop/notifications.zig:141
+#: src/desktop/apps.zig:39 src/desktop/notifications.zig:145
 msgid "Application"
 msgstr ""
 
@@ -2288,7 +2288,7 @@ msgstr ""
 msgid "Discovery starts when you choose Find devices."
 msgstr ""
 
-#: src/desktop/notifications.zig:76 src/ui/components/network.zig:110
+#: src/desktop/notifications.zig:80 src/ui/components/network.zig:110
 msgid "Dismiss"
 msgstr ""
 
@@ -2373,11 +2373,11 @@ msgstr ""
 msgid "Do not disturb"
 msgstr ""
 
-#: src/desktop/notifications.zig:107
+#: src/desktop/notifications.zig:111
 msgid "Do not disturb · Off"
 msgstr ""
 
-#: src/desktop/notifications.zig:107
+#: src/desktop/notifications.zig:111
 msgid "Do not disturb · On"
 msgstr ""
 
@@ -8296,7 +8296,7 @@ msgctxt "aqueous.input.xkb_variant.description"
 msgid "XKB layout variant."
 msgstr ""
 
-#: src/desktop/notifications.zig:157
+#: src/desktop/notifications.zig:176
 msgid "You're all caught up"
 msgstr ""
 

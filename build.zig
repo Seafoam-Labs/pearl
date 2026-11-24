@@ -1175,6 +1175,13 @@ pub fn build(b: *std.Build) void {
     session_services.addPassthruArgs();
     b.step("test-session-services", "Verify notifications, StatusNotifier/DBusMenu and MPRIS on private session buses").dependOn(&session_services.step);
 
+    const notification_progress = b.addSystemCommand(&.{ "python3", "tests/integration/test_notification_progress.py", "--pearl" });
+    notification_progress.addArtifactArg(integration_app);
+    notification_progress.addArg("--ctl");
+    notification_progress.addArtifactArg(ctl);
+    notification_progress.addPassthruArgs();
+    b.step("test-notification-progress", "Verify transfer progress hints, toast lifetime and final results").dependOn(&notification_progress.step);
+
     const dev_backend = b.option(enum { headless, nested }, "dev-backend", "Development compositor backend") orelse .headless;
     for ([_][]const u8{ "run", "gallery" }) |name| {
         const launch = b.addSystemCommand(&.{ "python3", "scripts/dev-session.py", "--backend", @tagName(dev_backend), "--" });

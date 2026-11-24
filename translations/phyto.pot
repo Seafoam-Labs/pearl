@@ -7,7 +7,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: subprojects/phyto/src/operations.zig:455
+#: subprojects/phyto/src/operations.zig:481
 msgid "A file with this name already exists"
 msgstr ""
 
@@ -40,7 +40,7 @@ msgctxt "desktop.description"
 msgid "Browse files with Pearl"
 msgstr ""
 
-#: subprojects/phyto/src/dnd.zig:826 subprojects/phyto/src/network_ui.zig:100 subprojects/phyto/src/window.zig:1460 subprojects/phyto/src/window.zig:1502
+#: subprojects/phyto/src/dnd.zig:826 subprojects/phyto/src/network_ui.zig:100 subprojects/phyto/src/platform/notifications.zig:310 subprojects/phyto/src/window.zig:1460 subprojects/phyto/src/window.zig:1502
 msgid "Cancel"
 msgstr ""
 
@@ -180,7 +180,7 @@ msgstr ""
 msgid "Empty document…"
 msgstr ""
 
-#: subprojects/phyto/src/operations.zig:126
+#: subprojects/phyto/src/operations.zig:133
 msgid "Enter a name without /; . and .. are not allowed."
 msgstr ""
 
@@ -224,7 +224,7 @@ msgstr ""
 msgid "File is unreadable or has been removed."
 msgstr ""
 
-#: subprojects/phyto/src/operations.zig:455 subprojects/phyto/src/window.zig:144
+#: subprojects/phyto/src/operations.zig:481 subprojects/phyto/src/window.zig:144
 msgid "File operations"
 msgstr ""
 
@@ -496,15 +496,15 @@ msgstr ""
 msgid "Rename…"
 msgstr ""
 
-#: subprojects/phyto/src/operations.zig:477
+#: subprojects/phyto/src/operations.zig:503
 msgid "Replace is unavailable because the existing item cannot be moved to Trash here."
 msgstr ""
 
-#: subprojects/phyto/src/operations.zig:472
+#: subprojects/phyto/src/operations.zig:498
 msgid "Replace moves the existing folder and everything in it to Trash first."
 msgstr ""
 
-#: subprojects/phyto/src/operations.zig:474
+#: subprojects/phyto/src/operations.zig:500
 msgid "Replace moves the existing item to Trash first, so you can restore it."
 msgstr ""
 
@@ -592,7 +592,7 @@ msgstr ""
 msgid "Tab limit reached"
 msgstr ""
 
-#: subprojects/phyto/src/operations.zig:465
+#: subprojects/phyto/src/operations.zig:491
 msgid "The existing item will be kept."
 msgstr ""
 
@@ -652,7 +652,7 @@ msgstr ""
 msgid "When Phyto opens"
 msgstr ""
 
-#: subprojects/phyto/src/operations.zig:485
+#: subprojects/phyto/src/operations.zig:511
 msgid "Working…"
 msgstr ""
 

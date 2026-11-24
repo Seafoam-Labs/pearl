@@ -2363,6 +2363,31 @@
     "options": []
   },
   {
+    "id": "test-notification-progress",
+    "description": "Verify transfer progress hints, toast lifetime and final results",
+    "groups": [
+      "integration"
+    ],
+    "cwd": ".",
+    "targets": [
+      "test-notification-progress"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "session",
+      "aqueous"
+    ],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 900,
+    "sources": [
+      "tests/integration/test_notification_progress.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
     "id": "test-plugin-host",
     "description": "Plugin component host contracts",
     "groups": [
@@ -2692,7 +2717,8 @@
     "output": "directory",
     "timeout": 1800,
     "sources": [
-      "subprojects/phyto/tests/native.py"
+      "subprojects/phyto/tests/native.py",
+      "subprojects/phyto/tests/notification_sink.py"
     ],
     "args": [
       "--aqueous-prefix",
