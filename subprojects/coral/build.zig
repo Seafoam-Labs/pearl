@@ -69,6 +69,9 @@ pub fn build(b: *std.Build) void {
     workspace_test.addArtifactArg(workspace);
     workspace_test.addPassthruArgs();
     b.step("workspace-integration", "Exercise OpenCode model selection and isolated Git review in GTK").dependOn(&workspace_test.step);
+    const service_test = b.addSystemCommand(&.{native_python});
+    service_test.addFileArg(b.path("tests/opencode_service.py"));
+    b.step("workspace-service-test", "Verify model switching during a real OpenCode turn with a loopback model").dependOn(&service_test.step);
     const workspace_id = if (git_variant) "org.aqueous.Coral.Workspace.Git" else "org.aqueous.Coral.Workspace";
     const launchers = b.addWriteFiles();
     const desktop = launchers.add("workspace.desktop", b.fmt(@embedFile("packaging/workspace.desktop.in"), .{ workspace_name, if (git_variant) "org.aqueous.Coral.Git" else "org.aqueous.Coral" }));

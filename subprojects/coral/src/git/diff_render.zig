@@ -27,6 +27,8 @@ pub const FileDiff = struct {
     old_path: []const u8,
     new_path: []const u8,
     kind: Kind,
+    /// Git headers retain exact modes, rename paths and blob IDs for file-level decisions.
+    headers: []const u8 = "",
     hunks: []const hunk.Hunk,
 
     pub fn path(self: FileDiff) []const u8 {
@@ -105,6 +107,7 @@ fn appendFile(a: Allocator, files: *std.ArrayList(FileDiff), section: []const u8
     const trimmed = std.mem.trimEnd(u8, section, "\n");
     if (trimmed.len == 0) return;
     const paths = sectionPaths(trimmed);
+    const headers = trimmed[0..(std.mem.indexOf(u8, trimmed, "\n@@ ") orelse trimmed.len)];
     // The strict single-file parser accepts one `diff --git` section and refuses
     // absent sides, mode/rename/copy and binary changes; map those to a kind.
     const parsed = hunk.parse(a, trimmed) catch |err| {
@@ -114,7 +117,7 @@ fn appendFile(a: Allocator, files: *std.ArrayList(FileDiff), section: []const u8
             error.PatchTooLarge => .too_large,
             else => .unsupported,
         };
-        try files.append(a, .{ .old_path = try a.dupe(u8, paths.old), .new_path = try a.dupe(u8, paths.new), .kind = kind, .hunks = &.{} });
+        try files.append(a, .{ .old_path = try a.dupe(u8, paths.old), .new_path = try a.dupe(u8, paths.new), .kind = kind, .headers = try a.dupe(u8, headers), .hunks = &.{} });
         return;
     };
     if (parsed.hunks.len > max_hunks) return error.TooManyHunks;
@@ -122,6 +125,7 @@ fn appendFile(a: Allocator, files: *std.ArrayList(FileDiff), section: []const u8
         .old_path = try a.dupe(u8, paths.old),
         .new_path = try a.dupe(u8, paths.new),
         .kind = .text,
+        .headers = try a.dupe(u8, headers),
         .hunks = parsed.hunks,
     });
 }

@@ -85,7 +85,7 @@ The composer keeps a separate model, draft and captured selection for each sessi
 
 **New OpenCode session** creates an isolated worktree from the current Git checkout, including changes to tracked files and untracked project files. Use **Review changes** to inspect a hunk, apply it to a Coral buffer, or resolve overlapping changes before saving. A project folder outside Git opens a planning session. The connection, model picker and chat use libsoup 3. The terminal uses the workbench’s bundled libghostty-vt backend.
 
-Run `zig build workspace-integration -Doptimize=safe -- --aqueous-prefix /path/to/aqueous/prefix` for a private Wayland test with a local OpenCode API fixture. The test exercises the native widgets and checks that review preserves the project’s staged and unstaged content.
+Run `zig build workspace-integration -Doptimize=safe -- --aqueous-prefix /path/to/aqueous/prefix` for a private Wayland test with a local OpenCode API fixture. The test exercises the native widgets and checks that review preserves the project’s staged and unstaged content. With OpenCode 2.4 installed, `zig build workspace-service-test` runs an isolated service and local model endpoint. It changes models during a turn, answers a permission request, and retries a queued prompt using its original ID.
 
 ## Build and run
 

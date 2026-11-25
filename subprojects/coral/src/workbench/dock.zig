@@ -61,6 +61,7 @@ pub const Controller = struct {
         for (docks, 0..) |dock, i| {
             const host = u.box(false, 0);
             c.gtk_widget_add_css_class(host, "dock");
+            if (@import("../workspace_identity.zig").enabled) c.gtk_widget_add_css_class(host, "workspace-dock");
             const bar = u.box(true, 0);
             c.gtk_widget_add_css_class(bar, "dock-header");
             u.append(host, bar);

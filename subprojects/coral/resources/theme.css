@@ -77,6 +77,6 @@ window.coral.$scope .workspace-composer { background: $container$; border-color:
 
 window.coral.$scope button.workspace-current-session { background: $high$; color: $primary$; }
 
-window.coral.$scope.coral-workspace .dock { background: $low$; }
+window.coral.$scope .workspace-dock { background: $low$; }
 window.coral.$scope .workspace-tools stack { background: $surface$; }
 window.coral.$scope .workspace-session .caption { color: $secondary$; }

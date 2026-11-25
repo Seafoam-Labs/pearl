@@ -39,7 +39,7 @@ def drive(offline=False):
             for obj in descendants(Atspi.get_desktop(0)):
                 if obj.get_name() != name or not obj.get_state_set().contains(Atspi.StateType.SHOWING):
                     continue
-                if not actionable or obj.get_n_actions() > 0:
+                if not actionable or (obj.get_n_actions() > 0 and obj.get_state_set().contains(Atspi.StateType.SENSITIVE)):
                     return obj
             time.sleep(.05)
         names = [obj.get_name() for obj in descendants(Atspi.get_desktop(0)) if obj.get_name() and obj.get_state_set().contains(Atspi.StateType.SHOWING)]
@@ -81,6 +81,16 @@ def drive(offline=False):
         composer = lookup("Message OpenCode", actionable=False)
         assert Atspi.Text.get_text(composer, 0, -1) == "Draft saved before restart"
         assert composer.set_text_contents("Offline edit")
+        click("Review changes")
+        lookup("Previously applied to the editor", actionable=False)
+        click("Next change")
+        lookup("renamed-image.bin   ·   1/1   ·   +0 −0", actionable=False)
+        click("Mark file reviewed")
+        lookup("File reviewed", actionable=False)
+        click("Next change")
+        lookup("test-binary.bin   ·   1/1   ·   +0 −0", actionable=False)
+        click("Mark file reviewed")
+        lookup("File reviewed", actionable=False)
         return
 
     source = buffer_with("staged and edited locally\n")
@@ -134,6 +144,7 @@ def drive(offline=False):
     lookup("Resolve overlapping edits", actionable=False)
     capture("conflict")
     click("Keep my edit")
+    click("Return to editor")
     buffer_with("my unsaved edit\n")
     click("Review changes")
     lookup("Previously skipped", actionable=False)
@@ -237,6 +248,8 @@ class API(BaseHTTPRequestHandler):
                 assert (tree / "hello.txt").read_text() == "staged and edited locally\n"
                 assert (tree / "untracked.txt").read_text() == "untracked baseline\n"
                 (tree / "hello.txt").write_text("agent edit\n")
+                (tree / "old-image.bin").rename(tree / "renamed-image.bin")
+                (tree / "test-binary.bin").write_bytes(b"\x00\xf0agent")
                 service.add("ses_created", "Worktree test", tree, "birch", body["metadata"])
                 return self.reply({"data": service.sessions["ses_created"]})
             return self.reply({"data": list(service.sessions.values()), "cursor": {}})
@@ -287,6 +300,8 @@ def main(args):
         git("init", "-q")
         file = project / "hello.txt"
         file.write_text("original\n")
+        (project / "old-image.bin").write_bytes(b"\x00rename")
+        (project / "test-binary.bin").write_bytes(b"\x00base")
         git("add", ".")
         git("-c", "user.email=test@localhost", "-c", "user.name=Fixture", "commit", "-qm", "Base")
         file.write_text("staged\n")

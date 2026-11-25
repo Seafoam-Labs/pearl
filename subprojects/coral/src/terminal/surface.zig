@@ -1614,7 +1614,7 @@ test "surface round-trips a real PTY under the worker/GIO model" {
         if (found) break;
     }
     try std.testing.expect(found);
-    handle.cancel();
+    // The shell already received exit 7. Cancelling here races its normal exit.
     const report = handle.wait();
     try std.testing.expectEqual(@as(c_int, 0), report.spawn_errno);
     try std.testing.expectEqual(@as(c_int, 1), report.reaped);

@@ -23,12 +23,14 @@ const Job = struct {
     revision: u64 = 0,
     ordinal: usize = 0,
     patch: ?[:0]u8 = null,
+    target_tree: ?[:0]u8 = null,
     merged: ?[:0]u8 = null,
     theirs: ?[:0]u8 = null,
     err: ?anyerror = null,
     fn deinit(self: *Job) void {
         for ([_][:0]u8{ self.root, self.base, self.path, self.local }) |s| a.free(s);
         if (self.patch) |s| a.free(s);
+        if (self.target_tree) |s| a.free(s);
         if (self.merged) |s| a.free(s);
         if (self.theirs) |s| a.free(s);
         a.destroy(self);
@@ -197,6 +199,7 @@ pub const Review = struct {
             hash.update(part);
             hash.update("\x00");
         }
+        if (f.kind != .text or f.hunks.len == 0) hash.update(f.headers);
         if (f.hunks.len != 0) {
             const h = f.hunks[self.ordinal];
             hash.update(std.mem.asBytes(&h.old_start));
@@ -223,7 +226,7 @@ pub const Review = struct {
         defer if (state) |value| value.deinit();
         const saved = if (state) |value| @import("opencode.zig").string(value.value, "decision") else "";
         c.gtk_widget_set_visible(self.decision, @intFromBool(saved.len != 0));
-        if (saved.len > 0) u.setLabel(self.decision, if (std.mem.eql(u8, saved, "applied")) i18n.dtr("coral", "Previously applied to the editor") else i18n.dtr("coral", "Previously skipped"));
+        if (saved.len > 0) u.setLabel(self.decision, if (std.mem.eql(u8, saved, "applied")) i18n.dtr("coral", "Previously applied to the editor") else if (std.mem.eql(u8, saved, "reviewed")) i18n.dtr("coral", "File reviewed") else i18n.dtr("coral", "Previously skipped"));
     }
     fn render(self: *Review) void {
         self.generation += 1;
@@ -246,7 +249,14 @@ pub const Review = struct {
             var arena = std.heap.ArenaAllocator.init(a);
             defer arena.deinit();
             const lines = diff.renderUnified(arena.allocator(), f, .unified) catch return;
-            if (lines.len > 0) self.setSource(lines[0].text);
+            if (lines.len > 0) {
+                const summary = u.fmt("{s}\n\n{s}\n", .{ lines[0].text, f.headers });
+                defer a.free(summary);
+                self.setSource(summary);
+            }
+            c.gtk_button_set_label(u.cast(c.GtkButton, self.mine), i18n.dtr("coral", "Skip file"));
+            c.gtk_button_set_label(u.cast(c.GtkButton, self.action), i18n.dtr("coral", "Mark file reviewed"));
+            c.gtk_widget_set_sensitive(self.action, 1);
             return;
         }
         const change = f.hunks[self.ordinal];
@@ -398,7 +408,13 @@ fn accept(_: ?*c.GtkButton, ctx: ?*anyopaque) callconv(.c) void {
         return;
     }
     if (self.files.len == 0) return;
-    const path = self.files[self.file].path();
+    const file = self.files[self.file];
+    if (file.kind != .text or file.hunks.len == 0) {
+        self.record("reviewed");
+        c.gtk_widget_set_sensitive(self.action, 0);
+        return;
+    }
+    const path = file.path();
     if (path.len == 0 or std.fs.path.isAbsolute(path)) return;
     const full = u.fmt("{s}/{s}", .{ self.original, path });
     defer a.free(full);
@@ -435,7 +451,8 @@ fn run(job: *Job, cancel: *c.GCancellable) !void {
         defer _ = c.g_remove(index);
         a.free(try git.git(job.root, index, &.{ "read-tree", "HEAD" }, cancel));
         a.free(try git.git(job.root, index, &.{ "add", "-A", "--", "." }, cancel));
-        job.patch = try git.gitRaw(job.root, index, &.{ "diff", "--cached", "--no-color", "--no-ext-diff", "--no-textconv", "--relative", job.base, "--", "." }, cancel, false);
+        job.target_tree = try git.git(job.root, index, &.{"write-tree"}, cancel);
+        job.patch = try git.gitRaw(job.root, null, &.{ "diff", "--full-index", "--find-renames", "--no-color", "--no-ext-diff", "--no-textconv", "--relative", job.base, job.target_tree.?, "--", "." }, cancel, false);
         return;
     }
     const spec = u.fmt("{s}:./{s}", .{ job.base, job.path });
@@ -478,6 +495,7 @@ fn ready(_: ?*c.GObject, res: ?*c.GAsyncResult, ctx: ?*anyopaque) callconv(.c) v
             return;
         };
         self.files = parsed.files;
+        @import("workspace_state.zig").write(self.tree, "review-manifest", .{ .base = @as([]const u8, self.base), .target = @as([]const u8, job.target_tree.?), .source = @as([]const u8, self.original), .file_count = self.files.len }) catch u.setLabel(self.title, i18n.dtr("coral", "Could not save the review manifest"));
         self.render();
     } else if (job.theirs != null) {
         self.conflict = job;

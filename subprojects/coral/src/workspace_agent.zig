@@ -41,6 +41,8 @@ pub const Agent = struct {
     draft_timer: c_uint = 0,
     pending: bool = false,
     model_generation: u64 = 0,
+    catalog_retry: c_uint = 0,
+    catalog_attempt: u3 = 0,
     model_feedback: u.W,
     connected: bool = false,
     sending: bool = false,
@@ -178,6 +180,7 @@ pub const Agent = struct {
     }
     pub fn deinit(self: *Agent) void {
         if (self.draft_timer != 0) _ = c.g_source_remove(self.draft_timer);
+        if (self.catalog_retry != 0) _ = c.g_source_remove(self.catalog_retry);
         if (self.session) |sid| self.saveDraft(sid);
         if (self.update_timer != 0) _ = c.g_source_remove(self.update_timer);
         if (self.reconnect_timer != 0) _ = c.g_source_remove(self.reconnect_timer);
@@ -364,6 +367,15 @@ pub const Agent = struct {
         a.free(self.server);
         self.server = u.z(server);
         self.activate(id, dir);
+        self.reviewBase(api.string(saved.value, "base"));
+        const title = api.string(saved.value, "title");
+        if (title.len > 0) u.setLabel(self.title, title);
+    }
+    fn reviewBase(self: *Agent, base: []const u8) void {
+        if (self.base) |old| a.free(old);
+        self.base = null;
+        if ((base.len == 40 or base.len == 64) and std.mem.indexOfNone(u8, base, "0123456789abcdef") == null) self.base = u.z(base);
+        c.gtk_widget_set_visible(self.review_button, @intFromBool(self.base != null));
     }
     fn activate(self: *Agent, id: []const u8, directory: []const u8) void {
         c.gtk_menu_button_popdown(u.cast(c.GtkMenuButton, self.models));
@@ -371,6 +383,7 @@ pub const Agent = struct {
         c.gtk_widget_set_visible(self.model_feedback, 0);
         self.model_generation += 1;
         self.sending = false;
+        self.catalog_attempt = 0;
         const next_id = u.z(id);
         if (self.session) |previous| {
             self.saveDraft(previous);
@@ -383,7 +396,7 @@ pub const Agent = struct {
         self.session = next_id;
         self.markSession();
         if (self.app.review) |r| r.hide();
-        c.gtk_widget_set_visible(self.review_button, 0);
+        self.reviewBase("");
         self.epoch += 1;
         self.pending = false;
         c.gtk_text_view_set_editable(u.cast(c.GtkTextView, self.composer), 1);
@@ -617,10 +630,7 @@ fn sessionInfo(ctx: *anyopaque, epoch: u64, result: Value, err: ?[]const u8) voi
     if (self.pending or !self.connected) return;
     const info = api.get(result, "data");
     u.setLabel(self.title, api.string(info, "title"));
-    if (self.base) |b| a.free(b);
-    const base = api.string(api.get(info, "metadata"), "coralBase");
-    self.base = if (base.len == 40 or base.len == 64) u.z(base) else null;
-    c.gtk_widget_set_visible(self.review_button, @intFromBool(self.base != null));
+    self.reviewBase(api.string(api.get(info, "metadata"), "coralBase"));
     const ref = api.get(info, "model");
     a.free(self.model_id);
     a.free(self.provider);
@@ -631,6 +641,7 @@ fn sessionInfo(ctx: *anyopaque, epoch: u64, result: Value, err: ?[]const u8) voi
         a.free(self.location);
         self.location = u.z(dir);
     }
+    storage.write(self.root, "last-open-thread", .{ .session = @as([]const u8, self.session orelse return), .server = @as([]const u8, self.server), .location = @as([]const u8, self.location), .base = @as([]const u8, self.base orelse ""), .title = api.string(info, "title") }) catch u.setLabel(self.status, i18n.dtr("coral", "Could not save session state"));
     c.gtk_menu_button_set_label(u.cast(c.GtkMenuButton, self.models), if (self.model_id.len > 0) self.model_id else i18n.dtr("coral", "Service default"));
     if (self.model_id.len == 0) self.queryModel("/api/model/default", &defaultModel) else self.queryModel("/api/model", &catalog);
     self.deliveryControls();
@@ -702,8 +713,25 @@ fn catalog(ctx: *anyopaque, epoch: u64, result: Value, err: ?[]const u8) void {
         u.connect(b, "clicked", &switchModel, self);
         u.append(group.value_ptr.*, b);
     }
-    if (providers.count() == 0) u.append(self.choices, u.label(i18n.dtr("coral", "No configured chat models")));
+    if (providers.count() == 0) {
+        u.append(self.choices, u.label(i18n.dtr("coral", "No configured chat models")));
+        // The service initially returns an empty catalog while its providers initialize.
+        if (self.catalog_retry == 0 and self.catalog_attempt < 5) {
+            self.catalog_retry = c.g_timeout_add_seconds(@as(c_uint, 1) << self.catalog_attempt, &retryCatalog, self);
+            self.catalog_attempt += 1;
+        }
+    } else {
+        if (self.catalog_retry != 0) _ = c.g_source_remove(self.catalog_retry);
+        self.catalog_retry = 0;
+        self.catalog_attempt = 0;
+    }
     c.gtk_widget_set_sensitive(self.models, @intFromBool(!self.pending));
+}
+fn retryCatalog(ctx: ?*anyopaque) callconv(.c) c_int {
+    const self = u.cast(Agent, ctx.?);
+    self.catalog_retry = 0;
+    self.requestInfo();
+    return 0;
 }
 fn switchModel(b: ?*c.GtkButton, ctx: ?*anyopaque) callconv(.c) void {
     const self = u.cast(Agent, ctx.?);
