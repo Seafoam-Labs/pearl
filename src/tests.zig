@@ -5,9 +5,12 @@ test {
     _ = @import("services/sched_profiles.zig");
     _ = @import("services/sched_editor.zig");
     _ = @import("services/sched_systemd.zig");
+    _ = @import("services/autostart_policy.zig");
+    _ = @import("services/autostart_session.zig");
     _ = @import("desktop/calculator.zig");
     _ = @import("services/notification_filter_policy.zig");
     _ = @import("desktop/window_switcher.zig");
+    _ = @import("desktop/window_menu.zig");
     _ = @import("services/audio_feedback.zig");
     _ = @import("services/brightness_feedback.zig");
     _ = @import("services/brightness_model.zig");
@@ -16,11 +19,13 @@ test {
     _ = @import("desktop/workspace_policy.zig");
     _ = @import("desktop/task_model.zig");
     _ = @import("settings/bar_model.zig");
+    _ = @import("settings/bar_dock_fields.zig");
     _ = @import("theme/package_model.zig");
     _ = @import("theme/palette_resolver.zig");
     _ = @import("theme/style.zig");
     _ = @import("plugins/model.zig");
     _ = @import("plugins/placement.zig");
+    _ = @import("plugins/artwork_policy.zig");
     _ = @import("plugins/discovery_policy.zig");
     _ = @import("settings/live_protocol.zig");
     _ = @import("plugins/protocol.zig");
@@ -35,6 +40,7 @@ test {
     _ = @import("settings/activation.zig");
     _ = @import("settings/options.zig");
     _ = @import("settings/protocol.zig");
+    _ = @import("settings/search_index.zig");
     _ = @import("config/dms_import.zig");
     _ = @import("desktop/dock_policy.zig");
     _ = @import("services/clipboard_policy.zig");
@@ -47,6 +53,7 @@ test {
     _ = @import("config/aqueous_presentation.zig");
     _ = @import("config/aqueous_draft.zig");
     _ = @import("config/border_theme.zig");
+    _ = @import("config/decoration_mode.zig");
     _ = @import("config/aqueous_contract.zig");
     _ = @import("config/aqueous_instance.zig");
     _ = @import("config/aqueous_collections.zig");
@@ -55,6 +62,7 @@ test {
     _ = @import("config/aqueous_display_mutations.zig");
     _ = @import("config/aqueous_display_setup.zig");
     _ = @import("config/preferences.zig");
+    _ = @import("config/bar_dock_presets.zig");
     _ = @import("config/slideshow_policy.zig");
     _ = @import("desktop/bar_opacity.zig");
     _ = @import("desktop/bar_visibility.zig");

@@ -9,6 +9,8 @@ const a = u.a;
 const Window = @import("window.zig").Window;
 const Context = @import("context.zig").Context;
 pub const engine = @import("operations/engine.zig");
+const io_priority = @import("platform/io_priority.zig");
+const notify = @import("platform/notifications.zig");
 const log = std.log.scoped(.platform);
 pub const Operations = struct {
     owner: *Window,
@@ -27,10 +29,16 @@ pub const Operations = struct {
     redo_stack: std.ArrayList(*engine.Job) = .empty,
     journal_origin: ?*engine.Job = null,
     result: [:0]u8,
+    reporter: notify.Reporter,
     pub fn init(owner: *Window) Operations {
-        return .{ .owner = owner, .result = a.dupeSentinel(u8, "No file operations are running.", 0) catch unreachable };
+        return .{
+            .owner = owner,
+            .result = a.dupeSentinel(u8, "No file operations are running.", 0) catch unreachable,
+            .reporter = notify.Reporter.init(@ptrCast(&owner.operations), notifyAction),
+        };
     }
     pub fn deinit(self: *Operations) void {
+        self.reporter.deinit();
         self.closeDialogs();
         self.clearPending();
         for (self.undo_stack.items) |j| j.destroy();
@@ -61,6 +69,13 @@ pub const Operations = struct {
         d.as(gtk.Widget).addCssClass("phyto-root");
         d.as(gtk.Widget).addCssClass(@import("appearance.zig").themeClass());
         d.getContentArea().as(gtk.Widget).addCssClass("dialog-body");
+        if (@import("build_options").test_hooks) {
+            // Same inspection hook as the connection editor, so the native suite
+            // can read and click the collision choices while the dialog is modal.
+            const keys = gtk.EventControllerKey.new();
+            _ = gtk.EventControllerKey.signals.key_pressed.connect(keys, *Window, Window.keyPressed, self.owner, .{});
+            d.as(gtk.Widget).addController(keys.as(gtk.EventController));
+        }
         return d;
     }
     pub fn nameDialog(self: *Operations, rename: bool) void {
@@ -209,6 +224,7 @@ pub const Operations = struct {
     }
     pub fn transfer(self: *Operations, c: *const Context, destination: ?*gio.File, kind: engine.Kind) void {
         const j = engine.Job.create(kind);
+        j.self_duplicate = true;
         for (c.items.items) |item| {
             var dest: ?*gio.File = null;
             if (destination) |parent| {
@@ -262,6 +278,7 @@ pub const Operations = struct {
         const j = engine.Job.create(if (cb.cut) .move else .copy);
         j.cut = cb.cut;
         j.clipboard_serial = cb.serial;
+        j.self_duplicate = true;
         for (cb.files.items) |f| {
             const basename = f.getBasename() orelse continue;
             defer glib.free(basename);
@@ -288,6 +305,8 @@ pub const Operations = struct {
         self.owner.app.as(gio.Application).hold();
         self.owner.queueUpdate();
         self.timer = glib.timeoutAdd(250, tick, self);
+        var summary_buf: [512]u8 = undefined;
+        if (reportable(j)) self.reporter.begin(summaryFor(j, &summary_buf), "Starting…", -1);
         self.run();
     }
     fn run(self: *Operations) void {
@@ -299,17 +318,27 @@ pub const Operations = struct {
     }
     fn worker(task: *gio.Task, _: *object.Object, data: ?*anyopaque, _: ?*gio.Cancellable) callconv(.c) void {
         const j: *engine.Job = @ptrCast(@alignCast(data.?));
+        // Yield storage bandwidth to interactive I/O while the transfer runs, then
+        // leave the shared pool thread's priority as it was (issue #124).
+        const saved = io_priority.lower();
+        defer io_priority.restore(saved);
         j.run();
         task.returnBoolean(1);
     }
     fn tick(data: ?*anyopaque) callconv(.c) c_int {
         const self: *Operations = @ptrCast(@alignCast(data.?));
         if (!self.busy) return 0;
+        const j = self.active.?;
         if (self.progress_text) |label| {
-            const size = glib.formatSize(self.active.?.bytes.load(.monotonic));
+            const size = glib.formatSize(j.bytes.load(.monotonic));
             defer glib.free(size);
             label.setText(size);
         }
+        var summary_buf: [512]u8 = undefined;
+        var body_buf: [160]u8 = undefined;
+        // While a collision pauses the batch, the card keeps the "waiting for a
+        // decision" body the conflict handler sent; ticks must not overwrite it.
+        if (!self.conflict) self.reporter.update(summaryFor(j, &summary_buf), progressBody(j, &body_buf), progressFor(j), false);
         return 1;
     }
     fn completed(_: ?*object.Object, _: *gio.AsyncResult, data: ?*anyopaque) callconv(.c) void {
@@ -317,6 +346,8 @@ pub const Operations = struct {
         const j = self.active.?;
         if (j.conflict) {
             self.conflict = true;
+            var summary_buf: [512]u8 = undefined;
+            self.reporter.update(summaryFor(j, &summary_buf), "Waiting for a decision…", progressFor(j), true);
             self.present();
             return;
         }
@@ -334,9 +365,11 @@ pub const Operations = struct {
         self.closeDialogs();
         var successful: usize = 0;
         var skipped: usize = 0;
+        var replaced: usize = 0;
         for (j.pairs.items) |p| {
             if (p.completed) successful += 1;
             if (p.skipped) skipped += 1;
+            if (p.replaced) replaced += 1;
         }
         // One batch-level line at the operation boundary. The payload carries
         // only the kind, the category and aggregate counts, so a large copy
@@ -350,8 +383,21 @@ pub const Operations = struct {
             .ok => log.debug("event=operation-finished {s}", .{text}),
         }
         a.free(self.result);
-        self.result = u.format("{d} completed · {d} skipped{s}{s}", .{ successful, skipped, if (j.cancelled) " · Cancelled" else "", if (j.failures.items.len != 0) " · Some items failed" else "" });
+        // A replaced item is recoverable from Trash, not from undo: undo removes
+        // the new item, so the receipt says where the previous one went.
+        const replaced_note: [:0]const u8 = if (replaced > 0) u.format(" · {d} replaced (previous items are in Trash)", .{replaced}) else "";
+        defer if (replaced > 0) a.free(replaced_note);
+        self.result = u.format("{d} completed · {d} skipped{s}{s}{s}", .{ successful, skipped, replaced_note, if (j.cancelled) " · Cancelled" else "", if (j.failures.items.len != 0) " · Some items failed" else "" });
         self.owner.setStatus(self.result);
+        var final_buf: [512]u8 = undefined;
+        const transferred = j.bytes.load(.monotonic);
+        if (transferred > 0) {
+            const size = glib.formatSize(transferred);
+            defer glib.free(size);
+            const body = u.format("{s} · {s}", .{ self.result, std.mem.span(size) });
+            defer a.free(body);
+            self.reporter.complete(finalSummary(j, result, &final_buf), body);
+        } else self.reporter.complete(finalSummary(j, result, &final_buf), self.result);
         self.owner.clipboard.remaining(j);
         var relocated = false;
         if (j.kind == .move or j.kind == .restore) for (j.pairs.items) |p| {
@@ -434,7 +480,7 @@ pub const Operations = struct {
         const j = self.active.?;
         const d = self.newDialog(if (self.conflict) @import("i18n").dtr("phyto", "A file with this name already exists") else @import("i18n").dtr("phyto", "File operations"));
         if (self.conflict) {
-            const p = j.pairs.items[j.index];
+            const p = j.pairs.items[j.index.load(.monotonic)];
             const path = if (p.destination) |dest| dest.getParseName() else p.source.getParseName();
             defer glib.free(path);
             const label = u.label(path, null);
@@ -443,8 +489,22 @@ pub const Operations = struct {
             label.setMaxWidthChars(50);
             d.getContentArea().append(label.as(gtk.Widget));
             d.getContentArea().append(u.label(@import("i18n").dtr("phyto", "The existing item will be kept."), "secondary").as(gtk.Widget));
+            // Replace is a transfer decision, never an undo/redo repair, and it
+            // needs a Trash the existing item can actually go to.
+            const transfer_kind = !j.undo and !j.redo and (j.kind == .copy or j.kind == .move or j.kind == .restore);
+            const replaceable = transfer_kind and (!j.conflict_info.known or j.conflict_info.can_trash);
+            if (replaceable) {
+                const note = if (j.conflict_info.directory)
+                    @import("i18n").dtr("phyto", "Replace moves the existing folder and everything in it to Trash first.")
+                else
+                    @import("i18n").dtr("phyto", "Replace moves the existing item to Trash first, so you can restore it.");
+                d.getContentArea().append(u.label(note, "secondary").as(gtk.Widget));
+            } else if (transfer_kind) {
+                d.getContentArea().append(u.label(@import("i18n").dtr("phyto", "Replace is unavailable because the existing item cannot be moved to Trash here."), "secondary").as(gtk.Widget));
+            }
             _ = d.addButton("Cancel operation", -1);
             _ = d.addButton("Skip", 0);
+            if (replaceable) d.addButton("Replace", 3).addCssClass("destructive-action");
             if (!j.undo and !j.redo) _ = d.addButton("Keep both", 2);
             d.setDefaultResponse(0);
         } else {
@@ -464,9 +524,9 @@ pub const Operations = struct {
         self.closeDialogs();
         const j = self.active orelse return;
         if (self.conflict) {
-            if (response == 2) j.keepBoth() else if (response == 0) {
-                j.pairs.items[j.index].skipped = true;
-                j.index += 1;
+            if (response == 2) j.keepBoth() else if (response == 3) j.replace() else if (response == 0) {
+                j.pairs.items[j.index.load(.monotonic)].skipped = true;
+                j.index.store(j.index.load(.monotonic) + 1, .monotonic);
             } else {
                 j.cancelled = true;
                 self.finish();
@@ -476,4 +536,108 @@ pub const Operations = struct {
             self.run();
         } else if (response != 1) j.cancel.cancel();
     }
+    /// Notification action route: Cancel stops the batch exactly like the
+    /// dialog button; the reserved card click presents the originating window.
+    fn notifyAction(context: *anyopaque, id: u32, key: []const u8) void {
+        const self: *Operations = @ptrCast(@alignCast(context));
+        if (id == 0 or id != self.reporter.id) return;
+        if (std.mem.eql(u8, key, "cancel")) {
+            const j = self.active orelse return;
+            if (self.conflict) {
+                self.conflict = false;
+                j.cancelled = true;
+                self.closeDialogs();
+                self.finish();
+            } else j.cancel.cancel();
+        } else if (std.mem.eql(u8, key, "default")) {
+            self.owner.window.present();
+        }
+    }
 };
+
+/// Phase 1 reports transfers only: copy/move/restore batches and their
+/// undo/redo. Trash/delete coverage is a later phase; other kinds stay inert.
+fn reportable(j: *engine.Job) bool {
+    return j.undo or j.redo or j.kind == .copy or j.kind == .move or j.kind == .restore;
+}
+
+/// User-facing batch label. Single items name the file; batches count top-level
+/// items. Undo/redo batches say so, matching the journal's vocabulary.
+fn summaryFor(j: *engine.Job, buf: []u8) []const u8 {    const gerund = switch (j.kind) {
+        .copy => "Copying",
+        .move => "Moving",
+        .restore => "Restoring",
+        else => "Working on",
+    };
+    const noun = switch (j.kind) {
+        .copy => "copy",
+        .move => "move",
+        .restore => "restore",
+        else => "operation",
+    };
+    const n = j.pairs.items.len;
+    var name_buf: [256]u8 = undefined;
+    const name: []const u8 = if (n == 1) blk: {
+        const base = j.pairs.items[0].source.getBasename() orelse break :blk "item";
+        defer glib.free(base);
+        break :blk std.fmt.bufPrint(&name_buf, "{s}", .{std.mem.span(base)}) catch "item";
+    } else "";
+    if (j.undo or j.redo) {
+        const verb = if (j.undo) "Undoing" else "Redoing";
+        return if (n == 1)
+            std.fmt.bufPrint(buf, "{s} {s} of {s}", .{ verb, noun, name }) catch "Working…"
+        else
+            std.fmt.bufPrint(buf, "{s} {s} of {d} items", .{ verb, noun, n }) catch "Working…";
+    }
+    return if (n == 1)
+        std.fmt.bufPrint(buf, "{s} {s}", .{ gerund, name }) catch "Working…"
+    else
+        std.fmt.bufPrint(buf, "{s} {d} items", .{ gerund, n }) catch "Working…";
+}
+
+/// The bar's fraction: bytes over a measured single-file total, completed
+/// top-level items for a batch, indeterminate when neither is known.
+fn progressFor(j: *engine.Job) ?f64 {
+    const total = j.total_bytes.load(.monotonic);
+    if (total != std.math.maxInt(u64)) {
+        if (total == 0) return 1;
+        const bytes = j.bytes.load(.monotonic);
+        return @min(1, @as(f64, @floatFromInt(bytes)) / @as(f64, @floatFromInt(total)));
+    }
+    const n = j.pairs.items.len;
+    if (n > 1) {
+        const done = j.index.load(.monotonic);
+        return @min(1, @as(f64, @floatFromInt(done)) / @as(f64, @floatFromInt(n)));
+    }
+    return -1;
+}
+
+/// Live byte count, plus the top-level item position for batches.
+fn progressBody(j: *engine.Job, buf: []u8) []const u8 {
+    const size = glib.formatSize(j.bytes.load(.monotonic));
+    defer glib.free(size);
+    const n = j.pairs.items.len;
+    if (n > 1) {
+        const item = @min(n, j.index.load(.monotonic) + 1);
+        return std.fmt.bufPrint(buf, "{s} · item {d} of {d}", .{ std.mem.span(size), item, n }) catch "Working…";
+    }
+    return std.fmt.bufPrint(buf, "{s}", .{std.mem.span(size)}) catch "Working…";
+}
+
+fn finalSummary(j: *engine.Job, result: engine.Outcome, buf: []u8) []const u8 {
+    const state = switch (result) {
+        .ok => "complete",
+        .cancelled => "cancelled",
+        else => "finished with errors",
+    };
+    if (j.undo) return std.fmt.bufPrint(buf, "Undo {s}", .{state}) catch "Undo finished";
+    if (j.redo) return std.fmt.bufPrint(buf, "Redo {s}", .{state}) catch "Redo finished";
+    if (result == .partial or result == .failed) return "Some items failed";
+    const noun = switch (j.kind) {
+        .copy => "Copy",
+        .move => "Move",
+        .restore => "Restore",
+        else => "Operation",
+    };
+    return std.fmt.bufPrint(buf, "{s} {s}", .{ noun, state }) catch "Operation finished";
+}

@@ -267,7 +267,7 @@ pub const Backend = struct {
             .@"aqueous.action" => return self.aqueousAction(peer, request, alloc),
             .@"page.enter" => {
                 const v = try p.fields(p.Enter, alloc, params);
-                const target: protocol.navigation.Target = .{ .page = v.page, .section = v.section };
+                const target = protocol.navigation.normalize(protocol.navigation.Target{ .page = v.page, .section = v.section });
                 try target.validate();
                 if (self.live) |*live| {
                     if (!self.locked()) {
@@ -283,7 +283,7 @@ pub const Backend = struct {
                 }
                 peer.view = try peer.next();
                 // Canonical section storage never borrows a request arena.
-                peer.target = .{ .page = v.page, .section = if (v.section) |section| protocol.navigation.aqueous_sections[try protocol.navigation.aqueousSectionIndex(section)] else null };
+                peer.target = .{ .page = target.page, .section = if (target.section) |section| protocol.navigation.aqueous_sections[try protocol.navigation.aqueousSectionIndex(section)] else null };
                 peer.subscribed = true;
                 return self.envelope(peer, alloc);
             },
@@ -581,6 +581,11 @@ pub const Backend = struct {
             if (self.preview_owner != peer) return error.NotOwner;
             return c.choose(false);
         }
+        if (v.action == .resolve) {
+            try c.resolve();
+            entry.aqueous_job = c.jobs;
+            return;
+        }
         try c.checkDraft(try p.number(v.expected_draft_revision), try p.number(v.version));
         switch (v.action) {
             .refresh, .validate, .apply => {
@@ -606,7 +611,7 @@ pub const Backend = struct {
                 if (self.preview_owner != peer) return error.NotOwner;
                 try c.choose(true);
             },
-            .revert => unreachable,
+            .revert, .resolve => unreachable,
         }
     }
 };

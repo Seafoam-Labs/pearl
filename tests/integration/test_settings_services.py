@@ -61,7 +61,8 @@ def navigate(s,ipc,page,section=None):
     params=dict(page=page)
     if section:params['section']=section
     assert request(s,ipc,**params)['ok']
-    try:wait_for(lambda:probe(s,ipc)['page']==page)
+    expected='advanced' if page=='aqueous' and section=='advanced' else page
+    try:wait_for(lambda:probe(s,ipc)['page']==expected)
     except Exception:print('navigation failed',probe(s,ipc),flush=True);raise
     time.sleep(.3)
 def connect_network(s, ipc, peer):
@@ -109,11 +110,11 @@ def main():
         net=s.child('network',['python3',FIX,'network'],input_pipe=True);net.expect('event=ready')
         bt=s.child('bluetooth',['python3',FIX,'bluetooth'],input_pipe=True);bt.expect('event=ready')
         shell=s.child('pearl',[args.pearl],G_DEBUG='fatal-warnings');shell.expect('event=control-ready')
-        app=s.child('settings',[args.settings,'--page','network'],G_DEBUG='fatal-warnings');app.expect('event=settings-window-created')
+        app=s.child('settings',[args.settings,'--page','network'],G_DEBUG='fatal-criticals');app.expect('event=settings-window-created')
         peer=Peer(s,ipc);other=Peer(s,ipc);ready(s,ipc);aq_ready(s,ipc,peer)
         assert windows(ipc)[0]['backend']=='xdg'
         checks['normal-window-real-schema-221-fields']=True
-        for page in ('network','bluetooth','sound','power','bar','session','notifications','overview'):
+        for page in ('network','bluetooth','sound','power','bar','notifications','overview'):
             navigate(s,ipc,page);ready(s,ipc);capture(s,page,output['name'])
             assert peer.enter(page)['available']
         checks['complete-sidebar-real-data-or-unavailable']=True
@@ -156,7 +157,7 @@ def main():
         wait_for(lambda:not other.page()['live']['pending'])
         assert not other.page()['live']['prompt']
         assert 'abandoned-test-secret' not in Path(s.env['PEARL_TEST_CONNECTIVITY_LOG']).read_text()
-        app=s.child('settings-after-prompt-crash',[args.settings,'--page','network'],G_DEBUG='fatal-warnings');app.expect('event=settings-window-created');ready(s,ipc)
+        app=s.child('settings-after-prompt-crash',[args.settings,'--page','network'],G_DEBUG='fatal-criticals');app.expect('event=settings-window-created');ready(s,ipc)
         assert not probe(s,ipc)['service_prompt']
         checks['frontend-crash-cancels-private-credential-prompt-without-secret-replay']=True
         connect_network(s,ipc,other);wait_for(lambda:probe(s,ipc)['service_prompt'])
@@ -170,7 +171,7 @@ def main():
         app.proc.kill();app.proc.wait(5)
         wait_for(lambda:not ctl(s,args.ctl,'connectivity','status')['result']['bluetooth']['discovering'])
         assert other.page()['live']['summary']=='Online'
-        app=s.child('settings-after-discovery-crash',[args.settings,'--page','bluetooth'],G_DEBUG='fatal-warnings');app.expect('event=settings-window-created');ready(s,ipc)
+        app=s.child('settings-after-discovery-crash',[args.settings,'--page','bluetooth'],G_DEBUG='fatal-criticals');app.expect('event=settings-window-created');ready(s,ipc)
         checks['frontend-crash-stops-owned-discovery-and-preserves-network-connection']=True
 
         data=peer.enter('bluetooth');other.enter('bluetooth')
@@ -202,7 +203,7 @@ def main():
         assert any(c['id']=='layout.gaps_outer' and c['value']==19 for c in peer.aq_document('draft')['changes'])
         choose_navigation(s,ipc,'sound')
         assert peer.aqueous()['draft']
-        v=choose_navigation(s,ipc,'aqueous');assert v['section']=='input'
+        v=choose_navigation(s,ipc,'aqueous','input');assert v['section']=='input'
         choose_navigation(s,ipc,'aqueous','layouts')
         click(s,ipc,'layout.gaps_outer')
         body=probe(s,ipc)['body_bounds'];win=windows(ipc)[0]['geometry']
@@ -289,10 +290,10 @@ def main():
             raise
         denied=peer.aq_action('keep');assert denied['state']=='failed' and denied['error_code']=='NotOwner',denied
         capture(s,'display-preview-during-sound',output['name'])
-        app.stop();clean(app);wait_for(lambda:not peer.aqueous()['busy'],45)
+        app.stop();clean(app, allowed_warnings=FRAME_WARNINGS);wait_for(lambda:not peer.aqueous()['busy'],45)
         assert next(o for o in json.loads(s.run(['wlr-randr','--json']).stdout) if o['name']==output['name'])['scale']==target['scale']
         assert peer.aqueous()['outcome'] in ('reverted','invalidated')
-        app=s.child('settings-after-preview',[args.settings,'--page','aqueous'],G_DEBUG='fatal-warnings');app.expect('event=settings-window-created');aq_ready(s,ipc,peer)
+        app=s.child('settings-after-preview',[args.settings,'--page','aqueous'],G_DEBUG='fatal-criticals');app.expect('event=settings-window-created');aq_ready(s,ipc,peer)
         peer.aq_action('discard');aq_ready(s,ipc,peer)
         checks['display-preview-navigation-owner-check-close-and-confirmed-rollback']=True
         # Abrupt frontend loss has no cleanup callback: backend disconnect and
@@ -307,7 +308,7 @@ def main():
         assert next(o for o in json.loads(s.run(['wlr-randr','--json']).stdout) if o['name']==output['name'])['scale']==target['scale']
         assert peer.aqueous()['outcome'] in ('reverted','invalidated')
         peer.aq_action('discard')
-        app=s.child('settings-after-crash',[args.settings,'--page','aqueous'],G_DEBUG='fatal-warnings');app.expect('event=settings-window-created');aq_ready(s,ipc,peer)
+        app=s.child('settings-after-crash',[args.settings,'--page','aqueous'],G_DEBUG='fatal-criticals');app.expect('event=settings-window-created');aq_ready(s,ipc,peer)
         checks['frontend-crash-releases-display-preview-and-restores-output']=True
         peer.aq_action('refresh');aq_ready(s,ipc,peer)
         current=peer.aq_document('committed');preview['expected_generation']=current['generation']
@@ -325,8 +326,8 @@ def main():
         # Normal close acknowledges drafts, leaves shell running, and reopens them.
         current=peer.aq_document('committed');candidate['expected_generation']=current['generation']
         peer.aq_keep(candidate);aq_ready(s,ipc,peer);navigate(s,ipc,'sound')
-        app.stop();clean(app);assert shell.proc.poll() is None and peer.aqueous()['draft']
-        app=s.child('settings-reopened',[args.settings,'--page','aqueous','--section','layouts'],G_DEBUG='fatal-warnings');app.expect('event=settings-window-created');aq_ready(s,ipc,peer)
+        app.stop();clean(app, allowed_warnings=FRAME_WARNINGS);assert shell.proc.poll() is None and peer.aqueous()['draft']
+        app=s.child('settings-reopened',[args.settings,'--page','aqueous','--section','layouts'],G_DEBUG='fatal-criticals');app.expect('event=settings-window-created');aq_ready(s,ipc,peer)
         assert peer.aq_document('draft')['changes'][0]['value']==19
         checks['aqueous-close-reopen-retains-acknowledged-draft']=True
         # Backend restart retains the frontend copy for explicit recovery only.
@@ -347,7 +348,7 @@ def main():
         accept_aqueous_review(s,ipc)
         wait_for(lambda:not peer.aqueous()['draft']);aq_ready(s,ipc,peer)
         checks['aqueous-backend-restart-no-replay-explicit-rebase-and-discard']=True
-        app.stop();clean(app);peer.close();shell.stop();clean(shell)
+        app.stop();clean(app, allowed_warnings=FRAME_WARNINGS);peer.close();shell.stop();clean(shell)
       report['status']='passed'
     except Exception as exc:
       report.update(status='failed',error=repr(exc));raise

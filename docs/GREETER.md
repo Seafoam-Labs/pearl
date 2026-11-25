@@ -164,6 +164,7 @@ adapters and explicitly disabled UWSM profiles remain unavailable in the chooser
 | `password_first` | Defaults true for standard password-first PAM stacks; accepts a password immediately and signs in with one Enter or Sign in action. Set false for custom stacks that request another credential first |
 | `fingerprint_hint` | Optional generic fingerprint guidance; defaults off and does not enable authentication or inspect enrollment |
 | `auth_timeout_seconds` | 30–300 seconds for the absolute attempt deadline and input inactivity; transport/cancellation and handoff deadlines are separately bounded |
+| `handoff_hold`, `handoff_timeout_seconds` | `handoff_hold` defaults true: after an accepted start the greeter keeps rendering a disabled login card until greetd SIGTERMs the host (overlap handoff); set false for the classic immediate quit. `handoff_timeout_seconds` (5–60, default 15) bounds the hold with a fallback quit if that termination never arrives |
 
 To keep the login card on the same monitor after changing ports, run
 `aqueousctl outputs --json` in your desktop session and copy that monitor's

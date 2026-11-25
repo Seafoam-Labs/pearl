@@ -119,7 +119,22 @@ pub fn spawn(owner: *Window, args: []const [*:0]const u8, directory: ?*gio.File)
 }
 pub fn terminal(owner: *Window, directory: *gio.File) void {
     const program = terminalProgram() orelse return;
+    const path = directory.getPath();
+    defer if (path) |p| glib.free(p);
+    // Single-instance terminals hand off to a running process that keeps its
+    // own cwd, so the launcher's cwd alone never reaches the new window.
+    if (path) |p| if (terminalDirectoryFlag(program)) |flag| {
+        const arg = u.format("{s}={s}", .{ flag, p });
+        defer a.free(arg);
+        spawn(owner, &.{ program, arg }, directory);
+        return;
+    };
     spawn(owner, &.{program}, directory);
+}
+fn terminalDirectoryFlag(program: [:0]const u8) ?[:0]const u8 {
+    if (std.mem.eql(u8, program, "konsole")) return "--workdir";
+    inline for (.{ "ghostty", "gnome-terminal", "foot" }) |p| if (std.mem.eql(u8, program, p)) return "--working-directory";
+    return null;
 }
 pub fn follow(owner: *Window, c: *const Context) void {
     if (c.items.items.len != 1) return;
@@ -153,6 +168,8 @@ fn propertiesWorker(task: *gio.Task, _: *u.object.Object, data: ?*anyopaque, _: 
     if (c.items.items.len == 0) c.add(c.directory, c.directory_info);
     var bytes: u64 = 0;
     var folders: usize = 0;
+    var unmeasured: usize = 0;
+    var partial: usize = 0;
     for (c.items.items, 0..) |item, index| {
         if (r.owner.background_cancel.isCancelled() != 0) break;
         var err: ?*glib.Error = null;
@@ -162,9 +179,19 @@ fn propertiesWorker(task: *gio.Task, _: *u.object.Object, data: ?*anyopaque, _: 
         const path = item.file.getParseName();
         defer glib.free(path);
         if (info) |i| {
-            if (i.getFileType() == .directory) folders += 1 else bytes += @intCast(@max(i.getSize(), 0));
+            var folder_size: ?u64 = null;
+            if (i.getFileType() == .directory) {
+                folders += 1;
+                // Enumeration-based recursion works on network backends too;
+                // unreadable subtrees are skipped and reported as partial.
+                if (@import("measure.zig").folderSize(item.file, r.owner.background_cancel)) |m| {
+                    folder_size = m.bytes;
+                    bytes += m.bytes;
+                    if (!m.complete) partial += 1;
+                } else unmeasured += 1;
+            } else bytes += @intCast(@max(i.getSize(), 0));
             if (index < 20) {
-                const size = u.sizeText(i);
+                const size = if (folder_size) |s| glib.formatSize(s) else u.sizeText(i);
                 defer glib.free(size);
                 const date = u.dateText(i);
                 defer glib.free(date);
@@ -181,7 +208,8 @@ fn propertiesWorker(task: *gio.Task, _: *u.object.Object, data: ?*anyopaque, _: 
     }
     const size = glib.formatSize(bytes);
     defer glib.free(size);
-    const total = u.format("{d} selected · {d} folders · {s} in selected files\nFolder contents are not included in this size.", .{ c.items.items.len, folders, size });
+    const skipped = unmeasured + partial;
+    const total = if (skipped > 0) u.format("{d} selected · {d} folders · {s} total\n{d} folders could not be fully measured.", .{ c.items.items.len, folders, size, skipped }) else u.format("{d} selected · {d} folders · {s} total", .{ c.items.items.len, folders, size });
     defer a.free(total);
     r.text.appendSlice(a, total) catch unreachable;
     r.text.append(a, 0) catch unreachable;
@@ -267,16 +295,7 @@ pub fn extractHere(owner: *Window, file: *gio.File, tool: Extractor) void {
 }
 pub fn integration(owner: *Window, c: *const Context, cmd: Command) void {
     if (cmd == .admin) {
-        const path = c.target().getPath() orelse return;
-        defer glib.free(path);
-        const escaped = glib.Uri.escapeString(path, "/", 0);
-        defer glib.free(escaped);
-        const uri = u.format("admin://{s}", .{escaped});
-        defer a.free(uri);
-        const file = gio.File.newForUri(uri);
-        defer file.unref();
-        owner.addTab(c.pane, file);
-        owner.sync();
+        openAdmin(owner, c);
         return;
     }
     if (cmd == .extract) {
@@ -299,6 +318,45 @@ pub fn integration(owner: *Window, c: *const Context, cmd: Command) void {
         args.append(a, path) catch unreachable;
     }
     spawn(owner, args.items, c.directory);
+}
+const AdminRequest = struct { owner: *Window, pane: usize, file: *gio.File, operation: *gtk.MountOperation };
+/// The GVFS admin backend is mountable: it must be mounted (which spawns
+/// gvfsd-admin through pkexec and authenticates via polkit) before its contents
+/// can be enumerated. Opening the tab without mounting first leaves it empty
+/// with G_IO_ERROR_NOT_MOUNTED (issue: "Open as administrator" shows no files).
+fn openAdmin(owner: *Window, c: *const Context) void {
+    const path = c.target().getPath() orelse return;
+    defer glib.free(path);
+    const escaped = glib.Uri.escapeString(path, "/", 0);
+    defer glib.free(escaped);
+    const uri = u.format("admin://{s}", .{escaped});
+    defer a.free(uri);
+    const file = gio.File.newForUri(uri);
+    const r = a.create(AdminRequest) catch {
+        file.unref();
+        return;
+    };
+    r.* = .{ .owner = owner, .pane = c.pane, .file = file, .operation = gtk.MountOperation.new(owner.window) };
+    owner.app.as(gio.Application).hold();
+    file.mountEnclosingVolume(.{}, r.operation.as(gio.MountOperation), null, adminMounted, r);
+}
+fn adminMounted(_: ?*u.object.Object, result: *gio.AsyncResult, data: ?*anyopaque) callconv(.c) void {
+    const r: *AdminRequest = @ptrCast(@alignCast(data.?));
+    defer {
+        r.file.unref();
+        r.operation.unref();
+        r.owner.app.as(gio.Application).release();
+        a.destroy(r);
+    }
+    var err: ?*glib.Error = null;
+    if (r.file.mountEnclosingVolumeFinish(result, &err) == 0) {
+        defer if (err) |e| e.free();
+        r.owner.message("Could not open as administrator", if (err) |e| e.f_message orelse "Authentication failed or the admin backend is unavailable." else "Authentication failed or the admin backend is unavailable.");
+        return;
+    }
+    if (r.owner.closed) return;
+    r.owner.addTab(r.pane, r.file);
+    r.owner.sync();
 }
 const VolumeRequest = struct { owner: *Window, context: Context, command: Command, operation: *gtk.MountOperation };
 pub fn volume(owner: *Window, c: *const Context, cmd: Command) void {

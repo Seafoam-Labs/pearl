@@ -12,6 +12,7 @@ const w = @import("../ui/components/widgets.zig");
 const tr = @import("text.zig").tr;
 const chargeState = @import("text.zig").chargeState;
 const presentation = @import("../services/power_presentation.zig");
+const network_presentation = @import("../services/network_presentation.zig");
 const a = std.heap.c_allocator;
 /// Matches the theme CSS; preferences at this value leave the theme in control.
 const default_radius: u8 = 14;
@@ -19,7 +20,7 @@ const clocks = @import("clock_policy.zig");
 const Clock = @import("clock_view.zig").View;
 const Running = @import("running_apps.zig");
 pub const Pane = enum { launcher_picker, running_apps, clipboard_capture, aqueous_settings, settings, launcher, calendar, control, notifications, media, tray, wallpapers, resources, scheduling, weather };
-pub const Event = union(enum) { running_apps: Running.Event, pane: Pane, settings: @import("settings_navigation.zig").Route, workspace: []const u8, keyboard, overview, window_switcher };
+pub const Event = union(enum) { running_apps: Running.Event, pane: Pane, settings: @import("settings_navigation.zig").Route, workspace: []const u8, keyboard, overview, window_switcher, toggle_theme };
 const Button = struct { owner: *Bar, event: Event, id: ?[]u8 = null };
 /// Manager wiring the optional `dock` widget needs to behave like the
 /// standalone dock: preferences, task matching, and the launcher picker.
@@ -63,6 +64,8 @@ pub const Bar = struct {
     media_art_viewing: bool = false,
     media_art_image: ?*@import("gdkpixbuf2").Pixbuf = null,
     network_label: ?*gtk.Label = null,
+    /// Swapped between wired, wireless and offline glyphs as the link changes.
+    network_icon: ?*gtk.Image = null,
     bluetooth_label: ?*gtk.Label = null,
     audio_label: ?*gtk.Label = null,
     /// Speaker glyph tracking mute state and volume level.
@@ -77,6 +80,10 @@ pub const Bar = struct {
     weather_service: ?*@import("../services/weather.zig").Service = null,
     weather_icon: ?*gtk.Image = null,
     weather_label: ?*gtk.Label = null,
+    /// Sun/moon glyph for the theme widget: moon while dark is active, sun
+    /// while light is active. `theme_dark` is set by the manager, never here.
+    theme_icon: ?*gtk.Image = null,
+    theme_dark: bool = true,
     client: *Client,
     output: []const u8,
     context: *anyopaque,
@@ -173,6 +180,7 @@ pub const Bar = struct {
         self.scheduler_dot = null;
         self.weather_icon = null;
         self.weather_label = null;
+        self.theme_icon = null;
         self.workspace_hash = null;
     }
     pub fn configure(self: *Bar, groups: policy.Groups, definitions: []const clocks.Definition) !void {
@@ -230,6 +238,20 @@ pub const Bar = struct {
         if (want == self.media_art_viewing) return;
         self.session_services.media.view(want);
         self.media_art_viewing = want;
+    }
+    /// Tracks the active light/dark variant so the theme widget shows the moon
+    /// while dark is active and the sun while light is active. The tooltip and
+    /// accessible name describe the variant a click switches to.
+    pub fn setThemeVariant(self: *Bar, dark: bool) void {
+        self.theme_dark = dark;
+        self.refreshTheme();
+    }
+    fn refreshTheme(self: *Bar) void {
+        const widget = self.widgets[@backingInt(policy.Item.theme)] orelse return;
+        if (self.theme_icon) |glyph| glyph.setFromIconName(if (self.theme_dark) "pearl-weather-clear-night-symbolic" else "pearl-weather-clear-symbolic");
+        const tip = if (self.theme_dark) @import("i18n").dtr("pearl", "Switch to the light theme") else @import("i18n").dtr("pearl", "Switch to the dark theme");
+        widget.setTooltipText(tip);
+        w.name(widget, tip);
     }
     /// Must be set before configure() when a group contains the `dock` widget.
     pub fn setDockDeps(self: *Bar, deps: DockDeps) void {
@@ -434,6 +456,13 @@ pub const Bar = struct {
                     .clipboard => (try self.makeButton(.{ .pane = .clipboard_capture }, "pearl-edit-copy-symbolic", @import("i18n").dtr("pearl", "Clipboard & capture"), false)).as(gtk.Widget),
                     .wallpaper => (try self.makeButton(.{ .pane = .wallpapers }, "pearl-image-symbolic", @import("i18n").dtr("pearl", "Wallpaper"), false)).as(gtk.Widget),
                     .control => (try self.makeButton(.{ .settings = .overview }, "pearl-emblem-system-symbolic", @import("i18n").dtr("pearl", "Open settings Overview"), false)).as(gtk.Widget),
+                    .theme => blk: {
+                        const button = try self.makeButton(.toggle_theme, null, "", false);
+                        const glyph = w.icon(if (self.theme_dark) "pearl-weather-clear-night-symbolic" else "pearl-weather-clear-symbolic");
+                        self.theme_icon = glyph;
+                        button.setChild(glyph.as(gtk.Widget));
+                        break :blk button.as(gtk.Widget);
+                    },
                     .clock => unreachable,
                     .audio, .battery, .network, .bluetooth, .scheduler => blk: {
                         const button = try self.makeButton(if (item == .scheduler) .{ .pane = .scheduling } else .{ .settings = switch (item) {
@@ -447,13 +476,14 @@ pub const Bar = struct {
                         const glyph = w.icon(switch (item) {
                             .audio => "pearl-audio-volume-high-symbolic",
                             .battery => "pearl-battery-symbolic",
-                            .network => "pearl-network-wireless-symbolic",
+                            .network => network_presentation.icon(self.network_service),
                             .bluetooth => "pearl-bluetooth-active-symbolic",
                             .scheduler => "pearl-scheduler-symbolic",
                             else => unreachable,
                         });
                         if (item == .battery) self.battery_icon = glyph;
                         if (item == .audio) self.audio_icon = glyph;
+                        if (item == .network) self.network_icon = glyph;
                         const symbol = glyph.as(gtk.Widget);
                         if (item == .scheduler) {
                             // Right-click opens the profiles in Settings.
@@ -630,6 +660,7 @@ pub const Bar = struct {
         self.action(self.context, .{ .pane = .tray });
     }
     pub fn update(self: *Bar) void {
+        self.refreshTheme();
         if (self.widgets[@backingInt(policy.Item.window_switcher)]) |widget| {
             const all = self.client.capabilities.global_window_switcher_v1;
             const n = @import("window_switcher.zig").count(&self.client.model, self.output, all);
@@ -717,6 +748,7 @@ pub const Bar = struct {
         }
         if (self.network_label) |label| {
             const n = self.network_service;
+            if (self.network_icon) |glyph| glyph.setFromIconName(network_presentation.icon(n));
             var connected = false;
             for (n.devices[0..n.device_count]) |dev| if (dev.state == 100) {
                 connected = true;

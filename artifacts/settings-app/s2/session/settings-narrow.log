@@ -1,9 +1,18 @@
-info: event=settings-launch activation_context=false
-info: event=settings-instance-ready session=f9c2686dc67940392ca2b4e8f48cac98
-info: event=settings-page page=overview
-info: event=settings-page page=appearance
-info: event=settings-window-created app_id=org.aqueous.Pearl.Settings
-info: event=settings-activation activation_context=false
-info: event=settings-page page=appearance
-info: event=settings-page page=appearance
-info: event=settings-connection-unavailable error=Eof
+ts=2026-11-14T02:53:41Z pid=992730 info(settings): event=settings-launch activation_context=false
+ts=2026-11-14T02:53:41Z pid=992730 info(settings): event=settings-instance-ready session_hash=7ec50d07596742e3
+ts=2026-11-14T02:53:41Z pid=992730 info(settings): event=settings-page page=overview
+ts=2026-11-14T02:53:41Z pid=992730 info(settings): event=settings-page page=appearance
+ts=2026-11-14T02:53:41Z pid=992730 info(settings): event=settings-window-created app_id=org.aqueous.Pearl.Settings
+ts=2026-11-14T02:53:41Z pid=992730 info(settings): event=settings-activation activation_context=false
+ts=2026-11-14T02:53:41Z pid=992730 info(settings): event=settings-page page=appearance
+ts=2026-11-14T02:53:41Z pid=992730 info(settings): event=settings-page page=appearance
+
+(pearl-settings-test:992730): Gdk-WARNING **: 21:53:44.991: Duplicate call to gdk_frame_timings_presented() with different values: presentation time is 16.16ms off from expected
+
+(pearl-settings-test:992730): Gdk-WARNING **: 21:53:45.076: gdk_frame_timings_discarded() called on already presented frame.
+ts=2026-11-14T02:53:45Z pid=992730 info(settings): event=settings-page page=aqueous
+ts=2026-11-14T02:53:46Z pid=992730 info(settings): event=settings-page page=aqueous
+ts=2026-11-14T02:53:47Z pid=992730 info(settings): event=settings-page page=aqueous
+ts=2026-11-14T02:53:47Z pid=992730 info(settings): event=settings-activation activation_context=false
+ts=2026-11-14T02:53:47Z pid=992730 info(settings): event=settings-page page=appearance
+ts=2026-11-14T02:53:49Z pid=992730 info(settings): event=settings-connection-unavailable error=Eof

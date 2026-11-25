@@ -66,7 +66,7 @@
       (dank-cyan-dark "#ff569e")   ; Dark cyan
       (dank-teal "#d17d99")        ; Dark teal
       (dank-fg "#878391")           ; Light foreground
-      (dank-gray "#595663")         ; Gray
+      (dank-gray "#8b8992")         ; Gray
       (dank-white "#b4b0be")       ; White
 
       ;; Map success colors to green
@@ -103,7 +103,7 @@
       (term5 "#ff569e")
       (term6 "#d17d99")
       (term7 "#878391")
-      (term8 "#595663")
+      (term8 "#8b8992")
       (term9 "#ff5b85")
       (term10 "#c38c00")
       (term11 "#9e8bd2")

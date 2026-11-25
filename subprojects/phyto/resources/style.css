@@ -13,8 +13,10 @@
 .phyto-root .place { min-height: 32px; padding: 6px 12px; }
 .phyto-root .section-label { font-size: 10px; font-weight: 600; letter-spacing: 1.4px; margin: 16px 12px 8px; }
 .phyto-root .content { margin: 8px 16px 8px; }
-.phyto-root .pane { border-radius: 12px; border: 1px solid alpha(currentColor, 0.14); }
-.phyto-root paned > separator { min-width: 12px; background: transparent; }
+.phyto-root .pane { border-radius: 12px; }
+/* Invisible resize gap: the wide-handle grip read as a stray UI artifact, but
+ * the 12px separator stays a comfortable drag target. */
+.phyto-root paned > separator { min-width: 12px; background: transparent; background-image: none; border: none; box-shadow: none; }
 .phyto-root .tabs { padding: 4px 8px 0; border-bottom: 1px solid alpha(currentColor, 0.12); }
 .phyto-root .tab { border-radius: 8px 8px 0 0; min-height: 26px; font-size: 12px; border-bottom: 2px solid transparent; }
 .phyto-root .files-grid { padding: 16px 8px; }
@@ -58,6 +60,9 @@
 .phyto-root .preview-slot { border-radius: 8px; }
 .phyto-root .preview-body { padding: 16px; }
 .phyto-root .preview-slot textview { padding: 8px; }
+
+/* Drag-and-drop destination highlight on folder items, Places rows and tabs. */
+.phyto-root .drop-target { background: alpha(currentColor, 0.10); outline: 2px solid alpha(currentColor, 0.55); outline-offset: -2px; border-radius: 8px; }
 
 .phyto-root .network-page { padding: 16px; }
 .phyto-root .network-card { padding: 14px; border: 1px solid alpha(currentColor, 0.15); border-radius: 12px; }

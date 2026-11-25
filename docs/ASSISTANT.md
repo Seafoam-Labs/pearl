@@ -1,7 +1,7 @@
 # Launcher assistant
 
 The [GPU and runtime update](ASSISTANT_GPU_RUNTIME_PLAN.md) adds selectable
-llama.cpp installations and experimental Vulkan/CUDA execution. See the
+mistral.rs installations and experimental Vulkan/CUDA execution. See the
 [interaction mockups](mockups/assistant-gpu/README.md) and
 [validation evidence](../artifacts/assistant/gpu-runtime/README.md).
 
@@ -9,8 +9,48 @@ Pearl's experimental assistant is opt-in and disabled by default. In Settings �
 Assistant, choose a local model, explicitly download it, enable the assistant
 and Apply. Bing search works without provider setup. Type a question in Super+Space and
 activate **Ask Pearl**. Pearl opens a
-separate native chat window and searches only the selected engine(s). Typing
-does not start a model or make a network request.
+separate native chat window. It can answer directly on device or request web
+search from the selected engine(s). Typing does not start a model or make a
+network request. Submitting a question no longer forces a search.
+
+## Conversation and optional tools
+
+Ordinary chat, explanations, writing, and coding help do not require sources or
+an enabled search provider. Responses stream even without search results. Search
+is model-selected, guided by the system prompt to use it for current information,
+verification, or explicit requests, not routine conversation. A model can still
+make mistakes about when to search.
+
+A successful search/page read in the current turn requires source references in
+the resulting answer. Unknown source IDs trigger one tools-disabled correction;
+failed correction is labeled incomplete. Prior sources do not force citations on
+an unrelated follow-up such as “thanks.” Citation checks validate IDs and syntax,
+not factual truth or whether a source supports every claim. Source links remain
+host-owned. Tool errors, denied page reads, and empty searches are returned to the
+model as structured results so it can explain the limitation instead of inventing
+results. Cancellation still stops work rather than becoming a recoverable tool
+failure.
+
+Questions accept up to **32 KiB of UTF-8 text**. Recent questions and answers are
+kept whole within the context budget rather than clipped to fixed byte prefixes.
+Pearl uses the runtime's `/apply-template` and `/tokenize` endpoints to measure
+messages, tool schemas, and the assistant prefix, reserving the configured
+completion allowance plus a safety margin. Oldest complete turns are removed
+first, then optional previous evidence; the current question and active tool
+call/result groups are never clipped. A request that still cannot fit fails
+explicitly. The UI retains at most 20 turns and 128 KiB per conversation.
+
+Completed, incomplete, cancelled, and failed responses have distinct outcomes;
+a truncated draft is not presented as complete. Runtime/model combinations that
+pass ordinary chat but fail tool qualification remain usable in **chat-only**
+mode, with a visible warning and no tool execution. Settings reports chat and
+web-tool compatibility separately. Authentication and runtime isolation checks
+remain mandatory.
+
+Phase 1 of the [conversational assistant and local tools plan](ASSISTANT_CHAT_TOOLS_IMPLEMENTATION_PLAN.md)
+is implemented. Filesystem permissions, file creation/deletion, explicit deletion
+confirmation, and requested application launching remain planned; **no local tools
+are enabled by this change**.
 
 ## Bing and other engines
 
@@ -42,16 +82,15 @@ The model selector includes these managed GGUF downloads:
 
 | Model | Quantization | Download |
 | --- | --- | --- |
-| LFM2.5-350M | Q4_K_M / Q8_0 | 229 MB / 379 MB |
+| LFM3-1.7B | Q4_K_M / Q5_K_M / Q8_0 | 1.10 GB / 1.26 GB / 1.85 GB |
 | Qwen3-4B-Instruct-2507 | Q4_K_M | 2.50 GB |
-| LFM2.5-2.6B | Q4_K_M | 1.67 GB |
-| LFM2.5-1.2B-Instruct | Q4_K_M | 731 MB |
 
 Each entry has its own immutable repository revision, exact byte count, SHA256
 and license link in [`model_registry.zig`](../src/agent/model_registry.zig).
 Interrupted downloads resume from `.part` files against that revision; the
 complete hash must match before atomic installation. Custom local GGUFs have no
-Pearl file-size ceiling and are checked for tool-call compatibility before use.
+Pearl file-size ceiling and are checked for chat health and optional tool-call
+compatibility before use.
 Models are not bundled with Pearl. Model/runtime tests use
 draft settings and local fixtures. Stop a current answer before testing; Pearl
 unloads an idle runtime first and an exclusive session lock prevents a second
@@ -65,7 +104,7 @@ draft. Existing saved token settings remain explicit until changed. Context must
 leave room for generation and prompt overhead; the selected runtime/model still
 determines which context sizes work.
 
-The LFM2.5-2.6B profile uses 8,192 context tokens and 4,096 generation tokens,
+The LFM3-1.7B profile uses 32,768 context tokens and 4,096 generation tokens,
 including reasoning. It requires `--reasoning-format` support; Pearl requests
 separate reasoning fields and displays only the final answer. The two new
 Instruct profiles use 4,096 context tokens and 512 generation tokens. Larger
@@ -84,13 +123,19 @@ Choose **Runtime & acceleration** in Assistant settings:
 
 - **Set up runtime (install if needed)** checks the chosen runtime, then existing
   system/private runtimes. It reuses one with the required capabilities. Otherwise
-  it opens a terminal to install `llama-cpp` using `shelly install standard
+  it opens a terminal to install `mistralrs` using `shelly install standard
   --needed` on Devario, or `sudo pacman -S --needed` on Arch and Arch derivatives.
-  GPU setup adds `ggml-vulkan` for Automatic/Vulkan or `ggml-cuda` for CUDA;
-  CPU setup needs only `llama-cpp`. Existing usable GPU backends are reused.
+  The package must exist in the configured repositories: Devario core ships the
+  prebuilt CPU release. GPU acceleration needs a CUDA-enabled mistral.rs build
+  selected as a custom executable; there are no separate backend packages.
   These are repository-selected versions, not a hard-coded release. See the
-  [Arch runtime package](https://archlinux.org/packages/extra/x86_64/llama-cpp/)
-  and [backend packages](https://archlinux.org/packages/extra/x86_64/ggml/).
+  [upstream releases](https://github.com/EricLBuehler/mistral.rs/releases)
+  and [documentation](https://docs.mistralrs.dev).
+  Where no repository carries the package, setup fails without changing the
+  selection; install a prebuilt release or source build manually and choose
+  Custom executable. Without Shelly or pacman, setup instead opens a terminal
+  for `cargo install mistralrs-cli`, the crate that ships the binary; the
+  post-install probe rejects releases lacking required flags.
   Devario is detected before Arch ancestry and always uses Shelly.
   The package manager handles authentication, transaction confirmation, signatures
   and dependencies. No AUR builds, repositories, forced downgrades, database-only
@@ -105,11 +150,17 @@ Choose **Runtime & acceleration** in Assistant settings:
   Settings does not kill an active package transaction. Failed/cancelled installs
   or an incompatible repository version leave the runtime selection unchanged;
   fix the package-manager error or update the repository and retry setup.
-- **System installation** searches `/usr/bin/llama-server`, then
-  `/usr/local/bin/llama-server`, and resolves the actual executable.
+- **System installation** searches `/usr/bin/mistralrs`, then
+  `/usr/local/bin/mistralrs`, then `~/.cargo/bin/mistralrs`, and resolves the
+  actual executable.
 - **Pearl runtime package** uses the private optional installation.
 - **Custom executable** accepts an absolute path or file chooser selection.
   Paths with spaces work; shell commands and extra arguments are not accepted.
+- **Semantic search** runs its GGUF embedding backbone on a separate
+  `llama-server`, resolved from `/usr/bin/llama-server`,
+  `/usr/local/bin/llama-server`, the private package directory, or a custom
+  llama-server path. Its setup installs `llama-cpp` (plus `ggml-cuda` or
+  `ggml-vulkan` for GPU); the chat runtime selection is never reused for it.
 
 Fresh preferences use System + CPU. Existing assistant preferences without a
 runtime field migrate to Pearl runtime package + CPU. No exact upstream version,
@@ -122,36 +173,128 @@ distributions retain manual system/custom runtime selection.
 **Discover runtime and GPU devices** reads version/help/device information.
 **Check runtime and model now** additionally tests authentication, token counting,
 streaming and tool/result continuation with the selected model. Tests make no web
-searches. Required capabilities must pass even for an unlisted release. Changed
+searches. Failed optional tool checks fall back to chat-only mode only after a
+fresh chat probe succeeds. Required capabilities must pass even for an unlisted release. Changed
 executable/model metadata invalidates a loaded profile; full checks run on each
 new load. There is no persistent compatibility cache across driver/library
 updates. Runtime changes during a check are rejected.
 
-Build the optional inference runtime from an explicitly selected source:
+Stage the optional private inference runtime from an explicitly selected
+prebuilt mistral.rs executable or release archive:
 
 ```sh
 zig build build-assistant-runtime \
-  -Dassistant-runtime-source=/path/to/llama.cpp \
-  -Dassistant-runtime-backend=vulkan
-# Or verify a caller-selected source archive:
+  -Dassistant-runtime-binary=/path/to/mistralrs
+# Or verify a caller-selected prebuilt release archive:
 zig build build-assistant-runtime \
-  -Dassistant-runtime-archive=/path/to/llama.tar.gz \
-  -Dassistant-runtime-sha256=EXPECTED_SHA256 \
-  -Dassistant-runtime-backend=cpu
+  -Dassistant-runtime-archive=/path/to/mistralrs-cpu-x86_64-unknown-linux-gnu.tar.gz \
+  -Dassistant-runtime-sha256=EXPECTED_SHA256
 ```
 
-Backend choices are `cpu`, `vulkan` and `cuda`. The target stages actual build
-libraries and SONAME files under `zig-out/libexec/pearl/assistant` with `$ORIGIN`
-lookup. Optional provenance records the source kind, archive hash and backend;
+The target stages the `mistralrs` server binary under
+`zig-out/libexec/pearl/assistant`, where the Pearl runtime package source
+resolves it. Optional provenance records the source kind and archive hash;
 it does not restrict which runtime the app accepts. Normal Pearl builds do not
-build or download llama.cpp. Upstream CMake and the requested GPU development
-dependencies must already be available.
+build or download mistral.rs. The prebuilt release is CPU-only; GPU acceleration
+requires a CUDA-enabled build supplied as a custom executable.
 
 The optional [distribution recipe](../packaging/assistant/PKGBUILD) keeps its
-own reproducible release/checksum independently of Pearl. It defaults to CPU;
-`PEARL_ASSISTANT_BACKEND=vulkan makepkg` or `PEARL_ASSISTANT_BACKEND=cuda makepkg`
-builds the corresponding alternative package. A system/custom runtime can be
+own reproducible release/checksum independently of Pearl and installs the same
+prebuilt CPU binary as `pearl-assistant-runtime`. A system/custom runtime can be
 used without that package. Model download integrity checks remain mandatory.
+
+## Semantic search
+
+Semantic search is a separate opt-in feature in Settings → Assistant →
+**Semantic search**, disabled on fresh installs and when older preferences omit
+the field. It does not require the chat assistant to be enabled, a chat model
+or any search provider. When enabled and indexed, the Super+Space launcher
+finds documents by description and shows the matching passage; Enter opens the
+file with its default application. See
+[DESKTOP.md](DESKTOP.md#semantic-document-search) for launcher behavior and the
+[implementation plan](SEMANTIC_SEARCH_IMPLEMENTATION_PLAN.md) for architecture.
+
+Turning the switch on immediately sets the feature up: it reuses a compatible
+installed runtime or installs mistral.rs through the distribution package
+manager (a terminal opens for authentication and confirmation), then downloads
+the embedding model. Both are immediate operations that survive Discard, with
+progress, cancellation of the download phase, and clear errors;
+**Set up now (runtime and model)** retries them. The package manager owns its
+transaction — Pearl never kills it, and closing Settings does not stop it.
+Setup verifies the llama-server runtime supports `--embeddings` before and
+after installing; a repository release without embedding support is reported,
+not used. The chat runtime (mistralrs) is installed separately by the assistant
+setup and is never reused for embeddings.
+
+The embedding model is **EmbeddingGemma 2** (Google DeepMind, Apache-2.0), text
+backbone only. Two managed profiles are pinned with immutable revisions, exact
+byte counts and SHA256 in [`model_registry.zig`](../src/agent/model_registry.zig):
+`ggml-org/embeddinggemma-2-GGUF` Q8_0 (310 MB, recommended) and
+`unsloth/embeddinggemma-2-GGUF` UD-Q4_K_XL (176 MB, low memory). The multimodal
+`mmproj` projectors are not downloaded. Downloads reuse the chat model
+machinery: resumable and hash-verified before atomic installation; an already
+installed model is not downloaded again.
+
+Nothing is indexed until you add folders (at most 16, absolute paths). The
+first index pass is scheduled automatically once enabling takes effect with
+folders configured and the model installed — it runs in the first quiet
+window (below), not immediately. An existing index is never rebuilt
+implicitly; **Index now** re-runs a pass on demand, immediately. Indexing walks
+selected folders without following symlinks,
+skips hidden entries and common cache directories, and indexes UTF-8 text
+documents (`.txt`, `.md`, `.markdown`, `.rst`) natively and PDFs through a
+bubblewrap-sandboxed `pdftotext` child. PDF indexing requires Poppler; without
+it, text documents still index and the status says so. Scanned PDFs without a
+text layer are counted as skipped, never OCR'd. Files are capped at 20 MiB;
+the index at 50,000 files / 200,000 passages. Changed files are re-embedded by
+mtime/size; deleted files and removed folders drop out on the next pass.
+
+The index lives in `~/.local/share/pearl/search/` (0700, files 0600): a manifest,
+normalized 256-dimension Matryoshka vectors and passage records. It contains
+document excerpts, stays on the device, and is excluded from preference
+exports, the raw JSON editor and `pearlctl report`. **Delete index** removes it;
+disabling the feature keeps it for cheap re-enable. A model or chunker change
+invalidates the index and requires an explicit reindex.
+
+Semantic search reuses the acceleration preference selected for the assistant,
+but runs its own llama-server embedding runtime: mistral.rs releases reject
+GGUF/GGML embedding backbones at load time, while the pinned backbone is GGUF.
+The embedding server is a second, separately locked `llama-server` started with
+`--embeddings` and mean pooling; runtimes without embedding support are
+rejected with an actionable error. Readiness verifies a probe embedding is
+768 finite, non-zero values before any document is indexed. The runtime unloads
+after 120 idle seconds; indexing defers while a chat answer is running and
+yields to live launcher queries. Lock screen and session loss cancel work and
+unload the runtime. All indexing, embedding and ranking are local — the model
+download is the only network operation.
+
+`pearlctl semantic status|index|stop|delete` exposes the same controls; Settings
+uses that verified channel because the shell owns the index.
+
+**Background indexing** (Settings → Assistant → Semantic search) keeps the
+index fresh without manual passes, primarily when the computer is idle or in
+low use. The choice is `Idle or low use` (default), `Idle only` or `Manual
+only`. Automatic work runs in bounded bursts — 120 s in idle windows (180 s of
+no input, via the compositor's ext-idle-notify, which honors idle inhibitors
+so video and games block it) and 15 s in low-use windows (confirmed low CPU
+load, no typing, AC power). Bursts stop promptly when you return, keep their
+committed progress (searchable immediately) and reschedule; at least five
+minutes separate automatic passes, and the first window opens no earlier than
+two minutes after login. On battery, only idle windows run, and only while
+charging or at ≥ 50%; power-saver mode defers everything. Locked sessions
+never index. Compositors without idle notifications degrade to low-use-only
+mode, disclosed in status.
+
+Freshness sources: directory monitors (folder roots plus discovered
+subdirectories, capped at 256) mark changed paths dirty; a stat-only rescan at
+most every six hours covers anything monitors miss (network mounts, inotify
+limits), with degraded mode reported honestly. Removing a folder applies
+immediately as a metadata-only commit — no runtime or window needed. Adding a
+folder queues an incremental pass for the next quiet window. Switching the
+embedding model queues a full rebuild the same way. The status line shows
+pending changes and what the scheduler is waiting for. Code-file support and
+real-hardware latency/memory acceptance remain open gates in the
+[idle reindex plan](SEMANTIC_IDLE_REINDEX_PLAN.md).
 
 ## GPU execution and recovery
 
@@ -299,14 +442,17 @@ These controls use Pearl's existing authenticated session control channel.
 
 ## Validation and remaining qualification
 
-Run policy/native tests with `zig build test-agent`. Build the instrumented
+Run policy/native tests with `zig build test-agent`. This includes offline HTTP/SSE
+fixtures for direct chat, optional search, provider failure, chat-only capability
+gating, citation correction, whole-turn context pruning, streaming, truncation,
+and cancellation; these need Python but no real model or web access. Build the instrumented
 frontend with `zig build build-agent-test`. Real-model and private-desktop tests
 are in `tests/integration/test_agent_model.py`, `test_agent_ui.py` and
 `test_agent_launcher.py`; none downloads models or uses live search credentials.
 `test_agent_runtime.py` uses an executable protocol fixture to simulate GPU
 enumeration, verified/unverified offload, device failure, version changes and
 missing authentication. Its passing results do not establish real GPU support
-on a particular driver. Use `test_agent_ui.py --runtime /absolute/llama-server`
+on a particular driver. Use `test_agent_ui.py --runtime /absolute/mistralrs`
 to exercise a custom installation with the real local model.
 
 `zig build test-agent-model-settings` checks the model selector, draft isolation,
@@ -317,7 +463,7 @@ fixtures, supply their existing GGUF files and a compatible runtime:
 ```sh
 zig build build-agent-test
 python3 tests/integration/test_agent_models.py --models-dir /path/to/models \
-    --runtime /absolute/llama-server --output /tmp/pearl-model-check
+    --runtime /absolute/mistralrs --output /tmp/pearl-model-check
 ```
 
 This is a compatibility smoke test. The implemented comparative benchmark has
@@ -325,7 +471,7 @@ separate integration checks:
 
 ```sh
 zig build test-agent-benchmark test-agent-benchmark-settings -- \
-    --model /path/to/LFM2.5-350M-Q4_K_M.gguf
+    --model /path/to/LFM3-1.7B-Q4_K_M.gguf
 zig build build-benchmark-check
 ```
 
@@ -348,7 +494,7 @@ After staging the runtime and supplying an existing model, run the real
 launcher/settings test with:
 
 ```sh
-zig build test-agent-launcher -- --model /path/to/LFM2.5-350M-Q4_K_M.gguf \
+zig build test-agent-launcher -- --model /path/to/LFM3-1.7B-Q4_K_M.gguf \
     --aqueous /path/to/patched/aqueous
 ```
 

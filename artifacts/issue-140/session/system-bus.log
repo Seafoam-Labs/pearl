@@ -1,0 +1,8 @@
+dbus-daemon[180953]: [session uid=1000 pid=180953 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.3' (uid=1000 pid=181108 comm="/usr/bin/systemctl show scx.service --property=Loa")
+dbus-daemon[180953]: [session uid=1000 pid=180953 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
+dbus-daemon[180953]: [session uid=1000 pid=180953 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.4' (uid=1000 pid=181113 comm="/usr/bin/systemctl show scx.service --property=Loa")
+dbus-daemon[180953]: [session uid=1000 pid=180953 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
+dbus-daemon[180953]: [session uid=1000 pid=180953 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.6' (uid=1000 pid=181406 comm="/usr/bin/systemctl show scx.service --property=Loa")
+dbus-daemon[180953]: [session uid=1000 pid=180953 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1
+dbus-daemon[180953]: [session uid=1000 pid=180953 pidfd=4] Activating service name='org.freedesktop.systemd1' requested by ':1.7' (uid=1000 pid=181411 comm="/usr/bin/systemctl show scx.service --property=Loa")
+dbus-daemon[180953]: [session uid=1000 pid=180953 pidfd=4] Activated service 'org.freedesktop.systemd1' failed: Process org.freedesktop.systemd1 exited with status 1

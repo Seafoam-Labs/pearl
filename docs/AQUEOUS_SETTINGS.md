@@ -35,18 +35,23 @@ lease. Backend loss requires explicit review/rebase or local discard after Retry
 
 ## Navigation
 
-Select **Aqueous** in Pearl Settings to reveal Appearance, Layouts, Input,
-Shortcuts, Rules, Displays, and Advanced beneath it. The selected child is
-highlighted; the header shows its section title with Aqueous context. Narrow
-windows use the same sublist in **Sections**: choosing Aqueous reveals its
-children, and choosing a child closes the popover.
+The Aqueous editors are permanent top-level destinations in Pearl Settings;
+there is no separate Aqueous category. **Displays**, **Input** and **Shortcuts**
+are grouped under DEVICES; **Window appearance**, **Layouts** and **Rules** are
+grouped under DESKTOP next to Pearl's own pages. The selected entry is
+highlighted and the header shows its title. Narrow windows use the same entries
+in **Sections**; choosing an entry closes the popover.
 
-Returning through the Aqueous parent restores the last section visited in this
-window. Each section retains its scroll position and valid control focus; if
+Each section retains its scroll position and valid control focus; if
 refreshing replaces those controls, focus falls back to the section heading.
 Explicit CLI links open at the heading, and an Aqueous launch without a section
-opens Appearance. Shortcuts retains the stable CLI section ID `keybinds`.
+opens Window appearance. Shortcuts retains the stable CLI section ID `keybinds`.
 Navigation transfers pending draft edits without applying or discarding them.
+
+The former Aqueous **Advanced** section is merged into the shared **Advanced**
+page under SYSTEM, below the Pearl preferences document. `--section advanced`
+(and the legacy `--text advanced`) still resolve to that page. The compact
+Control-center editor keeps its own tabbed Advanced section.
 
 ## Editing and outcomes
 
@@ -54,8 +59,9 @@ Appearance, Layouts, Input, Keybindings, Rules and Displays are generated from t
 helper's current fields. All 221 fields in the tested schema have controls; the
 [field inventory](AQUEOUS_FIELD_INVENTORY.md) records their coverage. Descriptions,
 select choices, numeric limits, colors and default values come from the helper.
-Advanced exposes the six raw TOML files and the complete helper request JSON.
-Unknown TOML settings and comments are left to the canonical backend.
+The shared Advanced page exposes the six raw TOML files and the complete helper
+request JSON alongside the Pearl preferences document; the two drafts remain
+independent. Unknown TOML settings and comments are left to the canonical backend.
 
 Drafts belong to the service and survive closing/reopening the view. Invalid JSON
 and invalid values remain editable. Raw edits are retained as you type; a raw
@@ -154,6 +160,19 @@ it does not write a string into the numeric field. The separate `auto_hdr`
 conversion feature remains an advanced setting and is not enabled by this checkbox.
 Unsupported HDR controls explain their availability. Preview capability remains
 separate from the ability to retain a configuration draft.
+
+**Adaptive sync (VRR)** sits directly below HDR in the selected-screen editor and
+stages the `adaptive_sync` output declaration. The indented **Only when a
+fullscreen app is running** checkbox stages `fullscreen_only_adaptive_sync`
+(default off: VRR is always active while enabled). The master checkbox is
+sensitive only while the display is enabled, VRR preview is supported, and the
+screen is not mirroring; the fullscreen-only checkbox additionally requires the
+master toggle to be on. Its help line explains unsupported hardware, unavailable
+previews, mirroring and commit errors, and reports whether VRR is active or
+waiting for a fullscreen app. Like HDR, a draft that enables adaptive sync on an
+output without VRR preview support blocks Apply; store-only edits remain
+available in the declaration editor. The helper persists both keys to
+`~/.config/aqueous/outputs.toml`.
 
 The diagram immediately shows the unsaved arrangement. A revision-matched
 canonical validation result supplies authoritative candidate geometry. Edits

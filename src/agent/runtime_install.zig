@@ -1,7 +1,10 @@
-//! Explicit desktop setup. Only the distribution package manager installs code.
-//! Interactive transactions own their terminal and are never killed by Settings.
+//! Explicit desktop setup. The distribution package manager installs code;
+//! a user-confirmed cargo build is the fallback where no supported manager
+//! exists. Interactive transactions own their terminal and are never killed
+//! by Settings.
 const std = @import("std");
 const gio = @import("gio2");
+const glib = @import("glib2");
 const config = @import("config.zig");
 const probe = @import("runtime_probe.zig");
 pub const Manager = enum { shelly, pacman };
@@ -27,23 +30,39 @@ fn contains(list: []const u8, value: []const u8) bool {
     while (words.next()) |word| if (std.mem.eql(u8, word, value)) return true;
     return false;
 }
+/// The repository `mistralrs` package ships the prebuilt CPU release. GPU
+/// acceleration needs a CUDA-enabled mistral.rs build, not backend packages.
 pub fn packages(compute: config.Compute) []const [:0]const u8 {
+    _ = compute;
+    return &.{"mistralrs"};
+}
+/// Semantic embeddings stay on llama-server (GGUF backbone); GPU backends are
+/// separate ggml packages there, unlike the bundled mistral.rs release.
+pub fn embeddingPackages(compute: config.Compute) []const [:0]const u8 {
     if (compute.mode == .cpu) return &.{"llama-cpp"};
     return if (compute.backend == .cuda) &.{ "llama-cpp", "ggml-cuda" } else &.{ "llama-cpp", "ggml-vulkan" };
 }
-pub fn command(a: std.mem.Allocator, selected: Manager, compute: config.Compute) ![]const [:0]const u8 {
+pub fn command(a: std.mem.Allocator, selected: Manager, compute: config.Compute, embedding: bool) ![]const [:0]const u8 {
     var args: std.ArrayList([:0]const u8) = .empty;
     try args.appendSlice(a, switch (selected) {
         .shelly => &.{ "/usr/bin/shelly", "install", "standard", "--needed" },
         .pacman => &.{ "/usr/bin/sudo", "/usr/bin/pacman", "-S", "--needed" },
     });
-    try args.appendSlice(a, packages(compute));
+    try args.appendSlice(a, if (embedding) embeddingPackages(compute) else packages(compute));
     return args.toOwnedSlice(a);
 }
 pub const Result = struct { runtime: config.RuntimeConfig, info: probe.Probe, installed: bool = false };
-fn suitable(info: probe.Probe, compute: config.Compute) bool {
+fn suitable(info: probe.Probe, compute: config.Compute, embedding: bool) bool {
+    if (embedding) {
+        if (!info.has("--embeddings")) return false;
+        if (compute.mode == .cpu) return true;
+        if (!info.has("--device") or !info.has("--split-mode")) return false;
+        for (info.devices) |device| {
+            if (compute.backend == .auto or compute.backend == device.backend) return true;
+        }
+        return false;
+    }
     if (compute.mode == .cpu) return true;
-    if (!info.has("--device") or !info.has("--split-mode")) return false;
     for (info.devices) |device| {
         if (compute.backend == .auto or compute.backend == device.backend) return true;
     }
@@ -52,6 +71,29 @@ fn suitable(info: probe.Probe, compute: config.Compute) bool {
 // The environment boundary also lets tests exercise setup without touching the
 // host package database, authenticating, or launching an actual terminal.
 pub fn ensureWith(a: std.mem.Allocator, cfg: config.Config, cancel: *gio.Cancellable, environment: anytype) !Result {
+    return ensureImpl(a, cfg, cancel, environment, false);
+}
+/// Semantic search setup additionally requires the embeddings endpoint, both
+/// when reusing an installed runtime and after a package-manager install.
+pub fn ensureEmbeddingWith(a: std.mem.Allocator, cfg: config.Config, cancel: *gio.Cancellable, environment: anytype) !Result {
+    return ensureImpl(a, cfg, cancel, environment, true);
+}
+fn ensureImpl(a: std.mem.Allocator, cfg: config.Config, cancel: *gio.Cancellable, environment: anytype, comptime embedding: bool) !Result {
+    if (embedding) {
+        // Embeddings resolve llama-server independently of the chat selection;
+        // probe.inspectEmbedding searches system, packaged and custom paths.
+        const reused = environment.inspectEmbedding(a, cfg.runtime, cancel) catch |err| blk: {
+            if (err == error.Cancelled or err == error.OutOfMemory) return err;
+            break :blk null;
+        };
+        if (reused) |info| if (suitable(info, cfg.compute, true)) return .{ .runtime = .{ .source = .system }, .info = info };
+        if (cancel.isCancelled() != 0) return error.Cancelled;
+        try environment.install(a, cfg.compute, true, cancel);
+        if (cancel.isCancelled() != 0) return error.Cancelled;
+        const info = try environment.inspectEmbedding(a, cfg.runtime, cancel);
+        if (!suitable(info, cfg.compute, true)) return error.RuntimeCapabilityMissing;
+        return .{ .runtime = .{ .source = .system }, .info = info, .installed = true };
+    }
     const candidates = [_]config.RuntimeConfig{ cfg.runtime, .{ .source = .system }, .{ .source = .packaged } };
     for (candidates, 0..) |candidate, i| {
         if (cancel.isCancelled() != 0) return error.Cancelled;
@@ -60,18 +102,22 @@ pub fn ensureWith(a: std.mem.Allocator, cfg: config.Config, cancel: *gio.Cancell
             if (err == error.Cancelled or err == error.OutOfMemory) return err;
             continue;
         };
-        if (suitable(info, cfg.compute)) return .{ .runtime = candidate, .info = info };
+        if (suitable(info, cfg.compute, false)) return .{ .runtime = candidate, .info = info };
     }
     if (cancel.isCancelled() != 0) return error.Cancelled;
-    try environment.install(a, cfg.compute, cancel);
+    try environment.install(a, cfg.compute, false, cancel);
     if (cancel.isCancelled() != 0) return error.Cancelled;
     const runtime: config.RuntimeConfig = .{ .source = .system };
     // Probe again even if the package manager reported success. A repository
     // release may lack required options; never claim it is compatible blindly.
-    return .{ .runtime = runtime, .info = try environment.inspect(a, runtime, cancel), .installed = true };
+    const info = try environment.inspect(a, runtime, cancel);
+    return .{ .runtime = runtime, .info = info, .installed = true };
 }
 pub fn ensure(a: std.mem.Allocator, cfg: config.Config, cancel: *gio.Cancellable) !Result {
     return ensureWith(a, cfg, cancel, Desktop{});
+}
+pub fn ensureEmbedding(a: std.mem.Allocator, cfg: config.Config, cancel: *gio.Cancellable) !Result {
+    return ensureEmbeddingWith(a, cfg, cancel, Desktop{});
 }
 fn installInTerminal(a: std.mem.Allocator, cmd: []const [:0]const u8, cancel: *gio.Cancellable, environment: anytype) !void {
     const terminals = [_][]const [:0]const u8{
@@ -100,14 +146,26 @@ const Desktop = struct {
     fn inspect(_: Desktop, a: std.mem.Allocator, runtime: config.RuntimeConfig, cancel: *gio.Cancellable) !probe.Probe {
         return probe.inspect(a, runtime, true, cancel);
     }
-    fn install(_: Desktop, a: std.mem.Allocator, compute: config.Compute, cancel: *gio.Cancellable) !void {
+    fn inspectEmbedding(_: Desktop, a: std.mem.Allocator, cfg: config.RuntimeConfig, cancel: *gio.Cancellable) !probe.Probe {
+        return probe.inspectEmbedding(a, cfg, true, cancel);
+    }
+    fn install(_: Desktop, a: std.mem.Allocator, compute: config.Compute, embedding: bool, cancel: *gio.Cancellable) !void {
         var buffer: [16384]u8 = undefined;
         const release = @import("memory.zig").read("/etc/os-release", &buffer) catch
-            @import("memory.zig").read("/usr/lib/os-release", &buffer) catch return error.RuntimeInstallationUnsupportedDistribution;
-        const selected = try manager(release);
-        const cmd = try command(a, selected, compute);
+            @import("memory.zig").read("/usr/lib/os-release", &buffer) catch {
+            if (embedding) return error.RuntimePackageManagerUnavailable;
+            return installCargo(a, cancel);
+        };
+        const selected = manager(release) catch {
+            if (embedding) return error.RuntimePackageManagerUnavailable;
+            return installCargo(a, cancel);
+        };
+        const cmd = try command(a, selected, compute, embedding);
         for (cmd[0..if (selected == .pacman) @as(usize, 2) else 1]) |exe| {
-            if (std.c.access(exe, std.c.X_OK) != 0) return error.RuntimePackageManagerUnavailable;
+            if (std.c.access(exe, std.c.X_OK) != 0) {
+                if (embedding) return error.RuntimePackageManagerUnavailable;
+                return installCargo(a, cancel);
+            }
         }
         try installInTerminal(a, cmd, cancel, Desktop{});
     }
@@ -124,6 +182,20 @@ const Desktop = struct {
     }
 };
 
+/// Source-built fallback for distributions without a supported package
+/// manager. Requires a Rust toolchain; the transaction still runs in a
+/// user-visible terminal and installs into ~/.cargo/bin, which resolve()
+/// searches. Never killed by Settings, like package-manager transactions.
+/// The `mistralrs` crate is a library; the server binary ships in
+/// `mistralrs-cli`. Older published releases lack required flags and are
+/// rejected by the post-install capability probe.
+fn installCargo(a: std.mem.Allocator, cancel: *gio.Cancellable) !void {
+    const user_cargo = try std.fmt.allocPrintSentinel(a, "{s}/.cargo/bin/cargo", .{std.mem.span(glib.getHomeDir())}, 0);
+    const exe: [:0]const u8 = if (std.c.access("/usr/bin/cargo", std.c.X_OK) == 0) "/usr/bin/cargo" else if (std.c.access(user_cargo, std.c.X_OK) == 0) user_cargo else return error.RuntimePackageManagerUnavailable;
+    const cmd = [_][:0]const u8{ exe, "install", "mistralrs-cli" };
+    try installInTerminal(a, &cmd, cancel, Desktop{});
+}
+
 test "Devario setup launches Shelly when Ghostty is the only terminal" {
     const Fake = struct {
         present: bool = true,
@@ -134,7 +206,7 @@ test "Devario setup launches Shelly when Ghostty is the only terminal" {
         }
         fn launch(self: *@This(), args: []const ?[*:0]const u8) !bool {
             self.launches += 1;
-            const expected = [_][]const u8{ "/usr/bin/ghostty", "-e", "/usr/bin/shelly", "install", "standard", "--needed", "llama-cpp" };
+            const expected = [_][]const u8{ "/usr/bin/ghostty", "-e", "/usr/bin/shelly", "install", "standard", "--needed", "mistralrs" };
             try std.testing.expectEqual(expected.len + 1, args.len);
             for (expected, args[0..expected.len]) |want, got| try std.testing.expectEqualStrings(want, std.mem.span(got.?));
             try std.testing.expect(args[expected.len] == null);
@@ -143,7 +215,7 @@ test "Devario setup launches Shelly when Ghostty is the only terminal" {
         }
     };
     const a = std.testing.allocator;
-    const cmd = try command(a, try manager("ID=devario\nID_LIKE=arch\n"), .{});
+    const cmd = try command(a, try manager("ID=devario\nID_LIKE=arch\n"), .{}, false);
     defer a.free(cmd);
     const cancel = gio.Cancellable.new();
     defer cancel.unref();
@@ -170,16 +242,23 @@ test "distribution identity gives Devario precedence and never evaluates shell t
     try std.testing.expectError(error.RuntimeInstallationUnsupportedDistribution, manager("ID=ubuntu\nID_LIKE=debian"));
     try std.testing.expectError(error.RuntimeInstallationUnsupportedDistribution, manager("ID=$(touch /tmp/not-executed)\nID_LIKE=archfake"));
 }
-test "install commands retain authentication and confirmation and request selected backend" {
+test "install commands retain confirmation and install the bundled-backend runtime" {
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
     const a = arena.allocator();
-    const shelly = try command(a, .shelly, .{});
-    try std.testing.expectEqualStrings("/usr/bin/shelly install standard --needed llama-cpp", try std.mem.join(a, " ", shelly));
-    const pacman = try command(a, .pacman, .{ .mode = .gpu, .backend = .cuda });
-    try std.testing.expectEqualStrings("/usr/bin/sudo /usr/bin/pacman -S --needed llama-cpp ggml-cuda", try std.mem.join(a, " ", pacman));
-    try std.testing.expectEqualStrings("ggml-vulkan", packages(.{ .mode = .auto })[1]);
+    const shelly = try command(a, .shelly, .{}, false);
+    try std.testing.expectEqualStrings("/usr/bin/shelly install standard --needed mistralrs", try std.mem.join(a, " ", shelly));
+    const pacman = try command(a, .pacman, .{ .mode = .gpu, .backend = .cuda }, false);
+    try std.testing.expectEqualStrings("/usr/bin/sudo /usr/bin/pacman -S --needed mistralrs", try std.mem.join(a, " ", pacman));
+    try std.testing.expectEqualStrings("mistralrs", packages(.{ .mode = .auto })[0]);
     try std.testing.expectEqual(@as(usize, 1), packages(.{ .mode = .cpu, .backend = .cuda }).len);
+    try std.testing.expectEqual(@as(usize, 1), packages(.{ .mode = .gpu, .backend = .vulkan }).len);
+    const shelly_embedding = try command(a, .shelly, .{}, true);
+    try std.testing.expectEqualStrings("/usr/bin/shelly install standard --needed llama-cpp", try std.mem.join(a, " ", shelly_embedding));
+    const pacman_embedding = try command(a, .pacman, .{ .mode = .gpu, .backend = .cuda }, true);
+    try std.testing.expectEqualStrings("/usr/bin/sudo /usr/bin/pacman -S --needed llama-cpp ggml-cuda", try std.mem.join(a, " ", pacman_embedding));
+    try std.testing.expectEqualStrings("llama-cpp", embeddingPackages(.{ .mode = .cpu })[0]);
+    try std.testing.expectEqual(@as(usize, 2), embeddingPackages(.{ .mode = .gpu, .backend = .vulkan }).len);
 }
 test "setup reuses compatible runtimes, installs once when absent, and rejects failed verification" {
     const Fake = struct {
@@ -195,9 +274,9 @@ test "setup reuses compatible runtimes, installs once when absent, and rejects f
             self.inspections += 1;
             if (!self.present or (self.only_system and runtime.source != .system)) return error.AssistantRuntimeNotInstalled;
             if (self.broken) return error.RuntimeCapabilityMissing;
-            return .{ .executable = "/usr/bin/llama-server", .fingerprint = "test", .version = "unrestricted release", .help = "--device --split-mode", .devices = if (self.gpu) &.{.{ .id = "fixture", .name = "CUDA0", .description = "Fixture", .backend = .cuda, .total_mib = 8192, .free_mib = 8192 }} else &.{}, .child_environment = &.{} };
+            return .{ .executable = "/usr/bin/mistralrs", .fingerprint = "test", .version = "unrestricted release", .help = "--host --port --max-model-len --no-ui --cpu --max-seqs -f", .embedding = false, .devices = if (self.gpu) &.{.{ .id = "fixture", .name = "CUDA0", .description = "Fixture", .backend = .cuda, .total_mib = 8192, .free_mib = 8192 }} else &.{}, .child_environment = &.{} };
         }
-        fn install(self: *@This(), _: std.mem.Allocator, _: config.Compute, cancel: *gio.Cancellable) !void {
+        fn install(self: *@This(), _: std.mem.Allocator, _: config.Compute, _: bool, cancel: *gio.Cancellable) !void {
             self.installs += 1;
             if (self.fail_install) return error.RuntimePackageInstallationFailed;
             self.present = true;
@@ -233,4 +312,42 @@ test "setup reuses compatible runtimes, installs once when absent, and rejects f
     var cancelled: Fake = .{};
     try std.testing.expectError(error.Cancelled, ensureWith(std.testing.allocator, .{}, cancel, &cancelled));
     try std.testing.expectEqual(@as(usize, 0), cancelled.installs);
+}
+
+test "embedding setup reuses only embedding-capable runtimes and verifies installs" {
+    const Fake = struct {
+        present: bool = false,
+        embeddings: bool = true,
+        installs: usize = 0,
+        fn inspect(self: *@This(), _: std.mem.Allocator, _: config.RuntimeConfig, _: *gio.Cancellable) !probe.Probe {
+            if (!self.present) return error.AssistantRuntimeNotInstalled;
+            return .{ .executable = "/usr/bin/mistralrs", .fingerprint = "test", .version = "unrestricted release", .help = "--host --port --max-model-len --no-ui --cpu --max-seqs -f", .embedding = self.embeddings, .devices = &.{}, .child_environment = &.{} };
+        }
+        fn inspectEmbedding(self: *@This(), _: std.mem.Allocator, _: config.RuntimeConfig, _: *gio.Cancellable) !probe.Probe {
+            if (!self.present) return error.AssistantRuntimeNotInstalled;
+            const base = "--host --port --api-key-file --alias --ctx-size --parallel --threads --threads-batch --threads-http --batch-size --ubatch-size --gpu-layers --no-webui --no-agent --device --split-mode";
+            const help = if (self.embeddings) base ++ " --embeddings" else base;
+            try probe.requiredLlamaEmbedding(help);
+            return .{ .executable = "/usr/bin/llama-server", .fingerprint = "test", .version = "unrestricted release", .help = help, .embedding = self.embeddings, .devices = &.{}, .child_environment = &.{} };
+        }
+        fn install(self: *@This(), _: std.mem.Allocator, _: config.Compute, _: bool, _: *gio.Cancellable) !void {
+            self.installs += 1;
+            self.present = true;
+        }
+    };
+    const cancel = gio.Cancellable.new();
+    defer cancel.unref();
+    var capable: Fake = .{ .present = true };
+    const reused = try ensureEmbeddingWith(std.testing.allocator, .{}, cancel, &capable);
+    try std.testing.expect(!reused.installed and capable.installs == 0);
+    var old_release: Fake = .{ .present = true, .embeddings = false };
+    try std.testing.expectError(error.RuntimeEmbeddingUnsupported, ensureEmbeddingWith(std.testing.allocator, .{}, cancel, &old_release));
+    try std.testing.expectEqual(@as(usize, 1), old_release.installs);
+    var missing: Fake = .{};
+    const installed = try ensureEmbeddingWith(std.testing.allocator, .{}, cancel, &missing);
+    try std.testing.expect(installed.installed and missing.installs == 1);
+    // Chat setup keeps accepting the same runtime without embedding support.
+    var chat_only: Fake = .{ .present = true, .embeddings = false };
+    const chat = try ensureWith(std.testing.allocator, .{}, cancel, &chat_only);
+    try std.testing.expect(!chat.installed and chat_only.installs == 0);
 }

@@ -24,6 +24,7 @@ pub const View = struct {
     width: i32 = 0,
     height: i32 = 0,
     allowed: bool = true,
+    menu_only: bool = false,
     arena: std.heap.ArenaAllocator,
     menu_arena: std.heap.ArenaAllocator,
     indices: []usize = &.{},
@@ -52,7 +53,8 @@ pub const View = struct {
     context: *anyopaque,
     settings: *const fn (*anyopaque) void,
     crop: *const fn (*anyopaque) void,
-    pub fn create(window: *gtk.Window, store: *directory.Store, apps: *Apps.Index, context: *anyopaque, settings: *const fn (*anyopaque) void, crop: *const fn (*anyopaque) void) !*View {
+    arrange: *const fn (*anyopaque) void,
+    pub fn create(window: *gtk.Window, store: *directory.Store, apps: *Apps.Index, context: *anyopaque, settings: *const fn (*anyopaque) void, crop: *const fn (*anyopaque) void, arrange: *const fn (*anyopaque) void) !*View {
         const self = try a.create(View);
         const root = gtk.Box.new(.vertical, 0);
         _ = root.ref();
@@ -75,7 +77,7 @@ pub const View = struct {
         band.as(gtk.Widget).setCanTarget(0);
         fixed.put(band.as(gtk.Widget), 0, 0);
         band.as(gtk.Widget).setVisible(0);
-        self.* = .{ .store = store, .apps = apps, .window = window, .root = root, .scroll = scroll, .fixed = fixed, .status = status, .arena = .init(a), .menu_arena = .init(a), .queue_arena = .init(a), .band = band, .context = context, .settings = settings, .crop = crop };
+        self.* = .{ .store = store, .apps = apps, .window = window, .root = root, .scroll = scroll, .fixed = fixed, .status = status, .arena = .init(a), .menu_arena = .init(a), .queue_arena = .init(a), .band = band, .context = context, .settings = settings, .crop = crop, .arrange = arrange };
         const click = gtk.GestureClick.new();
         click.as(gtk.GestureSingle).setButton(0);
         click.as(gtk.EventController).setPropagationPhase(.capture);
@@ -110,10 +112,11 @@ pub const View = struct {
         self.root.unref();
         a.destroy(self);
     }
-    pub fn configure(self: *View, config: model.Config, font: u8, width: i32, height: i32, allowed: bool) void {
-        const changed = config.icon_size != self.config.icon_size or config.show_hidden != self.config.show_hidden or config.arrangement != self.config.arrangement or font != self.font or width != self.width or height != self.height;
+    pub fn configure(self: *View, config: model.Config, font: u8, width: i32, height: i32, allowed: bool, menu_only: bool) void {
+        const changed = config.icon_size != self.config.icon_size or config.show_hidden != self.config.show_hidden or config.arrangement != self.config.arrangement or font != self.font or width != self.width or height != self.height or menu_only != self.menu_only;
         self.config = config;
         self.font = font;
+        self.menu_only = menu_only;
         self.width = @max(1, width);
         self.height = @max(1, height);
         if (self.allowed and !allowed) {
@@ -150,6 +153,14 @@ pub const View = struct {
         self.slots = &.{};
         self.selection = .{ .bits = &.{} };
         const alloc = self.arena.allocator();
+        if (self.menu_only) {
+            // Secondary monitors offer the desktop menu without a grid; icon
+            // placement stays owned by the monitor that renders the icons.
+            self.fixed.as(gtk.Widget).setSizeRequest(self.width, self.height);
+            self.message(if (self.feedback[0] != 0) std.mem.span(@as([*:0]const u8, &self.feedback)) else "");
+            self.clearCells();
+            return;
+        }
         const snapshot = self.store.snapshot orelse {
             self.message(@import("i18n").dtr("pearl", "Loading Desktop…"));
             self.clearCells();
@@ -182,6 +193,11 @@ pub const View = struct {
     }
     fn tryPut(map: *std.StringHashMap(void), key_: []const u8) void {
         map.put(key_, {}) catch {};
+    }
+    pub fn arrangeByName(self: *View) void {
+        for (self.uris, 0..) |uri, i| self.store.state.place(uri, self.grid.position(i)) catch {};
+        self.store.persist();
+        self.update();
     }
     pub fn report(self: *View, alloc: std.mem.Allocator, output: []const u8, keyboard_mode: []const u8) ![]const u8 {
         const Row = struct { name: []const u8, selected: bool, slot: usize, x: i32, y: i32 };
@@ -541,9 +557,7 @@ pub const View = struct {
                 }
             },
             .arrange => {
-                for (self.uris, 0..) |uri, i| self.store.state.place(uri, self.grid.position(i)) catch {};
-                self.store.persist();
-                self.update();
+                if (self.menu_only) self.arrange(self.context) else self.arrangeByName();
             },
             .settings => self.settings(self.context),
             .retry => {

@@ -85,6 +85,7 @@ const Screen = struct {
     monitor_source: c_uint = 0,
     output_watch: ?OutputWatch = null,
     tick_source: c_uint = 0,
+    handoff_source: c_uint = 0,
     keyboard: ?*gdk.Device = null,
     pending_power: ?bool = null,
     confirmed_power: bool = false,
@@ -191,10 +192,16 @@ const Screen = struct {
             },
             .starting => self.setMessage("Starting your desktop…"),
             .handoff => {
-                // Accepted or uncertain start: never replay; terminate the entire owned host.
+                // Accepted or uncertain start: never replay. With overlap handoff
+                // greetd SIGTERMs the owned host after the VT switch; hold the
+                // disabled card until then, with a bounded fallback quit.
                 if (self.config.remember_session and self.client.accepted) @import("state.zig").save(std.mem.sliceTo(&self.client.username, 0), std.mem.sliceTo(&self.selected_id, 0)) catch {};
                 self.status = 0;
-                self.loop.quit();
+                if (self.config.handoff_hold) {
+                    self.setMessage("Starting your desktop…");
+                    if (self.handoff_source == 0) self.handoff_source = glib.timeoutAdd(@as(c_uint, self.config.handoff_timeout_seconds) * 1000, handoffTimeout, self);
+                    log.info("event=greeter-handoff phase=hold", .{});
+                } else self.loop.quit();
             },
             .failed => {
                 self.auth_error = self.client.response.authentication_error;
@@ -215,6 +222,13 @@ const Screen = struct {
             self.focused_prompt = c.prompt_generation;
             _ = self.entry.as(gtk.Widget).grabFocus();
         } else if (c.state == .idle and self.job == null and self.pending_power == null) self.focusAccount();
+    }
+    fn handoffTimeout(data: ?*anyopaque) callconv(.c) c_int {
+        const self: *Screen = @ptrCast(@alignCast(data.?));
+        self.handoff_source = 0;
+        log.info("event=greeter-handoff phase=timeout", .{});
+        self.loop.quit();
+        return 0;
     }
     fn update(self: *Screen) void {
         const c = &self.client.controller;

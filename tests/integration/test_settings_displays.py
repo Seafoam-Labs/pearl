@@ -40,6 +40,15 @@ def main():
         capture(s, 'desktop', connector)
         checks['primary-layout-and-collapsed-advanced-controls'] = True
         checks['unsupported-hdr-checkbox-disabled'] = True
+        # Adaptive sync lives in the main card (not the advanced disclosures) and
+        # is capability-gated like HDR. Headless outputs report vrr preview
+        # unsupported, so both checkboxes must be disabled and stage nothing.
+        assert 'display.adaptive_sync' in controls and 'display.fullscreen_only_adaptive_sync' in controls
+        assert not controls['display.adaptive_sync']['enabled']
+        assert not controls['display.fullscreen_only_adaptive_sync']['enabled']
+        click(s, ipc, 'display.adaptive_sync'); aq_ready(s, ipc, peer)
+        assert probe(s, ipc)['aqueous']['display_changes'] == 0
+        checks['adaptive-sync-exposed-and-gated-on-unsupported-output'] = True
         click(s, ipc, 'display.select.1')
         click(s, ipc, 'display.exact'); time.sleep(.3)
         # Click the editable text, avoiding the spin button's decrement arrow.
@@ -74,6 +83,27 @@ def main():
         assert 'display.hdr_level' in {c['field'] for c in probe(s, ipc)['controls']}
         capture(s, 'advanced', connector)
         checks['advanced-controls-reachable-and-discard-restores-baseline'] = True
+        # A store-only adaptive-sync draft (the advanced path permits edits where
+        # preview is unsupported) must surface in the simple panel, keep both
+        # checkboxes reachable, and block Apply on this VRR-incapable backend.
+        outputs = Path(s.env['XDG_CONFIG_HOME'])/'aqueous/outputs.toml'
+        outputs.write_text(f'[[output]]\nname = "{connector}"\nadaptive_sync = false\n')
+        ipc.call('command', action='session.reload', fields={}); peer.aq_action('refresh'); aq_ready(s, ipc, peer)
+        base = peer.aq_document('base')
+        decl = next(d for d in base['display_declarations'] if d['kind'] == 'output' and d['source'] == 'outputs' and any(e['key'] == 'name' and e['raw'].strip('"\'') == connector for e in d.get('entries', [])))
+        candidate = dict(protocol=1, expected_generation=base['generation'], changes=[], raw_files={}, display_declaration_changes=dict(version=1, sources={}, operations=[dict(op='update', id=decl['id'], source='outputs', set=dict(adaptive_sync=True), unset=[])]))
+        assert peer.aq_keep(candidate)['ok']; aq_ready(s, ipc, peer)
+        click(s, ipc, 'display.select.0'); aq_ready(s, ipc, peer)
+        vrr_controls = {c['field']: c for c in probe(s, ipc)['controls']}
+        assert vrr_controls['display.adaptive_sync']['enabled']
+        assert vrr_controls['display.fullscreen_only_adaptive_sync']['enabled']
+        assert probe(s, ipc)['aqueous']['display_changes'] > 0
+        assert probe(s, ipc)['aqueous']['display_blocked']
+        click_widget(s, ipc, control(s, ipc, 'aqueous.discard')); aq_ready(s, ipc, peer)
+        wait_for(lambda: probe(s, ipc)['aqueous']['display_changes'] == 0)
+        outputs.write_text('')
+        ipc.call('command', action='session.reload', fields={}); peer.aq_action('refresh'); aq_ready(s, ipc, peer)
+        checks['staged-adaptive-sync-surfaces-and-blocks-unsupported-preview'] = True
         # Use the real Identify action. It must create one shell surface per enabled output.
         click(s, ipc, 'display.identify')
         wait_for(lambda: status(s, args.ctl)['identifying'] == len(ipc.outputs()))

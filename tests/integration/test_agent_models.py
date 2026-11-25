@@ -19,8 +19,8 @@ from test_agent_ui import Search, memory_snapshot
 
 MODELS = [
     ("qwen3-4b-instruct-2507-q4km", "Qwen3-4B-Instruct-2507-Q4_K_M.gguf"),
-    ("liquid-lfm25-26b-q4km", "LFM2.5-2.6B-Q4_K_M.gguf"),
-    ("liquid-lfm25-12b-instruct-q4km", "LFM2.5-1.2B-Instruct-Q4_K_M.gguf"),
+    ("liquid-lfm3-17b-q5km", "LFM3-1.7B-Q5_K_M.gguf"),
+    ("liquid-lfm3-17b-q8", "LFM3-1.7B-Q8_0.gguf"),
 ]
 
 

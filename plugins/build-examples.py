@@ -17,7 +17,7 @@ def run(*cmd, **kw): subprocess.run([str(x) for x in cmd], check=True, cwd=ROOT,
 def version(tool, expected):
     actual = subprocess.check_output([str(tool), 'version' if str(tool) == 'zig' else '--version'], text=True).strip()
     if expected not in actual: raise SystemExit(f'Expected {expected}; found {actual}')
-version('zig', '0.17.0'); version(args.wit_bindgen, '0.62.0'); version(args.wasm_tools, '1.259.0')
+version('zig', '0.17.1'); version(args.wit_bindgen, '0.62.0'); version(args.wasm_tools, '1.259.0')
 generated = out/'bindings'; generated.mkdir(exist_ok=True)
 run(args.wit_bindgen, 'c', ROOT/'plugins/wit', '--world', 'plugin', '--out-dir', generated)
 for name in ('plugin.c', 'plugin.h'):

@@ -153,6 +153,41 @@ Pearl. The implementation uses Zig 0.16.0 and the pinned Ghostty GTK/GIO binding
 
 ## Standalone editor
 
+**Bar & dock → Layout presets** starts the bar and dock from a shipped layout —
+**macOS** (slim top bar, always-visible bottom dock) and **Windows** (bottom
+taskbar with the applications strip in the bar). A preset rewrites only the bar
+and dock settings it names and their widgets; everything else — other
+preferences, per-display overrides, pinned applications and widget data such as
+the weather location and custom clocks — is left exactly as it was. Installed
+plugin widgets and custom clock references keep their place in the group they
+were in.
+
+Each preset tile shows a small clickable preview of the layout; clicking the
+image opens it large in a modal window, while clicking the rest of the tile
+selects the preset. The `preview` field in `src/config/bar_dock_presets.json`
+names a bundled GResource image (`/org/aqueous/Pearl/previews/<file>`). The
+shipped previews are real 16:9 desktop captures of each preset (AVIF, a few
+kilobytes); the tile shows the whole desktop and clicking it opens the capture
+at full size. `scripts/preset-screenshot.py` produces them in a private
+headless Aqueous session; re-run it to refresh after layout changes
+(`--reuse` re-encodes the stored captures without a session, `--detail`
+encodes close-up bar/dock sheets instead of the whole desktop). The source
+captures stay in `artifacts/preset-screenshot/`. Swapping in a different
+image is a data change only. Decoding uses the installed gdk-pixbuf loaders,
+so AVIF or WebP keep even 4K captures to a few hundred kilobytes; PNG is the
+universal fallback. A missing or undecodable image leaves the tile without a
+picture.
+
+The JSON field is the top-level `bar_dock_preset`, recording the id of the last
+applied preset (for example `"macos"`). It is informational only: the `bar` and
+`dock` values remain the source of truth. Changing any bar or dock setting, or
+moving a widget, clears it back to `""` so the picker reports a custom layout.
+Presets are authored in `src/config/bar_dock_presets.json`; `bar` and `dock` keys
+are matched against the live preference fields and `widgets` against the live
+widget names, so new settings and widgets need no code change. Keys a preset may
+not own — `groups`, `clocks` and `launcher_icon` — are refused by the preset
+tests and at apply time.
+
 **Bar & dock → Bar visibility** offers **Always visible** (default) and
 **Autohide**. Autohide reveals the bar at its screen edge and hides it 450 ms
 after the pointer leaves. An open Pearl flyout keeps its output's bar visible.
@@ -164,6 +199,15 @@ default to `always`. An `outputs[].bar` object replaces the entire default bar:
 if that object omits `mode`, that display uses `always`, even if `bar.mode` is
 `autohide`. Edit display overrides in Advanced. Visibility changes apply live
 and survive restart. See [the implementation plan](BAR_AUTOHIDE_IMPLEMENTATION_PLAN.md).
+
+An output entry with **no** `bar` object (or `"bar": null`) inherits the global
+bar instead, so adding a per-display wallpaper or dock override never resets bar
+settings such as islands, opacity, size or layout. A `bar` object that is exactly
+the built-in defaults *and* accompanies a wallpaper override is also treated as
+no override; this heals displays whose bar was reset by older wallpaper/crop
+saves that materialized a default bar. An explicit, non-default `bar` object
+still replaces the global bar completely. The Bar page shows a notice when a
+connected display's override replaces the defaults shown there.
 
 **Bar & dock → Bar displays** switches the bar off per connected display, for
 setups where the bar should stay always visible on one screen only. The JSON
@@ -177,8 +221,12 @@ first output keeps its bar. The list is independent of `outputs[].bar`
 overrides, so a display override never re-enables a hidden bar.
 
 The Zig `pearl-settings --page appearance` application edits the same session-owned
-Pearl draft as the shell preference popup. Advanced exposes the full JSON,
-including output overrides, pinned applications and export templates. Use **Apply & save** to save all
+Pearl draft as the shell preference popup. A search box above the navigation
+filters settings destinations by name, description and keywords. Advanced exposes the full JSON,
+including output overrides, pinned applications and export templates. The same
+Advanced page also hosts the Aqueous configuration status, receipts, raw TOML
+files and draft request below the Pearl document; those edits belong to the
+separate Aqueous draft and use its own footer actions. Use **Apply & save** to save all
 Pearl changes, or **Discard** to discard the shared draft. Navigation and normal
 close/reopen retain acknowledged drafts while the backend stays running; they
 never save implicitly. Invalid JSON stays available in Advanced for repair.
@@ -212,7 +260,7 @@ normal borders use `outline`, and urgent borders use `error`. Dynamic themes use
 the current matugen palette, including seed, wallpaper, and dark/light changes.
 The setting defaults off (`theme.sync_borders` in preferences JSON). GTK mode
 pauses synchronization; disabling it keeps the last colors for manual editing in
-**Aqueous → Appearance**. Border width is unaffected.
+**Window appearance**. Border width is unaffected.
 
 Synchronization waits for pending Aqueous drafts and active operations, then
 refreshes and saves only changed border colors through the normal Aqueous
@@ -361,9 +409,11 @@ light/dark Pearl container color. Theme background images and existing alpha
 are replaced on the bar background in Custom. Other shell surfaces keep their
 appearance. Blur remains controlled by the compositor.
 
-Each `outputs[].bar` can contain the same field. These are complete overrides:
-omitting `background_opacity` there selects Automatic, even if the default bar
-uses Custom. Display overrides remain editable in Advanced.
+Each `outputs[].bar` can contain the same field. An explicit `bar` override is
+complete: omitting `background_opacity` there selects Automatic, even if the
+default bar uses Custom. An output with no `bar` object (or `"bar": null`)
+inherits the global opacity instead, so a wallpaper-only override keeps the
+default bar's Custom setting. Display overrides remain editable in Advanced.
 
 ### Launcher button icon
 
@@ -407,7 +457,9 @@ support, remove `launcher_icon` from the default bar and every output bar in the
 saved configuration; older parsers reject unknown fields.
 
 Bar group strings remain comma-separated.
-See the [bar editor implementation](BAR_EDITOR_IMPLEMENTATION_PLAN.md).
+See the [bar editor implementation](BAR_EDITOR_IMPLEMENTATION_PLAN.md) and the
+[widget-to-JSON guide](BAR_WIDGETS.md) for every widget id, its settings fields
+and the bar/dock form values.
 
 Closing a popup, output removal, or lock hides the
 view while retaining the draft in memory. Drafts do not survive process exit.

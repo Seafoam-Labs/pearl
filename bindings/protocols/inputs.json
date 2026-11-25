@@ -1,10 +1,11 @@
 {
   "generator": "zig-wayland v0.7.0 (package integrity in build.zig.zon)",
-  "zig": "0.17.0",
+  "zig": "0.17.1",
   "globals": {
     "wl_compositor": 6,
     "ext_background_effect_manager_v1": 1,
-    "aqueous_shell_manager_v1": 2,
+    "aqueous_shell_manager_v1": 4,
+    "wp_cursor_shape_manager_v1": 1,
     "aqueous_window_info_manager_v1": 3,
     "zwlr_output_manager_v1": 4,
     "wl_output": 4,
@@ -30,8 +31,12 @@
       "sha256": "e463b7863c97d7be05489b52b15cd0b3a5d8290b51340f62023b47d03b4217e3"
     },
     "aqueous-shell-v1.xml": {
-      "source": "Aqueous 7611e23c653a72b24d6dd4d8b6404d1d1feb7480: compositor/protocol/aqueous-shell-v1.xml",
-      "sha256": "05a25b5b4a55ba4cb603ef2ecdac483c13725d19b0eb89c73c1c4102bf905007"
+      "source": "Aqueous working tree (shell manager v4: shell-drawn decorations): compositor/protocol/aqueous-shell-v1.xml",
+      "sha256": "21694998a2c5b62962161328655e7277d78a994e1c29094e54cb99b04632bdc3"
+    },
+    "cursor-shape-v1.xml": {
+      "source": "wayland-protocols 1.49: staging/cursor-shape/cursor-shape-v1.xml (vendored subset: get_tablet_tool_v2 removed; Pearl binds the pointer path only)",
+      "sha256": "4a772902fffabddd8be5a9eba8085037f25a5a86c1d91f46253478179f5b72e5"
     },
     "ext-workspace-v1.xml": {
       "source": "Aqueous 7611e23c653a72b24d6dd4d8b6404d1d1feb7480: compositor/protocol/upstream/ext-workspace-v1.xml",
@@ -82,5 +87,5 @@
       "sha256": "4065cbc291a80348b7ef311168fbfb5cf245efe977a6dc32211291ef1a9529a1"
     }
   },
-  "generated_sha256": "91d20aef77ecb30e1efcd06ecb6d5ab4baa6b7efe752c541949a4145173f4b38"
+  "generated_sha256": "bd0c2b5af114c3ce12e69a94b446c14b09a2d5a6da2c35989465289677463495"
 }

@@ -153,6 +153,8 @@ pub const Current = struct {
     scheduler: ?[]const u8 = null,
     unit_active: bool = false,
     unit_enabled: bool = false,
+    /// Enabled for the current boot only (`systemctl enable --runtime`).
+    unit_enabled_runtime: bool = false,
     running: ?Command = null,
     /// Null when nothing is configured, as after `start default`.
     next: ?Next = null,
@@ -241,7 +243,7 @@ const Wire = struct {
         featured: bool = false,
         tier: []const u8 = "unknown",
     };
-    const UnitState = struct { active: bool = false, enabled: bool = false };
+    const UnitState = struct { active: bool = false, enabled: bool = false, enabled_runtime: bool = false };
     const KernelState = struct { state: []const u8 = "", ops: ?[]const u8 = null };
     const State = struct {
         scheduler: ?[]const u8 = null,
@@ -286,6 +288,7 @@ fn current(state: Wire.State) Current {
         .scheduler = state.scheduler,
         .unit_active = state.unit.active,
         .unit_enabled = state.unit.enabled,
+        .unit_enabled_runtime = state.unit.enabled_runtime,
         .running = state.running,
         .next = state.next,
         .kernel_state = if (state.kernel) |k| k.state else null,
@@ -621,17 +624,31 @@ pub const Status = struct {
     /// Worked out from the last state scxcli gave, which it could not be
     /// asked for again since: shown, but not taken as confirmed.
     stale: bool = false,
+    /// Default runs while scx.service is configured to run a command that
+    /// nothing starts: the unit is inactive, not enabled, and did not fail.
+    /// scx's shipped file leaves a fresh system like this.
+    idle: bool = false,
 };
 
-/// How a profile row shows: what runs, or a selection kept while stopped.
-pub const Mark = enum { none, current, stopped };
+/// The command an idle scx.service would run (`Status.idle`).
+pub fn idleNext(listing: Listing, now: Status) ?Next {
+    return if (now.idle) listing.current.next else null;
+}
+
+/// How a profile row shows: what runs, a selection stopped while the unit
+/// stays enabled, or the command an idle unit would run.
+pub const Mark = enum { none, current, stopped, configured };
 
 pub fn mark(listing: Listing, now: Status, index: usize) Mark {
     const profile = listing.profiles[index];
     return switch (now.kind) {
         .running => if (active(listing)) |command| (if (matchRunning(profile, command)) .current else .none) else .none,
         // Default stays marked while a scheduler outside the profiles runs.
-        .off, .custom => if (now.profile) |i| (if (i == index and profile.isDefault()) .current else .none) else .none,
+        .off, .custom => blk: {
+            if (now.profile) |i| if (i == index and profile.isDefault()) break :blk .current;
+            if (idleNext(listing, now)) |next| if (matchNext(profile, next) != .none) break :blk .configured;
+            break :blk .none;
+        },
         .stopped => if (listing.current.next) |next| (if (matchNext(profile, next) != .none) .stopped else .none) else .none,
         else => .none,
     };
@@ -755,10 +772,20 @@ pub fn status(listing: Listing, unit: Unit, switching: bool, stuck: bool) Status
     };
     if (std.mem.eql(u8, name, default_id)) {
         // The kernel's own scheduler runs and the unit is not active.
-        if (!scheduler) return .{ .kind = .off, .profile = if (stopping) chosen else listing.find(default_id) };
+        // Idle: systemd reports the unit inactive, nothing enables it, it
+        // did not fail, and its environment was read whole.
+        const enabled = now.unit_enabled or now.unit_enabled_runtime;
+        const dormant = unit == .inactive and !now.unit_active and now.next != null and now.config_error == null and !enabled and now.failure == null;
+        if (!scheduler) return .{ .kind = .off, .profile = if (stopping) chosen else listing.find(default_id), .idle = dormant };
         if (unit == .activating or (switching and unit != .failed)) return settling;
+        // A run that failed is a failure of that profile, enabled or not.
         if (unit == .failed or now.failure != null) return .{ .kind = .failed, .profile = chosen, .ambiguous = ambiguous };
-        // Stopped with the selection kept, for the next boot or start.
+        if (dormant) return .{ .kind = .off, .profile = listing.find(default_id), .idle = true };
+        // Just started, by hand say; scxcli's next answer says what attached.
+        if (unit == .active) return settling;
+        // systemd has not reported yet: only that Default runs is known.
+        if (unit == .unknown and !enabled) return .{ .kind = .off, .profile = listing.find(default_id) };
+        // Stopped with the selection kept: the unit is still enabled.
         return .{ .kind = .stopped, .profile = chosen, .ambiguous = ambiguous };
     }
     // The unit runs a scheduler and the kernel reports it attached.
@@ -979,6 +1006,8 @@ test "scxcli get output is read field by field as scx's detection fixtures give 
         const unit = expected.get("unit").?.object;
         try t.expectEqual(unit.get("active").?.bool, state.unit_active);
         try t.expectEqual(unit.get("enabled").?.bool, state.unit_enabled);
+        // Written only when true; absent reads as false.
+        try t.expectEqual(if (unit.get("enabled_runtime")) |v| v.bool else false, state.unit_enabled_runtime);
         const running_ = expected.get("running").?;
         if (running_ == .null) try t.expect(state.running == null) else {
             try t.expectEqualStrings(running_.object.get("sched").?.string, state.running.?.sched);
@@ -1066,6 +1095,104 @@ test "the selected profiles are those whose command the unit's file holds" {
     try t.expect(selection(both).only() == null);
 }
 
+test "a command nothing starts leaves Default as the state and stays on show as configured" {
+    var arena = std.heap.ArenaAllocator.init(t.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    const State = @FieldType(Status, "kind");
+    // A fresh system: scx ships SCX_SCHEDULER=scx_cosmos, unit disabled.
+    var fresh = (try detected(a, "03-nothing-configured")).listing;
+    fresh.current.next = .{ .sched = "scx_cosmos" };
+    const cosmos = fresh.find("scx_cosmos").?;
+    try t.expectEqual(@as(?usize, cosmos), selection(fresh).only());
+    var now = status(fresh, .inactive, false, false);
+    try t.expectEqual(State.off, now.kind);
+    try t.expect(now.idle);
+    try t.expectEqualStrings("default", fresh.profiles[now.profile.?].id);
+    try t.expectEqual(Mark.current, mark(fresh, now, 0));
+    try t.expectEqual(Mark.configured, mark(fresh, now, cosmos));
+    try t.expectEqualStrings("scx_cosmos", idleNext(fresh, now).?.sched);
+    try t.expect(!crashed(now));
+
+    // A manual start that failed is a failure of Cosmos, not Default.
+    now = status(fresh, .failed, false, false);
+    try t.expectEqual(State.failed, now.kind);
+    try t.expectEqual(@as(?usize, cosmos), now.profile);
+    try t.expect(crashed(now));
+    var failed = fresh;
+    failed.current.failure = .{ .message = "Error: scheduler exited", .status = "exit-code/1" };
+    try t.expectEqual(State.failed, status(failed, .inactive, false, false).kind);
+    // While it is being started by hand, it is starting.
+    try t.expectEqual(State.starting, status(fresh, .activating, false, false).kind);
+
+    // A hand-written command is handled alike, bare name or absolute path.
+    for ([_][]const u8{ "scx_eevdf", "/usr/bin/scx_cosmos" }) |sched| {
+        var manual = fresh;
+        manual.current.next = .{ .sched = sched };
+        const off = status(manual, .inactive, false, false);
+        try t.expectEqual(State.off, off.kind);
+        try t.expectEqualStrings(sched, idleNext(manual, off).?.sched);
+    }
+    // So is a command no profile stands for.
+    var options = fresh;
+    options.current.next = .{ .sched = "scx_lavd", .args = &.{"--performance"} };
+    const off = status(options, .inactive, false, false);
+    try t.expectEqual(State.off, off.kind);
+    try t.expectEqualStrings("scx_lavd", idleNext(options, off).?.sched);
+
+    // Stopped with the unit disabled (fixture 04): the command stays on show.
+    const stopped = (try detected(a, "04-stopped-selection-kept")).listing;
+    const kept = status(stopped, .inactive, false, false);
+    try t.expectEqual(State.off, kept.kind);
+    try t.expectEqual(Mark.configured, mark(stopped, kept, stopped.find("scx_cosmos").?));
+
+    // Enabled, even for the current boot only: a stopped selection.
+    fresh.current.unit_enabled_runtime = true;
+    now = status(fresh, .inactive, false, false);
+    try t.expectEqual(State.stopped, now.kind);
+    try t.expect(!now.idle);
+    try t.expectEqual(Mark.stopped, mark(fresh, now, cosmos));
+    fresh.current.unit_enabled_runtime = false;
+    fresh.current.unit_enabled = true;
+    try t.expectEqual(State.stopped, status(fresh, .inactive, false, false).kind);
+    // With a config_error `next` is incomplete: nothing shown as configured.
+    var broken = (try detected(a, "03-nothing-configured")).listing;
+    broken.current.next = .{ .sched = "scx_cosmos" };
+    broken.current.config_error = "cannot read /etc/default/scx.d/local";
+    now = status(broken, .inactive, false, false);
+    try t.expectEqual(State.off, now.kind);
+    try t.expect(!now.idle);
+    try t.expect(idleNext(broken, now) == null);
+    try t.expectEqual(Mark.none, mark(broken, now, cosmos));
+    // Not idle unless systemd reports inactive: active is starting, unknown
+    // is plain Default.
+    var started = (try detected(a, "03-nothing-configured")).listing;
+    started.current.next = .{ .sched = "scx_cosmos" };
+    now = status(started, .active, false, false);
+    try t.expect(!now.idle);
+    try t.expectEqual(State.starting, now.kind);
+    try t.expectEqual(@as(?usize, cosmos), now.profile);
+    now = status(started, .unknown, false, false);
+    try t.expect(!now.idle);
+    try t.expectEqual(State.off, now.kind);
+    try t.expectEqual(Mark.none, mark(started, now, cosmos));
+    // Nor when scxcli itself says the unit is active.
+    started.current.unit_active = true;
+    try t.expect(!status(started, .inactive, false, false).idle);
+    // A command no profile stands for is not idle while the unit is up either.
+    var other = (try detected(a, "03-nothing-configured")).listing;
+    other.current.next = .{ .sched = "scx_lavd", .args = &.{"--performance"} };
+    try t.expect(!status(other, .active, false, false).idle);
+    try t.expect(!status(other, .unknown, false, false).idle);
+    // A unit still on its way down is not yet idle.
+    var leaving = (try detected(a, "03-nothing-configured")).listing;
+    leaving.current.next = .{ .sched = "scx_cosmos" };
+    try t.expect(!status(leaving, .deactivating, false, false).idle);
+    try t.expect(status(leaving, .inactive, false, false).idle);
+    // Nothing configured is plain Default.
+    try t.expect(!status((try detected(a, "03-nothing-configured")).listing, .inactive, false, false).idle);
+}
+
 test "status is what scxcli says runs, with the unit's live state" {
     var arena = std.heap.ArenaAllocator.init(t.allocator);
     defer arena.deinit();
@@ -1076,8 +1203,8 @@ test "status is what scxcli says runs, with the unit's live state" {
         .{ .fixture = "01-cosmos-running", .kind = .running, .profile = "scx_cosmos" },
         .{ .fixture = "02-selected-but-failed", .kind = .failed, .profile = "scx_cosmos" },
         .{ .fixture = "03-nothing-configured", .kind = .off, .profile = "default" },
-        // scxcli stop keeps the selection: stopped, not failed.
-        .{ .fixture = "04-stopped-selection-kept", .kind = .stopped, .profile = "scx_cosmos" },
+        // Stopped with the unit disabled: Default, idle.
+        .{ .fixture = "04-stopped-selection-kept", .kind = .off, .profile = "default" },
         // A command no profile has.
         .{ .fixture = "05-run-with-options", .kind = .custom, .profile = null },
         .{ .fixture = "06-attached-outside-the-unit", .kind = .custom, .profile = null },
@@ -1088,6 +1215,7 @@ test "status is what scxcli says runs, with the unit's live state" {
         .{ .fixture = "10-later-file-overrides", .kind = .custom, .profile = null },
         .{ .fixture = "11-hidden-started-by-run", .kind = .custom, .profile = null },
         .{ .fixture = "12-hand-written-name", .kind = .custom, .profile = null },
+        .{ .fixture = "13-enabled-runtime", .kind = .running, .profile = "scx_cosmos" },
     }) |case| {
         const c = try detected(a, case.fixture);
         const now = status(c.listing, c.unit, false, false);
@@ -1102,7 +1230,10 @@ test "status is what scxcli says runs, with the unit's live state" {
     try t.expectEqual(State.failed, status(waiting.listing, .active, false, true).kind);
     try t.expectEqual(State.starting, status(waiting.listing, .active, true, true).kind);
     // A stopped unit starting again, or just switched, is starting.
-    const stopped = try detected(a, "04-stopped-selection-kept");
+    // With the unit enabled, `scxcli stop` keeps a stopped selection.
+    var stopped = try detected(a, "04-stopped-selection-kept");
+    stopped.listing.current.unit_enabled = true;
+    try t.expectEqual(State.stopped, status(stopped.listing, .inactive, false, false).kind);
     try t.expectEqual(State.starting, status(stopped.listing, .activating, false, false).kind);
     try t.expectEqual(State.starting, status(stopped.listing, .inactive, true, false).kind);
     try t.expectEqual(State.failed, status((try detected(a, "02-selected-but-failed")).listing, .failed, true, false).kind);

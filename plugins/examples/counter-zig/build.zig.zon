@@ -1,8 +1,8 @@
 .{
     .name = .pearl_counter_example,
     .fingerprint = 0x8a8f2ebb53affdef,
-    .version = "0.3.9",
-    .minimum_zig_version = "0.17.0",
+    .version = "0.5.0",
+    .minimum_zig_version = "0.17.1",
     .dependencies = .{
         .translate_c = .{
             .url = "https://codeberg.org/ziglang/translate-c/archive/2.0.2.tar.gz",

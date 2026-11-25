@@ -29,7 +29,8 @@
     "pywalfox",
     "vesktop",
     "vencord",
-    "fcitx5"
+    "fcitx5",
+    "sonora"
   ],
   "existing_integration": [
     "qtengine"
@@ -276,6 +277,17 @@
         "theme.conf",
         "panel.svg",
         "highlight.svg"
+      ]
+    },
+    "sonora": {
+      "id": "pearl.material.sonora",
+      "variants": [
+        "dark",
+        "light"
+      ],
+      "outputs": [
+        "dark.json",
+        "light.json"
       ]
     }
   }

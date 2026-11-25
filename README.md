@@ -6,7 +6,7 @@ Pearl's initial design and implementation used **spec-driven development**. Writ
 
 Version **0.3.6** removes periodic DDC brightness polling that caused frame drops during gaming. Brightness now refreshes on demand and on hardware changes, with targeted writes and safe idle-dim restoration. It retains the libddcutil startup fix and bundles Phyto, Dome and Coral **0.1.1** with refreshed Arch and Devario packaging. It includes live Pearl theme following in Dome, updated Settings pages, the local launcher assistant with Bing RSS search by default, floating islands, a dock and migration tooling. Release acceptance is pending the physical, real-login, accessibility and license gates in [RELEASE.md](docs/RELEASE.md).
 
-The pinned Zig 0.17.0 stack has generated
+The pinned Zig 0.17.1 stack has generated
 layer-shell/session-lock bindings, an application lifecycle, compiled GTK
 resources and a demo gallery. Private Aqueous tests cover startup, shutdown,
 cancellation and session isolation. A bounded Aqueous decoder and atomic state
@@ -44,6 +44,8 @@ acceptance remains pending. Clipboard history, SDR output/region capture, floati
 - [Launcher calculator](docs/DESKTOP.md#calculator): arithmetic and advanced functions, Enter to copy, and `=` to continue. [Implementation and validation](docs/LAUNCHER_CALCULATOR_IMPLEMENTATION_PLAN.md) for issue #2.
 - [Custom launcher selection](docs/DOCK_ISLANDS.md#custom-application-launchers): choose a custom desktop entry for running applications, preserve its icon and launch arguments, and correct existing pins. [Implementation and tests](docs/DOCK_DESKTOP_OVERRIDES_IMPLEMENTATION_PLAN.md) for issue #3.
 - [Preferred custom launchers](docs/DOCK_LAUNCH_ATTRIBUTION_PLAN.md): issue #3 matching and pinning improvements, including matching custom pins and desktop IDs with spaces/Unicode; no Aqueous update required.
+- [Local semantic search](docs/SEMANTIC_SEARCH_IMPLEMENTATION_PLAN.md): opt-in Assistant feature for issue #46; find documents by description in the launcher using a local EmbeddingGemma 2 model and user-selected folders. Implemented; real-hardware acceptance and folder watching remain open.
+- [Semantic idle reindex](docs/SEMANTIC_IDLE_REINDEX_PLAN.md): folder-change sync and file watching for semantic search; automatic reindexing runs primarily in idle or low-use windows, in bounded bursts that pause when you return. Implemented; real-hardware acceptance pending.
 - [Experimental WebAssembly plugins](docs/PLUGINS.md): C, Zig and Rust components, native widgets and companion overlays, with controls in the main Settings app. [Implementation roadmap](docs/WASM_PLUGIN_IMPLEMENTATION_PLAN.md).
 - [Plugin development guide](docs/PLUGIN_DEVELOPMENT.md): build your first clickable widget, install and test it, then add settings, timers or an animated companion.
 - [Live plugin input activity plan](docs/PLUGIN_INPUT_ACTIVITY_IMPLEMENTATION_PLAN.md): implemented Aqueous integration for typing reactions, with permission and authentication controls; physical hardware acceptance remains open.
@@ -54,6 +56,7 @@ acceptance remains pending. Clipboard history, SDR output/region capture, floati
 - [Network interface](docs/NETWORK_UI_IMPLEMENTATION_PLAN.md): shared native connection controls, organized Network settings, [design mockups](docs/mockups/network/README.md) and [implementation captures](artifacts/network-ui/README.md).
 - [Bluetooth interface proposal](docs/BLUETOOTH_UI_IMPLEMENTATION_PLAN.md): matching flyout and Settings [mockups](docs/mockups/bluetooth/README.md), with connected devices, explicit discovery and clearer pairing flows.
 - [Qt application theming](docs/QT_THEMING.md): opt-in QtEngine + Darkly application styles for Qt 5/6, Pearl palettes, font/density settings, session setup and conditional restore. [Milestones](docs/QT_DARKLY_IMPLEMENTATION_PLAN.md) record delivery and remaining compatibility checks.
+- [Shell-drawn server-side decorations](docs/DECORATIONS.md): Pearl draws themed titlebars for SSD windows when Aqueous selects `decoration.renderer = "shell"`; compositor borders remain the fallback.
 - [Aqueous integration update plan](docs/AQUEOUS_MASTER_UPDATE_PLAN.md): implementation scope and acceptance for the pinned master contracts.
 - [Aqueous 0.8.2 update plan](docs/AQUEOUS_082_UPDATE_PLAN.md): adopt newly exposed collection transactions, display declarations and preview controls.
 - [Greeter](docs/GREETER.md): a separate greetd login screen and installed-desktop chooser, with Material/GTK themes and private tests. Runs on ordinary Aqueous, with a [standalone Arch package](packaging/arch-greeter/README.md) that installs defaults and selects Pearl for the next boot. Real-login validation remains pending.

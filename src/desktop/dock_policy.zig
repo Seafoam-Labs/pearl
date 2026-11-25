@@ -7,6 +7,9 @@ pub const Config = struct {
     enabled: bool = true,
     edge: p.Edge = .bottom,
     mode: Mode = .intelligent,
+    /// Running-state dots under dock icons, including a dim dot for apps
+    /// running only on other outputs.
+    running_indicators: bool = true,
     icon_size: u8 = 40,
     margin: u8 = 8,
     /// Follow the bar's background opacity; when off, `background_opacity` applies.
@@ -25,6 +28,20 @@ pub fn desktopId(id: []const u8) bool {
 }
 pub fn stem(id: []const u8) []const u8 {
     return if (std.mem.endsWith(u8, id, ".desktop")) id[0 .. id.len - 8] else id;
+}
+/// Running-state glyph for a dock slot: a count for multi-window groups,
+/// focus/minimize state, a plain dot for a single window, and the same dot
+/// when the app runs only on other outputs (callers dim that case via CSS).
+/// Empty when the group is idle or indicators are disabled. Multi-window
+/// text is allocated; static glyphs are borrowed, so callers use an arena
+/// and never free the result.
+pub fn indicator(alloc: std.mem.Allocator, windows: usize, focused: bool, minimized: bool, elsewhere: usize, enabled: bool) ![:0]const u8 {
+    if (!enabled) return "";
+    if (windows > 1) return std.fmt.allocPrintSentinel(alloc, "{s} {d}", .{ if (focused) "●" else "•", windows }, 0);
+    if (focused) return "●";
+    if (minimized) return "◦";
+    if (windows > 0 or elsewhere > 0) return "•";
+    return "";
 }
 pub fn eligible(window: e.Window, output: []const u8) bool {
     return !window.skip_taskbar and window.output != null and std.mem.eql(u8, window.output.?, output);
@@ -87,6 +104,23 @@ test "dock hiding gates override interaction and keep non-obscured output visibl
     try t.expectError(error.InvalidDock, validate(.{ .icon_size = 90 }));
     try t.expect((Config{}).opacity_sync);
     try t.expectError(error.InvalidBarOpacity, validate(.{ .background_opacity = .{ .percent = 101 } }));
+}
+
+test "dock running indicators cover local, remote and disabled states" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const alloc = arena.allocator();
+    const t = std.testing;
+    try t.expect((Config{}).running_indicators);
+    try t.expectEqualStrings("", try indicator(alloc, 0, false, false, 0, true));
+    try t.expectEqualStrings("•", try indicator(alloc, 1, false, false, 0, true));
+    try t.expectEqualStrings("●", try indicator(alloc, 1, true, false, 0, true));
+    try t.expectEqualStrings("◦", try indicator(alloc, 1, false, true, 0, true));
+    try t.expectEqualStrings("• 3", try indicator(alloc, 3, false, false, 0, true));
+    try t.expectEqualStrings("● 2", try indicator(alloc, 2, true, false, 0, true));
+    try t.expectEqualStrings("•", try indicator(alloc, 0, false, false, 2, true));
+    try t.expectEqualStrings("", try indicator(alloc, 0, false, false, 2, false));
+    try t.expectEqualStrings("", try indicator(alloc, 3, true, false, 0, false));
 }
 
 test "desktop IDs accept installed names without allowing paths or control characters" {

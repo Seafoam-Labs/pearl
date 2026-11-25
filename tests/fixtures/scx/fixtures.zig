@@ -21,6 +21,7 @@ pub const detection = [_]Fixture{
     .{ .name = "10-later-file-overrides", .bytes = @embedFile("detection/10-later-file-overrides.json") },
     .{ .name = "11-hidden-started-by-run", .bytes = @embedFile("detection/11-hidden-started-by-run.json") },
     .{ .name = "12-hand-written-name", .bytes = @embedFile("detection/12-hand-written-name.json") },
+    .{ .name = "13-enabled-runtime", .bytes = @embedFile("detection/13-enabled-runtime.json") },
 };
 
 /// Catalog files every scx tool accepts, as `scxcli catalog show` prints

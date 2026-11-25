@@ -24,6 +24,10 @@ pub var watch: ffi.guint = 0;
 
 pub var registration: ffi.guint = 0;
 
+pub var background_registration: ffi.guint = 0;
+
+pub var app_state: ?*ffi.GVariant = null;
+
 pub var name_id: ffi.guint = 0;
 
 pub var end_timer: ffi.guint = 0;
@@ -41,6 +45,8 @@ pub var context: ?*anyopaque = null;
 pub var end_callback: ?*const fn (?*anyopaque, ffi.gboolean) callconv(.c) void = null;
 
 pub const xml: [420:0]u8 = "<node><interface name='org.seafoam.Pearl.Session.Inhibit'><method name='Acquire'><arg type='s' direction='in'/><arg type='u' direction='in'/><arg type='s' direction='in'/><arg type='u' direction='out'/></method><method name='Release'><arg type='u' direction='in'/></method><method name='QueryEndResponse'/><property name='Locked' type='b' access='read'/><property name='State' type='u' access='read'/></interface></node>".*;
+
+pub const xml_background: [206:0]u8 = "<node><interface name='org.seafoam.Pearl.Session.Background'><method name='GetAppState'><arg type='a{sv}' name='apps' direction='out'/></method><signal name='RunningApplicationsChanged'/></interface></node>".*;
 
 pub fn pearl_session_portal_holds() callconv(.c) ffi.guint {
     var flags: ffi.guint = 0;
@@ -135,6 +141,45 @@ pub const vtable: ffi.GDBusInterfaceVTable = ffi.GDBusInterfaceVTable{
     .padding = @import("std").mem.zeroes([8]ffi.gpointer),
 };
 
+pub fn background_call(_: ?*ffi.GDBusConnection, sender: [*c]const u8, _: [*c]const u8, _: [*c]const u8, member: [*c]const u8, _: ?*ffi.GVariant, inv: ?*ffi.GDBusMethodInvocation, _: ffi.gpointer) callconv(.c) void {
+    if (owner == null or (ffi.strcmp(sender, owner) != 0)) {
+        ffi.g_dbus_method_invocation_return_error(inv, ffi.g_dbus_error_quark(), ffi.G_DBUS_ERROR_ACCESS_DENIED, "Only Pearl's current portal backend may query background state");
+        return;
+    }
+    if (ffi.strcmp(member, "GetAppState") == 0) {
+        if (app_state == null) {
+            ffi.g_dbus_method_invocation_return_error(inv, ffi.g_dbus_error_quark(), ffi.G_DBUS_ERROR_FAILED, "No application state available");
+            return;
+        }
+        ffi.g_dbus_method_invocation_return_value(inv, ffi.g_variant_new("(@a{sv})", app_state));
+        return;
+    }
+    ffi.g_dbus_method_invocation_return_value(inv, null);
+}
+
+pub const background_vtable: ffi.GDBusInterfaceVTable = ffi.GDBusInterfaceVTable{
+    .method_call = background_call,
+    .get_property = null,
+    .set_property = null,
+    .padding = @import("std").mem.zeroes([8]ffi.gpointer),
+};
+
+/// Shell publishes the current per-app window state (app_id -> 0/1/2). A null
+/// state means "no window list", which makes the portal report failure so the
+/// frontend monitor skips supervision instead of guessing.
+pub fn pearl_session_portal_set_app_state(value: ?*ffi.GVariant) callconv(.c) void {
+    const incoming = if (value) |s| ffi.g_variant_ref_sink(s) else null;
+    if (app_state != null and incoming != null and ffi.g_variant_equal(app_state, incoming) != 0) {
+        ffi.g_variant_unref(incoming);
+        return;
+    }
+    if (app_state) |old| ffi.g_variant_unref(old);
+    app_state = incoming;
+    if (bus) |b| {
+        _ = ffi.g_dbus_connection_emit_signal(b, null, "/org/seafoam/Pearl/Session", "org.seafoam.Pearl.Session.Background", "RunningApplicationsChanged", null, null);
+    }
+}
+
 pub fn appeared(_: ?*ffi.GDBusConnection, _: [*c]const u8, unique: [*c]const u8, _: ffi.gpointer) callconv(.c) void {
     ffi.g_free(@ptrCast(@alignCast(owner)));
     owner = ffi.g_strdup(unique);
@@ -165,6 +210,11 @@ pub fn pearl_session_portal_start(callback: ?*const fn (?*anyopaque) callconv(.c
     registration = ffi.g_dbus_connection_register_object(bus, "/org/seafoam/Pearl/Session", node.*.f_interfaces.?[0], &vtable, null, null, null);
     if (registration != 0) {
         name_id = ffi.g_bus_own_name_on_connection(bus, "org.seafoam.Pearl.Session", ffi.G_BUS_NAME_OWNER_FLAGS_NONE, null, null, null, null);
+    }
+    const background_node: [*c]ffi.GDBusNodeInfo = ffi.g_dbus_node_info_new_for_xml(@ptrCast(@alignCast(&xml_background)), null);
+    defer if (background_node != null) ffi.g_dbus_node_info_unref(@ptrCast(background_node));
+    if (background_node != null) {
+        background_registration = ffi.g_dbus_connection_register_object(bus, "/org/seafoam/Pearl/Session", background_node.*.f_interfaces.?[0], &background_vtable, null, null, null);
     }
     watch = ffi.g_bus_watch_name_on_connection(bus, identity.bus_name, ffi.G_BUS_NAME_WATCHER_FLAGS_NONE, appeared, vanished, null, null);
 }
@@ -215,6 +265,12 @@ pub fn pearl_session_portal_stop() callconv(.c) void {
         _ = ffi.g_dbus_connection_unregister_object(bus, registration);
     }
     registration = 0;
+    if (background_registration != 0) {
+        _ = ffi.g_dbus_connection_unregister_object(bus, background_registration);
+    }
+    background_registration = 0;
+    if (app_state) |s| ffi.g_variant_unref(s);
+    app_state = null;
     ffi.clear(&bus, ffi.g_object_unref);
     ffi.clear(&holds, ffi.g_hash_table_unref);
     ffi.clear(&owner, ffi.g_free);

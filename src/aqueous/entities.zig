@@ -24,6 +24,14 @@ pub const Workspace = struct {
     urgent: bool,
 };
 pub const Icon = struct { revision: []const u8, name: ?[]const u8, has_pixels: bool };
+/// xdg-decoration negotiation state (shell manager v4 / window-info v3).
+pub const DecorationState = struct {
+    capability: []const u8,
+    requested: []const u8,
+    effective: []const u8,
+    configure_pending: bool,
+    override: ?[]const u8 = null,
+};
 pub const Window = struct {
     id: []const u8,
     backend: enum { xdg, xwayland },
@@ -56,6 +64,11 @@ pub const Window = struct {
     layout_index: ?u32 = null,
     tag: ?[]const u8 = null,
     description: ?[]const u8 = null,
+    /// Additive shell-manager-v4 fields; absent on older compositors.
+    decoration: ?DecorationState = null,
+    ssd_renderer: ?[]const u8 = null,
+    /// Interactive operation state ("none", "move", "resize"); additive.
+    operation: ?[]const u8 = null,
 };
 pub const FocusKind = enum { window, shell_surface, layer_surface, override_redirect, lock_surface, none };
 pub const Seat = struct {

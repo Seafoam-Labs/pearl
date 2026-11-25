@@ -12,6 +12,9 @@ const portal_inhibit = @import("inhibit.zig").portal_inhibit;
 const portal_inhibit_clear = @import("inhibit.zig").portal_inhibit_clear;
 const portal_inhibit_init = @import("inhibit.zig").portal_inhibit_init;
 const portal_inhibit_stop = @import("inhibit.zig").portal_inhibit_stop;
+const portal_background = @import("background.zig").portal_background;
+const portal_background_init = @import("background.zig").portal_background_init;
+const portal_background_stop = @import("background.zig").portal_background_stop;
 const portal_notification = @import("notification.zig").portal_notification;
 const portal_notifications_init = @import("notification.zig").portal_notifications_init;
 const portal_notifications_stop = @import("notification.zig").portal_notifications_stop;
@@ -27,6 +30,7 @@ const portal_update_choices = @import("dialogs.zig").portal_update_choices;
 const xml_Access = @import("contracts.zig").xml_Access;
 const xml_Account = @import("contracts.zig").xml_Account;
 const xml_AppChooser = @import("contracts.zig").xml_AppChooser;
+const xml_Background = @import("contracts.zig").xml_Background;
 const xml_DynamicLauncher = @import("contracts.zig").xml_DynamicLauncher;
 const xml_Email = @import("contracts.zig").xml_Email;
 const xml_FileChooser = @import("contracts.zig").xml_FileChooser;
@@ -55,6 +59,7 @@ const implemented = [_][*:0]const u8{
     "Notification",
     "Print",
     "Inhibit",
+    "Background",
 };
 
 pub fn close_request(_: ?*ffi.GDBusConnection, sender: [*c]const u8, _: [*c]const u8, _: [*c]const u8, _: [*c]const u8, _: ?*ffi.GVariant, call: ?*ffi.GDBusMethodInvocation, data: ffi.gpointer) callconv(.c) void {
@@ -112,6 +117,10 @@ pub fn method(_: ?*ffi.GDBusConnection, sender: [*c]const u8, _: [*c]const u8, i
     }
     if (ffi.strcmp(iface, "org.freedesktop.impl.portal.Notification") == 0) {
         portal_notification(p, member, params, call);
+        return;
+    }
+    if (ffi.strcmp(iface, "org.freedesktop.impl.portal.Background") == 0) {
+        portal_background(p, member, params, call);
         return;
     }
     if (ffi.strcmp(member, "RequestInstallToken") == 0) {
@@ -243,7 +252,7 @@ pub fn run(argc: c_int, argv: [*c][*c]u8) callconv(.c) c_int {
     ffi.g_dbus_connection_set_exit_on_close(p.bus, 0);
     _ = ffi.g_signal_connect_data(@ptrCast(@alignCast(p.bus)), "closed", @as(ffi.GCallback, @ptrCast(@alignCast(@constCast(&disconnected)))), @ptrCast(@alignCast(&p)), null, 0);
     request_node = ffi.g_dbus_node_info_new_for_xml(@ptrCast(@alignCast(&xml_Request)), null);
-    const xmls: [11][*c]const u8 = [11][*c]const u8{
+    const xmls: [12][*c]const u8 = [12][*c]const u8{
         @ptrCast(@alignCast(&xml_FileChooser)),
         @ptrCast(@alignCast(&xml_AppChooser)),
         @ptrCast(@alignCast(&xml_Access)),
@@ -255,10 +264,12 @@ pub fn run(argc: c_int, argv: [*c][*c]u8) callconv(.c) c_int {
         @ptrCast(@alignCast(&xml_Notification)),
         @ptrCast(@alignCast(&xml_Print)),
         @ptrCast(@alignCast(&xml_Inhibit)),
+        @ptrCast(@alignCast(&xml_Background)),
     };
     var ids = @as([xmls.len]ffi.guint, @splat(0));
     portal_print_init(&p);
     portal_inhibit_init(&p);
+    portal_background_init(&p);
     portal_settings_init(&p);
     portal_notifications_init(&p);
     pearl_portal_appearance_start();
@@ -304,6 +315,7 @@ pub fn run(argc: c_int, argv: [*c][*c]u8) callconv(.c) c_int {
     portal_settings_stop(&p);
     portal_print_stop(&p);
     portal_inhibit_stop(&p);
+    portal_background_stop(&p);
     portal_notifications_stop(&p);
     {
         var i: ffi.guint = 0;

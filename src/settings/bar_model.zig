@@ -29,6 +29,7 @@ pub fn metadata(item: policy.Item) Metadata {
         .wallpaper => .{ .name = "Wallpaper", .description = "Browse a folder and set the wallpaper", .icon = "pearl-image-symbolic" },
         .scheduler => .{ .name = "CPU Scheduler", .description = "CPU scheduler profile (sched_ext)", .icon = "pearl-scheduler-symbolic" },
         .weather => .{ .name = "Weather", .description = "Current temperature and conditions for your location", .icon = "pearl-weather-clear-symbolic" },
+        .theme => .{ .name = "Theme", .description = "Switch between the light and dark appearance", .icon = "pearl-weather-clear-night-symbolic" },
     };
 }
 pub fn groupLabel(group: Group, edge: prefs.Edge) [:0]const u8 {
@@ -113,6 +114,8 @@ pub fn patch(a: std.mem.Allocator, text: []const u8, id: []const u8, action: Act
     var document = try prefs.parse(a, text);
     const layout = try Layout.parse(a, document.bar.groups);
     document.bar.groups = try (try layout.change(a, id, action)).serialize(a);
+    // A preset describes a shipped layout; moving a widget makes it the user's.
+    document.bar_dock_preset = "";
     try document.validate();
     const result = try std.json.Stringify.valueAlloc(a, document, .{ .whitespace = .indent_2 });
     if (result.len > prefs.max_bytes) return error.DocumentTooLarge;
@@ -123,6 +126,7 @@ pub fn patchWorkspaceMode(a: std.mem.Allocator, text: []const u8, mode: prefs.Wo
     const layout = try Layout.parse(a, document.bar.groups);
     if (layout.find("workspaces") == null) return error.WidgetNotFound;
     document.bar.workspace_mode = mode;
+    document.bar_dock_preset = "";
     try document.validate();
     const result = try std.json.Stringify.valueAlloc(a, document, .{ .whitespace = .indent_2 });
     if (result.len > prefs.max_bytes) return error.DocumentTooLarge;
@@ -133,6 +137,7 @@ pub fn patchResourceMode(a: std.mem.Allocator, text: []const u8, mode: prefs.Res
     const layout = try Layout.parse(a, document.bar.groups);
     if (layout.find("resources") == null) return error.WidgetNotFound;
     document.bar.resource_mode = mode;
+    document.bar_dock_preset = "";
     try document.validate();
     const result = try std.json.Stringify.valueAlloc(a, document, .{ .whitespace = .indent_2 });
     if (result.len > prefs.max_bytes) return error.DocumentTooLarge;
@@ -143,6 +148,7 @@ pub fn patchResourceSeries(a: std.mem.Allocator, text: []const u8, selection: pr
     const layout = try Layout.parse(a, document.bar.groups);
     if (layout.find("resources") == null) return error.WidgetNotFound;
     document.bar.resource_series = selection;
+    document.bar_dock_preset = "";
     try document.validate();
     const result = try std.json.Stringify.valueAlloc(a, document, .{ .whitespace = .indent_2 });
     if (result.len > prefs.max_bytes) return error.DocumentTooLarge;
@@ -153,6 +159,7 @@ pub fn patchMediaArt(a: std.mem.Allocator, text: []const u8, enabled: bool) ![]c
     const layout = try Layout.parse(a, document.bar.groups);
     if (layout.find("media") == null) return error.WidgetNotFound;
     document.bar.media_art = enabled;
+    document.bar_dock_preset = "";
     try document.validate();
     const result = try std.json.Stringify.valueAlloc(a, document, .{ .whitespace = .indent_2 });
     if (result.len > prefs.max_bytes) return error.DocumentTooLarge;
@@ -280,7 +287,7 @@ test "running applications is an optional singleton preserved across groups and 
     const moved = try patch(a, added, "running_apps", .{ .move = .center });
     const parsed = try prefs.parse(a, moved);
     try t.expectEqualStrings("clock,running_apps", parsed.bar.groups.center);
-    try t.expectEqualStrings("launcher,running_apps", parsed.outputs[0].bar.groups.left);
+    try t.expectEqualStrings("launcher,running_apps", parsed.outputs[0].bar.?.groups.left);
 }
 
 test "workspace mode patch preserves layout and unrelated preferences and survives removal" {
@@ -328,8 +335,8 @@ test "resource patches need the widget placed and preserve every unrelated prefe
     try std.testing.expectEqual(@as(u16, 19), restored.font_size);
     try std.testing.expectEqualStrings("DP-1", restored.outputs[0].connector);
     // An unrelated per-output bar policy is untouched by both patches.
-    try std.testing.expectEqual(prefs.WorkspaceMode.small, restored.outputs[0].bar.workspace_mode);
-    try std.testing.expectEqual(prefs.ResourceMode.icon, restored.outputs[0].bar.resource_mode);
+    try std.testing.expectEqual(prefs.WorkspaceMode.small, restored.outputs[0].bar.?.workspace_mode);
+    try std.testing.expectEqual(prefs.ResourceMode.icon, restored.outputs[0].bar.?.resource_mode);
 }
 
 test "media art patch needs the widget placed and survives removal" {
@@ -343,7 +350,7 @@ test "media art patch needs the widget placed and survives removal" {
     const off = try prefs.parse(a, try patchMediaArt(a, text, false));
     try std.testing.expect(!off.bar.media_art);
     try std.testing.expectEqual(@as(u16, 19), off.font_size);
-    try std.testing.expectEqual(prefs.WorkspaceMode.small, off.outputs[0].bar.workspace_mode);
+    try std.testing.expectEqual(prefs.WorkspaceMode.small, off.outputs[0].bar.?.workspace_mode);
     const removed = try patch(a, text, "media", .remove);
     try std.testing.expectError(error.WidgetNotFound, patchMediaArt(a, removed, false));
     // The choice outlives removal, exactly as the resource mode does.
@@ -378,7 +385,7 @@ test "launcher icon patch roundtrips and preserves unrelated preferences and out
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
     const a = arena.allocator();
-    var expected: prefs.Preferences = .{ .font_size = 19, .outputs = &.{.{ .connector = "DP-1" }} };
+    var expected: prefs.Preferences = .{ .font_size = 19, .outputs = &.{.{ .connector = "DP-1", .bar = .{} }} };
     const text = try std.json.Stringify.valueAlloc(a, expected, .{});
     try std.testing.expectEqualDeep(@import("../desktop/launcher_icon_policy.zig").Config{}, (try prefs.parse(a, "{}")).bar.launcher_icon);
     for ([_]@import("../desktop/launcher_icon_policy.zig").Config{ .{}, .{ .kind = .theme, .value = "pearl-view-grid-symbolic" }, .{ .kind = .file, .value = "/tmp/icon.png" } }) |cfg| {
@@ -433,14 +440,14 @@ test "clock instances are atomic, retain settings on removal, and isolate output
     var arena = std.heap.ArenaAllocator.init(t.allocator);
     defer arena.deinit();
     const a = arena.allocator();
-    const original = "{\"font_size\":17,\"outputs\":[{\"connector\":\"OTHER\"}]}";
+    const original = "{\"font_size\":17,\"outputs\":[{\"connector\":\"OTHER\",\"bar\":{\"edge\":\"left\"}}]}";
     var text = try patchClock(a, original, .{ .id = "london", .timezone = "Europe/London" }, .center);
     text = try patchClock(a, text, .{ .id = "tokyo", .timezone = "Asia/Tokyo", .label = "Home", .hour_format = .@"12h" }, .right);
     var document = try prefs.parse(a, text);
     try t.expectEqualStrings("clock,clock:london", document.bar.groups.center);
     try t.expectEqual(@as(u8, 17), document.font_size);
-    try t.expectEqual(@as(usize, 0), document.outputs[0].bar.clocks.len);
-    try t.expectEqualStrings("clock", document.outputs[0].bar.groups.center);
+    try t.expectEqual(@as(usize, 0), document.outputs[0].bar.?.clocks.len);
+    try t.expectEqualStrings("clock", document.outputs[0].bar.?.groups.center);
     text = try patch(a, text, "clock:tokyo", .{ .move = .center });
     text = try patch(a, text, "clock:tokyo", .earlier);
     try t.expectEqualStrings("clock,clock:tokyo,clock:london", (try prefs.parse(a, text)).bar.groups.center);

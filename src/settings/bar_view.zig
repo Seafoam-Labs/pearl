@@ -26,7 +26,11 @@ const Intent = union(enum) { clock_new, clock_open, clock_save, clock_cancel, cl
 const Binding = struct { view: *View, id: []const u8, intent: Intent };
 /// G_TYPE_STRING: fundamental type index 16 (2 is G_TYPE_INTERFACE) shifted into GType space.
 const g_type_string: usize = 16 << 2;
-const DragBinding = struct { view: *View, id: [*:0]const u8, widget: *gtk.Widget };
+const DragBinding = struct { view: *View, id: [*:0]const u8, widget: *gtk.Widget, press_time: i64 = 0 };
+
+/// Hold time before a press may turn into a drag, so plain clicks on widget
+/// rows are not instantly picked up. Microseconds, per glib.getMonotonicTime.
+const drag_debounce_us: i64 = 500 * std.time.us_per_ms;
 const RowDrop = struct { view: *View, group: Group, index: usize, widget: *gtk.Widget };
 const CardDrop = struct { view: *View, group: Group, widget: *gtk.Widget };
 pub const Control = struct { id: []const u8, widget: *gtk.Widget };
@@ -373,6 +377,23 @@ pub const View = struct {
                 drag_binding.* = .{ .view = self, .id = try alloc.dupeSentinel(u8, id, 0), .widget = row.as(gtk.Widget) };
                 const source = gtk.DragSource.new();
                 source.setActions(.{ .move = true });
+                // GtkGesture begin/end are not exposed in the bindings; connect them
+                // directly to stamp when the press started. ("pressed" does not exist
+                // on GestureSingle in GTK 4.24 — the lookup silently returns 0.)
+                _ = object.signalConnectClosureById(
+                    @ptrCast(@alignCast(source)),
+                    object.signalLookup("begin", gtk.DragSource.getGObjectType()),
+                    glib.quarkFromString(null),
+                    object.CClosure.new(@ptrCast(&dragGestureBegin), drag_binding, null),
+                    0,
+                );
+                _ = object.signalConnectClosureById(
+                    @ptrCast(@alignCast(source)),
+                    object.signalLookup("end", gtk.DragSource.getGObjectType()),
+                    glib.quarkFromString(null),
+                    object.CClosure.new(@ptrCast(&dragGestureEnd), drag_binding, null),
+                    0,
+                );
                 _ = gtk.DragSource.signals.prepare.connect(source, *DragBinding, dragPrepare, drag_binding, .{});
                 _ = gtk.DragSource.signals.drag_begin.connect(source, *DragBinding, dragBegin, drag_binding, .{});
                 _ = gtk.DragSource.signals.drag_end.connect(source, *DragBinding, dragEnd, drag_binding, .{});
@@ -751,7 +772,17 @@ pub const View = struct {
         const document = prefs.parse(alloc, self.editor.text()) catch return;
         self.popup_hash = barHash(alloc, document.bar) catch return;
     }
+    fn dragGestureBegin(_: *gtk.DragSource, _: ?*gdk.EventSequence, binding: *DragBinding) callconv(.c) void {
+        binding.press_time = glib.getMonotonicTime();
+    }
+    fn dragGestureEnd(_: *gtk.DragSource, _: ?*gdk.EventSequence, binding: *DragBinding) callconv(.c) void {
+        binding.press_time = 0;
+    }
     fn dragPrepare(_: *gtk.DragSource, _: f64, _: f64, binding: *DragBinding) callconv(.c) ?*gdk.ContentProvider {
+        // Returning null declines the drag; GTK re-emits prepare on later motion,
+        // so holding past the debounce still starts the drag.
+        if (binding.press_time == 0) binding.press_time = glib.getMonotonicTime();
+        if (glib.getMonotonicTime() - binding.press_time < drag_debounce_us) return null;
         binding.view.syncBarHash();
         // g_value_init requires zero-filled memory; stack garbage faults inside gobject.
         var value: object.Value = std.mem.zeroes(object.Value);

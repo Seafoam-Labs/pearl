@@ -7,30 +7,9 @@ const model = @import("../config/preferences.zig");
 const w = @import("../ui/components/widgets.zig");
 const Editor = @import("editor.zig").Editor;
 const a = std.heap.c_allocator;
-const Spec = struct { path: []const u8, label: [:0]const u8, kind: enum { text, number, percent, toggle, choice }, choices: []const [:0]const u8 = &.{}, min: f64 = 0, max: f64 = 86400 };
-const edges: []const [:0]const u8 = &.{ "top", "bottom", "left", "right" };
-const bar_fields = [_]Spec{
-    .{ .path = "bar.mode", .label = "Bar visibility", .kind = .choice, .choices = &.{ "always", "autohide" } },
-    .{ .path = "bar.edge", .label = "Bar edge", .kind = .choice, .choices = edges },
-    .{ .path = "bar.size", .label = "Bar size", .kind = .number, .min = 32, .max = 160 },
-    .{ .path = "bar.radius", .label = "Bar corner radius", .kind = .number, .min = 0, .max = 48 },
-    .{ .path = "bar.running_apps_per_window", .label = "One taskbar button per window", .kind = .toggle },
-    .{ .path = "bar.islands", .label = "Separate bar islands", .kind = .toggle },
-    .{ .path = "bar.attached", .label = "Attach bar to screen edge", .kind = .toggle },
-    .{ .path = "bar.background_opacity.mode", .label = "Background opacity", .kind = .choice, .choices = &.{ "automatic", "custom" } },
-    .{ .path = "bar.background_opacity.percent", .label = "Background opacity (%)", .kind = .percent, .min = 0, .max = 100 },
-    .{ .path = "dock.enabled", .label = "Show dock", .kind = .toggle },
-    .{ .path = "dock.edge", .label = "Dock edge", .kind = .choice, .choices = edges },
-    .{ .path = "dock.mode", .label = "Dock visibility", .kind = .choice, .choices = &.{ "always", "autohide", "intelligent" } },
-    .{ .path = "dock.icon_size", .label = "Dock icon size", .kind = .number, .min = 24, .max = 64 },
-    .{ .path = "dock.margin", .label = "Dock margin", .kind = .number, .min = 4, .max = 32 },
-    .{ .path = "dock.opacity_sync", .label = "Match bar opacity", .kind = .toggle },
-    .{ .path = "dock.background_opacity.percent", .label = "Dock opacity (%)", .kind = .percent, .min = 0, .max = 100 },
-    .{ .path = "popup.dismiss_outside", .label = "Dismiss flyouts when clicking outside", .kind = .toggle },
-    .{ .path = "popup.placement", .label = "Flyout placement", .kind = .choice, .choices = &.{ "anchored", "centered" } },
-    .{ .path = "popup.max_width", .label = "Maximum flyout width", .kind = .number, .min = 320, .max = 1280 },
-    .{ .path = "popup.max_height", .label = "Maximum flyout height", .kind = .number, .min = 320, .max = 1600 },
-};
+const form = @import("bar_dock_fields.zig");
+const Spec = form.Spec;
+const bar_fields = form.fields;
 const Field = struct { view: *View, spec: Spec, widget: *gtk.Widget, signal: c_ulong, slider: ?*gtk.Scale = null, lock: ?*gtk.Widget = null };
 /// One "show the bar here" switch per connected display. The connector names
 /// come from GDK, so this works on any Wayland compositor.
@@ -43,6 +22,8 @@ pub const View = struct {
     filling: bool = false,
     editing: bool = false,
     own_invalid: ?[64]u8 = null,
+    presets: ?*@import("presets_view.zig").View = null,
+    notice: *gtk.Label = undefined,
     bar: ?*@import("bar_view.zig").View = null,
     launchers: ?*@import("application_launchers_view.zig").View = null,
     pub fn create(host: *gtk.Box, editor: *Editor, context: *anyopaque, invalidate: *const fn (*anyopaque, @import("../desktop/settings_navigation.zig").Route) void) !*View {
@@ -52,6 +33,10 @@ pub const View = struct {
         var card = w.column(0);
         card.as(gtk.Widget).addCssClass("settings-card");
         host.append(card.as(gtk.Widget));
+        self.notice = w.label("", "pearl-secondary");
+        self.notice.setWrap(1);
+        self.notice.as(gtk.Widget).setVisible(0);
+        card.append(self.notice.as(gtk.Widget));
         for (specs, self.fields) |spec, *field| {
             const dock_start = std.mem.eql(u8, spec.path, "dock.enabled");
             if (dock_start or std.mem.eql(u8, spec.path, "popup.dismiss_outside")) {
@@ -107,6 +92,8 @@ pub const View = struct {
                 const hint = w.label(@import("i18n").dtr("pearl", "Autohide reveals the bar at the screen edge and gives applications more space. Display overrides in Advanced take priority."), "pearl-secondary");
                 hint.setWrap(1);
                 card.append(hint.as(gtk.Widget));
+                // Presets sit directly above the per-display switches.
+                self.presets = try @import("presets_view.zig").View.create(host, editor);
                 try self.buildDisplays();
             }
             field.* = .{ .view = self, .spec = spec, .widget = widget, .signal = 0 };
@@ -242,6 +229,7 @@ pub const View = struct {
     pub fn destroy(self: *View) void {
         if (self.launchers) |view| view.destroy();
         if (self.bar) |bar| bar.destroy();
+        if (self.presets) |picker| picker.destroy();
         for (self.fields) |field| object.signalHandlerDisconnect(field.widget.as(object.Object), field.signal);
         for (self.displays) |field| {
             object.signalHandlerDisconnect(field.widget.as(object.Object), field.signal);
@@ -254,6 +242,7 @@ pub const View = struct {
     pub fn update(self: *View) void {
         if (self.launchers) |view| view.update();
         if (self.bar) |bar| bar.update();
+        if (self.presets) |picker| picker.update();
         if (self.editing) return;
         self.filling = true;
         defer self.filling = false;
@@ -266,6 +255,7 @@ pub const View = struct {
                 if (field.slider) |slider| slider.as(gtk.Widget).setSensitive(0);
             }
             for (self.displays) |field| field.widget.as(gtk.Widget).setSensitive(0);
+            self.notice.as(gtk.Widget).setVisible(0);
             return;
         };
         for (self.fields) |field| field.widget.setSensitive(@intFromBool(self.editor.editable()));
@@ -313,6 +303,22 @@ pub const View = struct {
             field.widget.as(gtk.Widget).setSensitive(@intFromBool(self.editor.editable() and (hidden or shown > 1)));
             field.widget.setActive(@intFromBool(!hidden));
         }
+        // Make override shadowing and pending drafts visible: a control showing
+        // "off" here must not silently disagree with the bar on another display.
+        var overridden = std.array_list.Managed([]const u8).init(alloc);
+        defer overridden.deinit();
+        for (self.displays) |field| {
+            if (outputBarOverride(document, field.connector)) overridden.append(field.connector) catch {};
+        }
+        if (overridden.items.len > 0) {
+            const list = std.mem.join(alloc, ", ", overridden.items) catch "";
+            const text = @import("i18n").fmtAlloc(alloc, "Display overrides replace these defaults on: {s}. Edit or remove them in Advanced.", .{list}) catch "";
+            self.notice.setText(text);
+            self.notice.as(gtk.Widget).setVisible(1);
+        } else if (self.editor.state.dirty or self.editor.local != null) {
+            self.notice.setText(@import("i18n").dtr("pearl", "Changes are retained as a draft. Use Apply & save to make them active."));
+            self.notice.as(gtk.Widget).setVisible(1);
+        } else self.notice.as(gtk.Widget).setVisible(0);
     }
     fn save(field: *Field) void {
         const self = field.view;
@@ -358,6 +364,20 @@ fn lookup(document: std.json.Value, path: []const u8) ?std.json.Value {
     while (parts.next()) |part| value = if (value == .object) value.object.get(part) orelse return null else return null;
     return value;
 }
+/// True when `connector` has an explicit per-output bar override object, which
+/// replaces the global bar defaults shown on this page.
+fn outputBarOverride(document: std.json.Value, connector: []const u8) bool {
+    const outputs = lookup(document, "outputs") orelse return false;
+    if (outputs != .array) return false;
+    for (outputs.array.items) |entry| {
+        if (entry != .object) continue;
+        const conn = entry.object.get("connector") orelse continue;
+        if (conn != .string or !std.mem.eql(u8, conn.string, connector)) continue;
+        const bar = entry.object.get("bar") orelse return false;
+        return bar == .object;
+    }
+    return false;
+}
 fn barHiddenIn(document: std.json.Value, connector: []const u8) bool {
     const value = lookup(document, "bar_hidden_outputs") orelse return false;
     if (value != .array) return false;
@@ -393,5 +413,8 @@ fn patch(alloc: std.mem.Allocator, text: []const u8, path: []const u8, value: st
         part = next;
     }
     try current.object.put(alloc, part, value);
+    // Editing a setting a preset owns makes the layout the user's own again.
+    if (std.mem.startsWith(u8, path, "bar.") or std.mem.startsWith(u8, path, "dock."))
+        try document.object.put(alloc, "bar_dock_preset", .{ .string = "" });
     return std.json.Stringify.valueAlloc(alloc, document, .{ .whitespace = .indent_2 });
 }

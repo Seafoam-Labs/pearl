@@ -7,8 +7,8 @@ var pearl_version: *std.Build.Module = undefined;
 pub fn build(b: *std.Build) void {
     defer @import("pearl_ffi").attach(b, b.path("bindings/c"));
     @import("packaging/assistant/build.zig").add(b);
-    if (!std.mem.eql(u8, builtin.zig_version_string, "0.17.0"))
-        @panic("Pearl requires Zig 0.17.0; see .zigversion");
+    if (!std.mem.eql(u8, builtin.zig_version_string, "0.17.1"))
+        @panic("Pearl requires Zig 0.17.1; see .zigversion");
     const plugin_examples = b.option([]const u8, "plugin-examples", "Prebuilt plugin examples and failure fixtures") orelse ".cache/plugin-examples";
     const wasm_plugins = b.option(bool, "wasm-plugins", "Build the experimental WebAssembly plugin helper") orelse false;
     const community_theme_repository = b.option(bool, "community-theme-repository", "Include the Seafoam GitHub community repository by default") orelse true;
@@ -202,11 +202,13 @@ pub fn build(b: *std.Build) void {
     const scanner = Scanner.create(b, .{ .wayland_xml = b.path("bindings/protocols/wayland.xml"), .wayland_protocols = b.path("bindings/protocols") });
     scanner.addCustomProtocol(b.path("bindings/protocols/ext-background-effect-v1.xml"));
     scanner.addCustomProtocol(b.path("bindings/protocols/aqueous-shell-v1.xml"));
+    scanner.addCustomProtocol(b.path("bindings/protocols/cursor-shape-v1.xml"));
     scanner.addCustomProtocol(b.path("bindings/protocols/ext-workspace-v1.xml"));
     scanner.addCustomProtocol(b.path("bindings/protocols/aqueous-window-info-v1.xml"));
     scanner.addCustomProtocol(b.path("bindings/protocols/ext-foreign-toplevel-list-v1.xml"));
     scanner.generate("aqueous_window_info_manager_v1", 3);
-    scanner.generate("aqueous_shell_manager_v1", 2);
+    scanner.generate("aqueous_shell_manager_v1", 4);
+    scanner.generate("wp_cursor_shape_manager_v1", 1);
     scanner.addCustomProtocol(b.path("bindings/protocols/aqueous-output-warming-v1.xml"));
     scanner.generate("aqueous_output_warming_manager_v1", 1);
     scanner.addCustomProtocol(b.path("bindings/protocols/aqueous-input-activity-v1.xml"));
@@ -463,10 +465,17 @@ pub fn build(b: *std.Build) void {
     catalog_watch_module.linkSystemLibrary("gio-2.0", .{ .use_pkg_config = .yes });
     const catalog_watch = b.addRunArtifact(b.addTest(.{ .root_module = catalog_watch_module }));
     b.step("test-catalog-watch", "Verify the scheduler catalog is noticed when it or its directory appears later").dependOn(&catalog_watch.step);
+    // Steam library scanning against private temporary directories, no session needed.
+    const steam_library_module = createModule(b, .{ .root_source_file = b.path("src/desktop/steam_library.zig"), .target = target, .optimize = optimize, .link_libc = true });
+    for ([_][]const u8{ "gio2", "glib2", "gobject2" }) |name| steam_library_module.addImport(name, bindings.module(name));
+    steam_library_module.linkSystemLibrary("gio-2.0", .{ .use_pkg_config = .yes });
+    const steam_library_tests = b.addRunArtifact(b.addTest(.{ .root_module = steam_library_module }));
+    b.step("test-steam-library", "Verify Steam library scanning, shortcut generation and stale-entry pruning").dependOn(&steam_library_tests.step);
     const test_step = b.step("test", "Run model and Unicode policy tests without GTK or a compositor");
     test_step.dependOn(&b.addRunArtifact(pure).step);
     test_step.dependOn(&filter_tests.step);
     test_step.dependOn(&catalog_watch.step);
+    test_step.dependOn(&steam_library_tests.step);
     const i18n_tests = b.addSystemCommand(&.{ b.graph.zig_exe, "build", "--build-file", "translations/build.zig", "test", "check-templates" });
     i18n_tests.setCwd(b.path("."));
     i18n_tests.has_side_effects = true;
@@ -609,6 +618,15 @@ pub fn build(b: *std.Build) void {
     settings_services.addArtifactArg(spike);
     settings_services.addPassthruArgs();
     b.step("test-settings-services", "Verify standalone live pages and complete Aqueous editor boundary").dependOn(&settings_services.step);
+
+    const settings_field_search = b.addSystemCommand(&.{ "python3", "tests/integration/test_settings_field_search.py", "--settings" });
+    settings_field_search.addArtifactArg(settings_test_app);
+    settings_field_search.addArg("--pearl");
+    settings_field_search.addArtifactArg(app);
+    settings_field_search.addArg("--ctl");
+    settings_field_search.addArtifactArg(ctl);
+    settings_field_search.addPassthruArgs();
+    b.step("test-settings-field-search", "Verify field-level search across Aqueous schema fields and the Pearl manifest").dependOn(&settings_field_search.step);
 
     const settings_displays = b.addSystemCommand(&.{ "python3", "tests/integration/test_settings_displays.py", "--settings" });
     settings_displays.addArtifactArg(settings_test_app);
@@ -754,6 +772,12 @@ pub fn build(b: *std.Build) void {
     aqueous_layout.addArtifactArg(integration_app);
     aqueous_layout.addPassthruArgs();
     b.step("test-aqueous-layout", "Verify Aqueous cards, search, shared review and responsive layout in a private session").dependOn(&aqueous_layout.step);
+    const decoration_mode = b.addSystemCommand(&.{ "python3", "tests/integration/test_decoration_mode.py", "--settings" });
+    decoration_mode.addArtifactArg(settings_test_app);
+    decoration_mode.addArg("--pearl");
+    decoration_mode.addArtifactArg(integration_app);
+    decoration_mode.addPassthruArgs();
+    b.step("test-decoration-mode", "Verify the unified Window decorations dropdown maps renderer and force_ssd in a private session").dependOn(&decoration_mode.step);
     const settings_devices = b.addSystemCommand(&.{ "python3", "tests/integration/test_settings_devices.py", "--settings" });
     settings_devices.addArtifactArg(settings_test_app);
     settings_devices.addArg("--pearl");
@@ -801,6 +825,12 @@ pub fn build(b: *std.Build) void {
     settings_integration.addArtifactArg(production_locker);
     settings_integration.addArg("--themes");
     settings_integration.addArtifactArg(themes_tool);
+    settings_integration.addArg("--portal");
+    settings_integration.addArtifactArg(portal);
+    settings_integration.addArg("--capture-picker");
+    settings_integration.addArtifactArg(capture);
+    settings_integration.addArg("--preview-helper");
+    settings_integration.addArtifactArg(preview_helper);
     settings_integration.addPassthruArgs();
     b.step("test-settings-integration", "Verify staged Settings desktop, CLI and flyout launch integration").dependOn(&settings_integration.step);
 
@@ -1144,6 +1174,13 @@ pub fn build(b: *std.Build) void {
     session_services.addArtifactArg(ctl);
     session_services.addPassthruArgs();
     b.step("test-session-services", "Verify notifications, StatusNotifier/DBusMenu and MPRIS on private session buses").dependOn(&session_services.step);
+
+    const notification_progress = b.addSystemCommand(&.{ "python3", "tests/integration/test_notification_progress.py", "--pearl" });
+    notification_progress.addArtifactArg(integration_app);
+    notification_progress.addArg("--ctl");
+    notification_progress.addArtifactArg(ctl);
+    notification_progress.addPassthruArgs();
+    b.step("test-notification-progress", "Verify transfer progress hints, toast lifetime and final results").dependOn(&notification_progress.step);
 
     const dev_backend = b.option(enum { headless, nested }, "dev-backend", "Development compositor backend") orelse .headless;
     for ([_][]const u8{ "run", "gallery" }) |name| {

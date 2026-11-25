@@ -4,7 +4,7 @@ pub fn main(init: std.process.Init) void {
     @import("i18n").init(false);
     const args = init.minimal.args.toSlice(init.arena.allocator()) catch std.process.exit(2);
     if (args.len == 2 and std.mem.eql(u8, args[1], "--version")) {
-        @import("glib2").print("pearl-agent " ++ @import("version.zig").string ++ " (Zig 0.17.0, agent v1)\n");
+        @import("glib2").print("pearl-agent " ++ @import("version.zig").string ++ " (Zig 0.17.1, agent v1)\n");
         return;
     }
     if (args.len != 2 or !std.mem.eql(u8, args[1], "--shell-fd=3")) {

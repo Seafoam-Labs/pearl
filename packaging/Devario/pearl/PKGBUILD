@@ -1,8 +1,8 @@
-# Devario Core: build the v0.3.9 Pearl source archive.
+# Devario Core: build the v0.5.0 Pearl source archive.
 # One build produces the independently installable shell and login greeter.
 pkgbase=pearl
 pkgname=(pearl pearl-greeter)
-pkgver=0.3.9
+pkgver=0.5.0
 pkgrel=1
 # Preserve upgrade ordering from packages previously numbered 1.0.0rc2.
 epoch=1
@@ -28,7 +28,7 @@ _greeter_depends=('greetd>=0.10.3' 'aqueous>0.7' 'uwsm>=0.26.7' 'dbus' 'polkit'
 # Runtime handshake/native registry enforce the pinned capability contract; see RELEASE.md.
 # Keep session runtime dependencies out of the build to avoid the Aqueous
 # Pearl preset's build-order cycle. Checks use private fixtures.
-makedepends=('git' 'zig=0.17.0' 'pkgconf' 'gcc' 'qt5-base' 'qt6-base' 'python>=3.14'
+makedepends=('git' 'zig=0.17.1' 'pkgconf' 'gcc' 'qt5-base' 'qt6-base' 'python>=3.14'
              'rust' 'rust-wasm' 'librsvg'
              "${_build_libraries[@]}")
 options=('!strip' '!debug')
@@ -94,8 +94,8 @@ package_pearl() {
     # Capability required by the session dispatcher; bundled in the shell.
     provides=("pearl=$epoch:$pkgver-$pkgrel" 'pearl-capture-picker=1')
     optdepends=('ddcutil: brightness control for compatible external monitors'
-            'pearl-assistant-runtime: optional local launcher answers; system or custom llama-server also supported'
-                'llama-cpp: system runtime for launcher assistant setup'
+            'pearl-assistant-runtime: optional private mistral.rs runtime; system mistralrs or custom executable also supported'
+                'mistralrs: system runtime for launcher assistant setup'
                 'shelly: assistant runtime installation on Devario'
                 'ghostty: terminal for interactive assistant runtime installation'
                 'gvfs: Trash, SFTP connections, and administrative filesystems in Phyto'

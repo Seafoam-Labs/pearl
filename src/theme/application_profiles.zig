@@ -194,10 +194,11 @@ pub fn renderWithContext(a: std.mem.Allocator, captured: provider.Captured, snap
     for (captured.templates, 0..) |template, i| {
         const file = try io.read(a, try std.fmt.allocPrintSentinel(a, "{s}/output-{d}", .{ scratch, i }, 0), 131072, cancel);
         if (file.missing or file.bytes.len == 0 or !std.unicode.utf8ValidateSlice(file.bytes) or std.mem.indexOf(u8, file.bytes, "{{") != null) return error.InvalidProfileOutput;
-        if (captured.application == .zed or captured.application == .vscode or captured.application == .pywalfox) {
+        if (captured.application == .zed or captured.application == .vscode or captured.application == .pywalfox or captured.application == .sonora) {
             try @import("../config/preferences.zig").boundedJson(file.bytes, 131072, 16);
             const value = try std.json.parseFromSliceLeaky(std.json.Value, a, file.bytes, .{});
             if (value != .object or (captured.application == .zed and !value.object.contains("themes"))) return error.InvalidProfileOutput;
+            if (captured.application == .sonora and (!value.object.contains("theme") or !value.object.contains("name"))) return error.InvalidProfileOutput;
         }
         try result.append(a, .{ .name = template.path, .bytes = file.bytes });
     }
@@ -320,7 +321,12 @@ fn installFlatpaks(a: std.mem.Allocator, config: []const u8, state: [:0]const u8
         const sandbox = try std.fmt.allocPrintSentinel(a, "{s}/.var/app/{s}/config", .{ std.mem.span(glib.getHomeDir()), id }, 0);
         const journal = try std.fmt.allocPrint(a, "{s}-{s}", .{ @tagName(application), id });
         if (outputs.len > 0 and glib.fileTest(sandbox, .{ .is_dir = true }) == 0) continue;
-        const root = try std.fmt.allocPrint(a, "{s}/{s}/themes", .{ sandbox, if (application == .vesktop) "vesktop" else "Vencord" });
+        const subdir: []const u8 = switch (application) {
+            .vesktop => "vesktop",
+            .sonora => "sonora",
+            else => "Vencord",
+        };
+        const root = try std.fmt.allocPrint(a, "{s}/{s}/themes", .{ sandbox, subdir });
         try installAt(a, config, state, application, outputs, cancel, false, root, journal);
     }
 }

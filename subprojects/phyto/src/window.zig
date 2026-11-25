@@ -2,6 +2,7 @@ const std = @import("std");
 const u = @import("ui.zig");
 const gtk = u.gtk;
 const gio = u.gio;
+const giounix = @import("giounix2");
 const glib = u.glib;
 const object = u.object;
 const gdk = @import("gdk4");
@@ -43,6 +44,7 @@ pub const Window = struct {
     details_button: *gtk.Button,
     split_button: *gtk.Button,
     jobs_button: *gtk.Button,
+    empty_trash_button: *gtk.Button,
     paned: *gtk.Paned,
     panes: [2]Pane,
     active: usize = 0,
@@ -50,6 +52,7 @@ pub const Window = struct {
     show_details: bool = true,
     quick_preview: ?*@import("preview.zig").Quick = null,
     details_key: ?[:0]u8 = null,
+    details_measure_cancel: ?*gio.Cancellable = null,
     width: c_int = 1180,
     closed: bool = false,
     syncing: bool = false,
@@ -137,6 +140,11 @@ pub const Window = struct {
         toolbar.append(navigation.as(gtk.Widget));
         const search_button = u.iconButton("system-search-symbolic", @import("i18n").dtr("phyto", "Search this folder · Ctrl+F"));
         toolbar.append(search_button.as(gtk.Widget));
+        const empty_trash_button = gtk.Button.newWithLabel(@import("i18n").dtr("phyto", "Empty Trash…"));
+        empty_trash_button.as(gtk.Widget).addCssClass("destructive-action");
+        empty_trash_button.as(gtk.Widget).setVisible(0);
+        u.name(empty_trash_button.as(gtk.Widget), "Empty Trash");
+        toolbar.append(empty_trash_button.as(gtk.Widget));
         const pane_switch = u.iconButton("go-next-symbolic", @import("i18n").dtr("phyto", "Switch active pane · F6"));
         toolbar.append(pane_switch.as(gtk.Widget));
         const jobs_button = u.iconButton("folder-download-symbolic", @import("i18n").dtr("phyto", "File operations"));
@@ -174,7 +182,6 @@ pub const Window = struct {
         content.as(gtk.Widget).setHexpand(1);
         browser.append(content.as(gtk.Widget));
         const paned = gtk.Paned.new(.horizontal);
-        paned.setWideHandle(1);
         paned.setShrinkStartChild(1);
         paned.setShrinkEndChild(1);
         paned.as(gtk.Widget).setHexpand(1);
@@ -206,7 +213,7 @@ pub const Window = struct {
         const status = u.label(@import("i18n").dtr("phyto", "Loading folder…"), "status");
         status.setEllipsize(.end);
         browser.append(status.as(gtk.Widget));
-        self.* = .{ .app = app, .window = win, .root = root, .sidebar = sidebar, .sidebar_content = sidebar_box, .popup_content = popup_places, .places_button = places_button, .places_popover = popover, .location_button = location, .path = path, .search = search, .search_row = search_row, .search_scope = search_scope, .navigation = navigation, .details = details, .details_body = details_body, .status = status, .pane_switch = pane_switch, .grid_button = grid_button, .list_button = list_button, .back_button = back, .forward_button = forward, .up_button = up, .home_button = home_button, .details_button = details_button, .split_button = split_button, .jobs_button = jobs_button, .paned = paned, .panes = panes, .options = opts, .home = gio.File.newForPath(glib.getHomeDir()), .width = opts.width };
+        self.* = .{ .app = app, .window = win, .root = root, .sidebar = sidebar, .sidebar_content = sidebar_box, .popup_content = popup_places, .places_button = places_button, .places_popover = popover, .location_button = location, .path = path, .search = search, .search_row = search_row, .search_scope = search_scope, .navigation = navigation, .details = details, .details_body = details_body, .status = status, .pane_switch = pane_switch, .grid_button = grid_button, .list_button = list_button, .back_button = back, .forward_button = forward, .up_button = up, .home_button = home_button, .details_button = details_button, .split_button = split_button, .jobs_button = jobs_button, .empty_trash_button = empty_trash_button, .paned = paned, .panes = panes, .options = opts, .home = gio.File.newForPath(glib.getHomeDir()), .width = opts.width };
         self.preferences = @import("platform/preferences.zig").Preferences.acquire();
         if (opts.theme) |mode| if (self.preferences.theme != mode) {
             self.preferences.theme = mode;
@@ -245,6 +252,7 @@ pub const Window = struct {
         self.connect(search_close, .search);
         self.connect(split_button, .split);
         self.connect(jobs_button, .operations);
+        self.connect(empty_trash_button, .empty_trash);
         self.connect(pane_switch, .switch_pane);
         self.connect(grid_button, .grid);
         self.connect(list_button, .list);
@@ -324,6 +332,11 @@ pub const Window = struct {
             right.as(gtk.GestureSingle).setButton(3);
             _ = gtk.GestureClick.signals.pressed.connect(right, *Tab, tabContext, tab, .{});
             b.as(gtk.Widget).addController(right.as(gtk.EventController));
+            const middle = gtk.GestureClick.new();
+            middle.as(gtk.GestureSingle).setButton(2);
+            _ = gtk.GestureClick.signals.pressed.connect(middle, *Tab, tabMiddlePressed, tab, .{});
+            b.as(gtk.Widget).addController(middle.as(gtk.EventController));
+            @import("dnd.zig").attachTabButton(self, b, tab);
             p.tabs_row.append(b.as(gtk.Widget));
         }
         const add = u.iconButton("list-add-symbolic", @import("i18n").dtr("phyto", "New tab · Ctrl+T"));
@@ -370,6 +383,7 @@ pub const Window = struct {
         right.as(gtk.GestureSingle).setButton(3);
         _ = gtk.GestureClick.signals.pressed.connect(right, *Window, placeContext, self, .{});
         button.as(gtk.Widget).addController(right.as(gtk.EventController));
+        @import("dnd.zig").attachPlace(self, button);
         container.append(button.as(gtk.Widget));
     }
     fn unrefFile(data: ?*anyopaque) callconv(.c) void {
@@ -411,6 +425,7 @@ pub const Window = struct {
             }
         }
         self.network_ui.fillPlaces(container);
+        var devices_shown = false;
         const mounts = g_volume_monitor_get_mounts(self.volume_monitor);
         if (mounts) |head| {
             defer head.free();
@@ -425,7 +440,24 @@ pub const Window = struct {
                 defer f.unref();
                 const name_ = mount_.getName();
                 defer glib.free(name_);
-                self.place(container, name_, "drive-removable-media-symbolic", f);
+                const path = f.getPath();
+                const remote = path == null;
+                if (path) |p| glib.free(p);
+                if (remote) {
+                    // An unsaved GVfs mount belongs with the network devices.
+                    self.place(container, name_, "network-workgroup-symbolic", f);
+                } else {
+                    // OS mounts (/, /boot, fstab internals) are not user devices.
+                    if (systemMount(f)) {
+                        mount_.unref();
+                        continue;
+                    }
+                    if (!devices_shown) {
+                        container.append(u.label(@import("i18n").dtr("phyto", "DEVICES"), "section-label").as(gtk.Widget));
+                        devices_shown = true;
+                    }
+                    self.place(container, name_, "drive-removable-media-symbolic", f);
+                }
                 container.as(gtk.Widget).getLastChild().?.as(object.Object).setDataFull("phyto-mount", mount_, unrefObject);
             }
         }
@@ -444,10 +476,24 @@ pub const Window = struct {
                 defer f.unref();
                 const name_ = v.getName();
                 defer glib.free(name_);
+                if (!devices_shown) {
+                    container.append(u.label(@import("i18n").dtr("phyto", "DEVICES"), "section-label").as(gtk.Widget));
+                    devices_shown = true;
+                }
                 self.place(container, name_, "drive-removable-media-symbolic", f);
                 container.as(gtk.Widget).getLastChild().?.as(object.Object).setDataFull("phyto-volume", v, unrefObject);
             }
         }
+    }
+    /// GLib's own heuristic for OS-internal mounts (fstab entries without user
+    /// options, mounts outside /media, /mnt and /run/media): the same filter
+    /// GVfs uses to decide what is a user-visible device.
+    fn systemMount(root: *gio.File) bool {
+        const path = root.getPath() orelse return false;
+        defer glib.free(path);
+        const entry = giounix.MountEntry.at(path, null) orelse return false;
+        defer entry.free();
+        return entry.isSystemInternal() != 0;
     }
     fn locationContext(gesture: *gtk.GestureClick, _: c_int, x: f64, y: f64, self: *Window) callconv(.c) void {
         var c = @import("context.zig").Context.init(self.current(), .location);
@@ -459,6 +505,12 @@ pub const Window = struct {
         const c = @import("context.zig").Context.init(tab, .tab);
         tab.owner.context.show(c, gesture.as(gtk.EventController).getWidget().?, x, y);
         _ = gesture.as(gtk.Gesture).setState(.claimed);
+    }
+    fn tabMiddlePressed(gesture: *gtk.GestureClick, count: c_int, _: f64, _: f64, tab: *Tab) callconv(.c) void {
+        if (count != 1) return;
+        _ = gesture.as(gtk.Gesture).setState(.claimed);
+        // Same path as Ctrl+W: closing the last tab un-splits or closes the window.
+        tab.owner.tabCommand(tab, .close_tab);
     }
     fn placeContext(gesture: *gtk.GestureClick, _: c_int, x: f64, y: f64, self: *Window) callconv(.c) void {
         const widget = gesture.as(gtk.EventController).getWidget().?;
@@ -533,6 +585,18 @@ pub const Window = struct {
         self.preferences.save();
         self.queueUpdate();
     }
+    /// Drop every tab of a pane that is not currently visible. Used when a
+    /// split is created so the revealed pane starts fresh; the active pane is
+    /// never cleared here.
+    fn clearPane(self: *Window, pane: usize) void {
+        const p = &self.panes[pane];
+        for (p.tabs.items) |t| {
+            p.stack.remove(t.root.as(gtk.Widget));
+            t.destroy();
+        }
+        p.tabs.clearRetainingCapacity();
+        p.selected = 0;
+    }
     pub fn tabCommand(self: *Window, tab: *Tab, command: Command) void {
         self.context.close();
         const pane = tab.pane;
@@ -554,7 +618,14 @@ pub const Window = struct {
                 if (p.selected == index) p.selected = other else if (p.selected == other) p.selected = index;
             },
             .tab_other => {
-                if (!self.split or self.panes[1 - pane].tabs.items.len >= 32) return;
+                if (self.split and self.panes[1 - pane].tabs.items.len >= 32) return;
+                // From an unsplit window this creates the split, placing the
+                // tab next to the current one instead of requiring F3 first.
+                if (!self.split) {
+                    self.split = true;
+                    self.paned.setPosition(@divTrunc(@max(400, self.width - 256), 2));
+                    self.clearPane(1 - pane);
+                }
                 if (p.tabs.items.len == 1) self.addTab(pane, self.home);
                 _ = p.tabs.orderedRemove(index);
                 p.stack.remove(tab.root.as(gtk.Widget));
@@ -694,6 +765,7 @@ pub const Window = struct {
         const parent = f.getParent();
         self.up_button.as(gtk.Widget).setSensitive(@intFromBool(parent != null));
         if (parent) |p| p.unref();
+        self.empty_trash_button.as(gtk.Widget).setVisible(@intFromBool(std.mem.startsWith(u8, tab.uri, "trash:")));
         for (&self.panes, 0..) |*p, i| {
             if (self.split and i == self.active) p.host.as(gtk.Widget).addCssClass("active-pane") else p.host.as(gtk.Widget).removeCssClass("active-pane");
         }
@@ -732,7 +804,9 @@ pub const Window = struct {
         defer current_context.deinit();
         for (std.enums.values(Command)) |cmd| if (@import("actions.zig").fileAction(cmd)) {
             const action: *gio.SimpleAction = @ptrCast(object.ext.cast(gtk.ApplicationWindow, self.window).?.as(gio.ActionMap).lookupAction(@tagName(cmd)).?);
-            action.setEnabled(@intFromBool(self.context.allowed(&current_context, cmd)));
+            const enabled = self.context.allowed(&current_context, cmd);
+            action.setEnabled(@intFromBool(enabled));
+            if (cmd == .empty_trash) self.empty_trash_button.as(gtk.Widget).setSensitive(@intFromBool(enabled));
         };
         return 0;
     }
@@ -753,6 +827,11 @@ pub const Window = struct {
             a.free(old);
         }
         self.details_key = key;
+        if (self.details_measure_cancel) |c| {
+            c.cancel();
+            c.unref();
+            self.details_measure_cancel = null;
+        }
         u.clear(self.details_body);
         if (!visible) return;
         const top = u.box(.horizontal, 8, null);
@@ -782,21 +861,23 @@ pub const Window = struct {
         self.details_body.append(name.as(gtk.Widget));
         const type_ = if (info.getContentType()) |t| gio.contentTypeGetDescription(t) else glib.strdup("File");
         defer glib.free(type_);
-        self.detail(@import("i18n").dtr("phyto", "Type"), type_);
-        self.detail(@import("i18n").dtr("phyto", "Location"), self.current().title);
+        _ = self.detail(@import("i18n").dtr("phyto", "Type"), type_);
+        _ = self.detail(@import("i18n").dtr("phyto", "Location"), self.current().title);
+        const is_directory = info.getFileType() == .directory;
         const size = u.sizeText(info);
         defer glib.free(size);
-        self.detail(@import("i18n").dtr("phyto", "Size"), size);
+        const size_label = self.detail(@import("i18n").dtr("phyto", "Size"), if (is_directory) "Calculating…" else size);
+        if (is_directory) self.measureDetails(info, size_label);
         const date = u.dateText(info);
         defer glib.free(date);
-        self.detail(@import("i18n").dtr("phyto", "Modified"), date);
-        self.detail(@import("i18n").dtr("phyto", "Access"), if (info.hasAttribute("access::can-write") == 0) "Not reported" else if (info.getAttributeBoolean("access::can-write") != 0) "You can read and write" else "Read only");
+        _ = self.detail(@import("i18n").dtr("phyto", "Modified"), date);
+        _ = self.detail(@import("i18n").dtr("phyto", "Access"), if (info.hasAttribute("access::can-write") == 0) "Not reported" else if (info.getAttributeBoolean("access::can-write") != 0) "You can read and write" else "Read only");
         const properties = gtk.Button.newWithLabel(@import("i18n").dtr("phyto", "Properties"));
         properties.as(gtk.Widget).addCssClass("tonal");
         self.connect(properties, .properties);
         self.details_body.append(properties.as(gtk.Widget));
     }
-    fn detail(self: *Window, title: [*:0]const u8, value: [*:0]const u8) void {
+    fn detail(self: *Window, title: [*:0]const u8, value: [*:0]const u8) *gtk.Label {
         const row = u.box(.vertical, 4, "metadata");
         row.append(u.label(title, "secondary").as(gtk.Widget));
         const text = u.label(value, null);
@@ -806,6 +887,49 @@ pub const Window = struct {
         text.setSelectable(1);
         row.append(text.as(gtk.Widget));
         self.details_body.append(row.as(gtk.Widget));
+        return text;
+    }
+    const MeasureRequest = struct { owner: *Window, key: [:0]u8, label: *gtk.Label, file: *gio.File, bytes: u64 = 0, ok: bool = false };
+    fn measureDetails(self: *Window, info: *gio.FileInfo, label: *gtk.Label) void {
+        const cancel = gio.Cancellable.new();
+        self.details_measure_cancel = cancel;
+        self.app.as(gio.Application).hold();
+        const request = a.create(MeasureRequest) catch unreachable;
+        const file = u.file(info);
+        file.ref();
+        request.* = .{ .owner = self, .key = a.dupeSentinel(u8, self.details_key.?, 0) catch unreachable, .label = label, .file = file };
+        // Keep the value label alive even if the pane is cleared before the
+        // measurement lands; the key check below decides whether to use it.
+        _ = label.as(object.Object).ref();
+        const task = gio.Task.new(null, cancel, detailsMeasured, request);
+        defer task.unref();
+        task.setTaskData(request, null);
+        task.runInThread(measureWorker);
+    }
+    fn measureWorker(task: *gio.Task, _: *object.Object, data: ?*anyopaque, cancel: ?*gio.Cancellable) callconv(.c) void {
+        const request: *MeasureRequest = @ptrCast(@alignCast(data.?));
+        if (@import("platform/measure.zig").folderSize(request.file, cancel)) |m| {
+            request.bytes = m.bytes;
+            request.ok = true;
+        }
+        task.returnBoolean(1);
+    }
+    fn detailsMeasured(_: ?*object.Object, _: *gio.AsyncResult, data: ?*anyopaque) callconv(.c) void {
+        const request: *MeasureRequest = @ptrCast(@alignCast(data.?));
+        const self = request.owner;
+        defer {
+            self.app.as(gio.Application).release();
+            request.label.as(object.Object).unref();
+            request.file.unref();
+            a.free(request.key);
+            a.destroy(request);
+        }
+        if (self.closed) return;
+        const key = self.details_key orelse return;
+        if (!std.mem.eql(u8, key, request.key)) return;
+        const text = if (request.ok) glib.formatSize(request.bytes) else glib.strdup("Unavailable");
+        defer glib.free(text);
+        request.label.setText(text);
     }
     fn layout(self: *Window) void {
         @import("preview.zig").schedule();
@@ -946,7 +1070,13 @@ pub const Window = struct {
             },
             .split => {
                 self.split = !self.split;
-                if (!self.split) self.active = 0;
+                if (!self.split) self.active = 0 else {
+                    // A new split starts the revealed pane with a single fresh
+                    // Home tab instead of exposing placeholder tabs duplicated
+                    // from the window's initial location.
+                    self.clearPane(1 - self.active);
+                    self.addTab(1 - self.active, self.home);
+                }
                 self.paned.setPosition(@divTrunc(@max(400, self.width - 256), 2));
                 self.sync();
             },
@@ -1189,8 +1319,16 @@ pub const Window = struct {
         var dialog_widgets: std.ArrayList(ProbeWidget) = .empty;
         defer dialog_widgets.deinit(a);
         if (self.network_ui.editor) |e| self.probeWidgetsAt(e.dialog.as(gtk.Widget), e.dialog.as(gtk.Widget), &dialog_widgets);
+        var operation_widgets: std.ArrayList(ProbeWidget) = .empty;
+        defer operation_widgets.deinit(a);
+        if (self.operations.dialog) |d| self.probeWidgetsAt(d.as(gtk.Widget), d.as(gtk.Widget), &operation_widgets);
+        var message_widgets: std.ArrayList(ProbeWidget) = .empty;
+        defer message_widgets.deinit(a);
+        if (self.message_dialog) |d| self.probeWidgetsAt(d.as(gtk.Widget), d.as(gtk.Widget), &message_widgets);
         const json = std.json.Stringify.valueAlloc(a, .{
             .network_dialog_widgets = dialog_widgets.items,
+            .operation_dialog_widgets = operation_widgets.items,
+            .message_dialog_widgets = message_widgets.items,
             .network_profiles = @import("platform/network_mounts.zig").shared.?.store.profiles.items,
             .network_states = @import("platform/network_mounts.zig").shared.?.entries.items,
             .network_attempts = @import("platform/network_mounts.zig").shared.?.attempts,
@@ -1288,11 +1426,23 @@ pub const Window = struct {
         body.append(scroll.as(gtk.Widget));
         _ = dialog.addButton("Close", @backingInt(gtk.ResponseType.close));
         _ = gtk.Dialog.signals.response.connect(dialog, *Window, messageResponse, self, .{});
+        if (@import("build_options").test_hooks) {
+            const keys = gtk.EventControllerKey.new();
+            _ = gtk.EventControllerKey.signals.key_pressed.connect(keys, *Window, messageKey, self, .{});
+            dialog.as(gtk.Widget).addController(keys.as(gtk.EventController));
+        }
         dialog.as(gtk.Window).present();
     }
     fn messageResponse(dialog: *gtk.Dialog, _: c_int, self: *Window) callconv(.c) void {
         self.message_dialog = null;
         dialog.as(gtk.Window).destroy();
+    }
+    fn messageKey(_: *gtk.EventControllerKey, key: c_uint, _: c_uint, _: gdk.ModifierType, self: *Window) callconv(.c) c_int {
+        if (key == gdk.KEY_F12) {
+            self.probe();
+            return 1;
+        }
+        return 0;
     }
     const ExtractAsk = struct { owner: *Window, file: *gio.File, tool: @import("platform/applications.zig").Extractor };
     fn askExtract(self: *Window, file: *gio.File, info: *gio.FileInfo, tool: @import("platform/applications.zig").Extractor) void {
@@ -1424,6 +1574,11 @@ pub const Window = struct {
         self.context.stop();
         self.clipboard.stop();
         self.background_cancel.cancel();
+        if (self.details_measure_cancel) |c| {
+            c.cancel();
+            c.unref();
+            self.details_measure_cancel = null;
+        }
         for (self.volume_signals) |signal| object.signalHandlerDisconnect(self.volume_monitor.as(object.Object), signal);
         self.closed = true;
         if (self.quick_preview) |q| q.window.close();
@@ -1476,6 +1631,7 @@ pub const Window = struct {
         self.clipboard.deinit();
         self.preferences.release();
         if (self.details_key) |key| a.free(key);
+        if (self.details_measure_cancel) |c| c.unref();
         self.volume_monitor.unref();
         self.background_cancel.unref();
         if (self.status_message) |msg| a.free(msg);

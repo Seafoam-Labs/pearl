@@ -36,7 +36,8 @@ navigation, separators, disabled/hidden entries and check/radio toggle state.
 
 `org.freedesktop.Notifications` at `/org/freedesktop/Notifications` implements
 GetCapabilities, GetServerInformation, Notify and CloseNotification. Advertised
-capabilities are exactly `body`, `actions`, `persistence` and `icon-static`;
+capabilities are exactly `body`, `actions`, `persistence`, `icon-static` and
+`x-pearl-progress`;
 `icon-multi` is never advertised, because the specification makes the two
 mutually exclusive and specifying both a protocol error. The reported
 specification version is 1.2. Body markup, hyperlinks, embedded body images,
@@ -102,6 +103,27 @@ record limit includes active notifications and history. Old inactive records
 are evicted first; if all slots are active, Notify returns LimitsExceeded.
 Clear History preserves active records. Groups are ordered by newest delivery
 and records within an application group are newest first.
+
+## Transfer progress
+
+The `x-pearl-progress` hint (type `d`) turns a notification into a live progress
+card: a fraction in `[0, 1]` draws a determinate bar under the body, `-1` draws
+an indeterminate pulsing bar for an unknown total, and the absence of the hint
+is an ordinary record. NaN, infinities and out-of-range values are ignored, not
+fatal. The bar renders in both the toast and the notification center, styled
+like the volume OSD and silenced by reduced motion.
+
+Senders update one card through `replaces_id`. A replacement that carries the
+hint on both sides is a progress update: it refreshes content and the serial but
+**preserves the original toast expiry and deadline**, so a long transfer neither
+pins nor re-triggers its toast — the first delivery toasts for at most eight
+seconds and the card keeps updating in history. The final replacement drops the
+hint, which restores normal toast and expiration behavior for the result.
+Senders should keep `expire_timeout = 0` and the `resident` hint while running,
+then send the result with a normal timeout. DND, lock and history-only
+suppression still win over a preserved toast. Phyto's copy/move batches are the
+first sender; its Cancel action and card dismissal route through ActionInvoked
+and NotificationClosed like any other notification.
 
 ## Notification filters
 

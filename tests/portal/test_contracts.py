@@ -132,7 +132,10 @@ def client(binary):
             ('mime_rule', listed(rules('*a*a*b', kind=1)), False),
             ('most_rules', listed(rules(*('*.x%d' % i for i in range(2048)))), False),
             ('too_many_rules', listed(rules(*('*.x%d' % i for i in range(2049)))), True),
-            ('too_many_filters', listed(*[rules('*.x')] * 65), True),
+            ('many_filters', listed(*[rules('*.x')] * 65), False),
+            ('filters_over_cap', listed(*[rules('*.x%d' % i) for i in range(200)]), False),
+            ('current_beyond_cap', {**listed(*[rules('*.x%d' % i) for i in range(200)]),
+                                    **current(rules('*.x150'))}, False),
             ('current_too_many_rules', current(rules(*('*.x%d' % i for i in range(2049)))), True),
             ('current_three_stars', current(rules('*a*a*b')), True),
         ]
@@ -269,6 +272,33 @@ def client(binary):
         pump_until(lambda:shell_call('Holds').unpack()==(0,) and shell_call('InhibitorCount').unpack()==(0,))
         call('org.freedesktop.impl.portal.Session','Close',object_path=session)
         print('PASS shell-owned holds, logind FD release, owner isolation, monitor state and query-end acknowledgement',flush=True)
+        # Background portal: app state sourced from the session, autostart file
+        # management, and a consent dialog that defaults to keeping the app running.
+        expect_error(lambda:call('org.freedesktop.impl.portal.Background','GetAppState'),'Failed')
+        changed=[]
+        bus.signal_subscribe(destination,'org.freedesktop.impl.portal.Background','RunningApplicationsChanged',path,None,0,lambda c,s,p,i,m,args,d:changed.append(1),None)
+        shell_call('SetAppState',GLib.Variant('(a{sv})',({'org.example.Test':GLib.Variant('u',1),'org.example.Other':GLib.Variant('u',2)},)))
+        pump_until(lambda:changed)
+        assert call('org.freedesktop.impl.portal.Background','GetAppState').unpack()[0]=={'org.example.Test':1,'org.example.Other':2}
+        autostart=Path(os.environ.get('XDG_CONFIG_HOME',os.environ['HOME']+'/.config'))/'autostart/org.example.Test.desktop'
+        assert call('org.freedesktop.impl.portal.Background','EnableAutostart',GLib.Variant('(sbasu)',('org.example.Test',True,['flatpak','run','--command=easyeffects','org.example.Test','--hide-window'],0))).unpack()==(True,)
+        assert autostart.exists() and 'Exec=flatpak run --command=easyeffects org.example.Test --hide-window' in autostart.read_text(),str(autostart)
+        assert call('org.freedesktop.impl.portal.Background','EnableAutostart',GLib.Variant('(sbasu)',('org.example.Test',False,[],0))).unpack()==(True,)
+        assert not autostart.exists()
+        expect_error(lambda:call('org.freedesktop.impl.portal.Background','EnableAutostart',GLib.Variant('(sbasu)',('../evil',True,['x'],0))),'InvalidArgument')
+        handle=path+'/request/test/bg'
+        bg=request('Background','NotifyBackground',GLib.Variant('(oss)',(handle,'org.example.Test','Example')))
+        time.sleep(.3)
+        subprocess.run(['wtype','-s','100','-k','Return'],check=True)
+        pump_until(lambda:bg)
+        assert bg[0].unpack()==(0,{'result':1}),bg[0]
+        handle=path+'/request/test/bgclose'
+        bg=request('Background','NotifyBackground',GLib.Variant('(oss)',(handle,'org.example.Test','Example')))
+        time.sleep(.3)
+        call('org.freedesktop.impl.portal.Request','Close',object_path=handle)
+        pump_until(lambda:bg)
+        assert bg[0].unpack()==(1,{}),bg[0]
+        print('PASS background app state, autostart file management and safe background consent',flush=True)
         assert call('org.freedesktop.impl.portal.DynamicLauncher','RequestInstallToken',GLib.Variant('(sa{sv})',('org.example.Untrusted',{}))).unpack()==(2,)
         print('PASS request cancellation, owner isolation, removal and noninteractive installation denial',flush=True)
         handle=path+'/request/test/ownerloss'

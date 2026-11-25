@@ -59,13 +59,15 @@ def main():
         for mode in ('password', 'button', 'repeat-enter', 'remembered', 'remembered-switch', 'remembered-manual', 'remembered-override', 'refresh-user',
                      'switch', 'other', 'empty', 'disabled', 'fingerprint',
                      'blank', 'otp', 'visible', 'refresh', 'desktop-change', 'cancel', 'failure', 'failure-manual', 'stale',
-                     'oversize', 'oversize-utf8', 'policy-change', 'changed-before-begin', 'catalog-failure', 'timeout'):
+                     'oversize', 'oversize-utf8', 'policy-change', 'changed-before-begin', 'catalog-failure', 'timeout', 'handoff-hold'):
             entry.write_text('[Desktop Entry]\nType=Application\nName=Pearl (Aqueous)\nExec=/usr/bin/true\nDesktopNames=Aqueous;\n')
             value = {'roots': [{'path': str(root), 'type': 'wayland'}], 'power': False,
                      'accounts': mode not in ('disabled', 'remembered-manual', 'failure-manual'),
                      'remember_session': mode.startswith('remembered') or mode == 'refresh-user',
                      'preferred_output': primary,
                      'auth_timeout_seconds': 30,
+                     'handoff_hold': mode == 'handoff-hold',
+                     'handoff_timeout_seconds': 5,
                      'default_session': 'wayland:pearl.desktop'}
             config.write_text(json.dumps(value))
             state = session.base / 'selections.json'
@@ -243,6 +245,15 @@ def main():
                         release_result.set()
                         if mode == 'stale':
                             child.expect('event=greeter-state state=idle'); child.stop()
+                        elif mode == 'handoff-hold':
+                            # Overlap handoff: the accepted start must not quit the greeter;
+                            # it holds until greetd SIGTERMs the host, or the fallback quits.
+                            child.expect('event=greeter-handoff phase=hold')
+                            time.sleep(1)
+                            assert child.proc.poll() is None, child.lines[-20:]
+                            snapshot('login-handoff-hold')
+                            child.expect('event=greeter-handoff phase=timeout', timeout=10)
+                            assert child.wait() == 0, child.lines[-20:]
                         else: assert child.wait() == 0, child.lines[-20:]
                 thread.join(3)
                 assert not thread.is_alive() and not errors, (mode, errors)

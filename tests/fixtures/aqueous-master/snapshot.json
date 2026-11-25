@@ -2126,6 +2126,26 @@
       "max": 128
     },
     {
+      "id": "decoration.renderer",
+      "category": "appearance",
+      "label": "Server-side decoration renderer",
+      "description": "Who draws server-side window decorations: the compositor's built-in borders, or the Pearl shell's themed titlebars. Pearl must be running for shell rendering; otherwise borders remain.",
+      "file": "wm",
+      "section": "decoration",
+      "key": "renderer",
+      "type": "select",
+      "configured": false,
+      "inherited": false,
+      "advanced": false,
+      "value": "compositor",
+      "default": "compositor",
+      "raw": "compositor",
+      "options": [
+        "compositor",
+        "shell"
+      ]
+    },
+    {
       "id": "blur.radius",
       "category": "appearance",
       "label": "Blur radius",

@@ -5,6 +5,8 @@ switch = true
 
 [general]
 source_profile = false
+overlap_handoff = true
+overlap_switch_secs = 3
 
 [default_session]
 command = "/usr/lib/pearl/pearl-greeter-host"

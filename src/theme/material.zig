@@ -30,6 +30,7 @@ pub fn descriptor(a: std.mem.Allocator, app: profiles.Application) !profiles.Des
         .vesktop => @embedFile("material/pearl.material.vesktop/profile.json"),
         .vencord => @embedFile("material/pearl.material.vencord/profile.json"),
         .fcitx5 => @embedFile("material/pearl.material.fcitx5/profile.json"),
+        .sonora => @embedFile("material/pearl.material.sonora/profile.json"),
     }, 16384);
 }
 pub fn files(app: profiles.Application) []const pkg.File {
@@ -110,6 +111,10 @@ pub fn files(app: profiles.Application) []const pkg.File {
             .{ .path = "theme.conf", .bytes = @embedFile("material/pearl.material.fcitx5/theme.conf") },
             .{ .path = "panel.svg", .bytes = @embedFile("material/pearl.material.fcitx5/panel.svg") },
             .{ .path = "highlight.svg", .bytes = @embedFile("material/pearl.material.fcitx5/highlight.svg") },
+        },
+        .sonora => &.{
+            .{ .path = "dark.json", .bytes = @embedFile("material/pearl.material.sonora/dark.json") },
+            .{ .path = "light.json", .bytes = @embedFile("material/pearl.material.sonora/light.json") },
         },
     };
 }

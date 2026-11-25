@@ -45,6 +45,9 @@ pub fn ViewFor(comptime ClientType: type) type {
         announced_status: [1000:0]u8 = @splat(0),
         rules_view: ?*@import("../settings/window_rules_view.zig").For(Self) = null,
         host: *gtk.Box,
+        /// The normal settings window hosts the former Aqueous Advanced section
+        /// on its shared Advanced page; the compact popup keeps its own tab.
+        advanced_host: ?*gtk.Box = null,
         client: *ClientType,
         arena: std.heap.ArenaAllocator,
         content: *gtk.Box,
@@ -97,12 +100,14 @@ pub fn ViewFor(comptime ClientType: type) type {
         /// The standalone host invalidates page-local focus before widgets die.
         rebuild_observer: ?struct { context: *anyopaque, notify: *const fn (*anyopaque, bool) void } = null,
         reload_button: *gtk.Button,
+        resolve_button: *gtk.Button,
+        resolve_dialog: ?*gtk.Dialog = null,
         root_signals: Signals = .{},
         form_signals: Signals = .{},
         pub fn create(host: *gtk.Box, client: *ClientType, window: *gtk.Window) !*Self {
-            return createIn(host, client, window, host);
+            return createIn(host, client, window, host, null);
         }
-        pub fn createIn(host: *gtk.Box, client: *ClientType, window: *gtk.Window, footer: *gtk.Box) !*Self {
+        pub fn createIn(host: *gtk.Box, client: *ClientType, window: *gtk.Window, footer: *gtk.Box, advanced_host: ?*gtk.Box) !*Self {
             const self = try a.create(Self);
             if (!@hasDecl(ClientType, "standalone")) {
                 host.append(w.label(@import("i18n").dtr("pearl", "Aqueous settings"), "pearl-title").as(gtk.Widget));
@@ -126,6 +131,8 @@ pub fn ViewFor(comptime ClientType: type) type {
             actions.insert(rebase.as(gtk.Widget), -1);
             const validate = gtk.Button.newWithLabel(@import("i18n").dtr("pearl", "Validate"));
             actions.insert(validate.as(gtk.Widget), -1);
+            const resolve = gtk.Button.newWithLabel(@import("i18n").dtr("pearl", "Resolve unresolved save"));
+            actions.insert(resolve.as(gtk.Widget), -1);
             const apply = gtk.Button.newWithLabel(@import("i18n").dtr("pearl", "Apply & save"));
             actions.insert(apply.as(gtk.Widget), -1);
             const issue = w.wrappingButton(@import("i18n").dtr("pearl", "Review issue"));
@@ -140,13 +147,14 @@ pub fn ViewFor(comptime ClientType: type) type {
             preview_actions.insert(reload.as(gtk.Widget), -1);
             preview_actions.insert(keep.as(gtk.Widget), -1);
             preview_actions.insert(revert.as(gtk.Widget), -1);
-            self.* = .{ .issue_button = issue, .host = host, .client = client, .arena = .init(a), .content = content, .message = message, .actions = actions, .footer_line = footer_line, .buttons = .{ refresh, validate, apply }, .draft_buttons = .{ discard, rebase }, .preview_buttons = .{ keep, revert }, .preview_actions = preview_actions, .reload_button = reload, .window = window };
+            self.* = .{ .issue_button = issue, .host = host, .advanced_host = advanced_host, .client = client, .arena = .init(a), .content = content, .message = message, .actions = actions, .footer_line = footer_line, .buttons = .{ refresh, validate, apply }, .draft_buttons = .{ discard, rebase }, .preview_buttons = .{ keep, revert }, .preview_actions = preview_actions, .reload_button = reload, .resolve_button = resolve, .window = window };
             self.root_signals.add(refresh.as(object.Object), gtk.Button.signals.clicked.connect(refresh, *Self, refreshed, self, .{}));
             self.root_signals.add(issue.as(object.Object), gtk.Button.signals.clicked.connect(issue, *Self, issueClicked, self, .{}));
             self.root_signals.add(discard.as(object.Object), gtk.Button.signals.clicked.connect(discard, *Self, discarded, self, .{}));
             self.root_signals.add(validate.as(object.Object), gtk.Button.signals.clicked.connect(validate, *Self, validated, self, .{}));
             self.root_signals.add(apply.as(object.Object), gtk.Button.signals.clicked.connect(apply, *Self, applied, self, .{}));
             self.root_signals.add(rebase.as(object.Object), gtk.Button.signals.clicked.connect(rebase, *Self, rebased, self, .{}));
+            self.root_signals.add(resolve.as(object.Object), gtk.Button.signals.clicked.connect(resolve, *Self, resolveClicked, self, .{}));
             self.root_signals.add(keep.as(object.Object), gtk.Button.signals.clicked.connect(keep, *Self, kept, self, .{}));
             self.root_signals.add(revert.as(object.Object), gtk.Button.signals.clicked.connect(revert, *Self, reverted, self, .{}));
             self.root_signals.add(reload.as(object.Object), gtk.Button.signals.clicked.connect(reload, *Self, reloaded, self, .{}));
@@ -164,6 +172,7 @@ pub fn ViewFor(comptime ClientType: type) type {
             self.layout.clear();
             if (self.rules_view) |view| view.destroy();
             if (self.shared_dialog) |dialog| dialog.as(gtk.Window).destroy();
+            if (self.resolve_dialog) |dialog| dialog.as(gtk.Window).destroy();
             if (self.preview_dialog) |dialog| {
                 dialog.destroy();
                 self.preview_dialog = null;
@@ -179,6 +188,7 @@ pub fn ViewFor(comptime ClientType: type) type {
             if (self.client.previewing()) self.client.choose(false) catch {};
             self.filling = true;
             while (self.host.as(gtk.Widget).getFirstChild()) |c| self.host.remove(c);
+            if (self.advanced_host) |host| while (host.as(gtk.Widget).getFirstChild()) |c| host.remove(c);
             self.arena.deinit();
             a.destroy(self);
         }
@@ -229,6 +239,7 @@ pub fn ViewFor(comptime ClientType: type) type {
             self.page_count = 0;
             self.page_widgets = @splat(null);
             while (self.content.as(gtk.Widget).getFirstChild()) |c| self.content.remove(c);
+            if (self.advanced_host) |host| while (host.as(gtk.Widget).getFirstChild()) |c| host.remove(c);
             _ = self.arena.reset(.retain_capacity);
             self.editors = .empty;
             self.display_controls = .empty;
@@ -261,7 +272,7 @@ pub fn ViewFor(comptime ClientType: type) type {
                 const box = self.page(notebook, title);
                 try Layout.render(self, box, snapshot, draft, category);
             }
-            const advanced = self.page(notebook, @import("i18n").dtr("pearl", "Advanced"));
+            const advanced = self.advanced_host orelse self.page(notebook, @import("i18n").dtr("pearl", "Advanced"));
             try Layout.status(self, advanced);
             const receipts = try Layout.group(self, advanced, .receipts);
             if (self.client.preview_report) |report| {
@@ -389,6 +400,69 @@ pub fn ViewFor(comptime ClientType: type) type {
             } else row.append(editor.widget);
             // Raw edits own the whole file; typed widgets cannot obscure them.
             row.as(gtk.Widget).setSensitive(@intFromBool(draft == .object and m.get(m.get(draft, "raw_files"), m.str(m.get(field, "file"))) == .null));
+        }
+        /// Single derived "Window decorations" dropdown replacing the separate
+        /// renderer/force_ssd editors. It reads both fields (draft overrides
+        /// included) and writes them together, so every selection maps to one
+        /// consistent compositor configuration.
+        pub fn decorationModeEditor(self: *Self, box: *gtk.Box, snapshot: m.Value, draft: m.Value) !void {
+            const modes = @import("../config/decoration_mode.zig");
+            const alloc = self.arena.allocator();
+            var renderer: []const u8 = "compositor";
+            var force = false;
+            for (m.list(m.get(snapshot, "fields"))) |field| {
+                const id = m.str(m.get(field, "id"));
+                if (std.mem.eql(u8, id, modes.renderer_id)) renderer = m.str(m.get(field, "value"));
+                if (std.mem.eql(u8, id, modes.force_ssd_id)) force = m.get(field, "value") == .bool and m.get(field, "value").bool;
+            }
+            for (m.list(m.get(draft, "changes"))) |change| {
+                const id = m.str(m.get(change, "id"));
+                if (std.mem.eql(u8, id, modes.renderer_id)) renderer = m.str(m.get(change, "value"));
+                if (std.mem.eql(u8, id, modes.force_ssd_id)) force = m.get(change, "value") == .bool and m.get(change, "value").bool;
+            }
+            const row = w.column(8);
+            row.as(gtk.Widget).addCssClass("aqueous-field");
+            box.append(row.as(gtk.Widget));
+            const label = w.label(@import("i18n").dtr("pearl", "Window decorations"), null);
+            label.as(gtk.Widget).addCssClass("settings-row-title");
+            row.append(label.as(gtk.Widget));
+            row.as(gtk.Widget).setTooltipText(@import("i18n").dtr("pearl", "Who draws server-side decorations and which windows get them. Apps that only support client-side decorations always keep their own."));
+            const strings = [_:null]?[*:0]const u8{
+                @import("i18n").dtr("pearl", "Off — applications draw their own"),
+                @import("i18n").dtr("pearl", "Compositor borders — all capable apps"),
+                @import("i18n").dtr("pearl", "Pearl titlebars — apps that request them"),
+                @import("i18n").dtr("pearl", "Pearl titlebars — all capable apps"),
+            };
+            const input = gtk.DropDown.newFromStrings(@ptrCast(&strings));
+            @import("../settings/assistant_layout.zig").wrapChoice(input);
+            input.setSelected(@intFromEnum(modes.derive(renderer, force)));
+            w.name(input.as(gtk.Widget), @import("i18n").dtr("pearl", "Window decorations"));
+            const choice = try alloc.create(ModeChoice);
+            choice.* = .{ .view = self, .dropdown = input };
+            self.form_signals.add(input.as(object.Object), object.Object.signals.notify.connect(input.as(object.Object), *ModeChoice, modeSelected, choice, .{ .detail = "selected" }));
+            row.append(input.as(gtk.Widget));
+            try self.layout.controls.append(alloc, .{ .id = "aqueous.decoration-mode", .widget = input.as(gtk.Widget) });
+            // Raw wm edits own the whole file; the derived control must not obscure them.
+            row.as(gtk.Widget).setSensitive(@intFromBool(draft == .object and m.get(m.get(draft, "raw_files"), "wm") == .null));
+        }
+        const ModeChoice = struct { view: *Self, dropdown: *gtk.DropDown };
+        fn modeSelected(_: *object.Object, _: *object.ParamSpec, choice: *ModeChoice) callconv(.c) void {
+            const self = choice.view;
+            if (self.filling) return;
+            const modes = @import("../config/decoration_mode.zig");
+            const index = choice.dropdown.getSelected();
+            if (index > 3) return;
+            const mode: modes.Mode = @enumFromInt(index);
+            self.client.editField(modes.renderer_id, .{ .string = modes.renderer(mode) }) catch |err| {
+                self.fail(err);
+                return;
+            };
+            self.client.editField(modes.force_ssd_id, .{ .bool = modes.forceSsd(mode) }) catch |err| {
+                self.fail(err);
+                return;
+            };
+            self.syncRequest();
+            self.update();
         }
         pub fn monitorEditor(self: *Self, box: *gtk.Box, original: m.Value, live: bool) !void {
             const alloc = self.arena.allocator();
@@ -523,6 +597,8 @@ pub fn ViewFor(comptime ClientType: type) type {
             self.updatePreviewDialog();
             self.reload_button.as(gtk.Widget).setVisible(@intFromBool(c.reload_state == .failed or c.reload_state == .unknown or c.reload_state == .unavailable));
             self.reload_button.as(gtk.Widget).setSensitive(@intFromBool(c.job == null and c.reload_ticket == null and !c.unresolved));
+            self.resolve_button.as(gtk.Widget).setVisible(@intFromBool(c.unresolved and c.job == null));
+            self.resolve_button.as(gtk.Widget).getParent().?.setVisible(@intFromBool(c.unresolved and c.job == null));
             self.preview_buttons[0].as(gtk.Widget).setVisible(@intFromBool(c.previewing()));
             self.preview_buttons[1].as(gtk.Widget).setVisible(@intFromBool(c.previewPhase() != 0 and c.previewPhase() != 2));
             for ([_]*gtk.Button{ self.reload_button, self.preview_buttons[0], self.preview_buttons[1] }) |button| button.as(gtk.Widget).getParent().?.setVisible(button.as(gtk.Widget).getVisible());
@@ -818,6 +894,37 @@ pub fn ViewFor(comptime ClientType: type) type {
         fn reloaded(_: *gtk.Button, self: *Self) callconv(.c) void {
             self.client.requestReload() catch |err| self.fail(err);
         }
+        fn resolveClicked(_: *gtk.Button, self: *Self) callconv(.c) void {
+            if (self.resolve_dialog) |dialog| {
+                dialog.as(gtk.Window).present();
+                return;
+            }
+            const dialog = gtk.Dialog.new();
+            const win = dialog.as(gtk.Window);
+            self.styleDialog(win);
+            win.setTitle(@import("i18n").dtr("pearl", "Resolve the unresolved save?"));
+            win.setTransientFor(self.window);
+            win.setModal(1);
+            win.setDefaultSize(460, -1);
+            self.resolve_dialog = dialog;
+            const content = w.column(12);
+            inline for (.{ gtk.Widget.setMarginStart, gtk.Widget.setMarginEnd, gtk.Widget.setMarginTop, gtk.Widget.setMarginBottom }) |set| set(content.as(gtk.Widget), 20);
+            dialog.getContentArea().append(content.as(gtk.Widget));
+            content.append(w.label(@import("i18n").dtr("pearl", "Pearl could not determine whether the interrupted save reached the configuration."), null).as(gtk.Widget));
+            content.append(w.label(@import("i18n").dtr("pearl", "Resolving retires the pending record and unblocks writes. The configuration may already contain the interrupted save; review the current settings before applying again. Your draft is retained."), "pearl-secondary").as(gtk.Widget));
+            const cancel = dialog.addButton(@import("i18n").dtr("pearl", "Cancel"), 0);
+            const accept = dialog.addButton(@import("i18n").dtr("pearl", "Resolve unresolved save"), 1);
+            accept.addCssClass("pearl-primary");
+            self.root_signals.add(dialog.as(object.Object), gtk.Dialog.signals.response.connect(dialog, *Self, resolveResponse, self, .{}));
+            win.present();
+            _ = cancel.grabFocus();
+        }
+        fn resolveResponse(dialog: *gtk.Dialog, response: c_int, self: *Self) callconv(.c) void {
+            dialog.as(gtk.Window).destroy();
+            self.resolve_dialog = null;
+            if (response != 1) return;
+            self.client.resolve() catch |err| self.fail(err);
+        }
         fn rawSelected(_: *object.Object, _: *object.ParamSpec, self: *Self) callconv(.c) void {
             self.layout.raw_source = self.raw_file.?.getSelected();
             self.loadRaw();
@@ -890,6 +997,8 @@ pub fn ViewFor(comptime ClientType: type) type {
             if (self.issue_focus[0] != 0) self.revealIssue();
             const names = @import("settings_navigation.zig").aqueous_sections;
             for (names, 0..) |v, index| if (std.mem.eql(u8, v, name)) {
+                // The shared Advanced page owns the former Advanced section.
+                if (@hasDecl(ClientType, "standalone") and self.notebook != null and index >= self.page_count) return error.UnknownPage;
                 self.page_index = @intCast(index);
                 if (self.notebook) |notebook| {
                     self.selectPage(@intCast(index));
@@ -930,6 +1039,14 @@ pub fn ViewFor(comptime ClientType: type) type {
                 if (self.layout.sections[@backingInt(editor.group)]) |section| section.reveal();
                 break;
             };
+        }
+        /// Stage a field for reveal + focus after the next page show. Used by
+        /// field-level search; reuses the validation-issue reveal machinery.
+        pub fn stageReveal(self: *Self, id: []const u8) void {
+            @memset(&self.issue_focus, 0);
+            const len = @min(id.len, self.issue_focus.len - 1);
+            @memcpy(self.issue_focus[0..len], id[0..len]);
+            if (self.notebook != null) self.revealIssue();
         }
         pub fn focusIssue(self: *Self) bool {
             if (self.issue_focus[0] == 0) return false;

@@ -12,6 +12,102 @@ import sys
 import threading
 import time
 
+def qualification_fixture():
+    """Offline server used by runtime.zig tests; never executes returned tools."""
+    executable = Path(sys.argv[0])
+    scenario = Path(str(executable) + ".scenario").read_text()
+    serve_flags = "-f, --quantized-file --host --port --max-model-len --no-ui --cpu --max-seqs --disable-metrics --disable-access-log -n"
+    if "--help" in sys.argv:
+        if "serve" in sys.argv:
+            print(serve_flags)
+        else:
+            print("Commands: serve run doctor tune\n  serve [embedding]")
+        return
+    if "--version" in sys.argv:
+        print("deterministic-chat-tool-qualification")
+        return
+    def option(name):
+        return sys.argv[sys.argv.index(name) + 1]
+    assert "serve" in sys.argv
+    assert option("--host") == "127.0.0.1"
+    assert option("--max-seqs") == "1"
+    assert "--cpu" in sys.argv
+    log_path = Path(str(executable) + ".requests.jsonl")
+    class Handler(http.server.BaseHTTPRequestHandler):
+        def reply(self, status, value):
+            data = json.dumps(value).encode()
+            self.send_response(status)
+            self.send_header("Content-Length", str(len(data)))
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(data)
+        def do_GET(self):
+            # mistral.rs has no authentication; Authorization headers are ignored.
+            if self.path == "/health" or self.path == "/":
+                self.reply(200, {"status": "ok"})
+            elif self.path == "/v1/models":
+                self.reply(200, {"data": [{"id": "pearl-local"}]})
+            else:
+                self.reply(404, {"error": "not found"})
+        def do_POST(self):
+            payload = json.loads(self.rfile.read(int(self.headers.get("Content-Length", "0"))))
+            assert self.path == "/v1/chat/completions", self.path
+            messages = payload["messages"]
+            followup = any(m["role"] == "tool" for m in messages)
+            kind = "followup" if followup else "tools" if payload.get("tools") else "chat"
+            with log_path.open("a") as log:
+                log.write(json.dumps({"kind": kind, "payload": payload}) + "\n")
+            call = {"index": 0, "id": "fixture-search", "type": "function", "function": {"name": "search_web", "arguments": '{"query":"RAM storage"}'}}
+            finish = "stop"
+            if kind == "chat":
+                assert "tools" not in payload
+                assert all(m.get("tool_calls") is None for m in messages)
+                if scenario == "chat_http" or (scenario == "unhealthy_after_tools" and self.server.tool_attempted):
+                    self.reply(503, {"error": "chat unavailable"})
+                    return
+                delta = {"tool_calls": [call]} if scenario == "tool_in_chat" else {"content": " \t\n" if scenario == "empty_chat" else "Hello from the local chat fixture."}
+                self.server.chat_checked = True
+            else:
+                assert self.server.chat_checked, "tools were checked before chat"
+                self.server.tool_attempted = True
+                if kind == "followup":
+                    assert "tools" not in payload
+                    assert messages[-1]["tool_call_id"] == "fixture-search"
+                    assert json.loads(messages[-1]["content"])[0]["id"] == 1
+                    delta = {"content": "" if scenario == "bad_followup" else "RAM is temporary; storage retains files. [1]"}
+                elif scenario in ("http_tools", "unhealthy_after_tools"):
+                    self.reply(400, {"error": "tools unsupported"})
+                    return
+                elif scenario == "no_tools":
+                    delta = {"content": "I can chat but cannot call tools."}
+                else:
+                    if scenario == "malformed_arguments":
+                        call["function"]["arguments"] = "{broken"
+                    elif scenario == "unexpected_tool":
+                        call["function"]["name"] = "execute_shell"
+                    elif scenario == "truncated_tools":
+                        finish = "length"
+                    delta = {"tool_calls": [call]}
+            frames = [{"choices": [{"delta": delta, "finish_reason": finish}]}]
+            data = ("".join("data: " + json.dumps(frame) + "\n\n" for frame in frames) + "data: [DONE]\n\n").encode()
+            self.send_response(200)
+            self.send_header("Content-Type", "text/event-stream")
+            self.send_header("Content-Length", str(len(data)))
+            self.end_headers()
+            self.wfile.write(data)
+        def log_message(self, *_):
+            pass
+    server = http.server.HTTPServer(("127.0.0.1", int(option("--port"))), Handler)
+    server.chat_checked = False
+    server.tool_attempted = False
+    server.serve_forever()
+
+# Native tests copy this file to a private executable with a scenario sidecar.
+# Dispatch before importing the UI harness: qualification needs no compositor.
+if __name__ == "__main__" and Path(sys.argv[0]).name == "qualification-fixture":
+    qualification_fixture()
+    sys.exit(0)
+
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "scripts"))
 from pearl_session import PrivateSession, wait_for
@@ -46,7 +142,7 @@ def main():
         with PrivateSession(args.output / "session", aqueous=args.aqueous) as session:
             models = Path(session.env["XDG_DATA_HOME"]) / "pearl/assistant/models"
             models.mkdir(parents=True)
-            os.link(args.model.resolve(), models / "LFM2.5-350M-Q4_K_M.gguf")
+            os.link(args.model.resolve(), models / "LFM3-1.7B-Q4_K_M.gguf")
             parent, child = socket.socketpair()
             parent.settimeout(15)
             log = (args.output / "agent.log").open("w")
@@ -77,8 +173,8 @@ def main():
                 executable = location / scenario
                 shutil.copyfile(Path(__file__).with_name("fake_llama_server.py"), executable)
                 executable.chmod(0o755)
-                return dict(enabled=True, read_pages=False, default_provider_id="google", runtime=dict(source="custom", executable=str(executable)),
-                    compute=dict(mode=mode, backend="vulkan", device_id="vulkan:NVIDIA Fixture:8192", allow_cpu_fallback=fallback),
+                return dict(enabled=True, read_pages=False, default_provider_id="google", model_id="custom", custom_model=str(models / "LFM3-1.7B-Q4_K_M.gguf"), runtime=dict(source="custom", executable=str(executable)),
+                    compute=dict(mode=mode, backend="vulkan", device_id="vulkan:NVIDIA Fixture:8192", offload_layers=16, allow_cpu_fallback=fallback),
                     providers=[dict(id="google", kind="google", endpoint=f"http://127.0.0.1:{server.server_port}")])
             try:
                 assert not request("test_state")["runtime"] and not Search.requests
@@ -93,7 +189,9 @@ def main():
                     assert not latest["enforced_memory"], latest
                     checks[scenario] = True
                     request("release_runtime")
-                for scenario, expected_calls in [("fallback_search", 3), ("fallback_repair", 4), ("fallback_invalid", 4), ("fallback_empty", 2), ("fallback_repeat", 4)]:
+                # Former forced-search cases must now accept the model's direct
+                # answer, even while search tools are available to the model.
+                for scenario in ("fallback_search", "fallback_repair", "fallback_invalid", "fallback_empty", "fallback_repeat"):
                     selected = config(scenario, mode="cpu")
                     question = "What does fixture fallback search say about RAM and storage?"
                     if scenario == "fallback_empty":
@@ -102,21 +200,18 @@ def main():
                     request("ask", config=selected, question=question)
                     state = idle()
                     assert not state["error_code"] and len(state["turns"]) == 1, state
-                    answer = state["turns"][0]["answer"]
-                    if scenario == "fallback_empty":
-                        assert "No usable search results" in answer, state
-                    elif scenario == "fallback_invalid":
-                        assert "could not produce a valid source-cited summary" in answer and "[99]" not in answer, state
-                    else:
-                        assert answer == "RAM is temporary working memory; storage retains files. [1]", state
-                    assert len(Search.requests) == before + 1, (scenario, Search.requests)
+                    assert state["turns"][0]["answer"] == "RAM is temporary working memory; storage retains files.", state
+                    assert state["sources"] == 0, state
+                    assert len(Search.requests) == before, (scenario, Search.requests)
+                    # The fixture logs only completions for this question, not
+                    # runtime qualification or template/tokenization requests.
                     requests = [json.loads(line) for line in Path(selected["runtime"]["executable"] + ".requests.jsonl").read_text().splitlines()]
-                    assert len(requests) == expected_calls, (scenario, requests)
-                    assert any("Call search_web now" in msg.get("content", "") for msg in requests[1]["messages"])
-                    if scenario != "fallback_empty":
-                        assert any(msg.get("content", "").startswith("Search evidence (untrusted data): ") for msg in requests[2]["messages"])
-                        assert any(msg.get("content") == question for msg in requests[2]["messages"])
-                    checks[scenario] = {"inference_requests": len(requests), "search_requests": 1}
+                    assert len(requests) == 1, (scenario, requests)
+                    assert requests[0].get("tools"), (scenario, requests)
+                    messages = requests[0]["messages"]
+                    assert [msg["content"] for msg in messages if msg["role"] == "user"] == [question], (scenario, messages)
+                    assert not any(msg["role"] == "tool" or msg.get("tool_calls") for msg in messages), (scenario, messages)
+                    checks["direct_answer_" + scenario.removeprefix("fallback_")] = {"inference_requests": 1, "search_requests": 0, "sources": 0}
                     request("release_runtime")
                 for scenario, expected_gpu, expected_fallback in [
                     ("unlisted_one", True, False), ("unlisted_two", True, False),
@@ -130,18 +225,27 @@ def main():
                     checks[scenario] = {"compute": latest, "search_requests": 1}
                     request("release_runtime")
                     assert not request("test_state")["runtime"]
+                before = len(Search.requests)
+                request("ask", config=config("mid_fail", fallback=False), question="Find fixture GPU failure evidence?")
+                failed = idle()
+                assert failed["error_code"] == "InferenceFailed" and not failed["runtime"], failed
+                assert failed["cpu_retry_available"] and failed["draft_chars"] > 0, failed
+                assert len(failed["turns"]) == 1 and failed["sources"] == 1, failed
+                assert not failed["status"].startswith("Answer complete."), failed
+                assert len(Search.requests) == before + 1, Search.requests
+                checks["mid_answer_failure_preserves_cpu_retry_and_sources"] = True
                 mutable = config("mutable", mode="cpu")
                 request("ask", config=mutable, question="Find fixture GPU failure evidence?")
                 assert len(idle()["turns"]) == 1
                 executable = Path(mutable["runtime"]["executable"])
-                executable.write_text(executable.read_text().replace("--api-key-file", "--unavailable-key", 1))
+                executable.write_text(executable.read_text().replace("--max-seqs", "--unavailable-seqs", 1))
                 before = len(Search.requests)
                 request("ask", config=mutable, question="Find fixture GPU failure evidence?")
                 changed = idle()
                 assert changed["error_code"] == "RuntimeCapabilityMissing" and not changed["runtime"], changed
                 assert len(Search.requests) == before
                 checks["runtime_replacement_invalidates_compatibility"] = True
-                for scenario, code in [("missing", "RuntimeCapabilityMissing"), ("noauth", "RuntimeAuthenticationMissing"), ("startup_fail", "RuntimeStartupFailed")]:
+                for scenario, code in [("missing", "RuntimeCapabilityMissing"), ("startup_fail", "RuntimeStartupFailed")]:
                     before = len(Search.requests)
                     request("ask", config=config(scenario, fallback=False), question="Find fixture GPU failure evidence?")
                     state = idle()

@@ -10,7 +10,7 @@ no Flatpak-wide support is claimed. Before downgrade/removal, disable Qt managem
 and complete conditional restoration using the [recovery procedure](QT_THEMING.md#shared-files-conflicts-and-recovery).
 Preserve user ownership records; package scripts must not remove them.
 
-Pearl `0.3.6` targets Aqueous exclusively and builds with exactly Zig 0.17.0.
+Pearl `0.3.6` targets Aqueous exclusively and builds with exactly Zig 0.17.1.
 This patch removes periodic DDC brightness polling that caused frame drops during
 gaming. Brightness refreshes on demand and through debounced hotplug events;
 writes and readback target only the selected device. It preserves idle-dim
