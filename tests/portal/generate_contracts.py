@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 import xml.etree.ElementTree as ET
 ROOT=Path(__file__).resolve().parents[2]
-names=['FileChooser','AppChooser','Print','Notification','Inhibit','Access','Account','Email','DynamicLauncher','Lockdown','Settings','Request','Session']
+names=['FileChooser','AppChooser','Print','Notification','Inhibit','Background','Access','Account','Email','DynamicLauncher','Lockdown','Settings','Request','Session']
 text='// Generated from tests/fixtures/portal; preserve the XML license notices there.\n'
 for name in names:
     source=ROOT/'tests/fixtures/portal'/f'org.freedesktop.impl.portal.{name}.xml'

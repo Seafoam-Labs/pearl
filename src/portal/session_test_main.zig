@@ -2,7 +2,7 @@
 const std = @import("std");
 const session = @import("portal_session.zig");
 comptime {
-    for (.{ "pearl_session_portal_start", "pearl_session_portal_stop", "pearl_session_portal_holds", "pearl_session_portal_update", "pearl_session_portal_begin_end" }) |name| {
+    for (.{ "pearl_session_portal_start", "pearl_session_portal_stop", "pearl_session_portal_holds", "pearl_session_portal_update", "pearl_session_portal_begin_end", "pearl_session_portal_set_app_state" }) |name| {
         @export(&@field(session, name), .{ .name = name });
     }
 }

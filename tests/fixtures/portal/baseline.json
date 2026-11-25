@@ -484,6 +484,92 @@
       ]
     },
     {
+      "name": "org.freedesktop.impl.portal.Background",
+      "xml": "org.freedesktop.impl.portal.Background.xml",
+      "sha256": "34a160b1b6f09d002e1125f0b2e99dfde1e3fa28c95b951ff1f0eec50cb43f7a",
+      "baseline": true,
+      "members": [
+        {
+          "kind": "method",
+          "name": "GetAppState",
+          "args": [
+            {
+              "type": "a{sv}",
+              "name": "apps",
+              "direction": "out"
+            }
+          ]
+        },
+        {
+          "kind": "method",
+          "name": "NotifyBackground",
+          "args": [
+            {
+              "type": "o",
+              "name": "handle",
+              "direction": "in"
+            },
+            {
+              "type": "s",
+              "name": "app_id",
+              "direction": "in"
+            },
+            {
+              "type": "s",
+              "name": "name",
+              "direction": "in"
+            },
+            {
+              "type": "u",
+              "name": "response",
+              "direction": "out"
+            },
+            {
+              "type": "a{sv}",
+              "name": "results",
+              "direction": "out"
+            }
+          ]
+        },
+        {
+          "kind": "method",
+          "name": "EnableAutostart",
+          "args": [
+            {
+              "type": "s",
+              "name": "app_id",
+              "direction": "in"
+            },
+            {
+              "type": "b",
+              "name": "enable",
+              "direction": "in"
+            },
+            {
+              "type": "as",
+              "name": "commandline",
+              "direction": "in"
+            },
+            {
+              "type": "u",
+              "name": "flags",
+              "direction": "in"
+            },
+            {
+              "type": "b",
+              "name": "result",
+              "direction": "out"
+            }
+          ]
+        },
+        {
+          "kind": "signal",
+          "name": "RunningApplicationsChanged",
+          "args": []
+        }
+      ]
+    },
+    {
       "name": "org.freedesktop.impl.portal.Access",
       "xml": "org.freedesktop.impl.portal.Access.xml",
       "sha256": "7f39bddff5cee26256f0ca39c2ed21f4547b31f02cae2912e9b2c4e1bf956c55",
