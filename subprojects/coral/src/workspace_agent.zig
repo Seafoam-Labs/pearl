@@ -287,7 +287,7 @@ pub const Agent = struct {
             u.setLabel(self.status, i18n.dtr("coral", "Start OpenCode with opencode service start, then reconnect."));
             return;
         };
-        const id = self.client.identity.?;
+        const id = self.client.identity();
         if (!std.mem.eql(u8, id, self.server)) {
             if (self.session) |sid| {
                 self.saveDraft(sid);
