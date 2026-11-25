@@ -108,6 +108,7 @@ def verify(root):
         provider.release.set()
         permission = wait_for(lambda: api(path + "/permission")["data"], "read permission")[0]
         assert permission["action"] == "read" and permission["sessionID"] == session
+        assert permission["resources"] == ["selection.txt"] and permission["source"]["type"] == "tool"
         api(path + "/permission/" + permission["id"] + "/reply", {"decision":"once"})
         wait_for(lambda: len(provider.calls) >= 2, "the next model call")
         assert provider.calls[:2] == ["birch","cedar"], provider.calls

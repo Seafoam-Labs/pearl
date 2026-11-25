@@ -13,6 +13,7 @@ pub const Dock = struct {
     arena: std.heap.ArenaAllocator,
     problems: []language.DockProblem = &.{},
     timer: c_uint = 0,
+    last_problem: ?struct { index: usize, doc: u64, revision: u64, start: usize, end: usize } = null,
     pub fn create(app: *App, slot: u.W) *Dock {
         const self = a.create(Dock) catch unreachable;
         const notebook = c.gtk_notebook_new().?;
@@ -46,6 +47,47 @@ pub const Dock = struct {
         self.* = .{ .app = app, .book = book, .rows = rows, .arena = .init(a) };
         self.timer = c.g_timeout_add(400, &refresh, self);
         return self;
+    }
+    pub fn nextDiagnostic(self: *Dock) void {
+        var arena = std.heap.ArenaAllocator.init(a);
+        defer arena.deinit();
+        const problems = language.workspaceProblems(&self.app.language, arena.allocator()) catch return;
+        if (problems.len == 0) {
+            self.app.message(i18n.dtr("coral", "No language diagnostics"));
+            return;
+        }
+        var index: usize = 0;
+        if (self.app.active()) |doc| {
+            const buffer = self.app.activeBuffer() orelse return;
+            var cursor: c.GtkTextIter = undefined;
+            c.gtk_text_buffer_get_iter_at_mark(buffer, &cursor, c.gtk_text_buffer_get_insert(buffer));
+            const text = u.bufferText(doc.buffer);
+            defer a.free(text);
+            const at = @import("editor/excerpt.zig").byteAtChar(text, @intCast(self.app.activeSelectionBase() + c.gtk_text_iter_get_offset(&cursor)));
+            for (problems, 0..) |r, i| {
+                if (r.document > doc.id or (r.document == doc.id and r.start >= at)) {
+                    index = i;
+                    break;
+                }
+            }
+            if (self.last_problem) |last| {
+                if (last.doc == doc.id and last.revision == doc.revision and last.start == at and last.index < problems.len) {
+                    const previous = problems[last.index];
+                    if (previous.document == doc.id and previous.start == last.start and previous.end == last.end) index = (last.index + 1) % problems.len;
+                }
+            }
+        }
+        self.selectProblem(problems[index], index);
+    }
+    fn selectProblem(self: *Dock, r: language.DockProblem, index: usize) void {
+        const d = self.app.documents.get(r.document) orelse return;
+        if (d.revision != r.revision) return;
+        const text = u.bufferText(d.buffer);
+        defer a.free(text);
+        if (self.app.review) |review| if (review.visible()) review.hide();
+        _ = self.app.dock.dismissDrawer(false);
+        self.app.selectDocumentBytes(d, self.app.activeGroupId(), text, r.start, r.end) catch return;
+        self.last_problem = .{ .index = index, .doc = d.id, .revision = r.revision, .start = r.start, .end = r.end };
     }
     pub fn deinit(self: *Dock) void {
         _ = c.g_source_remove(self.timer);
@@ -91,21 +133,7 @@ fn refresh(data: ?*anyopaque) callconv(.c) c_int {
 fn navigate(b: ?*c.GtkButton, data: ?*anyopaque) callconv(.c) void {
     const self = u.cast(Dock, data.?);
     const index = @intFromPtr(c.g_object_get_data(u.cast(c.GObject, b.?), "index")) - 1;
-    const r = self.problems[index];
-    const d = self.app.documents.get(r.document) orelse return;
-    if (d.revision != r.revision) return;
-    self.app.acceptExisting(d.path orelse return);
-    const view = self.app.activeView() orelse return;
-    if (view.document != d) return;
-    const text = u.bufferText(d.buffer);
-    defer a.free(text);
-    const decoration = @import("language/decorations.zig");
-    var start = decoration.iter(d, text, r.start) catch return;
-    var end = decoration.iter(d, text, r.end) catch return;
-    c.gtk_text_buffer_get_iter_at_offset(view.buffer, &start, c.gtk_text_iter_get_offset(&start));
-    c.gtk_text_buffer_get_iter_at_offset(view.buffer, &end, c.gtk_text_iter_get_offset(&end));
-    c.gtk_text_buffer_select_range(view.buffer, &start, &end);
-    _ = c.gtk_text_view_scroll_to_iter(u.cast(c.GtkTextView, view.widget), &start, 0.15, 0, 0, 0);
+    self.selectProblem(self.problems[index], index);
 }
 fn showTasks(_: ?*c.GtkButton, data: ?*anyopaque) callconv(.c) void {
     u.cast(App, data.?).tasks.show();

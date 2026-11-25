@@ -73,6 +73,7 @@ window.coral.$scope textview.workspace-thread > text { background: $low$; color:
 window.coral.$scope textview.workspace-input,
 window.coral.$scope textview.workspace-input > text { background: $container$; color: $text$; }
 
+window.coral.$scope .workspace-permission,
 window.coral.$scope .workspace-composer { background: $container$; border-color: alpha($outline$, 0.4); }
 
 window.coral.$scope button.workspace-current-session { background: $high$; color: $primary$; }

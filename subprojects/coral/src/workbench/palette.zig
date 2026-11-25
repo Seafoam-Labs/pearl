@@ -136,6 +136,10 @@ pub const Palette = struct {
             if (entry.shortcut) |shortcut| {
                 c.gtk_accessible_update_property(u.cast(c.GtkAccessible, row), @as(c_int, c.GTK_ACCESSIBLE_PROPERTY_KEY_SHORTCUTS), shortcut.ptr, @as(c_int, -1));
             }
+            if (entry.workspace_only and !@import("../workspace_identity.zig").enabled) {
+                self.visible[index] = false;
+                c.gtk_widget_set_visible(row, 0);
+            }
             self.rows[index] = u.cast(c.GtkListBoxRow, row);
             c.gtk_list_box_row_set_child(self.rows[index], content);
             c.gtk_list_box_append(u.cast(c.GtkListBox, list), row);
@@ -206,7 +210,7 @@ pub const Palette = struct {
         for (commands.entries, 0..) |entry, index| {
             const label = c.g_utf8_casefold(entry.command.label(), -1);
             defer c.g_free(label);
-            self.visible[index] = matches(std.mem.span(query), std.mem.span(label), entry);
+            self.visible[index] = (!entry.workspace_only or @import("../workspace_identity.zig").enabled) and matches(std.mem.span(query), std.mem.span(label), entry);
             c.gtk_widget_set_visible(u.cast(c.GtkWidget, self.rows[index]), @intFromBool(self.visible[index]));
             if (self.visible[index] and first == null) first = self.rows[index];
         }

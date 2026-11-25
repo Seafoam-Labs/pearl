@@ -93,8 +93,8 @@ pub const Store = struct {
 
     /// Create (if needed) and open the state directory.
     pub fn init(allocator: Allocator, io: Io, dir_path: []const u8) !Store {
-        try Io.Dir.cwd().createDirPath(io, dir_path);
-        const dir = try Io.Dir.openDirAbsolute(io, dir_path, .{ .iterate = true });
+        const dir = try Io.Dir.cwd().createDirPathOpen(io, dir_path, .{ .permissions = .fromMode(0o700), .open_options = .{ .iterate = true } });
+        errdefer dir.close(io);
         return .{
             .allocator = allocator,
             .io = io,

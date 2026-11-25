@@ -7,6 +7,7 @@ const App = @import("app.zig").App;
 const Value = api.Value;
 const a = u.a;
 const i18n = @import("i18n");
+const permission_ui = @import("workspace_permissions.zig");
 const storage = @import("workspace_state.zig");
 const Draft = storage.Draft;
 pub const Agent = struct {
@@ -51,6 +52,8 @@ pub const Agent = struct {
     attach: u.W,
     new_session: u.W,
     permissions: u.W,
+    pending_scroll: u.W,
+    permission_state: permission_ui.State = .{},
     inbox: u.W,
     update_timer: c_uint = 0,
     reconnect_timer: c_uint = 0,
@@ -91,8 +94,17 @@ pub const Agent = struct {
         c.gtk_widget_set_visible(review_button, 0);
         const permissions = u.box(false, 3);
         const inbox = u.box(false, 2);
-        u.append(panel, permissions);
-        u.append(panel, inbox);
+        const pending_rows = u.box(false, 3);
+        u.append(pending_rows, permissions);
+        u.append(pending_rows, inbox);
+        const pending_scroll = c.gtk_scrolled_window_new().?;
+        const pending = u.cast(c.GtkScrolledWindow, pending_scroll);
+        c.gtk_scrolled_window_set_policy(pending, c.GTK_POLICY_NEVER, c.GTK_POLICY_AUTOMATIC);
+        c.gtk_scrolled_window_set_propagate_natural_height(pending, 1);
+        c.gtk_scrolled_window_set_max_content_height(pending, 210);
+        c.gtk_scrolled_window_set_child(pending, pending_rows);
+        u.append(panel, pending_scroll);
+        c.gtk_widget_set_visible(pending_scroll, 0);
         const card = u.box(false, 4);
         c.gtk_widget_add_css_class(card, "workspace-composer");
         u.append(panel, card);
@@ -158,10 +170,10 @@ pub const Agent = struct {
         c.gtk_widget_add_css_class(send, "suggested-action");
         u.append(controls, send);
         u.append(card, controls);
-        self.* = .{ .caption = caption, .snapshot = snapshot, .attach = attach, .delivery_notice = delivery_notice, .model_feedback = model_feedback, .review_button = review_button, .new_session = new_session, .permissions = permissions, .inbox = inbox, .app = app, .root = u.z(dir), .server = u.z(""), .location = u.z(dir), .client = api.Client.init(), .sessions = sessions, .models = models, .choices = options, .title = title, .status = status, .thread = .init(transcript, scroll, earlier), .composer = composer, .send = send, .chip = chip, .model_id = u.z(""), .provider = u.z("") };
+        self.* = .{ .caption = caption, .snapshot = snapshot, .attach = attach, .delivery_notice = delivery_notice, .model_feedback = model_feedback, .review_button = review_button, .new_session = new_session, .permissions = permissions, .pending_scroll = pending_scroll, .inbox = inbox, .app = app, .root = u.z(dir), .server = u.z(""), .location = u.z(dir), .client = api.Client.init(), .sessions = sessions, .models = models, .choices = options, .title = title, .status = status, .thread = .init(transcript, scroll, earlier), .composer = composer, .send = send, .chip = chip, .model_id = u.z(""), .provider = u.z("") };
         u.connect(earlier, "clicked", &olderMessages, self);
         u.connect(c.gtk_scrolled_window_get_vadjustment(u.cast(c.GtkScrolledWindow, scroll)).?, "value-changed", &readPositionChanged, self);
-        u.connect(review_button, "clicked", &showReview, self);
+        c.gtk_actionable_set_action_name(u.cast(c.GtkActionable, review_button), "win.workspace-open-review");
         u.connect(new_session, "clicked", &newSession, self);
         c.gtk_widget_set_sensitive(new_session, 0);
         u.connect(reconnect_button, "clicked", &reconnect, self);
@@ -169,7 +181,7 @@ pub const Agent = struct {
         u.connect(delivery_notice, "clicked", &submit, self);
         c.gtk_accessible_update_property(u.cast(c.GtkAccessible, composer), @as(c_int, c.GTK_ACCESSIBLE_PROPERTY_LABEL), @as([*:0]const u8, i18n.dtr("coral", "Message OpenCode")), @as(c_int, -1));
         u.connect(buffer(composer), "changed", &draftChanged, self);
-        u.connect(attach, "clicked", &attachCode, self);
+        c.gtk_actionable_set_action_name(u.cast(c.GtkActionable, attach), "win.workspace-attach-selection");
         u.connect(remove, "clicked", &detach, self);
         u.connect(replace, "clicked", &attachCode, self);
         u.connect(preview, "show", &showSnapshot, self);
@@ -196,6 +208,7 @@ pub const Agent = struct {
             e.value_ptr.deinit();
         }
         self.drafts.deinit(a);
+        self.permission_state.deinit();
         a.free(self.server);
         a.free(self.root);
         a.free(self.location);
@@ -217,12 +230,12 @@ pub const Agent = struct {
             .agent_allow, .agent_deny => {
                 if (self.connected and c.gtk_widget_get_sensitive(self.permissions) != 0) {
                     var child = c.gtk_widget_get_first_child(self.permissions);
-                    while (child) |row| : (child = c.gtk_widget_get_next_sibling(row)) {
+                    while (child) |card| : (child = c.gtk_widget_get_next_sibling(card)) {
+                        const row = c.gtk_widget_get_last_child(card).?;
                         const button = if (command == .agent_allow) c.gtk_widget_get_first_child(row) else c.gtk_widget_get_last_child(row);
-                        if (button != null and c.g_object_get_data(u.cast(c.GObject, button.?), "request") != null) {
-                            replyPermission(u.cast(c.GtkButton, button.?), self);
-                            break;
-                        }
+                        if (c.gtk_widget_is_sensitive(button) == 0) continue;
+                        replyPermission(u.cast(c.GtkButton, button.?), self);
+                        break;
                     }
                 }
             },
@@ -232,6 +245,16 @@ pub const Agent = struct {
             else => return false,
         }
         return true;
+    }
+    pub fn attachSelection(self: *Agent) void {
+        if (self.session != null and self.operation == null) attachCode(null, self);
+    }
+    pub fn openReview(self: *Agent) void {
+        if (self.base == null) {
+            self.app.message(i18n.dtr("coral", "This session has no worktree changes to review."));
+            return;
+        }
+        showReview(null, self);
     }
     pub fn workspaceChanged(self: *Agent) void {
         var path: []const u8 = "";
@@ -245,6 +268,7 @@ pub const Agent = struct {
         }
         if (std.mem.eql(u8, self.root, path)) return;
         self.epoch += 1;
+        self.permission_state.fetch = 0;
         self.model_generation += 1;
         self.connected = false;
         self.sending = false;
@@ -252,6 +276,7 @@ pub const Agent = struct {
         c.gtk_widget_set_visible(self.model_feedback, 0);
         clear(self.permissions);
         clear(self.inbox);
+        self.pendingVisible();
         c.gtk_widget_set_sensitive(self.new_session, 0);
         if (self.session) |id| {
             self.saveDraft(id);
@@ -281,7 +306,7 @@ pub const Agent = struct {
             self.deliveryControls();
             c.gtk_widget_set_sensitive(self.models, 0);
             c.gtk_widget_set_sensitive(self.new_session, 0);
-            c.gtk_widget_set_sensitive(self.permissions, 0);
+            self.disablePermissions();
             c.gtk_widget_set_sensitive(self.inbox, 0);
             if (self.reconnect_timer == 0) self.reconnect_timer = c.g_timeout_add_seconds(3, &retryConnection, self);
             u.setLabel(self.status, i18n.dtr("coral", "Start OpenCode with opencode service start, then reconnect."));
@@ -292,6 +317,7 @@ pub const Agent = struct {
             if (self.session) |sid| {
                 self.saveDraft(sid);
                 self.epoch += 1;
+                self.permission_state.fetch = 0;
                 self.model_generation += 1;
                 a.free(sid);
                 self.session = null;
@@ -304,6 +330,7 @@ pub const Agent = struct {
                 self.thread.clear();
                 clear(self.permissions);
                 clear(self.inbox);
+                self.pendingVisible();
                 if (self.app.review) |r| r.hide();
                 c.gtk_widget_set_visible(self.review_button, 0);
             }
@@ -338,6 +365,24 @@ pub const Agent = struct {
         defer a.free(path);
         self.model_generation += 1;
         self.client.request(path, null, self, self.model_generation, &sessionInfo);
+    }
+    fn pendingVisible(self: *Agent) void {
+        c.gtk_widget_set_visible(self.pending_scroll, @intFromBool(c.gtk_widget_get_first_child(self.permissions) != null or c.gtk_widget_get_first_child(self.inbox) != null));
+    }
+    fn disablePermissions(self: *Agent) void {
+        self.permission_state.fetch = 0;
+        c.gtk_widget_set_sensitive(self.permissions, 0);
+        var card = c.gtk_widget_get_first_child(self.permissions);
+        while (card) |w| : (card = c.gtk_widget_get_next_sibling(w)) permission_ui.setAnswerable(w, false);
+    }
+    fn readPermissions(self: *Agent) void {
+        if (!self.connected) return;
+        const sid = api.escaped(self.session orelse return);
+        defer a.free(sid);
+        const path = u.fmt("/api/session/{s}/permission", .{sid});
+        defer a.free(path);
+        self.permission_state.fetch = self.permission_state.next();
+        self.client.request(path, null, self, self.permission_state.fetch, &permissionList);
     }
     fn readThread(self: *Agent) void {
         const sid = api.escaped(self.session orelse return);
@@ -398,6 +443,7 @@ pub const Agent = struct {
         if (self.app.review) |r| r.hide();
         self.reviewBase("");
         self.epoch += 1;
+        self.permission_state.fetch = 0;
         self.pending = false;
         c.gtk_text_view_set_editable(u.cast(c.GtkTextView, self.composer), 1);
         self.clearSelection();
@@ -431,12 +477,13 @@ pub const Agent = struct {
         u.setLabel(self.status, i18n.dtr("coral", "Loading session…"));
         c.gtk_widget_set_sensitive(self.models, 0);
         c.gtk_widget_set_sensitive(self.send, 0);
+        clear(self.permissions);
+        clear(self.inbox);
+        self.pendingVisible();
         if (!self.connected) return;
         self.requestInfo();
         self.readThread();
-        clear(self.permissions);
-        clear(self.inbox);
-        self.call("/permission", null, &permissionList);
+        self.readPermissions();
         self.call("/inbox", null, &inboxList);
     }
     fn resetOperation(self: *Agent) void {
@@ -598,6 +645,7 @@ fn sessionPage(self: *Agent, result: Value) void {
         c.gtk_accessible_update_property(u.cast(c.GtkAccessible, b), @as(c_int, c.GTK_ACCESSIBLE_PROPERTY_LABEL), title.ptr, @as(c_int, -1));
         setData(b, "sid", id);
         setData(b, "location", directory);
+        setData(b, "title", title);
         u.connect(b, "clicked", &selectSession, self);
         u.append(self.sessions, b);
     }
@@ -617,7 +665,7 @@ fn sessionPage(self: *Agent, result: Value) void {
     if (self.session != null) {
         self.requestInfo();
         self.readThread();
-        self.call("/permission", null, &permissionList);
+        self.readPermissions();
         self.call("/inbox", null, &inboxList);
     } else if (first) |id| self.activate(id, first_dir);
 }
@@ -894,7 +942,7 @@ fn eventReceived(ctx: *anyopaque, _: u64, event: Value, err: ?[]const u8) void {
         c.gtk_widget_set_sensitive(self.inbox, 0);
         u.setLabel(self.status, i18n.dtr("coral", "Reconnecting to OpenCode…"));
         c.gtk_widget_set_sensitive(self.models, 0);
-        c.gtk_widget_set_sensitive(self.permissions, 0);
+        self.disablePermissions();
         if (self.reconnect_timer == 0) self.reconnect_timer = c.g_timeout_add_seconds(3, &retryConnection, self);
         return;
     }
@@ -927,60 +975,65 @@ fn flushEvents(ctx: ?*anyopaque) callconv(.c) c_int {
     if (self.need_info and !self.pending) self.requestInfo();
     if (self.need_thread) self.readThread();
     if (self.need_queue) self.call("/inbox", null, &inboxList);
-    if (self.need_permissions) self.call("/permission", null, &permissionList);
+    if (self.need_permissions) self.readPermissions();
     self.need_info = false;
     self.need_thread = false;
     self.need_queue = false;
     self.need_permissions = false;
     return 0;
 }
-fn permissionList(ctx: *anyopaque, epoch: u64, value: Value, err: ?[]const u8) void {
+fn permissionList(ctx: *anyopaque, generation: u64, value: Value, err: ?[]const u8) void {
     const self = u.cast(Agent, ctx);
-    if (epoch != self.epoch or failure(self, err)) return;
-    clear(self.permissions);
-    c.gtk_widget_set_sensitive(self.permissions, 1);
-    for (api.items(api.get(value, "data"))) |item| {
-        const request = api.string(item, "id");
-        if (request.len == 0) continue;
-        u.append(self.permissions, u.label(api.string(item, "action")));
-        for (api.items(api.get(item, "resources"))) |resource| if (resource == .string) {
-            const label = u.label(resource.string);
-            c.gtk_label_set_wrap(u.cast(c.GtkLabel, label), 1);
-            u.append(self.permissions, label);
-        };
-        const row = u.box(true, 6);
-        u.append(self.permissions, row);
-        for ([_]struct { [:0]const u8, []const u8 }{ .{ i18n.dtr("coral", "Allow once"), "once" }, .{ i18n.dtr("coral", "Deny"), "reject" } }) |action| {
-            const button = u.button(action[0]);
-            setData(button, "request", request);
-            setData(button, "decision", action[1]);
-            u.connect(button, "clicked", &replyPermission, self);
-            u.append(row, button);
+    if (generation != self.permission_state.fetch or !self.connected or failure(self, err)) return;
+    const sid = self.session orelse return;
+    var title: []const u8 = sid;
+    var row = c.gtk_widget_get_first_child(self.sessions);
+    while (row) |w| : (row = c.gtk_widget_get_next_sibling(w)) {
+        if (c.g_object_get_data(u.cast(c.GObject, w), "sid") != null and std.mem.eql(u8, widgetData(w, "sid"), sid)) {
+            title = widgetData(w, "title");
+            break;
         }
     }
+    self.permission_state.present(self.permissions, self.app.window, self.server, sid, title, self.location, api.items(api.get(value, "data")), self, &replyPermission);
+    self.pendingVisible();
+    c.gtk_widget_set_sensitive(self.permissions, 1);
 }
-fn replyPermission(b: ?*c.GtkButton, ctx: ?*anyopaque) callconv(.c) void {
+fn replyPermission(button: ?*c.GtkButton, ctx: ?*anyopaque) callconv(.c) void {
     const self = u.cast(Agent, ctx.?);
-    const key = u.z(widgetData(b.?, "request"));
-    defer a.free(key);
-    const id = api.escaped(key);
+    const widget = u.cast(c.GtkWidget, button.?);
+    if (!self.connected or c.gtk_widget_is_sensitive(widget) == 0) return;
+    const card = c.gtk_widget_get_parent(c.gtk_widget_get_parent(widget)).?;
+    if (c.gtk_widget_get_parent(card) != self.permissions or permission_ui.pending(card)) return;
+    const id = api.escaped(permission_ui.requestId(card));
     defer a.free(id);
-    const path = u.fmt("/permission/{s}/reply", .{id});
+    const sid = api.escaped(self.session orelse return);
+    defer a.free(sid);
+    const path = u.fmt("/api/session/{s}/permission/{s}/reply", .{ sid, id });
     defer a.free(path);
-    const body = api.json(.{ .decision = widgetData(b.?, "decision") });
+    const decision: []const u8 = if (c.g_object_get_data(u.cast(c.GObject, widget), "deny") != null) "reject" else "once";
+    const body = api.json(.{ .decision = decision });
     defer a.free(body);
-    c.gtk_widget_set_sensitive(self.permissions, 0);
-    self.call(path, body, &replied);
+    self.permission_state.fetch = 0;
+    const token = self.permission_state.next();
+    c.g_object_set_data(u.cast(c.GObject, card), "reply", @ptrFromInt(token));
+    permission_ui.setAnswerable(card, false);
+    self.client.request(path, body, self, token, &replied);
 }
-fn replied(ctx: *anyopaque, epoch: u64, _: Value, err: ?[]const u8) void {
+fn replied(ctx: *anyopaque, token: u64, _: Value, err: ?[]const u8) void {
     const self = u.cast(Agent, ctx);
-    if (epoch != self.epoch) return;
-    _ = failure(self, err);
-    self.call("/permission", null, &permissionList);
+    var child = c.gtk_widget_get_first_child(self.permissions);
+    while (child) |card| : (child = c.gtk_widget_get_next_sibling(card)) {
+        if (@intFromPtr(c.g_object_get_data(u.cast(c.GObject, card), "reply")) != token) continue;
+        c.g_object_set_data(u.cast(c.GObject, card), "reply", null);
+        _ = failure(self, err);
+        self.readPermissions();
+        return;
+    }
 }
 fn inboxList(ctx: *anyopaque, epoch: u64, value: Value, err: ?[]const u8) void {
     const self = u.cast(Agent, ctx);
     if (epoch != self.epoch or failure(self, err)) return;
+    defer self.pendingVisible();
     clear(self.inbox);
     c.gtk_widget_set_sensitive(self.inbox, @intFromBool(self.connected));
     const rows = api.items(api.get(value, "data"));

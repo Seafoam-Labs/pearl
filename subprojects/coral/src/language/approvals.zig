@@ -2,7 +2,7 @@
 //! Snapshot Home.init(allocator, null) on the main/owner thread before workers.
 //! Home is machine configuration (absolute XDG_STATE_HOME, otherwise
 //! HOME/.local/state), NEVER workspace configuration. Its ancestors must already
-//! exist. Only coral/language is created; no trust store is read or written.
+//! exist. Each application keeps its own language directory below the state root.
 //! Filesystem metadata, regular I/O and fsync can block: never call these APIs
 //! on the UI thread. Directory flock is nonblocking; Busy is retryable.
 //!
@@ -18,6 +18,7 @@
 //! Before queueing any operation, call the pure validateLocation with actual
 //! canonical workspace roots and manifest base. Cwd is not workspace identity.
 const std = @import("std");
+const identity = @import("../workspace_identity.zig");
 
 pub const Key = [32]u8;
 pub const Home = @import("../workspace/trust_fs.zig").StateHome;
@@ -118,7 +119,7 @@ fn sync(fd: c_int) !void {
 
 fn validatePath(path: []const u8) !void {
     try validateCanonicalPath(path);
-    if (path.len + "/coral/language/uncertain".len >= 4096) return error.InvalidPath;
+    if (path.len + 1 + identity.directory().len + "/language/uncertain".len >= 4096) return error.InvalidPath;
 }
 
 fn validateCanonicalPath(path: []const u8) !void {
@@ -131,7 +132,7 @@ fn validateCanonicalPath(path: []const u8) !void {
 }
 
 /// Pure, allocation-free owner-thread guard for EVERY operation, including pause
-/// and unpause. Reject the actual coral/language target inside any configured
+/// and unpause. Reject the actual language state directory inside any configured
 /// workspace root or manifest base, not the process cwd or the state home alone.
 /// Callers supply canonical filesystem identities captured off-thread; this
 /// checks path syntax/boundaries, not symlink resolution or workspace trust.
@@ -139,7 +140,7 @@ fn validateCanonicalPath(path: []const u8) !void {
 pub fn validateLocation(home: *const Home, canonical_roots: []const []const u8, manifest_base: ?[]const u8) !void {
     try validatePath(home.path);
     var target_buffer: [4096]u8 = undefined;
-    const target = try std.fmt.bufPrint(&target_buffer, "{s}{s}coral/language", .{ home.path, if (home.path.len == 1) "" else "/" });
+    const target = try std.fmt.bufPrint(&target_buffer, "{s}{s}{s}/language", .{ home.path, if (home.path.len == 1) "" else "/", identity.directory() });
     for (canonical_roots) |root| try outside(target, root);
     if (manifest_base) |base| try outside(target, base);
 }
@@ -193,7 +194,7 @@ fn openStore(home: *const Home, create: bool) !c_int {
     try validatePath(home.path);
     const state = try walk(home.path);
     defer close(state);
-    const coral = try privateDir(state, "coral", create);
+    const coral = try privateDir(state, identity.directory(), create);
     defer close(coral);
     return privateDir(coral, "language", create);
 }

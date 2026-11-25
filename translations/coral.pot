@@ -7,119 +7,123 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: subprojects/coral/src/app.zig:1414
+#: subprojects/coral/src/app.zig:1451
 msgid " · Changed on disk"
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:825
+#: subprojects/coral/src/workspace_agent.zig:873
 msgid " · Source changed or closed"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:1414
+#: subprojects/coral/src/app.zig:1451
 msgid " · Syntax/spelling off (presentation budget)"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:1414
+#: subprojects/coral/src/app.zig:1451
 msgid " · Working…"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:186
+#: subprojects/coral/src/workbench/commands.zig:191
 msgid "About Coral"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:2580
+#: subprojects/coral/src/app.zig:2609
 msgid "Add to dictionary"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:3210
+#: subprojects/coral/src/app.zig:3239
 msgid "Added to the personal dictionary shared by Enchant applications."
 msgstr ""
 
-#: subprojects/coral/src/workspace_review.zig:101
+#: subprojects/coral/src/workspace_review.zig:103
 msgid "Agent worktree"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:335
+#: subprojects/coral/src/workbench/commands.zig:340
 msgid "Agent: Accept review"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:333
+#: subprojects/coral/src/workbench/commands.zig:338
 msgid "Agent: Allow permission"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:332
+#: subprojects/coral/src/workbench/commands.zig:337
 msgid "Agent: Cancel run"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:334
+#: subprojects/coral/src/workbench/commands.zig:339
 msgid "Agent: Deny permission"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:330
+#: subprojects/coral/src/workbench/commands.zig:335
 msgid "Agent: New thread"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:336
+#: subprojects/coral/src/workbench/commands.zig:341
 msgid "Agent: Reject review"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:331
+#: subprojects/coral/src/workbench/commands.zig:336
 msgid "Agent: Send message"
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:953
+#: subprojects/coral/src/workspace_permissions.zig:115
 msgid "Allow once"
 msgstr ""
 
-#: subprojects/coral/src/workspace_review.zig:307
+#: subprojects/coral/src/workspace_review.zig:345
 msgid "Applied to unsaved buffer"
 msgstr ""
 
-#: subprojects/coral/src/workspace_review.zig:110 subprojects/coral/src/workspace_review.zig:181
+#: subprojects/coral/src/workspace_review.zig:112 subprojects/coral/src/workspace_review.zig:219
 msgid "Apply hunk"
 msgstr ""
 
-#: subprojects/coral/src/workspace_review.zig:398
+#: subprojects/coral/src/workspace_review.zig:436
 msgid "Apply resolution"
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:139
+#: subprojects/coral/src/workspace_agent.zig:151
 msgid "Attach selected code"
 msgstr ""
 
-#: subprojects/coral/src/workspace_review.zig:296
+#: subprojects/coral/src/workbench/commands.zig:342
+msgid "Attach selection to OpenCode"
+msgstr ""
+
+#: subprojects/coral/src/workspace_review.zig:334
 msgid "Buffer changed. Review the hunk again."
 msgstr ""
 
-#: subprojects/coral/src/app.zig:1627 subprojects/coral/src/app.zig:1683 subprojects/coral/src/app.zig:1806 subprojects/coral/src/app.zig:2503 subprojects/coral/src/app.zig:2932 subprojects/coral/src/app.zig:3038 subprojects/coral/src/app.zig:3250
+#: subprojects/coral/src/app.zig:1680 subprojects/coral/src/app.zig:1736 subprojects/coral/src/app.zig:1859 subprojects/coral/src/app.zig:2532 subprojects/coral/src/app.zig:2961 subprojects/coral/src/app.zig:3067 subprojects/coral/src/app.zig:3279
 msgid "Cancel"
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:1001
+#: subprojects/coral/src/workspace_agent.zig:1054
 msgid "Cancel queued prompt"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:239 subprojects/coral/src/app.zig:1422
+#: subprojects/coral/src/app.zig:239 subprojects/coral/src/app.zig:1459
 msgid "Checking dictionaries…"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:1683
+#: subprojects/coral/src/app.zig:1736
 msgid "Choose a line ending"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:1739
+#: subprojects/coral/src/app.zig:1792
 msgid "Choose a line ending before saving."
 msgstr ""
 
-#: subprojects/coral/src/app.zig:1484
+#: subprojects/coral/src/app.zig:1521
 msgid "Choose an existing regular file, not a folder or device."
 msgstr ""
 
-#: subprojects/coral/src/workspace_dock.zig:33
+#: subprojects/coral/src/workspace_dock.zig:34
 msgid "Choose task…"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:227
+#: subprojects/coral/src/workbench/commands.zig:232
 msgid "Close Window"
 msgstr ""
 
@@ -127,11 +131,11 @@ msgstr ""
 msgid "Close document"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:193
+#: subprojects/coral/src/workbench/commands.zig:198
 msgid "Close editor group"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:828
+#: subprojects/coral/src/app.zig:865
 msgid "Close excerpt"
 msgstr ""
 
@@ -139,11 +143,11 @@ msgstr ""
 msgid "Close search · Escape"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:187
+#: subprojects/coral/src/workbench/commands.zig:192
 msgid "Close tab"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:202
+#: subprojects/coral/src/workbench/commands.zig:207
 msgid "Close workspace (keep documents)"
 msgstr ""
 
@@ -151,7 +155,7 @@ msgstr ""
 msgid "Command Palette · Ctrl+Shift+P"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:189 subprojects/coral/src/workbench/palette.zig:77
+#: subprojects/coral/src/workbench/commands.zig:194 subprojects/coral/src/workbench/palette.zig:77
 msgid "Command Palette…"
 msgstr ""
 
@@ -159,23 +163,23 @@ msgstr ""
 msgid "Commands"
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:563
+#: subprojects/coral/src/workspace_agent.zig:610
 msgid "Completed"
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:614 subprojects/coral/src/workspace_agent.zig:648
+#: subprojects/coral/src/workspace_agent.zig:662 subprojects/coral/src/workspace_agent.zig:696
 msgid "Connected"
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:313
+#: subprojects/coral/src/workspace_agent.zig:340
 msgid "Connecting…"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:2587
+#: subprojects/coral/src/app.zig:2616
 msgid "Copy"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:156 subprojects/coral/src/app.zig:1407 subprojects/coral/src/workbench/chrome.zig:29
+#: subprojects/coral/src/app.zig:156 subprojects/coral/src/app.zig:1444 subprojects/coral/src/workbench/chrome.zig:29
 msgid "Coral"
 msgstr ""
 
@@ -183,75 +187,75 @@ msgstr ""
 msgid "Coral Workspace"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:2433
+#: subprojects/coral/src/app.zig:2462
 msgid "Coral preferences"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:1600
+#: subprojects/coral/src/app.zig:1653
 msgid "Could not monitor this file for external changes."
 msgstr ""
 
-#: subprojects/coral/src/app.zig:2156
+#: subprojects/coral/src/app.zig:2209
 msgid "Could not open the command palette."
 msgstr ""
 
-#: subprojects/coral/src/app.zig:1487
+#: subprojects/coral/src/app.zig:1524
 msgid "Could not resolve this file. Check the path and permissions."
 msgstr ""
 
-#: subprojects/coral/src/app.zig:2143
+#: subprojects/coral/src/app.zig:2196
 msgid "Could not safely apply this edit. Nothing was changed."
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:456
+#: subprojects/coral/src/workspace_agent.zig:503
 msgid "Could not save draft"
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:414 subprojects/coral/src/workspace_agent.zig:415 subprojects/coral/src/workspace_agent.zig:644
+#: subprojects/coral/src/workspace_agent.zig:460 subprojects/coral/src/workspace_agent.zig:461 subprojects/coral/src/workspace_agent.zig:692
 msgid "Could not save session state"
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:849
+#: subprojects/coral/src/workspace_agent.zig:897
 msgid "Could not save the prompt for delivery"
 msgstr ""
 
-#: subprojects/coral/src/workspace_review.zig:217
+#: subprojects/coral/src/workspace_review.zig:255
 msgid "Could not save the review decision"
 msgstr ""
 
-#: subprojects/coral/src/workspace_review.zig:498
+#: subprojects/coral/src/workspace_review.zig:536
 msgid "Could not save the review manifest"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:2587
+#: subprojects/coral/src/app.zig:2616
 msgid "Cut"
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:131
+#: subprojects/coral/src/workspace_agent.zig:143
 msgid "Delivery unknown · Retry this prompt"
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:953
+#: subprojects/coral/src/workspace_permissions.zig:115
 msgid "Deny"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:1422
+#: subprojects/coral/src/app.zig:1459
 msgid "Dictionary unavailable"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:1806
+#: subprojects/coral/src/app.zig:1859
 msgid "Discard"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:1627
+#: subprojects/coral/src/app.zig:1680
 msgid "Discard and reload"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:1627
+#: subprojects/coral/src/app.zig:1680
 msgid "Discard unsaved edits?"
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:79
+#: subprojects/coral/src/workspace_agent.zig:82
 msgid "Earlier messages"
 msgstr ""
 
@@ -259,11 +263,11 @@ msgstr ""
 msgid "Edit"
 msgstr ""
 
-#: subprojects/coral/src/workspace_review.zig:112
+#: subprojects/coral/src/workspace_review.zig:114
 msgid "Edit resolution"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:194
+#: subprojects/coral/src/workbench/commands.zig:199
 msgid "Edit selection as excerpt"
 msgstr ""
 
@@ -271,11 +275,11 @@ msgstr ""
 msgid "Editor menu"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:2503
+#: subprojects/coral/src/app.zig:2532
 msgid "Enter a line number."
 msgstr ""
 
-#: subprojects/coral/src/app.zig:825
+#: subprojects/coral/src/app.zig:862
 msgid "Excerpt"
 msgstr ""
 
@@ -283,23 +287,23 @@ msgstr ""
 msgid "Excerpt · {0}"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:234
+#: subprojects/coral/src/workbench/commands.zig:239
 msgid "Explorer: Delete permanently…"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:233
+#: subprojects/coral/src/workbench/commands.zig:238
 msgid "Explorer: Move…"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:231
+#: subprojects/coral/src/workbench/commands.zig:236
 msgid "Explorer: New directory…"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:230
+#: subprojects/coral/src/workbench/commands.zig:235
 msgid "Explorer: New file…"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:232
+#: subprojects/coral/src/workbench/commands.zig:237
 msgid "Explorer: Rename…"
 msgstr ""
 
@@ -307,15 +311,15 @@ msgstr ""
 msgid "File"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:3037
+#: subprojects/coral/src/app.zig:3066
 msgid "File changed on disk. Save again to review the conflict; your edits are preserved."
 msgstr ""
 
-#: subprojects/coral/src/app.zig:1482
+#: subprojects/coral/src/app.zig:1519
 msgid "File not found. Use New document and Save As to create a file."
 msgstr ""
 
-#: subprojects/coral/src/workspace_review.zig:229
+#: subprojects/coral/src/workspace_review.zig:267
 msgid "File reviewed"
 msgstr ""
 
@@ -327,7 +331,7 @@ msgstr ""
 msgid "Filter items…"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:182
+#: subprojects/coral/src/workbench/commands.zig:187
 msgid "Find / Replace"
 msgstr ""
 
@@ -335,43 +339,43 @@ msgstr ""
 msgid "Find and replace · Ctrl+F"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:329
+#: subprojects/coral/src/workbench/commands.zig:334
 msgid "Focus Agent"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:214
+#: subprojects/coral/src/workbench/commands.zig:219
 msgid "Focus Explorer"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:215
+#: subprojects/coral/src/workbench/commands.zig:220
 msgid "Focus Search"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:213
+#: subprojects/coral/src/workbench/commands.zig:218
 msgid "Focus Source Control"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:319
+#: subprojects/coral/src/workbench/commands.zig:324
 msgid "Focus Terminal"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:216
+#: subprojects/coral/src/workbench/commands.zig:221
 msgid "Focus editor"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:191
+#: subprojects/coral/src/workbench/commands.zig:196
 msgid "Focus next editor group"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:192
+#: subprojects/coral/src/workbench/commands.zig:197
 msgid "Focus previous editor group"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:2443
+#: subprojects/coral/src/app.zig:2472
 msgid "Follow Pearl"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:237
+#: subprojects/coral/src/workbench/commands.zig:242
 msgid "Forget Recent Session…"
 msgstr ""
 
@@ -379,251 +383,251 @@ msgstr ""
 msgid "Git"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:297
+#: subprojects/coral/src/workbench/commands.zig:302
 msgid "Git: Abort merge/rebase…"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:284
+#: subprojects/coral/src/workbench/commands.zig:289
 msgid "Git: Add worktree…"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:304
+#: subprojects/coral/src/workbench/commands.zig:309
 msgid "Git: Blame…"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:277
+#: subprojects/coral/src/workbench/commands.zig:282
 msgid "Git: Branches…"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:305
+#: subprojects/coral/src/workbench/commands.zig:310
 msgid "Git: Commit diff…"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:274
+#: subprojects/coral/src/workbench/commands.zig:279
 msgid "Git: Commit staged…"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:291
+#: subprojects/coral/src/workbench/commands.zig:296
 msgid "Git: Conflicts…"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:296
+#: subprojects/coral/src/workbench/commands.zig:301
 msgid "Git: Continue merge/rebase…"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:278
+#: subprojects/coral/src/workbench/commands.zig:283
 msgid "Git: Create branch…"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:282
+#: subprojects/coral/src/workbench/commands.zig:287
 msgid "Git: Create lightweight tag…"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:280
+#: subprojects/coral/src/workbench/commands.zig:285
 msgid "Git: Delete branch…"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:299
+#: subprojects/coral/src/workbench/commands.zig:304
 msgid "Git: Fetch…"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:303
+#: subprojects/coral/src/workbench/commands.zig:308
 msgid "Git: File history…"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:302
+#: subprojects/coral/src/workbench/commands.zig:307
 msgid "Git: Force push with lease…"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:295
+#: subprojects/coral/src/workbench/commands.zig:300
 msgid "Git: Manual conflict resolution"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:272
+#: subprojects/coral/src/workbench/commands.zig:277
 msgid "Git: Next hunk"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:306
+#: subprojects/coral/src/workbench/commands.zig:311
 msgid "Git: Open permalink…"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:273
+#: subprojects/coral/src/workbench/commands.zig:278
 msgid "Git: Previous hunk"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:309
+#: subprojects/coral/src/workbench/commands.zig:314
 msgid "Git: Project Diff next hunk"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:310
+#: subprojects/coral/src/workbench/commands.zig:315
 msgid "Git: Project Diff previous hunk"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:316
+#: subprojects/coral/src/workbench/commands.zig:321
 msgid "Git: Project Diff split view"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:311
+#: subprojects/coral/src/workbench/commands.zig:316
 msgid "Git: Project Diff stage hunk…"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:313
+#: subprojects/coral/src/workbench/commands.zig:318
 msgid "Git: Project Diff stage selection…"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:315
+#: subprojects/coral/src/workbench/commands.zig:320
 msgid "Git: Project Diff unified view"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:312
+#: subprojects/coral/src/workbench/commands.zig:317
 msgid "Git: Project Diff unstage hunk…"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:314
+#: subprojects/coral/src/workbench/commands.zig:319
 msgid "Git: Project Diff unstage selection…"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:317
+#: subprojects/coral/src/workbench/commands.zig:322
 msgid "Git: Project Diff word view"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:307
+#: subprojects/coral/src/workbench/commands.zig:312
 msgid "Git: Project Diff…"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:300
+#: subprojects/coral/src/workbench/commands.zig:305
 msgid "Git: Pull…"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:301
+#: subprojects/coral/src/workbench/commands.zig:306
 msgid "Git: Push…"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:308
+#: subprojects/coral/src/workbench/commands.zig:313
 msgid "Git: Refresh Project Diff"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:265
+#: subprojects/coral/src/workbench/commands.zig:270
 msgid "Git: Refresh repositories"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:298
+#: subprojects/coral/src/workbench/commands.zig:303
 msgid "Git: Remotes…"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:285
+#: subprojects/coral/src/workbench/commands.zig:290
 msgid "Git: Remove worktree…"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:294
+#: subprojects/coral/src/workbench/commands.zig:299
 msgid "Git: Resolve conflict using both…"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:292
+#: subprojects/coral/src/workbench/commands.zig:297
 msgid "Git: Resolve conflict using current…"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:293
+#: subprojects/coral/src/workbench/commands.zig:298
 msgid "Git: Resolve conflict using incoming…"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:264
+#: subprojects/coral/src/workbench/commands.zig:269
 msgid "Git: Source Control…"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:268
+#: subprojects/coral/src/workbench/commands.zig:273
 msgid "Git: Stage selected file…"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:270
+#: subprojects/coral/src/workbench/commands.zig:275
 msgid "Git: Stage selected hunk…"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:276
+#: subprojects/coral/src/workbench/commands.zig:281
 msgid "Git: Stage tracked and commit…"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:267
+#: subprojects/coral/src/workbench/commands.zig:272
 msgid "Git: Staged diff"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:288
+#: subprojects/coral/src/workbench/commands.zig:293
 msgid "Git: Stash apply…"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:290
+#: subprojects/coral/src/workbench/commands.zig:295
 msgid "Git: Stash drop…"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:287
+#: subprojects/coral/src/workbench/commands.zig:292
 msgid "Git: Stash list…"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:289
+#: subprojects/coral/src/workbench/commands.zig:294
 msgid "Git: Stash pop…"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:286
+#: subprojects/coral/src/workbench/commands.zig:291
 msgid "Git: Stash push…"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:279
+#: subprojects/coral/src/workbench/commands.zig:284
 msgid "Git: Switch branch…"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:281
+#: subprojects/coral/src/workbench/commands.zig:286
 msgid "Git: Tags…"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:275
+#: subprojects/coral/src/workbench/commands.zig:280
 msgid "Git: Uncommit last…"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:269
+#: subprojects/coral/src/workbench/commands.zig:274
 msgid "Git: Unstage selected file…"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:271
+#: subprojects/coral/src/workbench/commands.zig:276
 msgid "Git: Unstage selected hunk…"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:266
+#: subprojects/coral/src/workbench/commands.zig:271
 msgid "Git: Unstaged diff"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:283
+#: subprojects/coral/src/workbench/commands.zig:288
 msgid "Git: Worktrees…"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:2503
+#: subprojects/coral/src/app.zig:2532
 msgid "Go"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:183
+#: subprojects/coral/src/workbench/commands.zig:188
 msgid "Go to Line…"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:2503
+#: subprojects/coral/src/app.zig:2532
 msgid "Go to line"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:222
+#: subprojects/coral/src/workbench/commands.zig:227
 msgid "Grow active dock"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:217
+#: subprojects/coral/src/workbench/commands.zig:222
 msgid "Hide active panel"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:2580
+#: subprojects/coral/src/app.zig:2609
 msgid "Ignore for this document"
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:564
+#: subprojects/coral/src/workspace_agent.zig:611
 msgid "Interrupted"
 msgstr ""
 
-#: subprojects/coral/src/workspace_review.zig:508
+#: subprojects/coral/src/workspace_review.zig:546
 msgid "Keep my edit"
 msgstr ""
 
@@ -631,127 +635,127 @@ msgstr ""
 msgid "Language"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:259
+#: subprojects/coral/src/workbench/commands.zig:264
 msgid "Language: Code actions…"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:262
+#: subprojects/coral/src/workbench/commands.zig:267
 msgid "Language: Code lenses…"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:245
+#: subprojects/coral/src/workbench/commands.zig:250
 msgid "Language: Completion…"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:249
+#: subprojects/coral/src/workbench/commands.zig:254
 msgid "Language: Declaration…"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:248
+#: subprojects/coral/src/workbench/commands.zig:253
 msgid "Language: Definition…"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:263
+#: subprojects/coral/src/workbench/commands.zig:268
 msgid "Language: Document links…"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:253
+#: subprojects/coral/src/workbench/commands.zig:258
 msgid "Language: Document symbols…"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:256
+#: subprojects/coral/src/workbench/commands.zig:261
 msgid "Language: Format document…"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:257
+#: subprojects/coral/src/workbench/commands.zig:262
 msgid "Language: Format selection…"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:246
+#: subprojects/coral/src/workbench/commands.zig:251
 msgid "Language: Hover"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:251
+#: subprojects/coral/src/workbench/commands.zig:256
 msgid "Language: Implementation…"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:261
+#: subprojects/coral/src/workbench/commands.zig:266
 msgid "Language: Inlay hints…"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:255
+#: subprojects/coral/src/workbench/commands.zig:260
 msgid "Language: Problems"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:252
+#: subprojects/coral/src/workbench/commands.zig:257
 msgid "Language: References…"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:260
+#: subprojects/coral/src/workbench/commands.zig:265
 msgid "Language: Refresh semantic tokens"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:258
+#: subprojects/coral/src/workbench/commands.zig:263
 msgid "Language: Rename…"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:243
+#: subprojects/coral/src/workbench/commands.zig:248
 msgid "Language: Restart current server"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:247
+#: subprojects/coral/src/workbench/commands.zig:252
 msgid "Language: Signature help"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:241
+#: subprojects/coral/src/workbench/commands.zig:246
 msgid "Language: Start / resume…"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:244
+#: subprojects/coral/src/workbench/commands.zig:249
 msgid "Language: Status"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:242
+#: subprojects/coral/src/workbench/commands.zig:247
 msgid "Language: Stop all sessions / pause workspace"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:250
+#: subprojects/coral/src/workbench/commands.zig:255
 msgid "Language: Type definition…"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:254
+#: subprojects/coral/src/workbench/commands.zig:259
 msgid "Language: Workspace symbols…"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:2580
+#: subprojects/coral/src/app.zig:2609
 msgid "Language…"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:1414
+#: subprojects/coral/src/app.zig:1451
 msgid "Ln {0}, Col {1}   ·   UTF-8{2} · {3}{4}{5}"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:1420
+#: subprojects/coral/src/app.zig:1457
 msgid "Ln {0}, Col {1}{2}"
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:431
+#: subprojects/coral/src/workspace_agent.zig:477
 msgid "Loading session…"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:2439
+#: subprojects/coral/src/app.zig:2468
 msgid "Make yourself at home"
 msgstr ""
 
-#: subprojects/coral/src/workspace_review.zig:258
+#: subprojects/coral/src/workspace_review.zig:296
 msgid "Mark file reviewed"
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:170
+#: subprojects/coral/src/workspace_agent.zig:182
 msgid "Message OpenCode"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:2956
+#: subprojects/coral/src/app.zig:2985
 msgid "Mixed line endings detected. Choose LF or CRLF when you save."
 msgstr ""
 
@@ -763,35 +767,35 @@ msgstr ""
 msgid "Modified · Unavailable"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:220
+#: subprojects/coral/src/workbench/commands.zig:225
 msgid "Move active panel bottom"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:218
+#: subprojects/coral/src/workbench/commands.zig:223
 msgid "Move active panel left"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:219
+#: subprojects/coral/src/workbench/commands.zig:224
 msgid "Move active panel right"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:2443
+#: subprojects/coral/src/app.zig:2472
 msgid "Native GTK"
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:562
+#: subprojects/coral/src/workspace_agent.zig:609
 msgid "Needs attention"
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:65
+#: subprojects/coral/src/workspace_agent.zig:68
 msgid "New OpenCode session"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:226
+#: subprojects/coral/src/workbench/commands.zig:231
 msgid "New Window"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:177
+#: subprojects/coral/src/workbench/commands.zig:182
 msgid "New document"
 msgstr ""
 
@@ -799,15 +803,19 @@ msgstr ""
 msgid "New document · Ctrl+N"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:228
+#: subprojects/coral/src/workbench/commands.zig:233
 msgid "Next Window"
 msgstr ""
 
-#: subprojects/coral/src/workspace_review.zig:80
+#: subprojects/coral/src/workspace_review.zig:82
 msgid "Next change"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:224
+#: subprojects/coral/src/workbench/commands.zig:346
+msgid "Next diagnostic"
+msgstr ""
+
+#: subprojects/coral/src/workbench/commands.zig:229
 msgid "Next editor tab"
 msgstr ""
 
@@ -815,19 +823,23 @@ msgstr ""
 msgid "Next match · F3"
 msgstr ""
 
-#: subprojects/coral/src/workspace_review.zig:236
+#: subprojects/coral/src/workbench/commands.zig:344
+msgid "Next review hunk"
+msgstr ""
+
+#: subprojects/coral/src/workspace_review.zig:274
 msgid "No changes in the agent worktree"
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:717
+#: subprojects/coral/src/workspace_agent.zig:765
 msgid "No configured chat models"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:2474
+#: subprojects/coral/src/app.zig:2503
 msgid "No dictionaries found. Install an Enchant provider and a language dictionary, then restart Coral."
 msgstr ""
 
-#: subprojects/coral/src/workspace_dock.zig:79
+#: subprojects/coral/src/workspace_dock.zig:56 subprojects/coral/src/workspace_dock.zig:121
 msgid "No language diagnostics"
 msgstr ""
 
@@ -835,11 +847,11 @@ msgstr ""
 msgid "No matching commands"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:2579
+#: subprojects/coral/src/app.zig:2608
 msgid "No replacements found"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:2525
+#: subprojects/coral/src/app.zig:2554
 msgid "No spelling suggestions in this document."
 msgstr ""
 
@@ -847,35 +859,35 @@ msgstr ""
 msgid "No workspace"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:2105
+#: subprojects/coral/src/app.zig:2158
 msgid "Not enough memory to prepare the edit. Nothing was changed."
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:606
+#: subprojects/coral/src/workspace_agent.zig:654
 msgid "Older sessions"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:1483 subprojects/coral/src/app.zig:3063 subprojects/coral/src/app.zig:3084
+#: subprojects/coral/src/app.zig:1520 subprojects/coral/src/app.zig:3092 subprojects/coral/src/app.zig:3113
 msgid "Only local files are supported."
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:236
+#: subprojects/coral/src/workbench/commands.zig:241
 msgid "Open Buffers…"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:197
+#: subprojects/coral/src/workbench/commands.zig:202
 msgid "Open Folder…"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:235
+#: subprojects/coral/src/workbench/commands.zig:240
 msgid "Open Recent Project…"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:198
+#: subprojects/coral/src/workbench/commands.zig:203
 msgid "Open Workspace…"
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:178 subprojects/coral/src/workspace_agent.zig:275
+#: subprojects/coral/src/workspace_agent.zig:190 subprojects/coral/src/workspace_agent.zig:300
 msgid "Open a project to see its sessions"
 msgstr ""
 
@@ -883,67 +895,75 @@ msgstr ""
 msgid "Open files · Ctrl+O"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:2932 subprojects/coral/src/app.zig:3250
+#: subprojects/coral/src/app.zig:2961 subprojects/coral/src/app.zig:3279
 msgid "Open in large-file mode?"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:2932 subprojects/coral/src/app.zig:3250
+#: subprojects/coral/src/app.zig:2961 subprojects/coral/src/app.zig:3279
 msgid "Open large file"
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:67 subprojects/coral/src/workspace_agent.zig:430
+#: subprojects/coral/src/workbench/commands.zig:343
+msgid "Open session changes for review"
+msgstr ""
+
+#: subprojects/coral/src/workspace_agent.zig:70 subprojects/coral/src/workspace_agent.zig:476
 msgid "OpenCode"
 msgstr ""
 
-#: subprojects/coral/src/workspace_review.zig:429
+#: subprojects/coral/src/workspace_review.zig:467
 msgid "Opening file. Apply after it loads."
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:178
+#: subprojects/coral/src/workbench/commands.zig:183
 msgid "Open…"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:3038
+#: subprojects/coral/src/app.zig:3067
 msgid "Overwrite"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:2587
+#: subprojects/coral/src/app.zig:2616
 msgid "Paste"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:2443
+#: subprojects/coral/src/app.zig:2472
 msgid "Pearl dark"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:2443
+#: subprojects/coral/src/app.zig:2472
 msgid "Pearl light"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:1485
+#: subprojects/coral/src/app.zig:1522
 msgid "Permission denied while opening the file."
 msgstr ""
 
-#: subprojects/coral/src/app.zig:2474
+#: subprojects/coral/src/workspace_permissions.zig:78 subprojects/coral/src/workspace_permissions.zig:106
+msgid "Permission requested"
+msgstr ""
+
+#: subprojects/coral/src/app.zig:2503
 msgid "Personal dictionary words may be shared with other Enchant applications."
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:185
+#: subprojects/coral/src/workbench/commands.zig:190
 msgid "Preferences…"
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:1045
+#: subprojects/coral/src/workspace_agent.zig:1098
 msgid "Preparing session…"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:229
+#: subprojects/coral/src/workbench/commands.zig:234
 msgid "Previous Window"
 msgstr ""
 
-#: subprojects/coral/src/workspace_review.zig:79
+#: subprojects/coral/src/workspace_review.zig:81
 msgid "Previous change"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:225
+#: subprojects/coral/src/workbench/commands.zig:230
 msgid "Previous editor tab"
 msgstr ""
 
@@ -951,75 +971,79 @@ msgstr ""
 msgid "Previous match · Shift+F3"
 msgstr ""
 
-#: subprojects/coral/src/workspace_review.zig:229
+#: subprojects/coral/src/workbench/commands.zig:345
+msgid "Previous review hunk"
+msgstr ""
+
+#: subprojects/coral/src/workspace_review.zig:267
 msgid "Previously applied to the editor"
 msgstr ""
 
-#: subprojects/coral/src/workspace_review.zig:229
+#: subprojects/coral/src/workspace_review.zig:267
 msgid "Previously skipped"
 msgstr ""
 
-#: subprojects/coral/src/workspace_dock.zig:29
+#: subprojects/coral/src/workspace_dock.zig:30
 msgid "Problems"
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:875
+#: subprojects/coral/src/workspace_agent.zig:923
 msgid "Prompt delivered"
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:989
+#: subprojects/coral/src/workspace_agent.zig:1042
 msgid "Queued prompts"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:203
+#: subprojects/coral/src/workbench/commands.zig:208
 msgid "Quick Open…"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:188
+#: subprojects/coral/src/workbench/commands.zig:193
 msgid "Quit All"
 msgstr ""
 
-#: subprojects/coral/src/workspace_review.zig:167
+#: subprojects/coral/src/workspace_review.zig:204
 msgid "Reading agent worktree…"
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:565
+#: subprojects/coral/src/workspace_agent.zig:612
 msgid "Ready"
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:73
+#: subprojects/coral/src/workspace_agent.zig:76
 msgid "Reconnect to OpenCode"
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:895
+#: subprojects/coral/src/workspace_agent.zig:943
 msgid "Reconnecting to OpenCode…"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:196
+#: subprojects/coral/src/workbench/commands.zig:201
 msgid "Redo grouped edit"
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:116
+#: subprojects/coral/src/workspace_agent.zig:128
 msgid "Refresh from selection"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:3038
+#: subprojects/coral/src/app.zig:3067
 msgid "Reload"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:181
+#: subprojects/coral/src/workbench/commands.zig:186
 msgid "Reload from Disk"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:1627
+#: subprojects/coral/src/app.zig:1680
 msgid "Reloading replaces your current edits with the version on disk."
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:117
+#: subprojects/coral/src/workspace_agent.zig:129
 msgid "Remove selection"
 msgstr ""
 
-#: subprojects/coral/src/workspace_review.zig:292
+#: subprojects/coral/src/workspace_review.zig:330
 msgid "Reopen the source file to apply this change"
 msgstr ""
 
@@ -1035,15 +1059,15 @@ msgstr ""
 msgid "Replace with"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:221
+#: subprojects/coral/src/workbench/commands.zig:226
 msgid "Reset dock layout"
 msgstr ""
 
-#: subprojects/coral/src/workspace_review.zig:506
+#: subprojects/coral/src/workspace_review.zig:544
 msgid "Resolve overlapping edits"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:209
+#: subprojects/coral/src/workbench/commands.zig:214
 msgid "Restore Workspace Session"
 msgstr ""
 
@@ -1051,39 +1075,39 @@ msgstr ""
 msgid "Restricted"
 msgstr ""
 
-#: subprojects/coral/src/workspace_review.zig:73
+#: subprojects/coral/src/workspace_review.zig:75
 msgid "Return to editor"
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:89
+#: subprojects/coral/src/workspace_agent.zig:92
 msgid "Review changes"
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:560
+#: subprojects/coral/src/workspace_agent.zig:607
 msgid "Running"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:1806 subprojects/coral/src/workbench/commands.zig:179
+#: subprojects/coral/src/app.zig:1859 subprojects/coral/src/workbench/commands.zig:184
 msgid "Save"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:3038 subprojects/coral/src/workbench/commands.zig:180
+#: subprojects/coral/src/app.zig:3067 subprojects/coral/src/workbench/commands.zig:185
 msgid "Save As…"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:240
+#: subprojects/coral/src/workbench/commands.zig:245
 msgid "Save Workspace As…"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:208
+#: subprojects/coral/src/workbench/commands.zig:213
 msgid "Save Workspace Session"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:1806
+#: subprojects/coral/src/app.zig:1859
 msgid "Save this document before closing it? Discarding loses the unsaved edits."
 msgstr ""
 
-#: subprojects/coral/src/app.zig:1806
+#: subprojects/coral/src/app.zig:1859
 msgid "Save your changes?"
 msgstr ""
 
@@ -1091,15 +1115,15 @@ msgstr ""
 msgid "Save · Ctrl+S"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:3027
+#: subprojects/coral/src/app.zig:3056
 msgid "Saved the earlier revision. Newer edits are still unsaved."
 msgstr ""
 
-#: subprojects/coral/src/app.zig:3019
+#: subprojects/coral/src/app.zig:3048
 msgid "Saved."
 msgstr ""
 
-#: subprojects/coral/src/app.zig:1799
+#: subprojects/coral/src/app.zig:1852
 msgid "Saving is still in progress. Close this document after it finishes."
 msgstr ""
 
@@ -1111,35 +1135,35 @@ msgstr ""
 msgid "Search commands…"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:204
+#: subprojects/coral/src/workbench/commands.zig:209
 msgid "Search workspace…"
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:799
+#: subprojects/coral/src/workspace_agent.zig:847
 msgid "Select code in the editor first"
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:157
+#: subprojects/coral/src/workspace_agent.zig:169
 msgid "Send to this session"
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:645
+#: subprojects/coral/src/workspace_agent.zig:693
 msgid "Service default"
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:143 subprojects/coral/src/workspace_agent.zig:674
+#: subprojects/coral/src/workspace_agent.zig:155 subprojects/coral/src/workspace_agent.zig:722
 msgid "Session model"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:295
+#: subprojects/coral/src/app.zig:290
 msgid "Sessions"
 msgstr ""
 
-#: subprojects/coral/src/workspace_review.zig:100
+#: subprojects/coral/src/workspace_review.zig:102
 msgid "Shared base"
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:818
+#: subprojects/coral/src/workspace_agent.zig:866
 msgid "Show captured code"
 msgstr ""
 
@@ -1147,163 +1171,167 @@ msgstr ""
 msgid "Showing the first 50 matches. Refine your filter to see more."
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:223
+#: subprojects/coral/src/workbench/commands.zig:228
 msgid "Shrink active dock"
 msgstr ""
 
-#: subprojects/coral/src/workspace_review.zig:83
+#: subprojects/coral/src/workspace_review.zig:85
 msgid "Side by side"
 msgstr ""
 
-#: subprojects/coral/src/workspace_review.zig:257
+#: subprojects/coral/src/workspace_review.zig:295
 msgid "Skip file"
 msgstr ""
 
-#: subprojects/coral/src/workspace_review.zig:111 subprojects/coral/src/workspace_review.zig:182
+#: subprojects/coral/src/workspace_review.zig:113 subprojects/coral/src/workspace_review.zig:220
 msgid "Skip hunk"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:1422
+#: subprojects/coral/src/app.zig:1459
 msgid "Spelling"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:1422
+#: subprojects/coral/src/app.zig:1459
 msgid "Spelling off"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:184
+#: subprojects/coral/src/workbench/commands.zig:189
 msgid "Spelling suggestions"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:190
+#: subprojects/coral/src/workbench/commands.zig:195
 msgid "Split editor group"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:2917
+#: subprojects/coral/src/app.zig:2946
 msgid "Standalone CR line endings are not supported. Convert this file to LF or CRLF."
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:287
+#: subprojects/coral/src/workspace_agent.zig:312
 msgid "Start OpenCode with opencode service start, then reconnect."
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:747
+#: subprojects/coral/src/workspace_agent.zig:795
 msgid "Switching model…"
 msgstr ""
 
-#: subprojects/coral/src/workspace_dock.zig:45
+#: subprojects/coral/src/workspace_dock.zig:46
 msgid "Task output"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:327
+#: subprojects/coral/src/workbench/commands.zig:332
 msgid "Tasks: Restart task"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:325
+#: subprojects/coral/src/workbench/commands.zig:330
 msgid "Tasks: Run selected task"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:324
+#: subprojects/coral/src/workbench/commands.zig:329
 msgid "Tasks: Run task…"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:326
+#: subprojects/coral/src/workbench/commands.zig:331
 msgid "Tasks: Stop task"
 msgstr ""
 
-#: subprojects/coral/src/workspace_dock.zig:24
+#: subprojects/coral/src/workspace_dock.zig:25
 msgid "Terminal"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:323
+#: subprojects/coral/src/workbench/commands.zig:328
 msgid "Terminal: Cancel running command"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:321
+#: subprojects/coral/src/workbench/commands.zig:326
 msgid "Terminal: Close session"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:320
+#: subprojects/coral/src/workbench/commands.zig:325
 msgid "Terminal: New session"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:322
+#: subprojects/coral/src/workbench/commands.zig:327
 msgid "Terminal: Restart session"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:1713
+#: subprojects/coral/src/app.zig:1766
 msgid "That file is already open in another tab. Save to a different name."
 msgstr ""
 
-#: subprojects/coral/src/app.zig:2910
+#: subprojects/coral/src/app.zig:2939
 msgid "The document changed during loading. Your edits were kept; reload again to review the disk version."
 msgstr ""
 
-#: subprojects/coral/src/app.zig:2944
+#: subprojects/coral/src/app.zig:2973
 msgid "The document changed while awaiting the load decision. Your edits were kept."
 msgstr ""
 
-#: subprojects/coral/src/app.zig:2141
+#: subprojects/coral/src/app.zig:2194
 msgid "The document changed. Retry the edit against the current text."
 msgstr ""
 
-#: subprojects/coral/src/app.zig:2142
+#: subprojects/coral/src/app.zig:2195
 msgid "The edit exceeds the transaction safety limit. Nothing was changed."
 msgstr ""
 
-#: subprojects/coral/src/workspace_review.zig:424
+#: subprojects/coral/src/workspace_review.zig:462
 msgid "The file path changed. Reopen review."
 msgstr ""
 
-#: subprojects/coral/src/app.zig:3209
+#: subprojects/coral/src/app.zig:3238
 msgid "The personal dictionary could not be updated."
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:491
+#: subprojects/coral/src/workspace_agent.zig:538
 msgid "The source has changed since this selection was attached"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:3243
+#: subprojects/coral/src/app.zig:3272
 msgid "The spelling provider reported an error. Editing remains available."
 msgstr ""
 
-#: subprojects/coral/src/app.zig:2078
+#: subprojects/coral/src/app.zig:2131
 msgid "This buffer is too large for a safe edit transaction."
 msgstr ""
 
-#: subprojects/coral/src/app.zig:3038
+#: subprojects/coral/src/app.zig:3067
 msgid "This file changed elsewhere"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:2918
+#: subprojects/coral/src/app.zig:2947
 msgid "This file contains binary data and cannot be edited as text."
 msgstr ""
 
-#: subprojects/coral/src/app.zig:3250
+#: subprojects/coral/src/app.zig:3279
 msgid "This file exceeds 10 MiB. Automatic spelling and syntax highlighting will be disabled."
 msgstr ""
 
-#: subprojects/coral/src/app.zig:2902
+#: subprojects/coral/src/app.zig:2931
 msgid "This file exceeds Coral's 128 MiB safety limit."
 msgstr ""
 
-#: subprojects/coral/src/app.zig:2932
+#: subprojects/coral/src/app.zig:2961
 msgid "This file is larger than 10 MiB. Automatic spelling and syntax highlighting will be disabled."
 msgstr ""
 
-#: subprojects/coral/src/app.zig:2916
+#: subprojects/coral/src/app.zig:2945
 msgid "This file is not valid UTF-8. Convert its encoding before opening it in Coral."
 msgstr ""
 
-#: subprojects/coral/src/app.zig:1683
+#: subprojects/coral/src/app.zig:1736
 msgid "This file mixes LF and CRLF line endings. Choose a format before saving; Coral will normalize line endings explicitly."
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:328
+#: subprojects/coral/src/workspace_agent.zig:254
+msgid "This session has no worktree changes to review."
+msgstr ""
+
+#: subprojects/coral/src/workbench/commands.zig:333
 msgid "Toggle Agent dock"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:210
+#: subprojects/coral/src/workbench/commands.zig:215
 msgid "Toggle Explorer dock"
 msgstr ""
 
@@ -1315,19 +1343,19 @@ msgstr ""
 msgid "Toggle OpenCode drawer"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:211
+#: subprojects/coral/src/workbench/commands.zig:216
 msgid "Toggle Search dock"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:212
+#: subprojects/coral/src/workbench/commands.zig:217
 msgid "Toggle Source Control dock"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:318
+#: subprojects/coral/src/workbench/commands.zig:323
 msgid "Toggle Terminal dock"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:2099
+#: subprojects/coral/src/app.zig:2152
 msgid "Too many replacements. Narrow the search before replacing."
 msgstr ""
 
@@ -1335,7 +1363,7 @@ msgstr ""
 msgid "Trust check failed"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:206
+#: subprojects/coral/src/workbench/commands.zig:211
 msgid "Trust workspace…"
 msgstr ""
 
@@ -1347,23 +1375,23 @@ msgstr ""
 msgid "Unavailable"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:195
+#: subprojects/coral/src/workbench/commands.zig:200
 msgid "Undo grouped edit"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:1364 subprojects/coral/src/app.zig:1430 subprojects/coral/src/editor/view.zig:129 subprojects/coral/src/workbench/chrome.zig:186 subprojects/coral/src/workspace_agent.zig:809
+#: subprojects/coral/src/app.zig:1401 subprojects/coral/src/app.zig:1467 subprojects/coral/src/editor/view.zig:129 subprojects/coral/src/workbench/chrome.zig:186 subprojects/coral/src/workspace_agent.zig:857
 msgid "Untitled"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:1683
+#: subprojects/coral/src/app.zig:1736
 msgid "Use CRLF"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:1683
+#: subprojects/coral/src/app.zig:1736
 msgid "Use LF"
 msgstr ""
 
-#: subprojects/coral/src/workspace_review.zig:507
+#: subprojects/coral/src/workspace_review.zig:545
 msgid "Use agent change"
 msgstr ""
 
@@ -1375,12 +1403,16 @@ msgstr ""
 msgid "View"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:1678
+#: subprojects/coral/src/app.zig:1731
 msgid "Wait for the current file operation to finish."
 msgstr ""
 
 #: subprojects/coral/src/workbench/chrome.zig:254
 msgid "Window"
+msgstr ""
+
+#: subprojects/coral/src/workspace_permissions.zig:82
+msgid "Working directory"
 msgstr ""
 
 #: subprojects/coral/src/workbench/chrome.zig:250
@@ -1395,31 +1427,31 @@ msgstr ""
 msgid "Workspace trust; automatic language servers require exact configuration approval"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:238
+#: subprojects/coral/src/workbench/commands.zig:243
 msgid "Workspace: Add Folder…"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:200
+#: subprojects/coral/src/workbench/commands.zig:205
 msgid "Workspace: Back"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:239
+#: subprojects/coral/src/workbench/commands.zig:244
 msgid "Workspace: Remove Selected Root…"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:201
+#: subprojects/coral/src/workbench/commands.zig:206
 msgid "Workspace: Rescan directory"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:207
+#: subprojects/coral/src/workbench/commands.zig:212
 msgid "Workspace: Revoke trust"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:199
+#: subprojects/coral/src/workbench/commands.zig:204
 msgid "Workspace: Roots"
 msgstr ""
 
-#: subprojects/coral/src/workbench/commands.zig:205
+#: subprojects/coral/src/workbench/commands.zig:210
 msgid "Workspace: Settings and Trust…"
 msgstr ""
 
@@ -1432,11 +1464,11 @@ msgstr ""
 msgid "You"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:3038
+#: subprojects/coral/src/app.zig:3067
 msgid "Your edits are preserved. Save a copy, reload the file, or explicitly overwrite the version on disk."
 msgstr ""
 
-#: subprojects/coral/src/app.zig:1428
+#: subprojects/coral/src/app.zig:1465
 msgid "{count} match"
 msgid_plural "{count} matches"
 msgstr[0] ""

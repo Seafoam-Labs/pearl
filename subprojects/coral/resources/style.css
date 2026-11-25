@@ -130,7 +130,7 @@ window.coral-workbench .breadcrumbs {
 }
 window.coral-workbench .breadcrumbs label { min-width: 0; }
 
-.workspace-composer { border: 1px solid alpha(currentColor, 0.16); border-radius: 12px; padding: 8px; }
+.workspace-permission, .workspace-composer { border: 1px solid alpha(currentColor, 0.16); border-radius: 12px; padding: 8px; }
 .workspace-composer menubutton > button { border-radius: 7px; }
 .workspace-composer .suggested-action { border-radius: 18px; }
 

@@ -165,6 +165,11 @@ pub const Command = enum {
     agent_deny,
     agent_accept_review,
     agent_reject_review,
+    workspace_attach_selection,
+    workspace_open_review,
+    workspace_next_hunk,
+    workspace_previous_hunk,
+    workspace_next_diagnostic,
 
     pub fn metadata(self: Command) Metadata {
         return entries[@backingInt(self)];
@@ -334,6 +339,11 @@ pub const Command = enum {
             .agent_deny => i18n.dtr("coral", "Agent: Deny permission"),
             .agent_accept_review => i18n.dtr("coral", "Agent: Accept review"),
             .agent_reject_review => i18n.dtr("coral", "Agent: Reject review"),
+            .workspace_attach_selection => i18n.dtr("coral", "Attach selection to OpenCode"),
+            .workspace_open_review => i18n.dtr("coral", "Open session changes for review"),
+            .workspace_next_hunk => i18n.dtr("coral", "Next review hunk"),
+            .workspace_previous_hunk => i18n.dtr("coral", "Previous review hunk"),
+            .workspace_next_diagnostic => i18n.dtr("coral", "Next diagnostic"),
         };
     }
 };
@@ -346,6 +356,7 @@ pub const Metadata = struct {
     /// Source label for pure filtering/tests; use command.label() for UI text.
     label: [:0]const u8,
     shortcut: ?[:0]const u8,
+    workspace_only: bool = false,
 };
 
 pub const entries = [_]Metadata{
@@ -509,6 +520,11 @@ pub const entries = [_]Metadata{
     .{ .command = .agent_deny, .action = "agent-deny", .detailed_action = "win.agent-deny", .label = "Agent: Deny permission", .shortcut = null },
     .{ .command = .agent_accept_review, .action = "agent-accept-review", .detailed_action = "win.agent-accept-review", .label = "Agent: Accept review", .shortcut = null },
     .{ .command = .agent_reject_review, .action = "agent-reject-review", .detailed_action = "win.agent-reject-review", .label = "Agent: Reject review", .shortcut = null },
+    .{ .command = .workspace_attach_selection, .action = "workspace-attach-selection", .detailed_action = "win.workspace-attach-selection", .label = "Attach selection to OpenCode", .shortcut = "Ctrl+Shift+A", .workspace_only = true },
+    .{ .command = .workspace_open_review, .action = "workspace-open-review", .detailed_action = "win.workspace-open-review", .label = "Open session changes for review", .shortcut = "Ctrl+Shift+R", .workspace_only = true },
+    .{ .command = .workspace_next_hunk, .action = "workspace-next-hunk", .detailed_action = "win.workspace-next-hunk", .label = "Next review hunk", .shortcut = "Ctrl+F7", .workspace_only = true },
+    .{ .command = .workspace_previous_hunk, .action = "workspace-previous-hunk", .detailed_action = "win.workspace-previous-hunk", .label = "Previous review hunk", .shortcut = "Ctrl+Shift+F7", .workspace_only = true },
+    .{ .command = .workspace_next_diagnostic, .action = "workspace-next-diagnostic", .detailed_action = "win.workspace-next-diagnostic", .label = "Next diagnostic", .shortcut = "F8", .workspace_only = true },
 };
 
 pub fn fromAction(action: []const u8) ?Command {
@@ -539,6 +555,9 @@ pub fn fromKey(key: u32, state: u32) ?Command {
         else => null,
     };
     if (modifiers == ctrl | shift) return switch (lower) {
+        0xffc4 => .workspace_previous_hunk, // F7
+        'a' => .workspace_attach_selection,
+        'r' => .workspace_open_review,
         0xff09, 0xfe20 => .previous_tab, // Tab and ISO_Left_Tab
         'n' => .new_window,
         'w' => .close_window,
@@ -550,9 +569,11 @@ pub fn fromKey(key: u32, state: u32) ?Command {
         'f' => .workspace_search,
         else => null,
     };
+    if (modifiers == 0 and key == 0xffc5) return .workspace_next_diagnostic; // F8
     if (modifiers == shift and key == 0xffc7) return .spelling; // GDK_KEY_F10
     if (modifiers != ctrl) return null;
     return switch (lower) {
+        0xffc4 => .workspace_next_hunk, // F7
         0xff09 => .next_tab,
         0xfe20 => .previous_tab,
         'b' => .toggle_explorer,
@@ -573,7 +594,7 @@ pub fn fromKey(key: u32, state: u32) ?Command {
 
 test "registry is exhaustive, ordered and has unique stable actions" {
     try std.testing.expectEqual(@typeInfo(Command).@"enum".field_names.len, entries.len);
-    const actions = [_][]const u8{ "new", "open", "save", "save-as", "reload", "find", "goto", "spelling", "preferences", "about", "close", "quit", "command-palette", "split-group", "focus-next-group", "focus-previous-group", "close-group", "excerpt", "grouped-undo", "grouped-redo", "open-folder", "open-workspace", "workspace-roots", "workspace-back", "workspace-rescan", "close-workspace", "quick-open", "workspace-search", "workspace-policy", "workspace-trust", "workspace-revoke", "save-workspace-session", "restore-workspace-session", "toggle-explorer", "toggle-search", "toggle-source-control", "focus-source-control", "focus-explorer", "focus-search", "focus-editor", "hide-panel", "dock-left", "dock-right", "dock-bottom", "reset-docks", "dock-grow", "dock-shrink", "next-tab", "previous-tab", "new-window", "close-window", "next-window", "previous-window", "workspace-create-file", "workspace-create-directory", "workspace-rename", "workspace-move", "workspace-delete", "recent-projects", "open-buffers", "forget-project-session", "workspace-add-root", "workspace-remove-root", "save-workspace-as", "language-start", "language-stop", "language-restart", "language-status", "language-completion", "language-hover", "language-signature", "language-definition", "language-declaration", "language-type-definition", "language-implementation", "language-references", "language-document-symbols", "language-workspace-symbols", "language-problems", "language-formatting", "language-range-formatting", "language-rename", "language-code-actions", "language-semantic-tokens", "language-inlay-hints", "language-code-lenses", "language-document-links", "git-status", "git-refresh", "git-diff", "git-staged-diff", "git-stage", "git-unstage", "git-stage-hunk", "git-unstage-hunk", "git-next-hunk", "git-previous-hunk", "git-commit", "git-uncommit", "git-stage-tracked-commit", "git-branches", "git-create-branch", "git-switch-branch", "git-delete-branch", "git-tags", "git-create-tag", "git-worktrees", "git-add-worktree", "git-remove-worktree", "git-stash-push", "git-stash-list", "git-stash-apply", "git-stash-pop", "git-stash-drop", "git-conflicts", "git-resolve-current", "git-resolve-incoming", "git-resolve-both", "git-conflict-manual", "git-continue", "git-abort", "git-remotes", "git-fetch", "git-pull", "git-push", "git-force-push", "git-history", "git-blame", "git-commit-diff", "git-permalink", "git-project-diff", "git-project-diff-refresh", "git-project-diff-next-hunk", "git-project-diff-previous-hunk", "git-project-diff-stage-hunk", "git-project-diff-unstage-hunk", "git-project-diff-stage-selection", "git-project-diff-unstage-selection", "git-project-diff-unified", "git-project-diff-split", "git-project-diff-word", "toggle-terminal", "focus-terminal", "terminal-new", "terminal-close", "terminal-restart", "terminal-cancel", "tasks-show", "tasks-run", "tasks-stop", "tasks-restart", "toggle-agent", "focus-agent", "agent-new-thread", "agent-send", "agent-cancel", "agent-allow", "agent-deny", "agent-accept-review", "agent-reject-review" };
+    const actions = [_][]const u8{ "new", "open", "save", "save-as", "reload", "find", "goto", "spelling", "preferences", "about", "close", "quit", "command-palette", "split-group", "focus-next-group", "focus-previous-group", "close-group", "excerpt", "grouped-undo", "grouped-redo", "open-folder", "open-workspace", "workspace-roots", "workspace-back", "workspace-rescan", "close-workspace", "quick-open", "workspace-search", "workspace-policy", "workspace-trust", "workspace-revoke", "save-workspace-session", "restore-workspace-session", "toggle-explorer", "toggle-search", "toggle-source-control", "focus-source-control", "focus-explorer", "focus-search", "focus-editor", "hide-panel", "dock-left", "dock-right", "dock-bottom", "reset-docks", "dock-grow", "dock-shrink", "next-tab", "previous-tab", "new-window", "close-window", "next-window", "previous-window", "workspace-create-file", "workspace-create-directory", "workspace-rename", "workspace-move", "workspace-delete", "recent-projects", "open-buffers", "forget-project-session", "workspace-add-root", "workspace-remove-root", "save-workspace-as", "language-start", "language-stop", "language-restart", "language-status", "language-completion", "language-hover", "language-signature", "language-definition", "language-declaration", "language-type-definition", "language-implementation", "language-references", "language-document-symbols", "language-workspace-symbols", "language-problems", "language-formatting", "language-range-formatting", "language-rename", "language-code-actions", "language-semantic-tokens", "language-inlay-hints", "language-code-lenses", "language-document-links", "git-status", "git-refresh", "git-diff", "git-staged-diff", "git-stage", "git-unstage", "git-stage-hunk", "git-unstage-hunk", "git-next-hunk", "git-previous-hunk", "git-commit", "git-uncommit", "git-stage-tracked-commit", "git-branches", "git-create-branch", "git-switch-branch", "git-delete-branch", "git-tags", "git-create-tag", "git-worktrees", "git-add-worktree", "git-remove-worktree", "git-stash-push", "git-stash-list", "git-stash-apply", "git-stash-pop", "git-stash-drop", "git-conflicts", "git-resolve-current", "git-resolve-incoming", "git-resolve-both", "git-conflict-manual", "git-continue", "git-abort", "git-remotes", "git-fetch", "git-pull", "git-push", "git-force-push", "git-history", "git-blame", "git-commit-diff", "git-permalink", "git-project-diff", "git-project-diff-refresh", "git-project-diff-next-hunk", "git-project-diff-previous-hunk", "git-project-diff-stage-hunk", "git-project-diff-unstage-hunk", "git-project-diff-stage-selection", "git-project-diff-unstage-selection", "git-project-diff-unified", "git-project-diff-split", "git-project-diff-word", "toggle-terminal", "focus-terminal", "terminal-new", "terminal-close", "terminal-restart", "terminal-cancel", "tasks-show", "tasks-run", "tasks-stop", "tasks-restart", "toggle-agent", "focus-agent", "agent-new-thread", "agent-send", "agent-cancel", "agent-allow", "agent-deny", "agent-accept-review", "agent-reject-review", "workspace-attach-selection", "workspace-open-review", "workspace-next-hunk", "workspace-previous-hunk", "workspace-next-diagnostic" };
     for (entries, actions, 0..) |entry, action, index| {
         try std.testing.expectEqual(index, @backingInt(entry.command));
         try std.testing.expectEqualStrings(action, entry.action);

@@ -61,6 +61,8 @@ pub const Review = struct {
     generation: u64 = 0,
     conflict: ?*Job = null,
     editing: bool = false,
+    origin: c.GWeakRef = undefined,
+    origin_drawer: ?@import("workbench/layout.zig").Panel = null,
 
     pub fn create(app: *App, editor: u.W) *Review {
         const self = a.create(Review) catch unreachable;
@@ -115,8 +117,9 @@ pub const Review = struct {
         u.append(buttons, edit);
         self.* = .{ .content = content, .toggle = toggle, .old_source = old.source, .new_source = new.source, .decision = decision, .app = app, .stack = stack, .page = page, .title = title, .source = source, .action = action, .mine = mine, .edit = edit, .cancel = c.g_cancellable_new().?, .arena = .init(a), .original = u.z(""), .tree = u.z(""), .base = u.z("") };
         u.connect(back, "clicked", &close, self);
-        u.connect(previous, "clicked", &prev, self);
-        u.connect(next, "clicked", &advance, self);
+        c.g_weak_ref_init(&self.origin, null);
+        c.gtk_actionable_set_action_name(u.cast(c.GtkActionable, previous), "win.workspace-previous-hunk");
+        c.gtk_actionable_set_action_name(u.cast(c.GtkActionable, next), "win.workspace-next-hunk");
         u.connect(action, "clicked", &accept, self);
         u.connect(mine, "clicked", &skip, self);
         u.connect(toggle, "toggled", &toggleSplit, self);
@@ -124,6 +127,7 @@ pub const Review = struct {
         return self;
     }
     pub fn deinit(self: *Review) void {
+        c.g_weak_ref_clear(&self.origin);
         c.g_cancellable_cancel(self.cancel);
         c.g_object_unref(self.cancel);
         self.arena.deinit();
@@ -136,6 +140,15 @@ pub const Review = struct {
     pub fn visible(self: *Review) bool {
         return c.gtk_stack_get_visible_child(u.cast(c.GtkStack, self.stack)) == self.page;
     }
+    pub fn focusSource(self: *Review) void {
+        const split = c.gtk_stack_get_visible_child_name(u.cast(c.GtkStack, self.content));
+        const target = if (split != null and std.mem.eql(u8, std.mem.span(split), "split")) self.old_source else self.source;
+        _ = c.gtk_widget_grab_focus(target);
+    }
+    pub fn step(self: *Review, backwards: bool) void {
+        if (!self.visible() or self.editing) return;
+        if (backwards) prev(null, self) else advance(null, self);
+    }
     pub fn choose(self: *Review, apply_change: bool) void {
         if (!self.visible() or self.files.len == 0) return;
         const button = if (apply_change) self.action else self.mine;
@@ -143,7 +156,25 @@ pub const Review = struct {
             if (apply_change) accept(null, self) else skip(null, self);
         }
     }
+    pub fn dismiss(self: *Review) bool {
+        if (!self.visible() or self.editing) return false;
+        const focus = c.gtk_window_get_focus(u.cast(c.GtkWindow, self.app.window));
+        if (!@import("workbench/dock.zig").inside(focus, self.page)) return false;
+        if (c.gtk_widget_get_ancestor(focus, c.gtk_popover_get_type()) != null) return false;
+        const origin = c.g_weak_ref_get(&self.origin);
+        const drawer = self.origin_drawer;
+        self.hide();
+        if (origin) |object| {
+            defer c.g_object_unref(object);
+            const widget = u.cast(c.GtkWidget, object);
+            if (drawer) |panel| if (c.gtk_widget_get_mapped(widget) == 0) self.app.dock.show(panel);
+            if (c.gtk_widget_get_mapped(widget) != 0) _ = c.gtk_widget_grab_focus(widget);
+        }
+        return true;
+    }
     pub fn hide(self: *Review) void {
+        c.g_weak_ref_set(&self.origin, null);
+        self.origin_drawer = null;
         self.generation += 1;
         const was_open = self.visible();
         c.gtk_stack_set_visible_child_name(u.cast(c.GtkStack, self.stack), "editor");
@@ -152,6 +183,12 @@ pub const Review = struct {
         };
     }
     pub fn open(self: *Review, root: []const u8, tree: []const u8, base: []const u8) void {
+        if (!self.visible()) {
+            const focus = c.gtk_window_get_focus(u.cast(c.GtkWindow, self.app.window));
+            c.g_weak_ref_set(&self.origin, @ptrCast(focus));
+            self.origin_drawer = if (self.app.dock.drawers) |d| d.open else null;
+        }
+        _ = self.app.dock.dismissDrawer(false);
         self.generation += 1;
         a.free(self.original);
         a.free(self.tree);
@@ -171,6 +208,7 @@ pub const Review = struct {
         c.gtk_widget_set_sensitive(self.toggle, 0);
         c.gtk_widget_set_sensitive(self.mine, 0);
         c.gtk_widget_set_sensitive(self.action, 0);
+        _ = c.gtk_widget_grab_focus(self.source);
         self.start(.patch, null);
     }
     fn resetConflict(self: *Review) void {

@@ -78,7 +78,7 @@ pub const App = struct {
     workspace_dock: ?*@import("workspace_dock.zig").Dock = null,
     review: ?*@import("workspace_review.zig").Review = null,
     opencode: ?*@import("workspace_agent.zig").Agent = null,
-    agent: @import("agent/controller.zig").Controller = undefined,
+    agent: ?@import("agent/controller.zig").Controller = null,
     session: WorkspaceSession = undefined,
     workspace_operations: WorkspaceOperations = undefined,
     workspace_roots: @import("workspace/roots_controller.zig").Controller = undefined,
@@ -279,7 +279,6 @@ pub const App = struct {
         self.tasks = .init(self);
         self.tasks.navigate = &tasksNavigate;
         self.tasks.navigate_context = self;
-        self.agent = .init(self);
         self.browser = WorkspaceController.init(self, self.dock.explorer_slot);
         self.browser.attach();
         if (@import("workspace_identity.zig").enabled) self.dock.addDrawers(header, self, &drawerSource);
@@ -287,10 +286,6 @@ pub const App = struct {
         self.git_panel.attach(self.dock.source_control_slot);
         if (@import("workspace_identity.zig").enabled) self.workspace_dock = @import("workspace_dock.zig").Dock.create(self, self.dock.terminal_slot) else self.terminal.attach(self.dock.terminal_slot);
         if (@import("workspace_identity.zig").enabled) {
-            const legacy = u.box(false, 0);
-            u.append(self.dock.agent_slot, legacy);
-            self.agent.attach(legacy);
-            c.gtk_widget_set_visible(legacy, 0);
             const sessions = u.box(false, 2);
             const sessions_heading = u.label(@import("i18n").dtr("coral", "Sessions"));
             c.gtk_widget_add_css_class(sessions_heading, "workspace-section");
@@ -305,7 +300,10 @@ pub const App = struct {
             u.append(self.dock.agent_slot, right);
             self.opencode = @import("workspace_agent.zig").Agent.create(self, "", sessions, right);
             self.dock.restore(.{ .agent_visible = true, .terminal_visible = true, .left_size = 245, .right_size = 360, .bottom_size = 155 });
-        } else self.agent.attach(self.dock.agent_slot);
+        } else {
+            self.agent = .init(self);
+            self.agent.?.attach(self.dock.agent_slot);
+        }
         self.workspace_policy = WorkspacePolicy.init(self);
         self.session = .{ .app = self };
         self.workspace_operations = .init(self);
@@ -336,6 +334,7 @@ pub const App = struct {
         u.connect(keys, "key-pressed", &onKey, self);
         c.gtk_widget_add_controller(window, keys);
         for (commands.entries) |entry| {
+            if (entry.workspace_only and self.opencode == null) continue;
             const action = c.g_simple_action_new(entry.action, null).?;
             u.connect(action, "activate", &onAction, self);
             c.g_action_map_add_action(u.cast(c.GActionMap, window), u.cast(c.GAction, action));
@@ -380,23 +379,60 @@ pub const App = struct {
     fn focusAgent(self: *App) void {
         if (self.dock.picking) self.workspace_search.hide();
         self.dock.show(.agent);
-        if (self.opencode) |agent| _ = c.gtk_widget_grab_focus(agent.composer) else self.agent.show();
+        if (self.opencode) |agent| _ = c.gtk_widget_grab_focus(agent.composer) else if (self.agent) |*legacy| legacy.show();
     }
     /// Mirror the panel's provider picker so palette-created threads match the
     /// toolbar's New Thread button.
-    fn agentPickerSelection(self: *App) @import("agent/engine.zig").ProviderSelection {
-        const idx = c.gtk_drop_down_get_selected(u.cast(c.GtkDropDown, self.agent.provider_picker));
+    fn agentPickerSelection(agent: *@import("agent/controller.zig").Controller) @import("agent/engine.zig").ProviderSelection {
+        const idx = c.gtk_drop_down_get_selected(u.cast(c.GtkDropDown, agent.provider_picker));
         return switch (idx) {
-            1 => .{ .openai = .{ .base_url = if (self.agent.engine) |e| (e.auth_config.baseUrl("openai") orelse "") else "" } },
+            1 => .{ .openai = .{ .base_url = if (agent.engine) |e| (e.auth_config.baseUrl("openai") orelse "") else "" } },
             2 => .{ .acp = .{ .argv = &.{} } },
             else => .{ .fake = .{} },
         };
     }
-    fn answerAgentPermission(self: *App, decision: @import("agent/engine.zig").PermissionResponse) void {
-        const idx = self.agent.active orelse return;
-        const t = self.agent.threads[idx] orelse return;
+    fn legacyAgentCommand(agent: *@import("agent/controller.zig").Controller, command: commands.Command) void {
+        switch (command) {
+            .agent_new_thread => agent.newThread(.{ .provider = agentPickerSelection(agent) }) catch {},
+            .agent_send => {
+                const idx = agent.active orelse return;
+                const t = agent.threads[idx] orelse return;
+                const text = u.entryText(agent.input_entry);
+                if (text.len == 0) return;
+                // The palette sends the current draft with its chips; the panel's
+                // own Send button (and the agent-send fixture) consumes them.
+                var inputs: std.ArrayList(@import("agent/engine.zig").AttachmentInput) = .empty;
+                defer inputs.deinit(a);
+                for (t.attachments.items) |chip| inputs.append(a, .{ .kind = chip.kind, .label = chip.label, .content = chip.content }) catch {};
+                agent.send(t.id, text, inputs.items) catch {};
+            },
+            .agent_cancel => {
+                const idx = agent.active orelse return;
+                const t = agent.threads[idx] orelse return;
+                agent.cancel(t.id);
+            },
+            .agent_allow => answerAgentPermission(agent, .allow),
+            .agent_deny => answerAgentPermission(agent, .deny),
+            .agent_accept_review => {
+                const idx = agent.active orelse return;
+                const t = agent.threads[idx] orelse return;
+                const r = t.review orelse return;
+                agent.acceptReview(t.id, r.review_id) catch {};
+            },
+            .agent_reject_review => {
+                const idx = agent.active orelse return;
+                const t = agent.threads[idx] orelse return;
+                const r = t.review orelse return;
+                agent.rejectReview(t.id, r.review_id) catch {};
+            },
+            else => unreachable,
+        }
+    }
+    fn answerAgentPermission(agent: *@import("agent/controller.zig").Controller, decision: @import("agent/engine.zig").PermissionResponse) void {
+        const idx = agent.active orelse return;
+        const t = agent.threads[idx] orelse return;
         const p = t.permission orelse return;
-        self.agent.respondPermission(t.id, p.request_id, decision) catch {};
+        agent.respondPermission(t.id, p.request_id, decision) catch {};
     }
     fn projectDiffSave(context: ?*anyopaque, id: u64) void {
         const self = u.cast(App, context.?);
@@ -422,7 +458,7 @@ pub const App = struct {
     fn hidePanel(self: *App, panel: dock_layout.Panel) void {
         if (self.dock.drawers) |d| if (d.open == panel and self.dock.dismissDrawer(true)) return;
         if (panel == .search) self.workspace_search.hide() else {
-            if (panel == .agent) self.agent.hide();
+            if (panel == .agent) if (self.agent) |*legacy| legacy.hide();
             self.dock.hide(panel);
             self.focusEditor();
         }
@@ -454,6 +490,7 @@ pub const App = struct {
             self.disconnectObject(c.gtk_list_view_get_factory(u.cast(c.GtkListView, view.widget)).?);
         }
         for (commands.entries) |entry| {
+            if (entry.workspace_only and self.opencode == null) continue;
             if (c.g_action_map_lookup_action(u.cast(c.GActionMap, self.window), entry.action)) |action| self.disconnectObject(action);
             c.g_action_map_remove_action(u.cast(c.GActionMap, self.window), entry.action);
         }
@@ -462,7 +499,7 @@ pub const App = struct {
         if (self.workspace_dock) |d| d.deinit();
         if (self.opencode) |agent| agent.deinit();
         if (self.review) |r| r.deinit();
-        self.agent.deinit();
+        if (self.agent) |*legacy| legacy.deinit();
         self.dock.shutdown();
         self.session.deinit();
         self.browser.deinit();
@@ -1499,6 +1536,30 @@ pub const App = struct {
         d.path = u.z(canonical);
         self.load(d, false);
     }
+    fn focusFullDocument(self: *App, d: *Document, group_id: u64) !*EditorView {
+        _ = self.groups.get(group_id) orelse return error.UnknownGroup;
+        for (self.views.items) |view| if (view.document == d) {
+            if (self.groups.forPage(view.page)) |group| if (group.id == group_id) {
+                self.focusView(view);
+                return view;
+            };
+        };
+        const view = try self.addView(d, group_id);
+        self.focusView(view);
+        return view;
+    }
+    pub fn selectDocumentBytes(self: *App, doc: *Document, group_id: u64, text: []const u8, start: usize, end: usize) !void {
+        const decoration = @import("language/decorations.zig");
+        const first = try decoration.iter(doc, text, start);
+        const last = try decoration.iter(doc, text, end);
+        const view = try self.focusFullDocument(doc, group_id);
+        var view_start: c.GtkTextIter = undefined;
+        var view_end: c.GtkTextIter = undefined;
+        c.gtk_text_buffer_get_iter_at_offset(view.buffer, &view_start, c.gtk_text_iter_get_offset(&first));
+        c.gtk_text_buffer_get_iter_at_offset(view.buffer, &view_end, c.gtk_text_iter_get_offset(&last));
+        c.gtk_text_buffer_select_range(view.buffer, &view_start, &view_end);
+        self.scrollActiveTo(&view_start);
+    }
     /// Search always targets a full document view in the group active at activation.
     /// Positions are Unicode scalars; validate the loaded text before selecting it.
     pub fn navigateSearch(self: *App, d: *Document, group_id: u64, result: @import("workspace/search.zig").Result, mode: @import("workspace/search.zig").Mode, query: []const u8) !void {
@@ -1531,15 +1592,7 @@ pub const App = struct {
             }
             if (actual.nextCodepoint() != null) return error.StaleSearchLocation;
         }
-        var target: ?*EditorView = null;
-        for (self.views.items) |view| if (view.document == d) {
-            if (self.groups.forPage(view.page)) |group| if (group.id == group_id) {
-                target = view;
-                break;
-            };
-        };
-        const view = target orelse try self.addView(d, group_id);
-        self.focusView(view);
+        const view = try self.focusFullDocument(d, group_id);
         if (mode == .text) {
             var view_start: c.GtkTextIter = undefined;
             var view_end: c.GtkTextIter = undefined;
@@ -1567,7 +1620,7 @@ pub const App = struct {
         self.git_project_diff.invalidate();
         self.terminal.invalidate();
         self.tasks.invalidate();
-        self.agent.invalidate();
+        if (self.agent) |*legacy| legacy.invalidate();
         self.workspace_search.invalidate("Stale — document lifecycle changed. Refresh required.");
         self.workspace.invalidate();
         for (self.documents.entries.items) |d| {
@@ -1937,7 +1990,7 @@ pub const App = struct {
         self.git_project_diff.invalidate();
         self.terminal.invalidate();
         self.tasks.invalidate();
-        self.agent.invalidate();
+        if (self.agent) |*legacy| legacy.invalidate();
         self.dock.shutdown();
         self.session.shutdown();
         self.workspace_policy.shutdown();
@@ -2176,6 +2229,13 @@ pub const App = struct {
             if (agent.handleCommand(command)) return;
         }
         switch (command) {
+            .workspace_attach_selection => if (self.opencode) |agent| {
+                agent.attachSelection();
+                self.focusAgent();
+            },
+            .workspace_open_review => if (self.opencode) |agent| agent.openReview(),
+            .workspace_next_hunk, .workspace_previous_hunk => if (self.review) |review| review.step(command == .workspace_previous_hunk),
+            .workspace_next_diagnostic => if (self.workspace_dock) |dock| dock.nextDiagnostic(),
             .git_status => self.git.show(),
             .git_refresh => self.git.refresh(),
             .git_diff => self.git.showDiff(false),
@@ -2297,38 +2357,7 @@ pub const App = struct {
             .tasks_restart => self.tasks.restart(),
             .toggle_agent => if (self.dock.visible(.agent)) self.hidePanel(.agent) else self.focusAgent(),
             .focus_agent => self.focusAgent(),
-            .agent_new_thread => self.agent.newThread(.{ .provider = self.agentPickerSelection() }) catch {},
-            .agent_send => {
-                const idx = self.agent.active orelse return;
-                const t = self.agent.threads[idx] orelse return;
-                const text = u.entryText(self.agent.input_entry);
-                if (text.len == 0) return;
-                // The palette sends the current draft with its chips; the panel's
-                // own Send button (and the agent-send fixture) consumes them.
-                var inputs: std.ArrayList(@import("agent/engine.zig").AttachmentInput) = .empty;
-                defer inputs.deinit(a);
-                for (t.attachments.items) |chip| inputs.append(a, .{ .kind = chip.kind, .label = chip.label, .content = chip.content }) catch {};
-                self.agent.send(t.id, text, inputs.items) catch {};
-            },
-            .agent_cancel => {
-                const idx = self.agent.active orelse return;
-                const t = self.agent.threads[idx] orelse return;
-                self.agent.cancel(t.id);
-            },
-            .agent_allow => self.answerAgentPermission(.allow),
-            .agent_deny => self.answerAgentPermission(.deny),
-            .agent_accept_review => {
-                const idx = self.agent.active orelse return;
-                const t = self.agent.threads[idx] orelse return;
-                const r = t.review orelse return;
-                self.agent.acceptReview(t.id, r.review_id) catch {};
-            },
-            .agent_reject_review => {
-                const idx = self.agent.active orelse return;
-                const t = self.agent.threads[idx] orelse return;
-                const r = t.review orelse return;
-                self.agent.rejectReview(t.id, r.review_id) catch {};
-            },
+            .agent_new_thread, .agent_send, .agent_cancel, .agent_allow, .agent_deny, .agent_accept_review, .agent_reject_review => if (self.agent) |*legacy| legacyAgentCommand(legacy, command),
             .focus_editor => {
                 if (self.dock.picking) self.workspace_search.hide();
                 self.focusEditor();
@@ -3606,6 +3635,9 @@ fn onShortcut(controller: ?*c.GtkEventControllerKey, key: c_uint, code: c_uint, 
             return 1;
         };
     }
+    if (key == c.GDK_KEY_Escape and self.popover == null) {
+        if (self.review) |review| if (review.dismiss()) return 1;
+    }
     if (self.opencode != null and key == c.GDK_KEY_F6 and state & (c.GDK_CONTROL_MASK | c.GDK_ALT_MASK) == 0) {
         const focus = c.gtk_window_get_focus(u.cast(c.GtkWindow, self.window));
         const index: usize = if (dock_ui.inside(focus, self.dock.explorer_slot)) 0 else if (dock_ui.inside(focus, self.dock.agent_slot)) 2 else if (dock_ui.inside(focus, self.dock.terminal_slot)) 3 else 1;
@@ -3613,7 +3645,8 @@ fn onShortcut(controller: ?*c.GtkEventControllerKey, key: c_uint, code: c_uint, 
             0 => self.focusExplorer(),
             1 => if (self.review) |r| {
                 if (r.visible()) {
-                    _ = c.gtk_widget_grab_focus(r.source);
+                    _ = self.dock.dismissDrawer(false);
+                    r.focusSource();
                 } else self.focusEditor();
             },
             2 => self.focusAgent(),
@@ -3625,6 +3658,7 @@ fn onShortcut(controller: ?*c.GtkEventControllerKey, key: c_uint, code: c_uint, 
         return 1;
     }
     if (commands.fromKey(key, state)) |command| {
+        if (command.metadata().workspace_only and self.opencode == null) return 0;
         self.execute(command);
         return 1;
     }
@@ -3735,7 +3769,7 @@ fn testCommand(receiver: *App) void {
         self.git_project_diff.fixture(action, git_value) or
         self.terminal.fixture(action, git_value) or
         self.tasks.fixture(action, git_value) or
-        self.agent.fixture(action, git_value))
+        (if (self.agent) |*legacy| legacy.fixture(action, git_value) else false))
     {
         // Git fixture dispatch is compiled out of production builds.
     } else if (std.mem.startsWith(u8, action, "git-")) {
@@ -4170,7 +4204,7 @@ fn testCommand(receiver: *App) void {
     } else if (std.mem.eql(u8, action, "agent-skills-query")) {
         // Drive the real skills entry widget; its "changed" signal runs the
         // controller's actual updateSkills/searchSkills workflow.
-        if (value != null) c.gtk_editable_set_text(u.cast(c.GtkEditable, self.agent.skills_entry), value);
+        if (value != null) if (self.agent) |*legacy| c.gtk_editable_set_text(u.cast(c.GtkEditable, legacy.skills_entry), value);
     } else if (std.mem.eql(u8, action, "grouped-append")) {
         if (value != null) {
             const n = self.documents.entries.items.len;

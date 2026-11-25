@@ -21,10 +21,10 @@ PEARL = CORAL.parents[1]
 sys.path[:0] = [str(PEARL / "scripts"), str(PEARL / "tests/integration")]
 
 
-def drive(offline=False, adaptive=False):
+def drive(offline=False, adaptive=False, diagnostics=False, permissions=False):
     import gi
     gi.require_version("Atspi", "2.0")
-    from gi.repository import Atspi
+    from gi.repository import Atspi, GLib
 
     def descendants(node):
         yield node
@@ -39,14 +39,24 @@ def drive(offline=False, adaptive=False):
             for obj in descendants(Atspi.get_desktop(0)):
                 if obj.get_name() != name or not obj.get_state_set().contains(Atspi.StateType.SHOWING):
                     continue
-                if not actionable or (obj.get_n_actions() > 0 and obj.get_state_set().contains(Atspi.StateType.SENSITIVE)):
+                if not actionable or (obj.get_role() != Atspi.Role.LABEL and obj.get_n_actions() > 0
+                                      and obj.get_state_set().contains(Atspi.StateType.SENSITIVE)):
                     return obj
             time.sleep(.05)
         names = [obj.get_name() for obj in descendants(Atspi.get_desktop(0)) if obj.get_name() and obj.get_state_set().contains(Atspi.StateType.SHOWING)]
         raise AssertionError(f"Missing visible GTK control {name!r}; visible controls {names!r}")
 
     def click(name):
-        assert lookup(name).do_action(0), name
+        deadline = time.monotonic() + 5
+        while True:
+            try:
+                assert lookup(name).do_action(0), name
+                return
+            except GLib.Error as error:
+                # GTK can publish its action list one iteration after a model refresh.
+                if "No action with index" not in str(error) or time.monotonic() >= deadline:
+                    raise
+                time.sleep(.05)
 
     def fixture(action, **fields):
         request = Request(os.environ["WORKSPACE_FIXTURE_URL"] + "/test", data=json.dumps({"action": action, **fields}).encode(),
@@ -72,6 +82,117 @@ def drive(offline=False, adaptive=False):
         if directory := os.environ.get("WORKSPACE_TEST_CAPTURES"):
             subprocess.run(["grim", "-g", os.environ["WORKSPACE_TEST_GEOMETRY"],
                             str(Path(directory) / (name + ".png"))], check=True)
+
+    def key(name, *modifiers):
+        keys = ["wtype", "-s", "60"]
+        for modifier in modifiers:
+            keys.extend(["-M", modifier])
+        keys.extend(["-k", name])
+        for modifier in reversed(modifiers):
+            keys.extend(["-m", modifier])
+        subprocess.run(keys, check=True)
+
+    if permissions:
+        messages = []
+        def announced(event):
+            messages.append(str(event.any_data))
+
+        listener = Atspi.EventListener.new(announced)
+        assert listener.register("object:announcement")
+        def wait_for(predicate, explanation):
+            deadline = time.monotonic() + 6
+            while time.monotonic() < deadline:
+                while GLib.MainContext.default().iteration(False):
+                    pass
+                if predicate():
+                    return
+                time.sleep(.05)
+            raise AssertionError((explanation, messages))
+
+        def buttons(name):
+            return [obj for obj in descendants(Atspi.get_desktop(0)) if obj.get_name() == name
+                    and obj.get_role() == Atspi.Role.PUSH_BUTTON
+                    and obj.get_state_set().contains(Atspi.StateType.SHOWING)]
+        try:
+            lookup("Birch")
+            fixture("permissions-add")
+            details = buffer_with("readme.txt", contains=True)
+            lookup("Message OpenCode", actionable=False)
+            capture("pending-permissions")
+            text = Atspi.Text.get_text(details, 0, -1)
+            assert "Restore cursor" in text and "read" in text and "Working directory" in text and "/project" in text, text
+            wait_for(lambda: sum("readme.txt" in s for s in messages) == 1, "Missing permission announcement")
+            wait_for(lambda: len(buttons("Allow once")) == 2, "Expected two visible permission cards")
+            count = fixture("permission-reads")
+            fixture("permissions-repeat")
+            wait_for(lambda: fixture("permission-reads") > count, "The refresh was not observed")
+            click("Review watcher")
+            buffer_with("other-session.txt", contains=True)
+            wait_for(lambda: any("other-session.txt" in s for s in messages), "Second session announcement missing")
+            click("Restore cursor")
+            buffer_with("readme.txt", contains=True)
+            click("Allow once")
+            wait_for(lambda: fixture("permission-replies") == [["ses_first", "per_read", "once"]], "Allow routed to the wrong request")
+            wait_for(lambda: sum(obj.get_state_set().contains(Atspi.StateType.SENSITIVE) for obj in buttons("Deny")) == 1, "The other card must stay actionable")
+            deny = next(obj for obj in buttons("Deny") if obj.get_state_set().contains(Atspi.StateType.SENSITIVE))
+            assert deny.do_action(0)
+            wait_for(lambda: ["ses_first", "per_shell", "reject"] in fixture("permission-replies"), "Deny routed to the wrong request")
+            fixture("permissions-release")
+            wait_for(lambda: not buttons("Allow once"), "Answered permissions stayed visible")
+            click("Review watcher")
+            buffer_with("other-session.txt", contains=True)
+            fixture("permissions-external")
+            wait_for(lambda: not buttons("Allow once"), "Externally answered permission stayed visible")
+            for resource in ("readme.txt", "zig build test", "other-session.txt"):
+                assert sum(resource in s for s in messages) == 1, (resource, messages)
+            print("Verified per-request screen-reader announcements, simultaneous decisions, routing, refresh and external resolution.")
+        finally:
+            listener.deregister("object:announcement")
+        return
+
+    if diagnostics:
+        click("Approve and start")
+        deadline = time.monotonic() + 5
+        while any(obj.get_name() == "Approve and start" and obj.get_state_set().contains(Atspi.StateType.SHOWING)
+                  for obj in descendants(Atspi.get_desktop(0))):
+            assert time.monotonic() < deadline, "The language-start dialog did not close"
+            time.sleep(.05)
+        key("p", "ctrl", "shift")
+        lookup("Command Palette…", actionable=False)
+        subprocess.run(["wtype", "Next diagnostic"], check=True)
+        lookup("Next diagnostic", actionable=False)
+        lookup("F8", actionable=False)
+        key("Escape")
+        # Both open Zig documents publish their own UTF-16 range. F8 must
+        # switch buffers, select the complete Unicode token, and wrap around.
+        def selected_word():
+            for obj in descendants(Atspi.get_desktop(0)):
+                if not obj.get_state_set().contains(Atspi.StateType.SHOWING) or "Text" not in obj.get_interfaces():
+                    continue
+                if Atspi.Text.get_n_selections(obj):
+                    selection = Atspi.Text.get_selection(obj, 0)
+                    word = Atspi.Text.get_text(obj, selection.start_offset, selection.end_offset)
+                    if word in ("café😀", "naïve🌱"):
+                        return word
+            return None
+
+        end = time.monotonic() + 8
+        while not (first := selected_word()):
+            assert time.monotonic() < end, "F8 did not select a diagnostic"
+            key("F8")
+            time.sleep(.12)
+        key("F8")
+        end = time.monotonic() + 5
+        while (second := selected_word()) == first or second is None:
+            assert time.monotonic() < end, "F8 did not advance to the other document"
+            time.sleep(.05)
+        key("F8")
+        end = time.monotonic() + 3
+        while selected_word() != first:
+            assert time.monotonic() < end, "F8 did not wrap to the first diagnostic"
+            time.sleep(.05)
+        print("Verified the command palette, F8 cross-document diagnostic navigation, Unicode selection and wraparound.")
+        return
 
     if adaptive:
         def visible(name):
@@ -160,7 +281,11 @@ def drive(offline=False, adaptive=False):
         assert composer.set_text_contents("Offline edit")
         click("Review changes")
         lookup("Previously applied to the editor", actionable=False)
-        click("Next change")
+        key("F7", "ctrl")
+        lookup("renamed-image.bin   ·   1/1   ·   +0 −0", actionable=False)
+        key("F7", "ctrl", "shift")
+        lookup("Previously applied to the editor", actionable=False)
+        key("F7", "ctrl")
         lookup("renamed-image.bin   ·   1/1   ·   +0 −0", actionable=False)
         click("Mark file reviewed")
         lookup("File reviewed", actionable=False)
@@ -174,7 +299,7 @@ def drive(offline=False, adaptive=False):
     assert Atspi.Text.add_selection(source, 0, 6)
     click("Earlier messages")
     buffer_with("An older message from this thread.", contains=True)
-    click("Attach selected code")
+    key("a", "ctrl", "shift")
     lookup("hello.txt · L1–1")
     composer = lookup("Message OpenCode", actionable=False)
     assert composer.set_text_contents("Keep this draft across model switches")
@@ -204,7 +329,18 @@ def drive(offline=False, adaptive=False):
     click("Cancel queued prompt")
     click("New OpenCode session")
     lookup("Worktree test", actionable=False)
-    click("Review changes")
+    lookup("Review changes")
+    key("1", "ctrl")
+    key("F6")
+    subprocess.run(["wtype", "-s", "100", "FocusProbe"], check=True)
+    buffer_with("FocusProbe")
+    assert Atspi.Text.get_text(composer, 0, -1) == "FocusProbe", Atspi.Text.get_text(composer, 0, -1)
+    key("r", "ctrl", "shift")
+    lookup("Apply hunk")
+    key("Escape")
+    subprocess.run(["wtype", "-s", "100", "Restored"], check=True)
+    buffer_with("FocusProbeRestored")
+    key("r", "ctrl", "shift")
     click("Side by side")
     lookup("Shared base", actionable=False)
     lookup("Agent worktree", actionable=False)
@@ -250,6 +386,10 @@ class Service(ThreadingHTTPServer):
         self.inbox = {}
         self.attempts = []
         self.cancelled = []
+        self.permissions = {"ses_first": {}, "ses_second": {}}
+        self.permission_reads = 0
+        self.permission_replies = []
+        self.release_permission = threading.Event()
         self.add("ses_first", "Restore cursor", project, "birch")
         self.add("ses_second", "Review watcher", project, "cedar")
         self.sessions["ses_second"].pop("model")
@@ -306,6 +446,25 @@ class API(BaseHTTPRequestHandler):
             return
         body = json.loads(self.rfile.read(int(self.headers["Content-Length"]))) if post else None
         if path == "/test" and post:
+            if body["action"].startswith("permission"):
+                action = body["action"]
+                if action == "permission-reads":
+                    return self.reply(service.permission_reads)
+                if action == "permission-replies":
+                    return self.reply(service.permission_replies)
+                sid = "ses_first"
+                if action == "permissions-add":
+                    for sid, rid, kind, resource in [("ses_second", "per_other", "read", "other-session.txt"),
+                                                     ("ses_first", "per_read", "read", "readme.txt"),
+                                                     ("ses_first", "per_shell", "bash", "zig build test")]:
+                        service.permissions[sid][rid] = {"sessionID": sid, "id": rid, "action": kind, "resources": [resource]}
+                elif action == "permissions-release":
+                    service.release_permission.set()
+                elif action == "permissions-external":
+                    sid = "ses_second"
+                    service.permissions[sid].clear()
+                service.events.put({"type": "permission.updated", "data": {"sessionID": sid}})
+                return self.reply({})
             if body["action"] == "current-model":
                 return self.reply(service.sessions["ses_first"]["model"]["id"])
             if body["action"] in ("resize", "geometry"):
@@ -366,7 +525,18 @@ class API(BaseHTTPRequestHandler):
                     {"type": "assistant", "id": "msg_answer", "content": [{"type": "text", "text": "The saved cursor is restored before the thread opens. I can add a bounds check in the isolated worktree."}]},
                     {"type": "user", "id": "msg_request", "text": "Keep my reading position when I reopen this session."}]})
             if fields[3] == "permission":
-                return self.reply({"data": []})
+                sid = fields[2]
+                permissions = service.permissions.get(sid, {})
+                if post:
+                    rid = fields[4]
+                    assert fields[5] == "reply" and rid in permissions
+                    service.permission_replies.append([sid, rid, body["decision"]])
+                    if rid == "per_read":
+                        service.release_permission.wait(8)
+                    del permissions[rid]
+                    return self.reply({})
+                service.permission_reads += 1
+                return self.reply({"data": list(permissions.values())})
         self.send_error(404)
 
 
@@ -428,7 +598,24 @@ def main(args):
                     wait_for(lambda: abs(rect().get("width",0)-width) < 8)
                 return rect()
             service.window_geometry = window_geometry
-            application = session.child("workspace", [args.binary.resolve(), project, file], G_DEBUG="fatal-criticals")
+            documents = [file]
+            if args.diagnostics:
+                # Earlier Coral versions could create this path with the default
+                # mode. Workspace owns its approval records in its own directory.
+                legacy = Path(session.env["XDG_STATE_HOME"]) / "coral"
+                legacy.mkdir(mode=0o755)
+                config = Path(session.env["HOME"]) / ".config/coral/languages.json"
+                config.parent.parent.mkdir(mode=0o700, exist_ok=True)
+                config.parent.mkdir(mode=0o700, exist_ok=True)
+                config.write_text(json.dumps({"version": 1, "servers": [{
+                    "language": "zig", "cwd": "root", "env": {"PATH": "/usr/bin:/bin"},
+                    "argv": [sys.executable, "-B", str(CORAL / "tests/fixtures/fake_lsp.py"), "--encoding", "utf-16"],
+                }]}))
+                config.chmod(0o600)
+                documents = [project / "first.zig", project / "second.zig"]
+                for doc, data in zip(documents, ["   café😀 first\n", "  naïve🌱 second\n"]):
+                    doc.write_text(data)
+            application = session.child("workspace", [args.binary.resolve(), project, *documents], G_DEBUG="fatal-criticals")
             from pearl_session import wait_for
             wait_for(lambda: "/api/model" in service.calls)
             if args.capture_dir:
@@ -436,9 +623,13 @@ def main(args):
                 geometry = next(node["geometry"] for node in ipc.state() if node["kind"] == "window" and node.get("app_id") == "org.aqueous.Coral.Workspace")
                 session.env["WORKSPACE_TEST_CAPTURES"] = str(args.capture_dir.resolve())
                 session.env["WORKSPACE_TEST_GEOMETRY"] = "{x},{y} {width}x{height}".format(**geometry)
-            if args.adaptive:
-                subprocess.run([sys.executable, str(Path(__file__).resolve()), "--drive", "--adaptive"],
+            if args.adaptive or args.diagnostics or args.permissions:
+                scenario = "--adaptive" if args.adaptive else ("--diagnostics" if args.diagnostics else "--permissions")
+                subprocess.run([sys.executable, str(Path(__file__).resolve()), "--drive", scenario],
                                env=session.env, check=True, timeout=60)
+                if args.diagnostics:
+                    assert not (legacy / "agents").exists()
+                    assert (legacy.parent / "coral-workspace/language").is_dir()
                 return
             subprocess.run([sys.executable, str(Path(__file__).resolve()), "--drive"], env=session.env,
                            check=True, timeout=65)
@@ -471,6 +662,8 @@ if __name__ == "__main__":
     parser.add_argument("--drive", action="store_true")
     parser.add_argument("--offline", action="store_true")
     parser.add_argument("--adaptive", action="store_true")
+    parser.add_argument("--diagnostics", action="store_true")
+    parser.add_argument("--permissions", action="store_true")
     parser.add_argument("--binary", type=Path, default=CORAL / "zig-out/bin/coral-workspace")
     parser.add_argument("--output", type=Path, default=CORAL / ".zig-cache/workspace-integration")
     parser.add_argument("--aqueous-prefix", type=Path)
@@ -481,6 +674,6 @@ if __name__ == "__main__":
     parser.add_argument("--height", type=int, default=900)
     opts = parser.parse_args()
     if opts.drive:
-        drive(opts.offline, opts.adaptive)
+        drive(opts.offline, opts.adaptive, opts.diagnostics, opts.permissions)
     else:
         main(opts)

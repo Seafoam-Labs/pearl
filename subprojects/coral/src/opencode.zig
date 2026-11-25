@@ -46,7 +46,9 @@ const Service = struct {
             }
         }
         const service = u.a.create(Service) catch unreachable;
-        const http = c.soup_session_new().?;
+        // The permanent event stream occupies one connection. A pending prompt
+        // or permission must leave room for other sessions' requests.
+        const http = c.soup_session_new_with_options(@as([*:0]const u8, "max-conns-per-host"), @as(c_int, 8), @as(?*anyopaque, null)).?;
         c.soup_session_set_timeout(http, 15);
         service.* = .{ .http = http, .url = u.z(url), .identity = u.z(identity), .authorization = u.z(authorization) };
         services.append(u.a, service) catch unreachable;

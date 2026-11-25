@@ -1698,23 +1698,7 @@ pub const Controller = struct {
         const text = u.bufferText(d.buffer);
         defer a.free(text);
         const range = try positions.byteRange(text, nav.location.range, nav.encoding);
-        var existing: ?*@import("../editor/view.zig").EditorView = null;
-        _ = self.app.groups.get(nav.group) orelse return error.NavigationGroupClosed;
-        for (self.app.views.items) |view| if (view.document == d) {
-            if (self.app.groups.forPage(view.page)) |group| if (group.id == nav.group) {
-                existing = view;
-                break;
-            };
-        };
-        const view = existing orelse try self.app.addView(d, nav.group);
-        self.app.focusView(view);
-        var start = try decorations.iter(d, text, range.start);
-        var end = try decorations.iter(d, text, range.end);
-        // Views use independent buffer bridges; canonical character offsets map 1:1.
-        c.gtk_text_buffer_get_iter_at_offset(view.buffer, &start, c.gtk_text_iter_get_offset(&start));
-        c.gtk_text_buffer_get_iter_at_offset(view.buffer, &end, c.gtk_text_iter_get_offset(&end));
-        c.gtk_text_buffer_select_range(view.buffer, &start, &end);
-        _ = c.gtk_text_view_scroll_to_iter(u.cast(c.GtkTextView, view.widget), &start, 0.15, 0, 0, 0);
+        try self.app.selectDocumentBytes(d, nav.group, text, range.start, range.end);
         self.clearNavigation();
     }
     pub fn problems(self: *Controller) void {
@@ -2153,16 +2137,24 @@ fn methodFor(action: Action) []const u8 {
 pub const DockProblem = struct { document: u64, revision: u64, start: usize, end: usize, label: []const u8 };
 pub fn workspaceProblems(self: *Controller, alloc: std.mem.Allocator) ![]DockProblem {
     var rows: std.ArrayList(DockProblem) = .empty;
-    for (self.sessions) |slot| if (slot) |s| if (self.valid(s) and s.pipe.state == .ready) {
+    sessions: for (self.sessions) |slot| if (slot) |s| if (self.valid(s) and s.pipe.state == .ready) {
         for (s.docs.items) |synced| if (synced.diagnostics) |diagnostics| {
             const d = self.app.documents.get(synced.id) orelse continue;
             if (d.revision != synced.revision) continue;
             for (diagnostics.value.items) |item| {
-                if (rows.items.len >= f.max_items) return rows.toOwnedSlice(alloc);
+                if (rows.items.len >= f.max_items) break :sessions;
                 const name = if (d.path) |path| std.fs.path.basename(path) else "Untitled";
                 try rows.append(alloc, .{ .document = d.id, .revision = d.revision, .start = item.range.start, .end = item.range.end, .label = try std.fmt.allocPrint(alloc, "{s}   ·   {s}   ·   {s}", .{ name, @tagName(item.severity), item.message }) });
             }
         };
     };
+    std.mem.sort(DockProblem, rows.items, {}, struct {
+        fn less(_: void, left: DockProblem, right: DockProblem) bool {
+            if (left.document != right.document) return left.document < right.document;
+            if (left.start != right.start) return left.start < right.start;
+            if (left.end != right.end) return left.end < right.end;
+            return std.mem.lessThan(u8, left.label, right.label);
+        }
+    }.less);
     return rows.toOwnedSlice(alloc);
 }
