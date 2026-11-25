@@ -104,6 +104,10 @@ pub fn build(b: *std.Build) void {
     menus.addArtifactArg(test_exe);
     menus.addPassthruArgs();
     b.step("test-context-menus", "Exercise native context menus and batch operations").dependOn(&menus.step);
+    const trash = b.addSystemCommand(&.{ "python3", "tests/trash_native.py", "--binary" });
+    trash.addArtifactArg(test_exe);
+    trash.addPassthruArgs();
+    b.step("test-trash", "Exercise the Empty Trash toolbar button in an isolated session").dependOn(&trash.step);
     b.step("integration", "Exercise native GTK in a private Aqueous session and capture evidence").dependOn(&integration.step);
     const themes = b.addSystemCommand(&.{ "python3", "tests/themes.py", "--binary" });
     themes.addArtifactArg(test_exe);

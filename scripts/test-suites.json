@@ -2698,6 +2698,32 @@
     "options": []
   },
   {
+    "id": "phyto:test-trash",
+    "description": "Exercise the Empty Trash toolbar button in an isolated session",
+    "groups": [
+      "apps"
+    ],
+    "cwd": "subprojects/phyto",
+    "targets": [
+      "test-trash"
+    ],
+    "capabilities": [
+      "zig",
+      "native",
+      "session",
+      "aqueous",
+      "gvfs"
+    ],
+    "fixture": "production",
+    "output": "directory",
+    "timeout": 1800,
+    "sources": [
+      "subprojects/phyto/tests/trash_native.py"
+    ],
+    "args": [],
+    "options": []
+  },
+  {
     "id": "phyto:integration",
     "description": "Exercise native GTK in a private Aqueous session and capture evidence",
     "groups": [
