@@ -89,6 +89,8 @@ The composer keeps a separate model, draft and captured selection for each sessi
 
 Run `zig build workspace-integration -Doptimize=safe -- --aqueous-prefix /path/to/aqueous/prefix` for a private Wayland test with a local OpenCode API fixture. The test exercises the native widgets and checks that review preserves the project’s staged and unstaged content. Pass `--adaptive` to exercise the drawers through window resizes, or `--adaptive --large-text` to exercise them at 200% text DPI. The `--diagnostics` scenario checks Unicode selections across two documents. The `--permissions` scenario checks screen-reader announcements and replies across two sessions. With OpenCode 2.4 installed, `zig build workspace-service-test` runs an isolated service and local model endpoint. It changes models during a turn, answers a permission request, and retries a queued prompt using its original ID.
 
+Run `zig build workspace-profile -Doptimize=safe -- --aqueous-prefix /path/to/aqueous/prefix --output /tmp/coral-profile` to measure the native editor on a private desktop. The harness creates a 50,000-file Git checkout, loads a 2,000-message conversation, streams two sessions, and records real GTK input, buffer, and frame timestamps in `measurements.json`. [Recorded hardware and timings](../../docs/DEVELOPMENT_WORKSPACE_PERFORMANCE.md)
+
 ## Build and run
 
 Use Zig 0.17.1, `pkg-config`, a C toolchain, GTK **4.12+**, GtkSourceView **5**,

@@ -143,12 +143,28 @@ pub const Thread = struct {
         while (prefix < @min(self.rendered.len, text.len) and self.rendered[prefix] == text[prefix]) : (prefix += 1) {}
         if (prefix == text.len and prefix == self.rendered.len) return;
         while (prefix > 0 and prefix < text.len and text[prefix] & 0xc0 == 0x80) prefix -= 1;
+        // A history page prepends messages. Preserve the existing GTK paragraphs,
+        // their layout caches and text marks wherever the trailing bytes agree.
+        var old_end = self.rendered.len;
+        var new_end = text.len;
+        while (old_end > prefix and new_end > prefix and self.rendered[old_end - 1] == text[new_end - 1]) {
+            old_end -= 1;
+            new_end -= 1;
+        }
+        while (new_end < text.len and text[new_end] & 0xc0 == 0x80) {
+            old_end += 1;
+            new_end += 1;
+        }
         var start: c.GtkTextIter = undefined;
-        var end: c.GtkTextIter = undefined;
-        c.gtk_text_buffer_get_iter_at_offset(self.buffer(), &start, @intCast(c.g_utf8_strlen(self.rendered.ptr, @intCast(prefix))));
-        c.gtk_text_buffer_get_end_iter(self.buffer(), &end);
-        c.gtk_text_buffer_delete(self.buffer(), &start, &end);
-        if (prefix < text.len) c.gtk_text_buffer_insert(self.buffer(), &start, text[prefix..].ptr, @intCast(text.len - prefix));
+        const start_chars: c_int = @intCast(c.g_utf8_strlen(self.rendered.ptr, @intCast(prefix)));
+        c.gtk_text_buffer_get_iter_at_offset(self.buffer(), &start, start_chars);
+        if (old_end > prefix) {
+            var end: c.GtkTextIter = undefined;
+            const removed_chars: c_int = @intCast(c.g_utf8_strlen(self.rendered[prefix..].ptr, @intCast(old_end - prefix)));
+            c.gtk_text_buffer_get_iter_at_offset(self.buffer(), &end, start_chars + removed_chars);
+            c.gtk_text_buffer_delete(self.buffer(), &start, &end);
+        }
+        if (new_end > prefix) c.gtk_text_buffer_insert(self.buffer(), &start, text[prefix..].ptr, @intCast(new_end - prefix));
         a.free(self.rendered);
         self.rendered = u.z(text);
         if (target != null or self.cursor == null) {

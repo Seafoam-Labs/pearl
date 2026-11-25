@@ -1,0 +1,368 @@
+{
+  "baseline": [
+    {
+      "cpu": "AMD Ryzen 9 9950X3D 16-Core Processor",
+      "kernel": "7.3.6-1.1-devario",
+      "backend": "Aqueous headless, 1440×900 at 60 Hz, Cairo",
+      "optimize": "safe",
+      "tracked_files": 50000,
+      "messages_per_session": 2000,
+      "sessions": 2,
+      "chunks_per_session": 388,
+      "distinct_head_updates": {
+        "ses_first": 75,
+        "ses_second": 3
+      },
+      "binary_sha256": "98ef5ff024691b7f63ba4504dc6263c3d5508029271991c64622433d38529195",
+      "first_frame_prime_and_three_warm": [
+        {
+          "complete_us": 124262,
+          "presented_us": 113294
+        },
+        {
+          "complete_us": 126243,
+          "presented_us": 112911
+        },
+        {
+          "complete_us": 129592,
+          "presented_us": 116357
+        },
+        {
+          "complete_us": 131082,
+          "presented_us": 119358
+        }
+      ],
+      "main_context_5ms_heartbeat": {
+        "idle": {
+          "samples": 194,
+          "p50_ms": 5.05,
+          "p95_ms": 5.07,
+          "max_ms": 26.87
+        },
+        "expand": {
+          "samples": 58,
+          "p50_ms": 5.05,
+          "p95_ms": 8.02,
+          "max_ms": 20.82
+        },
+        "history": {
+          "samples": 1161,
+          "p50_ms": 5.04,
+          "p95_ms": 5.29,
+          "max_ms": 6.02
+        },
+        "typing": {
+          "samples": 340,
+          "p50_ms": 5.05,
+          "p95_ms": 5.25,
+          "max_ms": 25.43
+        },
+        "switch": {
+          "samples": 127,
+          "p50_ms": 5.05,
+          "p95_ms": 5.53,
+          "max_ms": 52.65
+        }
+      },
+      "key_to_buffer": {
+        "samples": 35,
+        "p50_ms": 0.08,
+        "p95_ms": 0.11,
+        "max_ms": 0.12
+      },
+      "key_to_frame_complete": {
+        "samples": 35,
+        "p50_ms": 19.6,
+        "p95_ms": 30.87,
+        "max_ms": 36.47
+      },
+      "key_to_presentation": {
+        "samples": 35,
+        "p50_ms": 16.86,
+        "p95_ms": 28.83,
+        "max_ms": 31.25
+      }
+    },
+    {
+      "cpu": "AMD Ryzen 9 9950X3D 16-Core Processor",
+      "kernel": "7.3.6-1.1-devario",
+      "backend": "Aqueous headless, 1440×900 at 60 Hz, Cairo",
+      "optimize": "safe",
+      "zig": "0.17.1",
+      "libraries": {
+        "gtk4": "4.24.1",
+        "gtksourceview-5": "5.22.0",
+        "libsoup-3.0": "3.8.1"
+      },
+      "window_px": [
+        1400,
+        860
+      ],
+      "tracked_files": 50000,
+      "messages_per_session": 2000,
+      "sessions": 2,
+      "chunks_per_session": 388,
+      "distinct_head_updates": {
+        "ses_first": 74,
+        "ses_second": 4
+      },
+      "binary_sha256": "9c39505ac6f5237400a36a9561cb5ca6ac4bafea798f638878b4b13e0cec687f",
+      "first_frame_prime_and_three_warm": [
+        {
+          "complete_us": 127194,
+          "presented_us": 115980
+        },
+        {
+          "complete_us": 125776,
+          "presented_us": 112260
+        },
+        {
+          "complete_us": 128463,
+          "presented_us": 117158
+        },
+        {
+          "complete_us": 128392,
+          "presented_us": 116290
+        }
+      ],
+      "main_context_5ms_heartbeat": {
+        "idle": {
+          "samples": 195,
+          "p50_ms": 5.05,
+          "p95_ms": 5.07,
+          "max_ms": 22.28
+        },
+        "expand": {
+          "samples": 48,
+          "p50_ms": 5.05,
+          "p95_ms": 6.54,
+          "max_ms": 21.0
+        },
+        "history": {
+          "samples": 1165,
+          "p50_ms": 5.05,
+          "p95_ms": 5.34,
+          "max_ms": 53.12
+        },
+        "typing": {
+          "samples": 340,
+          "p50_ms": 5.05,
+          "p95_ms": 5.07,
+          "max_ms": 26.59
+        },
+        "switch": {
+          "samples": 128,
+          "p50_ms": 5.05,
+          "p95_ms": 5.8,
+          "max_ms": 47.43
+        }
+      },
+      "key_to_buffer": {
+        "samples": 35,
+        "p50_ms": 0.07,
+        "p95_ms": 0.11,
+        "max_ms": 0.12
+      },
+      "key_to_frame_complete": {
+        "samples": 35,
+        "p50_ms": 18.94,
+        "p95_ms": 32.7,
+        "max_ms": 32.85
+      },
+      "key_to_presentation": {
+        "samples": 35,
+        "p50_ms": 16.56,
+        "p95_ms": 28.65,
+        "max_ms": 29.58
+      }
+    }
+  ],
+  "incremental_transcript": [
+    {
+      "cpu": "AMD Ryzen 9 9950X3D 16-Core Processor",
+      "kernel": "7.3.6-1.1-devario",
+      "backend": "Aqueous headless, 1440×900 at 60 Hz, Cairo",
+      "optimize": "safe",
+      "zig": "0.17.1",
+      "libraries": {
+        "gtk4": "4.24.1",
+        "gtksourceview-5": "5.22.0",
+        "libsoup-3.0": "3.8.1"
+      },
+      "window_px": [
+        1400,
+        860
+      ],
+      "tracked_files": 50000,
+      "messages_per_session": 2000,
+      "sessions": 2,
+      "chunks_per_session": 371,
+      "distinct_head_updates": {
+        "ses_first": 71,
+        "ses_second": 4
+      },
+      "binary_sha256": "1f2d60dc94db4e23e368c3da0f6e8fe22419a9c16665b9614c5975b1947f42a1",
+      "first_frame_prime_and_three_warm": [
+        {
+          "complete_us": 124504,
+          "presented_us": 113093
+        },
+        {
+          "complete_us": 125591,
+          "presented_us": 114224
+        },
+        {
+          "complete_us": 132387,
+          "presented_us": 120581
+        },
+        {
+          "complete_us": 126220,
+          "presented_us": 112592
+        }
+      ],
+      "main_context_5ms_heartbeat": {
+        "idle": {
+          "samples": 195,
+          "p50_ms": 5.05,
+          "p95_ms": 5.07,
+          "max_ms": 21.9
+        },
+        "expand": {
+          "samples": 47,
+          "p50_ms": 5.05,
+          "p95_ms": 7.71,
+          "max_ms": 25.15
+        },
+        "history": {
+          "samples": 1105,
+          "p50_ms": 5.03,
+          "p95_ms": 5.06,
+          "max_ms": 5.64
+        },
+        "typing": {
+          "samples": 342,
+          "p50_ms": 5.05,
+          "p95_ms": 5.07,
+          "max_ms": 25.48
+        },
+        "switch": {
+          "samples": 113,
+          "p50_ms": 5.03,
+          "p95_ms": 5.4,
+          "max_ms": 51.04
+        }
+      },
+      "key_to_buffer": {
+        "samples": 35,
+        "p50_ms": 0.08,
+        "p95_ms": 0.11,
+        "max_ms": 0.11
+      },
+      "key_to_frame_complete": {
+        "samples": 35,
+        "p50_ms": 20.44,
+        "p95_ms": 33.28,
+        "max_ms": 42.28
+      },
+      "key_to_presentation": {
+        "samples": 35,
+        "p50_ms": 18.57,
+        "p95_ms": 31.88,
+        "max_ms": 38.05
+      }
+    },
+    {
+      "cpu": "AMD Ryzen 9 9950X3D 16-Core Processor",
+      "kernel": "7.3.6-1.1-devario",
+      "backend": "Aqueous headless, 1440×900 at 60 Hz, Cairo",
+      "optimize": "safe",
+      "zig": "0.17.1",
+      "libraries": {
+        "gtk4": "4.24.1",
+        "gtksourceview-5": "5.22.0",
+        "libsoup-3.0": "3.8.1"
+      },
+      "window_px": [
+        1400,
+        860
+      ],
+      "tracked_files": 50000,
+      "messages_per_session": 2000,
+      "sessions": 2,
+      "chunks_per_session": 380,
+      "distinct_head_updates": {
+        "ses_first": 72,
+        "ses_second": 4
+      },
+      "binary_sha256": "1f2d60dc94db4e23e368c3da0f6e8fe22419a9c16665b9614c5975b1947f42a1",
+      "first_frame_prime_and_three_warm": [
+        {
+          "complete_us": 125583,
+          "presented_us": 114281
+        },
+        {
+          "complete_us": 129164,
+          "presented_us": 117598
+        },
+        {
+          "complete_us": 125652,
+          "presented_us": 112533
+        },
+        {
+          "complete_us": 128391,
+          "presented_us": 115068
+        }
+      ],
+      "main_context_5ms_heartbeat": {
+        "idle": {
+          "samples": 196,
+          "p50_ms": 5.05,
+          "p95_ms": 5.06,
+          "max_ms": 21.18
+        },
+        "expand": {
+          "samples": 47,
+          "p50_ms": 5.05,
+          "p95_ms": 5.49,
+          "max_ms": 25.28
+        },
+        "history": {
+          "samples": 1118,
+          "p50_ms": 5.03,
+          "p95_ms": 5.06,
+          "max_ms": 5.56
+        },
+        "typing": {
+          "samples": 338,
+          "p50_ms": 5.05,
+          "p95_ms": 5.07,
+          "max_ms": 31.14
+        },
+        "switch": {
+          "samples": 119,
+          "p50_ms": 5.04,
+          "p95_ms": 5.56,
+          "max_ms": 74.03
+        }
+      },
+      "key_to_buffer": {
+        "samples": 35,
+        "p50_ms": 0.09,
+        "p95_ms": 0.1,
+        "max_ms": 0.11
+      },
+      "key_to_frame_complete": {
+        "samples": 35,
+        "p50_ms": 21.42,
+        "p95_ms": 32.79,
+        "max_ms": 37.1
+      },
+      "key_to_presentation": {
+        "samples": 35,
+        "p50_ms": 17.27,
+        "p95_ms": 29.5,
+        "max_ms": 29.83
+      }
+    }
+  ]
+}

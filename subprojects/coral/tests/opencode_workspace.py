@@ -374,8 +374,8 @@ def drive(offline=False, adaptive=False, diagnostics=False, permissions=False):
 class Service(ThreadingHTTPServer):
     daemon_threads = True
 
-    def __init__(self, project):
-        super().__init__(("127.0.0.1", 0), API)
+    def __init__(self, project, handler=None):
+        super().__init__(("127.0.0.1", 0), handler or API)
         self.project = project
         self.password = secrets.token_urlsafe(20)
         self.authorization = "Basic " + base64.b64encode(("opencode:" + self.password).encode()).decode()

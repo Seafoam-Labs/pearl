@@ -69,6 +69,15 @@ pub fn build(b: *std.Build) void {
     workspace_test.addArtifactArg(workspace);
     workspace_test.addPassthruArgs();
     b.step("workspace-integration", "Exercise OpenCode model selection and isolated Git review in GTK").dependOn(&workspace_test.step);
+    const profile_module = b.createModule(.{ .root_source_file = b.path("src/workspace_profile.zig"), .target = target, .optimize = optimize });
+    profile_module.addImport("coral", m);
+    profile_module.addImport("pearl_app_c", m.import_table.get("pearl_app_c").?);
+    const profile = b.addExecutable(.{ .name = "coral-workspace-profile", .root_module = profile_module });
+    b.step("build-workspace-profile", "Build the instrumented workspace for latency measurements").dependOn(&b.addInstallArtifact(profile, .{}).step);
+    const profile_run = b.addSystemCommand(&.{ native_python, "tests/workspace_profile.py", "--binary" });
+    profile_run.addArtifactArg(profile);
+    profile_run.addPassthruArgs();
+    b.step("workspace-profile", "Measure native frame and input latency with a large checkout and two streaming sessions").dependOn(&profile_run.step);
     const service_test = b.addSystemCommand(&.{native_python});
     service_test.addFileArg(b.path("tests/opencode_service.py"));
     b.step("workspace-service-test", "Verify model switching during a real OpenCode turn with a loopback model").dependOn(&service_test.step);
