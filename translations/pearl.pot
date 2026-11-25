@@ -222,6 +222,10 @@ msgstr ""
 msgid "Active on some displays"
 msgstr ""
 
+#: src/desktop/aqueous_display_setup.zig:188
+msgid "Active."
+msgstr ""
+
 #: src/ui/components/network.zig:490
 msgid "Adapter unavailable"
 msgstr ""
@@ -232,6 +236,22 @@ msgstr ""
 
 #: src/desktop/connectivity.zig:82
 msgid "Adapters, nearby and saved networks"
+msgstr ""
+
+#: src/desktop/aqueous_display_setup.zig:438 src/desktop/aqueous_display_setup.zig:439
+msgid "Adaptive sync (VRR)"
+msgstr ""
+
+#: src/desktop/aqueous_display_setup.zig:188
+msgid "Adaptive sync could not be enabled on this display."
+msgstr ""
+
+#: src/desktop/aqueous_display_setup.zig:188
+msgid "Adaptive sync is unavailable while mirroring."
+msgstr ""
+
+#: src/desktop/aqueous_display_setup.zig:188
+msgid "Adaptive sync preview is not available for this display."
 msgstr ""
 
 #: src/settings/autostart_view.zig:245
@@ -375,7 +395,7 @@ msgstr ""
 msgid "Album art"
 msgstr ""
 
-#: src/desktop/aqueous_display_setup.zig:448
+#: src/desktop/aqueous_display_setup.zig:477
 msgid "Align edges"
 msgstr ""
 
@@ -658,7 +678,7 @@ msgstr ""
 msgid "Arrange by name"
 msgstr ""
 
-#: src/desktop/aqueous_display_setup.zig:384
+#: src/desktop/aqueous_display_setup.zig:401
 msgid "Arrange side by side"
 msgstr ""
 
@@ -670,7 +690,7 @@ msgstr ""
 msgid "Arrange your desktop bar and dock."
 msgstr ""
 
-#: src/desktop/aqueous_display_setup.zig:376
+#: src/desktop/aqueous_display_setup.zig:393
 msgid "Arrange your displays"
 msgstr ""
 
@@ -739,7 +759,7 @@ msgstr ""
 msgid "Automatic (first connected display)"
 msgstr ""
 
-#: src/desktop/aqueous_display_setup.zig:492
+#: src/desktop/aqueous_display_setup.zig:521
 msgid "Automatic SDR brightness uses inherited/default settings. Other color options and display profiles are below."
 msgstr ""
 
@@ -1184,7 +1204,7 @@ msgstr ""
 msgid "Celsius (°C)"
 msgstr ""
 
-#: src/desktop/aqueous_display_setup.zig:455
+#: src/desktop/aqueous_display_setup.zig:484
 msgid "Center"
 msgstr ""
 
@@ -1446,7 +1466,7 @@ msgstr ""
 msgid "Clear sky"
 msgstr ""
 
-#: src/desktop/aqueous_display_setup.zig:386
+#: src/desktop/aqueous_display_setup.zig:403
 msgid "Click a screen to change its settings."
 msgstr ""
 
@@ -1927,7 +1947,7 @@ msgstr ""
 msgid "Current arrangement; Validate updates the diagram from Aqueous's candidate"
 msgstr ""
 
-#: src/desktop/aqueous_display_setup.zig:249 src/desktop/aqueous_display_setup.zig:377
+#: src/desktop/aqueous_display_setup.zig:266 src/desktop/aqueous_display_setup.zig:394
 msgid "Current layout"
 msgstr ""
 
@@ -1977,7 +1997,7 @@ msgstr ""
 msgid "Custom GGUF: verify compatibility before use."
 msgstr ""
 
-#: src/desktop/aqueous_display_setup.zig:229
+#: src/desktop/aqueous_display_setup.zig:245
 msgid "Custom arrangement. Drag a screen or set its exact position."
 msgstr ""
 
@@ -1993,7 +2013,7 @@ msgstr ""
 msgid "Custom mistralrs absolute path"
 msgstr ""
 
-#: src/desktop/aqueous_display_setup.zig:167
+#: src/desktop/aqueous_display_setup.zig:170
 msgid "Custom settings in More display options."
 msgstr ""
 
@@ -2329,7 +2349,7 @@ msgctxt "aqueous.display.identify_by.label"
 msgid "Display identity"
 msgstr ""
 
-#: src/desktop/aqueous_display_setup.zig:483 src/settings/bar_view.zig:559
+#: src/desktop/aqueous_display_setup.zig:512 src/settings/bar_view.zig:559
 msgid "Display mode"
 msgstr ""
 
@@ -2357,7 +2377,7 @@ msgstr ""
 msgid "Displays"
 msgstr ""
 
-#: src/desktop/aqueous_display_setup.zig:244
+#: src/desktop/aqueous_display_setup.zig:261
 msgid "Displays overlap. Move them apart or choose mirroring before applying."
 msgstr ""
 
@@ -2469,7 +2489,7 @@ msgstr ""
 msgid "Draft · Apply & save to update your desktop."
 msgstr ""
 
-#: src/desktop/aqueous_display_setup.zig:376
+#: src/desktop/aqueous_display_setup.zig:393
 msgid "Drag screens to match how they sit on your desk."
 msgstr ""
 
@@ -2618,7 +2638,7 @@ msgctxt "aqueous.input.touchpad.middle_emulation.description"
 msgid "Emulate a middle button chord."
 msgstr ""
 
-#: src/desktop/aqueous_display_setup.zig:413 src/desktop/aqueous_display_setup.zig:414
+#: src/desktop/aqueous_display_setup.zig:430 src/desktop/aqueous_display_setup.zig:431
 msgid "Enable HDR"
 msgstr ""
 
@@ -2647,7 +2667,7 @@ msgctxt "aqueous.opacity.enabled.description"
 msgid "Enable compositor-controlled opacity."
 msgstr ""
 
-#: src/desktop/aqueous_display_setup.zig:411
+#: src/desktop/aqueous_display_setup.zig:428
 msgid "Enable display"
 msgstr ""
 
@@ -2675,8 +2695,16 @@ msgstr ""
 msgid "Enabled"
 msgstr ""
 
+#: src/desktop/aqueous_display_setup.zig:188
+msgid "Enabled for fullscreen apps."
+msgstr ""
+
 #: src/settings/plugins_view.zig:153
 msgid "Enabled in draft"
+msgstr ""
+
+#: src/desktop/aqueous_display_setup.zig:188
+msgid "Enabled."
 msgstr ""
 
 #: src/settings/preferences_view.zig:370
@@ -3133,11 +3161,11 @@ msgctxt "aqueous.layout.options.grid.single_window_aspect_ratio.label"
 msgid "Grid: Single window aspect ratio"
 msgstr ""
 
-#: src/desktop/aqueous_display_setup.zig:484
+#: src/desktop/aqueous_display_setup.zig:513
 msgid "HDR adjustments"
 msgstr ""
 
-#: src/desktop/aqueous_display_setup.zig:487
+#: src/desktop/aqueous_display_setup.zig:516
 msgid "HDR brightness"
 msgstr ""
 
@@ -3176,7 +3204,7 @@ msgstr ""
 msgid "History only — no popup"
 msgstr ""
 
-#: src/desktop/aqueous_display_setup.zig:473
+#: src/desktop/aqueous_display_setup.zig:502
 msgid "Horizontal (X)"
 msgstr ""
 
@@ -3207,11 +3235,11 @@ msgstr ""
 msgid "Icon theme name"
 msgstr ""
 
-#: src/desktop/aqueous_display_setup.zig:374
+#: src/desktop/aqueous_display_setup.zig:391
 msgid "Identify"
 msgstr ""
 
-#: src/desktop/aqueous_display_setup.zig:375
+#: src/desktop/aqueous_display_setup.zig:392
 msgid "Identify displays"
 msgstr ""
 
@@ -4227,7 +4255,7 @@ msgstr ""
 msgid "Next rules"
 msgstr ""
 
-#: src/desktop/aqueous_display_setup.zig:447
+#: src/desktop/aqueous_display_setup.zig:476
 msgid "Next to"
 msgstr ""
 
@@ -4275,7 +4303,7 @@ msgstr ""
 msgid "No capturable windows"
 msgstr ""
 
-#: src/desktop/aqueous_display_setup.zig:363
+#: src/desktop/aqueous_display_setup.zig:380
 msgid "No connected displays. Refresh after reconnecting to Aqueous."
 msgstr ""
 
@@ -4538,6 +4566,10 @@ msgstr ""
 msgid "One taskbar button per window"
 msgstr ""
 
+#: src/desktop/aqueous_display_setup.zig:446 src/desktop/aqueous_display_setup.zig:447
+msgid "Only when a fullscreen app is running"
+msgstr ""
+
 #: src/desktop/bar.zig:670
 msgid "Only window on this workspace"
 msgstr ""
@@ -4686,7 +4718,7 @@ msgstr ""
 msgid "Ordered conditions and effects"
 msgstr ""
 
-#: src/desktop/aqueous_display_setup.zig:434
+#: src/desktop/aqueous_display_setup.zig:463
 msgid "Orientation"
 msgstr ""
 
@@ -5043,7 +5075,7 @@ msgctxt "aqueous.struts.right.description"
 msgid "Pixels reserved right of windows."
 msgstr ""
 
-#: src/desktop/aqueous_display_setup.zig:438
+#: src/desktop/aqueous_display_setup.zig:467
 msgid "Place this display"
 msgstr ""
 
@@ -5151,7 +5183,7 @@ msgctxt "aqueous.desktop.font.width.description"
 msgid "Portable width selected with the installed face."
 msgstr ""
 
-#: src/desktop/aqueous_display_setup.zig:435
+#: src/desktop/aqueous_display_setup.zig:464
 msgid "Position"
 msgstr ""
 
@@ -5265,7 +5297,7 @@ msgstr ""
 msgid "Previous rules"
 msgstr ""
 
-#: src/desktop/aqueous_display_setup.zig:162 src/desktop/aqueous_display_setup.zig:422
+#: src/desktop/aqueous_display_setup.zig:165 src/desktop/aqueous_display_setup.zig:451
 msgid "Primary display"
 msgstr ""
 
@@ -5426,6 +5458,10 @@ msgstr ""
 msgid "Reduced motion"
 msgstr ""
 
+#: src/desktop/aqueous_display_setup.zig:188
+msgid "Reduces tearing by matching the refresh rate to the content."
+msgstr ""
+
 #: src/desktop/launcher.zig:454
 msgid "Refine your search for more results"
 msgstr ""
@@ -5450,7 +5486,7 @@ msgstr ""
 msgid "Refresh plugins"
 msgstr ""
 
-#: src/desktop/aqueous_display_setup.zig:429
+#: src/desktop/aqueous_display_setup.zig:458
 msgid "Refresh rate"
 msgstr ""
 
@@ -5560,7 +5596,7 @@ msgstr ""
 msgid "Request in progress…"
 msgstr ""
 
-#: src/portal/backend.zig:524
+#: src/portal/backend.zig:536
 msgid "Requested by {0}"
 msgstr ""
 
@@ -5592,7 +5628,7 @@ msgstr ""
 msgid "Reset to default"
 msgstr ""
 
-#: src/desktop/aqueous_display_setup.zig:428
+#: src/desktop/aqueous_display_setup.zig:457
 msgid "Resolution"
 msgstr ""
 
@@ -5860,7 +5896,7 @@ msgstr ""
 msgid "SA"
 msgstr ""
 
-#: src/desktop/aqueous_display_setup.zig:489
+#: src/desktop/aqueous_display_setup.zig:518
 msgid "SDR content brightness"
 msgstr ""
 
@@ -5973,7 +6009,7 @@ msgstr ""
 msgid "Saving power settings…"
 msgstr ""
 
-#: src/desktop/aqueous_display_setup.zig:432
+#: src/desktop/aqueous_display_setup.zig:461
 msgid "Scale"
 msgstr ""
 
@@ -6224,7 +6260,7 @@ msgstr ""
 msgid "Set an automatic lock time earlier than suspend in Session & lock. This change was not saved."
 msgstr ""
 
-#: src/desktop/aqueous_display_setup.zig:162 src/desktop/aqueous_display_setup.zig:421
+#: src/desktop/aqueous_display_setup.zig:165 src/desktop/aqueous_display_setup.zig:450
 msgid "Set as primary"
 msgstr ""
 
@@ -7361,7 +7397,7 @@ msgstr ""
 msgid "The desktop action could not be confirmed."
 msgstr ""
 
-#: src/desktop/aqueous_display_setup.zig:533
+#: src/desktop/aqueous_display_setup.zig:562
 msgid "The draft cannot be edited as declarations. Open Aqueous Advanced to correct the draft JSON."
 msgstr ""
 
@@ -7401,7 +7437,7 @@ msgstr ""
 msgid "The preference draft needs repair. Open Advanced to fix it; your text is retained."
 msgstr ""
 
-#: src/ui/i18n.zig:48 src/core/application.zig:421
+#: src/ui/i18n.zig:48 src/core/application.zig:422
 msgid "The preview could not be loaded."
 msgstr ""
 
@@ -7522,7 +7558,11 @@ msgstr ""
 msgid "This action is unavailable in the sample desktop."
 msgstr ""
 
-#: src/desktop/aqueous_display_setup.zig:229
+#: src/desktop/aqueous_display_setup.zig:188
+msgid "This display does not support adaptive sync."
+msgstr ""
+
+#: src/desktop/aqueous_display_setup.zig:245
 msgid "This display mirrors another screen."
 msgstr ""
 
@@ -7735,11 +7775,15 @@ msgstr ""
 msgid "Turn on"
 msgstr ""
 
-#: src/desktop/aqueous_display_setup.zig:167
+#: src/desktop/aqueous_display_setup.zig:170
 msgid "Turn on this display to use HDR."
 msgstr ""
 
-#: src/desktop/aqueous_display_setup.zig:229
+#: src/desktop/aqueous_display_setup.zig:188
+msgid "Turn on this display to use adaptive sync."
+msgstr ""
+
+#: src/desktop/aqueous_display_setup.zig:245
 msgid "Turn on two displays to arrange them."
 msgstr ""
 
@@ -7800,7 +7844,7 @@ msgstr ""
 msgid "Unsaved changes"
 msgstr ""
 
-#: src/desktop/aqueous_display_setup.zig:249
+#: src/desktop/aqueous_display_setup.zig:266
 msgid "Unsaved layout"
 msgstr ""
 
@@ -7858,7 +7902,7 @@ msgstr ""
 msgid "Use ascending page ranges, such as 1-3,5."
 msgstr ""
 
-#: src/desktop/aqueous_display_setup.zig:490
+#: src/desktop/aqueous_display_setup.zig:519
 msgid "Use automatic settings"
 msgstr ""
 
@@ -7944,7 +7988,7 @@ msgstr ""
 msgid "User entry"
 msgstr ""
 
-#: src/desktop/aqueous_display_setup.zig:167 src/desktop/aqueous_display_setup.zig:418
+#: src/desktop/aqueous_display_setup.zig:170 src/desktop/aqueous_display_setup.zig:435
 msgid "Uses automatic settings."
 msgstr ""
 
@@ -7968,7 +8012,7 @@ msgstr ""
 msgid "Validate draft"
 msgstr ""
 
-#: src/desktop/aqueous_display_setup.zig:249
+#: src/desktop/aqueous_display_setup.zig:266
 msgid "Validated arrangement · unsaved"
 msgstr ""
 
@@ -7992,7 +8036,7 @@ msgstr ""
 msgid "Verify model and test tools locally"
 msgstr ""
 
-#: src/desktop/aqueous_display_setup.zig:474
+#: src/desktop/aqueous_display_setup.zig:503
 msgid "Vertical (Y)"
 msgstr ""
 
