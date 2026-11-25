@@ -44,6 +44,7 @@ pub const Window = struct {
     details_button: *gtk.Button,
     split_button: *gtk.Button,
     jobs_button: *gtk.Button,
+    empty_trash_button: *gtk.Button,
     paned: *gtk.Paned,
     panes: [2]Pane,
     active: usize = 0,
@@ -139,6 +140,11 @@ pub const Window = struct {
         toolbar.append(navigation.as(gtk.Widget));
         const search_button = u.iconButton("system-search-symbolic", @import("i18n").dtr("phyto", "Search this folder · Ctrl+F"));
         toolbar.append(search_button.as(gtk.Widget));
+        const empty_trash_button = gtk.Button.newWithLabel(@import("i18n").dtr("phyto", "Empty Trash…"));
+        empty_trash_button.as(gtk.Widget).addCssClass("destructive-action");
+        empty_trash_button.as(gtk.Widget).setVisible(0);
+        u.name(empty_trash_button.as(gtk.Widget), "Empty Trash");
+        toolbar.append(empty_trash_button.as(gtk.Widget));
         const pane_switch = u.iconButton("go-next-symbolic", @import("i18n").dtr("phyto", "Switch active pane · F6"));
         toolbar.append(pane_switch.as(gtk.Widget));
         const jobs_button = u.iconButton("folder-download-symbolic", @import("i18n").dtr("phyto", "File operations"));
@@ -207,7 +213,7 @@ pub const Window = struct {
         const status = u.label(@import("i18n").dtr("phyto", "Loading folder…"), "status");
         status.setEllipsize(.end);
         browser.append(status.as(gtk.Widget));
-        self.* = .{ .app = app, .window = win, .root = root, .sidebar = sidebar, .sidebar_content = sidebar_box, .popup_content = popup_places, .places_button = places_button, .places_popover = popover, .location_button = location, .path = path, .search = search, .search_row = search_row, .search_scope = search_scope, .navigation = navigation, .details = details, .details_body = details_body, .status = status, .pane_switch = pane_switch, .grid_button = grid_button, .list_button = list_button, .back_button = back, .forward_button = forward, .up_button = up, .home_button = home_button, .details_button = details_button, .split_button = split_button, .jobs_button = jobs_button, .paned = paned, .panes = panes, .options = opts, .home = gio.File.newForPath(glib.getHomeDir()), .width = opts.width };
+        self.* = .{ .app = app, .window = win, .root = root, .sidebar = sidebar, .sidebar_content = sidebar_box, .popup_content = popup_places, .places_button = places_button, .places_popover = popover, .location_button = location, .path = path, .search = search, .search_row = search_row, .search_scope = search_scope, .navigation = navigation, .details = details, .details_body = details_body, .status = status, .pane_switch = pane_switch, .grid_button = grid_button, .list_button = list_button, .back_button = back, .forward_button = forward, .up_button = up, .home_button = home_button, .details_button = details_button, .split_button = split_button, .jobs_button = jobs_button, .empty_trash_button = empty_trash_button, .paned = paned, .panes = panes, .options = opts, .home = gio.File.newForPath(glib.getHomeDir()), .width = opts.width };
         self.preferences = @import("platform/preferences.zig").Preferences.acquire();
         if (opts.theme) |mode| if (self.preferences.theme != mode) {
             self.preferences.theme = mode;
@@ -246,6 +252,7 @@ pub const Window = struct {
         self.connect(search_close, .search);
         self.connect(split_button, .split);
         self.connect(jobs_button, .operations);
+        self.connect(empty_trash_button, .empty_trash);
         self.connect(pane_switch, .switch_pane);
         self.connect(grid_button, .grid);
         self.connect(list_button, .list);
@@ -758,6 +765,7 @@ pub const Window = struct {
         const parent = f.getParent();
         self.up_button.as(gtk.Widget).setSensitive(@intFromBool(parent != null));
         if (parent) |p| p.unref();
+        self.empty_trash_button.as(gtk.Widget).setVisible(@intFromBool(std.mem.startsWith(u8, tab.uri, "trash:")));
         for (&self.panes, 0..) |*p, i| {
             if (self.split and i == self.active) p.host.as(gtk.Widget).addCssClass("active-pane") else p.host.as(gtk.Widget).removeCssClass("active-pane");
         }
@@ -796,7 +804,9 @@ pub const Window = struct {
         defer current_context.deinit();
         for (std.enums.values(Command)) |cmd| if (@import("actions.zig").fileAction(cmd)) {
             const action: *gio.SimpleAction = @ptrCast(object.ext.cast(gtk.ApplicationWindow, self.window).?.as(gio.ActionMap).lookupAction(@tagName(cmd)).?);
-            action.setEnabled(@intFromBool(self.context.allowed(&current_context, cmd)));
+            const enabled = self.context.allowed(&current_context, cmd);
+            action.setEnabled(@intFromBool(enabled));
+            if (cmd == .empty_trash) self.empty_trash_button.as(gtk.Widget).setSensitive(@intFromBool(enabled));
         };
         return 0;
     }
