@@ -161,6 +161,19 @@ conversion feature remains an advanced setting and is not enabled by this checkb
 Unsupported HDR controls explain their availability. Preview capability remains
 separate from the ability to retain a configuration draft.
 
+**Adaptive sync (VRR)** sits directly below HDR in the selected-screen editor and
+stages the `adaptive_sync` output declaration. The indented **Only when a
+fullscreen app is running** checkbox stages `fullscreen_only_adaptive_sync`
+(default off: VRR is always active while enabled). The master checkbox is
+sensitive only while the display is enabled, VRR preview is supported, and the
+screen is not mirroring; the fullscreen-only checkbox additionally requires the
+master toggle to be on. Its help line explains unsupported hardware, unavailable
+previews, mirroring and commit errors, and reports whether VRR is active or
+waiting for a fullscreen app. Like HDR, a draft that enables adaptive sync on an
+output without VRR preview support blocks Apply; store-only edits remain
+available in the declaration editor. The helper persists both keys to
+`~/.config/aqueous/outputs.toml`.
+
 The diagram immediately shows the unsaved arrangement. A revision-matched
 canonical validation result supplies authoritative candidate geometry. Edits
 merge into the selected output's source-bound declaration; a new exact-connector
