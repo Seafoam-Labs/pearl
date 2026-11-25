@@ -6,7 +6,7 @@ Build a dedicated Pearl development workspace in Zig, GTK4 and GtkSourceView 5. 
 
 ![The OpenCode composer with its provider-grouped session model picker open](mockups/development-workspace/model-selection.png)
 
-[View the same model picker in Pearl light](mockups/development-workspace/model-selection-light.png).
+[View the same model picker in Pearl light](mockups/development-workspace/model-selection-light.png). The GTK implementation uses a native radio group that exposes the selected model to assistive technology. [Native dark](../artifacts/development-workspace/model-selection-dark.png) · [Native light](../artifacts/development-workspace/model-selection-light.png) · [Narrow window](../artifacts/development-workspace/narrow-model.png) · [Large text](../artifacts/development-workspace/large-text-model.png)
 
 ## The four-region window
 

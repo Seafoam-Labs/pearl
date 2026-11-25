@@ -21,7 +21,7 @@ PEARL = CORAL.parents[1]
 sys.path[:0] = [str(PEARL / "scripts"), str(PEARL / "tests/integration")]
 
 
-def drive(offline=False, adaptive=False, diagnostics=False, permissions=False, terminal=False):
+def drive(offline=False, adaptive=False, diagnostics=False, permissions=False, terminal=False, desktop=False):
     import gi
     gi.require_version("Atspi", "2.0")
     from gi.repository import Atspi, GLib
@@ -44,13 +44,20 @@ def drive(offline=False, adaptive=False, diagnostics=False, permissions=False, t
                     return obj
             time.sleep(.05)
         names = [obj.get_name() for obj in descendants(Atspi.get_desktop(0)) if obj.get_name() and obj.get_state_set().contains(Atspi.StateType.SHOWING)]
-        raise AssertionError(f"Missing visible GTK control {name!r}; visible controls {names!r}")
+        matches = [(o.get_role_name(), o.get_n_actions(), o.get_interfaces(), o.get_state_set().contains(Atspi.StateType.SENSITIVE))
+                   for o in descendants(Atspi.get_desktop(0)) if o.get_name() == name]
+        raise AssertionError(f"Missing GTK control {name!r}. Matches {matches}. Visible controls {names!r}")
 
     def click(name):
         deadline = time.monotonic() + 5
         while True:
             try:
-                assert lookup(name).do_action(0), name
+                control = lookup(name)
+                if control.get_role() == Atspi.Role.RADIO_BUTTON:
+                    index = next(i for i in range(control.get_n_actions()) if Atspi.Action.get_localized_name(control, i) == "model.select")
+                else:
+                    index = 0
+                assert control.do_action(index), name
                 return
             except GLib.Error as error:
                 # GTK can publish its action list one iteration after a model refresh.
@@ -91,6 +98,19 @@ def drive(offline=False, adaptive=False, diagnostics=False, permissions=False, t
         for modifier in reversed(modifiers):
             keys.extend(["-m", modifier])
         subprocess.run(keys, check=True)
+
+    if desktop:
+        from pearl_session import wait_for
+        lookup("Start OpenCode with opencode service start, then reconnect.", actionable=False)
+        buffer_with("staged and edited locally\n")
+        key("1", "ctrl")
+        key("End", "ctrl")
+        subprocess.run(["wtype", "Edited from the desktop launcher"], check=True)
+        key("s", "ctrl")
+        path = Path(os.environ["WORKSPACE_TEST_PROJECT"]) / "hello.txt"
+        wait_for(lambda: path.read_text() == "staged and edited locally\nEdited from the desktop launcher")
+        key("q", "ctrl")
+        return
 
     if terminal:
         from pearl_session import wait_for
@@ -193,7 +213,7 @@ def drive(offline=False, adaptive=False, diagnostics=False, permissions=False, t
                     and obj.get_role() == Atspi.Role.PUSH_BUTTON
                     and obj.get_state_set().contains(Atspi.StateType.SHOWING)]
         try:
-            lookup("Birch")
+            lookup("Change session model, currently Birch")
             fixture("permissions-add")
             details = buffer_with("readme.txt", contains=True)
             lookup("Message OpenCode", actionable=False)
@@ -290,19 +310,19 @@ def drive(offline=False, adaptive=False, diagnostics=False, permissions=False, t
             lookup("Toggle Explorer drawer")
             lookup("Toggle OpenCode drawer")
             click("Toggle OpenCode drawer")
-            click("Birch")
+            click("Change session model, currently Birch")
             lookup("Cedar")
             lookup("Task output", actionable=False)
             capture("large-text-model")
             print("Verified large-text drawer layout retains both the model picker and dock at desktop width.")
             return
-        lookup("Birch")
+        lookup("Change session model, currently Birch")
         composer = lookup("Message OpenCode", actionable=False)
         assert composer.set_text_contents("Drawer draft")
         fixture("resize", width=920)
         lookup("Toggle Explorer drawer")
         assert not visible("Toggle OpenCode drawer")
-        lookup("Birch")
+        lookup("Change session model, currently Birch")
         assert not visible("Restore cursor") or not visible("Review watcher")
         click("Toggle Explorer drawer")
         lookup("Review watcher")
@@ -313,10 +333,10 @@ def drive(offline=False, adaptive=False, diagnostics=False, permissions=False, t
         assert not visible("Message OpenCode")
         lookup("Task output", actionable=False)
         click("Toggle OpenCode drawer")
-        lookup("Birch")
+        lookup("Change session model, currently Birch")
         assert bounds("Message OpenCode").y < bounds("Task output").y
         assert Atspi.Text.get_text(lookup("Message OpenCode", False), 0, -1) == "Drawer draft"
-        click("Birch")
+        click("Change session model, currently Birch")
         lookup("Cedar")
         if directory := os.environ.get("WORKSPACE_TEST_CAPTURES"):
             frame = fixture("geometry")
@@ -327,11 +347,11 @@ def drive(offline=False, adaptive=False, diagnostics=False, permissions=False, t
         while fixture("current-model") != "cedar":
             assert time.monotonic() < until, "The service did not receive the model change"
             time.sleep(.05)
-        lookup("Cedar")
+        lookup("Change session model, currently Cedar")
         escape()
         fixture("resize", width=1440)
         lookup("Review watcher")
-        lookup("Cedar")
+        lookup("Change session model, currently Cedar")
         assert not visible("Toggle Explorer drawer") and not visible("Toggle OpenCode drawer")
         assert Atspi.Text.get_text(lookup("Message OpenCode", False), 0, -1) == "Drawer draft"
         # A temporarily opened drawer must not overwrite an explicitly hidden pin.
@@ -340,12 +360,12 @@ def drive(offline=False, adaptive=False, diagnostics=False, permissions=False, t
         while visible("Review watcher"):
             assert time.monotonic() < deadline, "Explorer pin did not close"
             time.sleep(.05)
-        lookup("Cedar")
+        lookup("Change session model, currently Cedar")
         fixture("resize", width=680)
         click("Toggle Explorer drawer")
         lookup("Review watcher")
         fixture("resize", width=1440)
-        lookup("Cedar")
+        lookup("Change session model, currently Cedar")
         assert not visible("Review watcher")
         print("Verified adaptive drawers, session model and draft, bottom dock access and manually hidden pin restoration.")
         return
@@ -382,22 +402,41 @@ def drive(offline=False, adaptive=False, diagnostics=False, permissions=False, t
     lookup("hello.txt · L1–1")
     composer = lookup("Message OpenCode", actionable=False)
     assert composer.set_text_contents("Keep this draft across model switches")
-    click("Birch")
+    click("Change session model, currently Birch")
     lookup("Retired")
+    key("Escape")
+    key("space")
+    selected = lookup("Birch")
+    assert selected.get_state_set().contains(Atspi.StateType.CHECKED)
+    assert not lookup("Cedar").get_state_set().contains(Atspi.StateType.CHECKED)
+    lookup("Retired")
+    lookup("Juniper · local")
+    lookup("Juniper · remote")
     capture("model-selection")
     click("Retired")
     lookup("This model has been retired", actionable=False)
     assert Atspi.Text.get_text(composer, 0, -1) == "Keep this draft across model switches"
-    click("Birch")
-    click("Cedar")
+    click("Change session model, currently Birch")
+    lookup("Cedar")
+    key("Down")
+    if any(obj.get_role() == Atspi.Role.RADIO_BUTTON and obj.get_name() == "Cedar" and
+           obj.get_state_set().contains(Atspi.StateType.FOCUSED) for obj in descendants(Atspi.get_desktop(0))):
+        key("space")
+    click("Change session model, currently Cedar")
+    click("Juniper · remote")
+    lookup("Change session model, currently Juniper · remote")
     click("Review watcher")
-    lookup("Birch")
+    lookup("Change session model, currently Birch")
     click("Restore cursor")
-    lookup("Cedar")
+    click("Change session model, currently Juniper · remote")
+    assert lookup("Juniper · remote").get_state_set().contains(Atspi.StateType.CHECKED)
+    assert not lookup("Juniper · local").get_state_set().contains(Atspi.StateType.CHECKED)
+    click("Cedar")
+    lookup("Change session model, currently Cedar")
     fixture("external-change")
-    lookup("Birch")
+    lookup("Change session model, currently Birch")
     fixture("missed-event")
-    lookup("Cedar")
+    lookup("Change session model, currently Cedar")
     assert Atspi.Text.get_text(composer, 0, -1) == "Keep this draft across model switches"
     click("hello.txt · L1–1")
     buffer_with("staged")
@@ -558,8 +597,10 @@ class API(BaseHTTPRequestHandler):
         if path == "/api/location":
             return self.reply({"project": {"id": "fixture"}, "directory": str(service.project)})
         if path == "/api/model":
-            return self.reply({"data": [dict(id=x.lower(), name=x, providerID="local", enabled=True)
-                                        for x in ("Birch", "Cedar", "Retired")]})
+            models = [dict(id=name.lower(), name=name, providerID="local", enabled=True)
+                      for name in ("Birch", "Cedar", "Retired", "Juniper")]
+            models.append(dict(id="juniper", name="Juniper", providerID="remote", enabled=True))
+            return self.reply({"data": models})
         if path == "/api/session":
             if post:
                 tree = Path(body["location"]["directory"])
@@ -696,6 +737,26 @@ def main(args):
                     doc.write_text(data)
             if args.terminal:
                 session.env.update(SHELL="/bin/sh", WORKSPACE_TEST_PROJECT=str(project))
+            if args.desktop:
+                from pearl_session import wait_for
+                prefix = args.binary.resolve().parents[1]
+                desktop_id = "org.aqueous.Coral.Workspace"
+                entry = prefix / "share/applications" / (desktop_id + ".desktop")
+                session.run(["desktop-file-validate", entry])
+                (state / "service.json").rename(state / "offline.json")
+                session.env.update(
+                    PATH=str(prefix / "bin") + ":" + session.env["PATH"],
+                    XDG_DATA_DIRS=str(prefix / "share") + ":" + session.env.get("XDG_DATA_DIRS", "/usr/local/share:/usr/share"),
+                    WORKSPACE_TEST_PROJECT=str(project), G_DEBUG="fatal-criticals",
+                )
+                launcher = session.child("desktop-launch", ["gtk-launch", desktop_id, project.as_uri(), file.as_uri()])
+                assert launcher.wait(timeout=10) == 0
+                wait_for(window_geometry, 10)
+                subprocess.run([sys.executable, str(Path(__file__).resolve()), "--drive", "--desktop"],
+                               env=session.env, check=True, timeout=30)
+                wait_for(lambda: not window_geometry(), 5)
+                print("Verified the installed desktop entry opened the project and file, saved an offline edit and quit.")
+                return
             application = session.child("workspace", [args.binary.resolve(), *(["--log-level", "debug", "--log-scopes", "services"] if args.terminal else []), project, *documents], G_DEBUG="fatal-criticals")
             from pearl_session import wait_for
             wait_for(lambda: "/api/model" in service.calls)
@@ -746,6 +807,7 @@ if __name__ == "__main__":
     parser.add_argument("--diagnostics", action="store_true")
     parser.add_argument("--permissions", action="store_true")
     parser.add_argument("--terminal", action="store_true")
+    parser.add_argument("--desktop", action="store_true", help="Use the installed binary and desktop entry from the same prefix")
     parser.add_argument("--binary", type=Path, default=CORAL / "zig-out/bin/coral-workspace")
     parser.add_argument("--output", type=Path, default=CORAL / ".zig-cache/workspace-integration")
     parser.add_argument("--aqueous-prefix", type=Path)
@@ -756,6 +818,6 @@ if __name__ == "__main__":
     parser.add_argument("--height", type=int, default=900)
     opts = parser.parse_args()
     if opts.drive:
-        drive(opts.offline, opts.adaptive, opts.diagnostics, opts.permissions, opts.terminal)
+        drive(opts.offline, opts.adaptive, opts.diagnostics, opts.permissions, opts.terminal, opts.desktop)
     else:
         main(opts)

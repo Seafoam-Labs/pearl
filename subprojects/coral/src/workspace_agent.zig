@@ -152,7 +152,7 @@ pub const Agent = struct {
         u.append(controls, attach);
         const models = c.gtk_menu_button_new().?;
         c.gtk_widget_set_hexpand(models, 1);
-        c.gtk_menu_button_set_label(u.cast(c.GtkMenuButton, models), i18n.dtr("coral", "Session model"));
+        setModelLabel(models, null);
         c.gtk_menu_button_set_direction(u.cast(c.GtkMenuButton, models), c.GTK_ARROW_UP);
         const pop = c.gtk_popover_new().?;
         c.gtk_popover_set_has_arrow(u.cast(c.GtkPopover, pop), 0);
@@ -307,7 +307,7 @@ pub const Agent = struct {
         a.free(self.provider);
         self.provider = u.z("");
         u.setLabel(self.title, i18n.dtr("coral", "OpenCode"));
-        c.gtk_menu_button_set_label(u.cast(c.GtkMenuButton, self.models), i18n.dtr("coral", "Session model"));
+        setModelLabel(self.models, null);
         c.gtk_widget_set_visible(self.model_feedback, 0);
         c.gtk_widget_set_sensitive(self.models, 0);
         c.gtk_widget_set_sensitive(self.new_session, 0);
@@ -422,7 +422,7 @@ pub const Agent = struct {
         clear(self.choices);
         c.gtk_widget_set_visible(self.model_feedback, 0);
         self.model_generation += 1;
-        c.gtk_menu_button_set_label(u.cast(c.GtkMenuButton, self.models), i18n.dtr("coral", "Session model"));
+        setModelLabel(self.models, null);
         self.sending = false;
         self.catalog_attempt = 0;
         const next_id = u.z(id);
@@ -686,7 +686,7 @@ fn sessionInfo(ctx: *anyopaque, epoch: u64, result: Value, err: ?[]const u8) voi
         self.location = u.z(dir);
     }
     storage.write(self.root, "last-open-thread", .{ .session = @as([]const u8, self.session orelse return), .server = @as([]const u8, self.server), .location = @as([]const u8, self.location), .base = @as([]const u8, self.base orelse ""), .title = api.string(info, "title") }) catch u.setLabel(self.status, i18n.dtr("coral", "Could not save session state"));
-    c.gtk_menu_button_set_label(u.cast(c.GtkMenuButton, self.models), if (self.model_id.len > 0) self.model_id else i18n.dtr("coral", "Service default"));
+    setModelLabel(self.models, if (self.model_id.len > 0) self.model_id else i18n.dtr("coral", "Service default"));
     if (self.model_id.len == 0) self.queryModel("/api/model/default", &defaultModel) else self.queryModel("/api/model", &catalog);
     self.deliveryControls();
     u.setLabel(self.status, i18n.dtr("coral", "Connected"));
@@ -702,6 +702,14 @@ fn defaultModel(ctx: *anyopaque, generation: u64, result: Value, err: ?[]const u
         self.provider = u.z(api.string(ref, "providerID"));
     }
     self.queryModel("/api/model", &catalog);
+}
+fn setModelLabel(widget: u.W, model: ?[:0]const u8) void {
+    var accessible_text: [2048]u8 = undefined;
+    const label = model orelse i18n.dtr("coral", "Session model");
+    const accessible = if (model) |name| i18n.dfmt("coral", &accessible_text, "Change session model, currently {s}", .{name}) else label;
+    c.gtk_menu_button_set_label(u.cast(c.GtkMenuButton, widget), label.ptr);
+    c.gtk_widget_set_tooltip_text(widget, accessible.ptr);
+    c.gtk_accessible_update_property(u.cast(c.GtkAccessible, widget), @as(c_int, c.GTK_ACCESSIBLE_PROPERTY_LABEL), accessible.ptr, @as(c_int, -1));
 }
 fn modelName(row: Value) []const u8 {
     const name = api.string(row, "name");
@@ -723,6 +731,7 @@ fn catalog(ctx: *anyopaque, epoch: u64, result: Value, err: ?[]const u8) void {
     const rows = api.items(api.get(result, "data"));
     var names: std.StringHashMapUnmanaged(usize) = .empty;
     defer names.deinit(a);
+    var radio_group: ?*c.GtkCheckButton = null;
     for (rows) |row| {
         if (!available(row)) continue;
         const entry = names.getOrPut(a, modelName(row)) catch unreachable;
@@ -745,16 +754,24 @@ fn catalog(ctx: *anyopaque, epoch: u64, result: Value, err: ?[]const u8) void {
         const display = if (names.get(name).? > 1) u.fmt("{s} · {s}", .{ name, provider }) else u.z(name);
         defer a.free(display);
         const active = std.mem.eql(u8, id, self.model_id) and std.mem.eql(u8, provider, self.provider);
-        const label = u.fmt("{s}{s}", .{ if (active) "✓ " else "", display });
-        defer a.free(label);
-        const b = u.button(label);
-        c.gtk_widget_add_css_class(b, "flat");
-        if (active) c.gtk_widget_add_css_class(b, "workspace-current-session");
-        if (active) c.gtk_menu_button_set_label(u.cast(c.GtkMenuButton, self.models), display);
+        const b = c.gtk_check_button_new_with_label(display.ptr).?;
+        const choice = u.cast(c.GtkCheckButton, b);
+        if (radio_group) |first| c.gtk_check_button_set_group(choice, first) else radio_group = choice;
+        c.gtk_check_button_set_active(choice, @intFromBool(active));
+        c.gtk_widget_add_css_class(b, "workspace-model-choice");
+        if (active) setModelLabel(self.models, display);
         setData(b, "sid", self.session orelse return);
         setData(b, "provider", provider);
         setData(b, "model", id);
-        u.connect(b, "clicked", &switchModel, self);
+        // GTK exposes parameterless widget actions to AT-SPI on radio controls.
+        const actions = c.g_simple_action_group_new().?;
+        defer c.g_object_unref(actions);
+        const select = c.g_simple_action_new("select", null).?;
+        defer c.g_object_unref(select);
+        u.connect(select, "activate", &selectChoice, choice);
+        c.g_action_map_add_action(u.cast(c.GActionMap, actions), u.cast(c.GAction, select));
+        c.gtk_widget_insert_action_group(b, "model", u.cast(c.GActionGroup, actions));
+        u.connect(b, "toggled", &switchModel, self);
         u.append(group.value_ptr.*, b);
     }
     if (providers.count() == 0) {
@@ -777,7 +794,11 @@ fn retryCatalog(ctx: ?*anyopaque) callconv(.c) c_int {
     self.requestInfo();
     return 0;
 }
-fn switchModel(b: ?*c.GtkButton, ctx: ?*anyopaque) callconv(.c) void {
+fn selectChoice(_: *c.GSimpleAction, _: ?*c.GVariant, ctx: ?*anyopaque) callconv(.c) void {
+    c.gtk_check_button_set_active(u.cast(c.GtkCheckButton, ctx.?), 1);
+}
+fn switchModel(b: ?*c.GtkCheckButton, ctx: ?*anyopaque) callconv(.c) void {
+    if (c.gtk_check_button_get_active(b) == 0) return;
     const self = u.cast(Agent, ctx.?);
     if (self.pending or !self.connected or !std.mem.eql(u8, self.session orelse return, widgetData(b.?, "sid"))) return;
     self.model_generation += 1;

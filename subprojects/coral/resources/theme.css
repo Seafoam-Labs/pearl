@@ -77,6 +77,10 @@ window.coral.$scope .workspace-permission,
 window.coral.$scope .workspace-composer { background: $container$; border-color: alpha($outline$, 0.4); }
 
 window.coral.$scope button.workspace-current-session { background: $high$; color: $primary$; }
+window.coral.$scope checkbutton.workspace-model-choice:hover { background: $high$; }
+window.coral.$scope checkbutton.workspace-model-choice:focus-visible { outline: 2px solid $primary$; outline-offset: -2px; }
+window.coral.$scope checkbutton.workspace-model-choice > radio { background: $container$; border: 1px solid $secondary$; box-shadow: none; }
+window.coral.$scope checkbutton.workspace-model-choice > radio:checked { background: $primary$; border-color: $primary$; color: $on_primary$; }
 
 window.coral.$scope .workspace-dock { background: $low$; }
 window.coral.$scope .workspace-tools stack { background: $surface$; }

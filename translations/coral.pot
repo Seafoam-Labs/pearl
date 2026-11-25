@@ -11,7 +11,7 @@ msgstr ""
 msgid " · Changed on disk"
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:869
+#: subprojects/coral/src/workspace_agent.zig:890
 msgid " · Source changed or closed"
 msgstr ""
 
@@ -99,8 +99,12 @@ msgstr ""
 msgid "Cancel"
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:1050
+#: subprojects/coral/src/workspace_agent.zig:1071
 msgid "Cancel queued prompt"
+msgstr ""
+
+#: subprojects/coral/src/workspace_agent.zig:709
+msgid "Change session model, currently {0}"
 msgstr ""
 
 #: subprojects/coral/src/app.zig:239 subprojects/coral/src/app.zig:1460
@@ -223,7 +227,7 @@ msgstr ""
 msgid "Could not save session state"
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:893
+#: subprojects/coral/src/workspace_agent.zig:914
 msgid "Could not save the prompt for delivery"
 msgstr ""
 
@@ -839,7 +843,7 @@ msgstr ""
 msgid "No changes in the agent worktree"
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:761
+#: subprojects/coral/src/workspace_agent.zig:778
 msgid "No configured chat models"
 msgstr ""
 
@@ -959,7 +963,7 @@ msgstr ""
 msgid "Preferences…"
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:1094
+#: subprojects/coral/src/workspace_agent.zig:1115
 msgid "Preparing session…"
 msgstr ""
 
@@ -995,11 +999,11 @@ msgstr ""
 msgid "Problems"
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:919
+#: subprojects/coral/src/workspace_agent.zig:940
 msgid "Prompt delivered"
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:1038
+#: subprojects/coral/src/workspace_agent.zig:1059
 msgid "Queued prompts"
 msgstr ""
 
@@ -1023,7 +1027,7 @@ msgstr ""
 msgid "Reconnect to OpenCode"
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:939
+#: subprojects/coral/src/workspace_agent.zig:960
 msgid "Reconnecting to OpenCode…"
 msgstr ""
 
@@ -1147,7 +1151,7 @@ msgstr ""
 msgid "Search workspace…"
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:843
+#: subprojects/coral/src/workspace_agent.zig:864
 msgid "Select code in the editor first"
 msgstr ""
 
@@ -1159,7 +1163,7 @@ msgstr ""
 msgid "Service default"
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:155 subprojects/coral/src/workspace_agent.zig:310 subprojects/coral/src/workspace_agent.zig:425 subprojects/coral/src/workspace_agent.zig:718
+#: subprojects/coral/src/workspace_agent.zig:708 subprojects/coral/src/workspace_agent.zig:726
 msgid "Session model"
 msgstr ""
 
@@ -1171,7 +1175,7 @@ msgstr ""
 msgid "Shared base"
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:862
+#: subprojects/coral/src/workspace_agent.zig:883
 msgid "Show captured code"
 msgstr ""
 
@@ -1219,7 +1223,7 @@ msgstr ""
 msgid "Start OpenCode with opencode service start, then reconnect."
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:791
+#: subprojects/coral/src/workspace_agent.zig:812
 msgid "Switching model…"
 msgstr ""
 
@@ -1387,7 +1391,7 @@ msgstr ""
 msgid "Undo grouped edit"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:1402 subprojects/coral/src/app.zig:1468 subprojects/coral/src/editor/view.zig:129 subprojects/coral/src/workbench/chrome.zig:186 subprojects/coral/src/workspace_agent.zig:853
+#: subprojects/coral/src/app.zig:1402 subprojects/coral/src/app.zig:1468 subprojects/coral/src/editor/view.zig:129 subprojects/coral/src/workbench/chrome.zig:186 subprojects/coral/src/workspace_agent.zig:874
 msgid "Untitled"
 msgstr ""
 
