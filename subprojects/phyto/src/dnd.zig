@@ -22,16 +22,14 @@ const core = @import("core/dnd.zig");
 const preview = @import("preview.zig");
 
 /// The one drag this process is performing; a pointer can only drag once at a
-/// time. Drop sites use it to recognize their own drags, and drag-end uses it to
-/// tell an external move (trash the originals) from an internal one (the engine
-/// already moved them).
+/// time. Drop sites use it to recognize their own drags and compare the source
+/// and destination filesystems.
 var active: ?*Drag = null;
 
 const Drag = struct {
     context: Context,
     source_fs: ?[:0]u8 = null,
     thumb: ?*gdk.Texture = null,
-    handled: bool = false,
     fn deinit(self: *Drag) void {
         self.context.deinit();
         if (self.source_fs) |id| a.free(id);
@@ -368,16 +366,14 @@ fn cachedThumb(item: @import("context.zig").Item) ?*gdk.Texture {
     return null;
 }
 
-fn dragEnd(_: *gtk.DragSource, _: *gdk.Drag, delete_data: c_int, tab: *Tab) callconv(.c) void {
+/// Never delete the originals here, even when the destination reports a move
+/// (delete_data). A file-list drop hands over paths, not content: destinations
+/// that want a move perform it themselves, and others (e.g. Firefox uploads)
+/// only read the files — trashing them would break the drop and lose data.
+fn dragEnd(_: *gtk.DragSource, _: *gdk.Drag, _: c_int, _: *Tab) callconv(.c) void {
     const drag = active orelse return;
     active = null;
-    defer drag.deinit();
-    if (delete_data == 0 or drag.handled or tab.owner.closed) return;
-    // Another application accepted a move and copied the files itself, so the
-    // originals are no longer needed. Trash keeps that recoverable.
-    const j = engine.Job.create(.trash);
-    for (drag.context.items.items) |entry| j.add(entry.file, null);
-    tab.owner.operations.start(j);
+    drag.deinit();
 }
 
 fn dragCancel(_: *gtk.DragSource, _: *gdk.Drag, _: gdk.DragCancelReason, _: *Tab) callconv(.c) c_int {
@@ -481,7 +477,6 @@ fn viewDropped(target: *gtk.DropTarget, value: *object.Value, x: f64, y: f64, ta
     const dest = destinationAt(tab, x, y);
     defer dest.file.unref();
     const drop = target.getCurrentDrop();
-    markInternal(drop);
     const action = dropAction(drop, dest.file);
     switch (action) {
         .none => return 0,
@@ -583,7 +578,6 @@ fn tabDropped(target: *gtk.DropTarget, value: *object.Value, _: f64, _: f64, bin
     const dest = gio.File.newForUri(tab.uri);
     defer dest.unref();
     const drop = target.getCurrentDrop();
-    markInternal(drop);
     const action = dropAction(drop, dest);
     if (action == .none) return 0;
     revealTab(owner, tab);
@@ -627,7 +621,6 @@ fn placeDropped(target: *gtk.DropTarget, value: *object.Value, _: f64, _: f64, o
     var files = filesFromValue(value) orelse return 0;
     defer releaseFiles(&files);
     const drop = target.getCurrentDrop();
-    markInternal(drop);
     const action = dropAction(drop, dest);
     if (action == .none) return 0;
     if (action == .ask) {
@@ -637,14 +630,6 @@ fn placeDropped(target: *gtk.DropTarget, value: *object.Value, _: f64, _: f64, o
     }
     perform(owner, owner.current(), files.items, dest, action);
     return 1;
-}
-
-/// A local drag whose drop we handle ourselves: the engine performs any move,
-/// so drag-end must not delete the originals a second time.
-fn markInternal(drop: ?*gdk.Drop) void {
-    const d = drop orelse return;
-    if (d.getDrag() == null) return;
-    if (active) |drag| drag.handled = true;
 }
 
 fn dropAction(drop: ?*gdk.Drop, dest: *gio.File) core.Action {

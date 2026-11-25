@@ -40,7 +40,7 @@ msgctxt "desktop.description"
 msgid "Browse files with Pearl"
 msgstr ""
 
-#: subprojects/phyto/src/dnd.zig:826 subprojects/phyto/src/network_ui.zig:100 subprojects/phyto/src/platform/notifications.zig:310 subprojects/phyto/src/window.zig:1460 subprojects/phyto/src/window.zig:1502
+#: subprojects/phyto/src/dnd.zig:811 subprojects/phyto/src/network_ui.zig:100 subprojects/phyto/src/platform/notifications.zig:310 subprojects/phyto/src/window.zig:1460 subprojects/phyto/src/window.zig:1502
 msgid "Cancel"
 msgstr ""
 
@@ -100,7 +100,7 @@ msgstr ""
 msgid "Copy"
 msgstr ""
 
-#: subprojects/phyto/src/dnd.zig:827
+#: subprojects/phyto/src/dnd.zig:812
 msgid "Copy here"
 msgstr ""
 
@@ -156,7 +156,7 @@ msgstr ""
 msgid "Disconnect"
 msgstr ""
 
-#: subprojects/phyto/src/dnd.zig:813
+#: subprojects/phyto/src/dnd.zig:798
 msgid "Drop files"
 msgstr ""
 
@@ -292,7 +292,7 @@ msgstr ""
 msgid "LOCATIONS"
 msgstr ""
 
-#: subprojects/phyto/src/dnd.zig:833
+#: subprojects/phyto/src/dnd.zig:818
 msgid "Link here"
 msgstr ""
 
@@ -324,7 +324,7 @@ msgstr ""
 msgid "Mount"
 msgstr ""
 
-#: subprojects/phyto/src/dnd.zig:828
+#: subprojects/phyto/src/dnd.zig:813
 msgid "Move here"
 msgstr ""
 
