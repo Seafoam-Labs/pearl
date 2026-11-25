@@ -11,7 +11,7 @@ msgstr ""
 msgid "Cancel"
 msgstr ""
 
-#: src/files/chooser.zig:397
+#: src/files/chooser.zig:418
 msgid "Choose a location stored on this computer."
 msgstr ""
 
@@ -19,15 +19,15 @@ msgstr ""
 msgid "Choose the source you want to share."
 msgstr ""
 
-#: src/files/chooser.zig:805
+#: src/files/chooser.zig:826
 msgid "Could not create that folder. Check its name and permissions."
 msgstr ""
 
-#: src/files/chooser.zig:1103
+#: src/files/chooser.zig:1124
 msgid "Filename"
 msgstr ""
 
-#: src/files/chooser.zig:835
+#: src/files/chooser.zig:856
 msgid "Folder name"
 msgstr ""
 
@@ -35,7 +35,7 @@ msgstr ""
 msgid "Loading files…"
 msgstr ""
 
-#: src/files/chooser.zig:828
+#: src/files/chooser.zig:849
 msgid "New folder"
 msgstr ""
 
@@ -47,11 +47,11 @@ msgstr ""
 msgid "Open"
 msgstr ""
 
-#: src/files/chooser.zig:1356
+#: src/files/chooser.zig:1377
 msgid "Open files"
 msgstr ""
 
-#: src/files/chooser.zig:1002
+#: src/files/chooser.zig:1023
 msgid "Places"
 msgstr ""
 
@@ -59,15 +59,15 @@ msgstr ""
 msgid "Requested by {0}"
 msgstr ""
 
-#: src/files/chooser.zig:1124 src/portal/file_chooser.zig:154
+#: src/files/chooser.zig:1145 src/portal/file_chooser.zig:154
 msgid "Save"
 msgstr ""
 
-#: src/files/chooser.zig:1356
+#: src/files/chooser.zig:1377
 msgid "Save document"
 msgstr ""
 
-#: src/files/chooser.zig:1124
+#: src/files/chooser.zig:1145
 msgid "Select"
 msgstr ""
 
@@ -79,7 +79,7 @@ msgstr ""
 msgid "Share source"
 msgstr ""
 
-#: src/files/chooser.zig:1034 src/files/chooser.zig:1037
+#: src/files/chooser.zig:1055 src/files/chooser.zig:1058
 msgid "Sort by"
 msgstr ""
 
@@ -87,7 +87,7 @@ msgstr ""
 msgid "This location is unavailable. Choose another location or retry."
 msgstr ""
 
-#: src/files/chooser.zig:1028
+#: src/files/chooser.zig:1049
 msgid "View"
 msgstr ""
 
@@ -98,6 +98,6 @@ msgid_plural "{count} files selected"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/files/chooser.zig:388
+#: src/files/chooser.zig:409
 msgid "›"
 msgstr ""

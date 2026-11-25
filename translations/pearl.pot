@@ -5560,7 +5560,7 @@ msgstr ""
 msgid "Request in progress…"
 msgstr ""
 
-#: src/portal/backend.zig:524
+#: src/portal/backend.zig:536
 msgid "Requested by {0}"
 msgstr ""
 
@@ -7401,7 +7401,7 @@ msgstr ""
 msgid "The preference draft needs repair. Open Advanced to fix it; your text is retained."
 msgstr ""
 
-#: src/ui/i18n.zig:48 src/core/application.zig:421
+#: src/ui/i18n.zig:48 src/core/application.zig:422
 msgid "The preview could not be loaded."
 msgstr ""
 

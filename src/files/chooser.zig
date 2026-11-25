@@ -359,6 +359,25 @@ fn itemsChanged(_: *gio.ListModel, _: c_uint, _: c_uint, _: c_uint, s: *Chooser)
 fn breadcrumbClicked(b: *gtk.Button, s: *Chooser) callconv(.c) void {
     navigate(s, u.data(gio.File, b, "folder").?);
 }
+const crumb_max = 15;
+// Breadcrumb buttons stay at most `crumb_max` characters wide: longer folder
+// names trim to an ellipsis, with the full name kept in the tooltip.
+fn crumbLabel(display: [*:0]const u8, buf: *[(crumb_max - 1) * 4 + 4:0]u8) [:0]const u8 {
+    const text = std.mem.span(display);
+    const view = std.unicode.Utf8View.init(text) catch return text;
+    var it = view.iterator();
+    var count: usize = 0;
+    var cut: usize = 0;
+    while (it.nextCodepointSlice()) |cp| {
+        count += 1;
+        if (count < crumb_max) cut += cp.len;
+    }
+    if (count <= crumb_max) return text;
+    @memcpy(buf[0..cut], text[0..cut]);
+    @memcpy(buf[cut..][0..3], "…");
+    buf[cut + 3] = 0;
+    return buf[0..cut + 3 :0];
+}
 fn breadcrumbs(s: *Chooser, folder: *gio.File) void {
     while (s.breadcrumbs_box.getFirstChild()) |child| cast(gtk.Box, s.breadcrumbs_box).remove(child);
     var parents: std.ArrayList(*gio.File) = .empty;
@@ -380,8 +399,10 @@ fn breadcrumbs(s: *Chooser, folder: *gio.File) void {
         defer glib.free(base);
         const display = glib.filenameDisplayName(base orelse "/");
         defer glib.free(display);
-        const b = gtk.Button.newWithLabel(display).as(gtk.Widget);
+        var label_buf: [(crumb_max - 1) * 4 + 4:0]u8 = undefined;
+        const b = gtk.Button.newWithLabel(crumbLabel(display, &label_buf).ptr).as(gtk.Widget);
         b.addCssClass("flat");
+        b.setTooltipText(display);
         u.ownedData(b, "folder", u.ref(file), &u.unrefData);
         u.connect(b, "clicked", &breadcrumbClicked, s);
         u.append(s.breadcrumbs_box, b);
