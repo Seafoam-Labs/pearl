@@ -71,6 +71,7 @@ pub const Window = struct {
     operations: Operations = undefined,
     network_ui: @import("network_ui.zig").UI = undefined,
     message_dialog: ?*gtk.Dialog = null,
+    properties_dialog: ?*gtk.Dialog = null,
     status_message: ?[:0]u8 = null,
     native_surface: ?*gdk.Surface = null,
     native_signal: c_ulong = 0,
@@ -1325,10 +1326,14 @@ pub const Window = struct {
         var message_widgets: std.ArrayList(ProbeWidget) = .empty;
         defer message_widgets.deinit(a);
         if (self.message_dialog) |d| self.probeWidgetsAt(d.as(gtk.Widget), d.as(gtk.Widget), &message_widgets);
+        var properties_widgets: std.ArrayList(ProbeWidget) = .empty;
+        defer properties_widgets.deinit(a);
+        if (self.properties_dialog) |d| self.probeWidgetsAt(d.as(gtk.Widget), d.as(gtk.Widget), &properties_widgets);
         const json = std.json.Stringify.valueAlloc(a, .{
             .network_dialog_widgets = dialog_widgets.items,
             .operation_dialog_widgets = operation_widgets.items,
             .message_dialog_widgets = message_widgets.items,
+            .properties_dialog_widgets = properties_widgets.items,
             .network_profiles = @import("platform/network_mounts.zig").shared.?.store.profiles.items,
             .network_states = @import("platform/network_mounts.zig").shared.?.entries.items,
             .network_attempts = @import("platform/network_mounts.zig").shared.?.attempts,
@@ -1599,6 +1604,10 @@ pub const Window = struct {
         if (self.message_dialog) |d| {
             d.as(gtk.Window).destroy();
             self.message_dialog = null;
+        }
+        if (self.properties_dialog) |d| {
+            d.as(gtk.Window).destroy();
+            self.properties_dialog = null;
         }
         for (&self.panes) |*p| for (p.tabs.items) |t| {
             t.ready = false;
