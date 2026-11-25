@@ -7,6 +7,7 @@ pub const struct_Portal = extern struct {
     requests: ?*ffi.GHashTable = null,
     print_tokens: ?*ffi.GHashTable = null,
     inhibitors: ffi.gpointer = null,
+    background: ffi.gpointer = null,
     settings: ?*ffi.GHashTable = null,
     policy: ?*ffi.GKeyFile = null,
     policy_monitor: [*c]ffi.GFileMonitor = null,

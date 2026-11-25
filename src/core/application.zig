@@ -268,6 +268,7 @@ fn sessionChanged(data: ?*anyopaque) callconv(.c) c_int {
     self.session_source = 0;
     if (self.logout_requested) return 0;
     const client = &self.aqueous.?;
+    @import("../services/app_state.zig").publish(client);
     if (self.control_server) |*server| {
         if (client.availability != .ready or !std.mem.eql(u8, &server.session, client.model.session)) {
             server.deinit();

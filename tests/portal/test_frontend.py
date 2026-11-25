@@ -33,6 +33,11 @@ def client():
     value = call('org.freedesktop.portal.Settings', 'Read',
                  GLib.Variant('(ss)', ('org.freedesktop.appearance', 'color-scheme')))
     assert value.unpack() == (1,), value
+    # The Background portal must be exported now that Pearl implements its backend;
+    # without it flatpaks cannot request background/autostart permission at all.
+    value = call('org.freedesktop.DBus.Properties', 'Get',
+                 GLib.Variant('(ss)', ('org.freedesktop.portal.Background', 'version')))
+    assert value.unpack() == (2,), value
     source = Path(os.environ['HOME']) / 'portal ✓ document.txt'
     source.write_text('Original content')
     responses = {}

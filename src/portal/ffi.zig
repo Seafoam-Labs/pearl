@@ -458,6 +458,8 @@ pub extern fn g_app_launch_context_setenv(context: [*c]GAppLaunchContext, variab
 
 pub extern fn g_build_filename(first_element: [*c]const gchar, ...) [*c]gchar;
 
+pub extern fn g_get_user_config_dir() [*c]const gchar;
+
 pub extern fn g_bytes_new_take(data: gpointer, size: gsize) ?*GBytes;
 
 pub extern fn g_bytes_unref(bytes: ?*GBytes) void;
@@ -898,6 +900,8 @@ pub const G_BUS_TYPE_SESSION: c_int = 2;
 
 pub const G_DBUS_ERROR_ACCESS_DENIED: c_int = 9;
 
+pub const G_DBUS_ERROR_FAILED: c_int = 0;
+
 pub const GdkModifierType = c_uint;
 
 pub const GdkSurface = @import("gdk4").Surface;
@@ -943,6 +947,8 @@ pub extern fn gtk_dialog_add_button(dialog: [*c]GtkDialog, button_text: [*c]cons
 pub extern fn gtk_dialog_new() [*c]GtkWidget;
 
 pub extern fn gtk_dialog_set_default_response(dialog: [*c]GtkDialog, response_id: c_int) void;
+
+pub extern fn gtk_dialog_get_widget_for_response(dialog: [*c]GtkDialog, response_id: c_int) [*c]GtkWidget;
 
 pub extern fn gtk_event_controller_key_new() ?*GtkEventController;
 

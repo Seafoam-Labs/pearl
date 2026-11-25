@@ -7,6 +7,7 @@ extern void pearl_session_portal_stop(void);
 extern guint pearl_session_portal_holds(void);
 extern void pearl_session_portal_update(gboolean);
 extern void pearl_session_portal_begin_end(void (*)(void *, gboolean));
+extern void pearl_session_portal_set_app_state(GVariant *);
 static guint notice_id, notice_count, replacements;
 static guint inhibitors;
 static gboolean released(gint fd, GIOCondition condition, gpointer data) {
@@ -88,6 +89,13 @@ static void call(GDBusConnection *c, const char *sender, const char *path,
         inv, g_variant_new("(u)", pearl_session_portal_holds()));
     return;
   }
+  if (!g_strcmp0(member, "SetAppState")) {
+    GVariant *apps = g_variant_get_child_value(params, 0);
+    pearl_session_portal_set_app_state(apps);
+    g_variant_unref(apps);
+    g_dbus_method_invocation_return_value(inv, NULL);
+    return;
+  }
   if (!g_strcmp0(member, "Lock")) {
     gboolean locked;
     g_variant_get(params, "(b)", &locked);
@@ -105,6 +113,7 @@ int main(void) {
       "type='u' direction='out'/><arg type='u' "
       "direction='out'/></method><method name='Trigger'/><method "
       "name='Holds'><arg type='u' direction='out'/></method><method "
+      "name='SetAppState'><arg type='a{sv}' direction='in'/></method><method "
       "name='Lock'><arg type='b' direction='in'/></method><method "
       "name='End'/></interface></node>",
       NULL);
