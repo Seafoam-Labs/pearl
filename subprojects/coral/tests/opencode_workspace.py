@@ -5,6 +5,7 @@ import json
 import os
 import queue
 import secrets
+import signal
 import socket
 import base64
 import subprocess
@@ -21,7 +22,12 @@ PEARL = CORAL.parents[1]
 sys.path[:0] = [str(PEARL / "scripts"), str(PEARL / "tests/integration")]
 
 
-def drive(offline=False, adaptive=False, diagnostics=False, permissions=False, terminal=False, desktop=False):
+def review_text(first=1, last=1):
+    middle = "".join(f"line {i:02d}\n" for i in range(24))
+    return f"first = {first}\n" + middle + f"last = {last}\n"
+
+
+def drive(offline=False, adaptive=False, diagnostics=False, permissions=False, terminal=False, desktop=False, crash_review=False):
     import gi
     gi.require_version("Atspi", "2.0")
     from gi.repository import Atspi, GLib
@@ -98,6 +104,31 @@ def drive(offline=False, adaptive=False, diagnostics=False, permissions=False, t
         for modifier in reversed(modifiers):
             keys.extend(["-m", modifier])
         subprocess.run(keys, check=True)
+
+    if crash_review:
+        if os.environ["WORKSPACE_REVIEW_PHASE"] == "before":
+            buffer_with(review_text())
+            click("New OpenCode session")
+            lookup("Worktree test", actionable=False)
+            click("Review changes")
+            lookup("review.txt   ·   1/2   ·   +2 −2", actionable=False)
+            click("Apply hunk")
+            return
+        click("Restore")
+        lookup("Recovery copied safely", actionable=False)
+        click("Keep for later")
+        buffer_with(review_text(first=2))
+        click("Review changes")
+        lookup("Previously applied to the editor", actionable=False)
+        click("Next change")
+        lookup("review.txt   ·   2/2   ·   +2 −2", actionable=False)
+        assert not any(n.get_name() == "Previously applied to the editor" and n.get_state_set().contains(Atspi.StateType.SHOWING)
+                       for n in descendants(Atspi.get_desktop(0)))
+        click("Apply hunk")
+        lookup("Applied to unsaved buffer", actionable=False)
+        click("Return to editor")
+        buffer_with(review_text(first=2, last=2))
+        return
 
     if desktop:
         from pearl_session import wait_for
@@ -607,9 +638,12 @@ class API(BaseHTTPRequestHandler):
                 assert tree.resolve() != service.project.resolve()
                 assert (tree / "hello.txt").read_text() == "staged and edited locally\n"
                 assert (tree / "untracked.txt").read_text() == "untracked baseline\n"
-                (tree / "hello.txt").write_text("agent edit\n")
-                (tree / "old-image.bin").rename(tree / "renamed-image.bin")
-                (tree / "test-binary.bin").write_bytes(b"\x00\xf0agent")
+                if (tree / "review.txt").exists():
+                    (tree / "review.txt").write_text(review_text(first=2, last=2))
+                else:
+                    (tree / "hello.txt").write_text("agent edit\n")
+                    (tree / "old-image.bin").rename(tree / "renamed-image.bin")
+                    (tree / "test-binary.bin").write_bytes(b"\x00\xf0agent")
                 service.add("ses_created", "Worktree test", tree, "birch", body["metadata"])
                 return self.reply({"data": service.sessions["ses_created"]})
             return self.reply({"data": list(service.sessions.values()), "cursor": {}})
@@ -673,6 +707,8 @@ def main(args):
         file.write_text("original\n")
         (project / "old-image.bin").write_bytes(b"\x00rename")
         (project / "test-binary.bin").write_bytes(b"\x00base")
+        if args.crash_review:
+            (project / "review.txt").write_text(review_text())
         git("add", ".")
         git("-c", "user.email=test@localhost", "-c", "user.name=Fixture", "commit", "-qm", "Base")
         file.write_text("staged\n")
@@ -718,7 +754,7 @@ def main(args):
                     wait_for(lambda: abs(rect().get("width",0)-width) < 8)
                 return rect()
             service.window_geometry = window_geometry
-            documents = [file]
+            documents = [project / "review.txt"] if args.crash_review else [file]
             if args.diagnostics:
                 # Earlier Coral versions could create this path with the default
                 # mode. Workspace owns its approval records in its own directory.
@@ -760,6 +796,28 @@ def main(args):
             application = session.child("workspace", [args.binary.resolve(), *(["--log-level", "debug", "--log-scopes", "services"] if args.terminal else []), project, *documents], G_DEBUG="fatal-criticals")
             from pearl_session import wait_for
             wait_for(lambda: "/api/model" in service.calls)
+            if args.crash_review:
+                driver = [sys.executable, str(Path(__file__).resolve()), "--drive", "--crash-review"]
+                session.env["WORKSPACE_REVIEW_PHASE"] = "before"
+                subprocess.run(driver, env=session.env, check=True, timeout=30)
+                receipts = Path(session.env["XDG_STATE_HOME"]) / "coral-workspace/sessions"
+                def applied_receipts():
+                    return {path for path in receipts.glob("*.json")
+                            if json.loads(path.read_text()).get("decision") == "applied"}
+                wait_for(lambda: len(applied_receipts()) == 1, 5)
+                first_receipts = applied_receipts()
+                application.signal(signal.SIGKILL)
+                assert application.wait(timeout=5) == -signal.SIGKILL
+                wait_for(lambda: not window_geometry(), 5)
+                assert (project / "review.txt").read_text() == review_text()
+                session.env["WORKSPACE_REVIEW_PHASE"] = "after"
+                session.child("review-recovery", [args.binary.resolve(), project], G_DEBUG="fatal-criticals")
+                subprocess.run(driver, env=session.env, check=True, timeout=35)
+                assert (project / "review.txt").read_text() == review_text()
+                assert git("show", ":review.txt").decode() == review_text()
+                assert len(applied_receipts()) == 2 and first_receipts < applied_receipts()
+                print("Verified both unsaved hunk results and separate review decisions across SIGKILL.")
+                return
             if args.capture_dir:
                 args.capture_dir.mkdir(parents=True, exist_ok=True)
                 geometry = next(node["geometry"] for node in ipc.state() if node["kind"] == "window" and node.get("app_id") == "org.aqueous.Coral.Workspace")
@@ -807,6 +865,7 @@ if __name__ == "__main__":
     parser.add_argument("--diagnostics", action="store_true")
     parser.add_argument("--permissions", action="store_true")
     parser.add_argument("--terminal", action="store_true")
+    parser.add_argument("--crash-review", action="store_true")
     parser.add_argument("--desktop", action="store_true", help="Use the installed binary and desktop entry from the same prefix")
     parser.add_argument("--binary", type=Path, default=CORAL / "zig-out/bin/coral-workspace")
     parser.add_argument("--output", type=Path, default=CORAL / ".zig-cache/workspace-integration")
@@ -818,6 +877,6 @@ if __name__ == "__main__":
     parser.add_argument("--height", type=int, default=900)
     opts = parser.parse_args()
     if opts.drive:
-        drive(opts.offline, opts.adaptive, opts.diagnostics, opts.permissions, opts.terminal, opts.desktop)
+        drive(opts.offline, opts.adaptive, opts.diagnostics, opts.permissions, opts.terminal, opts.desktop, opts.crash_review)
     else:
         main(opts)

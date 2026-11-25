@@ -104,6 +104,7 @@ pub const App = struct {
     history: History = History.init(a, .{}),
     closing_group: ?u64 = null,
     /// GTK-thread callback; snapshots are coherent here. Must not mutate/reenter App.
+    recovery_flush: ?*const fn (?*anyopaque, DurableCallback, *anyopaque) anyerror!void = null,
     recovery_context: ?*anyopaque = null,
     recovery_checkpoint: ?*const fn (?*anyopaque, *App) void = null,
     recovery_suspended: bool = false,
@@ -1061,6 +1062,7 @@ pub const App = struct {
         const index = c.gtk_notebook_page_num(u.cast(c.GtkNotebook, group.notebook), page);
         return .{ .id = id, .document_id = d.id, .group_id = group.id, .page = index, .active = self.active_page == page, .selected = c.gtk_notebook_get_current_page(u.cast(c.GtkNotebook, group.notebook)) == index, .insertion = c.gtk_text_iter_get_offset(&insertion), .bound = c.gtk_text_iter_get_offset(&bound), .scroll_x = scroll.x, .scroll_y = scroll.y };
     }
+    pub const DurableCallback = *const fn (*anyopaque, bool) void;
     pub const RestoreDocument = struct {
         text: []const u8,
         path: ?[]const u8 = null,

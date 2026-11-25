@@ -33,6 +33,9 @@ pub const Controller = struct {
     claim: ?*Work = null,
     transferred: bool = false,
     awaiting_checkpoint: bool = false,
+    receipt_callback: ?App.DurableCallback = null,
+    receipt_context: ?*anyopaque = null,
+    deferred_save: bool = false,
     ready: *const fn (*App) void,
 
     /// Called before App.create presents the window. No implicit mkdir of state
@@ -67,6 +70,7 @@ pub const Controller = struct {
     pub fn attachNew(self: *Controller, app: *App) void {
         self.app = app;
         app.recovery_context = self;
+        app.recovery_flush = &flush;
         app.recovery_checkpoint = &changed;
         u.connect(self.application, "window-removed", &windowRemoved, self);
         self.opening = true;
@@ -82,6 +86,7 @@ pub const Controller = struct {
     pub fn attach(self: *Controller, app: *App) void {
         self.app = app;
         app.recovery_context = self;
+        app.recovery_flush = &flush;
         app.recovery_checkpoint = &changed;
         app.recovery_suspended = true;
         u.connect(self.application, "window-removed", &windowRemoved, self);
@@ -211,7 +216,7 @@ pub const Controller = struct {
             defer a.free(text);
             bytes += text.len;
             if (text.len > recovery.limits.document_bytes or bytes > recovery.limits.text_bytes) return error.TooLarge;
-            out.* = .{ .id = doc.id, .text = try alloc.dupe(u8, text), .path = doc.path, .saved_etag = doc.etag, .dirty = doc.dirty(), .bom = doc.bom, .newline = switch (doc.newline) {
+            out.* = .{ .id = doc.id, .text = try alloc.dupe(u8, text), .path = doc.path, .recovered_from = if (doc.path == null) doc.recovered_from else null, .saved_etag = doc.etag, .dirty = doc.dirty(), .bom = doc.bom, .newline = switch (doc.newline) {
                 .lf => .lf,
                 .crlf => .crlf,
                 .mixed => .mixed,
@@ -265,7 +270,41 @@ pub const Controller = struct {
         return recovery.OwnedSnapshot.create(.{ .documents = docs, .groups = layout, .views = views, .active_group = active });
     }
 
+    // A hunk receipt acknowledges these exact bytes. Keep this checkpoint out
+    // of the trailing-edge autosave coalescing window until its worker finishes.
+    fn flush(context: ?*anyopaque, callback: App.DurableCallback, data: *anyopaque) !void {
+        const self = u.cast(Controller, context.?);
+        const app = self.app orelse return error.Closing;
+        if (self.closing or app.recovery_suspended or self.receipt_callback != null) return error.Busy;
+        const store = self.store orelse return error.RecoveryUnavailable;
+        const snapshot = try captureApp(app);
+        errdefer snapshot.deinit();
+        try store.saveAsync(snapshot, &flushed, self);
+        self.receipt_callback = callback;
+        self.receipt_context = data;
+        self.hold();
+        self.saves += 1;
+    }
+
+    fn flushed(data: ?*anyopaque, result: recovery.Result) void {
+        const self = u.cast(Controller, data.?);
+        const callback = self.receipt_callback.?;
+        const context = self.receipt_context.?;
+        self.receipt_callback = null;
+        self.receipt_context = null;
+        callback(context, result == .checkpoint and result.checkpoint == .durable);
+        if (self.deferred_save) {
+            self.deferred_save = false;
+            self.save();
+        }
+        saved(data, result);
+    }
+
     fn save(self: *Controller) void {
+        if (self.receipt_callback != null) {
+            self.deferred_save = true;
+            return;
+        }
         if (self.closing or self.opening or self.store == null) return;
         const snapshot = captureApp(self.app orelse return) catch |err| {
             if (err == error.Loading) {
@@ -349,6 +388,10 @@ pub const Controller = struct {
                 .mixed => .mixed,
                 .cr => return error.UnsupportedLineEnding,
             } });
+            if (out.*.path == null) {
+                const origin = doc.recovered_from orelse if (states == null) doc.path else null;
+                if (origin) |path| out.*.recovered_from = u.z(path);
+            }
         }
         for (snapshot.groups, group_map, 0..) |_, *out, i| {
             out.* = if (i == 0 and app.snapshotDocuments().len == snapshot.documents.len) app.activeGroupId() else try app.createGroup();
@@ -480,6 +523,7 @@ fn windowRemoved(_: ?*c.GtkApplication, window: ?*c.GtkWindow, data: ?*anyopaque
     if (window != u.cast(c.GtkWindow, app.window)) return;
     self.app = null;
     app.recovery_context = null;
+    app.recovery_flush = null;
     app.recovery_checkpoint = null;
     self.finish(false);
     if (self.dialog) |dialog| {

@@ -24,6 +24,7 @@ pub const Document = struct {
     /// path requires an explicit user decision AND a conditional GIO save using
     /// saved_etag (or conflict UI if it is null). Never blindly refresh the etag.
     path: ?[]const u8 = null,
+    recovered_from: ?[]const u8 = null,
     text: []const u8,
     dirty: bool = true,
     bom: bool = false,
@@ -78,6 +79,7 @@ pub const OwnedSnapshot = struct {
         const docs = try alloc.dupe(Document, value.documents);
         for (docs) |*doc| {
             doc.text = try alloc.dupe(u8, doc.text);
+            if (doc.recovered_from) |path| doc.recovered_from = try alloc.dupe(u8, path);
             if (doc.path) |path| doc.path = try alloc.dupe(u8, path);
             if (doc.saved_etag) |etag| doc.saved_etag = try alloc.dupe(u8, etag);
         }
@@ -108,6 +110,7 @@ pub fn validate(value: Snapshot) !void {
         total += doc.text.len;
         if (total > limits.text_bytes) return error.TooLarge;
         if (doc.path) |path| try nativePath(path);
+        if (doc.recovered_from) |path| try nativePath(path);
         if (doc.saved_etag) |etag| {
             if (etag.len > limits.metadata_bytes) return error.TooLarge;
             if (std.mem.indexOfScalar(u8, etag, 0) != null) return error.InvalidSnapshot;
@@ -177,6 +180,7 @@ pub fn nativePath(path: []const u8) !void {
 const WireDoc = struct {
     id: u64,
     path: ?[]const u8,
+    recovered_from: ?[]const u8 = null,
     text: []const u8,
     dirty: bool,
     bom: bool,
@@ -238,6 +242,7 @@ pub fn encode(alloc: std.mem.Allocator, value: Snapshot) ![]u8 {
     const docs = try temp.alloc(WireDoc, value.documents.len);
     for (docs, value.documents) |*out, doc| out.* = .{
         .id = doc.id,
+        .recovered_from = if (doc.recovered_from) |p| try b64(temp, p) else null,
         .path = if (doc.path) |p| try b64(temp, p) else null,
         .text = try b64(temp, doc.text),
         .dirty = doc.dirty,
@@ -295,6 +300,7 @@ fn decodeWire(comptime T: type, json: []const u8) !*OwnedSnapshot {
         if (total > limits.text_bytes) return error.TooLarge;
         doc.* = .{
             .id = w.id,
+            .recovered_from = if (w.recovered_from) |p| try unb64(temp, p, limits.metadata_bytes) else null,
             .path = if (w.path) |p| try unb64(temp, p, limits.metadata_bytes) else null,
             .text = text,
             .dirty = w.dirty,

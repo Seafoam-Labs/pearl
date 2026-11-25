@@ -11,6 +11,8 @@ pub const Document = struct {
     search_settings: *c.GtkSourceSearchSettings,
     tag: *c.GtkTextTag,
     path: ?[:0]u8 = null,
+    /// Identifies a recovered buffer for review, without granting a Save target.
+    recovered_from: ?[:0]u8 = null,
     etag: ?[:0]u8 = null,
     external_changed: bool = false,
     monitor: ?*c.GFileMonitor = null,
@@ -106,6 +108,7 @@ pub const Document = struct {
         if (d.pending) |p| u.a.free(p.text);
         if (d.pending_etag) |p| u.a.free(p);
         if (d.path) |p| u.a.free(p);
+        if (d.recovered_from) |p| u.a.free(p);
         if (d.etag) |p| u.a.free(p);
         if (d.language) |language| c.g_object_unref(language);
         var it = d.ignored.keyIterator();

@@ -36,6 +36,30 @@ const Job = struct {
         a.destroy(self);
     }
 };
+const Receipt = struct {
+    review: ?*Review,
+    generation: u64,
+    tree: [:0]u8,
+    key: [64]u8,
+
+    fn finish(context: *anyopaque, durable: bool) void {
+        const receipt = u.cast(Receipt, context);
+        defer a.destroy(receipt);
+        defer a.free(receipt.tree);
+        var confirmed = durable;
+        if (durable) {
+            @import("workspace_state.zig").write(receipt.tree, &receipt.key, .{ .decision = "applied" }) catch {
+                confirmed = false;
+            };
+        }
+        const review = receipt.review orelse return;
+        review.pending_receipt = null;
+        c.gtk_widget_set_sensitive(review.page, 1);
+        if (review.generation != receipt.generation) return;
+        if (confirmed) review.showDecision();
+        u.setLabel(review.title, if (confirmed) i18n.dtr("coral", "Applied to unsaved buffer") else if (durable) i18n.dtr("coral", "Could not save the review decision") else i18n.dtr("coral", "Buffer edited. Recovery failed. Save your work."));
+    }
+};
 pub const Review = struct {
     app: *App,
     stack: u.W,
@@ -61,6 +85,7 @@ pub const Review = struct {
     generation: u64 = 0,
     conflict: ?*Job = null,
     editing: bool = false,
+    pending_receipt: ?*Receipt = null,
     origin: c.GWeakRef = undefined,
     origin_drawer: ?@import("workbench/layout.zig").Panel = null,
 
@@ -127,6 +152,7 @@ pub const Review = struct {
         return self;
     }
     pub fn deinit(self: *Review) void {
+        if (self.pending_receipt) |receipt| receipt.review = null;
         c.g_weak_ref_clear(&self.origin);
         c.g_cancellable_cancel(self.cancel);
         c.g_object_unref(self.cancel);
@@ -146,11 +172,11 @@ pub const Review = struct {
         _ = c.gtk_widget_grab_focus(target);
     }
     pub fn step(self: *Review, backwards: bool) void {
-        if (!self.visible() or self.editing) return;
+        if (!self.visible() or self.editing or self.pending_receipt != null) return;
         if (backwards) prev(null, self) else advance(null, self);
     }
     pub fn choose(self: *Review, apply_change: bool) void {
-        if (!self.visible() or self.files.len == 0) return;
+        if (!self.visible() or self.files.len == 0 or self.pending_receipt != null) return;
         const button = if (apply_change) self.action else self.mine;
         if (c.gtk_widget_get_sensitive(button) != 0) {
             if (apply_change) accept(null, self) else skip(null, self);
@@ -340,10 +366,15 @@ pub const Review = struct {
             u.setLabel(self.title, @errorName(err));
             return;
         };
-        self.record("applied");
         self.resetConflict();
-        u.setLabel(self.title, i18n.dtr("coral", "Applied to unsaved buffer"));
         c.gtk_widget_set_sensitive(self.action, 0);
+        const receipt = a.create(Receipt) catch unreachable;
+        receipt.* = .{ .review = self, .generation = self.generation, .tree = u.z(self.tree), .key = self.decisionKey() };
+        self.pending_receipt = receipt;
+        c.gtk_widget_set_sensitive(self.page, 0);
+        if (self.app.recovery_flush) |flush| {
+            flush(self.app.recovery_context, &Receipt.finish, receipt) catch Receipt.finish(receipt, false);
+        } else Receipt.finish(receipt, false);
     }
 };
 const Comparison = struct { box: u.W, source: u.W, scroll: u.W };
@@ -462,7 +493,9 @@ fn accept(_: ?*c.GtkButton, ctx: ?*anyopaque) callconv(.c) void {
         u.setLabel(self.title, i18n.dtr("coral", "The file path changed. Reopen review."));
         return;
     }
-    const doc = self.app.documents.findPath(canonical) orelse {
+    const selected = self.app.active();
+    const recovered = if (selected) |doc| doc.path == null and doc.recovered_from != null and std.mem.eql(u8, doc.recovered_from.?, canonical) else false;
+    const doc = (if (recovered) selected else self.app.documents.findPath(canonical)) orelse {
         self.app.openExisting(canonical, null);
         u.setLabel(self.title, i18n.dtr("coral", "Opening file. Apply after it loads."));
         return;

@@ -12,7 +12,7 @@ const bytesEqual = std.testing.expectEqualStrings;
 const sample: model.Snapshot = .{
     .documents = &.{
         .{ .id = 7, .path = "/work/日本語\xff.txt", .text = "\xef\xbb\xbf雪😀\r\n\x00\xff", .bom = true, .newline = .crlf, .revision = 42, .saved_etag = "old-etag" },
-        .{ .id = 8, .text = "untitled\nΔ", .revision = 9 },
+        .{ .id = 8, .text = "untitled\nΔ", .recovered_from = "/original.txt", .revision = 9 },
     },
     .groups = &.{ .{ .path = "root", .split = .horizontal }, .{ .path = "root/0", .active_view = 10 }, .{ .path = "root/1", .active_view = 11 } },
     .views = &.{ .{ .id = 10, .document_id = 7, .group_path = "root/0", .anchor = 3, .cursor = 6 }, .{ .id = 11, .document_id = 8, .group_path = "root/1", .scroll_line = 12 } },
@@ -53,6 +53,7 @@ fn expectSample(value: model.Snapshot) !void {
         try equal(want.newline, got.newline);
         try equal(want.revision, got.revision);
         if (want.path) |path| try bytesEqual(path, got.path.?) else try expect(got.path == null);
+        if (want.recovered_from) |p| try bytesEqual(p, got.recovered_from.?) else try expect(got.recovered_from == null);
         if (want.saved_etag) |etag| try bytesEqual(etag, got.saved_etag.?) else try expect(got.saved_etag == null);
     }
     try bytesEqual("root/1", value.active_group.?);
