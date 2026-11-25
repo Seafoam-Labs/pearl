@@ -2,6 +2,7 @@
 const coral = @import("coral");
 const c = @import("pearl_app_c");
 const std = @import("std");
+pub const workspace_vte = true;
 pub const std_options = coral.std_options;
 
 var previous: i64 = 0;

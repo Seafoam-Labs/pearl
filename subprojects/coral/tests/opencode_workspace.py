@@ -21,7 +21,7 @@ PEARL = CORAL.parents[1]
 sys.path[:0] = [str(PEARL / "scripts"), str(PEARL / "tests/integration")]
 
 
-def drive(offline=False, adaptive=False, diagnostics=False, permissions=False):
+def drive(offline=False, adaptive=False, diagnostics=False, permissions=False, terminal=False):
     import gi
     gi.require_version("Atspi", "2.0")
     from gi.repository import Atspi, GLib
@@ -91,6 +91,85 @@ def drive(offline=False, adaptive=False, diagnostics=False, permissions=False):
         for modifier in reversed(modifiers):
             keys.extend(["-m", modifier])
         subprocess.run(keys, check=True)
+
+    if terminal:
+        from pearl_session import wait_for
+        project = Path(os.environ["WORKSPACE_TEST_PROJECT"])
+        other = project.parent / "second-project"
+        other.mkdir()
+
+        def type_text(text):
+            subprocess.run(["wtype", "-s", "100", "--", str(text)], check=True)
+
+        def command(text):
+            type_text(text)
+            key("Return")
+
+        def grid(directory, name):
+            output = directory / name
+            command("stty size > " + name)
+            wait_for(lambda: output.exists() and len(output.read_text().split()) == 2)
+            return tuple(map(int, output.read_text().split()))
+
+        def running():
+            return any("running" in (node.get_name() or "") and "Terminal " in node.get_name()
+                       for node in descendants(Atspi.get_desktop(0)))
+
+        def start_terminal():
+            click("New terminal")
+            try:
+                wait_for(running)
+            except TimeoutError:
+                state = [n.get_name() for n in descendants(Atspi.get_desktop(0)) if n.get_name()]
+                raise AssertionError(f"Shell failed to start. Accessible controls: {state}")
+
+        lookup("Trusted", actionable=False)
+        start_terminal()
+        command("pwd -P > terminal-cwd")
+        wait_for(lambda: (project / "terminal-cwd").exists())
+        assert (project / "terminal-cwd").read_text().strip() == str(project)
+        before = grid(project, "grid-before")
+        command('echo Coral "VTE ready"')
+        buffer_with("Coral VTE ready", contains=True)
+        capture("workspace-terminal")
+        fixture("resize", width=1080)
+        after = grid(project, "grid-after")
+        assert after[1] < before[1] and min(*before, *after) > 0, (before, after)
+
+        # The folder picker changes the active project with a live shell.
+        key("p", "ctrl", "shift")
+        lookup("Command Palette…", actionable=False)
+        type_text("Open Folder")
+        key("Return")
+        time.sleep(.3)
+        key("l", "ctrl")
+        key("a", "ctrl")
+        type_text(other)
+        key("Return")
+        time.sleep(.3)
+        key("Return", "ctrl")
+        lookup("second-project", actionable=False)
+        lookup("Session model", actionable=False)
+        assert not any(n.get_name() in ("Restore cursor", "Birch") and n.get_state_set().contains(Atspi.StateType.SHOWING)
+                       for n in descendants(Atspi.get_desktop(0)))
+        lookup("Terminal · 0/8 sessions", actionable=False)
+        start_terminal()
+        command("pwd -P > terminal-cwd")
+        wait_for(lambda: (other / "terminal-cwd").exists())
+        assert (other / "terminal-cwd").read_text().strip() == str(other)
+        command("printf second > new-project-only")
+        wait_for(lambda: (other / "new-project-only").exists())
+        assert not (project / "new-project-only").exists()
+        command("exit 7")
+        wait_for(lambda: any("exit 7" in (n.get_name() or "") for n in descendants(Atspi.get_desktop(0))))
+        click("Restart terminal")
+        wait_for(running)
+        command("echo restarted > restart-result")
+        wait_for(lambda: (other / "restart-result").exists())
+        click("Close terminal")
+        lookup("Terminal · 0/8 sessions", actionable=False)
+        print(f"Verified VTE shell I/O, resize {before} to {after}, isolated project cwd and exit status.")
+        return
 
     if permissions:
         messages = []
@@ -615,7 +694,9 @@ def main(args):
                 documents = [project / "first.zig", project / "second.zig"]
                 for doc, data in zip(documents, ["   café😀 first\n", "  naïve🌱 second\n"]):
                     doc.write_text(data)
-            application = session.child("workspace", [args.binary.resolve(), project, *documents], G_DEBUG="fatal-criticals")
+            if args.terminal:
+                session.env.update(SHELL="/bin/sh", WORKSPACE_TEST_PROJECT=str(project))
+            application = session.child("workspace", [args.binary.resolve(), *(["--log-level", "debug", "--log-scopes", "services"] if args.terminal else []), project, *documents], G_DEBUG="fatal-criticals")
             from pearl_session import wait_for
             wait_for(lambda: "/api/model" in service.calls)
             if args.capture_dir:
@@ -623,8 +704,8 @@ def main(args):
                 geometry = next(node["geometry"] for node in ipc.state() if node["kind"] == "window" and node.get("app_id") == "org.aqueous.Coral.Workspace")
                 session.env["WORKSPACE_TEST_CAPTURES"] = str(args.capture_dir.resolve())
                 session.env["WORKSPACE_TEST_GEOMETRY"] = "{x},{y} {width}x{height}".format(**geometry)
-            if args.adaptive or args.diagnostics or args.permissions:
-                scenario = "--adaptive" if args.adaptive else ("--diagnostics" if args.diagnostics else "--permissions")
+            if args.adaptive or args.diagnostics or args.permissions or args.terminal:
+                scenario = "--adaptive" if args.adaptive else ("--diagnostics" if args.diagnostics else ("--terminal" if args.terminal else "--permissions"))
                 subprocess.run([sys.executable, str(Path(__file__).resolve()), "--drive", scenario],
                                env=session.env, check=True, timeout=60)
                 if args.diagnostics:
@@ -664,6 +745,7 @@ if __name__ == "__main__":
     parser.add_argument("--adaptive", action="store_true")
     parser.add_argument("--diagnostics", action="store_true")
     parser.add_argument("--permissions", action="store_true")
+    parser.add_argument("--terminal", action="store_true")
     parser.add_argument("--binary", type=Path, default=CORAL / "zig-out/bin/coral-workspace")
     parser.add_argument("--output", type=Path, default=CORAL / ".zig-cache/workspace-integration")
     parser.add_argument("--aqueous-prefix", type=Path)
@@ -674,6 +756,6 @@ if __name__ == "__main__":
     parser.add_argument("--height", type=int, default=900)
     opts = parser.parse_args()
     if opts.drive:
-        drive(opts.offline, opts.adaptive, opts.diagnostics, opts.permissions)
+        drive(opts.offline, opts.adaptive, opts.diagnostics, opts.permissions, opts.terminal)
     else:
         main(opts)

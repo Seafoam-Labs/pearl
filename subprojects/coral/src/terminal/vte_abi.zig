@@ -1,6 +1,5 @@
-//! Narrow Linux C ABI for the optional GTK4/VTE feasibility fixture.
+//! Narrow Linux C ABI shared by the workspace terminal and its standalone GTK4 VTE fixture.
 //! Signatures checked against GTK 4.24 and VTE 0.84 public headers. No C bridge.
-//! Production bindings should share Coral's existing GTK module instances.
 pub const Object = opaque {};
 pub const Callback = *const fn () callconv(.c) void;
 pub extern "c" fn gtk_init_check() c_int;

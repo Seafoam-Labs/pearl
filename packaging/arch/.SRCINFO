@@ -27,6 +27,8 @@ pkgbase = pearl
 	depends = libxml2
 	depends = libsecret
 	depends = gtksourceview5
+	depends = libsoup3
+	depends = vte4
 	depends = enchant
 	depends = hunspell
 	depends = gtk4>=1:4.22.5

@@ -1338,6 +1338,7 @@ pub const App = struct {
         self.resetSpelling();
     }
     fn applySettings(self: *App) void {
+        self.terminal.updateAppearance();
         self.workspace_policy.userSettingsChanged();
         self.transients(false);
         self.themeClasses(self.window);

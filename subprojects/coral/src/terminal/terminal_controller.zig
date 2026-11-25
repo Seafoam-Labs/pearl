@@ -16,9 +16,11 @@ const c = u.c;
 const a = u.a;
 const App = @import("../app.zig").App;
 const pty = @import("pty.zig");
+const log = std.log.scoped(.services);
 const g = @import("ghostty.zig");
 const surface_mod = @import("surface.zig");
-const Surface = surface_mod.Surface;
+const workspace_vte = @hasDecl(@import("root"), "workspace_vte") and @import("root").workspace_vte;
+const Surface = if (workspace_vte) @import("vte_surface.zig").Surface else surface_mod.Surface;
 const test_hooks = @import("build_options").test_hooks;
 
 pub const max_sessions: usize = 8;
@@ -109,6 +111,7 @@ const Session = struct {
     phase: Phase = .starting,
     eof: bool = false,
     finalized: bool = false,
+    restart_after_close: bool = false,
     report: ?pty.Report = null,
     exit_code: ?i32 = null,
     signal: ?i32 = null,
@@ -133,6 +136,15 @@ const Session = struct {
     env_ptrs: [env_capacity + 1]?[*:0]const u8 = undefined,
     env_len: usize = 0,
 
+    fn stop(self: *Session) void {
+        log.debug("terminal {d} retiring from {s}", .{ self.id, @tagName(self.phase) });
+        self.phase = .closing;
+        if (workspace_vte) self.surface.disableInput();
+        self.job.cancel();
+    }
+    fn grid(self: *Session) [2]c_long {
+        return if (workspace_vte) self.surface.grid() else .{ self.surface.cols, self.surface.rows_count };
+    }
     fn hooks(self: *Session) surface_mod.Hooks {
         return .{
             .context = self,
@@ -232,7 +244,10 @@ const Session = struct {
 pub const Controller = struct {
     app: *App,
     root: u.W,
-    tab_bar: u.W,
+    tabs: u.W,
+    new_button: u.W,
+    close_button: u.W,
+    restart_button: u.W,
     stack: u.W,
     status: u.W,
     slot: ?u.W = null,
@@ -247,6 +262,7 @@ pub const Controller = struct {
     // Last editor font size pushed to session surfaces; the reaper tick compares
     // it against the live app setting so font changes recompute cell metrics.
     applied_font: c_int = 0,
+    last_grid: [2]c_long = .{ 0, 0 },
 
     pub fn init(app: *App) Controller {
         const root = u.box(false, 0);
@@ -258,6 +274,15 @@ pub const Controller = struct {
         const tab_bar = u.box(true, 2);
         c.gtk_widget_add_css_class(tab_bar, "terminal-tabs");
         u.append(root, tab_bar);
+
+        const tabs = u.box(true, 2);
+        u.append(tab_bar, tabs);
+        const new_button = u.icon("list-add-symbolic", "New terminal");
+        const close_button = u.icon("window-close-symbolic", "Close terminal");
+        const restart_button = u.icon("view-refresh-symbolic", "Restart terminal");
+        u.append(tab_bar, new_button);
+        u.append(tab_bar, close_button);
+        u.append(tab_bar, restart_button);
 
         const stack = c.gtk_stack_new().?;
         c.gtk_widget_set_hexpand(stack, 1);
@@ -271,7 +296,10 @@ pub const Controller = struct {
         return .{
             .app = app,
             .root = root,
-            .tab_bar = tab_bar,
+            .tabs = tabs,
+            .new_button = new_button,
+            .close_button = close_button,
+            .restart_button = restart_button,
             .stack = stack,
             .status = status,
         };
@@ -281,6 +309,9 @@ pub const Controller = struct {
     /// bounded reaper timeout. Call once the controller is at its stable address.
     pub fn attach(self: *Controller, slot: u.W) void {
         self.slot = slot;
+        u.connect(self.new_button, "clicked", &newClicked, self);
+        u.connect(self.close_button, "clicked", &closeClicked, self);
+        u.connect(self.restart_button, "clicked", &restartClicked, self);
         u.append(slot, self.root);
         self.timeout_id = c.g_timeout_add(50, &reapTick, self);
         self.refresh();
@@ -355,11 +386,14 @@ pub const Controller = struct {
         session.argv_ptrs[0] = session.shell.ptr;
         session.argv_ptrs[1] = null;
 
-        session.surface = Surface.init(session.hooks(), default_cols, default_rows) catch |err| return err;
+        session.surface = if (workspace_vte) Surface.init() else try Surface.init(session.hooks(), default_cols, default_rows);
         errdefer session.surface.deinit();
         // Follow the application editor font (family + size) from the start.
         session.surface.setFont(surface_mod.editor_font_family, self.app.settings.font);
-        session.surface.attach();
+        if (workspace_vte) {
+            u.connect(session.surface.widget, "eof", &terminalEof, session);
+            u.connect(session.surface.widget, "window-title-changed", &terminalTitle, session);
+        } else session.surface.attach();
 
         session.job = .{ .config = .{
             .authorization = .approved,
@@ -369,6 +403,7 @@ pub const Controller = struct {
             .rows = default_rows,
             .columns = default_cols,
         } };
+        log.debug("starting terminal {d}", .{session.id});
         session.job.start();
 
         self.sessions[index] = session;
@@ -377,6 +412,7 @@ pub const Controller = struct {
         self.applied_font = self.app.settings.font;
         _ = c.gtk_stack_add_named(u.cast(c.GtkStack, self.stack), session.surface.widget, session.stack_name);
         c.gtk_stack_set_visible_child_name(u.cast(c.GtkStack, self.stack), session.stack_name);
+        if (workspace_vte) self.styleTerminal(session);
         self.refresh();
         session.surface.focus();
     }
@@ -388,14 +424,14 @@ pub const Controller = struct {
 
     fn closeIndex(self: *Controller, index: usize) void {
         const session = self.sessions[index] orelse return;
+        session.restart_after_close = false;
         if (session.phase == .closing) return;
         if (session.finalized) {
             // Already exited and reaped: destroy immediately.
             self.destroySession(session, index);
             return;
         }
-        session.phase = .closing;
-        session.job.cancel();
+        session.stop();
         self.refresh();
     }
 
@@ -408,12 +444,21 @@ pub const Controller = struct {
             self.refresh();
             return;
         };
-        session.phase = .closing;
-        session.job.cancel();
-        self.spawn() catch |err| {
+        if (session.finalized) {
+            self.destroySession(session, index);
+            self.startReplacement();
+        } else {
+            session.restart_after_close = true;
+            session.stop();
+            self.refresh();
+        }
+    }
+
+    fn startReplacement(self: *Controller) void {
+        self.newSession() catch |err| {
             self.last_error = @errorName(err);
+            self.refresh();
         };
-        self.refresh();
     }
 
     pub fn cancelActive(self: *Controller) void {
@@ -448,38 +493,47 @@ pub const Controller = struct {
     }
 
     fn refresh(self: *Controller) void {
-        var child = c.gtk_widget_get_first_child(self.tab_bar);
-        while (child) |widget| {
-            const next = c.gtk_widget_get_next_sibling(widget);
-            c.gtk_box_remove(u.cast(c.GtkBox, self.tab_bar), widget);
-            child = next;
-        }
         for (self.sessions, 0..) |slot, i| {
             const session = slot orelse continue;
-            const label = u.fmt("{s}", .{session.title});
-            defer a.free(label);
-            const tab = u.button(label);
-            c.gtk_widget_add_css_class(tab, "terminal-tab");
-            if (self.active == i) c.gtk_widget_add_css_class(tab, "active");
-            u.connect(tab, "clicked", &tabClicked, session);
-            session.tab = tab;
-            u.append(self.tab_bar, tab);
+            const tab = session.tab orelse blk: {
+                const button = u.button(session.title);
+                c.gtk_widget_add_css_class(button, "terminal-tab");
+                u.connect(button, "clicked", &tabClicked, session);
+                c.gtk_box_insert_child_after(u.cast(c.GtkBox, self.tabs), button, self.precedingTab(i));
+                session.tab = button;
+                break :blk button;
+            };
+            if (self.active == i) c.gtk_widget_add_css_class(tab, "active") else c.gtk_widget_remove_css_class(tab, "active");
         }
-        const new_button = u.icon("list-add-symbolic", "New terminal");
-        u.connect(new_button, "clicked", &newClicked, self);
-        u.append(self.tab_bar, new_button);
-        const close_button = u.icon("window-close-symbolic", "Close terminal");
-        u.connect(close_button, "clicked", &closeClicked, self);
-        u.append(self.tab_bar, close_button);
-        const restart_button = u.icon("view-refresh-symbolic", "Restart terminal");
-        u.connect(restart_button, "clicked", &restartClicked, self);
-        u.append(self.tab_bar, restart_button);
+        self.updateNewButton();
+        const active = self.activeSession();
+        c.gtk_widget_set_sensitive(self.close_button, @intFromBool(active != null));
+        c.gtk_widget_set_sensitive(self.restart_button, @intFromBool(active != null and active.?.phase != .closing));
         self.refreshStatus();
+    }
+
+    fn precedingTab(self: *Controller, index: usize) ?u.W {
+        var i = index;
+        while (i > 0) {
+            i -= 1;
+            if (self.sessions[i]) |session| return session.tab;
+        }
+        return null;
+    }
+
+    fn updateNewButton(self: *Controller) void {
+        const model = self.app.browser.model;
+        const enabled = model != null and model.?.roots.len != 0 and !self.app.browser.loading and self.count() < max_sessions;
+        c.gtk_widget_set_sensitive(self.new_button, @intFromBool(enabled));
     }
 
     fn newClicked(_: *c.GtkButton, data: ?*anyopaque) callconv(.c) void {
         const self: *Controller = @ptrCast(@alignCast(data.?));
-        self.newSession() catch {};
+        self.newSession() catch |err| {
+            self.last_error = @errorName(err);
+            log.warn("terminal startup failed ({s})", .{@errorName(err)});
+            self.app.message(@import("i18n").dtr("coral", "Could not open a shell for this project"));
+        };
     }
     fn closeClicked(_: *c.GtkButton, data: ?*anyopaque) callconv(.c) void {
         const self: *Controller = @ptrCast(@alignCast(data.?));
@@ -496,7 +550,9 @@ pub const Controller = struct {
             const state = @tagName(s.phase);
             const exit = if (s.exit_code) |code| u.fmt(" · exit {d}", .{code}) else if (s.signal) |sig| u.fmt(" · signal {d}", .{sig}) else u.fmt("", .{});
             defer a.free(exit);
-            break :blk u.fmt("Terminal {d} · {s}{s} · {d}x{d}", .{ s.id, state, exit, s.surface.cols, s.surface.rows_count });
+            const grid = s.grid();
+            self.last_grid = grid;
+            break :blk u.fmt("Terminal {d} · {s}{s} · {d}x{d}", .{ s.id, state, exit, grid[0], grid[1] });
         } else u.fmt("Terminal · {d}/{d} sessions", .{ self.count(), max_sessions });
         defer a.free(text);
         u.setLabel(self.status, text);
@@ -504,7 +560,18 @@ pub const Controller = struct {
 
     /// Attach the GIO reader once the worker has published the PTY handle.
     fn ensureReader(self: *Controller, session: *Session) void {
-        _ = self;
+        if (workspace_vte) {
+            const handle = &(session.job.handle orelse return);
+            session.surface.start(handle) catch |err| {
+                self.last_error = @errorName(err);
+                self.app.message(@import("i18n").dtr("coral", "Could not attach the terminal to its shell"));
+                session.stop();
+                return;
+            };
+            session.phase = .running;
+            self.refreshStatus();
+            return;
+        }
         if (session.channel != null or !session.job.ready()) return;
         const handle = &(session.job.handle orelse return);
         const channel = c.g_io_channel_unix_new(handle.master) orelse return;
@@ -551,14 +618,36 @@ pub const Controller = struct {
         }
     }
 
+    fn terminalEof(_: u.W, data: ?*anyopaque) callconv(.c) void {
+        const session = u.cast(Session, data.?);
+        session.eof = true;
+    }
+    fn terminalTitle(_: u.W, data: ?*anyopaque) callconv(.c) void {
+        const session = u.cast(Session, data.?);
+        Session.titleChanged(session, session.surface.title());
+    }
+    fn styleTerminal(self: *Controller, session: *Session) void {
+        session.surface.setColors(self.app.appearance.palette, self.app.appearance.mode == .native_gtk);
+    }
+    pub fn updateAppearance(self: *Controller) void {
+        if (workspace_vte) for (self.sessions) |slot| {
+            if (slot) |session| self.styleTerminal(session);
+        };
+    }
+
     fn reapTick(data: ?*anyopaque) callconv(.c) c_int {
         const self: *Controller = @ptrCast(@alignCast(data.?));
         if (self.closed) return 0;
+        self.updateNewButton();
         self.syncEditorFont();
+        if (workspace_vte) if (self.activeSession()) |session| {
+            if (!std.meta.eql(self.last_grid, session.grid())) self.refreshStatus();
+        };
         for (self.sessions, 0..) |slot, i| {
             const session = slot orelse continue;
             if (session.phase == .starting and session.job.ready()) {
-                if (session.job.failure != null) {
+                if (session.job.failure) |err| {
+                    log.warn("terminal {d} PTY startup failed ({s})", .{ session.id, @errorName(err) });
                     session.phase = .closing;
                 } else {
                     self.ensureReader(session);
@@ -571,6 +660,7 @@ pub const Controller = struct {
 
     fn reap(self: *Controller, session: *Session) void {
         session.finalized = true;
+        if (workspace_vte) session.surface.disableInput();
         if (session.watch_id != 0) {
             _ = c.g_source_remove(session.watch_id);
             session.watch_id = 0;
@@ -602,13 +692,19 @@ pub const Controller = struct {
         const was_closing = session.phase == .closing;
         session.phase = .exited;
         if (was_closing) {
+            const restart = session.restart_after_close;
             self.destroySession(session, index);
+            if (restart) self.startReplacement();
         } else {
             self.refresh();
         }
     }
 
     fn destroySession(self: *Controller, session: *Session, index: usize) void {
+        if (session.tab) |tab| {
+            session.tab = null;
+            c.gtk_box_remove(u.cast(c.GtkBox, self.tabs), tab);
+        }
         c.gtk_stack_remove(u.cast(c.GtkStack, self.stack), session.surface.widget);
         session.surface.deinit();
         session.freeSpawnMetadata();
@@ -633,11 +729,11 @@ pub const Controller = struct {
     pub fn invalidate(self: *Controller) void {
         for (self.sessions, 0..) |slot, i| {
             const session = slot orelse continue;
+            session.restart_after_close = false;
             if (session.finalized) {
                 self.destroySession(session, i);
             } else if (session.phase != .closing) {
-                session.phase = .closing;
-                session.job.cancel();
+                session.stop();
             }
         }
         self.refresh();
@@ -663,7 +759,7 @@ pub const Controller = struct {
 
     // ---- Probe / fixtures (test hooks only) ----
     pub fn probe(self: *Controller) void {
-        if (!test_hooks) return;
+        if (!test_hooks or workspace_vte) return;
         const SessionView = struct {
             id: u64,
             phase: []const u8,
@@ -762,7 +858,7 @@ pub const Controller = struct {
 
     /// Test-only fixture dispatch. Returns true when the action was handled.
     pub fn fixture(self: *Controller, action: []const u8, value: []const u8) bool {
-        if (!test_hooks) return false;
+        if (!test_hooks or workspace_vte) return false;
         if (std.mem.eql(u8, action, "terminal-probe")) {
             self.probe();
         } else if (std.mem.eql(u8, action, "terminal-block-mode")) {

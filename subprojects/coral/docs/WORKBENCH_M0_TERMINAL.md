@@ -63,7 +63,7 @@ release task; this fixture makes no project-wide license change.
 
 ## Implemented boundary
 
-- `src/terminal/spike_abi.zig`: small, opaque public GTK4/GIO/GLib/VTE C ABI;
+- `src/terminal/vte_abi.zig`: small, opaque public GTK4/GIO/GLib/VTE C ABI;
   no C implementation shim and no new generated binding dependency.
 - `src/terminal/spike.zig`: retained VTE widget and stable-address ownership job.
   A GLib worker invokes `pty.start` and the single blocking `wait`; acquire/release

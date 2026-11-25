@@ -267,37 +267,51 @@ pub const Agent = struct {
             }
         }
         if (std.mem.eql(u8, self.root, path)) return;
+        self.leaveSession();
+        a.free(self.root);
+        self.root = u.z(path);
+        if (path.len != 0) self.refresh() else u.setLabel(self.status, i18n.dtr("coral", "Open a project to see its sessions"));
+    }
+    fn leaveSession(self: *Agent) void {
+        if (self.session) |sid| {
+            self.saveDraft(sid);
+            a.free(sid);
+            self.session = null;
+        }
         self.epoch += 1;
-        self.permission_state.fetch = 0;
         self.model_generation += 1;
+        self.thread_generation += 1;
+        self.permission_state.fetch = 0;
         self.connected = false;
+        self.pending = false;
         self.sending = false;
-        c.gtk_widget_set_visible(self.review_button, 0);
-        c.gtk_widget_set_visible(self.model_feedback, 0);
+        self.loading_older = false;
+        if (self.catalog_retry != 0) _ = c.g_source_remove(self.catalog_retry);
+        self.catalog_retry = 0;
+        self.catalog_attempt = 0;
+        self.resetOperation();
+        self.clearSelection();
+        self.showSelection();
+        setText(self.composer, "");
+        self.thread.clear();
+        self.reviewBase("");
+        if (self.app.review) |review| if (review.visible()) review.hide();
+        clear(self.sessions);
         clear(self.permissions);
         clear(self.inbox);
         self.pendingVisible();
-        c.gtk_widget_set_sensitive(self.new_session, 0);
-        if (self.session) |id| {
-            self.saveDraft(id);
-            a.free(id);
-            self.session = null;
-        }
-        self.resetOperation();
-        self.deliveryControls();
-        a.free(self.root);
-        self.root = u.z(path);
-        clear(self.sessions);
+        c.gtk_menu_button_popdown(u.cast(c.GtkMenuButton, self.models));
         clear(self.choices);
-        self.thread_generation += 1;
-        self.loading_older = false;
-        self.thread.clear();
-        setText(self.composer, "");
-        self.clearSelection();
-        self.showSelection();
+        a.free(self.model_id);
+        self.model_id = u.z("");
+        a.free(self.provider);
+        self.provider = u.z("");
+        u.setLabel(self.title, i18n.dtr("coral", "OpenCode"));
+        c.gtk_menu_button_set_label(u.cast(c.GtkMenuButton, self.models), i18n.dtr("coral", "Session model"));
+        c.gtk_widget_set_visible(self.model_feedback, 0);
         c.gtk_widget_set_sensitive(self.models, 0);
-        c.gtk_widget_set_sensitive(self.send, 0);
-        if (path.len != 0) self.refresh() else u.setLabel(self.status, i18n.dtr("coral", "Open a project to see its sessions"));
+        c.gtk_widget_set_sensitive(self.new_session, 0);
+        self.deliveryControls();
     }
     fn refresh(self: *Agent) void {
         self.client.discover() catch {
@@ -314,26 +328,7 @@ pub const Agent = struct {
         };
         const id = self.client.identity();
         if (!std.mem.eql(u8, id, self.server)) {
-            if (self.session) |sid| {
-                self.saveDraft(sid);
-                self.epoch += 1;
-                self.permission_state.fetch = 0;
-                self.model_generation += 1;
-                a.free(sid);
-                self.session = null;
-                self.resetOperation();
-                self.clearSelection();
-                self.showSelection();
-                setText(self.composer, "");
-                self.thread_generation += 1;
-                self.loading_older = false;
-                self.thread.clear();
-                clear(self.permissions);
-                clear(self.inbox);
-                self.pendingVisible();
-                if (self.app.review) |r| r.hide();
-                c.gtk_widget_set_visible(self.review_button, 0);
-            }
+            self.leaveSession();
             a.free(self.server);
             self.server = u.z(id);
         }
@@ -427,6 +422,7 @@ pub const Agent = struct {
         clear(self.choices);
         c.gtk_widget_set_visible(self.model_feedback, 0);
         self.model_generation += 1;
+        c.gtk_menu_button_set_label(u.cast(c.GtkMenuButton, self.models), i18n.dtr("coral", "Session model"));
         self.sending = false;
         self.catalog_attempt = 0;
         const next_id = u.z(id);
@@ -491,7 +487,7 @@ pub const Agent = struct {
         self.operation = null;
     }
     fn deliveryControls(self: *Agent) void {
-        const editable: c_int = @intFromBool(self.operation == null);
+        const editable: c_int = @intFromBool(self.session != null and self.operation == null);
         c.gtk_text_view_set_editable(u.cast(c.GtkTextView, self.composer), editable);
         c.gtk_widget_set_sensitive(self.attach, editable);
         c.gtk_widget_set_sensitive(self.chip, editable);

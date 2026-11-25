@@ -23,6 +23,8 @@ pkgbase = pearl
 	makedepends = libxml2
 	makedepends = libsecret
 	makedepends = gtksourceview5
+	makedepends = libsoup3
+	makedepends = vte4
 	makedepends = enchant
 	makedepends = gtk4>=1:4.22.5
 	makedepends = glib2>=2.88.3
@@ -56,6 +58,8 @@ pkgname = pearl
 	depends = libxml2
 	depends = libsecret
 	depends = gtksourceview5
+	depends = libsoup3
+	depends = vte4
 	depends = enchant
 	depends = gtk4>=1:4.22.5
 	depends = glib2>=2.88.3

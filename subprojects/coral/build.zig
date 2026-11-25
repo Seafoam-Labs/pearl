@@ -10,6 +10,15 @@ fn linkGhostty(b: *std.Build, mod: *std.Build.Module, prefix: []const u8, static
     }
 }
 
+fn linkWorkspaceVte(b: *std.Build, module: *std.Build.Module, prefix: ?[]const u8) void {
+    if (prefix) |dir| {
+        const lib: std.Build.LazyPath = .{ .cwd_relative = b.pathJoin(&.{ dir, "lib" }) };
+        module.addLibraryPath(lib);
+        module.addRPath(lib);
+        module.linkSystemLibrary("vte-2.91-gtk4", .{ .use_pkg_config = .no });
+    } else module.linkSystemLibrary("vte-2.91-gtk4", .{ .use_pkg_config = .force });
+}
+
 pub fn build(b: *std.Build) void {
     defer @import("pearl_ffi").attach(b, b.path("../../bindings/c"));
     const bindings = b.dependency("gobject", .{});
@@ -59,6 +68,8 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
     });
+    const vte_prefix = b.option([]const u8, "vte-prefix", "GTK4 VTE prefix for Coral Workspace (defaults to pkg-config)");
+    linkWorkspaceVte(b, workspace_module, vte_prefix);
     workspace_module.addImport("coral", m);
     const workspace = b.addExecutable(.{ .name = workspace_name, .root_module = workspace_module });
     b.installArtifact(workspace);
@@ -70,6 +81,7 @@ pub fn build(b: *std.Build) void {
     workspace_test.addPassthruArgs();
     b.step("workspace-integration", "Exercise OpenCode model selection and isolated Git review in GTK").dependOn(&workspace_test.step);
     const profile_module = b.createModule(.{ .root_source_file = b.path("src/workspace_profile.zig"), .target = target, .optimize = optimize });
+    linkWorkspaceVte(b, profile_module, vte_prefix);
     profile_module.addImport("coral", m);
     profile_module.addImport("pearl_app_c", m.import_table.get("pearl_app_c").?);
     const profile = b.addExecutable(.{ .name = "coral-workspace-profile", .root_module = profile_module });
