@@ -67,3 +67,16 @@ window.coral.$scope .breadcrumbs {
     color: $secondary$;
     border-color: alpha($outline$, 0.35);
 }
+
+window.coral.$scope textview.workspace-thread,
+window.coral.$scope textview.workspace-thread > text { background: $low$; color: $text$; }
+window.coral.$scope textview.workspace-input,
+window.coral.$scope textview.workspace-input > text { background: $container$; color: $text$; }
+
+window.coral.$scope .workspace-composer { background: $container$; border-color: alpha($outline$, 0.4); }
+
+window.coral.$scope button.workspace-current-session { background: $high$; color: $primary$; }
+
+window.coral.$scope.coral-workspace .dock { background: $low$; }
+window.coral.$scope .workspace-tools stack { background: $surface$; }
+window.coral.$scope .workspace-session .caption { color: $secondary$; }

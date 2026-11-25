@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Coral Workspace · Pearl design study</title>
+<link rel="stylesheet" href="style.css">
+<header>
+  <div class="brand"><span class="mark" aria-hidden="true">◈</span> Coral <small>Workspace</small></div>
+  <div class="repo"><i data-i="branch"></i> pearl <span>/</span> workspace-review</div>
+  <div class="tools"><label for="scene">Preview</label><select id="scene"><option value="model">Model selection</option><option value="edit">Editing</option><option value="review">Review changes</option><option value="conflict">Overlapping edits</option></select><button id="theme" title="Switch Pearl appearance" aria-label="Switch Pearl appearance"><i data-i="theme"></i></button></div>
+</header>
+<main>
+  <nav aria-label="Projects, files and sessions">
+    <div class="paneltitle"><i data-i="sidebar"></i> Explorer</div>
+    <div class="navbody">
+      <h2>Projects</h2>
+      <div class="project"><span class="projecticon"><i data-i="layers"></i></span><div><strong>Pearl</strong><small>~/Projects/pearl</small></div></div>
+      <h2>Files</h2>
+      <div class="tree"><details open><summary>src</summary><details open><summary>workspace</summary><div id="files"></div></details></details><button data-file="build.zig"><b class="zig">Z</b> build.zig</button></div>
+      <h2 class="separated">Sessions <span>3</span></h2>
+      <div id="sessions"></div>
+    </div>
+  </nav>
+  <section class="editor" aria-label="Code and review">
+    <div class="tabbar"><div id="filetabs"></div><button id="split" title="Toggle editor split" aria-label="Toggle editor split"><i data-i="split"></i></button></div>
+    <div class="crumb" id="crumb"></div>
+    <div class="editorbody" id="editorbody"></div>
+    <div class="editorfoot"><span><b class="zig">Z</b> Zig</span><span id="editstatus">UTF-8</span></div>
+  </section>
+  <aside aria-label="OpenCode session">
+    <div class="paneltitle agenthead"><i data-i="spark"></i> OpenCode <span class="online"><u></u>Connected</span></div>
+    <div class="agentbody"><div id="thread"></div><div id="queue"></div></div>
+    <form id="composer">
+      <div id="attachment"></div>
+      <textarea id="prompt" rows="2" aria-label="Message OpenCode" placeholder="Message this session…"></textarea>
+      <div class="composefoot">
+        <button type="button" id="attach" title="Attach editor selection"><i data-i="clip"></i>Selection</button>
+        <div class="model-control">
+          <button type="button" id="session-model" popovertarget="model-menu" title="Change session model">
+            <span id="model-name"></span><span class="chevron" aria-hidden="true"></span>
+          </button>
+          <fieldset id="model-menu" popover aria-label="Session model">
+            <div class="model-heading">Session model</div>
+            <div class="provider">Anthropic</div>
+            <label><input type="radio" name="model" value="anthropic/claude-sonnet-4"><span>Claude Sonnet 4</span></label>
+            <div class="provider">OpenAI</div>
+            <label><input type="radio" name="model" value="openai/gpt-4.1"><span>GPT-4.1</span></label>
+            <label><input type="radio" name="model" value="openai/gpt-4.1-mini"><span>GPT-4.1 mini</span></label>
+          </fieldset>
+        </div>
+        <button id="send" aria-label="Send or queue prompt" title="Send or queue prompt"><i data-i="up"></i></button>
+      </div>
+    </form>
+  </aside>
+</main>
+<section class="bottom" aria-label="Workspace tools">
+  <div class="docktabs"><button data-dock="Terminal">Terminal</button><button data-dock="Problems">Problems <em>1</em></button><button data-dock="Task output">Task output</button><small>pearl / workspace-review</small></div>
+  <div id="dockcontent"></div>
+</section>
+<footer><span><i data-i="branch"></i> workspace-review</span><span id="footerstate"></span><span class="right">Pearl appearance</span></footer>
+<div role="status" class="sr" id="announce"></div>
+<script src="app.js"></script>
+</html>

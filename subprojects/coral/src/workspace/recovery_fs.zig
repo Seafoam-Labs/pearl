@@ -86,7 +86,7 @@ pub fn openRoot(state_home: ?[]const u8) !c_int {
     }
     const stat = try inspect(fd);
     if (stat.st_uid != std.c.geteuid() or stat.st_mode & 0o022 != 0) return error.UnsafeDirectory;
-    const coral = try privateDir(fd, "coral", true);
+    const coral = try privateDir(fd, @import("../workspace_identity.zig").directory(), true);
     defer close(coral);
     return privateDir(coral, "recovery", true);
 }

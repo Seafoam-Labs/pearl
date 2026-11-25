@@ -35,7 +35,7 @@ pub fn build(b: *std.Build) void {
     options.addOptionPathDirectory("development_styles", b.path("resources"));
     options.addOption(bool, "test_hooks", b.option(bool, "test-hooks", "Enable isolated native test instrumentation") orelse false);
     const m = createModule(b, .{ .root_source_file = b.path("src/main.zig"), .target = target, .optimize = optimize, .link_libc = true });
-    for ([_][]const u8{ "gtk4", "gtksourceview-5", "enchant-2" }) |lib| m.linkSystemLibrary(lib, .{ .use_pkg_config = .yes });
+    for ([_][]const u8{ "gtk4", "gtksourceview-5", "enchant-2", "libsoup-3.0" }) |lib| m.linkSystemLibrary(lib, .{ .use_pkg_config = .yes });
     m.addCSourceFile(.{ .file = b.path("src/spelling/pango_words.c"), .flags = &.{"-std=c11"} });
     if (ghostty_prefix.len != 0) linkGhostty(b, m, ghostty_prefix, ghostty_static);
     m.addOptions("build_options", options);
@@ -53,6 +53,26 @@ pub fn build(b: *std.Build) void {
     m.addImport("file_chooser", chooserModule(b, b.path("../../src/files/chooser.zig"), m, bindings, m.import_table.get("previews").?, git_variant));
     const exe = b.addExecutable(.{ .name = command, .root_module = m });
     b.installArtifact(exe);
+    const workspace_name = if (git_variant) "coral-workspace-git" else "coral-workspace";
+    const workspace_module = b.createModule(.{
+        .root_source_file = b.path("src/workspace_main.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+    workspace_module.addImport("coral", m);
+    const workspace = b.addExecutable(.{ .name = workspace_name, .root_module = workspace_module });
+    b.installArtifact(workspace);
+    const workspace_run = b.addRunArtifact(workspace);
+    workspace_run.addPassthruArgs();
+    b.step("workspace", "Launch Coral Workspace").dependOn(&workspace_run.step);
+    const workspace_test = b.addSystemCommand(&.{ native_python, "tests/opencode_workspace.py", "--binary" });
+    workspace_test.addArtifactArg(workspace);
+    workspace_test.addPassthruArgs();
+    b.step("workspace-integration", "Exercise OpenCode model selection and isolated Git review in GTK").dependOn(&workspace_test.step);
+    const workspace_id = if (git_variant) "org.aqueous.Coral.Workspace.Git" else "org.aqueous.Coral.Workspace";
+    const launchers = b.addWriteFiles();
+    const desktop = launchers.add("workspace.desktop", b.fmt(@embedFile("packaging/workspace.desktop.in"), .{ workspace_name, if (git_variant) "org.aqueous.Coral.Git" else "org.aqueous.Coral" }));
+    b.getInstallStep().dependOn(&b.addInstallFile(desktop, b.fmt("share/applications/{s}.desktop", .{workspace_id})).step);
     b.installFile("resources/coral-dark.xml", b.fmt("share/{s}/styles/coral-dark.xml", .{command}));
     b.installFile("resources/coral-light.xml", b.fmt("share/{s}/styles/coral-light.xml", .{command}));
     const generated = b.addWriteFiles();
@@ -72,7 +92,7 @@ pub fn build(b: *std.Build) void {
     run.addPassthruArgs();
     b.step("run", "Launch Coral").dependOn(&run.step);
     const tm = createModule(b, .{ .root_source_file = b.path("src/tests.zig"), .target = target, .optimize = optimize, .link_libc = true });
-    for ([_][]const u8{ "gtk4", "gtksourceview-5", "enchant-2" }) |lib| tm.linkSystemLibrary(lib, .{ .use_pkg_config = .yes });
+    for ([_][]const u8{ "gtk4", "gtksourceview-5", "enchant-2", "libsoup-3.0" }) |lib| tm.linkSystemLibrary(lib, .{ .use_pkg_config = .yes });
     tm.addCSourceFile(.{ .file = b.path("src/spelling/pango_words.c"), .flags = &.{"-std=c11"} });
     if (ghostty_prefix.len != 0) linkGhostty(b, tm, ghostty_prefix, ghostty_static);
     // Admission tests use real App types but perform no GTK or filesystem I/O.
@@ -121,7 +141,7 @@ pub fn build(b: *std.Build) void {
     for ([_][]const u8{ "gtk4", "gdk4", "gio2", "glib2", "gobject2" }) |name| appearance_module.addImport(name, bindings.module(name));
     appearance_module.addImport("appearance_client", appearance);
     appearance_module.addAnonymousImport("theme_style", .{ .root_source_file = b.path("resources/theme.css") });
-    for ([_][]const u8{ "gtk4", "gtksourceview-5", "enchant-2" }) |lib| appearance_module.linkSystemLibrary(lib, .{ .use_pkg_config = .yes });
+    for ([_][]const u8{ "gtk4", "gtksourceview-5", "enchant-2", "libsoup-3.0" }) |lib| appearance_module.linkSystemLibrary(lib, .{ .use_pkg_config = .yes });
     const appearance_tests = b.addTest(.{ .root_module = appearance_module });
     test_step.dependOn(&b.addRunArtifact(appearance_tests).step);
     const io = b.addOptions();
@@ -129,7 +149,7 @@ pub fn build(b: *std.Build) void {
     io.addOption(bool, "git_variant", false);
     io.addOptionPathDirectory("development_styles", b.path("resources"));
     const im = createModule(b, .{ .root_source_file = b.path("src/main.zig"), .target = target, .optimize = optimize, .link_libc = true });
-    for ([_][]const u8{ "gtk4", "gtksourceview-5", "enchant-2" }) |lib| im.linkSystemLibrary(lib, .{ .use_pkg_config = .yes });
+    for ([_][]const u8{ "gtk4", "gtksourceview-5", "enchant-2", "libsoup-3.0" }) |lib| im.linkSystemLibrary(lib, .{ .use_pkg_config = .yes });
     im.addCSourceFile(.{ .file = b.path("src/spelling/pango_words.c"), .flags = &.{"-std=c11"} });
     if (ghostty_prefix.len != 0) linkGhostty(b, im, ghostty_prefix, ghostty_static);
     im.addOptions("build_options", io);
@@ -228,7 +248,7 @@ pub fn build(b: *std.Build) void {
         m1.dependOn(&check.step);
     }
     const wm = createModule(b, .{ .root_source_file = b.path("src/widget_tests.zig"), .target = target, .optimize = optimize, .link_libc = true });
-    for ([_][]const u8{ "gtk4", "gtksourceview-5", "enchant-2" }) |lib| wm.linkSystemLibrary(lib, .{ .use_pkg_config = .yes });
+    for ([_][]const u8{ "gtk4", "gtksourceview-5", "enchant-2", "libsoup-3.0" }) |lib| wm.linkSystemLibrary(lib, .{ .use_pkg_config = .yes });
     const widget_tests = b.addTest(.{ .root_module = wm });
     const widgets = b.addSystemCommand(&.{ native_python, "tests/widgets.py", "--binary" });
     widgets.addArtifactArg(widget_tests);
@@ -311,7 +331,7 @@ pub fn build(b: *std.Build) void {
     for ([_]*std.Build.Step{ &agent_core_units.step, &agent_protocol_units.step, &agent_native.step, &docks.step, &session_units.step }) |gate| m6_slice.dependOn(gate);
 
     const bm = createModule(b, .{ .root_source_file = b.path("src/benchmark_m0.zig"), .target = target, .optimize = optimize, .link_libc = true });
-    for ([_][]const u8{ "gtk4", "gtksourceview-5", "enchant-2" }) |lib| bm.linkSystemLibrary(lib, .{ .use_pkg_config = .yes });
+    for ([_][]const u8{ "gtk4", "gtksourceview-5", "enchant-2", "libsoup-3.0" }) |lib| bm.linkSystemLibrary(lib, .{ .use_pkg_config = .yes });
     const benchmark = b.addExecutable(.{ .name = "coral-benchmark-m0", .root_module = bm });
     const source_snapshot = b.addSystemCommand(&.{ "python3", "tests/benchmarks.py", "--capture-sources" });
     source_snapshot.has_side_effects = true;
@@ -372,7 +392,7 @@ fn createModule(b: *std.Build, opts: std.Build.Module.CreateOptions) *std.Build.
         .c_source_file = b.path("src/c.h"),
         .target = opts.target orelse b.graph.host,
         .optimize = opts.optimize orelse .debug,
-        .link_system_libs = &.{ .{ .name = "gtk4" }, .{ .name = "gtksourceview-5" }, .{ .name = "enchant-2" } },
+        .link_system_libs = &.{ .{ .name = "gtk4" }, .{ .name = "gtksourceview-5" }, .{ .name = "enchant-2" }, .{ .name = "libsoup-3.0" } },
     });
     m.addImport("pearl_app_c", app_c.mod);
     m.addImport("i18n", runtime);

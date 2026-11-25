@@ -129,3 +129,19 @@ window.coral-workbench .breadcrumbs {
     font-size: 10px;
 }
 window.coral-workbench .breadcrumbs label { min-width: 0; }
+
+.workspace-composer { border: 1px solid alpha(currentColor, 0.16); border-radius: 12px; padding: 8px; }
+.workspace-composer menubutton > button { border-radius: 7px; }
+.workspace-composer .suggested-action { border-radius: 18px; }
+
+window.coral-workspace .workbench-titlebar .brand { font-size: 17px; font-weight: 700; }
+window.coral-workspace .workspace-section { margin: 5px 8px; font-size: 12px; font-weight: 650; }
+window.coral-workspace .workspace-thread-title { font-size: 18px; font-weight: 650; }
+window.coral-workspace .workspace-session { padding: 5px 10px; margin: 1px 5px; border-radius: 7px; }
+window.coral-workspace .workspace-session .caption { font-size: 11px; }
+window.coral-workspace notebook.workspace-tools > header,
+window.coral-workspace notebook.workspace-tools > header > tabs { min-height: 34px; }
+window.coral-workspace notebook.workspace-tools > header tab { padding: 0 12px; min-height: 34px; }
+
+window.coral-workspace .workbench-titlebar .brand { letter-spacing: 0; }
+window.coral-workspace .dock { font-size: 13px; }

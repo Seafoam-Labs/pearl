@@ -172,7 +172,7 @@ fn openStore(override: ?[]const u8, create: bool) !c_int {
     const state = if (create) std.c.openat(traversed, ".", dir_flags) else traversed;
     if (state < 0) return error.UnsafeDirectory;
     defer if (create) close(state);
-    const coral = try privateDir(state, "coral", create);
+    const coral = try privateDir(state, @import("../workspace_identity.zig").directory(), create);
     defer close(coral);
     return privateDir(coral, "projects", create);
 }

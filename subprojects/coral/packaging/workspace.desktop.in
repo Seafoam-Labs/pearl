@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Coral Workspace
+Comment=Edit projects and review OpenCode sessions
+Exec={s} %F
+Icon={s}
+Categories=Development;IDE;
+Terminal=false

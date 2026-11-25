@@ -39,6 +39,14 @@ fn openInitialDocuments(p: *App) void {
     if (recovered) p.message("Recovery restores documents only, not workspace roots or manifests. Use Open Workspace to reopen roots explicitly.");
 }
 pub fn main(init: std.process.Init) void {
+    run(init, false);
+}
+pub fn run(init: std.process.Init, workspace: bool) void {
+    @import("workspace_identity.zig").enabled = workspace;
+    if (workspace) {
+        width = 1440;
+        height = 900;
+    }
     @import("i18n").init(false);
     settings = Settings.load();
     const args = init.minimal.args.toSlice(init.arena.allocator()) catch return;
@@ -68,6 +76,10 @@ pub fn main(init: std.process.Init) void {
             continue;
         }
         if (std.mem.eql(u8, arg, "--help")) {
+            if (workspace) {
+                c.g_print("Coral Workspace — GTK editor and OpenCode session workbench\nUsage: coral-workspace [DIRECTORY] [FILE…] [--folder PATH | --workspace MANIFEST]\n");
+                return;
+            }
             c.g_print("Workspace slice: --workspace PATH opens a version-1 .coral-workspace manifest; --folder PATH opens a root. Last explicit workspace option wins. Relative paths use the current directory. Bare directories remain invalid FILE arguments. Bounded workspace explorer/search with explicit trust and no auto-execution. Recovery does not restore workspace roots. Automatic per-project sessions reopen independent windows on ordinary launch; explicit FILE/folder/workspace arguments suppress automatic reopening. Recovery chooser decisions take precedence. Explicit saved sessions are separate.\n");
             c.g_print("Coral 0.1.2 — Zig / GTK4 text editor\nUsage: " ++ command ++ " [--follow-pearl|--light|--dark|--native-theme] [--width=N] [--height=N] [--log-level LEVEL] [--log-scopes LIST] [FILE…]\nCtrl+N new, Ctrl+O open, Ctrl+S save, Ctrl+Shift+S Save As, Ctrl+F find,\nCtrl+H replace, Ctrl+G go to line, Ctrl+, preferences, Shift+F10 spelling.\nCtrl+Shift+P command palette, including Reload from Disk and window switching.\nCtrl+Shift+N new window, Ctrl+Shift+W close window, Ctrl+Q quit all windows.\nUp to 16 live/draining windows; FILE/workspace options apply only to the first window.\nFILE arguments must exist; use New document and Save As to create a file.\nFollow Pearl is the first-run default; without Pearl it uses Coral's own dark palette.\n--log-level: error, warning, info or debug. Release builds default to info.\n--log-scopes: comma-separated scopes, all for every scope, ~scope to exclude.\n");
             return;
@@ -79,9 +91,16 @@ pub fn main(init: std.process.Init) void {
         if (std.mem.eql(u8, arg, "--follow-pearl")) settings.theme = 3 else if (std.mem.eql(u8, arg, "--light")) settings.theme = 1 else if (std.mem.eql(u8, arg, "--dark")) settings.theme = 0 else if (std.mem.eql(u8, arg, "--native-theme")) settings.theme = 2 else if (std.mem.startsWith(u8, arg, "--width=")) width = std.math.clamp(std.fmt.parseInt(c_int, arg[8..], 10) catch 1000, 390, 3840) else if (std.mem.startsWith(u8, arg, "--height=")) height = std.math.clamp(std.fmt.parseInt(c_int, arg[9..], 10) catch 740, 400, 2160) else if (std.mem.startsWith(u8, arg, "--")) {
             log.err("Unknown option: {f}", .{diagnostics.safe(arg)});
             std.process.exit(2);
+        } else if (workspace and c.g_file_test(arg.ptr, c.G_FILE_TEST_IS_DIR) != 0) {
+            workspace_source = .folder;
+            workspace_path = arg;
         } else paths.append(u.a, arg) catch unreachable;
     }
-    c.g_set_application_name(if (build_options.git_variant) "Coral Git" else "Coral");
+    if (workspace and workspace_source == null and paths.items.len != 0) {
+        workspace_source = .folder;
+        workspace_path = std.fs.path.dirname(paths.items[0]) orelse ".";
+    }
+    c.g_set_application_name(if (workspace) "Coral Workspace" else if (build_options.git_variant) "Coral Git" else "Coral");
     c.gtk_source_init();
     defer c.gtk_source_finalize();
     const executable = c.g_file_read_link("/proc/self/exe", null);
@@ -101,7 +120,7 @@ pub fn main(init: std.process.Init) void {
     const cache_z = u.z(cache_styles);
     defer u.a.free(cache_z);
     c.gtk_source_style_scheme_manager_append_search_path(c.gtk_source_style_scheme_manager_get_default(), cache_z);
-    const application = c.gtk_application_new(if (build_options.git_variant) "org.aqueous.Coral.Git" else "org.aqueous.Coral", c.G_APPLICATION_NON_UNIQUE).?;
+    const application = c.gtk_application_new(if (workspace) (if (build_options.git_variant) "org.aqueous.Coral.Workspace.Git" else "org.aqueous.Coral.Workspace") else if (build_options.git_variant) "org.aqueous.Coral.Git" else "org.aqueous.Coral", c.G_APPLICATION_NON_UNIQUE).?;
     defer c.g_object_unref(application);
     var manager: Manager = .{ .application = application, .settings = settings, .width = width, .height = height, .initial = &openInitialDocuments };
     defer manager.deinit();

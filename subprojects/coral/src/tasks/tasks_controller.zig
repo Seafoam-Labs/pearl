@@ -69,6 +69,7 @@ pub const Controller = struct {
     picker: ?u.W = null,
     problems_widget: ?u.W = null,
     output_view: ?u.W = null,
+    dock_output: ?*c.GtkTextView = null,
     summary: ?u.W = null,
     run_button: ?u.W = null,
     stop_button: ?u.W = null,
@@ -468,6 +469,7 @@ pub const Controller = struct {
         self.output_kind = kind;
         a.free(self.output_text);
         self.output_text = u.z(text);
+        if (self.dock_output) |view| c.gtk_text_buffer_set_text(c.gtk_text_view_get_buffer(view), self.output_text.ptr, @intCast(self.output_text.len));
         if (self.output_view) |view| c.gtk_text_buffer_set_text(c.gtk_text_view_get_buffer(u.cast(c.GtkTextView, view)), self.output_text.ptr, @intCast(self.output_text.len));
     }
     fn updateButtons(self: *Controller) void {

@@ -2148,3 +2148,21 @@ fn methodFor(action: Action) []const u8 {
         .document_links => "textDocument/documentLink",
     };
 }
+
+/// Stable UTF-8 source offsets for the workspace's Problems dock.
+pub const DockProblem = struct { document: u64, revision: u64, start: usize, end: usize, label: []const u8 };
+pub fn workspaceProblems(self: *Controller, alloc: std.mem.Allocator) ![]DockProblem {
+    var rows: std.ArrayList(DockProblem) = .empty;
+    for (self.sessions) |slot| if (slot) |s| if (self.valid(s) and s.pipe.state == .ready) {
+        for (s.docs.items) |synced| if (synced.diagnostics) |diagnostics| {
+            const d = self.app.documents.get(synced.id) orelse continue;
+            if (d.revision != synced.revision) continue;
+            for (diagnostics.value.items) |item| {
+                if (rows.items.len >= f.max_items) return rows.toOwnedSlice(alloc);
+                const name = if (d.path) |path| std.fs.path.basename(path) else "Untitled";
+                try rows.append(alloc, .{ .document = d.id, .revision = d.revision, .start = item.range.start, .end = item.range.end, .label = try std.fmt.allocPrint(alloc, "{s}   ·   {s}   ·   {s}", .{ name, @tagName(item.severity), item.message }) });
+            }
+        };
+    };
+    return rows.toOwnedSlice(alloc);
+}

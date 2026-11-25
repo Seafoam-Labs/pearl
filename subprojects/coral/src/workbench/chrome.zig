@@ -21,9 +21,10 @@ pub const Chrome = struct {
 
     pub fn init(header: u.W, footer: u.W) Chrome {
         c.gtk_widget_add_css_class(header, "workbench-titlebar");
-        c.gtk_widget_set_size_request(header, -1, 43);
+        const workspace = @import("../workspace_identity.zig").enabled;
+        c.gtk_widget_set_size_request(header, -1, if (workspace) 54 else 43);
         c.gtk_widget_set_size_request(footer, -1, 26);
-        const brand = u.label("C.");
+        const brand = u.label(if (workspace) i18n.dtr("coral", "Coral Workspace") else "C.");
         c.gtk_widget_add_css_class(brand, "brand");
         c.gtk_widget_set_tooltip_text(brand, i18n.dtr("coral", "Coral"));
         c.gtk_header_bar_pack_start(u.cast(c.GtkHeaderBar, header), brand);

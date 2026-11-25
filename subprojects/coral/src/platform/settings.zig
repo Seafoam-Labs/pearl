@@ -26,7 +26,7 @@ pub const Settings = struct {
     }
 
     pub fn load() Settings {
-        const p = u.fmt("{s}/coral/preferences.ini", .{std.mem.span(c.g_get_user_config_dir())});
+        const p = u.fmt("{s}/{s}/preferences.ini", .{ std.mem.span(c.g_get_user_config_dir()), @import("../workspace_identity.zig").directory() });
         defer u.a.free(p);
         return loadFrom(p);
     }
@@ -63,7 +63,7 @@ pub const Settings = struct {
         @memcpy(s.language[0..n], text[0..n]);
     }
     pub fn save(s: Settings) SaveError!void {
-        const dir = u.fmt("{s}/coral", .{std.mem.span(c.g_get_user_config_dir())});
+        const dir = u.fmt("{s}/{s}", .{ std.mem.span(c.g_get_user_config_dir()), @import("../workspace_identity.zig").directory() });
         defer u.a.free(dir);
         return saveIn(s, dir);
     }

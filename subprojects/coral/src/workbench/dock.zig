@@ -49,6 +49,7 @@ pub const Controller = struct {
         const rail = u.box(false, 5);
         c.gtk_widget_add_css_class(rail, "activity-rail");
         u.append(root, rail);
+        if (@import("../workspace_identity.zig").enabled) c.gtk_widget_set_visible(rail, 0);
         const overlay = c.gtk_overlay_new().?;
         c.gtk_widget_set_hexpand(overlay, 1);
         c.gtk_widget_set_vexpand(overlay, 1);
@@ -63,7 +64,8 @@ pub const Controller = struct {
             const bar = u.box(true, 0);
             c.gtk_widget_add_css_class(bar, "dock-header");
             u.append(host, bar);
-            tabs[i] = .{ actionButton("Explorer", "win.focus-explorer"), actionButton("Search", "win.focus-search"), actionButton("Source Control", "win.focus-source-control"), actionButton("Terminal", "win.focus-terminal"), actionButton("Agent", "win.focus-agent") };
+            if (@import("../workspace_identity.zig").enabled and dock == .bottom) c.gtk_widget_set_visible(bar, 0);
+            tabs[i] = .{ actionButton("Explorer", "win.focus-explorer"), actionButton("Search", "win.focus-search"), actionButton("Source Control", "win.focus-source-control"), actionButton("Terminal", "win.focus-terminal"), actionButton(if (@import("../workspace_identity.zig").enabled) "OpenCode" else "Agent", "win.focus-agent") };
             for (tabs[i]) |tab| {
                 c.gtk_widget_add_css_class(tab, "dock-tab");
                 u.append(bar, tab);
@@ -105,11 +107,17 @@ pub const Controller = struct {
         }
         c.gtk_paned_set_start_child(paneds[0], frames[0]);
         c.gtk_paned_set_end_child(paneds[0], u.cast(c.GtkWidget, paneds[1]));
-        c.gtk_paned_set_start_child(paneds[1], u.cast(c.GtkWidget, paneds[2]));
         c.gtk_paned_set_end_child(paneds[1], frames[1]);
-        c.gtk_paned_set_start_child(paneds[2], editor);
         c.gtk_paned_set_end_child(paneds[2], frames[2]);
-        c.gtk_overlay_set_child(u.cast(c.GtkOverlay, overlay), u.cast(c.GtkWidget, paneds[0]));
+        if (@import("../workspace_identity.zig").enabled) {
+            c.gtk_paned_set_start_child(paneds[1], editor);
+            c.gtk_paned_set_start_child(paneds[2], u.cast(c.GtkWidget, paneds[0]));
+            c.gtk_overlay_set_child(u.cast(c.GtkOverlay, overlay), u.cast(c.GtkWidget, paneds[2]));
+        } else {
+            c.gtk_paned_set_start_child(paneds[1], u.cast(c.GtkWidget, paneds[2]));
+            c.gtk_paned_set_start_child(paneds[2], editor);
+            c.gtk_overlay_set_child(u.cast(c.GtkOverlay, overlay), u.cast(c.GtkWidget, paneds[0]));
+        }
         const explorer_slot = u.box(false, 0);
         const search_slot = u.box(false, 0);
         const source_control_slot = u.box(false, 0);

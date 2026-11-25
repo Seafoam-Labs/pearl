@@ -27,3 +27,5 @@
 #include <enchant.h>
 #include <stdlib.h>
 #include <unistd.h>
+
+#include <libsoup/soup.h>

@@ -75,6 +75,9 @@ pub const App = struct {
     git_project_diff: @import("git/project_diff.zig").Controller = undefined,
     terminal: @import("terminal/terminal_controller.zig").Controller = undefined,
     tasks: @import("tasks/tasks_controller.zig").Controller = undefined,
+    workspace_dock: ?*@import("workspace_dock.zig").Dock = null,
+    review: ?*@import("workspace_review.zig").Review = null,
+    opencode: ?*@import("workspace_agent.zig").Agent = null,
     agent: @import("agent/controller.zig").Controller = undefined,
     session: WorkspaceSession = undefined,
     workspace_operations: WorkspaceOperations = undefined,
@@ -225,7 +228,8 @@ pub const App = struct {
         c.gtk_label_set_wrap(u.cast(c.GtkLabel, notice), 1);
         u.append(root, notice);
         c.gtk_widget_set_visible(notice, 0);
-        const dock = dock_ui.Controller.init(groups.root);
+        const review = if (@import("workspace_identity.zig").enabled) @import("workspace_review.zig").Review.create(self, groups.root) else null;
+        const dock = dock_ui.Controller.init(if (review) |r| r.stack else groups.root);
         u.append(root, dock.root);
         const status = u.label("");
         c.gtk_widget_add_css_class(status, "status-document");
@@ -243,6 +247,7 @@ pub const App = struct {
         self.window_id = window_id;
         self.scope_class = u.fmt("coral-window-{d}", .{window_id});
         _ = c.g_object_ref(window); // Keep the widget tree rooted until all callbacks drain.
+        self.review = review;
         self.dock = dock;
         self.workspace_search = WorkspaceSearch.init(self, self.dock.search_slot);
         self.workspace_search.present = &presentWorkspaceSearch;
@@ -279,8 +284,27 @@ pub const App = struct {
         self.browser.attach();
         self.dock.attach();
         self.git_panel.attach(self.dock.source_control_slot);
-        self.terminal.attach(self.dock.terminal_slot);
-        self.agent.attach(self.dock.agent_slot);
+        if (@import("workspace_identity.zig").enabled) self.workspace_dock = @import("workspace_dock.zig").Dock.create(self, self.dock.terminal_slot) else self.terminal.attach(self.dock.terminal_slot);
+        if (@import("workspace_identity.zig").enabled) {
+            const legacy = u.box(false, 0);
+            u.append(self.dock.agent_slot, legacy);
+            self.agent.attach(legacy);
+            c.gtk_widget_set_visible(legacy, 0);
+            const sessions = u.box(false, 2);
+            const sessions_heading = u.label(@import("i18n").dtr("coral", "Sessions"));
+            c.gtk_widget_add_css_class(sessions_heading, "workspace-section");
+            u.append(self.dock.explorer_slot, sessions_heading);
+            const scroll = c.gtk_scrolled_window_new().?;
+            c.gtk_widget_set_size_request(scroll, -1, 110);
+            c.gtk_scrolled_window_set_child(u.cast(c.GtkScrolledWindow, scroll), sessions);
+            u.append(self.dock.explorer_slot, scroll);
+            const right = u.box(false, 6);
+            u.margin(right, 12);
+            c.gtk_widget_set_vexpand(right, 1);
+            u.append(self.dock.agent_slot, right);
+            self.opencode = @import("workspace_agent.zig").Agent.create(self, "", sessions, right);
+            self.dock.restore(.{ .agent_visible = true, .terminal_visible = true, .left_size = 245, .right_size = 360, .bottom_size = 155 });
+        } else self.agent.attach(self.dock.agent_slot);
         self.workspace_policy = WorkspacePolicy.init(self);
         self.session = .{ .app = self };
         self.workspace_operations = .init(self);
@@ -290,9 +314,10 @@ pub const App = struct {
         c.gtk_css_provider_load_from_string(self.css, @embedFile("style"));
         c.gtk_style_context_add_provider_for_display(c.gdk_display_get_default(), u.cast(c.GtkStyleProvider, self.css), c.GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
         c.gtk_style_context_add_provider_for_display(c.gdk_display_get_default(), u.cast(c.GtkStyleProvider, self.font_css), c.GTK_STYLE_PROVIDER_PRIORITY_APPLICATION + 1);
-        self.appearance = .{ .context = self, .changed = appearanceChanged, .scope = self.scope_class };
+        self.appearance = .{ .context = self, .changed = appearanceChanged, .scope = self.scope_class, .workspace_palette = self.opencode != null };
         self.appearance.setMode(@import("appearance.zig").modeFrom(settings.theme));
         c.gtk_widget_add_css_class(window, "coral");
+        if (self.opencode != null) c.gtk_widget_add_css_class(window, "coral-workspace");
         u.connect(window, "close-request", &onCloseWindow, self);
         u.connect(notebook, "switch-page", &onSwitch, self);
         u.connect(notebook, "page-reordered", &onPageReordered, self);
@@ -353,7 +378,7 @@ pub const App = struct {
     fn focusAgent(self: *App) void {
         if (self.dock.picking) self.workspace_search.hide();
         self.dock.show(.agent);
-        self.agent.show();
+        if (self.opencode) |agent| _ = c.gtk_widget_grab_focus(agent.composer) else self.agent.show();
     }
     /// Mirror the panel's provider picker so palette-created threads match the
     /// toolbar's New Thread button.
@@ -431,6 +456,9 @@ pub const App = struct {
         }
         self.git_panel.deinit();
         self.terminal.deinit();
+        if (self.workspace_dock) |d| d.deinit();
+        if (self.opencode) |agent| agent.deinit();
+        if (self.review) |r| r.deinit();
         self.agent.deinit();
         self.dock.shutdown();
         self.session.deinit();
@@ -487,6 +515,9 @@ pub const App = struct {
         if (self.closing) return null;
         for (self.views.items) |view| if (view.page == self.active_page) return view;
         return null;
+    }
+    pub fn activeSelectionBase(self: *App) c_int {
+        return if (self.activeExcerpt()) |pane| excerptBase(pane) else 0;
     }
     fn activeExcerpt(self: *App) ?*ExcerptPane {
         if (self.closing) return null;
@@ -1152,10 +1183,11 @@ pub const App = struct {
         const manager = c.gtk_source_style_scheme_manager_get_default();
         var prefer_dark: c_int = 0;
         c.g_object_get(c.gtk_settings_get_default(), "gtk-application-prefer-dark-theme", &prefer_dark, @as(?*anyopaque, null));
-        const following = self.settings.theme == 3 and self.appearance.revision != null;
+        const following = (self.settings.theme == 3 and self.appearance.revision != null) or (self.opencode != null and self.settings.theme != 2);
         const native_look = std.mem.eql(u8, "native", self.appearance.themeClass());
         const name: [*:0]const u8 = if (native_look) (if (prefer_dark != 0) "Adwaita-dark" else "Adwaita") else if (following) self.appearance.ensureScheme() else if (self.settings.theme == 1) "coral-light" else "coral-dark";
         const scheme = c.gtk_source_style_scheme_manager_get_scheme(manager, name);
+        if (self.review) |review| review.scheme(scheme);
         c.gtk_source_buffer_set_style_scheme(u.cast(c.GtkSourceBuffer, d.buffer), scheme);
         var underline: c.GdkRGBA = undefined;
         const underline_hex: [:0]u8 = if (following) u.z(self.appearance.palette.error_color) else if (self.settings.theme == 1) u.z("#9b2a21") else u.z("#ffb4ab");
@@ -1269,7 +1301,7 @@ pub const App = struct {
         self.workspace_policy.userSettingsChanged();
         self.transients(false);
         self.themeClasses(self.window);
-        const css = u.fmt(".{s} textview {{ font-family: monospace; font-size: {d:.3}em; }}", .{ self.scope_class, @as(f64, @floatFromInt(self.settings.font)) / 14.667 });
+        const css = u.fmt(".{s} textview {{ font-family: monospace; font-size: {d:.3}em; }} .{s} textview.workspace-thread, .{s} textview.workspace-input {{ font-family: sans-serif; font-size: 13px; }}", .{ self.scope_class, @as(f64, @floatFromInt(self.settings.font)) / 14.667, self.scope_class, self.scope_class });
         defer a.free(css);
         c.gtk_css_provider_load_from_string(self.font_css, css);
         for (self.documents.entries.items) |d| self.configure(d, false);
@@ -2137,6 +2169,9 @@ pub const App = struct {
         }
         if (self.dialog != null or self.workspaceOperationBusy() or self.editingFrozen()) return;
         if (self.manager) |manager| if (manager.quitting) return;
+        if (self.opencode) |agent| {
+            if (agent.handleCommand(command)) return;
+        }
         switch (command) {
             .git_status => self.git.show(),
             .git_refresh => self.git.refresh(),
@@ -3278,6 +3313,7 @@ fn owner(document: *Document) *App {
 fn onChanged(_: ?*c.GtkTextBuffer, data: ?*anyopaque) callconv(.c) void {
     const d = u.cast(Document, data.?);
     d.due = c.g_get_monotonic_time() + 250000;
+    if (owner(d).opencode) |agent| agent.documentChanged(d.id);
     owner(d).language.changed(d);
     owner(d).workspace_search.documentChanged(d);
     owner(d).hidePopover();
@@ -3555,6 +3591,31 @@ fn onShortcut(controller: ?*c.GtkEventControllerKey, key: c_uint, code: c_uint, 
     if (onTestKey(controller, key, code, state, data) != 0) return 1;
     const self = u.cast(App, data.?);
     if (self.closing or self.dialog != null or self.palette != null) return 0;
+    if (self.opencode != null and state & (c.GDK_CONTROL_MASK | c.GDK_ALT_MASK) == c.GDK_CONTROL_MASK and (key == c.GDK_KEY_z or key == c.GDK_KEY_Z or key == c.GDK_KEY_y)) {
+        const focus = c.gtk_window_get_focus(u.cast(c.GtkWindow, self.window));
+        if (self.activeFocusWidget()) |editor| if (dock_ui.inside(focus, editor)) {
+            self.undo(state & c.GDK_SHIFT_MASK != 0 or key == c.GDK_KEY_y);
+            return 1;
+        };
+    }
+    if (self.opencode != null and key == c.GDK_KEY_F6 and state & (c.GDK_CONTROL_MASK | c.GDK_ALT_MASK) == 0) {
+        const focus = c.gtk_window_get_focus(u.cast(c.GtkWindow, self.window));
+        const index: usize = if (dock_ui.inside(focus, self.dock.explorer_slot)) 0 else if (dock_ui.inside(focus, self.dock.agent_slot)) 2 else if (dock_ui.inside(focus, self.dock.terminal_slot)) 3 else 1;
+        switch ((index + @as(usize, if (state & c.GDK_SHIFT_MASK != 0) 3 else 1)) % 4) {
+            0 => self.focusExplorer(),
+            1 => if (self.review) |r| {
+                if (r.visible()) {
+                    _ = c.gtk_widget_grab_focus(r.source);
+                } else self.focusEditor();
+            },
+            2 => self.focusAgent(),
+            else => {
+                self.dock.show(.terminal);
+                _ = c.gtk_widget_child_focus(self.dock.terminal_slot, c.GTK_DIR_TAB_FORWARD);
+            },
+        }
+        return 1;
+    }
     if (commands.fromKey(key, state)) |command| {
         self.execute(command);
         return 1;

@@ -250,6 +250,7 @@ pub const Controller = struct {
             self.clearRows();
             u.setLabel(self.status, "Open a folder or workspace to browse files.");
             self.app.refreshWorkspaceLabels();
+            if (self.app.opencode) |agent| agent.workspaceChanged();
             if (self.app.manager != null) self.app.projects.workspaceChanged();
         }
     }
@@ -343,7 +344,7 @@ pub const Controller = struct {
         self.app.workspace_policy.invalidate();
         self.loading = true;
         self.error_name = null;
-        self.app.message("Loading workspace on a worker… Existing documents remain open.");
+        if (self.app.opencode == null) self.app.message("Loading workspace on a worker… Existing documents remain open.");
         const job = self.work(.load, path);
         job.source = source;
         job.request = token;
@@ -855,9 +856,13 @@ pub const Controller = struct {
         self.roots();
         self.app.workspace_policy.modelChanged();
         self.app.refreshWorkspaceLabels();
+        if (self.app.opencode) |agent| {
+            agent.workspaceChanged();
+            if (self.model.?.roots.len != 0) self.browse(self.model.?.roots[0].id, "");
+        }
         if (self.app.manager != null) self.app.projects.workspaceChanged();
         self.app.scheduleCheckpoint();
-        self.app.message("Workspace opened in restricted mode. Documents kept. Recent Projects opens independent project windows; automatic sessions retain this window's tabs and layout.");
+        if (self.app.opencode == null) self.app.message("Workspace opened in restricted mode. Documents kept. Recent Projects opens independent project windows; automatic sessions retain this window's tabs and layout.");
     }
     fn acceptsModel(self: *Controller, token: identity.Token) bool {
         return if (self.model) |*m| m.scope.accepts(token) else false;

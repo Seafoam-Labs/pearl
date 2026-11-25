@@ -75,6 +75,18 @@ adapters are not installed or claimed. **M8 is next.** See the
 
 ![Native Coral editor](artifacts/native/editor-dark.png)
 
+## Coral Workspace
+
+Launch the dedicated GTK workbench with `zig build workspace -Doptimize=safe -- /path/to/project`. The installed desktop launcher is **Coral Workspace**. Start OpenCode’s local service with `opencode service start`. The workbench connects through OpenCode 2.4’s local service descriptor. Its composer reads the available chat models from the service, and changing the model applies to the selected session’s next model call.
+
+The composer keeps a separate model, draft and captured selection for each session. Click an attachment to read its original text or refresh it from the editor. Earlier messages load on demand. Unknown deliveries can be retried with their original message ID. After a restart, Coral can restore and edit the draft while the service is offline.
+
+[Native model picker](../../artifacts/development-workspace/model-selection-dark.png) · [Side-by-side review in Pearl light](../../artifacts/development-workspace/review-light.png) · [Overlapping edits](../../artifacts/development-workspace/conflict-dark.png)
+
+**New OpenCode session** creates an isolated worktree from the current Git checkout, including changes to tracked files and untracked project files. Use **Review changes** to inspect a hunk, apply it to a Coral buffer, or resolve overlapping changes before saving. A project folder outside Git opens a planning session. The connection, model picker and chat use libsoup 3. The terminal uses the workbench’s bundled libghostty-vt backend.
+
+Run `zig build workspace-integration -Doptimize=safe -- --aqueous-prefix /path/to/aqueous/prefix` for a private Wayland test with a local OpenCode API fixture. The test exercises the native widgets and checks that review preserves the project’s staged and unstaged content.
+
 ## Build and run
 
 Use Zig 0.17.1, `pkg-config`, a C toolchain, GTK **4.12+**, GtkSourceView **5**,
