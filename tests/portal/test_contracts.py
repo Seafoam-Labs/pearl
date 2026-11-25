@@ -132,7 +132,10 @@ def client(binary):
             ('mime_rule', listed(rules('*a*a*b', kind=1)), False),
             ('most_rules', listed(rules(*('*.x%d' % i for i in range(2048)))), False),
             ('too_many_rules', listed(rules(*('*.x%d' % i for i in range(2049)))), True),
-            ('too_many_filters', listed(*[rules('*.x')] * 65), True),
+            ('many_filters', listed(*[rules('*.x')] * 65), False),
+            ('filters_over_cap', listed(*[rules('*.x%d' % i) for i in range(200)]), False),
+            ('current_beyond_cap', {**listed(*[rules('*.x%d' % i) for i in range(200)]),
+                                    **current(rules('*.x150'))}, False),
             ('current_too_many_rules', current(rules(*('*.x%d' % i for i in range(2049)))), True),
             ('current_three_stars', current(rules('*a*a*b')), True),
         ]

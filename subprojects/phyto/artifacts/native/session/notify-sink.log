@@ -1,0 +1,3 @@
+event=ready
+command={"action": [2, "cancel"]}
+command={"close": 4}

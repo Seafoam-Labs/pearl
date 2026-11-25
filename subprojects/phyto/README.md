@@ -74,6 +74,11 @@ application identity so release and Git installs can coexist.
   session undo/redo. Existing destinations are never silently overwritten:
   Replace moves the previous item to Trash first. Keep both and pasting onto the
   source's own folder write numbered copies such as “Folder (2)”.
+- Transfer progress in the desktop notification bar: while a copy/move batch
+  runs, Pearl's notification card shows a live progress bar, transferred size
+  and item count with a Cancel action, and the result replaces the card when
+  the batch ends. Dismissing the card stops the updates, not the transfer.
+  Without a notification service, operations run unchanged.
 - Open with, terminal, empty documents/templates, aggregate Properties, Trash
   restore and permanent deletion with confirmation. GIO capabilities govern
   availability; optional integrations depend on installed providers.

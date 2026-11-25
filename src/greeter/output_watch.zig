@@ -1,5 +1,8 @@
 //! Read monitor identities on GTK's Wayland connection; GTK owns dispatch.
-//! This observer never creates or applies an output configuration.
+//! The greeter account has no Aqueous display configuration, so without a
+//! requested mode the compositor falls back to the EDID-preferred timing
+//! (often 60 Hz on high-refresh panels). Promote every enabled output to the
+//! highest-refresh mode at its preferred resolution through output-management.
 const std = @import("std");
 const gdk = @import("gdk4");
 const backend = @import("gdkwayland4");
@@ -23,6 +26,13 @@ const Text = struct {
         return if (self.len) |len| self.bytes[0..len] else null;
     }
 };
+const Mode = struct {
+    proxy: ?*zwlr.OutputModeV1 = null,
+    width: i32 = 0,
+    height: i32 = 0,
+    refresh_mhz: i32 = 0,
+    preferred: bool = false,
+};
 const Head = struct {
     proxy: ?*zwlr.OutputHeadV1 = null,
     name: Text = .{},
@@ -32,6 +42,12 @@ const Head = struct {
     enabled: bool = false,
     committed_name: Text = .{},
     digest: ?identity.Digest = null,
+    modes: [64]Mode = @splat(.{}),
+    current_mode: ?*zwlr.OutputModeV1 = null,
+    x: i32 = 0,
+    y: i32 = 0,
+    transform: wl.Output.Transform = .normal,
+    scale: wl.Fixed = wl.Fixed.fromInt(1),
 };
 
 pub const Watch = struct {
@@ -41,6 +57,9 @@ pub const Watch = struct {
     heads: [64]Head = @splat(.{}),
     ready: bool = false,
     timeout: c_uint = 0,
+    serial: u32 = 0,
+    pending: ?*zwlr.OutputConfigurationV1 = null,
+    head_overflow: bool = false,
     context: *anyopaque,
     changed: *const fn (*anyopaque) void,
 
@@ -105,14 +124,17 @@ pub const Watch = struct {
                     created.head.setListener(?*Head, headEvent, head);
                     return;
                 };
+                self.head_overflow = true;
                 created.head.setListener(?*Head, headEvent, null);
             },
-            .done => {
+            .done => |v| {
+                self.serial = v.serial;
                 for (&self.heads) |*head| {
                     head.committed_name = if (head.proxy != null and head.enabled) head.name else .{};
                     head.digest = if (head.make.invalid or head.model.invalid or head.serial.invalid) null else identity.hash(head.make.get(), head.model.get(), head.serial.get());
                 }
                 self.finish();
+                self.applyBestModes();
             },
             .finished => {
                 @as(*wl.Proxy, @ptrCast(manager)).destroy();
@@ -123,10 +145,23 @@ pub const Watch = struct {
         }
     }
     fn headEvent(proxy: *zwlr.OutputHeadV1, event: zwlr.OutputHeadV1.Event, data: ?*Head) void {
-        // Modes have their own lifetime even though placement does not use them.
-        if (event == .mode) event.mode.mode.setListener(?*Head, modeEvent, null);
+        // Modes have their own lifetime; track them so refresh can be promoted.
+        if (event == .mode) {
+            const mode = event.mode.mode;
+            if (data) |head| {
+                for (&head.modes) |*slot| if (slot.proxy == null) {
+                    slot.* = .{ .proxy = mode };
+                    break;
+                };
+            }
+            mode.setListener(?*Head, modeEvent, data);
+        }
         if (event == .finished) {
-            if (data) |head| head.proxy = null;
+            if (data) |head| {
+                head.proxy = null;
+                head.current_mode = null;
+                head.modes = @splat(.{});
+            }
             if (proxy.getVersion() >= 3) proxy.release() else @as(*wl.Proxy, @ptrCast(proxy)).destroy();
             return;
         }
@@ -137,13 +172,128 @@ pub const Watch = struct {
             .model => |v| head.model.set(v.model),
             .serial_number => |v| head.serial.set(v.serial_number),
             .enabled => |v| head.enabled = v.enabled != 0,
+            .current_mode => |v| head.current_mode = v.mode,
+            .position => |v| {
+                head.x = v.x;
+                head.y = v.y;
+            },
+            .transform => |v| head.transform = v.transform,
+            .scale => |v| head.scale = v.scale,
             else => {},
         }
     }
-    fn modeEvent(proxy: *zwlr.OutputModeV1, event: zwlr.OutputModeV1.Event, _: ?*Head) void {
+    fn modeEvent(proxy: *zwlr.OutputModeV1, event: zwlr.OutputModeV1.Event, data: ?*Head) void {
         if (event == .finished) {
+            if (data) |head| forgetMode(head, proxy);
             if (proxy.getVersion() >= 3) proxy.release() else @as(*wl.Proxy, @ptrCast(proxy)).destroy();
+            return;
         }
+        const head = data orelse return;
+        for (&head.modes) |*slot| {
+            if (slot.proxy != proxy) continue;
+            switch (event) {
+                .size => |v| {
+                    slot.width = v.width;
+                    slot.height = v.height;
+                },
+                .refresh => |v| slot.refresh_mhz = v.refresh,
+                .preferred => slot.preferred = true,
+                else => {},
+            }
+            return;
+        }
+    }
+    fn forgetMode(head: *Head, proxy: *zwlr.OutputModeV1) void {
+        for (&head.modes) |*slot| if (slot.proxy == proxy) {
+            slot.* = .{};
+        };
+        if (head.current_mode == proxy) head.current_mode = null;
+    }
+
+    /// Pick the highest-refresh mode at the head's native resolution. The
+    /// preferred (EDID) mode defines native; without one, the largest area
+    /// wins. This raises refresh without dropping resolution.
+    fn bestMode(head: *const Head) ?*const Mode {
+        var width: i32 = 0;
+        var height: i32 = 0;
+        var found = false;
+        for (&head.modes) |*mode| {
+            if (mode.proxy == null or !mode.preferred) continue;
+            width = mode.width;
+            height = mode.height;
+            found = true;
+            break;
+        }
+        if (!found) {
+            var area: i64 = 0;
+            for (&head.modes) |*mode| {
+                if (mode.proxy == null) continue;
+                const next = @as(i64, mode.width) * mode.height;
+                if (next > area) {
+                    area = next;
+                    width = mode.width;
+                    height = mode.height;
+                    found = true;
+                }
+            }
+        }
+        if (!found) return null;
+        var best: ?*const Mode = null;
+        for (&head.modes) |*mode| {
+            if (mode.proxy == null or mode.width != width or mode.height != height) continue;
+            const current = best orelse {
+                best = mode;
+                continue;
+            };
+            if (mode.refresh_mhz > current.refresh_mhz or
+                (mode.refresh_mhz == current.refresh_mhz and mode.preferred and !current.preferred)) best = mode;
+        }
+        return best;
+    }
+
+    fn targetMode(head: *const Head) ?*zwlr.OutputModeV1 {
+        if (bestMode(head)) |mode| return mode.proxy;
+        return head.current_mode;
+    }
+
+    fn applyBestModes(self: *Watch) void {
+        const manager = self.manager orelse return;
+        if (self.pending != null or self.head_overflow) return;
+        var needed = false;
+        for (&self.heads) |*head| {
+            if (head.proxy == null or !head.enabled) continue;
+            // A modeless enabled head cannot be reconfigured safely; leave the
+            // whole layout alone rather than risk a 0x0 custom mode.
+            const mode = targetMode(head) orelse return;
+            if (mode != head.current_mode) needed = true;
+        }
+        if (!needed) return;
+        const config = manager.createConfiguration(self.serial) catch return;
+        for (&self.heads) |*head| {
+            const proxy = head.proxy orelse continue;
+            if (!head.enabled) {
+                config.disableHead(proxy);
+                continue;
+            }
+            const target = config.enableHead(proxy) catch {
+                config.destroy();
+                self.display.flush();
+                return;
+            };
+            target.setMode(targetMode(head).?);
+            target.setPosition(head.x, head.y);
+            target.setTransform(head.transform);
+            target.setScale(head.scale);
+        }
+        config.setListener(*Watch, configEvent, self);
+        self.pending = config;
+        config.apply();
+        self.display.flush();
+    }
+    fn configEvent(config: *zwlr.OutputConfigurationV1, _: zwlr.OutputConfigurationV1.Event, self: *Watch) void {
+        config.destroy();
+        if (self.pending == config) self.pending = null;
+        self.display.flush();
     }
 };
 
@@ -188,4 +338,61 @@ test "protocol identity is published on done and cleared when disabled or ambigu
     Watch.headEvent(proxy, .{ .serial_number = .{ .serial_number = @import("test_strings").string("x", 769) } }, head);
     Watch.managerEvent(undefined, .{ .done = .{ .serial = 4 } }, &watch);
     try std.testing.expect(watch.digestFor("DP-9") == null);
+}
+
+test "best mode keeps native resolution and maximizes refresh" {
+    var head: Head = .{};
+    const low: *zwlr.OutputModeV1 = @ptrFromInt(0x2000);
+    const high: *zwlr.OutputModeV1 = @ptrFromInt(0x2008);
+    const small: *zwlr.OutputModeV1 = @ptrFromInt(0x2010);
+    head.modes[0] = .{ .proxy = low, .width = 2560, .height = 1440, .refresh_mhz = 59_940, .preferred = true };
+    head.modes[1] = .{ .proxy = high, .width = 2560, .height = 1440, .refresh_mhz = 143_856 };
+    head.modes[2] = .{ .proxy = small, .width = 1920, .height = 1080, .refresh_mhz = 239_760 };
+    // Native 1440p is retained; the faster 1080p mode must not win.
+    try std.testing.expectEqual(high, Watch.targetMode(&head).?);
+    // Without a preferred mode the largest area still defines native.
+    head.modes[0].preferred = false;
+    try std.testing.expectEqual(high, Watch.targetMode(&head).?);
+    // A finished (cleared) mode is ignored.
+    Watch.forgetMode(&head, high);
+    try std.testing.expectEqual(low, Watch.targetMode(&head).?);
+}
+
+test "target mode falls back to current when no modes are advertised" {
+    var head: Head = .{};
+    const current: *zwlr.OutputModeV1 = @ptrFromInt(0x3000);
+    head.current_mode = current;
+    try std.testing.expectEqual(current, Watch.targetMode(&head).?);
+    head.current_mode = null;
+    try std.testing.expect(Watch.targetMode(&head) == null);
+}
+
+test "mode events record timings and finished clears references" {
+    var head: Head = .{};
+    const proxy: *zwlr.OutputModeV1 = @ptrFromInt(0x4000);
+    head.modes[0] = .{ .proxy = proxy };
+    Watch.modeEvent(proxy, .{ .size = .{ .width = 2560, .height = 1440 } }, &head);
+    Watch.modeEvent(proxy, .{ .refresh = .{ .refresh = 143_856 } }, &head);
+    Watch.modeEvent(proxy, .preferred, &head);
+    try std.testing.expectEqual(@as(i32, 2560), head.modes[0].width);
+    try std.testing.expectEqual(@as(i32, 143_856), head.modes[0].refresh_mhz);
+    try std.testing.expect(head.modes[0].preferred);
+    head.current_mode = proxy;
+    Watch.forgetMode(&head, proxy);
+    try std.testing.expect(head.modes[0].proxy == null);
+    try std.testing.expect(head.current_mode == null);
+}
+
+test "head events capture layout needed to preserve placement" {
+    var head: Head = .{};
+    const proxy: *zwlr.OutputHeadV1 = @ptrFromInt(0x5000);
+    const mode: *zwlr.OutputModeV1 = @ptrFromInt(0x5008);
+    head.proxy = proxy;
+    Watch.headEvent(proxy, .{ .current_mode = .{ .mode = mode } }, &head);
+    Watch.headEvent(proxy, .{ .position = .{ .x = 1920, .y = 0 } }, &head);
+    Watch.headEvent(proxy, .{ .scale = .{ .scale = wl.Fixed.fromInt(2) } }, &head);
+    Watch.headEvent(proxy, .{ .transform = .{ .transform = .normal } }, &head);
+    try std.testing.expectEqual(mode, head.current_mode.?);
+    try std.testing.expectEqual(@as(i32, 1920), head.x);
+    try std.testing.expectEqual(wl.Fixed.fromInt(2), head.scale);
 }

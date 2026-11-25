@@ -1,0 +1,9 @@
+{"kind": "notify", "id": 1, "app": "Aqueous", "replaces": 0, "summary": "Aqueous configuration reloaded", "body": "", "actions": [], "hints": {"urgency": 1, "sender-pid": 262653}, "timeout": 3000}
+{"kind": "notify", "id": 2, "app": "Phyto", "replaces": 0, "summary": "Copying Renamed.md", "body": "Waiting for a decision\u2026", "actions": ["cancel", "Cancel", "default", ""], "hints": {"desktop-entry": "org.aqueous.Phyto", "resident": true, "x-pearl-progress": 0.0}, "timeout": 0}
+{"kind": "action", "id": 2, "key": "cancel"}
+{"kind": "notify", "id": 2, "app": "Phyto", "replaces": 2, "summary": "Copy cancelled", "body": "0 completed \u00b7 0 skipped \u00b7 Cancelled", "actions": ["default", ""], "hints": {"desktop-entry": "org.aqueous.Phyto"}, "timeout": -1}
+{"kind": "notify", "id": 3, "app": "Phyto", "replaces": 0, "summary": "Copying Renamed.md", "body": "Starting\u2026", "actions": ["cancel", "Cancel", "default", ""], "hints": {"desktop-entry": "org.aqueous.Phyto", "resident": true, "x-pearl-progress": -1.0}, "timeout": 0}
+{"kind": "notify", "id": 3, "app": "Phyto", "replaces": 3, "summary": "Copy complete", "body": "1 completed \u00b7 0 skipped \u00b7 27 bytes", "actions": ["default", ""], "hints": {"desktop-entry": "org.aqueous.Phyto"}, "timeout": -1}
+{"kind": "notify", "id": 4, "app": "Phyto", "replaces": 0, "summary": "Copying Renamed.md", "body": "Starting\u2026", "actions": ["cancel", "Cancel", "default", ""], "hints": {"desktop-entry": "org.aqueous.Phyto", "resident": true, "x-pearl-progress": -1.0}, "timeout": 0}
+{"kind": "notify", "id": 4, "app": "Phyto", "replaces": 4, "summary": "Copying Renamed.md", "body": "Waiting for a decision\u2026", "actions": ["cancel", "Cancel", "default", ""], "hints": {"desktop-entry": "org.aqueous.Phyto", "resident": true, "x-pearl-progress": 0.0}, "timeout": 0}
+{"kind": "closed", "id": 4, "reason": 2}

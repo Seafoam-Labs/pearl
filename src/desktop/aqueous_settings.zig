@@ -401,6 +401,69 @@ pub fn ViewFor(comptime ClientType: type) type {
             // Raw edits own the whole file; typed widgets cannot obscure them.
             row.as(gtk.Widget).setSensitive(@intFromBool(draft == .object and m.get(m.get(draft, "raw_files"), m.str(m.get(field, "file"))) == .null));
         }
+        /// Single derived "Window decorations" dropdown replacing the separate
+        /// renderer/force_ssd editors. It reads both fields (draft overrides
+        /// included) and writes them together, so every selection maps to one
+        /// consistent compositor configuration.
+        pub fn decorationModeEditor(self: *Self, box: *gtk.Box, snapshot: m.Value, draft: m.Value) !void {
+            const modes = @import("../config/decoration_mode.zig");
+            const alloc = self.arena.allocator();
+            var renderer: []const u8 = "compositor";
+            var force = false;
+            for (m.list(m.get(snapshot, "fields"))) |field| {
+                const id = m.str(m.get(field, "id"));
+                if (std.mem.eql(u8, id, modes.renderer_id)) renderer = m.str(m.get(field, "value"));
+                if (std.mem.eql(u8, id, modes.force_ssd_id)) force = m.get(field, "value") == .bool and m.get(field, "value").bool;
+            }
+            for (m.list(m.get(draft, "changes"))) |change| {
+                const id = m.str(m.get(change, "id"));
+                if (std.mem.eql(u8, id, modes.renderer_id)) renderer = m.str(m.get(change, "value"));
+                if (std.mem.eql(u8, id, modes.force_ssd_id)) force = m.get(change, "value") == .bool and m.get(change, "value").bool;
+            }
+            const row = w.column(8);
+            row.as(gtk.Widget).addCssClass("aqueous-field");
+            box.append(row.as(gtk.Widget));
+            const label = w.label(@import("i18n").dtr("pearl", "Window decorations"), null);
+            label.as(gtk.Widget).addCssClass("settings-row-title");
+            row.append(label.as(gtk.Widget));
+            row.as(gtk.Widget).setTooltipText(@import("i18n").dtr("pearl", "Who draws server-side decorations and which windows get them. Apps that only support client-side decorations always keep their own."));
+            const strings = [_:null]?[*:0]const u8{
+                @import("i18n").dtr("pearl", "Off — applications draw their own"),
+                @import("i18n").dtr("pearl", "Compositor borders — all capable apps"),
+                @import("i18n").dtr("pearl", "Pearl titlebars — apps that request them"),
+                @import("i18n").dtr("pearl", "Pearl titlebars — all capable apps"),
+            };
+            const input = gtk.DropDown.newFromStrings(@ptrCast(&strings));
+            @import("../settings/assistant_layout.zig").wrapChoice(input);
+            input.setSelected(@intFromEnum(modes.derive(renderer, force)));
+            w.name(input.as(gtk.Widget), @import("i18n").dtr("pearl", "Window decorations"));
+            const choice = try alloc.create(ModeChoice);
+            choice.* = .{ .view = self, .dropdown = input };
+            self.form_signals.add(input.as(object.Object), object.Object.signals.notify.connect(input.as(object.Object), *ModeChoice, modeSelected, choice, .{ .detail = "selected" }));
+            row.append(input.as(gtk.Widget));
+            try self.layout.controls.append(alloc, .{ .id = "aqueous.decoration-mode", .widget = input.as(gtk.Widget) });
+            // Raw wm edits own the whole file; the derived control must not obscure them.
+            row.as(gtk.Widget).setSensitive(@intFromBool(draft == .object and m.get(m.get(draft, "raw_files"), "wm") == .null));
+        }
+        const ModeChoice = struct { view: *Self, dropdown: *gtk.DropDown };
+        fn modeSelected(_: *object.Object, _: *object.ParamSpec, choice: *ModeChoice) callconv(.c) void {
+            const self = choice.view;
+            if (self.filling) return;
+            const modes = @import("../config/decoration_mode.zig");
+            const index = choice.dropdown.getSelected();
+            if (index > 3) return;
+            const mode: modes.Mode = @enumFromInt(index);
+            self.client.editField(modes.renderer_id, .{ .string = modes.renderer(mode) }) catch |err| {
+                self.fail(err);
+                return;
+            };
+            self.client.editField(modes.force_ssd_id, .{ .bool = modes.forceSsd(mode) }) catch |err| {
+                self.fail(err);
+                return;
+            };
+            self.syncRequest();
+            self.update();
+        }
         pub fn monitorEditor(self: *Self, box: *gtk.Box, original: m.Value, live: bool) !void {
             const alloc = self.arena.allocator();
             const name = m.str(m.get(original, "name"));

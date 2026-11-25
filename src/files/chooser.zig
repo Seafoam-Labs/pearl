@@ -54,6 +54,7 @@ const Chooser = struct {
     preview_box: W = undefined,
     state_key: ?[*:0]u8 = null,
     sort_kind: c_uint = 0,
+    places_width: c_int = 0,
     show_preview: bool = true,
     batch: std.ArrayList(W) = .empty,
     choices: std.ArrayList(Choice) = .empty,
@@ -446,6 +447,15 @@ fn addPlace(s: *Chooser, name: [*:0]const u8, file: *gio.File) void {
     }
     const b = gtk.Button.newWithLabel(name).as(gtk.Widget);
     b.addCssClass("flat");
+    b.addCssClass("place");
+    // Long bookmark names ellipsize instead of clipping; full name in the tooltip.
+    if (cast(gtk.Button, b).getChild()) |label| {
+        cast(gtk.Label, label).setEllipsize(.end);
+        cast(gtk.Label, label).setXalign(0);
+        cast(gtk.Label, label).setMaxWidthChars(18);
+        label.setHexpand(1);
+    }
+    b.setTooltipText(name);
     u.ownedData(b, "file", u.ref(file), &u.unrefData);
     u.connect(b, "clicked", &place, s);
     u.append(s.places, b);
@@ -866,6 +876,14 @@ fn reflow(widget: W, _: *gdk.FrameClock, data: ?*anyopaque) callconv(.c) c_int {
         cast(gtk.Popover, s.places_popup).setChild(null);
         cast(gtk.Box, s.panes).prepend(s.places_scroll);
     }
+    // Scale the sidebar with available space (bounded) so labels never clip.
+    if (!narrow) {
+        const target = @max(150, @min(240, @divTrunc(width, 5)));
+        if (target != s.places_width) {
+            s.places_width = target;
+            s.places_scroll.setSizeRequest(target, -1);
+        }
+    }
     return 1;
 }
 fn key(_: *gtk.EventControllerKey, keyval: c_uint, _: c_uint, mods: gdk.ModifierType, s: *Chooser) callconv(.c) c_int {
@@ -964,7 +982,7 @@ pub fn create(title: [*:0]const u8, action: gtk.FileChooserAction) callconv(.c) 
     u.connect(dialog, "response", &rememberState, null);
     const window = cast(gtk.Window, dialog);
     window.setTitle(title);
-    window.setDefaultSize(1040, 680);
+    window.setDefaultSize(1160, 720);
     cast(gtk.Widget, dialog).addCssClass("pearl-file-chooser");
     style.apply(window);
     const body = cast(gtk.Widget, dialog.getContentArea());
@@ -1037,7 +1055,7 @@ pub fn create(title: [*:0]const u8, action: gtk.FileChooserAction) callconv(.c) 
     s.places = gtk.Box.new(.vertical, 4).as(gtk.Widget);
     s.places_scroll = gtk.ScrolledWindow.new().as(gtk.Widget);
     cast(gtk.ScrolledWindow, s.places_scroll).setChild(s.places);
-    s.places_scroll.setSizeRequest(130, -1);
+    s.places_scroll.setSizeRequest(150, -1);
     u.append(s.panes, s.places_scroll);
     const home = gio.File.newForPath(glib.getHomeDir());
     defer u.unref(home);
@@ -1064,6 +1082,8 @@ pub fn create(title: [*:0]const u8, action: gtk.FileChooserAction) callconv(.c) 
     s.grid = gtk.GridView.new(cast(gtk.SelectionModel, u.ref(s.selection)), fileFactory(s)).as(gtk.Widget);
     cast(gtk.GridView, s.grid).setMinColumns(1);
     cast(gtk.GridView, s.grid).setMaxColumns(12);
+    // Match Phyto: allow drag/rubberband selection of multiple files.
+    cast(gtk.GridView, s.grid).setEnableRubberband(1);
     const scroll = gtk.ScrolledWindow.new().as(gtk.Widget);
     cast(gtk.ScrolledWindow, scroll).setChild(s.grid);
     scroll.setHexpand(1);
