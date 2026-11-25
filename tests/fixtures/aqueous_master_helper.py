@@ -5,7 +5,7 @@ from pathlib import Path
 fault=Path(os.environ['PEARL_MASTER_FAULT']).read_text().strip()
 args=sys.argv[1:];op=args[0]
 with open(os.environ['PEARL_MASTER_CALLS'],'a') as log:log.write(json.dumps(dict(op=op,args=args))+'\n')
-if op=='operation-status' and fault in ('lost-and-unqueryable','unknown'):
+if op=='operation-status' and fault in ('lost-and-unqueryable','unknown','absent'):
  id=args[args.index('--operation-id')+1]
  print(json.dumps(dict(ok=True,protocol=1,result_version=1,operation_id=id,receipt='unknown',reason='fixture-unavailable',save='uncertain',reload='unknown',display='unknown',retry_allowed=False)));sys.exit(0)
 request=sys.stdin.buffer.read() if '--request' in args else None
@@ -23,6 +23,9 @@ if op=='apply' and fault in ('admission-busy','admission-busy-once','legacy-admi
  if fault=='legacy-admission-busy':
   print(json.dumps(dict(ok=False,protocol=1,code='config_writer_busy',message='ConfigWriterBusy')));sys.exit(1)
  sys.stdout.buffer.write(r.stdout);sys.stderr.buffer.write(r.stderr);sys.exit(r.returncode)
+if op=='apply' and fault=='absent':
+ # The request never reaches the real helper: no write and no receipt.
+ sys.stdout.write('{lost');sys.exit(1)
 if op=='apply' and fault=='early-failure':
  # Force a real pre-write generation rejection; the helper owns the receipt.
  v=json.loads(request);v['expected_generation']='0'*16;request=json.dumps(v).encode()

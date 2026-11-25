@@ -196,6 +196,27 @@ def main():
      ctl(s,args.ctl,'aqueous','refresh');v=settled(s,args.ctl);assert not v['unresolved'] and v['save']=='saved' and v['receipt']=='complete',v
      assert count()==before_count+1 and json.loads(record.read_text())['pending'] is False
    fault.write_text('');checks['lost-apply-reply-queries-receipt-without-second-write']=True;checks['restart-reconciles-pending-operation']=True
+   # An operation the helper never received resolves from snapshot evidence:
+   # the unchanged generation proves no write, so Refresh unblocks by itself.
+   before_count=count();stage(s,args.ctl,changes=[dict(id='layout.gaps_outer',value=31)])
+   fault.write_text('absent');ctl(s,args.ctl,'aqueous','apply');v=settled(s,args.ctl)
+   assert not v['unresolved'] and v['err']=='SaveNeverWritten' and v['draft'],v
+   assert count()==before_count+1 and json.loads(record.read_text())['pending'] is False,v
+   fault.write_text('');ctl(s,args.ctl,'aqueous','apply');v=settled(s,args.ctl);assert v['outcome']=='saved' and not v['unresolved'] and count()==before_count+2,v
+   checks['absent-operation-resolves-from-unchanged-generation']=True
+   # A write whose receipt can never be recovered stays blocked until the
+   # explicit resolution retires it; the next Apply validates a fresh candidate.
+   before_count=count();stage(s,args.ctl,changes=[dict(id='layout.gaps_outer',value=32)])
+   fault.write_text('lost-and-unqueryable');ctl(s,args.ctl,'aqueous','apply');v=settled(s,args.ctl)
+   assert v['unresolved'] and json.loads(record.read_text())['pending'],v
+   ctl(s,args.ctl,'aqueous','refresh');v=settled(s,args.ctl);assert v['unresolved'],v
+   assert not ctl(s,args.ctl,'aqueous','apply',code=4)['ok']
+   ctl(s,args.ctl,'aqueous','resolve');v=settled(s,args.ctl)
+   assert not v['unresolved'] and v['err']=='OperationRetired' and v['draft'],v
+   assert json.loads(record.read_text())['pending'] is False,v
+   fault.write_text('');ctl(s,args.ctl,'aqueous','apply');v=settled(s,args.ctl)
+   assert v['outcome']=='saved' and not v['unresolved'] and count()==before_count+2,v
+   checks['unrecoverable-receipt-resolves-explicitly-and-unblocks']=True
    for failure,value in [('nonzero-saved',27),('saved-no-snapshot',28),('lost-recovered',29)]:
     stage(s,args.ctl,changes=[dict(id='layout.gaps_outer',value=value)]);fault.write_text(failure)
     ctl(s,args.ctl,'aqueous','apply');v=settled(s,args.ctl);assert v['outcome']=='saved' and not v['unresolved'],v

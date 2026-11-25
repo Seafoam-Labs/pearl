@@ -203,6 +203,9 @@ pub const Editor = struct {
     pub fn identify(self: *Editor) !void {
         try self.command(.identify);
     }
+    pub fn resolve(self: *Editor) !void {
+        try self.command(.resolve);
+    }
     pub fn requestReload(self: *Editor) !void {
         try self.command(.reload);
     }
@@ -250,7 +253,7 @@ pub const Editor = struct {
         if (@import("build_options").test_hooks) log.info("event=settings-aqueous-action action={s} pending={}", .{ @tagName(action), self.pending_receipt });
         if (!self.online or self.locked or self.suspended) return error.Unavailable;
         if (self.action != null or (self.pending_receipt and action != .keep and action != .revert)) return error.Busy;
-        if (self.recovery and action != .refresh and action != .revert) return error.ReviewRequired;
+        if (self.recovery and action != .refresh and action != .revert and action != .resolve) return error.ReviewRequired;
         self.action = action;
         self.due = 0;
         self.err = null;

@@ -24,7 +24,7 @@ const TaskApps = @import("task_apps.zig");
 const Picker = @import("launcher_picker.zig");
 const Action = enum { activate, launch, pin, unpin, minimize, maximize, close, choose_launcher };
 const Callback = struct { dock: *Dock, action: Action, id: [:0]const u8, value: bool = false, desktop_action: ?[:0]const u8 = null, resolution_hash: u64 = 0, window_id: ?[:0]const u8 = null, desktop_id: ?[:0]const u8 = null, picker: ?Picker.Request = null };
-const Group = struct { key: []const u8, desktop: ?[]const u8, pinned: bool, windows: std.ArrayList(*const e.Window) = .empty };
+const Group = struct { key: []const u8, desktop: ?[]const u8, pinned: bool, windows: std.ArrayList(*const e.Window) = .empty, elsewhere: usize = 0 };
 /// In-process drag state. Reordering never leaves GTK: a Wayland data-source
 /// drag that ends outside a drop target crashes Aqueous (wlroots XWM
 /// use-after-free in xwm_set_drag_focus), so the dock tracks the pointer
@@ -294,7 +294,7 @@ pub const Dock = struct {
         var temp = std.heap.ArenaAllocator.init(a);
         defer temp.deinit();
         const alloc = temp.allocator();
-        const windows = try self.client.model.windows(alloc, .{ .output = self.output });
+        const windows = try self.client.model.windows(alloc, .{});
         var groups: std.ArrayList(Group) = .empty;
         for (self.preferences.prefs().pinned_apps) |id| try groups.append(alloc, .{ .key = id, .desktop = id, .pinned = true });
         self.truncated = false;
@@ -318,11 +318,21 @@ pub const Dock = struct {
             const group = &groups.items[found.?];
             if (group.windows.items.len < 64) try group.windows.append(alloc, win) else self.truncated = true;
         }
+        // Windows on other outputs never join a group, but a matching pin (or
+        // local running group) still earns a dim running dot for them.
+        for (windows) |win| {
+            if (win.skip_taskbar or win.output == null or std.mem.eql(u8, win.output.?, self.output)) continue;
+            const desktop = self.match(win) orelse continue;
+            for (groups.items) |*group| if (std.mem.eql(u8, group.key, desktop)) {
+                group.elsewhere += 1;
+                break;
+            };
+        }
         self.count = groups.items.len;
         var digest = std.hash.Wyhash.init(0);
         digest.update(try std.json.Stringify.valueAlloc(alloc, .{ self.index.generation, next, self.preferences.appearance, @import("app_identity.zig").digest(self.preferences.prefs().application_launchers) }, .{}));
         for (groups.items) |group| {
-            digest.update(try std.json.Stringify.valueAlloc(alloc, .{ group.key, group.desktop, group.pinned }, .{}));
+            digest.update(try std.json.Stringify.valueAlloc(alloc, .{ group.key, group.desktop, group.pinned, group.elsewhere }, .{}));
             for (group.windows.items) |win| digest.update(try std.json.Stringify.valueAlloc(alloc, .{ win.id, win.title, win.focused, win.minimized, win.maximized, win.visible, win.can_activate, win.can_minimize, win.can_maximize }, .{}));
         }
         const hash = digest.final();
@@ -579,7 +589,7 @@ pub const Dock = struct {
                 minimized = minimized or win.minimized;
                 hidden = hidden or (!win.visible and !win.minimized);
             }
-            const description = try std.fmt.allocPrintSentinel(alloc, "{s} — {d} running{s}{s}{s}{s}", .{ title, group.windows.items.len, if (focused) ", focused" else "", if (minimized) ", minimized windows" else "", if (hidden) ", hidden windows" else "", if (group.pinned) ", pinned" else "" }, 0);
+            const description = try std.fmt.allocPrintSentinel(alloc, "{s} — {d} running{s}{s}{s}{s}{s}", .{ title, group.windows.items.len, if (focused) ", focused" else "", if (minimized) ", minimized windows" else "", if (hidden) ", hidden windows" else "", if (group.elsewhere > 0) ", running on other displays" else "", if (group.pinned) ", pinned" else "" }, 0);
             const box = gtk.Box.new(.horizontal, 0);
             // One-shot settle animation on the slot the last reorder landed in.
             if (self.landed) |id| if (group.desktop != null and std.mem.eql(u8, id, group.desktop.?)) {
@@ -596,9 +606,10 @@ pub const Dock = struct {
             const icon = if (entry != null and entry.?.info.getIcon() != null and gtk.IconTheme.getForDisplay(self.panel.as(gtk.Widget).getDisplay()).hasGicon(entry.?.info.getIcon().?) != 0) gtk.Image.newFromGicon(entry.?.info.getIcon().?) else gtk.Image.newFromIconName("pearl-application-x-executable-symbolic");
             icon.setPixelSize(self.config.icon_size);
             content.append(icon.as(gtk.Widget));
-            const indicator = if (group.windows.items.len > 1) try std.fmt.allocPrintSentinel(alloc, "{s} {d}", .{ if (focused) "●" else "•", group.windows.items.len }, 0) else if (focused) "●" else if (minimized) "◦" else if (group.windows.items.len > 0) "•" else "";
+            const indicator = try p.indicator(alloc, group.windows.items.len, focused, minimized, group.elsewhere, self.config.running_indicators);
             const indicator_label = gtk.Label.new(indicator);
             indicator_label.as(gtk.Widget).addCssClass("pearl-dock-indicator");
+            if (group.windows.items.len == 0 and group.elsewhere > 0) indicator_label.as(gtk.Widget).addCssClass("pearl-dock-elsewhere");
             content.append(indicator_label.as(gtk.Widget));
             primary.setChild(content.as(gtk.Widget));
             box.append(primary.as(gtk.Widget));

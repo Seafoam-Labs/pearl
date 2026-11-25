@@ -22,6 +22,7 @@ pub const fields = [_]Spec{
     .{ .path = "dock.enabled", .label = "Show dock", .kind = .toggle },
     .{ .path = "dock.edge", .label = "Dock edge", .kind = .choice, .choices = edges },
     .{ .path = "dock.mode", .label = "Dock visibility", .kind = .choice, .choices = &.{ "always", "autohide", "intelligent" } },
+    .{ .path = "dock.running_indicators", .label = "Running app indicators", .kind = .toggle },
     .{ .path = "dock.icon_size", .label = "Dock icon size", .kind = .number, .min = 24, .max = 64 },
     .{ .path = "dock.margin", .label = "Dock margin", .kind = .number, .min = 4, .max = 32 },
     .{ .path = "dock.opacity_sync", .label = "Match bar opacity", .kind = .toggle },
