@@ -282,6 +282,7 @@ pub const App = struct {
         self.agent = .init(self);
         self.browser = WorkspaceController.init(self, self.dock.explorer_slot);
         self.browser.attach();
+        if (@import("workspace_identity.zig").enabled) self.dock.addDrawers(header, self, &drawerSource);
         self.dock.attach();
         self.git_panel.attach(self.dock.source_control_slot);
         if (@import("workspace_identity.zig").enabled) self.workspace_dock = @import("workspace_dock.zig").Dock.create(self, self.dock.terminal_slot) else self.terminal.attach(self.dock.terminal_slot);
@@ -357,6 +358,7 @@ pub const App = struct {
     }
     pub fn focusEditor(self: *App) void {
         if (self.closing) return;
+        _ = self.dock.dismissDrawer(false);
         if (self.activeFocusWidget()) |widget| _ = c.gtk_widget_grab_focus(widget);
     }
     fn focusExplorer(self: *App) void {
@@ -418,6 +420,7 @@ pub const App = struct {
         self.openExisting(path, null);
     }
     fn hidePanel(self: *App, panel: dock_layout.Panel) void {
+        if (self.dock.drawers) |d| if (d.open == panel and self.dock.dismissDrawer(true)) return;
         if (panel == .search) self.workspace_search.hide() else {
             if (panel == .agent) self.agent.hide();
             self.dock.hide(panel);
@@ -1301,7 +1304,7 @@ pub const App = struct {
         self.workspace_policy.userSettingsChanged();
         self.transients(false);
         self.themeClasses(self.window);
-        const css = u.fmt(".{s} textview {{ font-family: monospace; font-size: {d:.3}em; }} .{s} textview.workspace-thread, .{s} textview.workspace-input {{ font-family: sans-serif; font-size: 13px; }}", .{ self.scope_class, @as(f64, @floatFromInt(self.settings.font)) / 14.667, self.scope_class, self.scope_class });
+        const css = u.fmt(".{s} textview {{ font-family: monospace; font-size: {d:.3}em; }} .{s} textview.workspace-thread, .{s} textview.workspace-input {{ font-family: sans-serif; font-size: 9.75pt; }}", .{ self.scope_class, @as(f64, @floatFromInt(self.settings.font)) / 14.667, self.scope_class, self.scope_class });
         defer a.free(css);
         c.gtk_css_provider_load_from_string(self.font_css, css);
         for (self.documents.entries.items) |d| self.configure(d, false);
@@ -3587,6 +3590,11 @@ fn onTestKey(_: ?*c.GtkEventControllerKey, key: c_uint, _: c_uint, state: c.GdkM
     }
     return 0;
 }
+fn drawerSource(ctx: *anyopaque) ?W {
+    const app = u.cast(App, ctx);
+    if (app.closing) return null;
+    return if (app.activeView()) |v| v.widget else null;
+}
 fn onShortcut(controller: ?*c.GtkEventControllerKey, key: c_uint, code: c_uint, state: c.GdkModifierType, data: ?*anyopaque) callconv(.c) c_int {
     if (onTestKey(controller, key, code, state, data) != 0) return 1;
     const self = u.cast(App, data.?);
@@ -3637,6 +3645,7 @@ fn onKey(_: ?*c.GtkEventControllerKey, key: c_uint, _: c_uint, state: c.GdkModif
             self.hidePopover();
             return 1;
         }
+        if (self.dock.dismissDrawer(true)) return 1;
         self.showSearch(false);
         self.message("");
         return 1;

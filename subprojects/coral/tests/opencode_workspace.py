@@ -21,7 +21,7 @@ PEARL = CORAL.parents[1]
 sys.path[:0] = [str(PEARL / "scripts"), str(PEARL / "tests/integration")]
 
 
-def drive(offline=False):
+def drive(offline=False, adaptive=False):
     import gi
     gi.require_version("Atspi", "2.0")
     from gi.repository import Atspi
@@ -48,8 +48,8 @@ def drive(offline=False):
     def click(name):
         assert lookup(name).do_action(0), name
 
-    def fixture(action):
-        request = Request(os.environ["WORKSPACE_FIXTURE_URL"] + "/test", data=json.dumps({"action": action}).encode(),
+    def fixture(action, **fields):
+        request = Request(os.environ["WORKSPACE_FIXTURE_URL"] + "/test", data=json.dumps({"action": action, **fields}).encode(),
                           headers={"Authorization": os.environ["WORKSPACE_FIXTURE_AUTH"]})
         with urlopen(request, timeout=5) as reply:
             return json.load(reply)
@@ -72,6 +72,83 @@ def drive(offline=False):
         if directory := os.environ.get("WORKSPACE_TEST_CAPTURES"):
             subprocess.run(["grim", "-g", os.environ["WORKSPACE_TEST_GEOMETRY"],
                             str(Path(directory) / (name + ".png"))], check=True)
+
+    if adaptive:
+        def visible(name):
+            return any(obj.get_name() == name and obj.get_state_set().contains(Atspi.StateType.SHOWING)
+                       for obj in descendants(Atspi.get_desktop(0)))
+
+        def bounds(name):
+            obj = lookup(name, actionable=False)
+            return Atspi.Component.get_extents(obj, Atspi.CoordType.WINDOW)
+
+        def escape():
+            subprocess.run(["wtype", "-s", "60", "-k", "Escape"], check=True)
+
+        if os.environ.get("WORKSPACE_TEST_LARGE_TEXT"):
+            # The same 1440px window now needs a drawer for its agent as well.
+            lookup("Toggle Explorer drawer")
+            lookup("Toggle OpenCode drawer")
+            click("Toggle OpenCode drawer")
+            click("Birch")
+            lookup("Cedar")
+            lookup("Task output", actionable=False)
+            capture("large-text-model")
+            print("Verified large-text drawer layout retains both the model picker and dock at desktop width.")
+            return
+        lookup("Birch")
+        composer = lookup("Message OpenCode", actionable=False)
+        assert composer.set_text_contents("Drawer draft")
+        fixture("resize", width=920)
+        lookup("Toggle Explorer drawer")
+        assert not visible("Toggle OpenCode drawer")
+        lookup("Birch")
+        assert not visible("Restore cursor") or not visible("Review watcher")
+        click("Toggle Explorer drawer")
+        lookup("Review watcher")
+        escape()
+        lookup("Toggle Explorer drawer")
+        fixture("resize", width=680)
+        lookup("Toggle OpenCode drawer")
+        assert not visible("Message OpenCode")
+        lookup("Task output", actionable=False)
+        click("Toggle OpenCode drawer")
+        lookup("Birch")
+        assert bounds("Message OpenCode").y < bounds("Task output").y
+        assert Atspi.Text.get_text(lookup("Message OpenCode", False), 0, -1) == "Drawer draft"
+        click("Birch")
+        lookup("Cedar")
+        if directory := os.environ.get("WORKSPACE_TEST_CAPTURES"):
+            frame = fixture("geometry")
+            geometry = "{x},{y} {width}x{height}".format(**frame)
+            subprocess.run(["grim", "-g", geometry, str(Path(directory) / "narrow-model.png")], check=True)
+        click("Cedar")
+        until = time.monotonic() + 3
+        while fixture("current-model") != "cedar":
+            assert time.monotonic() < until, "The service did not receive the model change"
+            time.sleep(.05)
+        lookup("Cedar")
+        escape()
+        fixture("resize", width=1440)
+        lookup("Review watcher")
+        lookup("Cedar")
+        assert not visible("Toggle Explorer drawer") and not visible("Toggle OpenCode drawer")
+        assert Atspi.Text.get_text(lookup("Message OpenCode", False), 0, -1) == "Drawer draft"
+        # A temporarily opened drawer must not overwrite an explicitly hidden pin.
+        subprocess.run(["wtype", "-M", "ctrl", "-k", "b", "-m", "ctrl"], check=True)
+        deadline = time.monotonic() + 3
+        while visible("Review watcher"):
+            assert time.monotonic() < deadline, "Explorer pin did not close"
+            time.sleep(.05)
+        lookup("Cedar")
+        fixture("resize", width=680)
+        click("Toggle Explorer drawer")
+        lookup("Review watcher")
+        fixture("resize", width=1440)
+        lookup("Cedar")
+        assert not visible("Review watcher")
+        print("Verified adaptive drawers, session model and draft, bottom dock access and manually hidden pin restoration.")
+        return
 
     if offline:
         click("Restore")
@@ -229,6 +306,10 @@ class API(BaseHTTPRequestHandler):
             return
         body = json.loads(self.rfile.read(int(self.headers["Content-Length"]))) if post else None
         if path == "/test" and post:
+            if body["action"] == "current-model":
+                return self.reply(service.sessions["ses_first"]["model"]["id"])
+            if body["action"] in ("resize", "geometry"):
+                return self.reply(service.window_geometry(body.get("width")))
             model = "birch" if body["action"] == "external-change" else "cedar"
             service.sessions["ses_first"]["model"] = {"id": model, "providerID": "local"}
             service.events.put({"type": "session.model.selected", "data": {"sessionID": "ses_first"}}
@@ -317,6 +398,11 @@ def main(args):
                                                             "password": service.password}))
             session.env["WORKSPACE_FIXTURE_URL"] = f"http://127.0.0.1:{service.server_port}"
             session.env["WORKSPACE_FIXTURE_AUTH"] = service.authorization
+            if args.large_text:
+                gtk_settings = Path(session.env["XDG_CONFIG_HOME"]) / "gtk-4.0/settings.ini"
+                gtk_settings.parent.mkdir(exist_ok=True)
+                gtk_settings.write_text("[Settings]\ngtk-xft-dpi=196608\n")
+                session.env["WORKSPACE_TEST_LARGE_TEXT"] = "1"
             if args.light:
                 prefs = Path(session.env["XDG_CONFIG_HOME"]) / "coral-workspace/preferences.ini"
                 prefs.parent.mkdir(exist_ok=True)
@@ -332,6 +418,16 @@ def main(args):
             rules = Path(session.env["XDG_CONFIG_HOME"]) / "aqueous/rules.toml"
             rules.write_text(f'[[window]]\napp_id="org.aqueous.Coral.Workspace"\nfloating=true\nwidth={args.width}\nheight={args.height}\n')
             ipc.call("command", action="session.reload", fields={})
+            def window_geometry(width=None):
+                def rect():
+                    return next((w["geometry"] for w in ipc.state() if w["kind"] == "window"
+                                 and w.get("app_id") == "org.aqueous.Coral.Workspace"), {})
+                if width:
+                    rules.write_text(f'[[window]]\napp_id="org.aqueous.Coral.Workspace"\nfloating=true\nwidth={width}\nheight=800\n')
+                    ipc.call("command",action="session.reload",fields={})
+                    wait_for(lambda: abs(rect().get("width",0)-width) < 8)
+                return rect()
+            service.window_geometry = window_geometry
             application = session.child("workspace", [args.binary.resolve(), project, file], G_DEBUG="fatal-criticals")
             from pearl_session import wait_for
             wait_for(lambda: "/api/model" in service.calls)
@@ -340,6 +436,10 @@ def main(args):
                 geometry = next(node["geometry"] for node in ipc.state() if node["kind"] == "window" and node.get("app_id") == "org.aqueous.Coral.Workspace")
                 session.env["WORKSPACE_TEST_CAPTURES"] = str(args.capture_dir.resolve())
                 session.env["WORKSPACE_TEST_GEOMETRY"] = "{x},{y} {width}x{height}".format(**geometry)
+            if args.adaptive:
+                subprocess.run([sys.executable, str(Path(__file__).resolve()), "--drive", "--adaptive"],
+                               env=session.env, check=True, timeout=60)
+                return
             subprocess.run([sys.executable, str(Path(__file__).resolve()), "--drive"], env=session.env,
                            check=True, timeout=65)
             assert service.sessions["ses_first"]["model"]["id"] == "cedar"
@@ -370,15 +470,17 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--drive", action="store_true")
     parser.add_argument("--offline", action="store_true")
+    parser.add_argument("--adaptive", action="store_true")
     parser.add_argument("--binary", type=Path, default=CORAL / "zig-out/bin/coral-workspace")
     parser.add_argument("--output", type=Path, default=CORAL / ".zig-cache/workspace-integration")
     parser.add_argument("--aqueous-prefix", type=Path)
     parser.add_argument("--capture-dir", type=Path)
     parser.add_argument("--light", action="store_true")
+    parser.add_argument("--large-text", action="store_true")
     parser.add_argument("--width", type=int, default=1440)
     parser.add_argument("--height", type=int, default=900)
     opts = parser.parse_args()
     if opts.drive:
-        drive(opts.offline)
+        drive(opts.offline, opts.adaptive)
     else:
         main(opts)

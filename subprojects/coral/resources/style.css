@@ -134,14 +134,17 @@ window.coral-workbench .breadcrumbs label { min-width: 0; }
 .workspace-composer menubutton > button { border-radius: 7px; }
 .workspace-composer .suggested-action { border-radius: 18px; }
 
-window.coral-workspace .workbench-titlebar .brand { font-size: 17px; font-weight: 700; }
-window.coral-workspace .workspace-section { margin: 5px 8px; font-size: 12px; font-weight: 650; }
-window.coral-workspace .workspace-thread-title { font-size: 18px; font-weight: 650; }
+window.coral-workspace .workbench-titlebar .brand { font-size: 12.75pt; font-weight: 700; }
+window.coral-workspace .workspace-section { margin: 5px 8px; font-size: 9pt; font-weight: 650; }
+window.coral-workspace .workspace-thread-title { font-size: 13.5pt; font-weight: 650; }
 window.coral-workspace .workspace-session { padding: 5px 10px; margin: 1px 5px; border-radius: 7px; }
-window.coral-workspace .workspace-session .caption { font-size: 11px; }
+window.coral-workspace .workspace-session .caption { font-size: 8.25pt; }
 window.coral-workspace notebook.workspace-tools > header,
 window.coral-workspace notebook.workspace-tools > header > tabs { min-height: 34px; }
 window.coral-workspace notebook.workspace-tools > header tab { padding: 0 12px; min-height: 34px; }
 
 window.coral-workspace .workbench-titlebar .brand { letter-spacing: 0; }
-window.coral-workspace .dock { font-size: 13px; }
+window.coral-workspace .dock { font-size: 9.75pt; }
+
+window.coral-workspace .workspace-drawer { border: 1px solid alpha(currentColor, 0.22); box-shadow: 0 4px 12px alpha(black, 0.24); }
+window.coral-workspace .workspace-drawer-backdrop { border: none; border-radius: 0; background: alpha(black, 0.18); box-shadow: none; }

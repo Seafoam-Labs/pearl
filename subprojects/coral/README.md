@@ -81,11 +81,11 @@ Launch the dedicated GTK workbench with `zig build workspace -Doptimize=safe -- 
 
 The composer keeps a separate model, draft and captured selection for each session. Click an attachment to read its original text or refresh it from the editor. Earlier messages load on demand. Unknown deliveries can be retried with their original message ID. After a restart, Coral can restore and edit the draft while the service is offline.
 
-[Native model picker](../../artifacts/development-workspace/model-selection-dark.png) · [Side-by-side review in Pearl light](../../artifacts/development-workspace/review-light.png) · [Overlapping edits](../../artifacts/development-workspace/conflict-dark.png)
+[Native model picker](../../artifacts/development-workspace/model-selection-dark.png) · [Narrow OpenCode drawer](../../artifacts/development-workspace/narrow-model.png) · [Model picker at 200% text DPI](../../artifacts/development-workspace/large-text-model.png) · [Side-by-side review in Pearl light](../../artifacts/development-workspace/review-light.png) · [Overlapping edits](../../artifacts/development-workspace/conflict-dark.png)
 
 **New OpenCode session** creates an isolated worktree from the current Git checkout, including changes to tracked files and untracked project files. Use **Review changes** to inspect a hunk, apply it to a Coral buffer, or resolve overlapping changes before saving. A project folder outside Git opens a planning session. The connection, model picker and chat use libsoup 3. The terminal uses the workbench’s bundled libghostty-vt backend.
 
-Run `zig build workspace-integration -Doptimize=safe -- --aqueous-prefix /path/to/aqueous/prefix` for a private Wayland test with a local OpenCode API fixture. The test exercises the native widgets and checks that review preserves the project’s staged and unstaged content. With OpenCode 2.4 installed, `zig build workspace-service-test` runs an isolated service and local model endpoint. It changes models during a turn, answers a permission request, and retries a queued prompt using its original ID.
+Run `zig build workspace-integration -Doptimize=safe -- --aqueous-prefix /path/to/aqueous/prefix` for a private Wayland test with a local OpenCode API fixture. The test exercises the native widgets and checks that review preserves the project’s staged and unstaged content. Pass `--adaptive` to exercise the drawers through window resizes, or `--adaptive --large-text` to exercise them at 200% text DPI. With OpenCode 2.4 installed, `zig build workspace-service-test` runs an isolated service and local model endpoint. It changes models during a turn, answers a permission request, and retries a queued prompt using its original ID.
 
 ## Build and run
 

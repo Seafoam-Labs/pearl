@@ -6,6 +6,8 @@ Build a dedicated Pearl development workspace in Zig, GTK4 and GtkSourceView 5. 
 
 ![The OpenCode composer with its provider-grouped session model picker open](mockups/development-workspace/model-selection.png)
 
+[View the same model picker in Pearl light](mockups/development-workspace/model-selection-light.png).
+
 ## The four-region window
 
 ![Editing a selected function with the OpenCode session visible](mockups/development-workspace/editing.png)

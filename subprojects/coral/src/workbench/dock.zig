@@ -30,11 +30,13 @@ pub const Controller = struct {
     state: layout.State = .{},
     effective: [5]bool = .{ true, false, false, false, false },
     compact: bool = false,
+    settle_drawers: u8 = 0,
+    drawers: ?@import("workspace_drawers.zig").Drawers = null,
     picking: bool = false,
     closed: bool = false,
     applying: bool = false,
     tick_id: c_uint = 0,
-    controllers: [12]*c.GtkEventController = undefined,
+    controllers: [13]*c.GtkEventController = undefined,
     controller_count: usize = 0,
     pending_focus: c.GWeakRef = undefined,
     pending_focus_frames: u8 = 0,
@@ -160,6 +162,24 @@ pub const Controller = struct {
         return .{ .root = root, .overlay = overlay, .editor = editor, .rail = rail, .activities = activities, .picker = picker, .explorer_slot = explorer_slot, .search_slot = search_slot, .source_control_slot = source_control_slot, .terminal_slot = terminal_slot, .agent_slot = agent_slot, .hosts = hosts, .frames = frames, .search_placeholder = search_placeholder, .tabs = tabs, .paneds = paneds };
     }
 
+    pub fn addDrawers(self: *Controller, header: u.W, ctx: *anyopaque, editor: *const fn (*anyopaque) ?u.W) void {
+        // The main overlay keeps its bottom split; install the drawer overlay only above it.
+        _ = c.g_object_ref(self.paneds[0]);
+        defer c.g_object_unref(self.paneds[0]);
+        self.drawers = @import("workspace_drawers.zig").Drawers.init(header, self.paneds, self.frames, ctx, editor);
+        c.g_weak_ref_init(&self.drawers.?.origin, null);
+        const click = c.gtk_gesture_click_new().?;
+        u.connect(click, "released", &dismissScrim, self);
+        self.addController(self.drawers.?.scrim, u.cast(c.GtkEventController, click));
+    }
+    pub fn dismissDrawer(self: *Controller, restore_focus: bool) bool {
+        const d = if (self.drawers) |*value| value else return false;
+        if (d.open == null) return false;
+        d.open = null;
+        self.apply();
+        if (restore_focus) d.returnFocus();
+        return true;
+    }
     /// Call only once the controller is at its stable address.
     pub fn attach(self: *Controller) void {
         c.g_weak_ref_init(&self.pending_focus, null);
@@ -207,6 +227,7 @@ pub const Controller = struct {
     pub fn shutdown(self: *Controller) void {
         if (self.closed) return;
         self.closed = true;
+        if (self.drawers) |*d| c.g_weak_ref_clear(&d.origin);
         c.g_weak_ref_clear(&self.pending_focus);
         if (self.tick_id != 0) c.gtk_widget_remove_tick_callback(self.root, self.tick_id);
         self.tick_id = 0;
@@ -225,7 +246,8 @@ pub const Controller = struct {
         self.state = layout.normalized(state);
         self.apply();
     }
-    pub fn visible(self: *const Controller, panel: Panel) bool {
+    pub fn visible(self: *Controller, panel: Panel) bool {
+        if (self.drawers) |d| if (d.uses(dockField(&self.state, panel).*)) return d.open == panel;
         return switch (panel) {
             .explorer => self.state.explorer_visible,
             .search => self.state.search_visible,
@@ -236,12 +258,23 @@ pub const Controller = struct {
     }
     pub fn show(self: *Controller, panel: Panel) void {
         if (self.closed) return;
+        if (self.drawers) |*d| {
+            if (d.uses(dockField(&self.state, panel).*)) {
+                d.remember(self.root);
+                d.open = panel;
+                self.state.active = panel;
+                self.apply();
+                return;
+            }
+            d.open = null;
+        }
         visibleField(&self.state, panel).* = true;
         self.state.active = panel;
         self.apply();
     }
     pub fn hide(self: *Controller, panel: Panel) void {
         if (self.closed) return;
+        if (self.drawers) |d| if (d.open == panel and self.dismissDrawer(true)) return;
         visibleField(&self.state, panel).* = false;
         if (self.state.active == panel) self.state.active = self.fallbackPanel(panel);
         self.apply();
@@ -272,6 +305,7 @@ pub const Controller = struct {
     }
     pub fn presentPicker(self: *Controller) void {
         if (self.closed) return;
+        _ = self.dismissDrawer(false);
         self.picking = true;
         self.apply();
     }
@@ -284,12 +318,12 @@ pub const Controller = struct {
     // A side strip narrower than its controls is not usable. Reflow only the
     // presentation on small windows; desired placement survives widening.
     fn presentationDock(self: *const Controller, dock: Dock) Dock {
-        return if (self.width > 0 and self.width < 520) .bottom else dock;
+        return if (self.drawers == null and self.width > 0 and self.width < 520) .bottom else dock;
     }
     /// Hiding the active panel falls back to another visible panel, or to the
     /// first other panel in rail order when none is visible. Explorer/Search
     /// keep their historical mutual fallback while Source Control is hidden.
-    fn fallbackPanel(self: *const Controller, hidden: Panel) Panel {
+    fn fallbackPanel(self: *Controller, hidden: Panel) Panel {
         inline for (.{ Panel.explorer, Panel.search, Panel.source_control, Panel.terminal, Panel.agent }) |panel| {
             if (panel != hidden and self.visible(panel)) return panel;
         }
@@ -342,7 +376,19 @@ pub const Controller = struct {
         // Compact windows present one panel at a time. Otherwise panels sharing
         // a dock collapse to the active one, or to the first visible panel in
         // rail order when the active panel is hidden or lives on another dock.
-        if (self.compact) {
+        if (self.drawers) |*d| {
+            if (d.open) |panel| if (!d.uses(panel_docks[@as(usize, @intCast(@backingInt(panel)))])) {
+                d.open = null;
+            };
+            for (panel_docks, 0..) |side, i| {
+                if (d.uses(side)) shown[i] = d.open == @as(Panel, @fromBackingInt(@intCast(i)));
+            }
+            c.gtk_widget_set_visible(d.scrim, @intFromBool(d.open != null));
+            c.gtk_widget_set_visible(d.buttons[0], @intFromBool(d.uses(explorer_dock)));
+            c.gtk_widget_set_visible(d.buttons[1], @intFromBool(d.uses(agent_dock)));
+            self.settle_drawers = 2;
+        }
+        if (self.compact and self.drawers == null) {
             var keep: ?usize = null;
             for (shown, 0..) |flag, i| {
                 if (flag and self.state.active == @as(Panel, @fromBackingInt(@intCast(i)))) keep = i;
@@ -388,8 +434,11 @@ pub const Controller = struct {
         for (docks, 0..) |dock, i| {
             const here = [5]bool{ explorer_dock == dock, search_dock == dock, source_control_dock == dock, terminal_dock == dock, agent_dock == dock };
             c.gtk_widget_set_visible(self.frames[i], @intFromBool((shown[0] and here[0]) or (shown[1] and here[1]) or (shown[2] and here[2]) or (shown[3] and here[3]) or (shown[4] and here[4])));
+            if (self.drawers) |*d| if (i < 2) {
+                d.present(i, self.frames[i], c.gtk_widget_get_visible(self.frames[i]) != 0, self.width, if (i == 0) self.state.left_size else self.state.right_size);
+            };
             for (self.tabs[i], 0..) |tab, panel| {
-                c.gtk_widget_set_visible(tab, @intFromBool(here[panel] and desired[panel]));
+                c.gtk_widget_set_visible(tab, @intFromBool(here[panel] and (desired[panel] or shown[panel])));
                 setActive(tab, shown[panel]);
             }
         }
@@ -406,6 +455,18 @@ pub const Controller = struct {
             const extent = if (i == 2) c.gtk_widget_get_height(widget) else c.gtk_widget_get_width(widget);
             self.extents[i] = extent;
             if (extent <= 1 or c.gtk_widget_get_visible(self.frames[i]) == 0) continue;
+            if (self.drawers) |d| if (i < 2) {
+                if (d.collapsed[i]) continue;
+                const other = 1 - i;
+                const paired = !d.collapsed[other] and c.gtk_widget_get_visible(self.frames[other]) != 0;
+                const remaining = @max(0, self.width - d.column * 60 - 48);
+                const wanted = @as(c_int, sizes[i]);
+                const total = wanted + if (paired) @as(c_int, sizes[other]) else 0;
+                const size = if (total > remaining) @divTrunc(remaining * wanted, @max(1, total)) else wanted;
+                self.applied[i] = if (i == 0) size else @max(0, extent - size);
+                c.gtk_paned_set_position(paned, self.applied[i]);
+                continue;
+            };
             // Reserve a useful central editor, even for oversized saved values.
             const reserve: c_int = if (i == 2) 165 else 245;
             const shared = i != 2 and c.gtk_widget_get_visible(self.frames[0]) != 0 and c.gtk_widget_get_visible(self.frames[1]) != 0;
@@ -582,11 +643,18 @@ fn allocated(_: ?*c.GtkWidget, _: ?*c.GdkFrameClock, data: ?*anyopaque) callconv
     if (self.closed) return 0;
     const width = c.gtk_widget_get_width(self.overlay);
     const height = c.gtk_widget_get_height(self.overlay);
-    if (width != self.width or height != self.height) {
+    const changed = if (self.drawers) |*d| d.columnChanged() else false;
+    if (width != self.width or height != self.height or changed) {
+        if (self.drawers) |*d| d.resize(width);
         self.width = width;
         self.height = height;
         self.compact = width < 900 or height < 420;
         self.apply();
+    } else if (self.settle_drawers != 0) {
+        // GtkPaned can adjust its position on the allocation *after* a hidden
+        // child is pinned again, even when the outer allocation stays constant.
+        self.settle_drawers -= 1;
+        if (!self.dragging[0] and !self.dragging[1] and !self.dragging[2]) self.setPositions();
     } else {
         for (self.paneds, 0..) |paned, i| {
             const w = u.cast(c.GtkWidget, paned);
@@ -633,6 +701,9 @@ fn pointerEvent(_: ?*c.GtkEventControllerLegacy, event: ?*c.GdkEvent, data: ?*an
         else => {},
     }
     return 0;
+}
+fn dismissScrim(_: ?*c.GtkGestureClick, _: c_int, _: f64, _: f64, data: ?*anyopaque) callconv(.c) void {
+    _ = u.cast(Controller, data.?).dismissDrawer(true);
 }
 fn hostFocused(controller: ?*c.GtkEventControllerFocus, data: ?*anyopaque) callconv(.c) void {
     const self = u.cast(Controller, data.?);
