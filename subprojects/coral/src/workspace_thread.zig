@@ -31,12 +31,18 @@ pub const Thread = struct {
     view: u.W,
     scroll: u.W,
     older: u.W,
+    sender: *c.GtkTextTag,
     messages: std.ArrayList(Message) = .empty,
     cursor: ?[:0]u8 = null,
     restore: Anchor = .{},
     rendered: [:0]u8,
     pub fn init(view: u.W, scroll: u.W, older: u.W) Thread {
-        return .{ .view = view, .scroll = scroll, .older = older, .rendered = u.z("") };
+        const text = u.cast(c.GtkTextView, view);
+        c.gtk_text_view_set_left_margin(text, 4);
+        c.gtk_text_view_set_right_margin(text, 6);
+        c.gtk_text_view_set_pixels_inside_wrap(text, 2);
+        const sender = c.gtk_text_buffer_create_tag(c.gtk_text_view_get_buffer(text), "workspace-speaker", "weight", @as(c_int, 650), "pixels-above-lines", @as(c_int, 5), "pixels-below-lines", @as(c_int, 3), @as(?*anyopaque, null)).?;
+        return .{ .view = view, .scroll = scroll, .older = older, .sender = sender, .rendered = u.z("") };
     }
     pub fn clear(self: *Thread) void {
         for (self.messages.items) |message| message.deinit();
@@ -165,6 +171,23 @@ pub const Thread = struct {
             c.gtk_text_buffer_delete(self.buffer(), &start, &end);
         }
         if (new_end > prefix) c.gtk_text_buffer_insert(self.buffer(), &start, text[prefix..].ptr, @intCast(new_end - prefix));
+        const changed_end = c.gtk_text_iter_get_offset(&start);
+        var changed_start: c.GtkTextIter = undefined;
+        c.gtk_text_buffer_get_iter_at_offset(self.buffer(), &changed_start, start_chars);
+        c.gtk_text_buffer_remove_tag(self.buffer(), self.sender, &changed_start, &start);
+        // Only style speakers intersecting the changed range. A token arriving
+        // mid-answer must leave the surrounding paragraphs and their layout alone.
+        for (self.messages.items) |msg| {
+            if (msg.start > changed_end) break;
+            const newline = std.mem.indexOfScalar(u8, msg.text, '\n') orelse continue;
+            const end = msg.start + @as(c_int, @intCast(c.g_utf8_strlen(msg.text.ptr, @intCast(newline))));
+            if (end < start_chars) continue;
+            var first: c.GtkTextIter = undefined;
+            var last: c.GtkTextIter = undefined;
+            c.gtk_text_buffer_get_iter_at_offset(self.buffer(), &first, msg.start);
+            c.gtk_text_buffer_get_iter_at_offset(self.buffer(), &last, end);
+            c.gtk_text_buffer_apply_tag(self.buffer(), self.sender, &first, &last);
+        }
         a.free(self.rendered);
         self.rendered = u.z(text);
         if (target != null or self.cursor == null) {

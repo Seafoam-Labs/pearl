@@ -257,6 +257,7 @@ pub const Agent = struct {
         showReview(null, self);
     }
     pub fn workspaceChanged(self: *Agent) void {
+        if (self.app.manager) |manager| @import("workspace_projects.zig").refresh(manager);
         var path: []const u8 = "";
         if (self.app.browser.model) |model| {
             for (model.roots) |root| {
@@ -270,6 +271,7 @@ pub const Agent = struct {
         self.leaveSession();
         a.free(self.root);
         self.root = u.z(path);
+        if (self.app.workspace_branch) |*branch| branch.follow(path);
         if (path.len != 0) self.refresh() else u.setLabel(self.status, i18n.dtr("coral", "Open a project to see its sessions"));
     }
     fn leaveSession(self: *Agent) void {
@@ -596,16 +598,17 @@ fn olderPage(ctx: *anyopaque, epoch: u64, result: Value, err: ?[]const u8) void 
     }
     sessionPage(self, result);
 }
-fn sessionState(row: Value) [*:0]const u8 {
+const SessionState = struct { name: [*:0]const u8, icon: [*:0]const u8 };
+fn sessionState(row: Value) SessionState {
     const times = api.get(row, "time");
     const busy = api.get(times, "busy");
     const idle = api.get(times, "idle");
-    if (busy == .integer and (idle != .integer or busy.integer > idle.integer)) return i18n.dtr("coral", "Running");
+    if (busy == .integer and (idle != .integer or busy.integer > idle.integer)) return .{ .name = i18n.dtr("coral", "Running"), .icon = "media-playback-start-symbolic" };
     const outcome = api.string(row, "outcome");
-    if (std.mem.eql(u8, outcome, "failed")) return i18n.dtr("coral", "Needs attention");
-    if (std.mem.eql(u8, outcome, "succeeded")) return i18n.dtr("coral", "Completed");
-    if (std.mem.eql(u8, outcome, "interrupted")) return i18n.dtr("coral", "Interrupted");
-    return i18n.dtr("coral", "Ready");
+    if (std.mem.eql(u8, outcome, "failed")) return .{ .name = i18n.dtr("coral", "Needs attention"), .icon = "dialog-warning-symbolic" };
+    if (std.mem.eql(u8, outcome, "succeeded")) return .{ .name = i18n.dtr("coral", "Completed"), .icon = "object-select-symbolic" };
+    if (std.mem.eql(u8, outcome, "interrupted")) return .{ .name = i18n.dtr("coral", "Interrupted"), .icon = "media-playback-pause-symbolic" };
+    return .{ .name = i18n.dtr("coral", "Ready"), .icon = "user-available-symbolic" };
 }
 fn sessionPage(self: *Agent, result: Value) void {
     const list = api.items(api.get(result, "data"));
@@ -634,10 +637,18 @@ fn sessionPage(self: *Agent, result: Value) void {
         const name = u.label(title);
         c.gtk_label_set_ellipsize(u.cast(c.GtkLabel, name), c.PANGO_ELLIPSIZE_END);
         u.append(labels, name);
-        const status = u.label(std.mem.span(sessionState(row)));
+        const state = sessionState(row);
+        const status = u.label(std.mem.span(state.name));
         c.gtk_widget_add_css_class(status, "caption");
         u.append(labels, status);
-        c.gtk_button_set_child(u.cast(c.GtkButton, b), labels);
+        const content = u.box(true, 8);
+        const glyph = c.gtk_image_new_from_icon_name(state.icon).?;
+        c.gtk_widget_add_css_class(glyph, "workspace-session-icon");
+        c.gtk_widget_set_valign(glyph, c.GTK_ALIGN_START);
+        u.append(content, glyph);
+        u.append(content, labels);
+        c.gtk_button_set_child(u.cast(c.GtkButton, b), content);
+        c.gtk_accessible_update_property(u.cast(c.GtkAccessible, b), @as(c_int, c.GTK_ACCESSIBLE_PROPERTY_DESCRIPTION), state.name, @as(c_int, -1));
         c.gtk_accessible_update_property(u.cast(c.GtkAccessible, b), @as(c_int, c.GTK_ACCESSIBLE_PROPERTY_LABEL), title.ptr, @as(c_int, -1));
         setData(b, "sid", id);
         setData(b, "location", directory);

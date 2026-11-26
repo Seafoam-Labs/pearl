@@ -85,3 +85,11 @@ window.coral.$scope checkbutton.workspace-model-choice > radio:checked { backgro
 window.coral.$scope .workspace-dock { background: $low$; }
 window.coral.$scope .workspace-tools stack { background: $surface$; }
 window.coral.$scope .workspace-session .caption { color: $secondary$; }
+
+window.coral.$scope button.workspace-current-project { background: $container$; border-color: alpha($outline$, 0.35); }
+window.coral.$scope .workspace-project-icon { background: $high$; color: $primary$; }
+window.coral.$scope .workspace-project .caption { color: $secondary$; }
+
+window.coral.$scope .workspace-session .caption,
+window.coral.$scope .workspace-session-icon { color: $secondary$; }
+window.coral.$scope .workspace-current-session .workspace-session-icon { color: $primary$; }

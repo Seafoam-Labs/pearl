@@ -3,7 +3,7 @@
     {
       "cpu": "AMD Ryzen 9 9950X3D 16-Core Processor",
       "kernel": "7.3.6-1.1-devario",
-      "backend": "Aqueous headless, 1440×900 at 60 Hz, Cairo",
+      "backend": "Aqueous headless, 1440\u00d7900 at 60 Hz, Cairo",
       "optimize": "safe",
       "tracked_files": 50000,
       "messages_per_session": 2000,
@@ -86,7 +86,7 @@
     {
       "cpu": "AMD Ryzen 9 9950X3D 16-Core Processor",
       "kernel": "7.3.6-1.1-devario",
-      "backend": "Aqueous headless, 1440×900 at 60 Hz, Cairo",
+      "backend": "Aqueous headless, 1440\u00d7900 at 60 Hz, Cairo",
       "optimize": "safe",
       "zig": "0.17.1",
       "libraries": {
@@ -181,7 +181,7 @@
     {
       "cpu": "AMD Ryzen 9 9950X3D 16-Core Processor",
       "kernel": "7.3.6-1.1-devario",
-      "backend": "Aqueous headless, 1440×900 at 60 Hz, Cairo",
+      "backend": "Aqueous headless, 1440\u00d7900 at 60 Hz, Cairo",
       "optimize": "safe",
       "zig": "0.17.1",
       "libraries": {
@@ -274,7 +274,7 @@
     {
       "cpu": "AMD Ryzen 9 9950X3D 16-Core Processor",
       "kernel": "7.3.6-1.1-devario",
-      "backend": "Aqueous headless, 1440×900 at 60 Hz, Cairo",
+      "backend": "Aqueous headless, 1440\u00d7900 at 60 Hz, Cairo",
       "optimize": "safe",
       "zig": "0.17.1",
       "libraries": {
@@ -362,6 +362,101 @@
         "p50_ms": 17.27,
         "p95_ms": 29.5,
         "max_ms": 29.83
+      }
+    }
+  ],
+  "project_rail_and_styled_transcript": [
+    {
+      "cpu": "AMD Ryzen 9 9950X3D 16-Core Processor",
+      "kernel": "7.3.6-1.1-devario",
+      "backend": "Aqueous headless, 1440\u00d7900 at 60 Hz, Cairo",
+      "optimize": "safe",
+      "zig": "0.17.1",
+      "libraries": {
+        "gtk4": "4.24.1",
+        "gtksourceview-5": "5.22.0",
+        "libsoup-3.0": "3.8.1"
+      },
+      "window_px": [
+        1400,
+        860
+      ],
+      "tracked_files": 50000,
+      "messages_per_session": 2000,
+      "sessions": 2,
+      "chunks_per_session": 374,
+      "distinct_head_updates": {
+        "ses_first": 72,
+        "ses_second": 3
+      },
+      "binary_sha256": "b69e72e8dae0634a455cb7ecffa911b1389c7e303520c9ce466ad9cfd1d8878b",
+      "first_frame_prime_and_three_warm": [
+        {
+          "complete_us": 119715,
+          "presented_us": 104866
+        },
+        {
+          "complete_us": 126991,
+          "presented_us": 111349
+        },
+        {
+          "complete_us": 123975,
+          "presented_us": 107617
+        },
+        {
+          "complete_us": 135208,
+          "presented_us": 119343
+        }
+      ],
+      "main_context_5ms_heartbeat": {
+        "idle": {
+          "samples": 194,
+          "p50_ms": 5.05,
+          "p95_ms": 5.07,
+          "max_ms": 31.17
+        },
+        "expand": {
+          "samples": 50,
+          "p50_ms": 5.05,
+          "p95_ms": 5.51,
+          "max_ms": 23.23
+        },
+        "history": {
+          "samples": 1116,
+          "p50_ms": 5.03,
+          "p95_ms": 5.05,
+          "max_ms": 5.55
+        },
+        "typing": {
+          "samples": 341,
+          "p50_ms": 5.05,
+          "p95_ms": 5.07,
+          "max_ms": 25.57
+        },
+        "switch": {
+          "samples": 111,
+          "p50_ms": 5.04,
+          "p95_ms": 5.45,
+          "max_ms": 51.02
+        }
+      },
+      "key_to_buffer": {
+        "samples": 35,
+        "p50_ms": 0.04,
+        "p95_ms": 0.05,
+        "max_ms": 0.05
+      },
+      "key_to_frame_complete": {
+        "samples": 35,
+        "p50_ms": 19.28,
+        "p95_ms": 30.91,
+        "max_ms": 32.84
+      },
+      "key_to_presentation": {
+        "samples": 35,
+        "p50_ms": 16.69,
+        "p95_ms": 27.57,
+        "max_ms": 30.12
       }
     }
   ]

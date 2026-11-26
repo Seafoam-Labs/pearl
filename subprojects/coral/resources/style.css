@@ -149,3 +149,12 @@ window.coral-workspace .dock { font-size: 9.75pt; }
 
 window.coral-workspace .workspace-drawer { border: 1px solid alpha(currentColor, 0.22); box-shadow: 0 4px 12px alpha(black, 0.24); }
 window.coral-workspace .workspace-drawer-backdrop { border: none; border-radius: 0; background: alpha(black, 0.18); box-shadow: none; }
+
+window.coral-workspace button.workspace-project { padding: 7px 9px; margin: 1px 7px; border: 1px solid transparent; border-radius: 9px; }
+window.coral-workspace .workspace-project-icon { padding: 5px; border-radius: 6px; }
+window.coral-workspace .workspace-project-name { font-weight: 650; }
+window.coral-workspace .workspace-project .caption { font-size: 8.25pt; }
+
+window.coral-workspace .workspace-session-icon { -gtk-icon-size: 12px; margin-top: 3px; }
+
+window.coral-workspace .workspace-branch { font-family: monospace; font-size: 9pt; margin-left: 2px; }

@@ -8,6 +8,7 @@ const commands = @import("commands.zig");
 
 pub const Chrome = struct {
     workspace_button: u.W,
+    branch: ?u.W = null,
     workspace_label: u.W,
     command_text: u.W,
     command_shortcut: u.W,
@@ -45,6 +46,12 @@ pub const Chrome = struct {
         }
         c.gtk_menu_button_set_menu_model(u.cast(c.GtkMenuButton, workspace_button), u.cast(c.GMenuModel, workspace_menu));
         c.gtk_header_bar_pack_start(u.cast(c.GtkHeaderBar, header), workspace_button);
+        const branch = if (workspace) compactLabel("", 20) else null;
+        if (branch) |label| {
+            c.gtk_widget_add_css_class(label, "workspace-branch");
+            c.gtk_widget_set_visible(label, 0);
+            c.gtk_header_bar_pack_start(u.cast(c.GtkHeaderBar, header), label);
+        }
 
         const command_button = u.icon("edit-find-symbolic", i18n.dtr("coral", "Command Palette · Ctrl+Shift+P"));
         c.gtk_widget_add_css_class(command_button, "command-button");
@@ -81,6 +88,7 @@ pub const Chrome = struct {
         u.append(footer, language_button);
         return .{
             .workspace_button = workspace_button,
+            .branch = branch,
             .workspace_label = workspace_label,
             .command_text = command_text,
             .command_shortcut = command_shortcut,
@@ -94,6 +102,7 @@ pub const Chrome = struct {
 
     pub fn update(self: *Chrome, app: *@import("../app.zig").App, width: c_int) void {
         const wide = width >= 760;
+        if (self.branch) |label| c.gtk_label_set_max_width_chars(u.cast(c.GtkLabel, label), if (wide) 20 else 8);
         c.gtk_widget_set_visible(self.command_text, @intFromBool(width >= 900));
         c.gtk_widget_set_visible(self.command_shortcut, @intFromBool(width >= 1100));
         if (self.open_button) |button| c.gtk_widget_set_visible(button, @intFromBool(wide));

@@ -1,6 +1,6 @@
 # Coral Workspace performance
 
-Two runs of the incremental transcript renderer met the plan’s one-second warm launch and 50 ms tree and history targets on this machine. Session switching had the longest observed main-loop gap, reaching 74 ms when leaving or restoring a large conversation. The table gives milliseconds.
+The runs of the incremental transcript renderer met the plan’s one-second warm launch and 50 ms tree and history targets on this machine. Session switching had the longest observed main-loop gap, reaching 74 ms when leaving or restoring a large conversation. The table gives milliseconds.
 
 | Renderer and run | Warm document presentation, range | Expand folder, max gap | Load history, max gap | Typing to presentation, p95 | Switch sessions, max gap |
 | --- | ---: | ---: | ---: | ---: | ---: |
@@ -8,8 +8,9 @@ Two runs of the incremental transcript renderer met the plan’s one-second warm
 | Baseline 2 | 112.3–117.2 | 21.00 | 53.12 | 28.65 | 47.43 |
 | Incremental 1 | 112.6–120.6 | 25.15 | 5.64 | 31.88 | 51.04 |
 | Incremental 2 | 112.5–117.6 | 25.28 | 5.56 | 29.50 | 74.03 |
+| Project rail and styled transcript | 107.6–119.3 | 23.23 | 5.55 | 27.57 | 51.02 |
 
-The baseline used the transcript renderer from commit 61e211ca. That renderer replaced text after the first differing byte. The incremental version retains the matching trailing text, so prepending a history page preserves GTK’s existing paragraphs, layout and text marks. The four runs are individual observations on one machine. The raw measurements include the priming launches, all sample counts, medians, 95th percentiles, maxima and measured binary hashes. [Measurements](../artifacts/development-workspace/performance.json)
+The baseline used the transcript renderer from commit 61e211ca. That renderer replaced text after the first differing byte. The incremental version retains the matching trailing text, so prepending a history page preserves GTK’s existing paragraphs, layout and text marks. The runs are individual observations on one machine. The raw measurements include the priming launches, all sample counts, medians, 95th percentiles, maxima and measured binary hashes. [Measurements](../artifacts/development-workspace/performance.json)
 
 ## Workload and instrumentation
 

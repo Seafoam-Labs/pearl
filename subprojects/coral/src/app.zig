@@ -75,6 +75,8 @@ pub const App = struct {
     git_project_diff: @import("git/project_diff.zig").Controller = undefined,
     terminal: @import("terminal/terminal_controller.zig").Controller = undefined,
     tasks: @import("tasks/tasks_controller.zig").Controller = undefined,
+    workspace_branch: ?@import("workspace_branch.zig").Branch = null,
+    project_rows: ?u.W = null,
     workspace_dock: ?*@import("workspace_dock.zig").Dock = null,
     review: ?*@import("workspace_review.zig").Review = null,
     opencode: ?*@import("workspace_agent.zig").Agent = null,
@@ -244,6 +246,7 @@ pub const App = struct {
         u.append(root, footer);
         self.* = .{ .application = application, .workspace = .init(), .window = window, .notebook = notebook, .groups = groups, .new_button = new, .search_button = search, .searchbox = searchbox, .query = query, .replacement = replacement, .matches = matches, .status = status, .spell_button = spell_button, .notice = notice, .settings = settings, .worker = spell.Worker.start(), .css = c.gtk_css_provider_new().?, .font_css = c.gtk_css_provider_new().? };
         self.chrome = chrome;
+        if (chrome.branch) |label| self.workspace_branch = .{ .app = self, .label = label };
         self.manager = manager;
         self.window_id = window_id;
         self.scope_class = u.fmt("coral-window-{d}", .{window_id});
@@ -280,7 +283,22 @@ pub const App = struct {
         self.tasks = .init(self);
         self.tasks.navigate = &tasksNavigate;
         self.tasks.navigate_context = self;
-        self.browser = WorkspaceController.init(self, self.dock.explorer_slot);
+        var files = self.dock.explorer_slot;
+        var session_slot = self.dock.explorer_slot;
+        if (@import("workspace_identity.zig").enabled) {
+            self.project_rows = @import("workspace_projects.zig").create(files);
+            const split = c.gtk_paned_new(c.GTK_ORIENTATION_VERTICAL).?;
+            c.gtk_widget_set_vexpand(split, 1);
+            u.append(files, split);
+            files = u.box(false, 0);
+            session_slot = u.box(false, 0);
+            c.gtk_paned_set_start_child(u.cast(c.GtkPaned, split), files);
+            c.gtk_paned_set_end_child(u.cast(c.GtkPaned, split), session_slot);
+            c.gtk_paned_set_resize_start_child(u.cast(c.GtkPaned, split), 1);
+            c.gtk_paned_set_resize_end_child(u.cast(c.GtkPaned, split), 1);
+            c.gtk_paned_set_position(u.cast(c.GtkPaned, split), 282);
+        }
+        self.browser = WorkspaceController.init(self, files);
         self.browser.attach();
         if (@import("workspace_identity.zig").enabled) self.dock.addDrawers(header, self, &drawerSource);
         self.dock.attach();
@@ -290,11 +308,12 @@ pub const App = struct {
             const sessions = u.box(false, 2);
             const sessions_heading = u.label(@import("i18n").dtr("coral", "Sessions"));
             c.gtk_widget_add_css_class(sessions_heading, "workspace-section");
-            u.append(self.dock.explorer_slot, sessions_heading);
+            u.append(session_slot, sessions_heading);
             const scroll = c.gtk_scrolled_window_new().?;
             c.gtk_widget_set_size_request(scroll, -1, 110);
             c.gtk_scrolled_window_set_child(u.cast(c.GtkScrolledWindow, scroll), sessions);
-            u.append(self.dock.explorer_slot, scroll);
+            c.gtk_widget_set_vexpand(scroll, 1);
+            u.append(session_slot, scroll);
             const right = u.box(false, 6);
             u.margin(right, 12);
             c.gtk_widget_set_vexpand(right, 1);
@@ -476,6 +495,7 @@ pub const App = struct {
         c.g_application_release(u.cast(c.GApplication, self.application));
     }
     pub fn deinit(self: *App) void {
+        if (self.workspace_branch) |*branch| branch.clear();
         std.debug.assert(self.holds == 0);
         if (self.close_guard) |guard| a.free(guard);
         if (self.final_close_guard) |guard| a.free(guard);

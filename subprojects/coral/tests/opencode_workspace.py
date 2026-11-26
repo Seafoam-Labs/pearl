@@ -27,7 +27,7 @@ def review_text(first=1, last=1):
     return f"first = {first}\n" + middle + f"last = {last}\n"
 
 
-def drive(offline=False, adaptive=False, diagnostics=False, permissions=False, terminal=False, desktop=False, crash_review=False):
+def drive(offline=False, adaptive=False, diagnostics=False, permissions=False, terminal=False, desktop=False, crash_review=False, two_windows=False, showcase=False):
     import gi
     gi.require_version("Atspi", "2.0")
     from gi.repository import Atspi, GLib
@@ -39,26 +39,26 @@ def drive(offline=False, adaptive=False, diagnostics=False, permissions=False, t
             if child:
                 yield from descendants(child)
 
-    def lookup(name, actionable=True):
+    def lookup(name, actionable=True, root=None):
         deadline = time.monotonic() + 5
         while time.monotonic() < deadline:
-            for obj in descendants(Atspi.get_desktop(0)):
+            for obj in descendants(root if root is not None else Atspi.get_desktop(0)):
                 if obj.get_name() != name or not obj.get_state_set().contains(Atspi.StateType.SHOWING):
                     continue
                 if not actionable or (obj.get_role() != Atspi.Role.LABEL and obj.get_n_actions() > 0
                                       and obj.get_state_set().contains(Atspi.StateType.SENSITIVE)):
                     return obj
             time.sleep(.05)
-        names = [obj.get_name() for obj in descendants(Atspi.get_desktop(0)) if obj.get_name() and obj.get_state_set().contains(Atspi.StateType.SHOWING)]
+        names = [obj.get_name() for obj in descendants(root if root is not None else Atspi.get_desktop(0)) if obj.get_name() and obj.get_state_set().contains(Atspi.StateType.SHOWING)]
         matches = [(o.get_role_name(), o.get_n_actions(), o.get_interfaces(), o.get_state_set().contains(Atspi.StateType.SENSITIVE))
-                   for o in descendants(Atspi.get_desktop(0)) if o.get_name() == name]
+                   for o in descendants(root if root is not None else Atspi.get_desktop(0)) if o.get_name() == name]
         raise AssertionError(f"Missing GTK control {name!r}. Matches {matches}. Visible controls {names!r}")
 
-    def click(name):
+    def click(name, root=None):
         deadline = time.monotonic() + 5
         while True:
             try:
-                control = lookup(name)
+                control = lookup(name, root=root)
                 if control.get_role() == Atspi.Role.RADIO_BUTTON:
                     index = next(i for i in range(control.get_n_actions()) if Atspi.Action.get_localized_name(control, i) == "model.select")
                 else:
@@ -77,11 +77,11 @@ def drive(offline=False, adaptive=False, diagnostics=False, permissions=False, t
         with urlopen(request, timeout=5) as reply:
             return json.load(reply)
 
-    def buffer_with(text, contains=False):
-        deadline = time.monotonic() + 3
+    def buffer_with(text, contains=False, root=None, timeout=3):
+        deadline = time.monotonic() + timeout
         while time.monotonic() < deadline:
             seen = []
-            for node in descendants(Atspi.get_desktop(0)):
+            for node in descendants(root if root is not None else Atspi.get_desktop(0)):
                 if node.get_state_set().contains(Atspi.StateType.SHOWING) and "Text" in node.get_interfaces():
                     contents = Atspi.Text.get_text(node, 0, -1)
                     if contents == text or (contains and text in contents):
@@ -104,6 +104,137 @@ def drive(offline=False, adaptive=False, diagnostics=False, permissions=False, t
         for modifier in reversed(modifiers):
             keys.extend(["-m", modifier])
         subprocess.run(keys, check=True)
+
+    def open_folder(path):
+        key("p", "ctrl", "shift")
+        lookup("Command Palette…", actionable=False)
+        subprocess.run(["wtype", "-s", "100", "--", "Open Folder"], check=True)
+        key("Return")
+        lookup("Location", False)
+        key("l", "ctrl")
+        time.sleep(.15)
+        key("a", "ctrl")
+        subprocess.run(["wtype", "-s", "100", "--", str(path)], check=True)
+        buffer_with(str(path))
+        key("Return")
+        time.sleep(.3)
+        key("Return", "ctrl")
+
+    def pointer_activate(control, target_title=None):
+        frame = control
+        while frame is not None and frame.get_role() != Atspi.Role.FRAME:
+            frame = frame.get_parent()
+        assert frame is not None
+        rect = control.get_extents(Atspi.CoordType.WINDOW)
+        fixture("widget-click", title=frame.get_name(), x=rect.x + rect.width // 2, y=rect.y + rect.height // 2,
+                target=target_title)
+
+    if showcase:
+        from pearl_session import wait_for
+        for name in ("src", "workspace", "session.zig"):
+            def file_row():
+                return next((node for node in descendants(Atspi.get_desktop(0))
+                             if node.get_role() == Atspi.Role.LABEL and (node.get_name() or "").strip().removeprefix("▸ ").strip() == name
+                             and node.get_state_set().contains(Atspi.StateType.SHOWING)), None)
+            try:
+                row = wait_for(file_row, 3)
+            except TimeoutError:
+                names = [n.get_name() for n in descendants(Atspi.get_desktop(0)) if n.get_role() == Atspi.Role.LABEL]
+                raise AssertionError(f"Explorer did not expose {name}. Labels {names}")
+            pointer_activate(row)
+        tab = wait_for(lambda: next((n for n in descendants(Atspi.get_desktop(0)) if n.get_role() == Atspi.Role.LABEL
+                                    and (n.get_name() or "").endswith(" · src/workspace/session.zig")
+                                    and n.get_state_set().contains(Atspi.StateType.SHOWING)), None))
+        pointer_activate(tab)
+        editor = buffer_with("pub const Session = struct", contains=True)
+        code = Atspi.Text.get_text(editor, 0, -1)
+        start = code.index("    pub fn restore(")
+        end = code.index("    }", start) + 5
+        assert Atspi.Text.add_selection(editor, start, end)
+        key("a", "ctrl", "shift")
+        lookup("Restore session cursor", False)
+        lookup("Branch · workspace-review", False)
+        lookup("Trusted", False)
+        click("New terminal")
+        time.sleep(.4)
+        subprocess.run(["wtype", "-s", "100", "--", "git branch --show-current"], check=True)
+        key("Return")
+        terminal = buffer_with("git branch --show-current", contains=True)
+        wait_for(lambda: "workspace-review" in Atspi.Text.get_text(terminal, 0, -1))
+        click("Change session model, currently Claude Sonnet 4")
+        assert lookup("Claude Sonnet 4").get_state_set().contains(Atspi.StateType.CHECKED)
+        lookup("GPT-4.1")
+        lookup("GPT-4.1 mini")
+        capture("model-selection")
+        return
+
+    if two_windows:
+        from pearl_session import wait_for
+        other = Path(os.environ["WORKSPACE_TEST_PROJECT"]).parent / "second-project"
+
+        def frame_of(node):
+            while node is not None and node.get_role() != Atspi.Role.FRAME:
+                node = node.get_parent()
+            assert node is not None
+            return node
+
+        def assert_thread(frame, own, foreign):
+            node = buffer_with(own, contains=True, root=frame, timeout=10)
+            text = Atspi.Text.get_text(node, 0, -1)
+            assert text.count(own) == 1 and foreign not in text, text
+
+        left = frame_of(lookup("Restore cursor"))
+        lookup("Branch · workspace-review", False, left)
+        lookup("Change session model, currently Birch", root=left)
+        assert lookup("Message OpenCode", False, left).set_text_contents("First project draft")
+        key("n", "ctrl", "shift")
+        wait_for(lambda: sum(n.get_role() == Atspi.Role.FRAME for n in descendants(Atspi.get_desktop(0))) == 2)
+        open_folder(other)
+        right = frame_of(lookup("Second project thread"))
+        assert left != right
+        lookup("Branch · topic/right", False, right)
+        detached = fixture("checkout-test-branch", detached=True)
+        lookup("Detached HEAD · " + detached, False, right)
+        lookup("Branch · workspace-review", False, left)
+        fixture("checkout-test-branch", detached=False)
+        lookup("Branch · topic/right", False, right)
+        for window in (left, right):
+            lookup("Show project project", root=window)
+            lookup("Show project second-project", root=window)
+        def switch_project(frame, name, target):
+            card = lookup("Show project " + name, root=frame)
+            pointer_activate(card, target.get_name())
+        switch_project(right, "project", left)
+        switch_project(left, "second-project", right)
+        key("f", "ctrl")
+        lookup("Next match · F3", False, right)
+        key("Escape")
+        lookup("Change session model, currently Cedar", root=right)
+        assert lookup("Message OpenCode", False, right).set_text_contents("Second project draft")
+        fixture("two-streams", step=1)
+        assert_thread(left, "Left response 1", "Right response")
+        assert_thread(right, "Right response 1", "Left response")
+        click("Change session model, currently Cedar", right)
+        click("Juniper · remote", right)
+        lookup("Change session model, currently Juniper · remote", root=right)
+        lookup("Change session model, currently Birch", root=left)
+        fixture("two-streams", step=2)
+        assert_thread(left, "Left response 2", "Right response")
+        assert_thread(right, "Right response 2", "Left response")
+        buffer_with("First project draft", root=left)
+        buffer_with("Second project draft", root=right)
+        # Disconnect while both windows are alive. Their authoritative histories
+        # advance during the gap and must be reconciled via one new stream.
+        fixture("two-streams", step=3, disconnect=True)
+        assert_thread(left, "Left response 3", "Right response")
+        assert_thread(right, "Right response 3", "Left response")
+        key("w", "ctrl", "shift")
+        wait_for(lambda: sum(n.get_role() == Atspi.Role.FRAME for n in descendants(Atspi.get_desktop(0))) == 1)
+        wait_for(lambda: not any(n.get_name() == "Show project second-project" for n in descendants(left)))
+        fixture("two-streams", step=4)
+        assert_thread(left, "Left response 4", "Right response")
+        buffer_with("First project draft", root=left)
+        return
 
     if crash_review:
         if os.environ["WORKSPACE_REVIEW_PHASE"] == "before":
@@ -188,17 +319,7 @@ def drive(offline=False, adaptive=False, diagnostics=False, permissions=False, t
         assert after[1] < before[1] and min(*before, *after) > 0, (before, after)
 
         # The folder picker changes the active project with a live shell.
-        key("p", "ctrl", "shift")
-        lookup("Command Palette…", actionable=False)
-        type_text("Open Folder")
-        key("Return")
-        time.sleep(.3)
-        key("l", "ctrl")
-        key("a", "ctrl")
-        type_text(other)
-        key("Return")
-        time.sleep(.3)
-        key("Return", "ctrl")
+        open_folder(other)
         lookup("second-project", actionable=False)
         lookup("Session model", actionable=False)
         assert not any(n.get_name() in ("Restore cursor", "Birch") and n.get_state_set().contains(Atspi.StateType.SHOWING)
@@ -532,6 +653,11 @@ class Service(ThreadingHTTPServer):
         self.calls = []
         self.closed = threading.Event()
         self.events = queue.Queue()
+        self.models = [dict(id=name.lower(), name=name, providerID="local", enabled=True)
+                       for name in ("Birch", "Cedar", "Retired", "Juniper")]
+        self.models.append(dict(id="juniper", name="Juniper", providerID="remote", enabled=True))
+        self.history = None
+        self.stream_step = 0
         self.inbox = {}
         self.attempts = []
         self.cancelled = []
@@ -595,6 +721,19 @@ class API(BaseHTTPRequestHandler):
             return
         body = json.loads(self.rfile.read(int(self.headers["Content-Length"]))) if post else None
         if path == "/test" and post:
+            if body["action"] == "checkout-test-branch":
+                return self.reply(service.checkout_test_branch(body["detached"]))
+            if body["action"] == "widget-click":
+                service.widget_click(body)
+                return self.reply({})
+            if body["action"] == "two-streams":
+                service.stream_step = body["step"]
+                if body.get("disconnect"):
+                    service.events.put(None)
+                else:
+                    for sid in ("ses_other", "ses_first"):
+                        service.events.put({"type": "session.text.updated", "data": {"sessionID": sid}})
+                return self.reply({})
             if body["action"].startswith("permission"):
                 action = body["action"]
                 if action == "permission-reads":
@@ -628,10 +767,7 @@ class API(BaseHTTPRequestHandler):
         if path == "/api/location":
             return self.reply({"project": {"id": "fixture"}, "directory": str(service.project)})
         if path == "/api/model":
-            models = [dict(id=name.lower(), name=name, providerID="local", enabled=True)
-                      for name in ("Birch", "Cedar", "Retired", "Juniper")]
-            models.append(dict(id="juniper", name="Juniper", providerID="remote", enabled=True))
-            return self.reply({"data": models})
+            return self.reply({"data": service.models})
         if path == "/api/session":
             if post:
                 tree = Path(body["location"]["directory"])
@@ -673,6 +809,12 @@ class API(BaseHTTPRequestHandler):
                     return self.reply({})
                 return self.reply({"data": list(service.inbox.values())})
             if fields[3] == "message":
+                if service.history:
+                    return self.reply({"data": service.history, "cursor": {}})
+                if service.stream_step:
+                    side = "Right" if fields[2] == "ses_other" else "Left"
+                    return self.reply({"cursor": {}, "data": [{"type": "assistant", "id": "streamed",
+                        "content": [{"type": "text", "text": f"{side} response {service.stream_step}"}]}]})
                 if parse_qs(urlsplit(self.path).query).get("cursor") == ["older"]:
                     return self.reply({"data": [{"type":"user", "id":"msg_older", "text":"An older message from this thread."}], "cursor":{}})
                 return self.reply({"cursor":{"next":"older"}, "data": [
@@ -698,24 +840,88 @@ def main(args):
     from pearl_session import PrivateSession, fixture_prefix
     from test_surfaces import IPC
     with PrivateSession(args.output / "session", tool_prefix=args.aqueous_prefix or fixture_prefix()) as session:
-        project = session.base / "project"
+        project = session.base / ("Pearl" if args.showcase else "project")
         project.mkdir()
         def git(*argv):
             return subprocess.check_output(["git", "-C", str(project), *argv], env=session.env)
         git("init", "-q")
-        file = project / "hello.txt"
-        file.write_text("original\n")
-        (project / "old-image.bin").write_bytes(b"\x00rename")
-        (project / "test-binary.bin").write_bytes(b"\x00base")
-        if args.crash_review:
-            (project / "review.txt").write_text(review_text())
-        git("add", ".")
-        git("-c", "user.email=test@localhost", "-c", "user.name=Fixture", "commit", "-qm", "Base")
-        file.write_text("staged\n")
-        git("add", "hello.txt")
-        file.write_text("staged and edited locally\n")
-        (project / "untracked.txt").write_text("untracked baseline\n")
+        if args.showcase:
+            source_dir = project / "src" / "workspace"
+            source_dir.mkdir(parents=True)
+            file = source_dir / "session.zig"
+            file.write_text('''const Store = @import("store.zig").Store;
+
+pub const Session = struct {
+    id: []const u8,
+    store: *Store,
+
+    /// Restore the last visible message.
+    pub fn restore(self: *Session) !usize {
+        const saved = try self.store.load(self.id);
+        return saved.cursor;
+    }
+
+    pub fn title(self: *Session) []const u8 {
+        return self.store.title(self.id);
+    }
+};
+''')
+            (source_dir / "store.zig").write_text('''pub const Store = struct {
+    cursor: usize,
+    name: []const u8,
+
+    pub fn load(self: *Store, _: []const u8) !*Store {
+        return self;
+    }
+
+    pub fn title(self: *Store, _: []const u8) []const u8 {
+        return self.name;
+    }
+};
+''')
+            git("add", ".")
+            git("-c", "user.email=test@localhost", "-c", "user.name=Fixture", "commit", "-qm", "Session restoration")
+            git("branch", "-m", "workspace-review")
+        else:
+            file = project / "hello.txt"
+            file.write_text("original\n")
+            (project / "old-image.bin").write_bytes(b"\x00rename")
+            (project / "test-binary.bin").write_bytes(b"\x00base")
+            if args.crash_review:
+                (project / "review.txt").write_text(review_text())
+            git("add", ".")
+            git("-c", "user.email=test@localhost", "-c", "user.name=Fixture", "commit", "-qm", "Base")
+            file.write_text("staged\n")
+            git("add", "hello.txt")
+            file.write_text("staged and edited locally\n")
+            (project / "untracked.txt").write_text("untracked baseline\n")
         service = Service(project)
+        if args.showcase:
+            service.sessions.clear()
+            for sid, title, outcome in [("ses_first", "Restore session cursor", ""), ("ses_watch", "Review file watcher", "failed"),
+                                        ("ses_tidy", "Tidy status labels", "succeeded")]:
+                service.add(sid, title, project, "claude-sonnet-4")
+                service.sessions[sid]["model"]["providerID"] = "anthropic"
+                service.sessions[sid]["outcome"] = outcome
+            service.sessions["ses_first"]["time"] = {"busy": 2, "idle": 1}
+            service.models = [dict(id=id, name=name, providerID=provider, enabled=True) for id, name, provider in [
+                ("claude-sonnet-4", "Claude Sonnet 4", "anthropic"), ("gpt-4.1", "GPT-4.1", "openai"), ("gpt-4.1-mini", "GPT-4.1 mini", "openai")]]
+            service.history = [
+                {"id": "msg_answer", "type": "assistant", "content": [{"type": "text", "text":
+                    "I found the restore path. A saved cursor can point past the final message after history is trimmed."}]},
+                {"id": "msg_request", "type": "user", "text": "Keep the reading position when I reopen a session."},
+            ]
+        if args.two_windows:
+            other = project.parent / "second-project"
+            git("branch", "-m", "workspace-review")
+            git("worktree", "add", "-q", "-b", "topic/right", str(other))
+            def checkout_test_branch(detached):
+                subprocess.run(["git", "-C", str(other), "switch", *(["--detach", "HEAD"] if detached else ["topic/right"])],
+                               check=True, capture_output=True, env=session.env)
+                return subprocess.check_output(["git", "-C", str(other), "rev-parse", "--short", "HEAD"], env=session.env, text=True).strip()
+            service.checkout_test_branch = checkout_test_branch
+            service.add("ses_other", "Second project thread", other, "cedar")
+            session.env["WORKSPACE_TEST_PROJECT"] = str(project)
         threading.Thread(target=service.serve_forever, daemon=True).start()
         try:
             state = Path(session.env["XDG_STATE_HOME"]) / "opencode"
@@ -754,7 +960,26 @@ def main(args):
                     wait_for(lambda: abs(rect().get("width",0)-width) < 8)
                 return rect()
             service.window_geometry = window_geometry
+            if args.two_windows or args.showcase:
+                from test_surfaces import click as pointer_click
+                def widget_click(point):
+                    windows = [w for w in ipc.state() if w["kind"] == "window"]
+                    window = next(w for w in windows if w.get("title") == point["title"])
+                    rect = window["geometry"]
+                    pointer_click(session, rect["x"] + point["x"], rect["y"] + point["y"], ipc.outputs())
+                    if target := point.get("target"):
+                        wait_for(lambda: any(w.get("title") == target and w.get("focused") for w in ipc.state()))
+                service.widget_click = widget_click
             documents = [project / "review.txt"] if args.crash_review else [file]
+            if args.showcase:
+                # This capture exercises the OpenCode picker. An independent
+                # language-server approval dialog would cover the code selection.
+                config = Path(session.env["HOME"]) / ".config/coral/languages.json"
+                config.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+                config.write_text(json.dumps({"version": 1, "servers": []}))
+                config.chmod(0o600)
+                session.env.update(SHELL="/bin/sh", PS1="❯ ")
+                documents = [file.with_name("store.zig"), file]
             if args.diagnostics:
                 # Earlier Coral versions could create this path with the default
                 # mode. Workspace owns its approval records in its own directory.
@@ -796,6 +1021,14 @@ def main(args):
             application = session.child("workspace", [args.binary.resolve(), *(["--log-level", "debug", "--log-scopes", "services"] if args.terminal else []), project, *documents], G_DEBUG="fatal-criticals")
             from pearl_session import wait_for
             wait_for(lambda: "/api/model" in service.calls)
+            if args.two_windows:
+                subprocess.run([sys.executable, str(Path(__file__).resolve()), "--drive", "--two-windows"],
+                               env=session.env, check=True, timeout=65)
+                assert service.calls.count("/api/event") == 2, service.calls.count("/api/event")
+                assert service.sessions["ses_first"]["model"] == {"providerID": "local", "id": "birch"}
+                assert service.sessions["ses_other"]["model"] == {"providerID": "remote", "id": "juniper"}
+                print("Verified independent drafts, models and streamed replies in two GTK windows, a shared reconnect, and closing one window.")
+                return
             if args.crash_review:
                 driver = [sys.executable, str(Path(__file__).resolve()), "--drive", "--crash-review"]
                 session.env["WORKSPACE_REVIEW_PHASE"] = "before"
@@ -823,6 +1056,10 @@ def main(args):
                 geometry = next(node["geometry"] for node in ipc.state() if node["kind"] == "window" and node.get("app_id") == "org.aqueous.Coral.Workspace")
                 session.env["WORKSPACE_TEST_CAPTURES"] = str(args.capture_dir.resolve())
                 session.env["WORKSPACE_TEST_GEOMETRY"] = "{x},{y} {width}x{height}".format(**geometry)
+            if args.showcase:
+                subprocess.run([sys.executable, str(Path(__file__).resolve()), "--drive", "--showcase"],
+                               env=session.env, check=True, timeout=35)
+                return
             if args.adaptive or args.diagnostics or args.permissions or args.terminal:
                 scenario = "--adaptive" if args.adaptive else ("--diagnostics" if args.diagnostics else ("--terminal" if args.terminal else "--permissions"))
                 subprocess.run([sys.executable, str(Path(__file__).resolve()), "--drive", scenario],
@@ -865,6 +1102,8 @@ if __name__ == "__main__":
     parser.add_argument("--diagnostics", action="store_true")
     parser.add_argument("--permissions", action="store_true")
     parser.add_argument("--terminal", action="store_true")
+    parser.add_argument("--showcase", action="store_true", help="Capture the design scene with real GTK widgets and a fixture catalog")
+    parser.add_argument("--two-windows", action="store_true")
     parser.add_argument("--crash-review", action="store_true")
     parser.add_argument("--desktop", action="store_true", help="Use the installed binary and desktop entry from the same prefix")
     parser.add_argument("--binary", type=Path, default=CORAL / "zig-out/bin/coral-workspace")
@@ -877,6 +1116,6 @@ if __name__ == "__main__":
     parser.add_argument("--height", type=int, default=900)
     opts = parser.parse_args()
     if opts.drive:
-        drive(opts.offline, opts.adaptive, opts.diagnostics, opts.permissions, opts.terminal, opts.desktop, opts.crash_review)
+        drive(opts.offline, opts.adaptive, opts.diagnostics, opts.permissions, opts.terminal, opts.desktop, opts.crash_review, opts.two_windows, opts.showcase)
     else:
         main(opts)

@@ -79,6 +79,12 @@ pub const Controller = struct {
         const bar = u.box(true, 2);
         c.gtk_widget_add_css_class(bar, "explorer-toolbar");
         u.append(panel, bar);
+        if (@import("../workspace_identity.zig").enabled) {
+            const heading = u.label(@import("i18n").dtr("coral", "Files"));
+            c.gtk_widget_add_css_class(heading, "workspace-section");
+            c.gtk_widget_set_hexpand(heading, 1);
+            u.append(bar, heading);
+        }
         inline for (.{ .{ "go-home-symbolic", "Roots", &rootsClicked }, .{ "go-previous-symbolic", "Back", &backClicked }, .{ "view-refresh-symbolic", "Rescan", &rescanClicked } }) |item| {
             const button = u.icon(item[0], item[1]);
             c.gtk_widget_add_css_class(button, "flat");

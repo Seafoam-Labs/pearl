@@ -97,6 +97,7 @@ pub const Manager = struct {
         entry.app = App.create(self.application, self.settings, self.width, self.height, self, id);
         entry.app.projects.restore_target = self.creating_project;
         self.entries[index] = entry;
+        if (entry.app.project_rows != null) @import("workspace_projects.zig").refresh(self);
         if (first) entry.recovery.attach(entry.app) else entry.recovery.attachNew(entry.app);
         if (self.source == 0) self.source = c.g_timeout_add(10, &pump, self);
     }
@@ -543,6 +544,7 @@ fn pump(data: ?*anyopaque) callconv(.c) c_int {
             entry.app.deinit();
             u.a.destroy(entry);
             slot.* = null;
+            if (@import("workspace_identity.zig").enabled) @import("workspace_projects.zig").refresh(self);
             c.g_application_release(u.cast(c.GApplication, self.application));
         } else remaining += 1;
     };
