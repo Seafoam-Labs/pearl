@@ -152,7 +152,7 @@ pub fn follow(owner: *Window, c: *const Context) void {
     defer containing.unref();
     (owner.findTab(c.tab_id) orelse return).navigate(containing, true);
 }
-const PropertyRequest = struct { owner: *Window, context: Context, text: std.ArrayList(u8) = .empty };
+const PropertyRequest = struct { owner: *Window, context: Context, text: std.ArrayList(u8) = .empty, info: ?*gio.FileInfo = null, folder_size: ?u64 = null, folder_partial: bool = false };
 pub fn properties(owner: *Window, c: *const Context) void {
     const r = a.create(PropertyRequest) catch unreachable;
     r.* = .{ .owner = owner, .context = c.clone() };
@@ -166,6 +166,11 @@ fn propertiesWorker(task: *gio.Task, _: *u.object.Object, data: ?*anyopaque, _: 
     const r: *PropertyRequest = @ptrCast(@alignCast(data.?));
     var c = &r.context;
     if (c.items.items.len == 0) c.add(c.directory, c.directory_info);
+    if (c.items.items.len == 1) {
+        propertiesSingle(r, c.items.items[0].file);
+        task.returnBoolean(1);
+        return;
+    }
     var bytes: u64 = 0;
     var folders: usize = 0;
     var unmeasured: usize = 0;
@@ -215,6 +220,29 @@ fn propertiesWorker(task: *gio.Task, _: *u.object.Object, data: ?*anyopaque, _: 
     r.text.append(a, 0) catch unreachable;
     task.returnBoolean(1);
 }
+fn propertiesSingle(r: *PropertyRequest, file: *gio.File) void {
+    var err: ?*glib.Error = null;
+    const info = file.queryInfo("standard::*,access::*,unix::mode,unix::user,unix::group,time::modified,trash::*", .{ .nofollow_symlinks = true }, r.owner.background_cancel, &err);
+    defer if (err) |e| e.free();
+    if (info) |i| {
+        if (i.getFileType() == .directory) {
+            // Enumeration-based recursion works on network backends too;
+            // unreadable subtrees are skipped and reported as partial.
+            if (@import("measure.zig").folderSize(file, r.owner.background_cancel)) |m| {
+                r.folder_size = m.bytes;
+                r.folder_partial = !m.complete;
+            }
+        }
+        r.info = i;
+    } else {
+        const path = file.getParseName();
+        defer glib.free(path);
+        const line = u.format("{s}: {s}\n", .{ path, if (err) |e| e.f_message orelse "Unavailable" else "Unavailable" });
+        defer a.free(line);
+        r.text.appendSlice(a, line) catch unreachable;
+        r.text.append(a, 0) catch unreachable;
+    }
+}
 fn propertiesReady(_: ?*u.object.Object, _: *gio.AsyncResult, data: ?*anyopaque) callconv(.c) void {
     const r: *PropertyRequest = @ptrCast(@alignCast(data.?));
     defer {
@@ -223,7 +251,199 @@ fn propertiesReady(_: ?*u.object.Object, _: *gio.AsyncResult, data: ?*anyopaque)
         r.owner.app.as(gio.Application).release();
         a.destroy(r);
     }
-    if (!r.owner.closed) r.owner.message("Properties", @ptrCast(r.text.items.ptr));
+    if (r.owner.closed) return;
+    if (r.info) |info| {
+        defer info.unref();
+        propertiesDialog(r.owner, r.context.items.items[0].file, info, r.folder_size, r.folder_partial);
+    } else r.owner.message("Properties", @ptrCast(r.text.items.ptr));
+}
+const PropertiesState = struct {
+    owner: *Window,
+    file: *gio.File,
+    mode: u32 = 0,
+    checks: [9]*gtk.CheckButton = undefined,
+    mode_label: *gtk.Label,
+    error_label: *gtk.Label,
+    updating: bool = false,
+};
+fn propertiesDialog(owner: *Window, file: *gio.File, info: *gio.FileInfo, folder_size: ?u64, folder_partial: bool) void {
+    const i18n = @import("i18n");
+    const title = i18n.dtr("phyto", "Properties");
+    if (owner.properties_dialog) |old| old.as(gtk.Window).destroy();
+    const dialog = gtk.Dialog.new();
+    owner.properties_dialog = dialog;
+    dialog.as(gtk.Widget).addCssClass("phyto-root");
+    dialog.as(gtk.Widget).addCssClass(@import("../appearance.zig").themeClass());
+    dialog.as(gtk.Window).setTitle(title);
+    dialog.as(gtk.Window).setTransientFor(owner.window);
+    dialog.as(gtk.Window).setDestroyWithParent(1);
+    dialog.as(gtk.Window).setModal(1);
+    dialog.as(gtk.Window).setDefaultSize(460, -1);
+    const body = dialog.getContentArea();
+    body.as(gtk.Widget).addCssClass("dialog-body");
+    const header = u.box(.horizontal, 12, null);
+    const icon = gtk.Image.new();
+    u.infoIcon(info, icon);
+    icon.setPixelSize(48);
+    header.append(icon.as(gtk.Widget));
+    const name = u.label(info.getDisplayName(), "state-title");
+    name.setWrap(1);
+    name.setWrapMode(.word_char);
+    name.setMaxWidthChars(30);
+    name.as(gtk.Widget).setValign(.center);
+    header.append(name.as(gtk.Widget));
+    body.append(header.as(gtk.Widget));
+    const details = gtk.Grid.new();
+    details.setRowSpacing(6);
+    details.setColumnSpacing(16);
+    var row: c_int = 0;
+    if (info.getFileType() == .directory) {
+        detail(details, &row, i18n.dtr("phyto", "Type"), i18n.dtr("phyto", "Folder"));
+    } else if (info.getFileType() == .symbolic_link) {
+        detail(details, &row, i18n.dtr("phyto", "Type"), i18n.dtr("phyto", "Symbolic link"));
+    } else if (info.getContentType()) |mime| {
+        const description = gio.contentTypeGetDescription(mime);
+        defer glib.free(description);
+        detail(details, &row, i18n.dtr("phyto", "Type"), std.mem.span(description));
+    }
+    if (folder_size) |s| {
+        const text = glib.formatSize(s);
+        defer glib.free(text);
+        const value = if (folder_partial) u.format("{s} ({s})", .{ text, i18n.dtr("phyto", "partial") }) else u.format("{s}", .{text});
+        defer a.free(value);
+        detail(details, &row, i18n.dtr("phyto", "Size"), value);
+    } else {
+        const text = u.sizeText(info);
+        defer glib.free(text);
+        detail(details, &row, i18n.dtr("phyto", "Size"), text);
+    }
+    if (file.getParent()) |parent| {
+        defer parent.unref();
+        if (parent.getPath()) |p| {
+            defer glib.free(p);
+            detail(details, &row, i18n.dtr("phyto", "Location"), p);
+        }
+    }
+    const date = u.dateText(info);
+    defer glib.free(date);
+    detail(details, &row, i18n.dtr("phyto", "Modified"), date);
+    if (info.getAttributeString("unix::user")) |user| detail(details, &row, i18n.dtr("phyto", "Owner"), user);
+    if (info.getAttributeString("unix::group")) |group| detail(details, &row, i18n.dtr("phyto", "Group"), group);
+    if (info.getSymlinkTarget()) |target| detail(details, &row, i18n.dtr("phyto", "Target"), target);
+    if (info.getAttributeByteString("trash::orig-path")) |original| {
+        if (original[0] != 0) detail(details, &row, i18n.dtr("phyto", "Original location"), original);
+    }
+    body.append(details.as(gtk.Widget));
+    file.ref();
+    const state = a.create(PropertiesState) catch unreachable;
+    state.* = .{ .owner = owner, .file = file, .mode_label = u.label("", "secondary"), .error_label = u.label("", "error") };
+    state.error_label.setWrap(1);
+    state.error_label.setWrapMode(.word_char);
+    state.error_label.setMaxWidthChars(40);
+    state.error_label.as(gtk.Widget).setVisible(0);
+    dialog.as(u.object.Object).setDataFull("phyto-properties", state, propertiesFreed);
+    if (info.hasAttribute("unix::mode") != 0) {
+        state.mode = info.getAttributeUint32("unix::mode") & 0o7777;
+        body.append(u.label(i18n.dtr("phyto", "Permissions"), "section-label").as(gtk.Widget));
+        const card = u.box(.vertical, 8, "permission-card");
+        const permissions = gtk.Grid.new();
+        permissions.setRowSpacing(6);
+        permissions.setColumnSpacing(12);
+        var who_row: c_int = 0;
+        var index: usize = 0;
+        inline for (.{ "Owner", "Group", "Other" }) |who| {
+            permissions.attach(u.label(i18n.dtr("phyto", who), null).as(gtk.Widget), 0, who_row, 1, 1);
+            var check_col: c_int = 1;
+            inline for (.{ "Read", "Write", "Execute" }) |bit| {
+                const check = gtk.CheckButton.newWithLabel(i18n.dtr("phyto", bit));
+                check.setActive(if (state.mode & (@as(u32, 0o400) >> @intCast(index)) != 0) 1 else 0);
+                const accessible = u.format("{s} {s}", .{ i18n.dtr("phyto", who), i18n.dtr("phyto", bit) });
+                defer a.free(accessible);
+                u.name(check.as(gtk.Widget), accessible);
+                _ = gtk.CheckButton.signals.toggled.connect(check, *PropertiesState, permissionToggled, state, .{});
+                state.checks[index] = check;
+                permissions.attach(check.as(gtk.Widget), check_col, who_row, 1, 1);
+                check_col += 1;
+                index += 1;
+            }
+            who_row += 1;
+        }
+        card.append(permissions.as(gtk.Widget));
+        updateModeLabel(state);
+        card.append(state.mode_label.as(gtk.Widget));
+        card.append(state.error_label.as(gtk.Widget));
+        body.append(card.as(gtk.Widget));
+    }
+    const close_button = dialog.addButton(i18n.dtr("phyto", "Close"), @backingInt(gtk.ResponseType.close));
+    _ = gtk.Dialog.signals.response.connect(dialog, *PropertiesState, propertiesResponse, state, .{});
+    if (@import("build_options").test_hooks) {
+        const keys = gtk.EventControllerKey.new();
+        _ = gtk.EventControllerKey.signals.key_pressed.connect(keys, *PropertiesState, propertiesKey, state, .{});
+        dialog.as(gtk.Widget).addController(keys.as(gtk.EventController));
+    }
+    dialog.as(gtk.Window).present();
+    // Focus Close so the dialog does not open with a text caret in a selectable detail.
+    dialog.as(gtk.Window).setFocus(close_button);
+}
+fn propertiesKey(_: *gtk.EventControllerKey, key: c_uint, _: c_uint, _: @import("gdk4").ModifierType, state: *PropertiesState) callconv(.c) c_int {
+    if (key == @import("gdk4").KEY_F12) {
+        state.owner.probe();
+        return 1;
+    }
+    return 0;
+}
+fn detail(grid: *gtk.Grid, row: *c_int, label: [*:0]const u8, value: [*:0]const u8) void {
+    grid.attach(u.label(label, "secondary").as(gtk.Widget), 0, row.*, 1, 1);
+    const text = u.label(value, null);
+    text.setWrap(1);
+    text.setWrapMode(.word_char);
+    text.setMaxWidthChars(36);
+    text.setSelectable(1);
+    text.as(gtk.Widget).setHexpand(1);
+    grid.attach(text.as(gtk.Widget), 1, row.*, 1, 1);
+    row.* += 1;
+}
+fn updateModeLabel(state: *PropertiesState) void {
+    const text = u.format("{s} {o:0>4}", .{ @import("i18n").dtr("phyto", "Mode:"), state.mode });
+    defer a.free(text);
+    state.mode_label.setText(text);
+}
+fn permissionToggled(_: *gtk.CheckButton, state: *PropertiesState) callconv(.c) void {
+    if (state.updating) return;
+    // setuid/setgid/sticky bits are preserved; only the nine access bits are editable.
+    var mode: u32 = state.mode & ~@as(u32, 0o777);
+    for (state.checks, 0..) |check, i| {
+        if (check.getActive() != 0) mode |= @as(u32, 0o400) >> @intCast(i);
+    }
+    if (mode == state.mode) return;
+    const attributes = gio.FileInfo.new();
+    defer attributes.unref();
+    attributes.setAttributeUint32("unix::mode", mode);
+    var err: ?*glib.Error = null;
+    if (state.file.setAttributesFromInfo(attributes, .{}, null, &err) == 0) {
+        state.updating = true;
+        for (state.checks, 0..) |check, i| check.setActive(if (state.mode & (@as(u32, 0o400) >> @intCast(i)) != 0) 1 else 0);
+        state.updating = false;
+        const fallback = @import("i18n").dtr("phyto", "The permissions could not be changed.");
+        const text: [*:0]const u8 = if (err) |e| e.f_message orelse fallback else fallback;
+        state.error_label.setText(text);
+        state.error_label.as(gtk.Widget).setVisible(1);
+        if (err) |e| e.free();
+        return;
+    }
+    if (err) |e| e.free();
+    state.mode = mode;
+    state.error_label.as(gtk.Widget).setVisible(0);
+    updateModeLabel(state);
+}
+fn propertiesResponse(dialog: *gtk.Dialog, _: c_int, state: *PropertiesState) callconv(.c) void {
+    state.owner.properties_dialog = null;
+    dialog.as(gtk.Window).destroy();
+}
+fn propertiesFreed(data: ?*anyopaque) callconv(.c) void {
+    const state: *PropertiesState = @ptrCast(@alignCast(data.?));
+    state.file.unref();
+    a.destroy(state);
 }
 pub fn runnable(info: *gio.FileInfo) ?bool {
     if (info.getAttributeBoolean("access::can-execute") != 0) return false;

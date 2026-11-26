@@ -41,6 +41,9 @@
 .phyto-root .state-title { font-size: 20px; font-weight: 500; }
 .phyto-root .dialog-body { padding: 24px; }
 .phyto-root .dialog-body > * { margin-bottom: 12px; }
+/* section-label carries a sidebar indent; inside a dialog align it with the body. */
+.phyto-root .dialog-body > .section-label { margin: 12px 0 8px; }
+.phyto-root .permission-card { padding: 12px 14px; border-radius: 12px; background: alpha(currentColor, 0.03); }
 .phyto-root.compact columnview row { min-height: 36px; }
 .phyto-root.compact .file-name { padding: 4px 0; }
 .phyto-root.compact .file-card { min-height: 84px; padding: 8px 4px; }

@@ -108,6 +108,10 @@ pub fn build(b: *std.Build) void {
     trash.addArtifactArg(test_exe);
     trash.addPassthruArgs();
     b.step("test-trash", "Exercise the Empty Trash toolbar button in an isolated session").dependOn(&trash.step);
+    const properties = b.addSystemCommand(&.{ "python3", "tests/properties_native.py", "--binary" });
+    properties.addArtifactArg(test_exe);
+    properties.addPassthruArgs();
+    b.step("test-properties", "Exercise the Properties dialog and permission editing in an isolated session").dependOn(&properties.step);
     b.step("integration", "Exercise native GTK in a private Aqueous session and capture evidence").dependOn(&integration.step);
     const themes = b.addSystemCommand(&.{ "python3", "tests/themes.py", "--binary" });
     themes.addArtifactArg(test_exe);
