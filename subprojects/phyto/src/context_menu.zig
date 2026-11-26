@@ -318,6 +318,7 @@ pub const Menu = struct {
             },
             .tab_close_others => self.owner.panes[c.pane].tabs.items.len > 1,
             .archive => f.local and count > 0 and apps.available("file-roller"),
+            .send_archive => f.local and count > 0 and apps.sendArchiveAvailable(),
             .extract => f.local and apps.extractor(c) != null,
             .bulk_rename => count > 1 and apps.available("bulky") and f.local,
             .admin => f.local and f.all_directories and apps.adminAvailable(),
@@ -478,6 +479,7 @@ pub const Menu = struct {
             self.section(menu, change);
             const extensions = gio.Menu.new();
             if (apps.available("file-roller") and f.local) self.add(extensions, @import("i18n").dtr("phyto", "Compress…"), .archive);
+            if (f.local and apps.sendArchiveAvailable()) self.add(extensions, @import("i18n").dtr("phyto", "Send to tar.xz"), .send_archive);
             if (f.local and apps.extractor(c) != null) self.add(extensions, @import("i18n").dtr("phyto", "Extract…"), .extract);
             if (f.all_directories and f.local and apps.adminAvailable()) self.add(extensions, @import("i18n").dtr("phyto", "Open as administrator"), .admin);
             for (self.providers.items.items) |p| if (p.matches(c)) self.extra(extensions, p.name, .{ .kind = .provider, .provider = p });
@@ -635,6 +637,7 @@ pub const Menu = struct {
             .mount, .unmount, .eject => apps.volume(owner, c, cmd),
             .tab_duplicate, .tab_left, .tab_right, .tab_other, .tab_close_others, .close_tab => owner.tabCommand(tab, cmd),
             .archive, .extract, .bulk_rename, .admin => apps.integration(owner, c, cmd),
+            .send_archive => apps.sendArchive(owner, c),
             else => {
                 owner.activatePane(c.pane);
                 owner.dispatch(cmd);

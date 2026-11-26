@@ -15,7 +15,7 @@ msgstr ""
 msgid "Access"
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:477
+#: subprojects/phyto/src/context_menu.zig:478
 msgid "Add bookmark"
 msgstr ""
 
@@ -44,7 +44,7 @@ msgstr ""
 msgid "Cancel"
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:367
+#: subprojects/phyto/src/context_menu.zig:368
 msgid "Cancel connection"
 msgstr ""
 
@@ -52,7 +52,7 @@ msgstr ""
 msgid "Cannot open this folder"
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:525
+#: subprojects/phyto/src/context_menu.zig:527
 msgid "Choose folder…"
 msgstr ""
 
@@ -64,7 +64,7 @@ msgstr ""
 msgid "Close details"
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:383
+#: subprojects/phyto/src/context_menu.zig:384
 msgid "Close other tabs"
 msgstr ""
 
@@ -72,11 +72,11 @@ msgstr ""
 msgid "Close search"
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:382
+#: subprojects/phyto/src/context_menu.zig:383
 msgid "Close tab"
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:480
+#: subprojects/phyto/src/context_menu.zig:481
 msgid "Compress…"
 msgstr ""
 
@@ -84,7 +84,7 @@ msgstr ""
 msgid "Connect"
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:366
+#: subprojects/phyto/src/context_menu.zig:367
 msgid "Connect / Open"
 msgstr ""
 
@@ -96,11 +96,11 @@ msgstr ""
 msgid "Connection settings"
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:369 subprojects/phyto/src/network_ui.zig:58
+#: subprojects/phyto/src/context_menu.zig:370 subprojects/phyto/src/network_ui.zig:58
 msgid "Connection settings…"
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:462
+#: subprojects/phyto/src/context_menu.zig:463
 msgid "Copy"
 msgstr ""
 
@@ -108,11 +108,11 @@ msgstr ""
 msgid "Copy here"
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:393
+#: subprojects/phyto/src/context_menu.zig:394
 msgid "Copy location"
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:526
+#: subprojects/phyto/src/context_menu.zig:528
 msgid "Copy to"
 msgstr ""
 
@@ -132,7 +132,7 @@ msgstr ""
 msgid "Current folder"
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:461
+#: subprojects/phyto/src/context_menu.zig:462
 msgid "Cut"
 msgstr ""
 
@@ -140,15 +140,15 @@ msgstr ""
 msgid "DEVICES"
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:411 subprojects/phyto/src/context_menu.zig:487
+#: subprojects/phyto/src/context_menu.zig:412 subprojects/phyto/src/context_menu.zig:489
 msgid "Delete permanently…"
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:505
+#: subprojects/phyto/src/context_menu.zig:507
 msgid "Descending"
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:498
+#: subprojects/phyto/src/context_menu.zig:500
 msgid "Detailed list"
 msgstr ""
 
@@ -156,7 +156,7 @@ msgstr ""
 msgid "Detailed list · Ctrl+2"
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:368 subprojects/phyto/src/network_ui.zig:103
+#: subprojects/phyto/src/context_menu.zig:369 subprojects/phyto/src/network_ui.zig:103
 msgid "Disconnect"
 msgstr ""
 
@@ -164,23 +164,23 @@ msgstr ""
 msgid "Drop files"
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:472
+#: subprojects/phyto/src/context_menu.zig:473
 msgid "Duplicate"
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:374
+#: subprojects/phyto/src/context_menu.zig:375
 msgid "Duplicate tab"
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:402
+#: subprojects/phyto/src/context_menu.zig:403
 msgid "Eject"
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:412 subprojects/phyto/src/window.zig:144
+#: subprojects/phyto/src/context_menu.zig:413 subprojects/phyto/src/window.zig:144
 msgid "Empty Trash…"
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:420
+#: subprojects/phyto/src/context_menu.zig:421
 msgid "Empty document…"
 msgstr ""
 
@@ -200,11 +200,11 @@ msgstr ""
 msgid "Extract here"
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:481
+#: subprojects/phyto/src/context_menu.zig:483
 msgid "Extract…"
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:475
+#: subprojects/phyto/src/context_menu.zig:476
 msgid "Favorite"
 msgstr ""
 
@@ -232,7 +232,7 @@ msgstr ""
 msgid "File operations"
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:719
+#: subprojects/phyto/src/context_menu.zig:722
 msgid "File view options"
 msgstr ""
 
@@ -248,11 +248,11 @@ msgstr ""
 msgid "Folder"
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:506
+#: subprojects/phyto/src/context_menu.zig:508
 msgid "Folders first"
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:457
+#: subprojects/phyto/src/context_menu.zig:458
 msgid "Follow link to original"
 msgstr ""
 
@@ -260,7 +260,7 @@ msgstr ""
 msgid "Forget connection?"
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:370
+#: subprojects/phyto/src/context_menu.zig:371
 msgid "Forget connection…"
 msgstr ""
 
@@ -276,11 +276,11 @@ msgstr ""
 msgid "Group"
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:737
+#: subprojects/phyto/src/context_menu.zig:740
 msgid "Hidden places (check to show again)"
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:399
+#: subprojects/phyto/src/context_menu.zig:400
 msgid "Hide from Places"
 msgstr ""
 
@@ -288,7 +288,7 @@ msgstr ""
 msgid "Home"
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:497
+#: subprojects/phyto/src/context_menu.zig:499
 msgid "Icon view"
 msgstr ""
 
@@ -296,7 +296,7 @@ msgstr ""
 msgid "Icon view · Ctrl+1"
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:750
+#: subprojects/phyto/src/context_menu.zig:753
 msgid "Image size limit (MiB)"
 msgstr ""
 
@@ -320,7 +320,7 @@ msgstr ""
 msgid "Make executable and run"
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:473
+#: subprojects/phyto/src/context_menu.zig:474
 msgid "Make link"
 msgstr ""
 
@@ -328,7 +328,7 @@ msgstr ""
 msgid "Mode:"
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:504 subprojects/phyto/src/platform/applications.zig:329 subprojects/phyto/src/window.zig:874
+#: subprojects/phyto/src/context_menu.zig:506 subprojects/phyto/src/platform/applications.zig:329 subprojects/phyto/src/window.zig:874
 msgid "Modified"
 msgstr ""
 
@@ -336,7 +336,7 @@ msgstr ""
 msgid "More options"
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:401
+#: subprojects/phyto/src/context_menu.zig:402
 msgid "Mount"
 msgstr ""
 
@@ -344,23 +344,23 @@ msgstr ""
 msgid "Move here"
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:377
+#: subprojects/phyto/src/context_menu.zig:378
 msgid "Move tab left"
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:378
+#: subprojects/phyto/src/context_menu.zig:379
 msgid "Move tab right"
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:526
+#: subprojects/phyto/src/context_menu.zig:528
 msgid "Move to"
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:486
+#: subprojects/phyto/src/context_menu.zig:488
 msgid "Move to Trash…"
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:379
+#: subprojects/phyto/src/context_menu.zig:380
 msgid "Move to other pane"
 msgstr ""
 
@@ -368,7 +368,7 @@ msgstr ""
 msgid "NETWORK DEVICES"
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:501
+#: subprojects/phyto/src/context_menu.zig:503
 msgid "Name"
 msgstr ""
 
@@ -376,15 +376,15 @@ msgstr ""
 msgid "Network"
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:422
+#: subprojects/phyto/src/context_menu.zig:423
 msgid "New document"
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:418
+#: subprojects/phyto/src/context_menu.zig:419
 msgid "New folder…"
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:373
+#: subprojects/phyto/src/context_menu.zig:374
 msgid "New tab"
 msgstr ""
 
@@ -400,35 +400,35 @@ msgstr ""
 msgid "No preview is available for this file type."
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:387 subprojects/phyto/src/network_ui.zig:100 subprojects/phyto/src/preview.zig:252
+#: subprojects/phyto/src/context_menu.zig:388 subprojects/phyto/src/network_ui.zig:100 subprojects/phyto/src/preview.zig:252
 msgid "Open"
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:482
+#: subprojects/phyto/src/context_menu.zig:484
 msgid "Open as administrator"
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:458
+#: subprojects/phyto/src/context_menu.zig:459
 msgid "Open containing folder"
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:388 subprojects/phyto/src/context_menu.zig:441
+#: subprojects/phyto/src/context_menu.zig:389 subprojects/phyto/src/context_menu.zig:442
 msgid "Open in new tab"
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:389 subprojects/phyto/src/context_menu.zig:442
+#: subprojects/phyto/src/context_menu.zig:390 subprojects/phyto/src/context_menu.zig:443
 msgid "Open in new window"
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:390 subprojects/phyto/src/context_menu.zig:429 subprojects/phyto/src/context_menu.zig:443
+#: subprojects/phyto/src/context_menu.zig:391 subprojects/phyto/src/context_menu.zig:430 subprojects/phyto/src/context_menu.zig:444
 msgid "Open in terminal"
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:658
+#: subprojects/phyto/src/context_menu.zig:661
 msgid "Open selected items?"
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:454
+#: subprojects/phyto/src/context_menu.zig:455
 msgid "Open with"
 msgstr ""
 
@@ -436,11 +436,11 @@ msgstr ""
 msgid "Original location"
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:453
+#: subprojects/phyto/src/context_menu.zig:454
 msgid "Other application…"
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:515
+#: subprojects/phyto/src/context_menu.zig:517
 msgid "Other pane"
 msgstr ""
 
@@ -448,7 +448,7 @@ msgstr ""
 msgid "Owner"
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:751
+#: subprojects/phyto/src/context_menu.zig:754
 msgid "PDF limit: 50 MiB · Video limit: 2 GiB"
 msgstr ""
 
@@ -460,11 +460,11 @@ msgstr ""
 msgid "Parent folder · Alt+Up"
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:425
+#: subprojects/phyto/src/context_menu.zig:426
 msgid "Paste"
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:463
+#: subprojects/phyto/src/context_menu.zig:464
 msgid "Paste into folder"
 msgstr ""
 
@@ -476,7 +476,7 @@ msgstr ""
 msgid "Phyto"
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:474
+#: subprojects/phyto/src/context_menu.zig:475
 msgid "Pinned"
 msgstr ""
 
@@ -488,19 +488,19 @@ msgstr ""
 msgid "Preferences were not saved"
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:456
+#: subprojects/phyto/src/context_menu.zig:457
 msgid "Preview"
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:510
+#: subprojects/phyto/src/context_menu.zig:512
 msgid "Preview in details"
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:405 subprojects/phyto/src/context_menu.zig:415 subprojects/phyto/src/context_menu.zig:434 subprojects/phyto/src/context_menu.zig:489 subprojects/phyto/src/platform/applications.zig:271 subprojects/phyto/src/window.zig:876
+#: subprojects/phyto/src/context_menu.zig:406 subprojects/phyto/src/context_menu.zig:416 subprojects/phyto/src/context_menu.zig:435 subprojects/phyto/src/context_menu.zig:491 subprojects/phyto/src/platform/applications.zig:271 subprojects/phyto/src/window.zig:876
 msgid "Properties"
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:427
+#: subprojects/phyto/src/context_menu.zig:428
 msgid "Redo"
 msgstr ""
 
@@ -508,19 +508,19 @@ msgstr ""
 msgid "Refresh folder"
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:397
+#: subprojects/phyto/src/context_menu.zig:398
 msgid "Remove bookmark"
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:396
+#: subprojects/phyto/src/context_menu.zig:397
 msgid "Rename bookmark…"
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:470
+#: subprojects/phyto/src/context_menu.zig:471
 msgid "Rename items…"
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:470
+#: subprojects/phyto/src/context_menu.zig:471
 msgid "Rename…"
 msgstr ""
 
@@ -536,11 +536,11 @@ msgstr ""
 msgid "Replace moves the existing item to Trash first, so you can restore it."
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:409
+#: subprojects/phyto/src/context_menu.zig:410
 msgid "Restore"
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:410
+#: subprojects/phyto/src/context_menu.zig:411
 msgid "Restore to…"
 msgstr ""
 
@@ -560,7 +560,7 @@ msgstr ""
 msgid "Run executable?"
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:394
+#: subprojects/phyto/src/context_menu.zig:395
 msgid "Save connection…"
 msgstr ""
 
@@ -576,6 +576,10 @@ msgstr ""
 msgid "Search this folder · Ctrl+F"
 msgstr ""
 
+#: subprojects/phyto/src/context_menu.zig:482
+msgid "Send to tar.xz"
+msgstr ""
+
 #: subprojects/phyto/src/network_ui.zig:136
 msgid "Server address"
 msgstr ""
@@ -584,11 +588,11 @@ msgstr ""
 msgid "Settings…"
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:508
+#: subprojects/phyto/src/context_menu.zig:510
 msgid "Show hidden files"
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:509
+#: subprojects/phyto/src/context_menu.zig:511
 msgid "Show thumbnails"
 msgstr ""
 
@@ -596,11 +600,11 @@ msgstr ""
 msgid "Sign in…"
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:502 subprojects/phyto/src/platform/applications.zig:314 subprojects/phyto/src/platform/applications.zig:318 subprojects/phyto/src/window.zig:870
+#: subprojects/phyto/src/context_menu.zig:504 subprojects/phyto/src/platform/applications.zig:314 subprojects/phyto/src/platform/applications.zig:318 subprojects/phyto/src/window.zig:870
 msgid "Size"
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:507
+#: subprojects/phyto/src/context_menu.zig:509
 msgid "Sort by"
 msgstr ""
 
@@ -608,7 +612,7 @@ msgstr ""
 msgid "Split panes · F3"
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:379
+#: subprojects/phyto/src/context_menu.zig:380
 msgid "Split with this tab"
 msgstr ""
 
@@ -664,15 +668,15 @@ msgstr ""
 msgid "Try a shorter name, or clear the search."
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:503 subprojects/phyto/src/platform/applications.zig:301 subprojects/phyto/src/platform/applications.zig:303 subprojects/phyto/src/platform/applications.zig:307 subprojects/phyto/src/window.zig:865
+#: subprojects/phyto/src/context_menu.zig:505 subprojects/phyto/src/platform/applications.zig:301 subprojects/phyto/src/platform/applications.zig:303 subprojects/phyto/src/platform/applications.zig:307 subprojects/phyto/src/window.zig:865
 msgid "Type"
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:426
+#: subprojects/phyto/src/context_menu.zig:427
 msgid "Undo"
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:402
+#: subprojects/phyto/src/context_menu.zig:403
 msgid "Unmount"
 msgstr ""
 
@@ -680,7 +684,7 @@ msgstr ""
 msgid "Video still"
 msgstr ""
 
-#: subprojects/phyto/src/context_menu.zig:499
+#: subprojects/phyto/src/context_menu.zig:501
 msgid "View"
 msgstr ""
 

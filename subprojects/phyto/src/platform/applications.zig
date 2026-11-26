@@ -513,6 +513,60 @@ pub fn extractHere(owner: *Window, file: *gio.File, tool: Extractor) void {
     args.append(a, path) catch unreachable;
     spawn(owner, args.items, dir);
 }
+pub fn sendArchiveAvailable() bool {
+    return available("bsdtar") or (available("tar") and available("xz")) or available("file-roller");
+}
+/// One-click compressed tar.xz beside the selection: "name.tar.xz", then
+/// "name (2).tar.xz", … like numbered paste copies. tar tools store relative
+/// basenames; file-roller (--add-to, non-interactive) is the last fallback.
+pub fn sendArchive(owner: *Window, c: *const Context) void {
+    if (c.items.items.len == 0) return;
+    const base = if (c.items.items.len == 1) c.items.items[0].file.getBasename() else c.directory.getBasename();
+    defer if (base) |b| glib.free(b);
+    const stem = if (base) |b| std.mem.span(b) else "Archive";
+    var target: ?*gio.File = null;
+    var n: usize = 1;
+    while (n < 10_000) : (n += 1) {
+        const name = if (n == 1) u.format("{s}.tar.xz", .{stem}) else u.format("{s} ({d}).tar.xz", .{ stem, n });
+        defer a.free(name);
+        const candidate = c.directory.getChild(name);
+        if (candidate.queryExists(null) == 0) {
+            target = candidate;
+            break;
+        }
+        candidate.unref();
+    }
+    const dest = target orelse return;
+    defer dest.unref();
+    const dest_path = dest.getPath() orelse return;
+    defer glib.free(dest_path);
+    var args: std.ArrayList([*:0]const u8) = .empty;
+    defer args.deinit(a);
+    var names: std.ArrayList([*:0]u8) = .empty;
+    defer {
+        for (names.items) |p| glib.free(p);
+        names.deinit(a);
+    }
+    var add_flag: ?[:0]u8 = null;
+    defer if (add_flag) |f| a.free(f);
+    if (available("bsdtar") or (available("tar") and available("xz"))) {
+        args.appendSlice(a, &.{ if (available("bsdtar")) "bsdtar" else "tar", "-cJf", dest_path, "--" }) catch unreachable;
+        for (c.items.items) |item| {
+            const name = item.file.getBasename() orelse return;
+            names.append(a, name) catch unreachable;
+            args.append(a, name) catch unreachable;
+        }
+    } else {
+        add_flag = u.format("--add-to={s}", .{dest_path});
+        args.appendSlice(a, &.{ "file-roller", add_flag.?, "--" }) catch unreachable;
+        for (c.items.items) |item| {
+            const path = item.file.getPath() orelse return;
+            names.append(a, path) catch unreachable;
+            args.append(a, path) catch unreachable;
+        }
+    }
+    spawn(owner, args.items, c.directory);
+}
 pub fn integration(owner: *Window, c: *const Context, cmd: Command) void {
     if (cmd == .admin) {
         openAdmin(owner, c);
