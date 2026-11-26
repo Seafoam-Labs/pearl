@@ -62,10 +62,14 @@ const Receipt = struct {
 };
 pub const Review = struct {
     app: *App,
-    stack: u.W,
+    host: ?u.W = null,
+    removing_background: ?u.W = null,
+    source_page: ?u.W = null,
     page: u.W,
     title: u.W,
     source: u.W,
+    file_menu: u.W,
+    file_list: @import("workspace/explorer.zig").View,
     action: u.W,
     content: u.W,
     toggle: u.W,
@@ -80,6 +84,7 @@ pub const Review = struct {
     tree: [:0]u8,
     base: [:0]u8,
     files: []const diff.FileDiff = &.{},
+    target_tree: []const u8 = "",
     file: usize = 0,
     ordinal: usize = 0,
     generation: u64 = 0,
@@ -89,16 +94,37 @@ pub const Review = struct {
     origin: c.GWeakRef = undefined,
     origin_drawer: ?@import("workbench/layout.zig").Panel = null,
 
-    pub fn create(app: *App, editor: u.W) *Review {
+    pub fn create(app: *App) *Review {
         const self = a.create(Review) catch unreachable;
-        const stack = c.gtk_stack_new().?;
-        _ = c.gtk_stack_add_named(u.cast(c.GtkStack, stack), editor, "editor");
         const page = u.box(false, 5);
-        _ = c.gtk_stack_add_named(u.cast(c.GtkStack, stack), page, "review");
+        _ = c.g_object_ref_sink(page);
+        c.gtk_widget_add_css_class(page, "workspace-review-page");
         const toolbar = u.box(true, 5);
+        c.gtk_widget_add_css_class(toolbar, "workspace-review-controls");
         u.append(page, toolbar);
         const back = u.icon("go-previous-symbolic", i18n.dtr("coral", "Return to editor"));
         u.append(toolbar, back);
+        const file_menu = c.gtk_menu_button_new().?;
+        c.gtk_menu_button_set_icon_name(u.cast(c.GtkMenuButton, file_menu), "view-list-symbolic");
+        const files_label = i18n.dtr("coral", "Changed files");
+        c.gtk_widget_set_tooltip_text(file_menu, files_label);
+        c.gtk_accessible_update_property(u.cast(c.GtkAccessible, file_menu), @as(c_int, c.GTK_ACCESSIBLE_PROPERTY_LABEL), files_label.ptr, @as(c_int, -1));
+        const file_popover = c.gtk_popover_new().?;
+        const file_box = u.box(false, 4);
+        u.margin(file_box, 6);
+        u.append(file_box, u.label(files_label));
+        const file_list = @import("workspace/explorer.zig").View.init();
+        const file_scroll = c.gtk_scrolled_window_new().?;
+        const scrolled = u.cast(c.GtkScrolledWindow, file_scroll);
+        c.gtk_scrolled_window_set_policy(scrolled, c.GTK_POLICY_NEVER, c.GTK_POLICY_AUTOMATIC);
+        c.gtk_scrolled_window_set_propagate_natural_height(scrolled, 1);
+        c.gtk_scrolled_window_set_max_content_height(scrolled, 320);
+        c.gtk_widget_set_size_request(file_scroll, 240, -1);
+        c.gtk_scrolled_window_set_child(scrolled, file_list.widget);
+        u.append(file_box, file_scroll);
+        c.gtk_popover_set_child(u.cast(c.GtkPopover, file_popover), file_box);
+        c.gtk_menu_button_set_popover(u.cast(c.GtkMenuButton, file_menu), file_popover);
+        u.append(toolbar, file_menu);
         const title = u.label("");
         c.gtk_widget_set_hexpand(title, 1);
         c.gtk_label_set_ellipsize(u.cast(c.GtkLabel, title), c.PANGO_ELLIPSIZE_MIDDLE);
@@ -133,6 +159,7 @@ pub const Review = struct {
         u.append(page, decision);
         c.gtk_widget_set_visible(decision, 0);
         const buttons = u.box(true, 6);
+        c.gtk_widget_add_css_class(buttons, "workspace-review-controls");
         u.append(page, buttons);
         const action = u.button(i18n.dtr("coral", "Apply hunk"));
         const mine = u.button(i18n.dtr("coral", "Skip hunk"));
@@ -140,7 +167,9 @@ pub const Review = struct {
         u.append(buttons, action);
         u.append(buttons, mine);
         u.append(buttons, edit);
-        self.* = .{ .content = content, .toggle = toggle, .old_source = old.source, .new_source = new.source, .decision = decision, .app = app, .stack = stack, .page = page, .title = title, .source = source, .action = action, .mine = mine, .edit = edit, .cancel = c.g_cancellable_new().?, .arena = .init(a), .original = u.z(""), .tree = u.z(""), .base = u.z("") };
+        self.* = .{ .content = content, .toggle = toggle, .old_source = old.source, .new_source = new.source, .decision = decision, .app = app, .page = page, .file_menu = file_menu, .file_list = file_list, .title = title, .source = source, .action = action, .mine = mine, .edit = edit, .cancel = c.g_cancellable_new().?, .arena = .init(a), .original = u.z(""), .tree = u.z(""), .base = u.z("") };
+        self.file_list.connect();
+        u.connect(file_list.widget, "activate", &chooseFile, self);
         u.connect(back, "clicked", &close, self);
         c.g_weak_ref_init(&self.origin, null);
         c.gtk_actionable_set_action_name(u.cast(c.GtkActionable, previous), "win.workspace-previous-hunk");
@@ -154,6 +183,12 @@ pub const Review = struct {
     pub fn deinit(self: *Review) void {
         if (self.pending_receipt) |receipt| receipt.review = null;
         c.g_weak_ref_clear(&self.origin);
+        if (self.host) |host| {
+            const book = u.cast(c.GtkNotebook, host);
+            const index = c.gtk_notebook_page_num(book, self.page);
+            if (index >= 0) c.gtk_notebook_remove_page(book, index);
+        }
+        c.g_object_unref(self.page);
         c.g_cancellable_cancel(self.cancel);
         c.g_object_unref(self.cancel);
         self.arena.deinit();
@@ -164,7 +199,10 @@ pub const Review = struct {
         a.destroy(self);
     }
     pub fn visible(self: *Review) bool {
-        return c.gtk_stack_get_visible_child(u.cast(c.GtkStack, self.stack)) == self.page;
+        const host = self.host orelse return false;
+        if (self.app.notebook != host) return false;
+        const book = u.cast(c.GtkNotebook, host);
+        return c.gtk_notebook_get_nth_page(book, c.gtk_notebook_get_current_page(book)) == self.page;
     }
     pub fn focusSource(self: *Review) void {
         const split = c.gtk_stack_get_visible_child_name(u.cast(c.GtkStack, self.content));
@@ -203,12 +241,26 @@ pub const Review = struct {
         self.origin_drawer = null;
         self.generation += 1;
         const was_open = self.visible();
-        c.gtk_stack_set_visible_child_name(u.cast(c.GtkStack, self.stack), "editor");
-        if (was_open) if (self.app.activeView()) |view| {
-            _ = c.gtk_widget_grab_focus(view.widget);
+        const host = self.host orelse return;
+        const book = u.cast(c.GtkNotebook, host);
+        const source_page = self.source_page;
+        self.removing_background = if (host != self.app.notebook) host else null;
+        defer self.removing_background = null;
+        self.host = null;
+        self.source_page = null;
+        const review_index = c.gtk_notebook_page_num(book, self.page);
+        if (review_index < 0) return;
+        if (was_open) if (source_page) |source| {
+            const index = c.gtk_notebook_page_num(book, source);
+            if (index >= 0) c.gtk_notebook_set_current_page(book, index);
+        };
+        c.gtk_notebook_remove_page(book, review_index);
+        if (was_open) if (self.app.activeWidget()) |widget| {
+            _ = c.gtk_widget_grab_focus(widget);
         };
     }
     pub fn open(self: *Review, root: []const u8, tree: []const u8, base: []const u8) void {
+        if (self.host != null and self.host != self.app.notebook) self.hide();
         if (!self.visible()) {
             const focus = c.gtk_window_get_focus(u.cast(c.GtkWindow, self.app.window));
             c.g_weak_ref_set(&self.origin, @ptrCast(focus));
@@ -225,8 +277,31 @@ pub const Review = struct {
         self.file = 0;
         self.ordinal = 0;
         self.files = &.{};
+        self.file_list.clear();
+        c.gtk_widget_set_sensitive(self.file_menu, 0);
         self.resetConflict();
-        c.gtk_stack_set_visible_child_name(u.cast(c.GtkStack, self.stack), "review");
+        if (self.host == null) {
+            const book = u.cast(c.GtkNotebook, self.app.notebook);
+            self.host = self.app.notebook;
+            self.source_page = self.app.active_page;
+            const tab = u.box(true, 5);
+            u.append(tab, c.gtk_image_new_from_icon_name("document-properties-symbolic").?);
+            const caption = if (self.app.opencode) |agent| std.mem.span(c.gtk_label_get_text(u.cast(c.GtkLabel, agent.title))) else "";
+            var buf: [1024]u8 = undefined;
+            const name = i18n.dfmt("coral", &buf, "Review · {s}", .{caption});
+            const label = u.label(name);
+            @import("editor/view.zig").sizeTabLabel(label, c.gtk_widget_get_width(self.app.notebook));
+            c.gtk_label_set_max_width_chars(u.cast(c.GtkLabel, label), 24);
+            c.gtk_label_set_ellipsize(u.cast(c.GtkLabel, label), c.PANGO_ELLIPSIZE_END);
+            u.append(tab, label);
+            const dismiss_button = u.icon("window-close-symbolic", i18n.dtr("coral", "Close review"));
+            c.gtk_widget_add_css_class(dismiss_button, "flat");
+            u.connect(dismiss_button, "clicked", &close, self);
+            u.append(tab, dismiss_button);
+            _ = c.gtk_notebook_append_page(book, self.page, tab);
+            c.gtk_widget_set_tooltip_text(tab, self.tree);
+        }
+        self.selectTab();
         u.setLabel(self.title, i18n.dtr("coral", "Reading agent worktree…"));
         self.setSource("");
         c.gtk_stack_set_visible_child_name(u.cast(c.GtkStack, self.content), "unified");
@@ -237,10 +312,15 @@ pub const Review = struct {
         _ = c.gtk_widget_grab_focus(self.source);
         self.start(.patch, null);
     }
+    fn selectTab(self: *Review) void {
+        const book = u.cast(c.GtkNotebook, self.host orelse return);
+        c.gtk_notebook_set_current_page(book, c.gtk_notebook_page_num(book, self.page));
+    }
     fn resetConflict(self: *Review) void {
         if (self.conflict) |job| job.deinit();
         self.conflict = null;
         self.editing = false;
+        c.gtk_widget_set_sensitive(self.file_menu, @intFromBool(self.files.len > 0));
         c.gtk_text_view_set_editable(u.cast(c.GtkTextView, self.source), 0);
         c.gtk_button_set_label(u.cast(c.GtkButton, self.action), i18n.dtr("coral", "Apply hunk"));
         c.gtk_button_set_label(u.cast(c.GtkButton, self.mine), i18n.dtr("coral", "Skip hunk"));
@@ -248,19 +328,34 @@ pub const Review = struct {
     }
     fn setSource(self: *Review, text: []const u8) void {
         const buf = c.gtk_text_view_get_buffer(u.cast(c.GtkTextView, self.source));
-        c.gtk_text_buffer_set_text(buf, text.ptr, @intCast(text.len));
+        @import("workspace_diff_style.zig").setText(buf.?, text, self.conflict != null);
     }
     pub fn scheme(self: *Review, active: ?*c.GtkSourceStyleScheme) void {
         for ([_]u.W{ self.source, self.old_source, self.new_source }) |view| {
             const buf = c.gtk_text_view_get_buffer(u.cast(c.GtkTextView, view)).?;
             c.gtk_source_buffer_set_style_scheme(u.cast(c.GtkSourceBuffer, buf), active);
+            @import("workspace_diff_style.zig").configure(buf.?, active, self.app.appearance.palette);
         }
     }
-    fn decisionKey(self: *Review) [64]u8 {
+    fn decisionKey(self: *Review, version: enum { current, legacy }) [64]u8 {
         const f = self.files[self.file];
         var hash = std.crypto.hash.sha2.Sha256.init(.{});
         for ([_][]const u8{ self.base, f.old_path, f.new_path, @tagName(f.kind) }) |part| {
             hash.update(part);
+            hash.update("\x00");
+        }
+        if (version == .current) {
+            // --full-index identifies the exact file version without invalidating
+            // a decision when the agent edits an unrelated file. Pure renames and
+            // mode-only changes can lack an index line, so use the snapshot tree.
+            var target = self.target_tree;
+            var lines = std.mem.splitScalar(u8, f.headers, '\n');
+            while (lines.next()) |line| if (std.mem.startsWith(u8, line, "index ")) {
+                target = line;
+                break;
+            };
+            hash.update("target\x00");
+            hash.update(target);
             hash.update("\x00");
         }
         if (f.kind != .text or f.hunks.len == 0) hash.update(f.headers);
@@ -275,18 +370,28 @@ pub const Review = struct {
         }
         return std.fmt.bytesToHex(hash.finalResult(), .lower);
     }
-    fn record(self: *Review, decision: []const u8) void {
-        const key = self.decisionKey();
+    fn record(self: *Review, decision: []const u8) bool {
+        const key = self.decisionKey(.current);
         @import("workspace_state.zig").write(self.tree, &key, .{ .decision = decision }) catch {
             u.setLabel(self.decision, i18n.dtr("coral", "Could not save the review decision"));
             c.gtk_widget_set_visible(self.decision, 1);
-            return;
+            return false;
         };
         self.showDecision();
+        return true;
     }
     fn showDecision(self: *Review) void {
-        const key = self.decisionKey();
+        const key = self.decisionKey(.current);
         const state = @import("workspace_state.zig").read(self.tree, &key);
+        if (state == null) {
+            const old_key = self.decisionKey(.legacy);
+            if (@import("workspace_state.zig").read(self.tree, &old_key)) |old| {
+                defer old.deinit();
+                u.setLabel(self.decision, i18n.dtr("coral", "Earlier review decision · verify this revision"));
+                c.gtk_widget_set_visible(self.decision, 1);
+                return;
+            }
+        }
         defer if (state) |value| value.deinit();
         const saved = if (state) |value| @import("opencode.zig").string(value.value, "decision") else "";
         c.gtk_widget_set_visible(self.decision, @intFromBool(saved.len != 0));
@@ -302,6 +407,7 @@ pub const Review = struct {
             return;
         }
         const f = self.files[self.file];
+        c.gtk_single_selection_set_selected(self.file_list.selection, @intCast(self.file));
         self.showDecision();
         c.gtk_widget_set_sensitive(self.mine, 1);
         c.gtk_widget_set_sensitive(self.toggle, @intFromBool(f.kind == .text and f.hunks.len != 0));
@@ -369,7 +475,7 @@ pub const Review = struct {
         self.resetConflict();
         c.gtk_widget_set_sensitive(self.action, 0);
         const receipt = a.create(Receipt) catch unreachable;
-        receipt.* = .{ .review = self, .generation = self.generation, .tree = u.z(self.tree), .key = self.decisionKey() };
+        receipt.* = .{ .review = self, .generation = self.generation, .tree = u.z(self.tree), .key = self.decisionKey(.current) };
         self.pending_receipt = receipt;
         c.gtk_widget_set_sensitive(self.page, 0);
         if (self.app.recovery_flush) |flush| {
@@ -392,6 +498,17 @@ fn comparisonPane(title: [*:0]const u8) Comparison {
     c.gtk_scrolled_window_set_child(u.cast(c.GtkScrolledWindow, scroll), source);
     u.append(box, scroll);
     return .{ .box = box, .source = source, .scroll = scroll };
+}
+fn chooseFile(_: ?*c.GtkListView, position: c_uint, data: ?*anyopaque) callconv(.c) void {
+    const self = u.cast(Review, data.?);
+    if (position >= self.files.len or self.pending_receipt != null) return;
+    c.gtk_menu_button_popdown(u.cast(c.GtkMenuButton, self.file_menu));
+    if (self.file != position) {
+        self.file = position;
+        self.ordinal = 0;
+        self.render();
+    }
+    self.focusSource();
 }
 fn toggleSplit(_: ?*c.GtkToggleButton, ctx: ?*anyopaque) callconv(.c) void {
     const self = u.cast(Review, ctx.?);
@@ -416,14 +533,13 @@ fn toggleSplit(_: ?*c.GtkToggleButton, ctx: ?*anyopaque) callconv(.c) void {
             }
             out.writer.writeByte('\n') catch unreachable;
         }
-        c.gtk_text_buffer_set_text(c.gtk_text_view_get_buffer(u.cast(c.GtkTextView, source)), out.written().ptr, @intCast(out.written().len));
+        @import("workspace_diff_style.zig").setText(c.gtk_text_view_get_buffer(u.cast(c.GtkTextView, source)).?, out.written(), false);
     }
 }
 fn skip(_: ?*c.GtkButton, ctx: ?*anyopaque) callconv(.c) void {
     const self = u.cast(Review, ctx.?);
     if (self.files.len == 0) return;
-    self.record("skipped");
-    advance(null, ctx);
+    if (self.record("skipped")) advance(null, ctx);
 }
 fn minimalEdit(old: []const u8, new: []const u8) @import("editor/transactions.zig").Replacement {
     var prefix: usize = 0;
@@ -461,6 +577,7 @@ fn advance(_: ?*c.GtkButton, ctx: ?*anyopaque) callconv(.c) void {
 fn manual(_: ?*c.GtkButton, ctx: ?*anyopaque) callconv(.c) void {
     const self = u.cast(Review, ctx.?);
     self.editing = true;
+    c.gtk_widget_set_sensitive(self.file_menu, 0);
     c.gtk_widget_set_visible(self.edit, 0);
     c.gtk_text_view_set_editable(u.cast(c.GtkTextView, self.source), 1);
     _ = c.gtk_widget_grab_focus(self.source);
@@ -479,8 +596,7 @@ fn accept(_: ?*c.GtkButton, ctx: ?*anyopaque) callconv(.c) void {
     if (self.files.len == 0) return;
     const file = self.files[self.file];
     if (file.kind != .text or file.hunks.len == 0) {
-        self.record("reviewed");
-        c.gtk_widget_set_sensitive(self.action, 0);
+        if (self.record("reviewed")) c.gtk_widget_set_sensitive(self.action, 0);
         return;
     }
     const path = file.path();
@@ -497,6 +613,7 @@ fn accept(_: ?*c.GtkButton, ctx: ?*anyopaque) callconv(.c) void {
     const recovered = if (selected) |doc| doc.path == null and doc.recovered_from != null and std.mem.eql(u8, doc.recovered_from.?, canonical) else false;
     const doc = (if (recovered) selected else self.app.documents.findPath(canonical)) orelse {
         self.app.openExisting(canonical, null);
+        self.selectTab();
         u.setLabel(self.title, i18n.dtr("coral", "Opening file. Apply after it loads."));
         return;
     };
@@ -566,6 +683,13 @@ fn ready(_: ?*c.GObject, res: ?*c.GAsyncResult, ctx: ?*anyopaque) callconv(.c) v
             return;
         };
         self.files = parsed.files;
+        self.target_tree = self.arena.allocator().dupe(u8, job.target_tree.?) catch unreachable;
+        for (self.files) |file| {
+            const path = u.z(file.path());
+            defer a.free(path);
+            self.file_list.append(path);
+        }
+        c.gtk_widget_set_sensitive(self.file_menu, @intFromBool(self.files.len > 0));
         @import("workspace_state.zig").write(self.tree, "review-manifest", .{ .base = @as([]const u8, self.base), .target = @as([]const u8, job.target_tree.?), .source = @as([]const u8, self.original), .file_count = self.files.len }) catch u.setLabel(self.title, i18n.dtr("coral", "Could not save the review manifest"));
         self.render();
     } else if (job.theirs != null) {

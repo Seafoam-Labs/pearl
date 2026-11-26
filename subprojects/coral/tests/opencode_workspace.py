@@ -27,7 +27,7 @@ def review_text(first=1, last=1):
     return f"first = {first}\n" + middle + f"last = {last}\n"
 
 
-def drive(offline=False, adaptive=False, diagnostics=False, permissions=False, terminal=False, desktop=False, crash_review=False, two_windows=False, showcase=False):
+def drive(offline=False, adaptive=False, diagnostics=False, permissions=False, terminal=False, desktop=False, crash_review=False, two_windows=False, showcase=False, editor_tabs=False, planning_folder=None, window_layout=False):
     import gi
     gi.require_version("Atspi", "2.0")
     from gi.repository import Atspi, GLib
@@ -71,10 +71,10 @@ def drive(offline=False, adaptive=False, diagnostics=False, permissions=False, t
                     raise
                 time.sleep(.05)
 
-    def fixture(action, **fields):
+    def fixture(action, timeout=5, **fields):
         request = Request(os.environ["WORKSPACE_FIXTURE_URL"] + "/test", data=json.dumps({"action": action, **fields}).encode(),
                           headers={"Authorization": os.environ["WORKSPACE_FIXTURE_AUTH"]})
-        with urlopen(request, timeout=5) as reply:
+        with urlopen(request, timeout=timeout) as reply:
             return json.load(reply)
 
     def buffer_with(text, contains=False, root=None, timeout=3):
@@ -129,6 +129,106 @@ def drive(offline=False, adaptive=False, diagnostics=False, permissions=False, t
         fixture("widget-click", title=frame.get_name(), x=rect.x + rect.width // 2, y=rect.y + rect.height // 2,
                 target=target_title)
 
+    def tab_label(name):
+        for tab in descendants(Atspi.get_desktop(0)):
+            if tab.get_role() != Atspi.Role.PAGE_TAB:
+                continue
+            for node in descendants(tab):
+                if node.get_role() == Atspi.Role.LABEL and node.get_name() == name and node.get_state_set().contains(Atspi.StateType.SHOWING):
+                    return node
+        return None
+
+    if window_layout:
+        from pearl_session import wait_for
+        def model_visible():
+            return any(node.get_state_set().contains(Atspi.StateType.SHOWING)
+                       and (node.get_name() or "").startswith("Change session model")
+                       for node in descendants(Atspi.get_desktop(0)))
+        if os.environ["WORKSPACE_LAYOUT_PHASE"] == "before":
+            lookup("Change session model, currently Birch")
+            fixture("resize", width=1264)
+            key("p", "ctrl", "shift")
+            lookup("Command Palette…", False)
+            subprocess.run(["wtype", "--", "Toggle Agent dock"], check=True)
+            key("Return")
+            wait_for(lambda: not model_visible())
+        else:
+            pointer_activate(buffer_with("staged and edited locally", contains=True))
+            assert not model_visible()
+            key("p", "ctrl", "shift")
+            lookup("Command Palette…", False)
+            subprocess.run(["wtype", "--", "Toggle Agent dock"], check=True)
+            key("Return")
+            lookup("Change session model, currently Birch")
+        key("q", "ctrl")
+        return
+
+    if planning_folder:
+        from pearl_session import wait_for
+        lookup("Change session model, currently Birch")
+        click("New OpenCode session")
+        lookup("Planning session", False)
+        lookup("Chat is available in Plan mode. To review agent edits in an isolated worktree, open a Git project with a commit.", False)
+        composer = lookup("Message OpenCode", False)
+        assert composer.set_text_contents("Explain this folder.")
+        click("Change session model, currently Birch")
+        click("Cedar")
+        lookup("Change session model, currently Cedar")
+        assert Atspi.Text.get_text(composer, 0, -1) == "Explain this folder."
+        editor = buffer_with("Notes from my project", contains=True)
+        assert editor.set_text_contents("Edited in my project")
+        pointer_activate(editor)
+        key("s", "ctrl")
+        file = Path(os.environ["WORKSPACE_TEST_PROJECT"]) / "hello.txt"
+        wait_for(lambda: file.read_text() == "Edited in my project")
+        print("Verified editing, Plan session creation and per-session model selection without a baseline commit.")
+        return
+
+    if editor_tabs:
+        from pearl_session import wait_for
+
+        def splits():
+            return sorted((n for n in descendants(Atspi.get_desktop(0)) if n.get_name() == "Split editor group"
+                           and n.get_role() == Atspi.Role.PUSH_BUTTON and n.get_state_set().contains(Atspi.StateType.SHOWING)),
+                          key=lambda n: n.get_extents(Atspi.CoordType.WINDOW).x)
+
+        def copies(text):
+            return sorted((n for n in descendants(Atspi.get_desktop(0)) if n.get_state_set().contains(Atspi.StateType.SHOWING)
+                           and "EditableText" in n.get_interfaces() and Atspi.Text.get_text(n, 0, -1) == text),
+                          key=lambda n: n.get_extents(Atspi.CoordType.WINDOW).x)
+
+        wait_for(lambda: tab_label("notes.txt"))
+        wait_for(lambda: tab_label("right/shared.txt"))
+        pointer_activate(wait_for(lambda: tab_label("left/shared.txt")))
+        lookup("left › shared.txt", False)
+        buffer_with("Left document\n")
+        pointer_activate(splits()[0])
+        wait_for(lambda: len(copies("Left document\n")) == 2)
+        assert len(splits()) == 2
+        # Pick the right-hand file in the original group, then focus the
+        # other group's editor before invoking the original group's split.
+        pointer_activate(copies("Left document\n")[0])
+        for _ in range(3):
+            key("Tab", "ctrl")
+            if copies("Right document\n"):
+                break
+        lookup("right › shared.txt", False)
+        right_text = "Right document\n"
+        pointer_activate(buffer_with("Left document\n"))
+        pointer_activate(splits()[0])
+        wait_for(lambda: len(copies(right_text)) == 2)
+        assert len(copies("Left document\n")) == 1 and len(splits()) == 3
+        assert copies(right_text)[-1].set_text_contents("Edited in a split\n")
+        wait_for(lambda: len(copies("Edited in a split\n")) == 2)
+        pointer_activate(copies("Edited in a split\n")[-1])
+        key("s", "ctrl")
+        project = Path(os.environ["WORKSPACE_TEST_PROJECT"])
+        wait_for(lambda: (project / "right/shared.txt").read_text() == "Edited in a split\n")
+        assert (project / "left/shared.txt").read_text() == "Left document\n"
+        lookup("Change session model, currently Birch")
+        print("Verified tab disambiguation, relative breadcrumbs, group-specific splits and saving through a shared buffer.")
+        return
+
     if showcase:
         from pearl_session import wait_for
         for name in ("src", "workspace", "session.zig"):
@@ -142,10 +242,7 @@ def drive(offline=False, adaptive=False, diagnostics=False, permissions=False, t
                 names = [n.get_name() for n in descendants(Atspi.get_desktop(0)) if n.get_role() == Atspi.Role.LABEL]
                 raise AssertionError(f"Explorer did not expose {name}. Labels {names}")
             pointer_activate(row)
-        tab = wait_for(lambda: next((n for n in descendants(Atspi.get_desktop(0)) if n.get_role() == Atspi.Role.LABEL
-                                    and (n.get_name() or "").endswith(" · src/workspace/session.zig")
-                                    and n.get_state_set().contains(Atspi.StateType.SHOWING)), None))
-        pointer_activate(tab)
+        pointer_activate(wait_for(lambda: tab_label("session.zig")))
         editor = buffer_with("pub const Session = struct", contains=True)
         code = Atspi.Text.get_text(editor, 0, -1)
         start = code.index("    pub fn restore(")
@@ -161,11 +258,43 @@ def drive(offline=False, adaptive=False, diagnostics=False, permissions=False, t
         key("Return")
         terminal = buffer_with("git branch --show-current", contains=True)
         wait_for(lambda: "workspace-review" in Atspi.Text.get_text(terminal, 0, -1))
+        live_theme = bool(os.environ.get("WORKSPACE_LIVE_THEME"))
+        if live_theme:
+            composer = lookup("Message OpenCode", False)
+            assert composer.set_text_contents("Please keep the saved cursor in bounds.")
+            chip = f"src/workspace/session.zig · L{code.count(chr(10), 0, start) + 1}–{code.count(chr(10), 0, end) + 1}"
+            lookup(chip)
         click("Change session model, currently Claude Sonnet 4")
         assert lookup("Claude Sonnet 4").get_state_set().contains(Atspi.StateType.CHECKED)
         lookup("GPT-4.1")
         lookup("GPT-4.1 mini")
-        capture("model-selection")
+        if live_theme:
+            import io
+            from PIL import Image
+            palette = fixture("commit-theme", timeout=35)
+
+            def themed_frame():
+                # Count colors in this GTK window. The shell outside its frame
+                # and the settings peer can never satisfy these assertions.
+                png = subprocess.check_output(["grim", "-g", os.environ["WORKSPACE_TEST_GEOMETRY"], "-"])
+                with Image.open(io.BytesIO(png)) as frame:
+                    colors = {rgb: n for n, rgb in frame.convert("RGB").getcolors(frame.width * frame.height)}
+                    def count(role):
+                        return colors.get(tuple(bytes.fromhex(palette[role][1:])), 0)
+                    if count("primary") > 70 and count("surface") > 2000:
+                        assert frame.width == int(os.environ["WORKSPACE_CAPTURE_SCALE"]) * int(os.environ["WORKSPACE_TEST_GEOMETRY"].split()[1].split("x")[0])
+                        return png
+                return None
+            png = wait_for(themed_frame, 12)
+            Path(os.environ["WORKSPACE_TEST_CAPTURES"], "model-selection.png").write_bytes(png)
+            assert lookup("Claude Sonnet 4").get_state_set().contains(Atspi.StateType.CHECKED)
+            assert Atspi.Text.get_text(composer, 0, -1) == "Please keep the saved cursor in bounds."
+            lookup(chip)
+            key("Escape")
+            click(chip)
+            buffer_with(code[start:end])
+        else:
+            capture("model-selection")
         return
 
     if two_windows:
@@ -255,22 +384,40 @@ def drive(offline=False, adaptive=False, diagnostics=False, permissions=False, t
         lookup("review.txt   ·   2/2   ·   +2 −2", actionable=False)
         assert not any(n.get_name() == "Previously applied to the editor" and n.get_state_set().contains(Atspi.StateType.SHOWING)
                        for n in descendants(Atspi.get_desktop(0)))
+        # Visiting the source tab must preserve the current hunk in the review tab.
+        key("Tab", "ctrl")
+        buffer_with(review_text(first=2))
+        key("Tab", "ctrl")
+        lookup("review.txt   ·   2/2   ·   +2 −2", False)
         click("Apply hunk")
         lookup("Applied to unsaved buffer", actionable=False)
         click("Return to editor")
+        buffer_with(review_text(first=2, last=2))
+        # Change a different hunk in the same file. The first patch still
+        # matches byte-for-byte, but its target blob is a different revision.
+        fixture("advance-review-target")
+        click("Review changes")
+        lookup("review.txt   ·   1/2   ·   +2 −2", False)
+        assert not any(n.get_name() == "Previously applied to the editor" and n.get_state_set().contains(Atspi.StateType.SHOWING)
+                       for n in descendants(Atspi.get_desktop(0)))
+        key("w", "ctrl")
         buffer_with(review_text(first=2, last=2))
         return
 
     if desktop:
         from pearl_session import wait_for
         lookup("Start OpenCode with opencode service start, then reconnect.", actionable=False)
-        buffer_with("staged and edited locally\n")
-        key("1", "ctrl")
+        editor = buffer_with("staged and edited locally\n")
+        pointer_activate(editor)
         key("End", "ctrl")
-        subprocess.run(["wtype", "Edited from the desktop launcher"], check=True)
+        subprocess.run(["wtype", "-s", "150", "-d", "10", "--", "Edited from the desktop launcher"], check=True)
+        wait_for(lambda: Atspi.Text.get_text(editor, 0, -1).endswith("Edited from the desktop launcher"))
         key("s", "ctrl")
         path = Path(os.environ["WORKSPACE_TEST_PROJECT"]) / "hello.txt"
-        wait_for(lambda: path.read_text() == "staged and edited locally\nEdited from the desktop launcher")
+        try:
+            wait_for(lambda: path.read_text() == "staged and edited locally\nEdited from the desktop launcher")
+        except TimeoutError:
+            raise AssertionError((path.read_text(), Atspi.Text.get_text(editor, 0, -1))) from None
         key("q", "ctrl")
         return
 
@@ -374,6 +521,11 @@ def drive(offline=False, adaptive=False, diagnostics=False, permissions=False, t
             assert "Restore cursor" in text and "read" in text and "Working directory" in text and "/project" in text, text
             wait_for(lambda: sum("readme.txt" in s for s in messages) == 1, "Missing permission announcement")
             wait_for(lambda: len(buttons("Allow once")) == 2, "Expected two visible permission cards")
+            if os.environ.get("WORKSPACE_LIVE_THEME"):
+                fixture("commit-theme", timeout=35)
+                assert Atspi.Text.get_text(buffer_with("readme.txt", contains=True), 0, -1) == text
+                assert sum(obj.get_state_set().contains(Atspi.StateType.SENSITIVE) for obj in buttons("Allow once")) == 2
+                capture("themed-permissions")
             count = fixture("permission-reads")
             fixture("permissions-repeat")
             wait_for(lambda: fixture("permission-reads") > count, "The refresh was not observed")
@@ -611,6 +763,17 @@ def drive(offline=False, adaptive=False, diagnostics=False, permissions=False, t
     subprocess.run(["wtype", "-s", "100", "Restored"], check=True)
     buffer_with("FocusProbeRestored")
     key("r", "ctrl", "shift")
+    lookup("Review · Worktree test", False)
+    click("Changed files")
+    lookup("test-binary.bin", False)
+    key("End")
+    key("Return")
+    lookup("test-binary.bin   ·   1/1   ·   +0 −0", False)
+    click("Changed files")
+    lookup("test-binary.bin", False)
+    key("Home")
+    key("Return")
+    lookup("hello.txt   ·   1/1   ·   +1 −1", False)
     click("Side by side")
     lookup("Shared base", actionable=False)
     lookup("Agent worktree", actionable=False)
@@ -721,6 +884,12 @@ class API(BaseHTTPRequestHandler):
             return
         body = json.loads(self.rfile.read(int(self.headers["Content-Length"]))) if post else None
         if path == "/test" and post:
+            if body["action"] == "commit-theme":
+                return self.reply(service.commit_theme())
+            if body["action"] == "advance-review-target":
+                tree = Path(service.sessions["ses_created"]["location"]["directory"])
+                (tree / "review.txt").write_text(review_text(first=2, last=3))
+                return self.reply({})
             if body["action"] == "checkout-test-branch":
                 return self.reply(service.checkout_test_branch(body["detached"]))
             if body["action"] == "widget-click":
@@ -771,6 +940,11 @@ class API(BaseHTTPRequestHandler):
         if path == "/api/session":
             if post:
                 tree = Path(body["location"]["directory"])
+                if getattr(service, "planning_folder", None):
+                    assert tree.resolve() == service.project.resolve() and body["agent"] == "plan"
+                    assert "coralBase" not in body["metadata"]
+                    service.add("ses_created", "Planning session", tree, "birch", body["metadata"])
+                    return self.reply({"data": service.sessions["ses_created"]})
                 assert tree.resolve() != service.project.resolve()
                 assert (tree / "hello.txt").read_text() == "staged and edited locally\n"
                 assert (tree / "untracked.txt").read_text() == "untracked baseline\n"
@@ -844,8 +1018,13 @@ def main(args):
         project.mkdir()
         def git(*argv):
             return subprocess.check_output(["git", "-C", str(project), *argv], env=session.env)
-        git("init", "-q")
-        if args.showcase:
+        if args.planning_folder != "plain":
+            git("init", "-q")
+        if args.planning_folder:
+            file = project / "hello.txt"
+            file.write_text("Notes from my project\n")
+            session.env["WORKSPACE_TEST_PROJECT"] = str(project)
+        elif args.showcase:
             source_dir = project / "src" / "workspace"
             source_dir.mkdir(parents=True)
             file = source_dir / "session.zig"
@@ -896,6 +1075,7 @@ pub const Session = struct {
             file.write_text("staged and edited locally\n")
             (project / "untracked.txt").write_text("untracked baseline\n")
         service = Service(project)
+        service.planning_folder = args.planning_folder
         if args.showcase:
             service.sessions.clear()
             for sid, title, outcome in [("ses_first", "Restore session cursor", ""), ("ses_watch", "Review file watcher", "failed"),
@@ -946,10 +1126,48 @@ pub const Session = struct {
             registry.expect("well-known name")
             ipc = IPC(session)
             display = next(iter(ipc.outputs().values()))
-            session.run(["wlr-randr", "--output", display["name"], "--custom-mode", "1800x1100@60Hz"])
+            session.run(["wlr-randr", "--output", display["name"], "--custom-mode",
+                         f"{1800 * args.scale}x{1100 * args.scale}@60Hz", "--scale", str(args.scale)])
+            session.env["WORKSPACE_CAPTURE_SCALE"] = str(args.scale)
             rules = Path(session.env["XDG_CONFIG_HOME"]) / "aqueous/rules.toml"
             rules.write_text(f'[[window]]\napp_id="org.aqueous.Coral.Workspace"\nfloating=true\nwidth={args.width}\nheight={args.height}\n')
             ipc.call("command", action="session.reload", fields={})
+            if args.pearl:
+                from test_custom_themes import Peer
+                from test_settings_appearance import settled
+                from test_theme_packages import archive, fixture as package_fixture, PALETTE
+                session.env["GSETTINGS_BACKEND"] = "memory"
+                legacy = Path(session.env["XDG_CONFIG_HOME"]) / "pearl/last-good.json"
+                legacy.parent.mkdir(exist_ok=True)
+                legacy.write_text("{}")
+                calls = session.base / "generator-calls"
+                mode = session.base / "generator-mode"
+                calls.touch()
+                mode.write_text("pass")
+                session.env.update(PATH=str(PEARL / "tests/fixtures/theme") + ":" + session.env["PATH"],
+                                   PEARL_TEST_GENERATOR_LOG=str(calls), PEARL_TEST_GENERATOR_MODE=str(mode),
+                                   WORKSPACE_LIVE_THEME="1")
+                source = session.base / "theme-source"
+                manifest = package_fixture(source)
+                bundle = session.base / "meadow.tar.gz"
+                archive(source, bundle)
+                shell = session.child("pearl", [args.pearl.resolve()])
+                shell.expect("event=control-ready")
+                def commit_theme():
+                    peer = Peer(session, ipc)
+                    try:
+                        settled(peer)
+                        peer.theme("import_archive", path=str(bundle))
+                        catalog = peer.theme("catalog")
+                        prefs = json.loads(peer.document("committed"))
+                        prefs["theme"].update(mode="package", package_id=manifest["id"], catalog_revision=catalog["revision"])
+                        peer.keep(json.dumps(prefs))
+                        assert peer.action("apply")["state"] == "succeeded"
+                        settled(peer)
+                        return PALETTE
+                    finally:
+                        peer.close()
+                service.commit_theme = commit_theme
             def window_geometry(width=None):
                 def rect():
                     return next((w["geometry"] for w in ipc.state() if w["kind"] == "window"
@@ -960,7 +1178,7 @@ pub const Session = struct {
                     wait_for(lambda: abs(rect().get("width",0)-width) < 8)
                 return rect()
             service.window_geometry = window_geometry
-            if args.two_windows or args.showcase:
+            if args.two_windows or args.showcase or args.editor_tabs or args.planning_folder or args.desktop or args.window_layout:
                 from test_surfaces import click as pointer_click
                 def widget_click(point):
                     windows = [w for w in ipc.state() if w["kind"] == "window"]
@@ -971,6 +1189,14 @@ pub const Session = struct {
                         wait_for(lambda: any(w.get("title") == target and w.get("focused") for w in ipc.state()))
                 service.widget_click = widget_click
             documents = [project / "review.txt"] if args.crash_review else [file]
+            if args.editor_tabs:
+                session.env["WORKSPACE_TEST_PROJECT"] = str(project)
+                documents = []
+                for name, content in [("left/shared.txt", "Left document"), ("right/shared.txt", "Right document"), ("notes.txt", "Notes")]:
+                    doc = project / name
+                    doc.parent.mkdir(parents=True, exist_ok=True)
+                    doc.write_text(content + "\n")
+                    documents.append(doc)
             if args.showcase:
                 # This capture exercises the OpenCode picker. An independent
                 # language-server approval dialog would cover the code selection.
@@ -1021,6 +1247,26 @@ pub const Session = struct {
             application = session.child("workspace", [args.binary.resolve(), *(["--log-level", "debug", "--log-scopes", "services"] if args.terminal else []), project, *documents], G_DEBUG="fatal-criticals")
             from pearl_session import wait_for
             wait_for(lambda: "/api/model" in service.calls)
+            if args.window_layout:
+                driver = [sys.executable, str(Path(__file__).resolve()), "--drive", "--window-layout"]
+                session.env["WORKSPACE_LAYOUT_PHASE"] = "before"
+                subprocess.run(driver, env=session.env, check=True, timeout=30)
+                assert application.wait() == 0
+                records = (Path(session.env["XDG_STATE_HOME"]) / "coral-workspace/sessions").glob("*.json")
+                saved = next(obj for record in records if "dock" in (obj := json.loads(record.read_text())))
+                assert abs(saved["width"] - 1264) <= 4 and abs(saved["height"] - 800) <= 4, saved
+                assert not saved["dock"]["agent_visible"], saved
+                # Aqueous supplies floating windows an explicit size at map time.
+                # Check GTK's restored request independently of that policy.
+                child = session.child("reopened-workspace", [args.binary.resolve(), "--log-level", "debug", "--log-scopes", "services", project, file], G_DEBUG="fatal-criticals")
+                child.expect(f'Workspace window requests {saved["width"]}x{saved["height"]}')
+                wait_for(lambda: abs(window_geometry().get("width", 0) - saved["width"]) <= 4
+                         and abs(window_geometry().get("height", 0) - saved["height"]) <= 4)
+                session.env["WORKSPACE_LAYOUT_PHASE"] = "after"
+                subprocess.run(driver, env=session.env, check=True, timeout=30)
+                assert child.wait() == 0
+                print("Verified that window dimensions and a manually hidden agent dock survive a normal restart.")
+                return
             if args.two_windows:
                 subprocess.run([sys.executable, str(Path(__file__).resolve()), "--drive", "--two-windows"],
                                env=session.env, check=True, timeout=65)
@@ -1056,9 +1302,13 @@ pub const Session = struct {
                 geometry = next(node["geometry"] for node in ipc.state() if node["kind"] == "window" and node.get("app_id") == "org.aqueous.Coral.Workspace")
                 session.env["WORKSPACE_TEST_CAPTURES"] = str(args.capture_dir.resolve())
                 session.env["WORKSPACE_TEST_GEOMETRY"] = "{x},{y} {width}x{height}".format(**geometry)
-            if args.showcase:
-                subprocess.run([sys.executable, str(Path(__file__).resolve()), "--drive", "--showcase"],
+            if args.planning_folder:
+                subprocess.run([sys.executable, str(Path(__file__).resolve()), "--drive", "--planning-folder", args.planning_folder],
                                env=session.env, check=True, timeout=35)
+                return
+            if args.showcase or args.editor_tabs:
+                subprocess.run([sys.executable, str(Path(__file__).resolve()), "--drive", "--showcase" if args.showcase else "--editor-tabs"],
+                               env=session.env, check=True, timeout=80 if args.pearl else 35)
                 return
             if args.adaptive or args.diagnostics or args.permissions or args.terminal:
                 scenario = "--adaptive" if args.adaptive else ("--diagnostics" if args.diagnostics else ("--terminal" if args.terminal else "--permissions"))
@@ -1102,6 +1352,9 @@ if __name__ == "__main__":
     parser.add_argument("--diagnostics", action="store_true")
     parser.add_argument("--permissions", action="store_true")
     parser.add_argument("--terminal", action="store_true")
+    parser.add_argument("--window-layout", action="store_true")
+    parser.add_argument("--planning-folder", choices=["plain", "unborn"])
+    parser.add_argument("--editor-tabs", action="store_true")
     parser.add_argument("--showcase", action="store_true", help="Capture the design scene with real GTK widgets and a fixture catalog")
     parser.add_argument("--two-windows", action="store_true")
     parser.add_argument("--crash-review", action="store_true")
@@ -1112,10 +1365,14 @@ if __name__ == "__main__":
     parser.add_argument("--capture-dir", type=Path)
     parser.add_argument("--light", action="store_true")
     parser.add_argument("--large-text", action="store_true")
+    parser.add_argument("--pearl", type=Path, help="Publish a custom theme while the picker or a permission is open")
+    parser.add_argument("--scale", type=int, choices=[1, 2], default=1)
     parser.add_argument("--width", type=int, default=1440)
     parser.add_argument("--height", type=int, default=900)
     opts = parser.parse_args()
+    if opts.pearl and (not (opts.showcase or opts.permissions) or opts.light or not opts.capture_dir):
+        parser.error("--pearl requires --showcase or --permissions, plus --capture-dir in Follow Pearl mode")
     if opts.drive:
-        drive(opts.offline, opts.adaptive, opts.diagnostics, opts.permissions, opts.terminal, opts.desktop, opts.crash_review, opts.two_windows, opts.showcase)
+        drive(opts.offline, opts.adaptive, opts.diagnostics, opts.permissions, opts.terminal, opts.desktop, opts.crash_review, opts.two_windows, opts.showcase, opts.editor_tabs, opts.planning_folder, opts.window_layout)
     else:
         main(opts)

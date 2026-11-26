@@ -31,13 +31,9 @@ pub const View = struct {
         defer c.g_object_unref(foreign);
         c.vte_terminal_set_pty(self.widget, foreign);
     }
-    pub fn detach(self: *View) void {
-        c.vte_terminal_set_pty(self.widget, null);
-    }
-    /// Unparent first. Retaining a reference keeps callbacks and teardown safe
-    /// while close-request cancels and the ownership worker finishes reaping.
+    /// Unparent first. Finalizing the widget releases VTE's foreign PTY,
+    /// including its duplicate fd, even if its EOF callback has not run yet.
     pub fn deinit(self: *View) void {
-        self.detach();
         c.g_object_unref(self.widget);
     }
 };

@@ -44,8 +44,10 @@ pub fn main(init: std.process.Init) void {
 pub fn run(init: std.process.Init, workspace: bool) void {
     @import("workspace_identity.zig").enabled = workspace;
     if (workspace) {
-        width = 1440;
-        height = 900;
+        const window_state = @import("workspace_window_state.zig");
+        window_state.initial = window_state.load();
+        width = window_state.initial.width;
+        height = window_state.initial.height;
     }
     @import("i18n").init(false);
     settings = Settings.load();
@@ -88,6 +90,7 @@ pub fn run(init: std.process.Init, workspace: bool) void {
             c.g_print("Coral 0.1.2\n");
             return;
         }
+        if (std.mem.startsWith(u8, arg, "--width=") or std.mem.startsWith(u8, arg, "--height=")) @import("workspace_window_state.zig").initial.maximized = false;
         if (std.mem.eql(u8, arg, "--follow-pearl")) settings.theme = 3 else if (std.mem.eql(u8, arg, "--light")) settings.theme = 1 else if (std.mem.eql(u8, arg, "--dark")) settings.theme = 0 else if (std.mem.eql(u8, arg, "--native-theme")) settings.theme = 2 else if (std.mem.startsWith(u8, arg, "--width=")) width = std.math.clamp(std.fmt.parseInt(c_int, arg[8..], 10) catch 1000, 390, 3840) else if (std.mem.startsWith(u8, arg, "--height=")) height = std.math.clamp(std.fmt.parseInt(c_int, arg[9..], 10) catch 740, 400, 2160) else if (std.mem.startsWith(u8, arg, "--")) {
             log.err("Unknown option: {f}", .{diagnostics.safe(arg)});
             std.process.exit(2);

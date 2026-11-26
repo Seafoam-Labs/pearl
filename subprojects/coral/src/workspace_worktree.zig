@@ -71,7 +71,10 @@ fn snapshot(root: [:0]const u8, cancel: *c.GCancellable) !?Snapshot {
         else => return err,
     };
     defer a.free(top);
-    const head = try git(root, null, &.{ "rev-parse", "--verify", "HEAD" }, cancel);
+    const head = git(root, null, &.{ "rev-parse", "--verify", "HEAD" }, cancel) catch |err| switch (err) {
+        error.GitFailed => return null, // A new repository can chat before its first commit.
+        else => return err,
+    };
     defer a.free(head);
     const parent = u.fmt("{s}/coral-workspace/worktrees", .{std.mem.span(c.g_get_user_state_dir())});
     defer a.free(parent);

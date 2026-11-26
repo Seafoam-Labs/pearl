@@ -118,7 +118,6 @@ pub fn main() !void {
     while (os.nowMs() < deadline) {
         drain();
         if (job.done() and state.report == null and state.eof) {
-            view.detach();
             state.report = job.finish() orelse return error.MissingReport;
             try emit("SPIKE_REAP", .{ .supervisor = state.supervisor, .report = state.report.? });
         }

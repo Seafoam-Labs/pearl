@@ -297,7 +297,7 @@ pub const Agent = struct {
         setText(self.composer, "");
         self.thread.clear();
         self.reviewBase("");
-        if (self.app.review) |review| if (review.visible()) review.hide();
+        if (self.app.review) |review| review.hide();
         clear(self.sessions);
         clear(self.permissions);
         clear(self.inbox);
@@ -1134,6 +1134,7 @@ fn prepared(ctx: *anyopaque, epoch: u64, result: anyerror!?@import("workspace_wo
         u.setLabel(self.status, @errorName(err));
         return;
     };
+    if (snapshot == null) self.app.message(i18n.dtr("coral", "Chat is available in Plan mode. To review agent edits in an isolated worktree, open a Git project with a commit."));
     const body = if (snapshot) |s| api.json(.{ .location = .{ .directory = @as([]const u8, s.directory) }, .metadata = .{ .coralRoot = @as([]const u8, self.root), .coralBase = @as([]const u8, s.base) } }) else api.json(.{ .agent = "plan", .location = .{ .directory = @as([]const u8, self.root) }, .metadata = .{ .coralRoot = @as([]const u8, self.root) } });
     defer a.free(body);
     c.gtk_widget_set_sensitive(self.new_session, 0);

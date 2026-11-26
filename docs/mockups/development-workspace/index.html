@@ -41,11 +41,15 @@
           </button>
           <fieldset id="model-menu" popover aria-label="Session model">
             <div class="model-heading">Session model</div>
-            <div class="provider">Anthropic</div>
-            <label><input type="radio" name="model" value="anthropic/claude-sonnet-4"><span>Claude Sonnet 4</span></label>
-            <div class="provider">OpenAI</div>
-            <label><input type="radio" name="model" value="openai/gpt-4.1"><span>GPT-4.1</span></label>
-            <label><input type="radio" name="model" value="openai/gpt-4.1-mini"><span>GPT-4.1 mini</span></label>
+            <div role="group" aria-labelledby="model-provider-anthropic">
+              <div class="provider" id="model-provider-anthropic">Anthropic</div>
+              <label><input type="radio" name="model" value="anthropic/claude-sonnet-4"><span>Claude Sonnet 4</span></label>
+            </div>
+            <div role="group" aria-labelledby="model-provider-openai">
+              <div class="provider" id="model-provider-openai">OpenAI</div>
+              <label><input type="radio" name="model" value="openai/gpt-4.1"><span>GPT-4.1</span></label>
+              <label><input type="radio" name="model" value="openai/gpt-4.1-mini"><span>GPT-4.1 mini</span></label>
+            </div>
           </fieldset>
         </div>
         <button id="send" aria-label="Send or queue prompt" title="Send or queue prompt"><i data-i="up"></i></button>

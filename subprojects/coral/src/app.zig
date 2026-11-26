@@ -231,8 +231,8 @@ pub const App = struct {
         c.gtk_label_set_wrap(u.cast(c.GtkLabel, notice), 1);
         u.append(root, notice);
         c.gtk_widget_set_visible(notice, 0);
-        const review = if (@import("workspace_identity.zig").enabled) @import("workspace_review.zig").Review.create(self, groups.root) else null;
-        const dock = dock_ui.Controller.init(if (review) |r| r.stack else groups.root);
+        const review = if (@import("workspace_identity.zig").enabled) @import("workspace_review.zig").Review.create(self) else null;
+        const dock = dock_ui.Controller.init(groups.root);
         u.append(root, dock.root);
         const status = u.label("");
         c.gtk_widget_add_css_class(status, "status-document");
@@ -319,7 +319,9 @@ pub const App = struct {
             c.gtk_widget_set_vexpand(right, 1);
             u.append(self.dock.agent_slot, right);
             self.opencode = @import("workspace_agent.zig").Agent.create(self, "", sessions, right);
-            self.dock.restore(.{ .agent_visible = true, .terminal_visible = true, .left_size = 245, .right_size = 360, .bottom_size = 155 });
+            const window_state = @import("workspace_window_state.zig");
+            self.dock.restore(window_state.initial.dock);
+            window_state.configure(u.cast(c.GtkWindow, window));
         } else {
             self.agent = .init(self);
             self.agent.?.attach(self.dock.agent_slot);
@@ -338,8 +340,7 @@ pub const App = struct {
         c.gtk_widget_add_css_class(window, "coral");
         if (self.opencode != null) c.gtk_widget_add_css_class(window, "coral-workspace");
         u.connect(window, "close-request", &onCloseWindow, self);
-        u.connect(notebook, "switch-page", &onSwitch, self);
-        u.connect(notebook, "page-reordered", &onPageReordered, self);
+        self.connectGroup(first_group);
         u.connect(query, "search-changed", &onQuery, self);
         u.connect(query, "activate", &onNext, self);
         u.connect(query, "stop-search", &onStopSearch, self);
@@ -378,6 +379,13 @@ pub const App = struct {
     pub fn focusEditor(self: *App) void {
         if (self.closing) return;
         _ = self.dock.dismissDrawer(false);
+        self.grabEditorFocus();
+    }
+    fn grabEditorFocus(self: *App) void {
+        if (self.review) |review| if (review.visible()) {
+            review.focusSource();
+            return;
+        };
         if (self.activeFocusWidget()) |widget| _ = c.gtk_widget_grab_focus(widget);
     }
     fn focusExplorer(self: *App) void {
@@ -519,7 +527,10 @@ pub const App = struct {
         self.terminal.deinit();
         if (self.workspace_dock) |d| d.deinit();
         if (self.opencode) |agent| agent.deinit();
-        if (self.review) |r| r.deinit();
+        if (self.review) |r| {
+            self.review = null;
+            r.deinit();
+        }
         if (self.agent) |*legacy| legacy.deinit();
         self.dock.shutdown();
         self.session.deinit();
@@ -626,6 +637,10 @@ pub const App = struct {
     }
     fn focus(self: *App, d: *Document) void {
         if (self.active() == d) {
+            if (self.review) |review| if (review.visible()) {
+                if (self.activeView()) |view| self.focusView(view) else if (self.activeExcerpt()) |pane| self.focusPage(pane.editor.root, pane.editor.widget);
+                return;
+            };
             if (self.activeFocusWidget()) |widget| _ = c.gtk_widget_grab_focus(widget);
             return;
         }
@@ -706,10 +721,29 @@ pub const App = struct {
         if (self.editingFrozen()) return error.Closing;
         const group = try self.groups.add();
         dock_ui.wrapEditorGroup(self.groups.root, group.chrome.root);
-        u.connect(group.notebook, "switch-page", &onSwitch, self);
-        u.connect(group.notebook, "page-reordered", &onPageReordered, self);
+        self.connectGroup(group);
         self.scheduleCheckpoint();
         return group.id;
+    }
+    fn connectGroup(self: *App, group: @import("editor_groups.zig").Group) void {
+        _ = c.g_signal_connect_data(group.notebook, "switch-page", @ptrCast(&onSwitch), self, null, c.G_CONNECT_AFTER);
+        u.connect(group.notebook, "page-reordered", &onPageReordered, self);
+        if (self.opencode != null) {
+            const split = u.icon("view-dual-symbolic", commands.Command.split_group.label());
+            c.gtk_widget_add_css_class(split, "flat");
+            c.gtk_widget_add_css_class(split, "workspace-split");
+            c.gtk_notebook_set_action_widget(u.cast(c.GtkNotebook, group.notebook), split, c.GTK_PACK_END);
+            u.connect(split, "clicked", &splitClicked, self);
+        }
+    }
+    fn splitClicked(button: ?*c.GtkButton, context: ?*anyopaque) callconv(.c) void {
+        const self = u.cast(App, context.?);
+        const notebook = c.gtk_widget_get_ancestor(u.cast(c.GtkWidget, button.?), c.gtk_notebook_get_type());
+        for (self.groups.items.items) |group| if (group.notebook == notebook) {
+            self.focusGroup(group.id);
+            self.execute(.split_group);
+            return;
+        };
     }
     pub fn splitGroup(self: *App) !void {
         const d = self.active() orelse return;
@@ -725,8 +759,8 @@ pub const App = struct {
     pub fn focusGroup(self: *App, id: u64) void {
         const group = self.groups.get(id) orelse return;
         self.notebook = group.notebook;
-        self.active_page = c.gtk_notebook_get_nth_page(u.cast(c.GtkNotebook, group.notebook), c.gtk_notebook_get_current_page(u.cast(c.GtkNotebook, group.notebook)));
-        if (self.activeFocusWidget()) |widget| _ = c.gtk_widget_grab_focus(widget);
+        self.active_page = self.editorPage(group.chrome.selected());
+        self.grabEditorFocus();
         self.hidePopover();
         self.update();
         self.scheduleCheckpoint();
@@ -741,6 +775,7 @@ pub const App = struct {
     pub fn closeGroup(self: *App) void {
         if (self.editingFrozen() or self.rejectOperationClose()) return;
         if (self.dialog != null or self.closing) return;
+        if (self.review) |review| if (review.host == self.notebook) review.hide();
         self.closing_group = self.activeGroupId();
         self.continueCloseGroup();
     }
@@ -778,6 +813,10 @@ pub const App = struct {
         if (self.editingFrozen() or self.rejectOperationClose()) return;
         if (self.dialog != null or self.closing or self.quitting) return;
         if (self.manager) |manager| if (manager.quitting) return;
+        if (self.review) |review| if (review.visible()) {
+            review.hide();
+            return;
+        };
         const d = self.active() orelse return;
         if (self.viewCount(d) == 1) self.closeDocument(d) else {
             self.detachActive();
@@ -791,6 +830,7 @@ pub const App = struct {
         if (self.activeView()) |view| self.detachView(view) else if (self.activeExcerpt()) |pane| self.detachExcerpt(pane);
     }
     fn unparentPage(self: *App, page: W) void {
+        if (self.review) |review| if (review.source_page == page) review.hide();
         if (self.active_page == page) self.active_page = null;
         if (self.groups.forPage(page)) |group| {
             const notebook = u.cast(c.GtkNotebook, group.notebook);
@@ -852,8 +892,8 @@ pub const App = struct {
                 self.removeGroup(group.id);
             } else index += 1;
         }
-        self.active_page = c.gtk_notebook_get_nth_page(u.cast(c.GtkNotebook, self.notebook), c.gtk_notebook_get_current_page(u.cast(c.GtkNotebook, self.notebook)));
-        if (self.activeFocusWidget()) |widget| _ = c.gtk_widget_grab_focus(widget);
+        self.active_page = self.editorPage(c.gtk_notebook_get_nth_page(u.cast(c.GtkNotebook, self.notebook), c.gtk_notebook_get_current_page(u.cast(c.GtkNotebook, self.notebook))));
+        self.grabEditorFocus();
     }
     pub fn openExcerpt(self: *App, d: *Document, group_id: u64, range: excerpt_model.Range) !u64 {
         if (self.editingFrozen()) return error.Closing;
@@ -1072,6 +1112,10 @@ pub const App = struct {
         }
         return result;
     }
+    fn editorPage(self: *App, page: ?W) ?W {
+        if (self.review) |review| if (page == review.page) return review.source_page;
+        return page;
+    }
     fn viewState(self: *App, id: u64, d: *Document, page: W, widget: W, buffer: *c.GtkTextBuffer) group_model.ViewState {
         const group = self.groups.forPage(page).?;
         var insertion: c.GtkTextIter = undefined;
@@ -1080,7 +1124,12 @@ pub const App = struct {
         c.gtk_text_buffer_get_iter_at_mark(buffer, &bound, c.gtk_text_buffer_get_selection_bound(buffer));
         const scroll = @import("editor_scroll.zig").capture(widget);
         const index = c.gtk_notebook_page_num(u.cast(c.GtkNotebook, group.notebook), page);
-        return .{ .id = id, .document_id = d.id, .group_id = group.id, .page = index, .active = self.active_page == page, .selected = c.gtk_notebook_get_current_page(u.cast(c.GtkNotebook, group.notebook)) == index, .insertion = c.gtk_text_iter_get_offset(&insertion), .bound = c.gtk_text_iter_get_offset(&bound), .scroll_x = scroll.x, .scroll_y = scroll.y };
+        var saved_index = index;
+        if (self.review) |review| if (review.host == group.notebook) {
+            const transient = c.gtk_notebook_page_num(u.cast(c.GtkNotebook, group.notebook), review.page);
+            if (transient >= 0 and transient < index) saved_index -= 1;
+        };
+        return .{ .id = id, .document_id = d.id, .group_id = group.id, .page = saved_index, .active = self.active_page == page, .selected = self.editorPage(group.chrome.selected()) == page, .insertion = c.gtk_text_iter_get_offset(&insertion), .bound = c.gtk_text_iter_get_offset(&bound), .scroll_x = scroll.x, .scroll_y = scroll.y };
     }
     pub const DurableCallback = *const fn (*anyopaque, bool) void;
     pub const RestoreDocument = struct {
@@ -1441,8 +1490,13 @@ pub const App = struct {
                     const base = root.canonical_path.?;
                     // Keep the distinguishing identity at the visible start, even
                     // when both root names collide and GTK ellipsizes a long tab.
-                    qualified = u.fmt("#{d} {s} · {s}", .{ @backingInt(root.id), root.display_name, path[@min(path.len, base.len + @as(usize, if (base.len == 1) 0 else 1))..] });
-                    name = qualified.?;
+                    const relative = path[@min(path.len, base.len + @as(usize, if (base.len == 1) 0 else 1))..];
+                    if (self.opencode != null and snapshot.roots.len == 1) {
+                        if (std.mem.eql(u8, name, path)) name = relative;
+                    } else {
+                        qualified = u.fmt("#{d} {s} · {s}", .{ @backingInt(root.id), root.display_name, relative });
+                        name = qualified.?;
+                    }
                 }
             };
             const title = u.fmt("{s}{s}", .{ name, if (d.dirty()) " •" else "" });
@@ -1993,6 +2047,10 @@ pub const App = struct {
     }
     fn shutdownWindow(self: *App) void {
         if (self.closing or self.rejectOperationClose()) return;
+        if (@import("workspace_identity.zig").enabled) {
+            @import("workspace_window_state.zig").save(u.cast(c.GtkWindow, self.window), self.snapshotDockLayout()) catch |err|
+                std.log.warn("Could not save workspace window layout: {t}", .{err});
+        }
         self.checkpoint();
         if (self.manager != null) {
             self.projects.shutdown();
@@ -3404,8 +3462,9 @@ fn onViewMark(buffer: ?*c.GtkTextBuffer, _: ?*c.GtkTextIter, mark: ?*c.GtkTextMa
 fn onSwitch(notebook: ?*c.GtkNotebook, page: ?*c.GtkWidget, _: c_uint, data: ?*anyopaque) callconv(.c) void {
     const self = u.cast(App, data.?);
     if (self.closing) return;
+    if (self.review) |review| if (review.removing_background == u.cast(c.GtkWidget, notebook.?)) return;
     self.notebook = u.cast(c.GtkWidget, notebook.?);
-    self.active_page = page;
+    self.active_page = self.editorPage(page);
     self.hidePopover();
     self.update();
     self.scheduleCheckpoint();

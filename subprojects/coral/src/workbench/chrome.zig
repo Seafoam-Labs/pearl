@@ -200,7 +200,11 @@ pub const GroupChrome = struct {
                 const folder = model.rootById(id).?;
                 const base = folder.canonical_path.?;
                 const relative = p[@min(p.len, base.len + @as(usize, if (base.len == 1) 0 else 1))..];
-                qualified = u.fmt("#{d} {s} › {s}", .{ @backingInt(id), folder.display_name, relative });
+                if (@import("../workspace_identity.zig").enabled) {
+                    const trail = std.mem.replaceOwned(u8, u.a, relative, "/", " › ") catch unreachable;
+                    defer u.a.free(trail);
+                    qualified = if (model.roots.len == 1) u.z(trail) else u.fmt("#{d} {s} › {s}", .{ @backingInt(id), folder.display_name, trail });
+                } else qualified = u.fmt("#{d} {s} › {s}", .{ @backingInt(id), folder.display_name, relative });
             }
         };
         const name: []const u8 = qualified orelse full_path;
@@ -214,14 +218,16 @@ pub const GroupChrome = struct {
     }
 
     pub fn clearIfEmpty(self: GroupChrome) void {
-        if (self.selected() != null) return;
+        if (self.selected()) |page| {
+            if (c.gtk_widget_has_css_class(page, "workspace-review-page") == 0) return;
+        }
         u.setLabel(self.label, "");
         c.gtk_widget_set_tooltip_text(self.breadcrumbs, null);
         c.gtk_widget_set_visible(self.breadcrumbs, 0);
     }
 
     fn reserveBreadcrumb(_: ?*c.GtkNotebook, page: ?*c.GtkWidget, _: c_uint, _: ?*anyopaque) callconv(.c) void {
-        c.gtk_widget_set_margin_top(page, breadcrumb_height);
+        if (c.gtk_widget_has_css_class(page, "workspace-review-page") == 0) c.gtk_widget_set_margin_top(page, breadcrumb_height);
     }
     fn releaseBreadcrumb(_: ?*c.GtkNotebook, page: ?*c.GtkWidget, _: c_uint, _: ?*anyopaque) callconv(.c) void {
         c.gtk_widget_set_margin_top(page, 0);

@@ -93,3 +93,5 @@ window.coral.$scope .workspace-project .caption { color: $secondary$; }
 window.coral.$scope .workspace-session .caption,
 window.coral.$scope .workspace-session-icon { color: $secondary$; }
 window.coral.$scope .workspace-current-session .workspace-session-icon { color: $primary$; }
+
+window.coral.$scope .workspace-review-page { background: $surface$; color: $text$; }
