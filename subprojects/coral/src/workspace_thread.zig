@@ -4,7 +4,7 @@ const api = @import("opencode.zig");
 const u = @import("c.zig");
 const c = u.c;
 const a = u.a;
-const i18n = @import("i18n");
+const message_ui = @import("workspace_message.zig");
 
 const Message = struct {
     id: [:0]u8,
@@ -33,6 +33,7 @@ pub const Thread = struct {
     older: u.W,
     sender: *c.GtkTextTag,
     messages: std.ArrayList(Message) = .empty,
+    live: message_ui.Live = .{},
     cursor: ?[:0]u8 = null,
     restore: Anchor = .{},
     rendered: [:0]u8,
@@ -45,6 +46,7 @@ pub const Thread = struct {
         return .{ .view = view, .scroll = scroll, .older = older, .sender = sender, .rendered = u.z("") };
     }
     pub fn clear(self: *Thread) void {
+        self.live.clear();
         for (self.messages.items) |message| message.deinit();
         self.messages.clearRetainingCapacity();
         if (self.cursor) |id| a.free(id);
@@ -57,6 +59,7 @@ pub const Thread = struct {
         c.gtk_widget_set_visible(self.older, 0);
     }
     pub fn deinit(self: *Thread) void {
+        self.live.clear();
         for (self.messages.items) |message| message.deinit();
         self.messages.deinit(a);
         self.restore.deinit();
@@ -80,7 +83,7 @@ pub const Thread = struct {
         while (i > 0) {
             i -= 1;
             const msg = self.messages.items[i];
-            if (msg.start <= offset) return .{ .id = u.z(msg.id), .offset = offset - msg.start };
+            if (msg.text.len != 0 and msg.start <= offset) return .{ .id = u.z(msg.id), .offset = offset - msg.start };
         }
         return .{};
     }
@@ -96,7 +99,7 @@ pub const Thread = struct {
             const row = rows[i];
             const id = api.string(row, "id");
             if (id.len == 0) continue;
-            const text = formatMessage(row) orelse continue;
+            const text = message_ui.format(row, &self.live);
             page_rows.append(a, .{ .id = u.z(id), .text = text }) catch unreachable;
         }
         const before = self.messages.items.len;
@@ -201,19 +204,3 @@ pub const Thread = struct {
         c.gtk_text_view_scroll_to_mark(u.cast(c.GtkTextView, self.view), mark, 0, 1, 0, if (anchor.id == null) 1 else 0);
     }
 };
-
-fn formatMessage(row: api.Value) ?[:0]u8 {
-    const kind = api.string(row, "type");
-    var text: std.Io.Writer.Allocating = .init(a);
-    defer text.deinit();
-    if (std.mem.eql(u8, kind, "user")) {
-        text.writer.print("{s}\n{s}\n\n", .{ i18n.dtr("coral", "You"), api.string(row, "text") }) catch unreachable;
-    } else if (std.mem.eql(u8, kind, "assistant")) {
-        text.writer.writeAll("OpenCode\n") catch unreachable;
-        for (api.items(api.get(row, "content"))) |part| {
-            if (std.mem.eql(u8, api.string(part, "type"), "text")) text.writer.writeAll(api.string(part, "text")) catch unreachable;
-        }
-        text.writer.writeAll("\n\n") catch unreachable;
-    } else return null;
-    return u.z(text.written());
-}

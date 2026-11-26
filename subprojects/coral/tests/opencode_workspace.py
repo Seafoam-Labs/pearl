@@ -83,7 +83,11 @@ def drive(offline=False, adaptive=False, diagnostics=False, permissions=False, t
             seen = []
             for node in descendants(root if root is not None else Atspi.get_desktop(0)):
                 if node.get_state_set().contains(Atspi.StateType.SHOWING) and "Text" in node.get_interfaces():
-                    contents = Atspi.Text.get_text(node, 0, -1)
+                    try:
+                        contents = Atspi.Text.get_text(node, 0, -1)
+                    except GLib.Error:
+                        # A refreshed GTK row may disappear between the two D-Bus calls.
+                        continue
                     if contents == text or (contains and text in contents):
                         return node
                     if "EditableText" in node.get_interfaces():
@@ -702,6 +706,25 @@ def drive(offline=False, adaptive=False, diagnostics=False, permissions=False, t
     assert Atspi.Text.add_selection(source, 0, 6)
     click("Earlier messages")
     buffer_with("An older message from this thread.", contains=True)
+    # Real OpenCode snapshots have empty text during a live delta. Tool-only
+    # steps are independent assistant rows within the same user turn.
+    fixture("transcript-phase", phase=1)
+    live = buffer_with("I’ll inspect the parser", contains=True)
+    assert "An older message from this thread." in Atspi.Text.get_text(live, 0, -1)
+    fixture("transcript-phase", phase=2)
+    buffer_with("Running tool · read\nsrc/parser.zig", contains=True)
+    fixture("transcript-phase", phase=3)
+    live = buffer_with("The parser handles UTF-8", contains=True)
+    activity = Atspi.Text.get_text(live, 0, -1)
+    ordered = ["An older message from this thread.", "Trace the parser.", "Thinking",
+               "I’ll inspect the parser", "Tool completed · read", "src/parser.zig", "fn parse()",
+               "Tool failed · grep", "Path unavailable", "The parser handles UTF-8"]
+    assert [activity.index(v) for v in ordered] == sorted(activity.index(v) for v in ordered), activity
+    assert "OpenCode\n\n" not in activity and "FOREIGN SESSION" not in activity
+    fixture("transcript-phase", phase=4)
+    live = buffer_with("The parser handles UTF-8 correctly.", contains=True)
+    assert Atspi.Text.get_text(live, 0, -1).count("The parser handles UTF-8") == 1
+    capture("turn-activity")
     key("a", "ctrl", "shift")
     lookup("hello.txt · L1–1")
     composer = lookup("Message OpenCode", actionable=False)
@@ -732,6 +755,10 @@ def drive(offline=False, adaptive=False, diagnostics=False, permissions=False, t
     click("Review watcher")
     lookup("Change session model, currently Birch")
     click("Restore cursor")
+    live = buffer_with("The parser handles UTF-8 correctly.", contains=True)
+    restored = Atspi.Text.get_text(live, 0, -1)
+    for fragment in ordered[1:]:
+        assert fragment in restored, restored
     click("Change session model, currently Juniper · remote")
     assert lookup("Juniper · remote").get_state_set().contains(Atspi.StateType.CHECKED)
     assert not lookup("Juniper · local").get_state_set().contains(Atspi.StateType.CHECKED)
@@ -820,6 +847,7 @@ class Service(ThreadingHTTPServer):
                        for name in ("Birch", "Cedar", "Retired", "Juniper")]
         self.models.append(dict(id="juniper", name="Juniper", providerID="remote", enabled=True))
         self.history = None
+        self.transcript = []
         self.stream_step = 0
         self.inbox = {}
         self.attempts = []
@@ -894,6 +922,42 @@ class API(BaseHTTPRequestHandler):
                 return self.reply(service.checkout_test_branch(body["detached"]))
             if body["action"] == "widget-click":
                 service.widget_click(body)
+                return self.reply({})
+            if body["action"] == "transcript-phase":
+                phase = body["phase"]
+                analysis = "I’ll inspect the parser"
+                answer = "The parser handles UTF-8 correctly."
+                thinking = {"type":"reasoning", "text":analysis if phase >= 2 else ""}
+                parts = [thinking]
+                rows = [{"type":"user","id":"new-question","text":"Trace the parser."},
+                        {"type":"assistant","id":"work","content":parts}]
+                def notify(kind, msg, **fields):
+                    service.events.put({"type":"session." + kind, "data":{"sessionID":"ses_first",
+                                        "assistantMessageID":msg, **fields}})
+                if phase >= 2:
+                    state = {"status":"running", "input":{"path":"src/parser.zig"}}
+                    if phase >= 3:
+                        state.update(status="completed", content=[{"type":"text","text":"fn parse()"}])
+                    parts.append({"type":"tool","id":"read1","name":"read","state":state})
+                if phase >= 3:
+                    parts.append({"type":"tool","id":"grep1","name":"grep","state":{"status":"error",
+                                  "input":{}, "error":{"message":"Path unavailable"}}})
+                    rows.append({"type":"assistant","id":"answer","content":[{"type":"text",
+                                 "text":answer if phase == 4 else ""}]})
+                service.transcript = list(reversed(rows))
+                if phase == 1:
+                    notify("reasoning.started", "work", ordinal=0)
+                    notify("reasoning.delta", "work", ordinal=0, delta=analysis)
+                elif phase == 2:
+                    notify("tool.called", "work")
+                elif phase == 3:
+                    notify("text.started", "answer", ordinal=0)
+                    notify("text.delta", "answer", ordinal=0, delta="The parser handles ")
+                    notify("text.delta", "answer", ordinal=0, delta="UTF-8")
+                    service.events.put({"type":"session.text.delta","data":{"sessionID":"ses_second",
+                                        "assistantMessageID":"answer","ordinal":0,"delta":"FOREIGN SESSION"}})
+                else:
+                    notify("text.ended", "answer", ordinal=0, text=answer)
                 return self.reply({})
             if body["action"] == "two-streams":
                 service.stream_step = body["step"]
@@ -991,7 +1055,8 @@ class API(BaseHTTPRequestHandler):
                         "content": [{"type": "text", "text": f"{side} response {service.stream_step}"}]}]})
                 if parse_qs(urlsplit(self.path).query).get("cursor") == ["older"]:
                     return self.reply({"data": [{"type":"user", "id":"msg_older", "text":"An older message from this thread."}], "cursor":{}})
-                return self.reply({"cursor":{"next":"older"}, "data": [
+                work = service.transcript if fields[2] == "ses_first" else []
+                return self.reply({"cursor":{"next":"older"}, "data": work + [
                     {"type": "assistant", "id": "msg_answer", "content": [{"type": "text", "text": "The saved cursor is restored before the thread opens. I can add a bounds check in the isolated worktree."}]},
                     {"type": "user", "id": "msg_request", "text": "Keep my reading position when I reopen this session."}]})
             if fields[3] == "permission":
@@ -1337,7 +1402,7 @@ pub const Session = struct {
             wait_for(lambda: draft_saved("Offline edit"))
             assert file.read_text() == "staged and edited locally\n"
             assert git("show", ":hello.txt") == b"staged\n"
-            print("Passed native selection, model sync, history paging, idempotent retry, queue cancellation, split review, conflict, undo, and offline draft recovery.")
+            print("Passed native selection, model sync, live reasoning and tool activity, restored turn history, history paging, idempotent retry, queue cancellation, split review, conflict, undo, and offline draft recovery.")
         finally:
             service.closed.set()
             service.shutdown()

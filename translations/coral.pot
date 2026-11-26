@@ -11,7 +11,7 @@ msgstr ""
 msgid " · Changed on disk"
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:901
+#: subprojects/coral/src/workspace_agent.zig:922
 msgid " · Source changed or closed"
 msgstr ""
 
@@ -83,7 +83,7 @@ msgstr ""
 msgid "Apply resolution"
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:151
+#: subprojects/coral/src/workspace_agent.zig:153
 msgid "Attach selected code"
 msgstr ""
 
@@ -107,11 +107,11 @@ msgstr ""
 msgid "Cancel"
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:1082
+#: subprojects/coral/src/workspace_agent.zig:1109
 msgid "Cancel queued prompt"
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:720
+#: subprojects/coral/src/workspace_agent.zig:735
 msgid "Change session model, currently {0}"
 msgstr ""
 
@@ -119,7 +119,7 @@ msgstr ""
 msgid "Changed files"
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:1137
+#: subprojects/coral/src/workspace_agent.zig:1164
 msgid "Chat is available in Plan mode. To review agent edits in an isolated worktree, open a Git project with a commit."
 msgstr ""
 
@@ -187,15 +187,15 @@ msgstr ""
 msgid "Commands"
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:609
+#: subprojects/coral/src/workspace_agent.zig:624
 msgid "Completed"
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:669 subprojects/coral/src/workspace_agent.zig:703
+#: subprojects/coral/src/workspace_agent.zig:684 subprojects/coral/src/workspace_agent.zig:718
 msgid "Connected"
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:337
+#: subprojects/coral/src/workspace_agent.zig:342
 msgid "Connecting…"
 msgstr ""
 
@@ -239,15 +239,15 @@ msgstr ""
 msgid "Could not safely apply this edit. Nothing was changed."
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:501
+#: subprojects/coral/src/workspace_agent.zig:516
 msgid "Could not save draft"
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:458 subprojects/coral/src/workspace_agent.zig:459 subprojects/coral/src/workspace_agent.zig:699
+#: subprojects/coral/src/workspace_agent.zig:473 subprojects/coral/src/workspace_agent.zig:474 subprojects/coral/src/workspace_agent.zig:714
 msgid "Could not save session state"
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:925
+#: subprojects/coral/src/workspace_agent.zig:946
 msgid "Could not save the prompt for delivery"
 msgstr ""
 
@@ -263,7 +263,7 @@ msgstr ""
 msgid "Cut"
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:143
+#: subprojects/coral/src/workspace_agent.zig:145
 msgid "Delivery unknown · Retry this prompt"
 msgstr ""
 
@@ -291,7 +291,7 @@ msgstr ""
 msgid "Discard unsaved edits?"
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:82
+#: subprojects/coral/src/workspace_agent.zig:84
 msgid "Earlier messages"
 msgstr ""
 
@@ -667,7 +667,7 @@ msgstr ""
 msgid "Ignore for this document"
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:610
+#: subprojects/coral/src/workspace_agent.zig:625
 msgid "Interrupted"
 msgstr ""
 
@@ -783,7 +783,7 @@ msgstr ""
 msgid "Ln {0}, Col {1}{2}"
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:475
+#: subprojects/coral/src/workspace_agent.zig:490
 msgid "Loading session…"
 msgstr ""
 
@@ -795,7 +795,7 @@ msgstr ""
 msgid "Mark file reviewed"
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:182
+#: subprojects/coral/src/workspace_agent.zig:184
 msgid "Message OpenCode"
 msgstr ""
 
@@ -827,11 +827,11 @@ msgstr ""
 msgid "Native GTK"
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:608
+#: subprojects/coral/src/workspace_agent.zig:623
 msgid "Needs attention"
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:68
+#: subprojects/coral/src/workspace_agent.zig:70
 msgid "New OpenCode session"
 msgstr ""
 
@@ -875,7 +875,7 @@ msgstr ""
 msgid "No changes in the agent worktree"
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:789
+#: subprojects/coral/src/workspace_agent.zig:804
 msgid "No configured chat models"
 msgstr ""
 
@@ -907,7 +907,7 @@ msgstr ""
 msgid "Not enough memory to prepare the edit. Nothing was changed."
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:661
+#: subprojects/coral/src/workspace_agent.zig:676
 msgid "Older sessions"
 msgstr ""
 
@@ -931,7 +931,7 @@ msgstr ""
 msgid "Open Workspace…"
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:190 subprojects/coral/src/workspace_agent.zig:275
+#: subprojects/coral/src/workspace_agent.zig:192 subprojects/coral/src/workspace_agent.zig:277
 msgid "Open a project to see its sessions"
 msgstr ""
 
@@ -951,7 +951,7 @@ msgstr ""
 msgid "Open session changes for review"
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:70 subprojects/coral/src/workspace_agent.zig:311 subprojects/coral/src/workspace_agent.zig:474
+#: subprojects/coral/src/workspace_agent.zig:72 subprojects/coral/src/workspace_agent.zig:315 subprojects/coral/src/workspace_agent.zig:489
 msgid "OpenCode"
 msgstr ""
 
@@ -995,8 +995,12 @@ msgstr ""
 msgid "Preferences…"
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:1126
+#: subprojects/coral/src/workspace_agent.zig:1153
 msgid "Preparing session…"
+msgstr ""
+
+#: subprojects/coral/src/workspace_message.zig:83
+msgid "Preparing tool"
 msgstr ""
 
 #: subprojects/coral/src/workbench/commands.zig:234
@@ -1035,11 +1039,11 @@ msgstr ""
 msgid "Projects"
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:951
+#: subprojects/coral/src/workspace_agent.zig:972
 msgid "Prompt delivered"
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:1070
+#: subprojects/coral/src/workspace_agent.zig:1097
 msgid "Queued prompts"
 msgstr ""
 
@@ -1055,7 +1059,7 @@ msgstr ""
 msgid "Reading agent worktree…"
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:611
+#: subprojects/coral/src/workspace_agent.zig:626
 msgid "Ready"
 msgstr ""
 
@@ -1063,11 +1067,11 @@ msgstr ""
 msgid "Recent projects"
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:76
+#: subprojects/coral/src/workspace_agent.zig:78
 msgid "Reconnect to OpenCode"
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:971
+#: subprojects/coral/src/workspace_agent.zig:992
 msgid "Reconnecting to OpenCode…"
 msgstr ""
 
@@ -1075,7 +1079,7 @@ msgstr ""
 msgid "Redo grouped edit"
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:128
+#: subprojects/coral/src/workspace_agent.zig:130
 msgid "Refresh from selection"
 msgstr ""
 
@@ -1091,7 +1095,7 @@ msgstr ""
 msgid "Reloading replaces your current edits with the version on disk."
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:129
+#: subprojects/coral/src/workspace_agent.zig:131
 msgid "Remove selection"
 msgstr ""
 
@@ -1119,6 +1123,10 @@ msgstr ""
 msgid "Resolve overlapping edits"
 msgstr ""
 
+#: subprojects/coral/src/workspace_message.zig:130
+msgid "Response failed"
+msgstr ""
+
 #: subprojects/coral/src/workbench/commands.zig:214
 msgid "Restore Workspace Session"
 msgstr ""
@@ -1131,7 +1139,7 @@ msgstr ""
 msgid "Return to editor"
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:92
+#: subprojects/coral/src/workspace_agent.zig:94
 msgid "Review changes"
 msgstr ""
 
@@ -1139,8 +1147,12 @@ msgstr ""
 msgid "Review · {0}"
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:606
+#: subprojects/coral/src/workspace_agent.zig:621
 msgid "Running"
+msgstr ""
+
+#: subprojects/coral/src/workspace_message.zig:83
+msgid "Running tool"
 msgstr ""
 
 #: subprojects/coral/src/app.zig:1936 subprojects/coral/src/workbench/commands.zig:184
@@ -1195,19 +1207,19 @@ msgstr ""
 msgid "Search workspace…"
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:875
+#: subprojects/coral/src/workspace_agent.zig:896
 msgid "Select code in the editor first"
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:169
+#: subprojects/coral/src/workspace_agent.zig:171
 msgid "Send to this session"
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:700
+#: subprojects/coral/src/workspace_agent.zig:715
 msgid "Service default"
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:719 subprojects/coral/src/workspace_agent.zig:737
+#: subprojects/coral/src/workspace_agent.zig:734 subprojects/coral/src/workspace_agent.zig:752
 msgid "Session model"
 msgstr ""
 
@@ -1219,7 +1231,7 @@ msgstr ""
 msgid "Shared base"
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:894
+#: subprojects/coral/src/workspace_agent.zig:915
 msgid "Show captured code"
 msgstr ""
 
@@ -1267,11 +1279,11 @@ msgstr ""
 msgid "Standalone CR line endings are not supported. Convert this file to LF or CRLF."
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:328
+#: subprojects/coral/src/workspace_agent.zig:332
 msgid "Start OpenCode with opencode service start, then reconnect."
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:823
+#: subprojects/coral/src/workspace_agent.zig:838
 msgid "Switching model…"
 msgstr ""
 
@@ -1343,12 +1355,16 @@ msgstr ""
 msgid "The personal dictionary could not be updated."
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:536
+#: subprojects/coral/src/workspace_agent.zig:551
 msgid "The source has changed since this selection was attached"
 msgstr ""
 
 #: subprojects/coral/src/app.zig:3353
 msgid "The spelling provider reported an error. Editing remains available."
+msgstr ""
+
+#: subprojects/coral/src/workspace_message.zig:126
+msgid "Thinking"
 msgstr ""
 
 #: subprojects/coral/src/app.zig:2212
@@ -1383,7 +1399,7 @@ msgstr ""
 msgid "This file mixes LF and CRLF line endings. Choose a format before saving; Coral will normalize line endings explicitly."
 msgstr ""
 
-#: subprojects/coral/src/workspace_agent.zig:254
+#: subprojects/coral/src/workspace_agent.zig:256
 msgid "This session has no worktree changes to review."
 msgstr ""
 
@@ -1419,6 +1435,18 @@ msgstr ""
 msgid "Too many replacements. Narrow the search before replacing."
 msgstr ""
 
+#: subprojects/coral/src/workspace_message.zig:83
+msgid "Tool"
+msgstr ""
+
+#: subprojects/coral/src/workspace_message.zig:83
+msgid "Tool completed"
+msgstr ""
+
+#: subprojects/coral/src/workspace_message.zig:83
+msgid "Tool failed"
+msgstr ""
+
 #: subprojects/coral/src/workbench/chrome.zig:132
 msgid "Trust check failed"
 msgstr ""
@@ -1439,7 +1467,7 @@ msgstr ""
 msgid "Undo grouped edit"
 msgstr ""
 
-#: subprojects/coral/src/app.zig:1473 subprojects/coral/src/app.zig:1544 subprojects/coral/src/editor/view.zig:129 subprojects/coral/src/workbench/chrome.zig:195 subprojects/coral/src/workspace_agent.zig:885
+#: subprojects/coral/src/app.zig:1473 subprojects/coral/src/app.zig:1544 subprojects/coral/src/editor/view.zig:129 subprojects/coral/src/workbench/chrome.zig:195 subprojects/coral/src/workspace_agent.zig:906
 msgid "Untitled"
 msgstr ""
 
@@ -1520,7 +1548,7 @@ msgctxt "desktop.description"
 msgid "Write and edit text with local spelling suggestions"
 msgstr ""
 
-#: subprojects/coral/src/workspace_thread.zig:210
+#: subprojects/coral/src/workspace_message.zig:115
 msgid "You"
 msgstr ""
 

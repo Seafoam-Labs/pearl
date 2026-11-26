@@ -26,6 +26,8 @@ pub const Agent = struct {
     thread: @import("workspace_thread.zig").Thread,
     thread_generation: u64 = 0,
     loading_older: bool = false,
+    reading_thread: bool = false,
+    reread_thread: bool = false,
     composer: u.W,
     send: u.W,
     chip: u.W,
@@ -288,6 +290,8 @@ pub const Agent = struct {
         self.pending = false;
         self.sending = false;
         self.loading_older = false;
+        self.reading_thread = false;
+        self.reread_thread = false;
         if (self.catalog_retry != 0) _ = c.g_source_remove(self.catalog_retry);
         self.catalog_retry = 0;
         self.catalog_attempt = 0;
@@ -334,6 +338,7 @@ pub const Agent = struct {
             a.free(self.server);
             self.server = u.z(id);
         }
+        self.resetThreadRequests();
         u.setLabel(self.status, i18n.dtr("coral", "Connecting…"));
         self.rehydrate = true;
         self.client.subscribe(self, &eventReceived);
@@ -381,9 +386,19 @@ pub const Agent = struct {
         self.permission_state.fetch = self.permission_state.next();
         self.client.request(path, null, self, self.permission_state.fetch, &permissionList);
     }
+    fn resetThreadRequests(self: *Agent) void {
+        self.thread_generation += 1;
+        self.reading_thread = false;
+        self.reread_thread = false;
+    }
     fn readThread(self: *Agent) void {
         const sid = api.escaped(self.session orelse return);
         defer a.free(sid);
+        if (self.reading_thread) {
+            self.reread_thread = true;
+            return;
+        }
+        self.reading_thread = true;
         const path = u.fmt("/api/session/{s}/message?limit=100&order=desc", .{sid});
         defer a.free(path);
         self.thread_generation += 1;
@@ -467,7 +482,7 @@ pub const Agent = struct {
         }
         self.showSelection();
         self.deliveryControls();
-        self.thread_generation += 1;
+        self.resetThreadRequests();
         self.loading_older = false;
         self.thread.clear();
         if (draft) |d| self.thread.restore = d.read.copy();
@@ -836,7 +851,13 @@ fn switched(ctx: *anyopaque, epoch: u64, _: Value, err: ?[]const u8) void {
 }
 fn history(ctx: *anyopaque, generation: u64, result: Value, err: ?[]const u8) void {
     const self = u.cast(Agent, ctx);
-    if (generation != self.thread_generation or failure(self, err)) return;
+    if (generation != self.thread_generation) return;
+    self.reading_thread = false;
+    defer if (self.reread_thread) {
+        self.reread_thread = false;
+        if (self.connected) self.readThread();
+    };
+    if (failure(self, err)) return;
     reconcileDelivery(self, api.items(api.get(result, "data")));
     self.thread.page(result, false);
     if (self.thread.restore.id != null and self.thread.cursor != null) olderMessages(null, self);
@@ -846,7 +867,7 @@ fn olderMessages(_: ?*c.GtkButton, ctx: ?*anyopaque) callconv(.c) void {
     if (self.loading_older) return;
     const cursor = api.escaped(self.thread.cursor orelse return);
     defer a.free(cursor);
-    const suffix = u.fmt("/message?limit=100&cursor={s}", .{cursor});
+    const suffix = u.fmt("/message?limit=100&order=desc&cursor={s}", .{cursor});
     defer a.free(suffix);
     self.loading_older = true;
     c.gtk_widget_set_sensitive(self.thread.older, 0);
@@ -984,7 +1005,13 @@ fn eventReceived(ctx: *anyopaque, _: u64, event: Value, err: ?[]const u8) void {
     const sid = api.string(data, "sessionID");
     if (sid.len != 0 and !std.mem.eql(u8, self.session orelse return, sid)) return;
     if (std.mem.eql(u8, kind, "session.model.selected") or std.mem.eql(u8, kind, "model.updated") or std.mem.eql(u8, kind, "provider.updated")) self.need_info = true;
-    if (std.mem.startsWith(u8, kind, "session.text.") or std.mem.startsWith(u8, kind, "session.step.") or std.mem.startsWith(u8, kind, "session.execution.")) self.need_thread = true;
+    if (sid.len != 0) self.thread.live.receive(kind, data);
+    for ([_][]const u8{ "session.text.", "session.reasoning.", "session.tool.", "session.step.", "session.execution.", "session.inbox.delivered" }) |prefix| {
+        if (std.mem.startsWith(u8, kind, prefix)) {
+            self.need_thread = true;
+            break;
+        }
+    }
     if (std.mem.startsWith(u8, kind, "session.inbox.")) self.need_queue = true;
     if (std.mem.startsWith(u8, kind, "permission.")) self.need_permissions = true;
     if (self.update_timer == 0 and (self.need_info or self.need_thread or self.need_queue or self.need_permissions)) self.update_timer = c.g_timeout_add(120, &flushEvents, self);
