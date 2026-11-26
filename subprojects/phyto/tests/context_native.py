@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Native context menus, target identities and operations in an isolated session."""
-import argparse, configparser, hashlib, json, os, sys, time
+import argparse, configparser, hashlib, json, os, sys, tarfile, time
 from pathlib import Path
 PROJECT = Path(__file__).resolve().parents[1]
 PEARL = PROJECT.parents[1]
@@ -97,6 +97,21 @@ def main():
             def capture(name):
                 rect = windows()[0]['geometry']
                 s.run(['grim', '-g', f"{rect['x']},{rect['y']} {rect['width']}x{rect['height']}", output / (name + '.png')])
+
+            def archive_names(path):
+                try:
+                    with tarfile.open(path) as t:
+                        return t.getnames()
+                except Exception:
+                    return None
+
+            def archive_bytes(path, name):
+                try:
+                    with tarfile.open(path) as t:
+                        member = t.extractfile(name)
+                        return member.read() if member else None
+                except Exception:
+                    return None
 
             def dialog_click(title, label):
                 row = next(x for x in probe()['operation_dialog_widgets'] if x['label'] == label)
@@ -220,6 +235,17 @@ def main():
             wait_for(lambda: (source / 'Folder/two.txt').exists())
             wait_for(lambda: not probe()['busy'])
             passed('Paste into folder uses the clicked destination')
+            click('one.txt', button='right')
+            click('Send to tar.xz', menu=True)
+            wait_for(lambda: archive_names(source / 'one.txt.tar.xz') == ['one.txt'])
+            wait_for(lambda: archive_bytes(source / 'one.txt.tar.xz', 'one.txt') == (source / 'one.txt').read_bytes())
+            click('one.txt', button='right')
+            click('Send to tar.xz', menu=True)
+            wait_for(lambda: archive_names(source / 'one.txt (2).tar.xz') == ['one.txt'])
+            click('Folder', button='right')
+            click('Send to tar.xz', menu=True)
+            wait_for(lambda: 'Folder/nested.txt' in (archive_names(source / 'Folder.tar.xz') or []))
+            passed('Send to tar.xz writes numbered compressed archives beside the selection')
             rect = windows()[0]['geometry']
             s.run(['wlrctl', 'pointer', 'move', '-100000', '-100000'])
             s.run(['wlrctl', 'pointer', 'move', str(rect['x'] + 700), str(rect['y'] + 620)])

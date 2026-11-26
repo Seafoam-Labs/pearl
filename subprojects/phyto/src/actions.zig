@@ -82,13 +82,14 @@ pub const Command = enum {
     advanced,
     allow_delete,
     archive,
+    send_archive,
     extract,
     bulk_rename,
     admin,
 };
 pub fn fileAction(c: Command) bool {
     return switch (c) {
-        .network_save, .network_connect, .network_cancel, .network_disconnect, .network_settings, .network_forget, .new_folder, .rename, .trash, .copy, .paste, .properties, .preview, .open, .open_tab, .open_window, .open_with, .terminal, .cut, .paste_into, .copy_to, .move_to, .copy_other, .move_other, .duplicate, .link, .delete, .new_document, .restore, .restore_to, .empty_trash, .undo, .redo, .containing, .follow_link, .copy_location, .bookmark_add, .bookmark_rename, .bookmark_remove, .place_hide, .tab_duplicate, .tab_left, .tab_right, .tab_other, .tab_close_others, .mount, .unmount, .eject, .pin, .favorite, .menu_settings, .archive, .extract, .bulk_rename, .admin => true,
+        .network_save, .network_connect, .network_cancel, .network_disconnect, .network_settings, .network_forget, .new_folder, .rename, .trash, .copy, .paste, .properties, .preview, .open, .open_tab, .open_window, .open_with, .terminal, .cut, .paste_into, .copy_to, .move_to, .copy_other, .move_other, .duplicate, .link, .delete, .new_document, .restore, .restore_to, .empty_trash, .undo, .redo, .containing, .follow_link, .copy_location, .bookmark_add, .bookmark_rename, .bookmark_remove, .place_hide, .tab_duplicate, .tab_left, .tab_right, .tab_other, .tab_close_others, .mount, .unmount, .eject, .pin, .favorite, .menu_settings, .archive, .send_archive, .extract, .bulk_rename, .admin => true,
         else => false,
     };
 }
