@@ -37,6 +37,7 @@ pub const Tab = struct {
     alive: bool = true,
     ready: bool = false,
     focus_pending: bool = false,
+    refresh_id: c_uint = 0,
     pub fn create(owner: *Window, pane: usize, file: *gio.File) *Tab {
         const self = a.create(Tab) catch @panic("Out of memory");
         const root = gtk.Stack.new();
@@ -156,6 +157,10 @@ pub const Tab = struct {
     pub fn destroy(self: *Tab) void {
         self.invalidate();
         self.alive = false;
+        if (self.refresh_id != 0) {
+            _ = glib.Source.remove(self.refresh_id);
+            self.refresh_id = 0;
+        }
         if (self.metadata_cancel) |c| {
             c.cancel();
             c.unref();
@@ -242,6 +247,21 @@ pub const Tab = struct {
         defer f.unref();
         self.directory.setFile(null);
         self.directory.setFile(f);
+    }
+    /// Spawned writers (archives, extractions) change the directory outside
+    /// the operation engine; reload once after they have had time to land.
+    /// Coalesced per tab so a burst of spawns schedules a single reload.
+    pub fn scheduleRefresh(self: *Tab) void {
+        if (self.refresh_id == 0) self.refresh_id = glib.timeoutAdd(500, refreshTimeout, self);
+    }
+    fn refreshTimeout(data: ?*anyopaque) callconv(.c) c_int {
+        const self: *Tab = @ptrCast(@alignCast(data.?));
+        self.refresh_id = 0;
+        if (self.alive and !self.owner.closed) {
+            self.refresh();
+            self.owner.invalidateDetails();
+        }
+        return 0;
     }
     pub fn setQuery(self: *Tab, query: []const u8) void {
         self.invalidate();
