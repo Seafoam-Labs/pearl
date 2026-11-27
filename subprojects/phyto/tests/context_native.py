@@ -264,6 +264,16 @@ def main():
             assert probe()['count'] == count_before + 1
             passed('Send to tar.xz archive appears in the listing without a manual refresh')
             spawned_writer_settled()
+            # The incremental refresh must keep the prior selection (a wholesale
+            # reload would drop it) and re-bind the new archive with its final
+            # on-disk size rather than the creation-time size the monitor saw.
+            assert probe()['selected'] == 1
+            click('one.txt.tar.xz')
+            archive_size = (source / 'one.txt.tar.xz').stat().st_size
+            wait_for(lambda: detail_size() not in (None, '0 bytes', 'Unavailable', 'Calculating…'))
+            if archive_size < 1024:
+                assert detail_size() == f'{archive_size} bytes', detail_size()
+            passed('Send to tar.xz refresh updates the archive size and keeps the selection')
             click('one.txt', button='right')
             click('Send to tar.xz', menu=True)
             wait_for(lambda: archive_names(source / 'one.txt (2).tar.xz') == ['one.txt'])

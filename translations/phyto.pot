@@ -48,7 +48,7 @@ msgstr ""
 msgid "Cancel connection"
 msgstr ""
 
-#: subprojects/phyto/src/tab.zig:293
+#: subprojects/phyto/src/tab.zig:298
 msgid "Cannot open this folder"
 msgstr ""
 
@@ -124,7 +124,7 @@ msgstr ""
 msgid "Could not run file"
 msgstr ""
 
-#: subprojects/phyto/src/tab.zig:116 subprojects/phyto/src/tab.zig:303
+#: subprojects/phyto/src/tab.zig:117 subprojects/phyto/src/tab.zig:308
 msgid "Create a folder, or choose another location."
 msgstr ""
 
@@ -308,7 +308,7 @@ msgstr ""
 msgid "Link here"
 msgstr ""
 
-#: subprojects/phyto/src/tab.zig:296 subprojects/phyto/src/window.zig:215
+#: subprojects/phyto/src/tab.zig:301 subprojects/phyto/src/window.zig:215
 msgid "Loading folder…"
 msgstr ""
 
@@ -392,7 +392,7 @@ msgstr ""
 msgid "New tab · Ctrl+T"
 msgstr ""
 
-#: subprojects/phyto/src/tab.zig:299
+#: subprojects/phyto/src/tab.zig:304
 msgid "No matching filenames"
 msgstr ""
 
@@ -504,7 +504,7 @@ msgstr ""
 msgid "Redo"
 msgstr ""
 
-#: subprojects/phyto/src/tab.zig:121
+#: subprojects/phyto/src/tab.zig:122
 msgid "Refresh folder"
 msgstr ""
 
@@ -652,7 +652,7 @@ msgstr ""
 msgid "This file will be run as a program. Only run programs from sources you trust."
 msgstr ""
 
-#: subprojects/phyto/src/tab.zig:114 subprojects/phyto/src/tab.zig:302
+#: subprojects/phyto/src/tab.zig:115 subprojects/phyto/src/tab.zig:307
 msgid "This folder is empty"
 msgstr ""
 
@@ -664,7 +664,7 @@ msgstr ""
 msgid "Trash"
 msgstr ""
 
-#: subprojects/phyto/src/tab.zig:300
+#: subprojects/phyto/src/tab.zig:305
 msgid "Try a shorter name, or clear the search."
 msgstr ""
 
@@ -700,7 +700,7 @@ msgstr ""
 msgid "Working…"
 msgstr ""
 
-#: subprojects/phyto/src/tab.zig:297
+#: subprojects/phyto/src/tab.zig:302
 msgid "You can navigate elsewhere while files load."
 msgstr ""
 
