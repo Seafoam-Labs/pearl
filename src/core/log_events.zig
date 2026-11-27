@@ -49,7 +49,6 @@ pub const events: []const Event = &.{
     .{ .name = "decoration-menu-open-failed", .scopes = &.{.ui} },
     .{ .name = "decoration-menu-opened", .scopes = &.{.desktop} },
     .{ .name = "default-apps-apply-failed", .scopes = &.{.settings} },
-    .{ .name = "default-apps-candidates-failed", .scopes = &.{.settings} },
     .{ .name = "default-apps-set-failed", .scopes = &.{.settings} },
     .{ .name = "desktop-action", .scopes = &.{.ui} },
     .{ .name = "desktop-action-dropped", .scopes = &.{.ui} },
