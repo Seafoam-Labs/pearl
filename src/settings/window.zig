@@ -50,6 +50,7 @@ pub const Window = struct {
     scheduler_view: ?*@import("scheduler_view.zig").View = null,
     autostart_service: ?*@import("../services/autostart.zig").Service = null,
     autostart_view: ?*@import("autostart_view.zig").View = null,
+    default_apps_view: ?*@import("default_apps_view.zig").View = null,
     plugins_view: ?*@import("plugins_view.zig").View = null,
     notification_filters: ?*@import("notification_filters_view.zig").View = null,
     preferences_view: ?*@import("preferences_view.zig").View = null,
@@ -319,6 +320,11 @@ pub const Window = struct {
             };
             self.autostart_view = try @import("autostart_view.zig").View.create(body, autostart);
         }
+        if (!fixture) {
+            const body = object.ext.cast(gtk.Box, self.pages[@backingInt(nav.Route.defaults)].body).?;
+            while (body.as(gtk.Widget).getFirstChild()) |child| body.remove(child);
+            self.default_apps_view = try @import("default_apps_view.zig").View.create(body);
+        }
         if (!fixture) for ([_]nav.Route{ .overview, .network, .bluetooth, .sound, .power, .notifications }) |route| {
             const body = object.ext.cast(gtk.Box, self.pages[@backingInt(route)].body).?;
             if (route != .overview) while (body.as(gtk.Widget).getFirstChild()) |child| {
@@ -413,6 +419,8 @@ pub const Window = struct {
             a.destroy(service);
         }
         self.autostart_service = null;
+        if (self.default_apps_view) |view| view.destroy();
+        self.default_apps_view = null;
         if (self.plugins_view) |view| view.destroy();
         for (self.live_pages) |page| if (page) |view| view.destroy();
         for (self.preference_pages) |page| if (page) |view| view.destroy();
@@ -449,6 +457,7 @@ pub const Window = struct {
             .power => @import("i18n").dtr("pearl", "Balance performance, battery life, sleep and locking."),
             .bar => @import("i18n").dtr("pearl", "Arrange your desktop bar and dock."),
             .notifications => @import("i18n").dtr("pearl", "Manage interruptions and notification history."),
+            .defaults => @import("i18n").dtr("pearl", "Choose the applications that open links and files."),
             .system => @import("i18n").dtr("pearl", "Manage system performance and CPU scheduling."),
             .startup => @import("i18n").dtr("pearl", "Choose which applications start when you log in."),
             .aqueous => @import("i18n").dtr("pearl", "Configure your compositor by section."),
@@ -467,7 +476,7 @@ pub const Window = struct {
             .assistant => "pearl-user-available-symbolic",
             .bar, .aqueous => "pearl-window-symbolic",
             .notifications => "pearl-notifications-symbolic",
-            .startup => "pearl-application-x-executable-symbolic",
+            .startup, .defaults => "pearl-application-x-executable-symbolic",
             .system, .advanced, .plugins => "pearl-emblem-system-symbolic",
         };
     }
@@ -641,6 +650,13 @@ pub const Window = struct {
             },
             .advanced => {
                 if (std.mem.eql(u8, id, "raw")) if (self.preferences_view) |view| return revealWidget(view.raw_view.as(gtk.Widget));
+            },
+            .defaults => {
+                const view = self.default_apps_view orelse return false;
+                const prefix = "defaults.";
+                if (!std.mem.startsWith(u8, id, prefix)) return false;
+                const category = id[prefix.len..];
+                for (view.rows) |*row| if (std.mem.eql(u8, @tagName(row.spec.category), category)) return revealWidget(row.dropdown.as(gtk.Widget));
             },
             else => {},
         }
@@ -931,6 +947,7 @@ pub const Window = struct {
         w.name(self.heading_anchor, heading);
         self.subtitle.setText(if (target.page == .aqueous) sectionDescription(self.aqueous_section) else self.description(target.page));
         self.stack.setVisibleChildName(target.page.id());
+        if (target.page == .defaults) if (self.default_apps_view) |view| view.update();
         self.popover.popdown();
         const page = &self.pages[@backingInt(target.page)];
         if (external) {

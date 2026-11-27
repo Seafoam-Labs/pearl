@@ -11,6 +11,7 @@ pub const Route = enum {
     assistant,
     bar,
     notifications,
+    defaults,
     system,
     startup,
     aqueous,
@@ -32,6 +33,7 @@ pub const Route = enum {
             .assistant => @import("i18n").mark("Assistant"),
             .bar => @import("i18n").mark("Bar & dock"),
             .notifications => @import("i18n").mark("Notifications"),
+            .defaults => @import("i18n").mark("Default applications"),
             .system => @import("i18n").mark("System"),
             .startup => @import("i18n").mark("Startup applications"),
             .aqueous => @import("i18n").mark("Aqueous"),
@@ -43,7 +45,7 @@ pub const Route = enum {
     pub fn isCompact(self: Route) bool {
         return switch (self) {
             .overview, .network, .bluetooth, .sound, .power => true,
-            .appearance, .assistant, .bar, .notifications, .system, .startup, .aqueous, .advanced, .plugins => false,
+            .appearance, .assistant, .bar, .notifications, .defaults, .system, .startup, .aqueous, .advanced, .plugins => false,
         };
     }
 };
@@ -104,6 +106,7 @@ pub const entries = [_]Entry{
     .{ .target = .{ .page = .assistant }, .group = .desktop, .keywords = "ai search engine answers" },
     .{ .target = .{ .page = .bar }, .group = .desktop, .keywords = "dock panel widgets" },
     .{ .target = .{ .page = .notifications }, .group = .desktop, .keywords = "dnd disturb alerts history" },
+    .{ .target = .{ .page = .defaults }, .group = .desktop, .keywords = "default applications browser web files manager terminal mail editor music video" },
     .{ .target = .{ .page = .system }, .group = .system, .keywords = "scheduler cpu performance" },
     .{ .target = .{ .page = .startup }, .group = .system, .keywords = "autostart login applications" },
     .{ .target = .{ .page = .advanced }, .group = .system, .keywords = "json raw toml configuration draft" },

@@ -207,7 +207,7 @@ pub const usage = @import("i18n").mark(
     \\       pearlctl aqueous draft --text JSON
     \\       pearlctl settings show [--page PAGE] [--section AQUEOUS_SECTION] [--output ID]
     \\       Settings pages: overview, appearance, network, bluetooth, sound, power,
-    \\                       bar, notifications, session, aqueous, advanced
+    \\                       bar, notifications, defaults, session, aqueous, advanced
     \\       Aqueous sections: appearance, layouts, input, keybinds, rules, displays
     \\                       (advanced opens the shared Advanced page)
     \\       Repeated settings launches activate the window; they never toggle it closed.
