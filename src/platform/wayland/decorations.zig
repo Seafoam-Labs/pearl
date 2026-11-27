@@ -177,8 +177,11 @@ const Bar = struct {
     content_height: i32 = 0,
     last_width: i64 = -1,
     last_height: i64 = -1,
-    // Interactive-op atomicity (sync_next_commit) with a watchdog.
+    // Interactive-op atomicity (sync_next_commit) with a watchdog. Tracked
+    // per surface: a sync request must always be followed by that surface's
+    // commit, or the compositor posts a fatal protocol error.
     sync_commit: bool = false,
+    frame_sync_commit: bool = false,
     op_active_since: i64 = 0,
     enter_serial: u32 = 0,
     seen: bool = false,
@@ -266,6 +269,11 @@ const Bar = struct {
         if (!self.sync_commit) return;
         self.sync_commit = false;
         if (self.decoration) |decoration| decoration.syncNextCommit();
+    }
+
+    fn beginFrameSync(self: *Bar) void {
+        if (!self.frame_sync_commit) return;
+        self.frame_sync_commit = false;
         if (self.frame_decoration) |decoration| decoration.syncNextCommit();
     }
 
@@ -371,7 +379,6 @@ const Bar = struct {
                 else => {},
             }
         }
-        self.beginSync();
         self.surface.attach(buffer, 0, 0);
         self.surface.damageBuffer(0, 0, phys_w, phys_h);
         self.shm.slot ^= 1;
@@ -382,6 +389,7 @@ const Bar = struct {
             return;
         };
         frame.setListener(*Bar, frameDone, self);
+        self.beginSync();
         self.surface.commit();
         self.owner.display.flush();
     }
@@ -432,6 +440,7 @@ const Bar = struct {
             return;
         };
         frame.setListener(*Bar, frameSurfaceDone, self);
+        self.beginFrameSync();
         surface.commit();
         self.owner.display.flush();
     }
@@ -923,7 +932,10 @@ pub const Decorations = struct {
         if (op_active) {
             const now = glib.getMonotonicTime();
             if (b.op_active_since == 0) b.op_active_since = now;
-            if (geometry_changed and now - b.op_active_since < op_sync_watchdog_us) b.sync_commit = true;
+            if (geometry_changed and now - b.op_active_since < op_sync_watchdog_us) {
+                b.sync_commit = true;
+                b.frame_sync_commit = true;
+            }
         } else {
             b.op_active_since = 0;
         }
