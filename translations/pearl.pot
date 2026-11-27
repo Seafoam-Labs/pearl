@@ -131,7 +131,7 @@ msgstr ""
 msgid "A place for your day"
 msgstr ""
 
-#: src/settings/window.zig:1113
+#: src/settings/window.zig:1115
 msgid "A profile applies immediately and stays selected after a restart."
 msgstr ""
 
@@ -622,7 +622,7 @@ msgctxt "aqueous.display.apply_on_reload.label"
 msgid "Apply displays on reload"
 msgstr ""
 
-#: src/settings/window.zig:1113
+#: src/settings/window.zig:1115
 msgid "Apply saves all Pearl preferences. Filters affect future arrivals; DND and history actions are immediate."
 msgstr ""
 
@@ -1265,6 +1265,10 @@ msgstr ""
 msgid "Change icon…"
 msgstr ""
 
+#: src/settings/window.zig:1115
+msgid "Changes apply immediately, in Pearl and in other applications that follow the system defaults."
+msgstr ""
+
 #: src/desktop/brightness_controls.zig:103
 msgid "Changes apply to the selected display"
 msgstr ""
@@ -1273,7 +1277,7 @@ msgstr ""
 msgid "Changes are retained as a draft. Use Apply & save to make them active."
 msgstr ""
 
-#: src/settings/window.zig:1113
+#: src/settings/window.zig:1115
 msgid "Changes on this page take effect immediately."
 msgstr ""
 
@@ -1494,7 +1498,7 @@ msgstr ""
 msgid "Clock saved to draft. Apply & save to update the bar."
 msgstr ""
 
-#: src/desktop/window_menu.zig:134 src/settings/window.zig:1293
+#: src/desktop/window_menu.zig:134 src/settings/window.zig:1295
 msgid "Close"
 msgstr ""
 
@@ -1738,7 +1742,7 @@ msgstr ""
 msgid "Connected and offline output declarations"
 msgstr ""
 
-#: src/settings/window.zig:1082
+#: src/settings/window.zig:1084
 msgid "Connected to Pearl."
 msgstr ""
 
@@ -1754,7 +1758,7 @@ msgstr ""
 msgid "Connected · Trusted"
 msgstr ""
 
-#: src/settings/window.zig:1082
+#: src/settings/window.zig:1084
 msgid "Connecting to your Pearl session…"
 msgstr ""
 
@@ -2094,7 +2098,7 @@ msgstr ""
 msgid "Default"
 msgstr ""
 
-#: src/desktop/settings_navigation.zig:36 src/settings/default_apps_view.zig:42
+#: src/desktop/settings_navigation.zig:36
 msgid "Default applications"
 msgstr ""
 
@@ -2284,7 +2288,7 @@ msgstr ""
 msgid "Discard palette edits"
 msgstr ""
 
-#: src/settings/window.zig:1232
+#: src/settings/window.zig:1234
 msgid "Discard untransferred changes and close"
 msgstr ""
 
@@ -3333,7 +3337,7 @@ msgctxt "aqueous.layout.options.float.snap_gap.description"
 msgid "Inset around committed snap regions."
 msgstr ""
 
-#: src/settings/window.zig:1189
+#: src/settings/window.zig:1191
 msgid "Install Network Connections (nm-connection-editor) to change advanced settings."
 msgstr ""
 
@@ -3467,7 +3471,7 @@ msgstr ""
 msgid "Keep notifications quiet while you focus."
 msgstr ""
 
-#: src/settings/window.zig:1231
+#: src/settings/window.zig:1233
 msgid "Keep open"
 msgstr ""
 
@@ -3483,7 +3487,7 @@ msgstr ""
 msgid "Keep transitions quiet"
 msgstr ""
 
-#: src/settings/window.zig:1221
+#: src/settings/window.zig:1223
 msgid "Keep your changes"
 msgstr ""
 
@@ -3740,7 +3744,7 @@ msgstr ""
 msgid "Loading Desktop…"
 msgstr ""
 
-#: src/settings/window.zig:1115
+#: src/settings/window.zig:1117
 msgid "Loading Pearl preferences…"
 msgstr ""
 
@@ -3748,7 +3752,7 @@ msgstr ""
 msgid "Loading applications…"
 msgstr ""
 
-#: src/settings/window.zig:1125
+#: src/settings/window.zig:1127
 msgid "Loading displays…"
 msgstr ""
 
@@ -3772,11 +3776,11 @@ msgstr ""
 msgid "Loading wallpaper preview…"
 msgstr ""
 
-#: src/settings/window.zig:1160
+#: src/settings/window.zig:1162
 msgid "Local Aqueous draft — recovery"
 msgstr ""
 
-#: src/settings/window.zig:1113
+#: src/settings/window.zig:1115
 msgid "Local changes need review. Merge them or discard only the local copy."
 msgstr ""
 
@@ -4928,7 +4932,7 @@ msgstr ""
 msgid "Pearl interface text"
 msgstr ""
 
-#: src/settings/window.zig:1188
+#: src/settings/window.zig:1190
 msgid "Pearl is busy. Your changes are retained; try again when the current work completes."
 msgstr ""
 
@@ -4952,31 +4956,31 @@ msgstr ""
 msgid "Pearl preferences"
 msgstr ""
 
-#: src/settings/window.zig:966
+#: src/settings/window.zig:968
 msgid "Pearl preferences are managed by your session."
 msgstr ""
 
-#: src/settings/window.zig:1113
+#: src/settings/window.zig:1115
 msgid "Pearl preferences · All changes are applied explicitly."
 msgstr ""
 
-#: src/settings/window.zig:1113
+#: src/settings/window.zig:1115
 msgid "Pearl preferences · Draft retained in this session. Apply saves all Pearl changes."
 msgstr ""
 
-#: src/settings/window.zig:1113
+#: src/settings/window.zig:1115
 msgid "Pearl preferences · Preparing settings…"
 msgstr ""
 
-#: src/settings/window.zig:966
+#: src/settings/window.zig:968
 msgid "Pearl preferences · Preview only"
 msgstr ""
 
-#: src/settings/window.zig:1113
+#: src/settings/window.zig:1115
 msgid "Pearl preferences · Retaining draft…"
 msgstr ""
 
-#: src/settings/window.zig:1082
+#: src/settings/window.zig:1084
 msgid "Pearl session unavailable. Start Pearl, then choose Retry."
 msgstr ""
 
@@ -5231,11 +5235,11 @@ msgstr ""
 msgid "Power saver"
 msgstr ""
 
-#: src/settings/window.zig:1186
+#: src/settings/window.zig:1188
 msgid "Power settings are still saving. Wait for completion, then try again."
 msgstr ""
 
-#: src/settings/window.zig:1185
+#: src/settings/window.zig:1187
 msgid "Power settings changed in another editor. Review the retained draft in Advanced, then try again."
 msgstr ""
 
@@ -5253,11 +5257,11 @@ msgstr ""
 msgid "Preferences changed. Reopen the picker to review the current choice."
 msgstr ""
 
-#: src/settings/window.zig:1197
+#: src/settings/window.zig:1199
 msgid "Preferences could not be saved. Your draft and working settings are retained."
 msgstr ""
 
-#: src/settings/window.zig:1115
+#: src/settings/window.zig:1117
 msgid "Preferences were saved. An export needs attention; your changes remain applied."
 msgstr ""
 
@@ -5277,7 +5281,7 @@ msgstr ""
 msgid "Preview current draft"
 msgstr ""
 
-#: src/settings/window.zig:966
+#: src/settings/window.zig:968
 msgid "Preview only · Sample devices"
 msgstr ""
 
@@ -5418,7 +5422,7 @@ msgstr ""
 msgid "Read search result pages"
 msgstr ""
 
-#: src/settings/window.zig:1278
+#: src/settings/window.zig:1280
 msgid "Read-only saved settings. Your draft stays in Advanced. Copy values from here to resolve overlapping changes, or discard the draft to start from the saved settings."
 msgstr ""
 
@@ -5977,7 +5981,7 @@ msgstr ""
 msgid "Save, reload, synchronization and recovery"
 msgstr ""
 
-#: src/settings/window.zig:1273
+#: src/settings/window.zig:1275
 msgid "Saved Pearl preferences"
 msgstr ""
 
@@ -6173,7 +6177,7 @@ msgstr ""
 msgid "Select Show samples to inspect answers, settings and telemetry. GPU memory and separate reasoning throughput are unavailable unless reported; RAM is sampled process-tree RSS plus OS high-water information, which may miss brief child peaks."
 msgstr ""
 
-#: src/settings/window.zig:1113
+#: src/settings/window.zig:1115
 msgid "Select a scheduler and mode, then use Apply scheduler. Boot defaults are unchanged."
 msgstr ""
 
@@ -6236,7 +6240,7 @@ msgctxt "aqueous.decoration.renderer.label"
 msgid "Server-side decoration renderer"
 msgstr ""
 
-#: src/settings/window.zig:1113
+#: src/settings/window.zig:1115
 msgid "Service controls take effect immediately. Pearl preference draft retained."
 msgstr ""
 
@@ -6252,7 +6256,7 @@ msgstr ""
 msgid "Session actions"
 msgstr ""
 
-#: src/settings/window.zig:1082
+#: src/settings/window.zig:1084
 msgid "Session mismatch. Open Settings from the matching Aqueous session."
 msgstr ""
 
@@ -6264,7 +6268,7 @@ msgstr ""
 msgid "Set a wallpaper folder in Settings → Appearance → Slideshow."
 msgstr ""
 
-#: src/settings/window.zig:1183
+#: src/settings/window.zig:1185
 msgid "Set an automatic lock time earlier than suspend in Session & lock. This change was not saved."
 msgstr ""
 
@@ -6308,7 +6312,7 @@ msgstr ""
 msgid "Settings are updating. Wait for synchronization, then try again."
 msgstr ""
 
-#: src/settings/window.zig:1115
+#: src/settings/window.zig:1117
 msgid "Settings changed elsewhere. Your changes are retained. Merge independent changes, or review Advanced to resolve a conflict."
 msgstr ""
 
@@ -7070,7 +7074,7 @@ msgstr ""
 msgid "Solid color"
 msgstr ""
 
-#: src/settings/window.zig:1230
+#: src/settings/window.zig:1232
 msgid "Some changes have not reached Pearl. Keep this window open to recover them, or close and discard only those untransferred changes. Drafts already retained by Pearl remain in the session."
 msgstr ""
 
@@ -7385,15 +7389,15 @@ msgstr ""
 msgid "The application could not be added."
 msgstr ""
 
-#: src/settings/window.zig:1198
+#: src/settings/window.zig:1200
 msgid "The change could not be completed. Your draft is retained. Review Advanced and try again."
 msgstr ""
 
-#: src/settings/window.zig:1115
+#: src/settings/window.zig:1117
 msgid "The connection ended during an operation. Review the current settings before applying again."
 msgstr ""
 
-#: src/settings/default_apps_view.zig:185
+#: src/settings/default_apps_view.zig:190
 msgid "The default application could not be changed."
 msgstr ""
 
@@ -7413,11 +7417,11 @@ msgstr ""
 msgid "The draft cannot be edited as declarations. Open Aqueous Advanced to correct the draft JSON."
 msgstr ""
 
-#: src/settings/window.zig:1115
+#: src/settings/window.zig:1117
 msgid "The draft is invalid. Correct the fields or review the JSON in Advanced before applying."
 msgstr ""
 
-#: src/settings/window.zig:1194
+#: src/settings/window.zig:1196
 msgid "The draft is limited to 64 KiB. The previous text is retained."
 msgstr ""
 
@@ -7486,7 +7490,7 @@ msgstr ""
 msgid "The same field changed in both versions. Draft retained; review Advanced before discarding or resolving it."
 msgstr ""
 
-#: src/settings/window.zig:1195
+#: src/settings/window.zig:1197
 msgid "The same field changed in both versions. Review Advanced before resolving or discarding the draft."
 msgstr ""
 
@@ -7494,7 +7498,7 @@ msgstr ""
 msgid "The sample could not be tested. Wait for the draft to sync, then try again."
 msgstr ""
 
-#: src/settings/window.zig:1191
+#: src/settings/window.zig:1193
 msgid "The scheduler action could not be completed. Review its status and refresh before retrying."
 msgstr ""
 
@@ -7506,7 +7510,7 @@ msgstr ""
 msgid "The scheduler catalog was changed elsewhere meanwhile. Nothing was saved; review the profiles and save again."
 msgstr ""
 
-#: src/settings/window.zig:1184
+#: src/settings/window.zig:1186
 msgid "The screen must turn off before or at the suspend timeout. This change was not saved."
 msgstr ""
 
@@ -7530,7 +7534,7 @@ msgstr ""
 msgid "The tested draft has changed. Check the new selection before use."
 msgstr ""
 
-#: src/settings/window.zig:1196
+#: src/settings/window.zig:1198
 msgid "The wallpaper image could not be used. Choose a readable PNG or JPEG, then apply again."
 msgstr ""
 
@@ -7554,15 +7558,11 @@ msgstr ""
 msgid "Themes & customization"
 msgstr ""
 
-#: src/settings/default_apps_view.zig:43 src/settings/default_apps_view.zig:189
-msgid "These applications open links and files by default. Changes apply immediately, in Pearl and in other applications that follow the system defaults."
-msgstr ""
-
 #: src/settings/autostart_view.zig:116
 msgid "These applications start when you log in. Changes apply at the next login."
 msgstr ""
 
-#: src/settings/window.zig:1082
+#: src/settings/window.zig:1084
 msgid "This Pearl session uses an incompatible Settings version."
 msgstr ""
 
@@ -7606,7 +7606,7 @@ msgstr ""
 msgid "This llama-server build does not support embeddings. Update the runtime in Runtime & acceleration."
 msgstr ""
 
-#: src/settings/window.zig:1172
+#: src/settings/window.zig:1174
 msgid "This local copy has not been resubmitted. Copy it before discarding, or use Rebase to reconcile independent changes."
 msgstr ""
 

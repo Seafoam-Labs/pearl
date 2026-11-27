@@ -42,16 +42,12 @@ pub const View = struct {
         const card = w.column(0);
         card.as(gtk.Widget).addCssClass("settings-card");
         self.root.append(card.as(gtk.Widget));
-        const header = w.column(4);
-        header.as(gtk.Widget).setMarginTop(16);
-        header.as(gtk.Widget).setMarginBottom(16);
-        header.as(gtk.Widget).setMarginStart(20);
-        header.as(gtk.Widget).setMarginEnd(20);
-        header.append(w.label(@import("i18n").dtr("pearl", "Default applications"), "pearl-section-title").as(gtk.Widget));
-        self.status = w.label(@import("i18n").dtr("pearl", "These applications open links and files by default. Changes apply immediately, in Pearl and in other applications that follow the system defaults."), "pearl-secondary");
+        // Immediacy and scope are stated once, in the window footer; the card
+        // only surfaces failures, so the rows start at the top.
+        self.status = w.label("", "pearl-secondary");
         self.status.setWrap(1);
-        header.append(self.status.as(gtk.Widget));
-        card.append(header.as(gtk.Widget));
+        self.status.as(gtk.Widget).setVisible(0);
+        card.append(self.status.as(gtk.Widget));
         for (&policy.specs, self.rows) |*spec, *row| {
             const line = w.flow(2);
             line.setHomogeneous(0);
@@ -192,10 +188,11 @@ pub const View = struct {
         self.apply(row.spec, id) catch |err| {
             log.warn("event=default-apps-apply-failed category={s} app={s} error={s}", .{ @tagName(row.spec.category), id, @errorName(err) });
             self.status.setText(@import("i18n").dtr("pearl", "The default application could not be changed."));
+            self.status.as(gtk.Widget).setVisible(1);
             self.update();
             return;
         };
-        self.status.setText(@import("i18n").dtr("pearl", "These applications open links and files by default. Changes apply immediately, in Pearl and in other applications that follow the system defaults."));
+        self.status.as(gtk.Widget).setVisible(0);
     }
 
     fn apply(_: *View, spec: *const policy.Spec, id: [:0]const u8) !void {
