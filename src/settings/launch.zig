@@ -2,6 +2,7 @@
 const std = @import("std");
 const gio = @import("gio2");
 const glib = @import("glib2");
+const gobject = @import("gobject2");
 const c = @import("pearl_libc");
 const nav = @import("../desktop/settings_navigation.zig");
 const distribution = @import("distribution.zig");
@@ -19,6 +20,30 @@ pub fn activationInfo(program: [:0]const u8, name: [:0]const u8) !*@import("giou
     key.setBoolean("Desktop Entry", "StartupNotify", 1);
     return @import("giounix2").DesktopAppInfo.newFromKeyfile(key) orelse error.SettingsLaunchFailed;
 }
+/// Desktop ID of the session's default application for a category, resolved
+/// from the XDG defaults (mimeapps.list through GIO, xdg-terminals.list for
+/// terminals). Null when nothing is configured. Caller owns the result.
+pub fn defaultDesktopId(alloc: std.mem.Allocator, category: @import("../services/default_apps.zig").Category) !?[]u8 {
+    const policy = @import("../services/default_apps.zig");
+    if (category == .terminal) return policy.terminalDefault(alloc, try configHome(alloc));
+    const spec = for (policy.specs) |s| {
+        if (s.category == category) break s;
+    } else unreachable;
+    const info = gio.AppInfo.getDefaultForType(spec.mimes[0], 0) orelse return null;
+    defer info.as(gobject.Object).unref();
+    const raw = info.getId() orelse return null;
+    return try alloc.dupe(u8, std.mem.span(raw));
+}
+
+pub fn configHome(alloc: std.mem.Allocator) ![]const u8 {
+    if (glib.getenv("XDG_CONFIG_HOME")) |raw| {
+        const value = std.mem.span(raw);
+        if (value.len > 0) return value;
+    }
+    const home = glib.getenv("HOME") orelse return error.NoConfigHome;
+    return std.fs.path.join(alloc, &.{ std.mem.span(home), ".config" });
+}
+
 pub fn path() ![:0]u8 {
     var buffer: [4096]u8 = undefined;
     const result = try distribution.sibling(a, try distribution.executable(&buffer));

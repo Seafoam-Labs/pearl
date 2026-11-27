@@ -131,7 +131,7 @@ msgstr ""
 msgid "A place for your day"
 msgstr ""
 
-#: src/settings/window.zig:1115
+#: src/settings/window.zig:1117
 msgid "A profile applies immediately and stays selected after a restart."
 msgstr ""
 
@@ -622,7 +622,7 @@ msgctxt "aqueous.display.apply_on_reload.label"
 msgid "Apply displays on reload"
 msgstr ""
 
-#: src/settings/window.zig:1115
+#: src/settings/window.zig:1117
 msgid "Apply saves all Pearl preferences. Filters affect future arrivals; DND and history actions are immediate."
 msgstr ""
 
@@ -1265,7 +1265,7 @@ msgstr ""
 msgid "Change icon…"
 msgstr ""
 
-#: src/settings/window.zig:1115
+#: src/settings/window.zig:1117
 msgid "Changes apply immediately, in Pearl and in other applications that follow the system defaults."
 msgstr ""
 
@@ -1277,7 +1277,7 @@ msgstr ""
 msgid "Changes are retained as a draft. Use Apply & save to make them active."
 msgstr ""
 
-#: src/settings/window.zig:1115
+#: src/settings/window.zig:1117
 msgid "Changes on this page take effect immediately."
 msgstr ""
 
@@ -1498,7 +1498,7 @@ msgstr ""
 msgid "Clock saved to draft. Apply & save to update the bar."
 msgstr ""
 
-#: src/desktop/window_menu.zig:134 src/settings/window.zig:1295
+#: src/desktop/window_menu.zig:134 src/settings/window.zig:1297
 msgid "Close"
 msgstr ""
 
@@ -1742,7 +1742,7 @@ msgstr ""
 msgid "Connected and offline output declarations"
 msgstr ""
 
-#: src/settings/window.zig:1084
+#: src/settings/window.zig:1086
 msgid "Connected to Pearl."
 msgstr ""
 
@@ -1758,7 +1758,7 @@ msgstr ""
 msgid "Connected · Trusted"
 msgstr ""
 
-#: src/settings/window.zig:1084
+#: src/settings/window.zig:1086
 msgid "Connecting to your Pearl session…"
 msgstr ""
 
@@ -2288,7 +2288,7 @@ msgstr ""
 msgid "Discard palette edits"
 msgstr ""
 
-#: src/settings/window.zig:1234
+#: src/settings/window.zig:1236
 msgid "Discard untransferred changes and close"
 msgstr ""
 
@@ -3337,7 +3337,7 @@ msgctxt "aqueous.layout.options.float.snap_gap.description"
 msgid "Inset around committed snap regions."
 msgstr ""
 
-#: src/settings/window.zig:1191
+#: src/settings/window.zig:1193
 msgid "Install Network Connections (nm-connection-editor) to change advanced settings."
 msgstr ""
 
@@ -3471,7 +3471,7 @@ msgstr ""
 msgid "Keep notifications quiet while you focus."
 msgstr ""
 
-#: src/settings/window.zig:1233
+#: src/settings/window.zig:1235
 msgid "Keep open"
 msgstr ""
 
@@ -3487,7 +3487,7 @@ msgstr ""
 msgid "Keep transitions quiet"
 msgstr ""
 
-#: src/settings/window.zig:1223
+#: src/settings/window.zig:1225
 msgid "Keep your changes"
 msgstr ""
 
@@ -3589,7 +3589,7 @@ msgstr ""
 msgid "Layout behavior"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:3038
+#: src/ui/surfaces/manager.zig:3064
 msgid "Layout change unavailable"
 msgstr ""
 
@@ -3744,7 +3744,7 @@ msgstr ""
 msgid "Loading Desktop…"
 msgstr ""
 
-#: src/settings/window.zig:1117
+#: src/settings/window.zig:1119
 msgid "Loading Pearl preferences…"
 msgstr ""
 
@@ -3752,7 +3752,7 @@ msgstr ""
 msgid "Loading applications…"
 msgstr ""
 
-#: src/settings/window.zig:1127
+#: src/settings/window.zig:1129
 msgid "Loading displays…"
 msgstr ""
 
@@ -3776,11 +3776,11 @@ msgstr ""
 msgid "Loading wallpaper preview…"
 msgstr ""
 
-#: src/settings/window.zig:1162
+#: src/settings/window.zig:1164
 msgid "Local Aqueous draft — recovery"
 msgstr ""
 
-#: src/settings/window.zig:1115
+#: src/settings/window.zig:1117
 msgid "Local changes need review. Merge them or discard only the local copy."
 msgstr ""
 
@@ -4932,7 +4932,7 @@ msgstr ""
 msgid "Pearl interface text"
 msgstr ""
 
-#: src/settings/window.zig:1190
+#: src/settings/window.zig:1192
 msgid "Pearl is busy. Your changes are retained; try again when the current work completes."
 msgstr ""
 
@@ -4956,31 +4956,31 @@ msgstr ""
 msgid "Pearl preferences"
 msgstr ""
 
-#: src/settings/window.zig:968
+#: src/settings/window.zig:970
 msgid "Pearl preferences are managed by your session."
 msgstr ""
 
-#: src/settings/window.zig:1115
+#: src/settings/window.zig:1117
 msgid "Pearl preferences · All changes are applied explicitly."
 msgstr ""
 
-#: src/settings/window.zig:1115
+#: src/settings/window.zig:1117
 msgid "Pearl preferences · Draft retained in this session. Apply saves all Pearl changes."
 msgstr ""
 
-#: src/settings/window.zig:1115
+#: src/settings/window.zig:1117
 msgid "Pearl preferences · Preparing settings…"
 msgstr ""
 
-#: src/settings/window.zig:968
+#: src/settings/window.zig:970
 msgid "Pearl preferences · Preview only"
 msgstr ""
 
-#: src/settings/window.zig:1115
+#: src/settings/window.zig:1117
 msgid "Pearl preferences · Retaining draft…"
 msgstr ""
 
-#: src/settings/window.zig:1084
+#: src/settings/window.zig:1086
 msgid "Pearl session unavailable. Start Pearl, then choose Retry."
 msgstr ""
 
@@ -5235,11 +5235,11 @@ msgstr ""
 msgid "Power saver"
 msgstr ""
 
-#: src/settings/window.zig:1188
+#: src/settings/window.zig:1190
 msgid "Power settings are still saving. Wait for completion, then try again."
 msgstr ""
 
-#: src/settings/window.zig:1187
+#: src/settings/window.zig:1189
 msgid "Power settings changed in another editor. Review the retained draft in Advanced, then try again."
 msgstr ""
 
@@ -5257,11 +5257,11 @@ msgstr ""
 msgid "Preferences changed. Reopen the picker to review the current choice."
 msgstr ""
 
-#: src/settings/window.zig:1199
+#: src/settings/window.zig:1201
 msgid "Preferences could not be saved. Your draft and working settings are retained."
 msgstr ""
 
-#: src/settings/window.zig:1117
+#: src/settings/window.zig:1119
 msgid "Preferences were saved. An export needs attention; your changes remain applied."
 msgstr ""
 
@@ -5281,7 +5281,7 @@ msgstr ""
 msgid "Preview current draft"
 msgstr ""
 
-#: src/settings/window.zig:968
+#: src/settings/window.zig:970
 msgid "Preview only · Sample devices"
 msgstr ""
 
@@ -5422,7 +5422,7 @@ msgstr ""
 msgid "Read search result pages"
 msgstr ""
 
-#: src/settings/window.zig:1280
+#: src/settings/window.zig:1282
 msgid "Read-only saved settings. Your draft stays in Advanced. Copy values from here to resolve overlapping changes, or discard the draft to start from the saved settings."
 msgstr ""
 
@@ -5981,7 +5981,7 @@ msgstr ""
 msgid "Save, reload, synchronization and recovery"
 msgstr ""
 
-#: src/settings/window.zig:1275
+#: src/settings/window.zig:1277
 msgid "Saved Pearl preferences"
 msgstr ""
 
@@ -6177,7 +6177,7 @@ msgstr ""
 msgid "Select Show samples to inspect answers, settings and telemetry. GPU memory and separate reasoning throughput are unavailable unless reported; RAM is sampled process-tree RSS plus OS high-water information, which may miss brief child peaks."
 msgstr ""
 
-#: src/settings/window.zig:1115
+#: src/settings/window.zig:1117
 msgid "Select a scheduler and mode, then use Apply scheduler. Boot defaults are unchanged."
 msgstr ""
 
@@ -6240,7 +6240,7 @@ msgctxt "aqueous.decoration.renderer.label"
 msgid "Server-side decoration renderer"
 msgstr ""
 
-#: src/settings/window.zig:1115
+#: src/settings/window.zig:1117
 msgid "Service controls take effect immediately. Pearl preference draft retained."
 msgstr ""
 
@@ -6256,7 +6256,7 @@ msgstr ""
 msgid "Session actions"
 msgstr ""
 
-#: src/settings/window.zig:1084
+#: src/settings/window.zig:1086
 msgid "Session mismatch. Open Settings from the matching Aqueous session."
 msgstr ""
 
@@ -6268,7 +6268,7 @@ msgstr ""
 msgid "Set a wallpaper folder in Settings → Appearance → Slideshow."
 msgstr ""
 
-#: src/settings/window.zig:1185
+#: src/settings/window.zig:1187
 msgid "Set an automatic lock time earlier than suspend in Session & lock. This change was not saved."
 msgstr ""
 
@@ -6312,7 +6312,7 @@ msgstr ""
 msgid "Settings are updating. Wait for synchronization, then try again."
 msgstr ""
 
-#: src/settings/window.zig:1117
+#: src/settings/window.zig:1119
 msgid "Settings changed elsewhere. Your changes are retained. Merge independent changes, or review Advanced to resolve a conflict."
 msgstr ""
 
@@ -7074,7 +7074,7 @@ msgstr ""
 msgid "Solid color"
 msgstr ""
 
-#: src/settings/window.zig:1232
+#: src/settings/window.zig:1234
 msgid "Some changes have not reached Pearl. Keep this window open to recover them, or close and discard only those untransferred changes. Drafts already retained by Pearl remain in the session."
 msgstr ""
 
@@ -7389,15 +7389,15 @@ msgstr ""
 msgid "The application could not be added."
 msgstr ""
 
-#: src/settings/window.zig:1200
+#: src/settings/window.zig:1202
 msgid "The change could not be completed. Your draft is retained. Review Advanced and try again."
 msgstr ""
 
-#: src/settings/window.zig:1117
+#: src/settings/window.zig:1119
 msgid "The connection ended during an operation. Review the current settings before applying again."
 msgstr ""
 
-#: src/settings/default_apps_view.zig:190
+#: src/settings/default_apps_view.zig:181
 msgid "The default application could not be changed."
 msgstr ""
 
@@ -7417,11 +7417,11 @@ msgstr ""
 msgid "The draft cannot be edited as declarations. Open Aqueous Advanced to correct the draft JSON."
 msgstr ""
 
-#: src/settings/window.zig:1117
+#: src/settings/window.zig:1119
 msgid "The draft is invalid. Correct the fields or review the JSON in Advanced before applying."
 msgstr ""
 
-#: src/settings/window.zig:1196
+#: src/settings/window.zig:1198
 msgid "The draft is limited to 64 KiB. The previous text is retained."
 msgstr ""
 
@@ -7490,7 +7490,7 @@ msgstr ""
 msgid "The same field changed in both versions. Draft retained; review Advanced before discarding or resolving it."
 msgstr ""
 
-#: src/settings/window.zig:1197
+#: src/settings/window.zig:1199
 msgid "The same field changed in both versions. Review Advanced before resolving or discarding the draft."
 msgstr ""
 
@@ -7498,7 +7498,7 @@ msgstr ""
 msgid "The sample could not be tested. Wait for the draft to sync, then try again."
 msgstr ""
 
-#: src/settings/window.zig:1193
+#: src/settings/window.zig:1195
 msgid "The scheduler action could not be completed. Review its status and refresh before retrying."
 msgstr ""
 
@@ -7510,7 +7510,7 @@ msgstr ""
 msgid "The scheduler catalog was changed elsewhere meanwhile. Nothing was saved; review the profiles and save again."
 msgstr ""
 
-#: src/settings/window.zig:1186
+#: src/settings/window.zig:1188
 msgid "The screen must turn off before or at the suspend timeout. This change was not saved."
 msgstr ""
 
@@ -7534,7 +7534,7 @@ msgstr ""
 msgid "The tested draft has changed. Check the new selection before use."
 msgstr ""
 
-#: src/settings/window.zig:1198
+#: src/settings/window.zig:1200
 msgid "The wallpaper image could not be used. Choose a readable PNG or JPEG, then apply again."
 msgstr ""
 
@@ -7562,7 +7562,7 @@ msgstr ""
 msgid "These applications start when you log in. Changes apply at the next login."
 msgstr ""
 
-#: src/settings/window.zig:1084
+#: src/settings/window.zig:1086
 msgid "This Pearl session uses an incompatible Settings version."
 msgstr ""
 
@@ -7606,7 +7606,7 @@ msgstr ""
 msgid "This llama-server build does not support embeddings. Update the runtime in Runtime & acceleration."
 msgstr ""
 
-#: src/settings/window.zig:1174
+#: src/settings/window.zig:1176
 msgid "This local copy has not been resubmitted. Copy it before discarding, or use Rebase to reconcile independent changes."
 msgstr ""
 
@@ -7882,11 +7882,11 @@ msgid "Usage: pearl [--demo] [--help] [--version] [--check-environment] [--log-l
 msgstr ""
 
 #: src/settings/options.zig:28
-msgid "Usage: pearl-settings [--page PAGE] [--section AQUEOUS_SECTION]\n\nPages: overview, network, bluetooth, sound, power, appearance, bar,\n       notifications, defaults, system, session, aqueous, advanced, plugins\nAqueous sections: appearance, layouts, input, keybinds, rules, displays\n                  (advanced opens the shared Advanced page)\n\nA generic launch opens Overview. Repeated launches activate the existing\nwindow in this Aqueous session. Editing requires a running Pearl session.\n"
+msgid "Usage: pearl-settings [--page PAGE] [--section AQUEOUS_SECTION]\n\nPages: overview, network, bluetooth, sound, power, appearance, bar,\n       notifications, system, defaults, session, aqueous, advanced, plugins\nAqueous sections: appearance, layouts, input, keybinds, rules, displays\n                  (advanced opens the shared Advanced page)\n\nA generic launch opens Overview. Repeated launches activate the existing\nwindow in this Aqueous session. Editing requires a running Pearl session.\n"
 msgstr ""
 
 #: src/cli/options.zig:181
-msgid "Usage: pearlctl status | report | quit | lock\n       pearlctl assistant status|show|stop|clear|release|cancel\n       pearlctl semantic status|index|stop|delete\n       pearlctl night-light status|on|off|toggle|resume|retry\n       pearlctl clipboard status|show|toggle|clear\n       pearlctl clipboard select|delete --generation ENTRY_ID\n       pearlctl migrate dms --input SETTINGS [--session-file SESSION] [--base PEARL_JSON] [--bundle NEW_DIRECTORY]\n       pearlctl preferences apply --revision N --file PREFERENCES_JSON\n       pearlctl dock show|hide [--output ID]\n       pearlctl dock pin|unpin --text DESKTOP_ID [--output ID]\n       pearlctl capture status|show|cancel\n       pearlctl wm action --text ACTION_JSON\n       pearlctl capture windows [--offset N]\n       pearlctl capture window --text TOPLEVEL_ID\n       pearlctl capture output [--output ID]\n       pearlctl capture region --text X,Y,WIDTH,HEIGHT [--output ID]\n       pearlctl capture copy --generation N\n       pearlctl capture save --generation N [--path /absolute/new.png]\n       pearlctl lifecycle status\n       pearlctl lifecycle action --text lock|suspend|hibernate|logout|cancel|inhibit|uninhibit\n       pearlctl lifecycle action --text confirm --generation N\n       pearlctl aqueous show [--section SECTION] (legacy --text SECTION accepted)\n       pearlctl aqueous status|refresh|validate|apply|discard|rebase|reload\n       pearlctl aqueous keep|revert\n       pearlctl aqueous record --text FIELD_ID\n       pearlctl aqueous draft --text JSON\n       pearlctl settings show [--page PAGE] [--section AQUEOUS_SECTION] [--output ID]\n       Settings pages: overview, appearance, network, bluetooth, sound, power,\n                       bar, notifications, defaults, session, aqueous, advanced\n       Aqueous sections: appearance, layouts, input, keybinds, rules, displays\n                       (advanced opens the shared Advanced page)\n       Repeated settings launches activate the window; they never toggle it closed.\n       pearlctl plugins refresh\n       pearlctl plugins list [--offset N]\n       pearlctl plugins inspect|reload --path ID\n       pearlctl plugins enable --path ID --text PACKAGE_SHA256 --revision N\n       pearlctl plugins disable --path ID --revision N\n       pearlctl preferences status|reload\n       pearlctl preferences apply --revision N --text JSON\n       pearlctl popup show|toggle [--output ID]\n       pearlctl popup hide\n       pearlctl bar set --output ID --edge top|right|bottom|left --size 32..160\n       pearlctl frame set --output ID --edge EDGE --size 0..160\n       pearlctl osd show --text TEXT [--output ID] [--duration 100..10000]\n\n       pearlctl launcher show|hide|toggle [--output ID]\n       pearlctl control-center show|toggle [--output ID] [--page PAGE]\n       PAGE: overview (default), sound, network, bluetooth, power\n       Opens the compact flyout. Toggle closes the same page or switches to another.\n       Status popup.page reports its route; invalid pages leave the flyout unchanged.\n       pearlctl window-switcher next|previous|dismiss [--output ID]\n         Cycle all workspaces/displays on updated Aqueous; output anchors the switcher.\n       pearlctl running-apps show [--output ID]\n       pearlctl desktop focus [--output ID]\n       pearlctl calendar toggle [--output ID]\n       pearlctl overview toggle [--output ID]\n       pearlctl layout get|set --output ID [--layout NAME]\n       pearlctl bar groups --output ID --left ITEMS --center ITEMS --right ITEMS\n       ITEMS: comma-separated launcher,workspaces,title,clock,keyboard,overview,control,audio,battery,network,bluetooth,notifications,media,tray,clipboard\n       Also clock:ID for instances defined in the output's effective bar.clocks preferences.\n\n       pearlctl notifications|media|tray toggle [--output ID]\n       pearlctl session status [--offset N]\n       pearlctl session action --command COMMAND [--generation N] [--notification ID]\n                               [--position MICROSECONDS] [--menu-id ID --revision N] [--text ACTION_KEY]\n       See docs/SESSION_SERVICES.md for commands and identity fields.\n\n       pearlctl connectivity status [--offset N]\n       pearlctl connectivity action --service network|bluetooth --action ACTION --generation N [--path PATH]\n       pearlctl services status [--offset N]\n       pearlctl audio set --kind sink|source|playback|recording [--generation N --device ID]\n                          [--volume 0..100] [--mute true|false] [--default true] [--target ID]\n       pearlctl brightness set --percent 0..100 [--output NAME_OR_DEVICE_ID]\n       pearlctl brightness adjust --delta -100..100 [--output NAME_OR_DEVICE_ID]\n       pearlctl profile set --profile power-saver|balanced|performance\n\n       pearlctl report: write a bounded support report (environment, status,\n       recent journal lines) to ~/.local/state/pearl/report-*.log and print\n       its path. Contents and retention: docs/LOGGING.md.\n\nUses the current AQUEOUS_SOCKET, WAYLAND_DISPLAY and XDG_RUNTIME_DIR.\nOutput IDs come from `pearlctl status`. Replies are Pearl control v1 JSON.\n\nAny command also accepts --log-level error|warning|info|debug and\n--log-scopes LIST (all, or comma-separated scopes; ~scope excludes one).\n"
+msgid "Usage: pearlctl status | report | quit | lock\n       pearlctl assistant status|show|stop|clear|release|cancel\n       pearlctl semantic status|index|stop|delete\n       pearlctl night-light status|on|off|toggle|resume|retry\n       pearlctl clipboard status|show|toggle|clear\n       pearlctl clipboard select|delete --generation ENTRY_ID\n       pearlctl migrate dms --input SETTINGS [--session-file SESSION] [--base PEARL_JSON] [--bundle NEW_DIRECTORY]\n       pearlctl preferences apply --revision N --file PREFERENCES_JSON\n       pearlctl dock show|hide [--output ID]\n       pearlctl dock pin|unpin --text DESKTOP_ID [--output ID]\n       pearlctl capture status|show|cancel\n       pearlctl wm action --text ACTION_JSON\n       pearlctl apps launch --text browser|files|terminal|mail|editor|music|video\n       Launches the session's default application for the category.\n       pearlctl capture windows [--offset N]\n       pearlctl capture window --text TOPLEVEL_ID\n       pearlctl capture output [--output ID]\n       pearlctl capture region --text X,Y,WIDTH,HEIGHT [--output ID]\n       pearlctl capture copy --generation N\n       pearlctl capture save --generation N [--path /absolute/new.png]\n       pearlctl lifecycle status\n       pearlctl lifecycle action --text lock|suspend|hibernate|logout|cancel|inhibit|uninhibit\n       pearlctl lifecycle action --text confirm --generation N\n       pearlctl aqueous show [--section SECTION] (legacy --text SECTION accepted)\n       pearlctl aqueous status|refresh|validate|apply|discard|rebase|reload\n       pearlctl aqueous keep|revert\n       pearlctl aqueous record --text FIELD_ID\n       pearlctl aqueous draft --text JSON\n       pearlctl settings show [--page PAGE] [--section AQUEOUS_SECTION] [--output ID]\n       Settings pages: overview, appearance, network, bluetooth, sound, power,\n                       bar, notifications, defaults, session, aqueous, advanced\n       Aqueous sections: appearance, layouts, input, keybinds, rules, displays\n                       (advanced opens the shared Advanced page)\n       Repeated settings launches activate the window; they never toggle it closed.\n       pearlctl plugins refresh\n       pearlctl plugins list [--offset N]\n       pearlctl plugins inspect|reload --path ID\n       pearlctl plugins enable --path ID --text PACKAGE_SHA256 --revision N\n       pearlctl plugins disable --path ID --revision N\n       pearlctl preferences status|reload\n       pearlctl preferences apply --revision N --text JSON\n       pearlctl popup show|toggle [--output ID]\n       pearlctl popup hide\n       pearlctl bar set --output ID --edge top|right|bottom|left --size 32..160\n       pearlctl frame set --output ID --edge EDGE --size 0..160\n       pearlctl osd show --text TEXT [--output ID] [--duration 100..10000]\n\n       pearlctl launcher show|hide|toggle [--output ID]\n       pearlctl control-center show|toggle [--output ID] [--page PAGE]\n       PAGE: overview (default), sound, network, bluetooth, power\n       Opens the compact flyout. Toggle closes the same page or switches to another.\n       Status popup.page reports its route; invalid pages leave the flyout unchanged.\n       pearlctl window-switcher next|previous|dismiss [--output ID]\n         Cycle all workspaces/displays on updated Aqueous; output anchors the switcher.\n       pearlctl running-apps show [--output ID]\n       pearlctl desktop focus [--output ID]\n       pearlctl calendar toggle [--output ID]\n       pearlctl overview toggle [--output ID]\n       pearlctl layout get|set --output ID [--layout NAME]\n       pearlctl bar groups --output ID --left ITEMS --center ITEMS --right ITEMS\n       ITEMS: comma-separated launcher,workspaces,title,clock,keyboard,overview,control,audio,battery,network,bluetooth,notifications,media,tray,clipboard\n       Also clock:ID for instances defined in the output's effective bar.clocks preferences.\n\n       pearlctl notifications|media|tray toggle [--output ID]\n       pearlctl session status [--offset N]\n       pearlctl session action --command COMMAND [--generation N] [--notification ID]\n                               [--position MICROSECONDS] [--menu-id ID --revision N] [--text ACTION_KEY]\n       See docs/SESSION_SERVICES.md for commands and identity fields.\n\n       pearlctl connectivity status [--offset N]\n       pearlctl connectivity action --service network|bluetooth --action ACTION --generation N [--path PATH]\n       pearlctl services status [--offset N]\n       pearlctl audio set --kind sink|source|playback|recording [--generation N --device ID]\n                          [--volume 0..100] [--mute true|false] [--default true] [--target ID]\n       pearlctl brightness set --percent 0..100 [--output NAME_OR_DEVICE_ID]\n       pearlctl brightness adjust --delta -100..100 [--output NAME_OR_DEVICE_ID]\n       pearlctl profile set --profile power-saver|balanced|performance\n\n       pearlctl report: write a bounded support report (environment, status,\n       recent journal lines) to ~/.local/state/pearl/report-*.log and print\n       its path. Contents and retention: docs/LOGGING.md.\n\nUses the current AQUEOUS_SOCKET, WAYLAND_DISPLAY and XDG_RUNTIME_DIR.\nOutput IDs come from `pearlctl status`. Replies are Pearl control v1 JSON.\n\nAny command also accepts --log-level error|warning|info|debug and\n--log-scopes LIST (all, or comma-separated scopes; ~scope excludes one).\n"
 msgstr ""
 
 #: src/settings/assistant_view.zig:166

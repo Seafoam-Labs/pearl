@@ -109,17 +109,8 @@ pub const View = struct {
         }
     }
 
-    fn currentDefault(self: *View, alloc: std.mem.Allocator, spec: *const policy.Spec) !?[]const u8 {
-        _ = self;
-        if (spec.category == .terminal) {
-            const dir = configHome(alloc) catch return null;
-            const id = policy.terminalDefault(alloc, dir) catch return null;
-            return id;
-        }
-        const info = gio.AppInfo.getDefaultForType(spec.mimes[0], 0) orelse return null;
-        defer info.as(object.Object).unref();
-        const raw = info.getId() orelse return null;
-        return try alloc.dupe(u8, std.mem.span(raw));
+    fn currentDefault(_: *View, alloc: std.mem.Allocator, spec: *const policy.Spec) !?[]const u8 {
+        return @import("launch.zig").defaultDesktopId(alloc, spec.category);
     }
 
     fn fillCandidates(self: *View, alloc: std.mem.Allocator, row: *Row, model: *gtk.StringList) !void {
@@ -200,7 +191,7 @@ pub const View = struct {
         defer arena.deinit();
         const alloc = arena.allocator();
         if (spec.category == .terminal) {
-            const dir = try configHome(alloc);
+            const dir = try @import("launch.zig").configHome(alloc);
             return policy.setTerminalDefault(alloc, dir, id);
         }
         const desktop = unix.DesktopAppInfo.new(id) orelse return error.ApplicationNotFound;
@@ -217,12 +208,3 @@ pub const View = struct {
         }
     }
 };
-
-fn configHome(alloc: std.mem.Allocator) ![]const u8 {
-    if (glib.getenv("XDG_CONFIG_HOME")) |raw| {
-        const value = std.mem.span(raw);
-        if (value.len > 0) return value;
-    }
-    const home = glib.getenv("HOME") orelse return error.NoConfigHome;
-    return std.fs.path.join(alloc, &.{ std.mem.span(home), ".config" });
-}

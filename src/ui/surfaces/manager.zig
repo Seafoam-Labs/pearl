@@ -2581,6 +2581,32 @@ pub const Manager = struct {
                 try self.session_services.act(request);
                 return "{\"queued\":true}";
             },
+            .apps_launch => {
+                const defaults_policy = @import("../../services/default_apps.zig");
+                const launch = @import("../../settings/launch.zig");
+                const category = std.meta.stringToEnum(defaults_policy.Category, request.text orelse return error.InvalidValue) orelse return error.InvalidValue;
+                var arena = std.heap.ArenaAllocator.init(a);
+                defer arena.deinit();
+                const id = (try launch.defaultDesktopId(arena.allocator(), category)) orelse return error.Unavailable;
+                const idz = try arena.allocator().dupeSentinel(u8, id, 0);
+                const desktop = @import("giounix2").DesktopAppInfo.new(idz) orelse return error.Unavailable;
+                defer desktop.unref();
+                const context = self.display.getAppLaunchContext();
+                defer context.unref();
+                const info = launch.activationInfo("/proc/self/exe", "Pearl") catch null;
+                defer if (info) |i| i.unref();
+                const token = if (info) |i| context.as(gio.AppLaunchContext).getStartupNotifyId(i.as(gio.AppInfo), null) else null;
+                defer if (token) |t| glib.free(t);
+                if (token) |t| {
+                    context.as(gio.AppLaunchContext).setenv("XDG_ACTIVATION_TOKEN", std.mem.span(t));
+                    context.as(gio.AppLaunchContext).setenv("DESKTOP_STARTUP_ID", std.mem.span(t));
+                }
+                var err: ?*glib.Error = null;
+                defer if (err) |e| e.free();
+                if (desktop.as(gio.AppInfo).launch(null, context.as(gio.AppLaunchContext), &err) == 0) return error.Unavailable;
+                self.index.remember(id);
+                return "{\"launched\":true}";
+            },
             .notifications_toggle, .media_toggle, .tray_toggle, .clipboard_toggle => {
                 const pane: Bar.Pane = switch (request.op) {
                     .notifications_toggle => .notifications,
