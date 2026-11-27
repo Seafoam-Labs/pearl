@@ -566,6 +566,7 @@ pub fn sendArchive(owner: *Window, c: *const Context) void {
         }
     }
     spawn(owner, args.items, c.directory);
+    if (owner.findTab(c.tab_id)) |tab| tab.scheduleRefresh();
 }
 pub fn integration(owner: *Window, c: *const Context, cmd: Command) void {
     if (cmd == .admin) {
@@ -574,6 +575,7 @@ pub fn integration(owner: *Window, c: *const Context, cmd: Command) void {
     }
     if (cmd == .extract) {
         extractHere(owner, c.items.items[0].file, extractor(c) orelse return);
+        if (owner.findTab(c.tab_id)) |tab| tab.scheduleRefresh();
         return;
     }
     var args: std.ArrayList([*:0]const u8) = .empty;
@@ -592,6 +594,7 @@ pub fn integration(owner: *Window, c: *const Context, cmd: Command) void {
         args.append(a, path) catch unreachable;
     }
     spawn(owner, args.items, c.directory);
+    if (owner.findTab(c.tab_id)) |tab| tab.scheduleRefresh();
 }
 const AdminRequest = struct { owner: *Window, pane: usize, file: *gio.File, operation: *gtk.MountOperation };
 /// The GVFS admin backend is mountable: it must be mounted (which spawns

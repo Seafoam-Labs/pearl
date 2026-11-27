@@ -37,6 +37,8 @@ pub const Tab = struct {
     alive: bool = true,
     ready: bool = false,
     focus_pending: bool = false,
+    refresh_id: c_uint = 0,
+    diff: *@import("directory_model.zig").Model,
     pub fn create(owner: *Window, pane: usize, file: *gio.File) *Tab {
         const self = a.create(Tab) catch @panic("Out of memory");
         const root = gtk.Stack.new();
@@ -49,9 +51,9 @@ pub const Tab = struct {
         directory.setIoPriority(200);
         directory.setMonitored(1);
         const filter = gtk.CustomFilter.new(matches, self, null);
-        directory.ref();
         filter.ref();
-        const filtered = gtk.FilterListModel.new(directory.as(gio.ListModel), filter.as(gtk.Filter));
+        const diff = @import("directory_model.zig").Model.new(directory);
+        const filtered = gtk.FilterListModel.new(diff.as(gio.ListModel), filter.as(gtk.Filter));
         const sorter = gtk.CustomSorter.new(compare, self, null);
         sorter.ref();
         const sorted = gtk.SortListModel.new(filtered.as(gio.ListModel), sorter.as(gtk.Sorter));
@@ -125,7 +127,7 @@ pub const Tab = struct {
         const network_body = u.box(.vertical, 12, "network-page");
         _ = root.addNamed(u.scroll(network_body.as(gtk.Widget)).as(gtk.Widget), "network");
         owner.next_tab_id += 1;
-        self.* = .{ .id = owner.next_tab_id, .sorter = sorter, .owner = owner, .pane = pane, .root = root, .views = views, .network_body = network_body, .grid = grid, .list = list, .directory = directory, .filter = filter, .selection = selection, .error_label = error_label, .error_title = error_title, .uri = a.dupeSentinel(u8, "", 0) catch unreachable, .title = a.dupeSentinel(u8, "", 0) catch unreachable, .query = a.dupeSentinel(u8, "", 0) catch unreachable };
+        self.* = .{ .id = owner.next_tab_id, .sorter = sorter, .owner = owner, .pane = pane, .root = root, .views = views, .network_body = network_body, .grid = grid, .list = list, .directory = directory, .diff = diff, .filter = filter, .selection = selection, .error_label = error_label, .error_title = error_title, .uri = a.dupeSentinel(u8, "", 0) catch unreachable, .title = a.dupeSentinel(u8, "", 0) catch unreachable, .query = a.dupeSentinel(u8, "", 0) catch unreachable };
         // Restore before enumeration, without syncing a tab not yet in its pane.
         self.list_mode = owner.preferences.view_mode == .list;
         self.hidden = owner.preferences.show_hidden;
@@ -156,6 +158,11 @@ pub const Tab = struct {
     pub fn destroy(self: *Tab) void {
         self.invalidate();
         self.alive = false;
+        if (self.refresh_id != 0) {
+            _ = glib.Source.remove(self.refresh_id);
+            self.refresh_id = 0;
+        }
+        self.diff.destroy();
         if (self.metadata_cancel) |c| {
             c.cancel();
             c.unref();
@@ -166,6 +173,7 @@ pub const Tab = struct {
         self.root.unref();
         self.selection.unref();
         self.filter.unref();
+        self.diff.unref();
         self.directory.unref();
         self.history.deinit();
         a.free(self.uri);
@@ -242,6 +250,23 @@ pub const Tab = struct {
         defer f.unref();
         self.directory.setFile(null);
         self.directory.setFile(f);
+    }
+    /// Spawned writers (archives, extractions) change the directory outside
+    /// the operation engine. Re-enumerate and diff against the live listing so
+    /// only new or changed items update (correct size/icon) without flashing
+    /// every icon or dropping the selection. Coalesced per tab so a burst of
+    /// spawns schedules a single refresh.
+    pub fn scheduleRefresh(self: *Tab) void {
+        if (self.refresh_id == 0) self.refresh_id = glib.timeoutAdd(500, refreshTimeout, self);
+    }
+    fn refreshTimeout(data: ?*anyopaque) callconv(.c) c_int {
+        const self: *Tab = @ptrCast(@alignCast(data.?));
+        self.refresh_id = 0;
+        if (self.alive and !self.owner.closed) {
+            self.diff.refresh();
+            self.owner.invalidateDetails();
+        }
+        return 0;
     }
     pub fn setQuery(self: *Tab, query: []const u8) void {
         self.invalidate();

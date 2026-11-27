@@ -53,6 +53,7 @@ pub const Window = struct {
     quick_preview: ?*@import("preview.zig").Quick = null,
     details_key: ?[:0]u8 = null,
     details_measure_cancel: ?*gio.Cancellable = null,
+    details_monitor: ?*gio.FileMonitor = null,
     width: c_int = 1180,
     closed: bool = false,
     syncing: bool = false,
@@ -788,6 +789,15 @@ pub const Window = struct {
     pub fn queueUpdate(self: *Window) void {
         if (!self.closed and self.update_id == 0) self.update_id = glib.idleAdd(updateIdle, self);
     }
+    /// Force the details pane to rebuild and re-measure on the next idle,
+    /// even when the selected item's cached identity has not changed.
+    pub fn invalidateDetails(self: *Window) void {
+        if (self.details_key) |key| {
+            a.free(key);
+            self.details_key = null;
+        }
+        self.queueUpdate();
+    }
     fn updateIdle(data: ?*anyopaque) callconv(.c) c_int {
         const self: *Window = @ptrCast(@alignCast(data.?));
         self.update_id = 0;
@@ -833,6 +843,11 @@ pub const Window = struct {
             c.unref();
             self.details_measure_cancel = null;
         }
+        if (self.details_monitor) |m| {
+            _ = m.cancel();
+            m.unref();
+            self.details_monitor = null;
+        }
         u.clear(self.details_body);
         if (!visible) return;
         const top = u.box(.horizontal, 8, null);
@@ -868,7 +883,15 @@ pub const Window = struct {
         const size = u.sizeText(info);
         defer glib.free(size);
         const size_label = self.detail(@import("i18n").dtr("phyto", "Size"), if (is_directory) "Calculating…" else size);
-        if (is_directory) self.measureDetails(info, size_label);
+        if (is_directory) {
+            self.measureDetails(info, size_label);
+            // The parent listing's monitor never reports changes inside a
+            // child folder, so its cached identity (and the details key)
+            // would stay stale; watch the folder itself to re-measure.
+            const folder = u.file(info);
+            self.details_monitor = folder.monitorDirectory(.{}, null, null);
+            if (self.details_monitor) |m| _ = gio.FileMonitor.signals.changed.connect(m, *Window, detailsChanged, self, .{});
+        }
         const date = u.dateText(info);
         defer glib.free(date);
         _ = self.detail(@import("i18n").dtr("phyto", "Modified"), date);
@@ -877,6 +900,9 @@ pub const Window = struct {
         properties.as(gtk.Widget).addCssClass("tonal");
         self.connect(properties, .properties);
         self.details_body.append(properties.as(gtk.Widget));
+    }
+    fn detailsChanged(_: *gio.FileMonitor, _: *gio.File, _: ?*gio.File, _: gio.FileMonitorEvent, self: *Window) callconv(.c) void {
+        if (!self.closed) self.invalidateDetails();
     }
     fn detail(self: *Window, title: [*:0]const u8, value: [*:0]const u8) *gtk.Label {
         const row = u.box(.vertical, 4, "metadata");
@@ -1480,7 +1506,10 @@ pub const Window = struct {
         dialog.as(gtk.Window).present();
     }
     fn extractAskResponse(dialog: *gtk.Dialog, response: c_int, r: *ExtractAsk) callconv(.c) void {
-        if (response == 1 and !r.owner.closed) @import("platform/applications.zig").extractHere(r.owner, r.file, r.tool);
+        if (response == 1 and !r.owner.closed) {
+            @import("platform/applications.zig").extractHere(r.owner, r.file, r.tool);
+            r.owner.current().scheduleRefresh();
+        }
         dialog.as(gtk.Window).destroy();
     }
     fn extractAskFreed(data: ?*anyopaque) callconv(.c) void {
@@ -1583,6 +1612,11 @@ pub const Window = struct {
             c.cancel();
             c.unref();
             self.details_measure_cancel = null;
+        }
+        if (self.details_monitor) |m| {
+            _ = m.cancel();
+            m.unref();
+            self.details_monitor = null;
         }
         for (self.volume_signals) |signal| object.signalHandlerDisconnect(self.volume_monitor.as(object.Object), signal);
         self.closed = true;
