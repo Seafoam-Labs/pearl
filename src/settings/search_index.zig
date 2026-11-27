@@ -93,6 +93,13 @@ pub const pearl_manifest = [_]PearlEntry{
     .{ .id = "dock.icon_size", .label = "Dock icon size", .description = "Dock icon size in pixels", .route = .bar, .breadcrumb = "Bar & dock › Dock", .keywords = "dock icon size" },
     .{ .id = "popup.placement", .label = "Flyout placement", .description = "Anchored or centered flyouts", .route = .bar, .breadcrumb = "Bar & dock › Flyouts", .keywords = "flyout popup placement anchored centered" },
     .{ .id = "raw", .label = "Pearl preferences JSON", .description = "Edit the full preferences document", .route = .advanced, .breadcrumb = "Advanced", .keywords = "json raw preferences config document advanced" },
+    .{ .id = "defaults.browser", .label = "Web browser", .description = "Opens web links and HTML files", .route = .defaults, .breadcrumb = "Default applications", .keywords = "browser web http https firefox zen chrome chromium default" },
+    .{ .id = "defaults.files", .label = "File manager", .description = "Opens folders and drives", .route = .defaults, .breadcrumb = "Default applications", .keywords = "files folder directory manager phyto nemo nautilus default" },
+    .{ .id = "defaults.terminal", .label = "Terminal", .description = "Runs command-line sessions", .route = .defaults, .breadcrumb = "Default applications", .keywords = "terminal console shell ghostty kitty foot wezterm default" },
+    .{ .id = "defaults.mail", .label = "Mail", .description = "Composes messages for mailto links", .route = .defaults, .breadcrumb = "Default applications", .keywords = "mail email mailto thunderbird geary default" },
+    .{ .id = "defaults.editor", .label = "Text editor", .description = "Opens plain-text documents", .route = .defaults, .breadcrumb = "Default applications", .keywords = "text editor plain documents zed gedit default" },
+    .{ .id = "defaults.music", .label = "Music player", .description = "Plays audio files", .route = .defaults, .breadcrumb = "Default applications", .keywords = "music audio player songs default" },
+    .{ .id = "defaults.video", .label = "Video player", .description = "Plays video files", .route = .defaults, .breadcrumb = "Default applications", .keywords = "video player movies mpv vlc default" },
 };
 
 /// Append every Pearl manifest entry matching the needle. Labels and

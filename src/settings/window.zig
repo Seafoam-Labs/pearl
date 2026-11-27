@@ -50,6 +50,7 @@ pub const Window = struct {
     scheduler_view: ?*@import("scheduler_view.zig").View = null,
     autostart_service: ?*@import("../services/autostart.zig").Service = null,
     autostart_view: ?*@import("autostart_view.zig").View = null,
+    default_apps_view: ?*@import("default_apps_view.zig").View = null,
     plugins_view: ?*@import("plugins_view.zig").View = null,
     notification_filters: ?*@import("notification_filters_view.zig").View = null,
     preferences_view: ?*@import("preferences_view.zig").View = null,
@@ -319,6 +320,11 @@ pub const Window = struct {
             };
             self.autostart_view = try @import("autostart_view.zig").View.create(body, autostart);
         }
+        if (!fixture) {
+            const body = object.ext.cast(gtk.Box, self.pages[@backingInt(nav.Route.defaults)].body).?;
+            while (body.as(gtk.Widget).getFirstChild()) |child| body.remove(child);
+            self.default_apps_view = try @import("default_apps_view.zig").View.create(body);
+        }
         if (!fixture) for ([_]nav.Route{ .overview, .network, .bluetooth, .sound, .power, .notifications }) |route| {
             const body = object.ext.cast(gtk.Box, self.pages[@backingInt(route)].body).?;
             if (route != .overview) while (body.as(gtk.Widget).getFirstChild()) |child| {
@@ -413,6 +419,8 @@ pub const Window = struct {
             a.destroy(service);
         }
         self.autostart_service = null;
+        if (self.default_apps_view) |view| view.destroy();
+        self.default_apps_view = null;
         if (self.plugins_view) |view| view.destroy();
         for (self.live_pages) |page| if (page) |view| view.destroy();
         for (self.preference_pages) |page| if (page) |view| view.destroy();
@@ -449,6 +457,7 @@ pub const Window = struct {
             .power => @import("i18n").dtr("pearl", "Balance performance, battery life, sleep and locking."),
             .bar => @import("i18n").dtr("pearl", "Arrange your desktop bar and dock."),
             .notifications => @import("i18n").dtr("pearl", "Manage interruptions and notification history."),
+            .defaults => @import("i18n").dtr("pearl", "Choose the applications that open links and files."),
             .system => @import("i18n").dtr("pearl", "Manage system performance and CPU scheduling."),
             .startup => @import("i18n").dtr("pearl", "Choose which applications start when you log in."),
             .aqueous => @import("i18n").dtr("pearl", "Configure your compositor by section."),
@@ -467,7 +476,7 @@ pub const Window = struct {
             .assistant => "pearl-user-available-symbolic",
             .bar, .aqueous => "pearl-window-symbolic",
             .notifications => "pearl-notifications-symbolic",
-            .startup => "pearl-application-x-executable-symbolic",
+            .startup, .defaults => "pearl-application-x-executable-symbolic",
             .system, .advanced, .plugins => "pearl-emblem-system-symbolic",
         };
     }
@@ -641,6 +650,13 @@ pub const Window = struct {
             },
             .advanced => {
                 if (std.mem.eql(u8, id, "raw")) if (self.preferences_view) |view| return revealWidget(view.raw_view.as(gtk.Widget));
+            },
+            .defaults => {
+                const view = self.default_apps_view orelse return false;
+                const prefix = "defaults.";
+                if (!std.mem.startsWith(u8, id, prefix)) return false;
+                const category = id[prefix.len..];
+                for (view.rows) |*row| if (std.mem.eql(u8, @tagName(row.spec.category), category)) return revealWidget(row.dropdown.as(gtk.Widget));
             },
             else => {},
         }
@@ -929,8 +945,13 @@ pub const Window = struct {
         const heading = if (target.page == .aqueous) self.sectionTitle(self.aqueous_section) else self.title(target.page);
         self.heading.setText(heading);
         w.name(self.heading_anchor, heading);
+        // The sidebar already names this page, so its card starts at the top.
+        // The hidden header's top inset moves to the body to keep the gap.
+        self.heading_anchor.setVisible(@intFromBool(target.page != .defaults));
+        self.pages[@backingInt(target.page)].body.setMarginTop(if (target.page == .defaults) 24 else 0);
         self.subtitle.setText(if (target.page == .aqueous) sectionDescription(self.aqueous_section) else self.description(target.page));
         self.stack.setVisibleChildName(target.page.id());
+        if (target.page == .defaults) if (self.default_apps_view) |view| view.update();
         self.popover.popdown();
         const page = &self.pages[@backingInt(target.page)];
         if (external) {
@@ -1093,7 +1114,7 @@ pub const Window = struct {
         self.save.as(gtk.Widget).setSensitive(@intFromBool(available and dirty and (if (editor.local != null) editor.local_valid else editor.state.valid) and !editor.state.conflict and !editor.recovery));
         self.discard.as(gtk.Widget).setSensitive(@intFromBool(available and dirty));
         self.merge_button.as(gtk.Widget).setSensitive(@intFromBool(available));
-        self.footer_text.setText(if (editor.recovery) @import("i18n").dtr("pearl", "Local changes need review. Merge them or discard only the local copy.") else if (editor.local != null) @import("i18n").dtr("pearl", "Pearl preferences · Retaining draft…") else if (editor.state.busy) @import("i18n").dtr("pearl", "Pearl preferences · Preparing settings…") else if (self.target.page == .system and self.scheduler_view != null) @import("i18n").dtr("pearl", "A profile applies immediately and stays selected after a restart.") else if (self.target.page == .system) @import("i18n").dtr("pearl", "Select a scheduler and mode, then use Apply scheduler. Boot defaults are unchanged.") else if (!preference_page) (if (dirty) @import("i18n").dtr("pearl", "Service controls take effect immediately. Pearl preference draft retained.") else @import("i18n").dtr("pearl", "Changes on this page take effect immediately.")) else if (self.target.page == .notifications) @import("i18n").dtr("pearl", "Apply saves all Pearl preferences. Filters affect future arrivals; DND and history actions are immediate.") else if (editor.state.dirty) @import("i18n").dtr("pearl", "Pearl preferences · Draft retained in this session. Apply saves all Pearl changes.") else @import("i18n").dtr("pearl", "Pearl preferences · All changes are applied explicitly."));
+        self.footer_text.setText(if (editor.recovery) @import("i18n").dtr("pearl", "Local changes need review. Merge them or discard only the local copy.") else if (editor.local != null) @import("i18n").dtr("pearl", "Pearl preferences · Retaining draft…") else if (editor.state.busy) @import("i18n").dtr("pearl", "Pearl preferences · Preparing settings…") else if (self.target.page == .system and self.scheduler_view != null) @import("i18n").dtr("pearl", "A profile applies immediately and stays selected after a restart.") else if (self.target.page == .system) @import("i18n").dtr("pearl", "Select a scheduler and mode, then use Apply scheduler. Boot defaults are unchanged.") else if (!preference_page) (if (dirty) @import("i18n").dtr("pearl", "Service controls take effect immediately. Pearl preference draft retained.") else if (self.target.page == .defaults) @import("i18n").dtr("pearl", "Changes apply immediately, in Pearl and in other applications that follow the system defaults.") else @import("i18n").dtr("pearl", "Changes on this page take effect immediately.")) else if (self.target.page == .notifications) @import("i18n").dtr("pearl", "Apply saves all Pearl preferences. Filters affect future arrivals; DND and history actions are immediate.") else if (editor.state.dirty) @import("i18n").dtr("pearl", "Pearl preferences · Draft retained in this session. Apply saves all Pearl changes.") else @import("i18n").dtr("pearl", "Pearl preferences · All changes are applied explicitly."));
         if (!self.connected) return;
         const status_text: [:0]const u8 = if (!editor.ready) @import("i18n").dtr("pearl", "Loading Pearl preferences…") else if (editor.uncertain_operation) @import("i18n").dtr("pearl", "The connection ended during an operation. Review the current settings before applying again.") else if (editor.recovery or editor.state.conflict) @import("i18n").dtr("pearl", "Settings changed elsewhere. Your changes are retained. Merge independent changes, or review Advanced to resolve a conflict.") else if (editor.error_code.len > 0) self.errorMessage(editor.error_code.slice()) else if (!editor.state.valid) @import("i18n").dtr("pearl", "The draft is invalid. Correct the fields or review the JSON in Advanced before applying.") else if (editor.export_error.len > 0) @import("i18n").dtr("pearl", "Preferences were saved. An export needs attention; your changes remain applied.") else "";
         self.status.setText(status_text);
@@ -1644,6 +1665,9 @@ pub const Window = struct {
                 try controls.append(alloc, .{ .field = control.id, .focused = if (focus) |f| f == control.widget or f.isAncestor(control.widget) != 0 else false, .enabled = control.widget.getSensitive() != 0, .bounds = self.bounds(control.widget) });
             };
         }
+        if (self.default_apps_view) |view| for (view.rows) |*row| {
+            try controls.append(alloc, .{ .field = try std.fmt.allocPrint(alloc, "defaults.{s}", .{@tagName(row.spec.category)}), .focused = if (focus) |f| f == row.dropdown.as(gtk.Widget) or f.isAncestor(row.dropdown.as(gtk.Widget)) != 0 else false, .enabled = row.dropdown.as(gtk.Widget).isSensitive() != 0, .bounds = self.bounds(row.dropdown.as(gtk.Widget)) });
+        };
         if (self.live_pages[@backingInt(self.target.page)]) |view| for (view.bindings.items) |binding| {
             try controls.append(alloc, .{ .field = binding.id, .focused = if (focus) |f| f == binding.widget or f.isAncestor(binding.widget) != 0 else false, .bounds = self.bounds(binding.widget) });
         };

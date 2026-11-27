@@ -38,6 +38,9 @@
 .pearl-root.$scope listview row { padding: 0; border-radius: 12px; margin: 2px 3px; }
 .pearl-root.$scope listview row:hover { background: $high$; }
 .pearl-root.$scope listview row:selected { background: $primary_container$; color: $on_container$; }
+/* Dropdown popups reuse these zero-padding rows; without inset their labels
+   sit flush against the rounded row backgrounds and the popover corners. */
+.pearl-root.$scope popover listview row { padding: 8px 10px; }
 /* The scroller clips at its own edge, so reserve the room a row focus ring
    needs beyond its margin or the first and last rings lose a side. */
 .pearl-root.$scope .pearl-launcher-list { padding: 2px 1px; }
