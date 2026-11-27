@@ -4359,7 +4359,7 @@ msgstr ""
 msgid "No matches. Try another name."
 msgstr ""
 
-#: src/settings/autostart_view.zig:263 src/settings/default_apps_view.zig:247
+#: src/settings/autostart_view.zig:263
 msgid "No matching applications."
 msgstr ""
 
@@ -4474,10 +4474,6 @@ msgstr ""
 
 #: src/desktop/scheduling.zig:117 src/settings/scheduler_view.zig:155
 msgid "Not installed"
-msgstr ""
-
-#: src/settings/default_apps_view.zig:72 src/settings/default_apps_view.zig:106 src/settings/default_apps_view.zig:110
-msgid "Not set"
 msgstr ""
 
 #: src/settings/semantic_view.zig:105
@@ -7401,7 +7397,7 @@ msgstr ""
 msgid "The connection ended during an operation. Review the current settings before applying again."
 msgstr ""
 
-#: src/settings/default_apps_view.zig:178
+#: src/settings/default_apps_view.zig:191
 msgid "The default application could not be changed."
 msgstr ""
 

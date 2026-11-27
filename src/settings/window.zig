@@ -656,7 +656,7 @@ pub const Window = struct {
                 const prefix = "defaults.";
                 if (!std.mem.startsWith(u8, id, prefix)) return false;
                 const category = id[prefix.len..];
-                for (view.rows) |*row| if (std.mem.eql(u8, @tagName(row.spec.category), category)) return revealWidget(row.button.as(gtk.Widget));
+                for (view.rows) |*row| if (std.mem.eql(u8, @tagName(row.spec.category), category)) return revealWidget(row.dropdown.as(gtk.Widget));
             },
             else => {},
         }
@@ -1666,7 +1666,7 @@ pub const Window = struct {
             };
         }
         if (self.default_apps_view) |view| for (view.rows) |*row| {
-            try controls.append(alloc, .{ .field = try std.fmt.allocPrint(alloc, "defaults.{s}", .{@tagName(row.spec.category)}), .focused = if (focus) |f| f == row.button.as(gtk.Widget) or f.isAncestor(row.button.as(gtk.Widget)) != 0 else false, .enabled = row.button.as(gtk.Widget).isSensitive() != 0, .bounds = self.bounds(row.button.as(gtk.Widget)) });
+            try controls.append(alloc, .{ .field = try std.fmt.allocPrint(alloc, "defaults.{s}", .{@tagName(row.spec.category)}), .focused = if (focus) |f| f == row.dropdown.as(gtk.Widget) or f.isAncestor(row.dropdown.as(gtk.Widget)) != 0 else false, .enabled = row.dropdown.as(gtk.Widget).isSensitive() != 0, .bounds = self.bounds(row.dropdown.as(gtk.Widget)) });
         };
         if (self.live_pages[@backingInt(self.target.page)]) |view| for (view.bindings.items) |binding| {
             try controls.append(alloc, .{ .field = binding.id, .focused = if (focus) |f| f == binding.widget or f.isAncestor(binding.widget) != 0 else false, .bounds = self.bounds(binding.widget) });

@@ -25,7 +25,10 @@ pub fn activationInfo(program: [:0]const u8, name: [:0]const u8) !*@import("giou
 /// terminals). Null when nothing is configured. Caller owns the result.
 pub fn defaultDesktopId(alloc: std.mem.Allocator, category: @import("../services/default_apps.zig").Category) !?[]u8 {
     const policy = @import("../services/default_apps.zig");
-    if (category == .terminal) return policy.terminalDefault(alloc, try configHome(alloc));
+    if (category == .terminal) {
+        if (try policy.terminalDefault(alloc, try configHome(alloc))) |id| return id;
+        return terminalFallback(alloc);
+    }
     const spec = for (policy.specs) |s| {
         if (s.category == category) break s;
     } else unreachable;
@@ -33,6 +36,32 @@ pub fn defaultDesktopId(alloc: std.mem.Allocator, category: @import("../services
     defer info.as(gobject.Object).unref();
     const raw = info.getId() orelse return null;
     return try alloc.dupe(u8, std.mem.span(raw));
+}
+
+/// First installed terminal emulator, for sessions where a terminal is
+/// registered but never set up as the default. Caller owns the result.
+pub fn terminalFallback(alloc: std.mem.Allocator) !?[]u8 {
+    const policy = @import("../services/default_apps.zig");
+    const get: *const fn () callconv(.c) ?*glib.List = @ptrCast(&gio.AppInfo.getAll);
+    const list = get();
+    defer if (list) |head| {
+        var it: ?*glib.List = head;
+        while (it) |node| : (it = node.f_next) {
+            const info: *gio.AppInfo = @ptrCast(@alignCast(node.f_data.?));
+            info.as(gobject.Object).unref();
+        }
+        head.free();
+    };
+    var it = list;
+    while (it) |node| : (it = node.f_next) {
+        const info: *gio.AppInfo = @ptrCast(@alignCast(node.f_data.?));
+        const desktop = gobject.ext.cast(@import("giounix2").DesktopAppInfo, info) orelse continue;
+        const raw = desktop.getCategories() orelse continue;
+        if (!policy.hasCategory(std.mem.span(raw), "TerminalEmulator")) continue;
+        const id = info.getId() orelse continue;
+        return try alloc.dupe(u8, std.mem.span(id));
+    }
+    return null;
 }
 
 pub fn configHome(alloc: std.mem.Allocator) ![]const u8 {

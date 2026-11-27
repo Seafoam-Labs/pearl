@@ -1,9 +1,6 @@
 //! Default applications page. Choices are written straight to the XDG
 //! defaults (mimeapps.list through GIO, xdg-terminals.list for terminals), so
 //! they apply immediately and are honored outside Pearl as well.
-//! Each row is a button opening the same chooser-dialog pattern the Startup
-//! applications page uses; dropdown popups proved unreliable for dynamic
-//! candidate lists in this GTK build.
 const std = @import("std");
 const gtk = @import("gtk4");
 const gio = @import("gio2");
@@ -11,7 +8,6 @@ const glib = @import("glib2");
 const object = @import("gobject2");
 const unix = @import("giounix2");
 const w = @import("../ui/components/widgets.zig");
-const builder = @import("rule_builder.zig");
 const policy = @import("../services/default_apps.zig");
 const log = std.log.scoped(.settings);
 const a = std.heap.c_allocator;
@@ -21,24 +17,17 @@ pub const View = struct {
     root: *gtk.Box,
     status: *gtk.Label,
     rows: []Row,
-    picker: ?Picker = null,
+    connections: std.ArrayList(Connection) = .empty,
+    /// Owns candidate ids and names rebuilt on every update.
+    arena: std.heap.ArenaAllocator = .init(a),
+    filling: bool = false,
 
     const Row = struct {
         view: *View,
         spec: *const policy.Spec,
-        title: [:0]const u8,
-        line: *gtk.FlowBox,
-        button: *gtk.Button,
-        signal: c_ulong = 0,
-    };
-
-    const Picker = struct {
-        view: *View,
-        row: *Row,
-        shell: builder.Shell,
-        list: *gtk.ListBox,
+        dropdown: *gtk.DropDown,
+        /// Desktop IDs matching the dropdown's current model order.
         ids: std.ArrayList([:0]const u8) = .empty,
-        connections: std.ArrayList(Connection) = .empty,
     };
 
     pub fn create(host: *gtk.Box) !*View {
@@ -46,6 +35,7 @@ pub const View = struct {
         errdefer a.destroy(self);
         self.* = .{ .root = w.column(16), .status = undefined, .rows = try a.alloc(Row, policy.specs.len) };
         errdefer a.free(self.rows);
+        errdefer self.arena.deinit();
         host.append(self.root.as(gtk.Widget));
         // Form rows carry their own padding and flush separators, so the card
         // itself must stay spacing-free like the other preference pages.
@@ -69,129 +59,75 @@ pub const View = struct {
             detail.as(gtk.Widget).setHalign(.start);
             titles.append(detail.as(gtk.Widget));
             line.insert(titles.as(gtk.Widget), -1);
-            const button = gtk.Button.newWithLabel(@import("i18n").dtr("pearl", "Not set"));
-            // The card surface is $high$ too; without the value-control tint the
-            // button chrome would be invisible against it.
-            button.as(gtk.Widget).addCssClass("settings-value");
-            button.as(gtk.Widget).setHalign(.end);
-            button.as(gtk.Widget).setValign(.center);
-            w.name(button.as(gtk.Widget), title.getText());
-            line.insert(button.as(gtk.Widget), -1);
+            const dropdown = gtk.DropDown.new(null, null);
+            dropdown.as(gtk.Widget).setHalign(.end);
+            dropdown.as(gtk.Widget).setValign(.center);
+            w.name(dropdown.as(gtk.Widget), title.getText());
+            line.insert(dropdown.as(gtk.Widget), -1);
             card.append(line.as(gtk.Widget));
-            row.* = .{ .view = self, .spec = spec, .title = std.mem.span(title.getText()), .line = line, .button = button };
-            row.signal = gtk.Button.signals.clicked.connect(button, *Row, buttonClicked, row, .{});
+            row.* = .{ .view = self, .spec = spec, .dropdown = dropdown };
+            const signal = object.Object.signals.notify.connect(dropdown.as(object.Object), *Row, selectedChanged, row, .{ .detail = "selected" });
+            try self.connections.append(a, .{ .obj = dropdown.as(object.Object), .id = signal });
         }
         self.update();
         return self;
     }
 
     pub fn destroy(self: *View) void {
-        self.closePicker();
-        for (self.rows) |*row| {
-            if (row.signal != 0) object.signalHandlerDisconnect(row.button.as(object.Object), row.signal);
-        }
+        for (self.connections.items) |c| object.signalHandlerDisconnect(c.obj, c.id);
+        self.connections.deinit(a);
+        for (self.rows) |*row| row.ids.deinit(a);
+        self.arena.deinit();
         a.free(self.rows);
         a.destroy(self);
     }
 
-    /// Re-read the current defaults; called when the page is shown so choices
-    /// made elsewhere stay visible.
+    /// Re-read candidates and the current defaults; called when the page is
+    /// shown so choices made elsewhere stay visible.
     pub fn update(self: *View) void {
-        var arena = std.heap.ArenaAllocator.init(a);
-        defer arena.deinit();
-        const alloc = arena.allocator();
+        self.filling = true;
+        defer self.filling = false;
+        _ = self.arena.reset(.retain_capacity);
+        const alloc = self.arena.allocator();
         for (self.rows) |*row| {
+            row.ids.clearRetainingCapacity();
+            const model = gtk.StringList.new(null);
+            defer model.unref();
+            self.fillCandidates(alloc, row, model) catch |err| {
+                log.warn("event=default-apps-candidates-failed category={s} error={s}", .{ @tagName(row.spec.category), @errorName(err) });
+            };
+            row.dropdown.setModel(model.as(gio.ListModel));
             const current = self.currentDefault(alloc, row.spec) catch null;
-            const label: [:0]const u8 = if (current) |id| named: {
-                const idz = alloc.dupeSentinel(u8, id, 0) catch break :named @import("i18n").dtr("pearl", "Not set");
-                const desktop = unix.DesktopAppInfo.new(idz) orelse break :named idz;
-                defer desktop.as(object.Object).unref();
-                break :named alloc.dupeSentinel(u8, std.mem.span(desktop.as(gio.AppInfo).getDisplayName()), 0) catch idz;
-            } else @import("i18n").dtr("pearl", "Not set");
-            row.button.setLabel(label);
+            var index: c_uint = gtk.INVALID_LIST_POSITION;
+            if (current) |id| for (row.ids.items, 0..) |candidate, i| {
+                if (std.mem.eql(u8, candidate, id)) {
+                    index = @intCast(i);
+                    break;
+                }
+            };
+            row.dropdown.setSelected(index);
         }
     }
 
-    fn currentDefault(_: *View, alloc: std.mem.Allocator, spec: *const policy.Spec) !?[]const u8 {
-        return @import("launch.zig").defaultDesktopId(alloc, spec.category);
-    }
-
-    fn buttonClicked(_: *gtk.Button, row: *Row) callconv(.c) void {
-        row.view.openPicker(row) catch |err| {
-            log.warn("event=default-apps-apply-failed category={s} app={s} error={s}", .{ @tagName(row.spec.category), "", @errorName(err) });
-        };
-    }
-
-    fn parentWindow(self: *View) ?*gtk.Window {
-        const root = self.root.as(gtk.Widget).getRoot() orelse return null;
-        return object.ext.cast(gtk.Window, root);
-    }
-
-    fn closePicker(self: *View) void {
-        if (self.picker) |*picker| {
-            for (picker.connections.items) |c| object.signalHandlerDisconnect(c.obj, c.id);
-            picker.connections.deinit(a);
-            for (picker.ids.items) |id| a.free(id);
-            picker.ids.deinit(a);
-            picker.shell.dialog.as(gtk.Window).destroy();
-            picker.shell.dialog.unref();
+    fn currentDefault(self: *View, alloc: std.mem.Allocator, spec: *const policy.Spec) !?[]const u8 {
+        _ = self;
+        if (spec.category == .terminal) {
+            const dir = configHome(alloc) catch return null;
+            if (policy.terminalDefault(alloc, dir) catch null) |id| return id;
+            // Registered but never set up: show the installed emulator.
+            return @import("launch.zig").terminalFallback(alloc) catch null;
         }
-        self.picker = null;
+        const info = gio.AppInfo.getDefaultForType(spec.mimes[0], 0) orelse return null;
+        defer info.as(object.Object).unref();
+        const raw = info.getId() orelse return null;
+        return try alloc.dupe(u8, std.mem.span(raw));
     }
 
-    fn openPicker(self: *View, row: *Row) !void {
-        if (self.picker != null) return;
-        const parent = self.parentWindow() orelse return error.NoWindow;
-        const shell = builder.open(parent, row.title);
-        self.picker = .{ .view = self, .row = row, .shell = shell, .list = undefined };
-        errdefer self.closePicker();
-        const picker = &self.picker.?;
-        const scroll = gtk.ScrolledWindow.new();
-        scroll.setPolicy(.never, .automatic);
-        scroll.as(gtk.Widget).setVexpand(1);
-        const list = gtk.ListBox.new();
-        list.setSelectionMode(.none);
-        scroll.setChild(list.as(gtk.Widget));
-        shell.body.append(scroll.as(gtk.Widget));
-        picker.list = list;
-        var connections = picker.connections;
-        const activate_connection = try connections.addOne(a);
-        activate_connection.* = .{ .obj = list.as(gtk.Widget).as(object.Object), .id = gtk.ListBox.signals.row_activated.connect(list, *Picker, rowActivated, picker, .{}) };
-        const response_connection = try connections.addOne(a);
-        response_connection.* = .{ .obj = shell.dialog.as(gtk.Widget).as(object.Object), .id = gtk.Dialog.signals.response.connect(shell.dialog, *View, pickerResponse, self, .{}) };
-        self.populate(picker);
-        shell.dialog.as(gtk.Window).setDefaultSize(480, 520);
-        shell.dialog.as(gtk.Window).present();
-    }
-
-    fn pickerResponse(_: *gtk.Dialog, _: c_int, self: *View) callconv(.c) void {
-        self.closePicker();
-    }
-
-    fn rowActivated(_: *gtk.ListBox, row: *gtk.ListBoxRow, picker: *Picker) callconv(.c) void {
-        const self = picker.view;
-        const index = row.getIndex();
-        if (index < 0 or @as(usize, @intCast(index)) >= picker.ids.items.len) return;
-        const id = picker.ids.items[@intCast(index)];
-        self.apply(picker.row.spec, id) catch |err| {
-            log.warn("event=default-apps-apply-failed category={s} app={s} error={s}", .{ @tagName(picker.row.spec.category), id, @errorName(err) });
-            self.status.setText(@import("i18n").dtr("pearl", "The default application could not be changed."));
-            self.status.as(gtk.Widget).setVisible(1);
-            self.closePicker();
-            self.update();
-            return;
-        };
-        self.status.as(gtk.Widget).setVisible(0);
-        self.closePicker();
-        self.update();
-    }
-
-    /// Installed applications able to handle the row's category.
-    fn populate(_: *View, picker: *Picker) void {
-        const spec = picker.row.spec;
+    fn fillCandidates(self: *View, alloc: std.mem.Allocator, row: *Row, model: *gtk.StringList) !void {
+        if (row.spec.category == .terminal) return self.fillTerminalCandidates(alloc, row, model);
+        // GIR marks this list non-null, but the C API returns NULL for no apps.
         const get: *const fn ([*:0]const u8) callconv(.c) ?*glib.List = @ptrCast(&gio.AppInfo.getAllForType);
-        const get_all: *const fn () callconv(.c) ?*glib.List = @ptrCast(&gio.AppInfo.getAll);
-        const list = if (spec.category == .terminal) get_all() else get(spec.mimes[0]);
+        const list = get(row.spec.mimes[0]);
         defer if (list) |head| {
             var it: ?*glib.List = head;
             while (it) |node| : (it = node.f_next) {
@@ -202,51 +138,62 @@ pub const View = struct {
         };
         var it = list;
         while (it) |node| : (it = node.f_next) {
-            if (picker.ids.items.len >= 256) break;
             const info: *gio.AppInfo = @ptrCast(@alignCast(node.f_data.?));
-            if (spec.category == .terminal) {
-                const desktop = object.ext.cast(unix.DesktopAppInfo, info) orelse continue;
-                const raw = desktop.getCategories() orelse continue;
-                // Menu visibility does not remove terminal capability.
-                if (!policy.hasCategory(std.mem.span(raw), "TerminalEmulator")) continue;
-            } else if (info.shouldShow() == 0) continue;
-            const raw_id = info.getId() orelse continue;
-            const id = std.mem.span(raw_id);
-            var seen = false;
-            for (picker.ids.items) |existing| if (std.mem.eql(u8, existing, id)) {
-                seen = true;
-            };
-            if (seen) continue;
-            const owned = a.dupeSentinel(u8, id, 0) catch continue;
-            picker.ids.append(a, owned) catch {
-                a.free(owned);
-                continue;
-            };
-            const name = std.mem.span(info.getDisplayName());
-            const list_row = gtk.ListBoxRow.new();
-            const box = w.row(10);
-            const image = if (info.getIcon()) |icon| blk: {
-                // AppInfo.getIcon is borrowed; the image takes its own ref.
-                const from_icon = gtk.Image.new();
-                from_icon.setFromGicon(icon);
-                from_icon.setPixelSize(24);
-                break :blk from_icon;
-            } else blk: {
-                const fallback = gtk.Image.newFromIconName("application-x-executable");
-                fallback.setPixelSize(24);
-                break :blk fallback;
-            };
-            box.append(image.as(gtk.Widget));
-            const label = w.label(name.ptr, null);
-            label.setEllipsize(.end);
-            box.append(label.as(gtk.Widget));
-            list_row.setChild(box.as(gtk.Widget));
-            picker.list.append(list_row.as(gtk.Widget));
+            try self.appendCandidate(alloc, row, model, info);
         }
-        if (picker.ids.items.len == 0) {
-            const empty = w.label(@import("i18n").dtr("pearl", "No matching applications."), "pearl-secondary");
-            picker.shell.body.append(empty.as(gtk.Widget));
+    }
+
+    fn fillTerminalCandidates(self: *View, alloc: std.mem.Allocator, row: *Row, model: *gtk.StringList) !void {
+        const get: *const fn () callconv(.c) ?*glib.List = @ptrCast(&gio.AppInfo.getAll);
+        const list = get();
+        defer if (list) |head| {
+            var it: ?*glib.List = head;
+            while (it) |node| : (it = node.f_next) {
+                const info: *gio.AppInfo = @ptrCast(@alignCast(node.f_data.?));
+                info.as(object.Object).unref();
+            }
+            head.free();
+        };
+        var it = list;
+        while (it) |node| : (it = node.f_next) {
+            const info: *gio.AppInfo = @ptrCast(@alignCast(node.f_data.?));
+            const desktop = object.ext.cast(unix.DesktopAppInfo, info) orelse continue;
+            const raw = desktop.getCategories() orelse continue;
+            if (!policy.hasCategory(std.mem.span(raw), "TerminalEmulator")) continue;
+            try self.appendCandidate(alloc, row, model, info);
         }
+    }
+
+    fn appendCandidate(self: *View, alloc: std.mem.Allocator, row: *Row, model: *gtk.StringList, info: *gio.AppInfo) !void {
+        _ = self;
+        if (row.ids.items.len >= 256) return;
+        if (info.shouldShow() == 0) return;
+        const raw_id = info.getId() orelse return;
+        const id = std.mem.span(raw_id);
+        for (row.ids.items) |existing| if (std.mem.eql(u8, existing, id)) return;
+        const name = std.mem.span(info.getDisplayName());
+        const owned_id = try alloc.dupeSentinel(u8, id, 0);
+        errdefer alloc.free(owned_id);
+        const owned_name = try alloc.dupeSentinel(u8, name, 0);
+        defer alloc.free(owned_name);
+        try row.ids.append(a, owned_id);
+        model.append(owned_name);
+    }
+
+    fn selectedChanged(_: *object.Object, _: *object.ParamSpec, row: *Row) callconv(.c) void {
+        const self = row.view;
+        if (self.filling) return;
+        const index = row.dropdown.getSelected();
+        if (index == gtk.INVALID_LIST_POSITION or index >= row.ids.items.len) return;
+        const id = row.ids.items[index];
+        self.apply(row.spec, id) catch |err| {
+            log.warn("event=default-apps-apply-failed category={s} app={s} error={s}", .{ @tagName(row.spec.category), id, @errorName(err) });
+            self.status.setText(@import("i18n").dtr("pearl", "The default application could not be changed."));
+            self.status.as(gtk.Widget).setVisible(1);
+            self.update();
+            return;
+        };
+        self.status.as(gtk.Widget).setVisible(0);
     }
 
     fn apply(_: *View, spec: *const policy.Spec, id: [:0]const u8) !void {
@@ -254,7 +201,7 @@ pub const View = struct {
         defer arena.deinit();
         const alloc = arena.allocator();
         if (spec.category == .terminal) {
-            const dir = try @import("launch.zig").configHome(alloc);
+            const dir = try configHome(alloc);
             return policy.setTerminalDefault(alloc, dir, id);
         }
         const desktop = unix.DesktopAppInfo.new(id) orelse return error.ApplicationNotFound;
@@ -271,3 +218,12 @@ pub const View = struct {
         }
     }
 };
+
+fn configHome(alloc: std.mem.Allocator) ![]const u8 {
+    if (glib.getenv("XDG_CONFIG_HOME")) |raw| {
+        const value = std.mem.span(raw);
+        if (value.len > 0) return value;
+    }
+    const home = glib.getenv("HOME") orelse return error.NoConfigHome;
+    return std.fs.path.join(alloc, &.{ std.mem.span(home), ".config" });
+}
