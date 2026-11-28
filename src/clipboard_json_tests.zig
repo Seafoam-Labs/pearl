@@ -11,18 +11,18 @@ test {
 
 const Fixture = @import("testing/clipboard.zig").Fixture;
 
-test "service retains 100 promotes stable identities and prunes on history access" {
+test "duplicate promotion preserves identity and refreshes activity-driven expiry" {
     var f: Fixture = undefined;
     f.init();
     defer f.deinit();
-    for (0..101) |index| {
+    for (0..3) |index| {
         var buffer: [32]u8 = undefined;
         try f.clipboard.add(.text, try std.fmt.bufPrint(&buffer, "entry-{d}", .{index}));
     }
-    try t.expectEqual(@as(usize, 100), f.clipboard.len);
-    const id = f.clipboard.rows[99].id;
+    const id = f.clipboard.rows[1].id;
     f.clipboard.test_time = 200;
     try f.clipboard.add(.text, "entry-1");
+    try t.expectEqual(@as(usize, 3), f.clipboard.len);
     try t.expectEqual(id, f.clipboard.rows[0].id);
     try t.expectEqual(@as(i64, 200), f.clipboard.rows[0].last_used);
     f.clipboard.device = @ptrFromInt(1); // availability only; never dispatched

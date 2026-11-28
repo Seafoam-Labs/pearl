@@ -125,10 +125,8 @@ retry clears the dirty/error state. Shutdown frees runtime resources without
 saving an accidental empty history. Delete/Clear do not promise forensic erasure
 from backups, filesystem snapshots or interrupted private temporary files.
 
-The previous `$XDG_STATE_HOME/pearl/clipboard/history.bin` format is incompatible.
-It is left untouched and is **not automatically migrated or used as a fallback**.
-Legacy saved text will not appear in JSON history until a migration policy is
-approved. Clearing JSON history does not remove that legacy file.
+Legacy `$XDG_STATE_HOME/pearl/clipboard/history.bin` files are left untouched;
+they are neither migrated nor read as a fallback. Clear affects JSON history only.
 
 ## Privacy and lock integration
 
@@ -277,27 +275,31 @@ control requests and no bulk payload in status responses.
 zig build -Doptimize=safe -j2
 zig build test -Doptimize=safe -j2
 zig build test-clipboard-history -Doptimize=safe -j2
-zig build --build-file translations/build.zig check-templates -j2
+python3 scripts/test.py check-registry --python-only
 ```
 
-The focused suite checks deterministic history/expiry, JSON bounds, real saves
-and service restarts under disposable `/tmp` state roots, private permissions,
-unsafe objects, failures before and after replacement, paging and suspension
-callbacks. It never uses the user's clipboard storage. GTK widget tests require
-`PEARL_TEST_CLIPBOARD_GTK=1` and an explicitly isolated display, such as a private
-Broadway server with `GDK_BACKEND=broadway` and a private `XDG_RUNTIME_DIR`.
+Use Zig 0.17.1. The registered `test-clipboard-history` target checks controlled-clock
+expiry, JSON and payload bounds, private atomic saves, restart restoration,
+unsafe storage, save failures, paging and suspension callbacks. It uses disposable
+state directories and socket pairs, without accessing desktop clipboard history.
+GTK widget tests require `PEARL_TEST_CLIPBOARD_GTK=1` and an explicitly isolated
+display, such as a private Broadway server with `GDK_BACKEND=broadway` and a
+private `XDG_RUNTIME_DIR`.
 They otherwise report skips and never use an inherited desktop display.
 
-The established `test-clipboard-capture`, `test-launcher-calculator`,
+The `test-clipboard-capture`, `test-launcher-calculator`,
 `test-security` and `test-capture-master` targets use the pinned private Aqueous
 fixture from `scripts/aqueous-target.json`, isolated XDG directories and D-Bus/PAM
-fixtures. `wl-paste` checks actual text/PNG paste; screenshot tests compare
-output transforms and fractional crops. These targets must not run against the
-installed desktop. If the fixture is absent, the compositor tests remain
-unexecuted; headless or build passes are not equivalent evidence.
+fixtures. The harness supplies private user and system autostart roots to Pearl's
+test build; isolated XDG directories alone do not override its system autostart
+directory. `wl-paste` checks real paste and screenshots check transforms and crops.
+Run these suites only with verified fixtures and autostart isolation, never against
+the installed desktop. Build and headless passes do not establish compositor acceptance.
 
-Historical installed-desktop acceptance for the old binary persistence
-implementation does not validate this JSON implementation. A migration decision
-and real compositor device-loss/reconnection testing remain separate acceptance
-items. Hardware HDR and real screen-reader interaction also require dedicated
-validation.
+Reported manual Devario acceptance covers JSON persistence/restoration, duplicate
+promotion, Delete/Clear persistence, screenshot-to-PNG copy, lock/unlock privacy
+(text retained, PNG discarded), 100-entry retention after 105 copies, 20-entry CLI
+pages, and the text, PNG and retained-payload limits. These are manual results,
+separate from automated checks. Real Wayland verification remains for controlled-clock
+seven-day expiry, exact PNG dimension boundaries and unexpected device-loss recovery.
+Hardware HDR and screen-reader interaction also need dedicated validation.

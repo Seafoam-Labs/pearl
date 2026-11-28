@@ -109,6 +109,36 @@ class CatalogTests(unittest.TestCase):
             self.assertTrue(any('PEARL_TEST_AGENT_MODEL' in issue for issue in env.check(suite)['issues']))
 
 
+class PrivateSessionTests(unittest.TestCase):
+    def test_autostart_is_isolated_before_any_child_can_start(self):
+        from pearl_session import PrivateSession
+
+        class StopBeforeLaunch(Exception):
+            pass
+
+        with tempfile.TemporaryDirectory() as temp:
+            binary = Path(temp) / 'aqueous'
+            binary.touch()
+            session = PrivateSession(Path(temp) / 'output', aqueous=binary, inherited={})
+            roots = []
+
+            def before_launch(*args, **kwargs):
+                for key in ('PEARL_TEST_AUTOSTART_USER', 'PEARL_TEST_AUTOSTART_SYSTEM'):
+                    root = Path(session.env[key])
+                    self.assertTrue(root.is_relative_to(session.base))
+                    self.assertTrue(root.is_dir())
+                    self.assertEqual(list(root.iterdir()), [])
+                    roots.append(root)
+                raise StopBeforeLaunch
+
+            with patch.object(session, 'child', side_effect=before_launch):
+                with self.assertRaises(StopBeforeLaunch):
+                    with session:
+                        self.fail('a child was launched')
+            self.assertEqual(len(set(roots)), 2)
+            self.assertTrue(all(not root.exists() for root in roots))
+
+
 class ProcessTests(unittest.TestCase):
     def test_nonzero_exit_and_complete_log(self):
         with tempfile.TemporaryDirectory() as temp:

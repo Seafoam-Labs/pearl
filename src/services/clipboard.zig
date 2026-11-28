@@ -15,7 +15,7 @@ const i18n = @import("i18n");
 const log = std.log.scoped(.services);
 const a = std.heap.c_allocator;
 pub const Entry = struct { id: u64, kind: policy.Kind, bytes: []u8, last_used: i64 };
-const Offer = struct { proxy: *ext.DataControlOfferV1, owner: *Clipboard, mime: ?[:0]const u8 = null, mime_text: [32:0]u8 = @splat(0), kind: policy.Kind = .text, sensitive: bool = false };
+const Offer = struct { proxy: *ext.DataControlOfferV1, mime: ?[:0]const u8 = null, mime_text: [32:0]u8 = @splat(0), kind: policy.Kind = .text, sensitive: bool = false };
 const Transfer = struct {
     owner: *Clipboard,
     fd: c_int,
@@ -550,7 +550,7 @@ pub const Clipboard = struct {
                     ev.id.destroy();
                     return;
                 };
-                o.* = .{ .proxy = ev.id, .owner = self };
+                o.* = .{ .proxy = ev.id };
                 self.offers.append(a, o) catch {
                     ev.id.destroy();
                     a.destroy(o);
@@ -585,7 +585,7 @@ pub const Clipboard = struct {
         if (std.c.pipe2(&fds, .{ .CLOEXEC = true }) != 0) return error.Pipe;
         defer _ = std.c.close(fds[1]);
         errdefer _ = std.c.close(fds[0]);
-        _ = std.c.fcntl(fds[0], std.c.F.SETFL, @as(c_int, @bitCast(std.c.O{ .NONBLOCK = true })));
+        if (std.c.fcntl(fds[0], std.c.F.SETFL, @as(c_int, @bitCast(std.c.O{ .NONBLOCK = true }))) < 0) return error.Pipe;
         const t = try a.create(Transfer);
         t.* = .{ .owner = self, .fd = fds[0], .kind = offer.kind };
         self.read = t;
@@ -610,6 +610,7 @@ pub const Clipboard = struct {
                 };
                 const e = self.owned orelse return;
                 if (!self.available() or source != self.source or !std.mem.eql(u8, std.mem.span(ev.mime_type), mime(e.kind))) return;
+                if (std.c.fcntl(ev.fd, std.c.F.SETFL, @as(c_int, @bitCast(std.c.O{ .NONBLOCK = true }))) < 0) return;
                 for (&self.writes) |*slot| if (slot.* == null) {
                     const t = a.create(Transfer) catch return;
                     t.* = .{ .owner = self, .fd = ev.fd, .kind = e.kind, .write = true };
@@ -617,7 +618,6 @@ pub const Clipboard = struct {
                         a.destroy(t);
                         return;
                     };
-                    _ = std.c.fcntl(ev.fd, std.c.F.SETFL, @as(c_int, @bitCast(std.c.O{ .NONBLOCK = true })));
                     slot.* = t;
                     retained = true;
                     t.start();
