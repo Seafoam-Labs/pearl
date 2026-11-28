@@ -41,7 +41,7 @@ is required to start Dome. Use GTK4 directly; libadwaita is not required.
 | Storage | Per-device read/write rates and activity history | Device identity, capacity and mounted filesystem details |
 | Network | Per-interface receive/send rates, totals and state | Addresses, link speed and optional Wi-Fi metadata |
 | Processes | Search, sorting, details and end/force-stop for permitted targets | Best-effort application grouping and optional GPU columns |
-| GPU | Architecture and capability states designed in D0 | AMD, Intel and NVIDIA adapters, multiple GPUs, available engine/memory/power metrics |
+| GPU | Architecture and capability states designed in D0 | AMD, Intel and NVIDIA adapters, multiple GPUs, available engine/memory/power metrics, combined AMD video activity |
 | Sensors | Explicit unavailable state | Read-only temperature and fan RPM where exposed |
 | Services | Deferred | Optional systemd user/system service status and start/stop/restart |
 | Preferences | Sampling interval, pause, units, theme and column choices | Compact mode, persisted graph duration and live Pearl appearance |
@@ -201,8 +201,11 @@ missing privileged clients make aggregates incomplete. See
 [DRM client statistics](https://docs.kernel.org/gpu/drm-usage-stats.html).
 For NVIDIA, load [NVML](https://docs.nvidia.com/deploy/nvml-api/latest/index.html)
 optionally at runtime. AMD/Intel device totals require their own supported
-interfaces; client accounting alone is insufficient. GPU utilization, video
-encode/decode, memory, power and temperature each have independent availability.
+interfaces; client accounting alone is insufficient. AMD video is one combined
+device-level VCN value from `vcn_busy_percent`, falling back to `gpu_metrics`;
+it cannot separate encode and decode. Intel has no device video source in this
+build. GPU utilization, video encode/decode, memory, power and temperature each
+have independent availability.
 Fan and temperature reads follow the [hwmon ABI](https://docs.kernel.org/hwmon/sysfs-interface.html).
 
 ## 6. Processes, applications and actions

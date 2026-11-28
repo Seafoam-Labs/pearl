@@ -128,6 +128,7 @@ pub const Gpu = struct {
     fan: ?f64 = null,
     encode: ?f64 = null,
     decode: ?f64 = null,
+    video: ?f64 = null, // combined AMD VCN activity %, encode+decode
     frequency: ?f64 = null,
     mem_frequency: ?f64 = null,
     max_frequency: ?f64 = null,
@@ -236,6 +237,28 @@ pub fn parseSclkList(text: []const u8) ?f64 {
     }
     return maximum;
 }
+/// Decode the combined video activity from an AMD `gpu_metrics` struct dump.
+/// Only revisions with a known `average_mm_activity` offset and unit are accepted;
+/// unknown layouts must stay undecoded instead of reading a plausible wrong field.
+pub fn parseGpuMetricsVideo(data: []const u8) ?f64 {
+    if (data.len < 4) return null;
+    const endian = @import("builtin").cpu.arch.endian();
+    const size = std.mem.readInt(u16, data[0..2], endian);
+    if (size < 4 or size > data.len) return null;
+    const fields = switch (data[2]) {
+        // V1_1-V1_3: plain percent. V1_0, V1_4+ and per-VCN layouts are unsupported.
+        1 => if (data[3] >= 1 and data[3] <= 3) GpuMetricsVideo{ .offset = 20, .divisor = 1 } else return null,
+        // V2_1-V2_4: centi-percent. V2_0 and V2_5+ are unsupported.
+        2 => if (data[3] >= 1 and data[3] <= 4) GpuMetricsVideo{ .offset = 30, .divisor = 100 } else return null,
+        else => return null,
+    };
+    if (size < fields.offset + 2) return null;
+    const raw = std.mem.readInt(u16, data[fields.offset..][0..2], endian);
+    const value = @as(f64, @floatFromInt(raw)) / fields.divisor;
+    return if (value <= 100) value else null;
+}
+const GpuMetricsVideo = struct { offset: usize, divisor: f64 };
+
 pub fn pcieGen(text: []const u8) ?u32 {
     var words = std.mem.tokenizeAny(u8, text, " \t\r\n");
     const speed = number(words.next() orelse return null) orelse return null;
@@ -653,6 +676,62 @@ test "GPU sysfs parsers: sclk list, PCIe generation, uevent and labels" {
     try std.testing.expectEqualStrings("freq2", fileForLabel(&clocks, "sclk").?);
     try std.testing.expectEqualStrings("freq1", fileForLabel(&clocks, "mclk").?);
     try std.testing.expect(fileForLabel(&clocks, "vclk") == null);
+}
+/// Test fixture builder shared with the collector tests: a zeroed gpu_metrics
+/// table with the given header and one u16 field written at `offset`.
+pub fn gpuMetricsFixture(size: u16, format: u8, content: u8, offset: usize, raw: u16) [120]u8 {
+    var table: [120]u8 = @splat(0);
+    const endian = @import("builtin").cpu.arch.endian();
+    std.mem.writeInt(u16, table[0..2], size, endian);
+    table[2] = format;
+    table[3] = content;
+    std.mem.writeInt(u16, table[offset..][0..2], raw, endian);
+    return table;
+}
+test "gpu_metrics video parser accepts known percent and centi-percent layouts" {
+    inline for (.{ 1, 2, 3 }) |content| {
+        const table = gpuMetricsFixture(120, 1, content, 20, 37);
+        try std.testing.expectEqual(@as(?f64, 37), parseGpuMetricsVideo(&table));
+    }
+    inline for (.{ 1, 2, 3, 4 }) |content| {
+        const table = gpuMetricsFixture(120, 2, content, 30, 9600);
+        try std.testing.expectEqual(@as(?f64, 96), parseGpuMetricsVideo(&table));
+    }
+    try std.testing.expectEqual(@as(?f64, 0.01), parseGpuMetricsVideo(&gpuMetricsFixture(120, 2, 1, 30, 1)));
+    try std.testing.expectEqual(@as(?f64, 0), parseGpuMetricsVideo(&gpuMetricsFixture(120, 1, 3, 20, 0)));
+    try std.testing.expectEqual(@as(?f64, 100), parseGpuMetricsVideo(&gpuMetricsFixture(120, 1, 3, 20, 100)));
+    try std.testing.expectEqual(@as(?f64, 100), parseGpuMetricsVideo(&gpuMetricsFixture(120, 2, 4, 30, 10000)));
+    try std.testing.expectEqual(@as(?f64, null), parseGpuMetricsVideo(&gpuMetricsFixture(120, 1, 3, 20, 101)));
+    try std.testing.expectEqual(@as(?f64, null), parseGpuMetricsVideo(&gpuMetricsFixture(120, 2, 1, 30, 10001)));
+}
+test "gpu_metrics video parser rejects unknown versions, short buffers and wrong offsets" {
+    try std.testing.expectEqual(@as(?f64, null), parseGpuMetricsVideo(&.{}));
+    try std.testing.expectEqual(@as(?f64, null), parseGpuMetricsVideo(&.{ 120, 0, 1, 1 }));
+    try std.testing.expectEqual(@as(?f64, null), parseGpuMetricsVideo(&gpuMetricsFixture(3, 1, 3, 20, 37)));
+    try std.testing.expectEqual(@as(?f64, null), parseGpuMetricsVideo(&gpuMetricsFixture(121, 1, 3, 20, 37)));
+    try std.testing.expectEqual(@as(?f64, null), parseGpuMetricsVideo(&gpuMetricsFixture(21, 1, 3, 20, 37)));
+    try std.testing.expectEqual(@as(?f64, null), parseGpuMetricsVideo(&gpuMetricsFixture(31, 2, 1, 30, 9600)));
+    inline for (.{
+        .{ 0, 1 },
+        .{ 3, 1 },
+        .{ 1, 0 },
+        .{ 1, 4 },
+        .{ 2, 0 },
+        .{ 2, 5 },
+    }) |version| {
+        // A plausible value at either known offset must not make an unsupported layout readable.
+        var table = gpuMetricsFixture(120, version[0], version[1], 20, 55);
+        std.mem.writeInt(u16, table[30..][0..2], 8800, @import("builtin").cpu.arch.endian());
+        try std.testing.expectEqual(@as(?f64, null), parseGpuMetricsVideo(&table));
+    }
+    const truncated = gpuMetricsFixture(120, 2, 1, 30, 9600);
+    try std.testing.expectEqual(@as(?f64, null), parseGpuMetricsVideo(truncated[0..31]));
+    var random = std.Random.DefaultPrng.init(0x6770756d);
+    var bytes: [128]u8 = undefined;
+    for (0..1000) |_| {
+        random.random().bytes(&bytes);
+        _ = parseGpuMetricsVideo(bytes[0..random.random().intRangeAtMost(usize, 0, bytes.len)]);
+    }
 }
 test "pci.ids scanner tokenizes indentation, skips junk and prefers brackets" {
     var scanner: PciIdsScanner = .{ .target_vendor = 0x1002, .target_device = 0x744c };

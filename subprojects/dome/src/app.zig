@@ -27,7 +27,7 @@ fn pageTitle(index: usize) [:0]const u8 {
     };
 }
 const symbols = [_][*:0]const u8{ "view-grid-symbolic", "computer-symbolic", "media-flash-symbolic", "drive-harddisk-symbolic", "network-wireless-symbolic", "video-display-symbolic", "weather-clear-symbolic", "view-list-symbolic", "preferences-system-symbolic" };
-const Field = enum { cpu, io_wait, frequency, processes, threads, uptime, mem_used, mem_available, mem_cached, swap, disk_read, disk_write, disk_busy, disk_latency, disk_size, net_receive, net_send, net_rx, net_tx, net_speed, gpu_usage, gpu_used, gpu_total, gpu_temp, gpu_power, gpu_power_cap, gpu_fan, gpu_encode, gpu_decode, gpu_frequency, gpu_mem_frequency, gpu_max_frequency, gpu_mem_usage, gpu_gtt, gpu_gtt_total, gpu_pcie, gpu_video_frequency, gpu_pstate, gpu_compute, gpu_pcie_rx, gpu_pcie_tx, sensor, proc_cpu, proc_memory, proc_read, proc_write, proc_threads, proc_pss, proc_command };
+const Field = enum { cpu, io_wait, frequency, processes, threads, uptime, mem_used, mem_available, mem_cached, swap, disk_read, disk_write, disk_busy, disk_latency, disk_size, net_receive, net_send, net_rx, net_tx, net_speed, gpu_usage, gpu_used, gpu_total, gpu_temp, gpu_power, gpu_power_cap, gpu_fan, gpu_encode, gpu_decode, gpu_video, gpu_frequency, gpu_mem_frequency, gpu_max_frequency, gpu_mem_usage, gpu_gtt, gpu_gtt_total, gpu_pcie, gpu_video_frequency, gpu_pstate, gpu_compute, gpu_pcie_rx, gpu_pcie_tx, sensor, proc_cpu, proc_memory, proc_read, proc_write, proc_threads, proc_pss, proc_command };
 const Binding = struct { widget: u.W, field: Field, index: usize = 0 };
 pub const App = struct {
     application: *c.GtkApplication,
@@ -635,8 +635,12 @@ pub const App = struct {
         self.metric(power, @import("i18n").dtr("dome", "Power limit"), .gpu_power_cap, index);
         u.append(self.content, power);
         const video = u.box(c.GTK_ORIENTATION_HORIZONTAL, 12, null);
-        self.metric(video, @import("i18n").dtr("dome", "Video encode"), .gpu_encode, index);
-        self.metric(video, @import("i18n").dtr("dome", "Video decode"), .gpu_decode, index);
+        if (g.vendor == 0x1002) {
+            self.metric(video, @import("i18n").dtr("dome", "Video"), .gpu_video, index);
+        } else {
+            self.metric(video, @import("i18n").dtr("dome", "Video encode"), .gpu_encode, index);
+            self.metric(video, @import("i18n").dtr("dome", "Video decode"), .gpu_decode, index);
+        }
         u.append(self.content, video);
         const capacity = u.box(c.GTK_ORIENTATION_HORIZONTAL, 12, null);
         self.metric(capacity, @import("i18n").dtr("dome", "Memory capacity"), .gpu_total, index);
@@ -664,6 +668,7 @@ pub const App = struct {
         self.metric(rates, @import("i18n").dtr("dome", "PCIe send · rate"), .gpu_pcie_tx, index);
         u.append(self.content, rates);
         self.addNote(@import("i18n").dtr("dome", "A dash means the driver does not expose that metric or permission is unavailable. Visible client usage is never presented as device-wide utilization."));
+        if (g.vendor == 0x1002) self.addNote(@import("i18n").dtr("dome", "AMD exposes a single combined VCN activity value; video encode and decode are not separable. The reading may lag slightly."));
         var power_note: [512]u8 = undefined;
         if (g.power_label.len > 0) self.addNote(@import("i18n").dfmt("dome", &power_note, "Power reading: {s}", .{g.power_label.slice()}));
         if (g.reserved) |value| if (value > 0) {
@@ -821,7 +826,7 @@ pub const App = struct {
                     else => unreachable,
                 };
             },
-            .gpu_usage, .gpu_used, .gpu_total, .gpu_temp, .gpu_power, .gpu_power_cap, .gpu_fan, .gpu_encode, .gpu_decode, .gpu_frequency, .gpu_mem_frequency, .gpu_max_frequency, .gpu_mem_usage, .gpu_gtt, .gpu_gtt_total, .gpu_pcie, .gpu_video_frequency, .gpu_pstate, .gpu_compute, .gpu_pcie_rx, .gpu_pcie_tx => {
+            .gpu_usage, .gpu_used, .gpu_total, .gpu_temp, .gpu_power, .gpu_power_cap, .gpu_fan, .gpu_encode, .gpu_decode, .gpu_video, .gpu_frequency, .gpu_mem_frequency, .gpu_max_frequency, .gpu_mem_usage, .gpu_gtt, .gpu_gtt_total, .gpu_pcie, .gpu_video_frequency, .gpu_pstate, .gpu_compute, .gpu_pcie_rx, .gpu_pcie_tx => {
                 if (index >= s.gpus.len) return m.Text(512).init("—");
                 const g = self.nvml.resolve(s.gpus[index]);
                 return switch (field) {
@@ -834,6 +839,7 @@ pub const App = struct {
                     .gpu_fan => numberText(g.fan, "%"),
                     .gpu_encode => numberText(g.encode, "%"),
                     .gpu_decode => numberText(g.decode, "%"),
+                    .gpu_video => numberText(g.video, "%"),
                     .gpu_frequency => numberText(g.frequency, " MHz"),
                     .gpu_mem_frequency => numberText(g.mem_frequency, " MHz"),
                     .gpu_max_frequency => numberText(g.max_frequency, " MHz"),

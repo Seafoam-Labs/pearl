@@ -327,6 +327,45 @@ fn collectSensors(s: *m.Snapshot) void {
     s.sensors = items.items;
 }
 const default_ids_paths = [_][]const u8{ "/usr/share/hwdata/pci.ids", "/usr/share/misc/pci.ids" };
+const video_hold_us = 3_000_000;
+const VideoCacheEntry = struct { key: m.Path = .{}, value: f64 = 0, time: i64 = 0 };
+var video_cache: [m.max_gpus]VideoCacheEntry = @splat(.{});
+var video_cache_count: usize = 0;
+fn videoCacheEntry(key: []const u8) ?*VideoCacheEntry {
+    for (video_cache[0..video_cache_count]) |*entry| {
+        if (std.mem.eql(u8, entry.key.slice(), key)) return entry;
+    }
+    return null;
+}
+fn rememberVideo(key: []const u8, value: f64, time: i64) void {
+    if (videoCacheEntry(key)) |entry| {
+        entry.value = value;
+        entry.time = time;
+        return;
+    }
+    if (video_cache_count >= video_cache.len) return;
+    video_cache[video_cache_count] = .{ .key = m.Path.init(key), .value = value, .time = time };
+    video_cache_count += 1;
+}
+/// AMD exposes one combined VCN value. Prefer the stable kernel attribute and fall
+/// back to `gpu_metrics`; hold its positive sample briefly because the cached driver
+/// table transiently reads zero while VCN is busy.
+fn amdVideo(key: []const u8, base: []const u8, time: i64) ?f64 {
+    const busy_path = io.path("{s}/vcn_busy_percent", .{base});
+    if (io.number(busy_path.slice())) |value| {
+        if (value >= 0 and value <= 100) return value;
+    }
+    var buffer: [4096]u8 = undefined;
+    const metrics_path = io.path("{s}/gpu_metrics", .{base});
+    const data = io.read(metrics_path.slice(), &buffer) orelse return null;
+    const value = m.parseGpuMetricsVideo(data) orelse return null;
+    if (value > 0) {
+        rememberVideo(key, value, time);
+        return value;
+    }
+    const entry = videoCacheEntry(key) orelse return value;
+    return if (time - entry.time <= video_hold_us) entry.value else 0;
+}
 const ids_memo_size = 16;
 const IdsMemoEntry = struct { path: m.Path = .{}, vendor: u32 = 0, device: u32 = 0, name: m.Name = .{} };
 var ids_memo: [ids_memo_size]IdsMemoEntry = @splat(.{});
@@ -468,6 +507,7 @@ fn collectGpu(s: *m.Snapshot, root: []const u8, ids_paths: []const []const u8) v
             var clock_buffer: [65536]u8 = undefined;
             const sclk_path = io.path("{s}/pp_dpm_sclk", .{base.slice()});
             if (io.read(sclk_path.slice(), &clock_buffer)) |text| gpu.max_frequency = m.parseSclkList(text);
+            gpu.video = amdVideo(gpu.key.slice(), base.slice(), s.time);
         }
         // Intel's current_link_* can report the power-on default instead of the live link
         // (2.5 GT/s x1 shown while a DMA transfer measured ~19 GB/s), so only AMD is read: unknown
@@ -706,6 +746,54 @@ fn writeFixture(dir: std.Io.Dir, path: []const u8, data: []const u8) !void {
     if (std.fs.path.dirname(path)) |parent| try dir.createDirPath(std.testing.io, parent);
     try dir.writeFile(std.testing.io, .{ .sub_path = path, .data = data });
 }
+fn fixtureVideo(root: []const u8, time: i64) ?f64 {
+    var s: m.Snapshot = .{ .arena = .init(std.testing.allocator), .time = time };
+    defer s.arena.deinit();
+    const ids_paths = [_][]const u8{};
+    collectGpu(&s, root, &ids_paths);
+    return if (s.gpus.len == 0) null else s.gpus[0].video;
+}
+test "GPU video prefers vcn_busy_percent, falls back to gpu_metrics and holds transient zeros" {
+    var tmp = std.testing.tmpDir(.{});
+    defer tmp.cleanup();
+    var path_buffer: [std.fs.max_path_bytes]u8 = undefined;
+    const path_length = try tmp.dir.realPath(std.testing.io, &path_buffer);
+    const tmp_path = path_buffer[0..path_length];
+    const root = try std.fs.path.join(std.testing.allocator, &.{ tmp_path, "drm" });
+    defer std.testing.allocator.free(root);
+    try writeFixture(tmp.dir, "drm/card1/device/vendor", "0x1002\n");
+    try writeFixture(tmp.dir, "drm/card1/device/product_name", "Fixture AMD\n");
+    try writeFixture(tmp.dir, "drm/card1/device/gpu_busy_percent", "12\n");
+    try writeFixture(tmp.dir, "drm/card1/device/uevent", "DRIVER=amdgpu\nPCI_SLOT_NAME=0000:03:00.0\n");
+    const metrics = m.gpuMetricsFixture(120, 1, 3, 20, 55);
+    try writeFixture(tmp.dir, "drm/card1/device/gpu_metrics", &metrics);
+    const start: i64 = 10_000_000;
+    // The stable attribute wins even when gpu_metrics reports another value.
+    try writeFixture(tmp.dir, "drm/card1/device/vcn_busy_percent", "42\n");
+    try std.testing.expectEqual(@as(?f64, 42), fixtureVideo(root, start));
+    // An out-of-range attribute falls back to the parsed metrics value.
+    try writeFixture(tmp.dir, "drm/card1/device/vcn_busy_percent", "101\n");
+    try std.testing.expectEqual(@as(?f64, 55), fixtureVideo(root, start));
+    // A valid zero attribute bypasses the hold cache.
+    try writeFixture(tmp.dir, "drm/card1/device/vcn_busy_percent", "0\n");
+    try std.testing.expectEqual(@as(?f64, 0), fixtureVideo(root, start));
+    try tmp.dir.deleteFile(std.testing.io, "drm/card1/device/vcn_busy_percent");
+    try std.testing.expectEqual(@as(?f64, 55), fixtureVideo(root, start + 1_000_000));
+    // A read failure is unknown and leaves the cached sample available for a later zero.
+    try tmp.dir.deleteFile(std.testing.io, "drm/card1/device/gpu_metrics");
+    try std.testing.expectEqual(@as(?f64, null), fixtureVideo(root, start + 1_500_000));
+    // A parsed zero reuses the last positive sample for at most three seconds.
+    try writeFixture(tmp.dir, "drm/card1/device/gpu_metrics", &m.gpuMetricsFixture(120, 1, 3, 20, 0));
+    try std.testing.expectEqual(@as(?f64, 55), fixtureVideo(root, start + 2_000_000));
+    try std.testing.expectEqual(@as(?f64, 55), fixtureVideo(root, start + 4_000_000));
+    try std.testing.expectEqual(@as(?f64, 0), fixtureVideo(root, start + 4_000_001));
+    // Unsupported and truncated tables return unknown instead of a held or guessed value.
+    try writeFixture(tmp.dir, "drm/card1/device/gpu_metrics", &m.gpuMetricsFixture(120, 1, 4, 20, 55));
+    try std.testing.expectEqual(@as(?f64, null), fixtureVideo(root, start + 5_000_000));
+    const truncated = m.gpuMetricsFixture(120, 2, 1, 30, 9600);
+    try writeFixture(tmp.dir, "drm/card1/device/gpu_metrics", truncated[0..31]);
+    try std.testing.expectEqual(@as(?f64, null), fixtureVideo(root, start + 5_000_000));
+}
 test "GPU fixture reads AMD sysfs fields, dedups and orders cards" {
     var tmp = std.testing.tmpDir(.{});
     defer tmp.cleanup();
@@ -727,6 +815,8 @@ test "GPU fixture reads AMD sysfs fields, dedups and orders cards" {
     try writeFixture(tmp.dir, "drm/card1/device/gpu_busy_percent", "37\n");
     try writeFixture(tmp.dir, "drm/card1/device/mem_busy_percent", "23\n");
     try writeFixture(tmp.dir, "drm/card1/device/pp_dpm_sclk", "0: 500Mhz *\n1: 2200Mhz\n2: 2500Mhz\n");
+    try writeFixture(tmp.dir, "drm/card1/device/vcn_busy_percent", "42\n");
+    try writeFixture(tmp.dir, "drm/card1/device/gpu_metrics", &m.gpuMetricsFixture(120, 1, 3, 20, 55));
     try writeFixture(tmp.dir, "drm/card1/device/current_link_speed", "16.0 GT/s PCIe\n");
     try writeFixture(tmp.dir, "drm/card1/device/current_link_width", "16\n");
     try writeFixture(tmp.dir, "drm/card1/device/uevent", "DRIVER=amdgpu\nPCI_SLOT_NAME=0000:03:00.0\n");
@@ -752,6 +842,7 @@ test "GPU fixture reads AMD sysfs fields, dedups and orders cards" {
     try writeFixture(tmp.dir, "drm/card2/device/mem_info_vram_total", "536870912\n");
     try writeFixture(tmp.dir, "drm/card2/device/mem_info_vram_used", "134217728\n");
     try writeFixture(tmp.dir, "drm/card2/device/gpu_busy_percent", "5\n");
+    try writeFixture(tmp.dir, "drm/card2/device/gpu_metrics", &m.gpuMetricsFixture(120, 2, 1, 30, 9600));
     try writeFixture(tmp.dir, "drm/card2/device/uevent", "DRIVER=amdgpu\nPCI_SLOT_NAME=0000:04:00.0\n");
     try writeFixture(tmp.dir, "drm/card3/device/product_name", "Duplicate card\n");
     try writeFixture(tmp.dir, "drm/card3/device/uevent", "DRIVER=amdgpu\nPCI_SLOT_NAME=0000:03:00.0\n");
@@ -789,6 +880,7 @@ test "GPU fixture reads AMD sysfs fields, dedups and orders cards" {
     try std.testing.expectEqual(@as(?f64, 2500), gpu.frequency);
     try std.testing.expectEqual(@as(?f64, 1000), gpu.mem_frequency);
     try std.testing.expectEqual(@as(?f64, 2500), gpu.max_frequency);
+    try std.testing.expectEqual(@as(?f64, 42), gpu.video);
     try std.testing.expectEqual(@as(?u32, 4), gpu.pcie_gen);
     try std.testing.expectEqual(@as(?u32, 16), gpu.pcie_width);
     // Discrete cards first, then by total: the Intel card's total is unknown, so it precedes the APU.
@@ -797,9 +889,11 @@ test "GPU fixture reads AMD sysfs fields, dedups and orders cards" {
     try std.testing.expectEqual(@as(?u32, null), intel.pcie_gen);
     try std.testing.expectEqual(@as(?u32, null), intel.pcie_width);
     try std.testing.expectEqual(@as(?f64, 41), intel.temp);
+    try std.testing.expectEqual(@as(?f64, null), intel.video);
     const apu = s.gpus[2];
     try std.testing.expectEqualStrings("AMD Fixture Marketing", apu.name.slice());
     try std.testing.expect(apu.integrated);
     try std.testing.expectEqual(@as(?f64, 5), apu.usage);
+    try std.testing.expectEqual(@as(?f64, 96), apu.video);
     try std.testing.expectEqual(@as(?f64, 536870912), apu.total);
 }
