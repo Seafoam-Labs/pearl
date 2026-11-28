@@ -15,7 +15,7 @@ msgstr ""
 msgid " Its dock pin will also be updated."
 msgstr ""
 
-#: src/desktop/running_apps.zig:327
+#: src/desktop/running_apps.zig:339
 msgid " · Activation unavailable"
 msgstr ""
 
@@ -23,11 +23,11 @@ msgstr ""
 msgid " · Applying…"
 msgstr ""
 
-#: src/desktop/running_apps.zig:327 src/desktop/running_apps.zig:342
+#: src/desktop/running_apps.zig:339 src/desktop/running_apps.zig:354
 msgid " · Focused"
 msgstr ""
 
-#: src/desktop/running_apps.zig:327 src/desktop/running_apps.zig:342
+#: src/desktop/running_apps.zig:339 src/desktop/running_apps.zig:354
 msgid " · Minimized"
 msgstr ""
 
@@ -51,11 +51,11 @@ msgstr ""
 msgid "+ Add widget"
 msgstr ""
 
-#: src/desktop/running_apps.zig:143
+#: src/desktop/running_apps.zig:144
 msgid ", focused"
 msgstr ""
 
-#: src/desktop/running_apps.zig:143
+#: src/desktop/running_apps.zig:144
 msgid ", minimized"
 msgstr ""
 
@@ -139,7 +139,7 @@ msgstr ""
 msgid "A profile takes at most 32 options."
 msgstr ""
 
-#: src/desktop/dock.zig:709
+#: src/desktop/dock.zig:710
 msgid "A unique application identity is needed. Existing choices can be removed in Settings."
 msgstr ""
 
@@ -206,7 +206,7 @@ msgstr ""
 msgid "Action unavailable or failed. Try again."
 msgstr ""
 
-#: src/desktop/dock.zig:959 src/desktop/dock.zig:980
+#: src/desktop/dock.zig:960 src/desktop/dock.zig:981
 msgid "Action unavailable; the application or window may have changed."
 msgstr ""
 
@@ -403,7 +403,7 @@ msgstr ""
 msgid "All Aqueous settings saved"
 msgstr ""
 
-#: src/desktop/running_apps.zig:318 src/desktop/running_apps.zig:340
+#: src/desktop/running_apps.zig:330 src/desktop/running_apps.zig:352
 msgid "All applications"
 msgstr ""
 
@@ -435,7 +435,7 @@ msgstr ""
 msgid "All pages, or 1-3,5"
 msgstr ""
 
-#: src/desktop/running_apps.zig:245
+#: src/desktop/running_apps.zig:257
 msgid "All workspaces · All displays"
 msgstr ""
 
@@ -530,7 +530,7 @@ msgstr ""
 msgid "Application appearance"
 msgstr ""
 
-#: src/desktop/running_apps.zig:333
+#: src/desktop/running_apps.zig:345
 msgid "Application closed"
 msgstr ""
 
@@ -811,7 +811,7 @@ msgstr ""
 msgid "Back"
 msgstr ""
 
-#: src/desktop/running_apps.zig:318
+#: src/desktop/running_apps.zig:330
 msgid "Back to the application list"
 msgstr ""
 
@@ -2369,7 +2369,7 @@ msgstr ""
 msgid "Display the plugin outside the bar. Choose its placement under Settings and placement."
 msgstr ""
 
-#: src/desktop/running_apps.zig:327
+#: src/desktop/running_apps.zig:339
 msgid "Display unavailable"
 msgstr ""
 
@@ -3577,7 +3577,7 @@ msgstr ""
 msgid "Layout behavior"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:3038
+#: src/ui/surfaces/manager.zig:3042
 msgid "Layout change unavailable"
 msgstr ""
 
@@ -3724,7 +3724,7 @@ msgstr ""
 msgid "Live display observation unavailable. Refresh after reconnecting to Aqueous."
 msgstr ""
 
-#: src/desktop/running_apps.zig:367
+#: src/desktop/running_apps.zig:379
 msgid "Load the next 50 items"
 msgstr ""
 
@@ -4061,7 +4061,7 @@ msgstr ""
 msgid "More"
 msgstr ""
 
-#: src/desktop/running_apps.zig:337
+#: src/desktop/running_apps.zig:349
 msgid "More applications"
 msgstr ""
 
@@ -4367,7 +4367,7 @@ msgstr ""
 msgid "No matching shortcuts. Clear the search to see all actions."
 msgstr ""
 
-#: src/desktop/running_apps.zig:346
+#: src/desktop/running_apps.zig:358
 msgid "No open applications"
 msgstr ""
 
@@ -4423,7 +4423,7 @@ msgstr ""
 msgid "No widgets match your search."
 msgstr ""
 
-#: src/desktop/running_apps.zig:334
+#: src/desktop/running_apps.zig:346
 msgid "No windows remain. Choose another application."
 msgstr ""
 
@@ -5864,11 +5864,11 @@ msgstr ""
 msgid "Running - {0} - since {1}"
 msgstr ""
 
-#: src/desktop/running_apps.zig:240 src/desktop/running_apps.zig:337
+#: src/desktop/running_apps.zig:252 src/desktop/running_apps.zig:349
 msgid "Running applications"
 msgstr ""
 
-#: src/desktop/running_apps.zig:161
+#: src/desktop/running_apps.zig:162
 msgid "Running applications ({0})"
 msgstr ""
 
@@ -6962,11 +6962,11 @@ msgstr ""
 msgid "Show more"
 msgstr ""
 
-#: src/desktop/running_apps.zig:366
+#: src/desktop/running_apps.zig:378
 msgid "Show more ({0} remaining)"
 msgstr ""
 
-#: src/desktop/running_apps.zig:340
+#: src/desktop/running_apps.zig:352
 msgid "Show the complete list"
 msgstr ""
 
@@ -7942,7 +7942,7 @@ msgstr ""
 msgid "Use launcher"
 msgstr ""
 
-#: src/desktop/dock.zig:695 src/desktop/dock.zig:696
+#: src/desktop/dock.zig:696 src/desktop/dock.zig:697
 msgid "Use launcher…"
 msgstr ""
 
@@ -8335,11 +8335,11 @@ msgstr ""
 msgid "Workspace layout"
 msgstr ""
 
-#: src/desktop/running_apps.zig:326
+#: src/desktop/running_apps.zig:338
 msgid "Workspace unavailable"
 msgstr ""
 
-#: src/desktop/running_apps.zig:326
+#: src/desktop/running_apps.zig:338
 msgid "Workspace {0}"
 msgstr ""
 
@@ -8429,11 +8429,11 @@ msgctxt "aqueous.layout.options.scrolling.new_window_position.option"
 msgid "append"
 msgstr ""
 
-#: src/desktop/running_apps.zig:339
+#: src/desktop/running_apps.zig:351
 msgid "application"
 msgstr ""
 
-#: src/desktop/running_apps.zig:339
+#: src/desktop/running_apps.zig:351
 msgid "applications"
 msgstr ""
 
@@ -9715,7 +9715,7 @@ msgctxt "aqueous.wheel_scroll_up.label"
 msgid "wheel_scroll_up"
 msgstr ""
 
-#: src/desktop/running_apps.zig:12
+#: src/desktop/running_apps.zig:13
 msgid "window"
 msgstr ""
 
@@ -9734,7 +9734,7 @@ msgctxt "aqueous.window_switcher_previous.label"
 msgid "window_switcher_previous"
 msgstr ""
 
-#: src/desktop/running_apps.zig:12
+#: src/desktop/running_apps.zig:13
 msgid "windows"
 msgstr ""
 
@@ -9783,11 +9783,11 @@ msgstr ""
 msgid "{0} matching actions"
 msgstr ""
 
-#: src/desktop/running_apps.zig:161
+#: src/desktop/running_apps.zig:162
 msgid "{0} more applications"
 msgstr ""
 
-#: src/desktop/running_apps.zig:161
+#: src/desktop/running_apps.zig:162
 msgid "{0} more windows"
 msgstr ""
 
@@ -9820,11 +9820,11 @@ msgstr ""
 msgid "{0} {1}"
 msgstr ""
 
-#: src/desktop/running_apps.zig:324 src/desktop/running_apps.zig:339
+#: src/desktop/running_apps.zig:336 src/desktop/running_apps.zig:351
 msgid "{0} {1} · All workspaces & displays"
 msgstr ""
 
-#: src/desktop/running_apps.zig:342
+#: src/desktop/running_apps.zig:354
 msgid "{0} {1}{2}{3}"
 msgstr ""
 
@@ -9832,7 +9832,7 @@ msgstr ""
 msgid "{0} · {1}%"
 msgstr ""
 
-#: src/desktop/running_apps.zig:143
+#: src/desktop/running_apps.zig:144
 msgid "{0} — {1} {2}, all workspaces{3}{4}"
 msgstr ""
 
