@@ -597,7 +597,8 @@ pub const Dock = struct {
                 a.free(id);
                 self.landed = null;
             };
-            const primary = try self.button(description, if (target != null) .activate else .launch, if (target) |win| win.id else group.desktop.?, false, null, null, if (target != null) group.desktop else null);
+            const minimize_click = target != null and p.minimizeOnClick(group.windows.items.len, focused, target.?.can_minimize);
+            const primary = try self.button(description, if (minimize_click) .minimize else if (target != null) .activate else .launch, if (target) |win| win.id else group.desktop.?, minimize_click, null, null, if (target != null) group.desktop else null);
             primary.as(gtk.Widget).setTooltipText(description);
             if (target == null and entry == null) primary.as(gtk.Widget).setSensitive(1); // Keep context menu and Unpin reachable.
             // Keep the icon reachable so unavailable pins can still be unpinned.

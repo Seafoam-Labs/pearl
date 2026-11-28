@@ -3,6 +3,7 @@ const std = @import("std");
 const gtk = @import("gtk4");
 const gdk = @import("gdk4");
 const tasks = @import("task_model.zig");
+const policy = @import("dock_policy.zig");
 const Apps = @import("apps.zig");
 const Client = @import("../aqueous/client.zig").Client;
 const w = @import("../ui/components/widgets.zig");
@@ -11,7 +12,7 @@ const a = std.heap.c_allocator;
 fn windowWord(count: usize) [:0]const u8 {
     return if (count == 1) @import("i18n").dtr("pearl", "window") else @import("i18n").dtr("pearl", "windows");
 }
-pub const Event = union(enum) { activate: []const u8, group: []const u8, overflow: usize };
+pub const Event = union(enum) { activate: []const u8, minimize: []const u8, group: []const u8, overflow: usize };
 pub const Rect = struct { x: f64, y: f64, width: i32, height: i32 };
 pub const ProbeRow = struct { id: []const u8, kind: []const u8, rect: Rect, enabled: bool, focused: bool };
 fn rect(widget: *gtk.Widget, root: *gtk.Widget) Rect {
@@ -204,13 +205,24 @@ pub const Strip = struct {
         }
         const group = self.snapshot.find(cb.key) orelse return;
         if (cb.window) |id| {
-            for (group.windows.items) |win| if (std.mem.eql(u8, win.id, id) and win.can_activate) {
-                self.dispatch(self.context, .{ .activate = id });
+            for (group.windows.items) |win| if (std.mem.eql(u8, win.id, id)) {
+                if (policy.minimizeOnClick(1, win.focused, win.can_minimize)) self.dispatch(self.context, .{ .minimize = id }) else if (win.can_activate) self.dispatch(self.context, .{ .activate = id });
                 break;
             };
             return;
         }
-        if (group.windows.items.len == 1 and group.windows.items[0].can_activate) self.dispatch(self.context, .{ .activate = group.windows.items[0].id }) else self.dispatch(self.context, .{ .group = group.key });
+        if (group.windows.items.len == 1) {
+            const win = group.windows.items[0];
+            if (policy.minimizeOnClick(1, win.focused, win.can_minimize)) {
+                self.dispatch(self.context, .{ .minimize = win.id });
+                return;
+            }
+            if (win.can_activate) {
+                self.dispatch(self.context, .{ .activate = win.id });
+                return;
+            }
+        }
+        self.dispatch(self.context, .{ .group = group.key });
     }
     fn menu(gesture: *gtk.GestureClick, _: c_int, _: f64, _: f64, cb: *StripButton) callconv(.c) void {
         _ = gesture.as(gtk.Gesture).setState(.claimed);
