@@ -128,6 +128,7 @@ pub const Gpu = struct {
     fan: ?f64 = null,
     encode: ?f64 = null,
     decode: ?f64 = null,
+    video: ?f64 = null, // combined AMD VCN activity %, encode+decode
     frequency: ?f64 = null,
     mem_frequency: ?f64 = null,
     max_frequency: ?f64 = null,
@@ -236,6 +237,28 @@ pub fn parseSclkList(text: []const u8) ?f64 {
     }
     return maximum;
 }
+/// Decode the combined video activity from an AMD `gpu_metrics` struct dump.
+/// Only revisions with a known `average_mm_activity` offset and unit are accepted;
+/// unknown layouts must stay undecoded instead of reading a plausible wrong field.
+pub fn parseGpuMetricsVideo(data: []const u8) ?f64 {
+    if (data.len < 4) return null;
+    const endian = @import("builtin").cpu.arch.endian();
+    const size = std.mem.readInt(u16, data[0..2], endian);
+    if (size < 4 or size > data.len) return null;
+    const fields = switch (data[2]) {
+        // V1_1-V1_3: plain percent. V1_0, V1_4+ and per-VCN layouts are unsupported.
+        1 => if (data[3] >= 1 and data[3] <= 3) GpuMetricsVideo{ .offset = 20, .divisor = 1 } else return null,
+        // V2_1-V2_4: centi-percent. V2_0 and V2_5+ are unsupported.
+        2 => if (data[3] >= 1 and data[3] <= 4) GpuMetricsVideo{ .offset = 30, .divisor = 100 } else return null,
+        else => return null,
+    };
+    if (size < fields.offset + 2) return null;
+    const raw = std.mem.readInt(u16, data[fields.offset..][0..2], endian);
+    const value = @as(f64, @floatFromInt(raw)) / fields.divisor;
+    return if (value <= 100) value else null;
+}
+const GpuMetricsVideo = struct { offset: usize, divisor: f64 };
+
 pub fn pcieGen(text: []const u8) ?u32 {
     var words = std.mem.tokenizeAny(u8, text, " \t\r\n");
     const speed = number(words.next() orelse return null) orelse return null;
@@ -286,11 +309,33 @@ pub const PciIdsScanner = struct {
     }
 };
 pub const LabeledFile = struct { file: []const u8, label: []const u8 };
-pub fn chooseTemp(entries: []const LabeledFile) []const u8 {
-    for (entries) |entry| if (std.mem.eql(u8, entry.label, "edge")) return entry.file;
-    return "temp1";
+const intel_temp_labels = [_][]const u8{ "pkg", "gpu", "edge" };
+/// Capacity `tempCandidates` needs: the longest label ladder plus the temp1 fallback.
+pub const max_temp_candidates = intel_temp_labels.len + 1;
+/// Temperature sensor file bases to try in order. Intel labels the GPU package `pkg` (and need not
+/// put it on temp1), so its ladder starts there; AMD's GPU temperature is `edge`. A caller moves to
+/// the next candidate when a sensor's input cannot be read; `temp1` is tried last for Intel and as
+/// the legacy fallback when no label matched.
+pub fn tempCandidates(entries: []const LabeledFile, intel: bool, out: *[max_temp_candidates][]const u8) []const []const u8 {
+    var n: usize = 0;
+    const labels: []const []const u8 = if (intel) &intel_temp_labels else &.{"edge"};
+    for (labels) |label| {
+        if (fileForLabel(entries, label)) |file| {
+            out[n] = file;
+            n += 1;
+        }
+    }
+    if (intel or n == 0) {
+        var present = false;
+        for (out[0..n]) |file| present = present or std.mem.eql(u8, file, "temp1");
+        if (!present) {
+            out[n] = "temp1";
+            n += 1;
+        }
+    }
+    return out[0..n];
 }
-pub fn chooseClock(entries: []const LabeledFile, label: []const u8) ?[]const u8 {
+pub fn fileForLabel(entries: []const LabeledFile, label: []const u8) ?[]const u8 {
     for (entries) |entry| if (std.mem.eql(u8, entry.label, label)) return entry.file;
     return null;
 }
@@ -604,12 +649,89 @@ test "GPU sysfs parsers: sclk list, PCIe generation, uevent and labels" {
     try std.testing.expectEqualStrings("0000:03:00.0", ueventValue("DRIVER=amdgpu\nPCI_SLOT_NAME=0000:03:00.0\n", "PCI_SLOT_NAME").?);
     try std.testing.expect(ueventValue("DRIVER=amdgpu\n", "PCI_SLOT_NAME") == null);
     const labels = [_]LabeledFile{ .{ .file = "temp1", .label = "junction" }, .{ .file = "temp2", .label = "edge" } };
-    try std.testing.expectEqualStrings("temp2", chooseTemp(&labels));
-    try std.testing.expectEqualStrings("temp1", chooseTemp(&.{}));
+    var candidates: [max_temp_candidates][]const u8 = undefined;
+    const amd = tempCandidates(&labels, false, &candidates);
+    try std.testing.expectEqual(@as(usize, 1), amd.len);
+    try std.testing.expectEqualStrings("temp2", amd[0]);
+    const legacy = tempCandidates(&.{}, false, &candidates);
+    try std.testing.expectEqual(@as(usize, 1), legacy.len);
+    try std.testing.expectEqualStrings("temp1", legacy[0]);
+    // Intel: matching labels in preference order, then temp1; a matched sensor missing from temp1 still counts.
+    const intel_labels = [_]LabeledFile{ .{ .file = "temp1", .label = "junction" }, .{ .file = "temp3", .label = "edge" }, .{ .file = "temp2", .label = "pkg" } };
+    const intel = tempCandidates(&intel_labels, true, &candidates);
+    try std.testing.expectEqual(@as(usize, 3), intel.len);
+    try std.testing.expectEqualStrings("temp2", intel[0]);
+    try std.testing.expectEqualStrings("temp3", intel[1]);
+    try std.testing.expectEqualStrings("temp1", intel[2]);
+    const intel_bare = tempCandidates(&.{}, true, &candidates);
+    try std.testing.expectEqual(@as(usize, 1), intel_bare.len);
+    try std.testing.expectEqualStrings("temp1", intel_bare[0]);
+    // A matched label already on temp1 must not list it twice.
+    const intel_temp1 = [_]LabeledFile{ .{ .file = "temp1", .label = "pkg" }, .{ .file = "temp3", .label = "edge" } };
+    const deduped = tempCandidates(&intel_temp1, true, &candidates);
+    try std.testing.expectEqual(@as(usize, 2), deduped.len);
+    try std.testing.expectEqualStrings("temp1", deduped[0]);
+    try std.testing.expectEqualStrings("temp3", deduped[1]);
     const clocks = [_]LabeledFile{ .{ .file = "freq1", .label = "mclk" }, .{ .file = "freq2", .label = "sclk" } };
-    try std.testing.expectEqualStrings("freq2", chooseClock(&clocks, "sclk").?);
-    try std.testing.expectEqualStrings("freq1", chooseClock(&clocks, "mclk").?);
-    try std.testing.expect(chooseClock(&clocks, "vclk") == null);
+    try std.testing.expectEqualStrings("freq2", fileForLabel(&clocks, "sclk").?);
+    try std.testing.expectEqualStrings("freq1", fileForLabel(&clocks, "mclk").?);
+    try std.testing.expect(fileForLabel(&clocks, "vclk") == null);
+}
+/// Test fixture builder shared with the collector tests: a zeroed gpu_metrics
+/// table with the given header and one u16 field written at `offset`.
+pub fn gpuMetricsFixture(size: u16, format: u8, content: u8, offset: usize, raw: u16) [120]u8 {
+    var table: [120]u8 = @splat(0);
+    const endian = @import("builtin").cpu.arch.endian();
+    std.mem.writeInt(u16, table[0..2], size, endian);
+    table[2] = format;
+    table[3] = content;
+    std.mem.writeInt(u16, table[offset..][0..2], raw, endian);
+    return table;
+}
+test "gpu_metrics video parser accepts known percent and centi-percent layouts" {
+    inline for (.{ 1, 2, 3 }) |content| {
+        const table = gpuMetricsFixture(120, 1, content, 20, 37);
+        try std.testing.expectEqual(@as(?f64, 37), parseGpuMetricsVideo(&table));
+    }
+    inline for (.{ 1, 2, 3, 4 }) |content| {
+        const table = gpuMetricsFixture(120, 2, content, 30, 9600);
+        try std.testing.expectEqual(@as(?f64, 96), parseGpuMetricsVideo(&table));
+    }
+    try std.testing.expectEqual(@as(?f64, 0.01), parseGpuMetricsVideo(&gpuMetricsFixture(120, 2, 1, 30, 1)));
+    try std.testing.expectEqual(@as(?f64, 0), parseGpuMetricsVideo(&gpuMetricsFixture(120, 1, 3, 20, 0)));
+    try std.testing.expectEqual(@as(?f64, 100), parseGpuMetricsVideo(&gpuMetricsFixture(120, 1, 3, 20, 100)));
+    try std.testing.expectEqual(@as(?f64, 100), parseGpuMetricsVideo(&gpuMetricsFixture(120, 2, 4, 30, 10000)));
+    try std.testing.expectEqual(@as(?f64, null), parseGpuMetricsVideo(&gpuMetricsFixture(120, 1, 3, 20, 101)));
+    try std.testing.expectEqual(@as(?f64, null), parseGpuMetricsVideo(&gpuMetricsFixture(120, 2, 1, 30, 10001)));
+}
+test "gpu_metrics video parser rejects unknown versions, short buffers and wrong offsets" {
+    try std.testing.expectEqual(@as(?f64, null), parseGpuMetricsVideo(&.{}));
+    try std.testing.expectEqual(@as(?f64, null), parseGpuMetricsVideo(&.{ 120, 0, 1, 1 }));
+    try std.testing.expectEqual(@as(?f64, null), parseGpuMetricsVideo(&gpuMetricsFixture(3, 1, 3, 20, 37)));
+    try std.testing.expectEqual(@as(?f64, null), parseGpuMetricsVideo(&gpuMetricsFixture(121, 1, 3, 20, 37)));
+    try std.testing.expectEqual(@as(?f64, null), parseGpuMetricsVideo(&gpuMetricsFixture(21, 1, 3, 20, 37)));
+    try std.testing.expectEqual(@as(?f64, null), parseGpuMetricsVideo(&gpuMetricsFixture(31, 2, 1, 30, 9600)));
+    inline for (.{
+        .{ 0, 1 },
+        .{ 3, 1 },
+        .{ 1, 0 },
+        .{ 1, 4 },
+        .{ 2, 0 },
+        .{ 2, 5 },
+    }) |version| {
+        // A plausible value at either known offset must not make an unsupported layout readable.
+        var table = gpuMetricsFixture(120, version[0], version[1], 20, 55);
+        std.mem.writeInt(u16, table[30..][0..2], 8800, @import("builtin").cpu.arch.endian());
+        try std.testing.expectEqual(@as(?f64, null), parseGpuMetricsVideo(&table));
+    }
+    const truncated = gpuMetricsFixture(120, 2, 1, 30, 9600);
+    try std.testing.expectEqual(@as(?f64, null), parseGpuMetricsVideo(truncated[0..31]));
+    var random = std.Random.DefaultPrng.init(0x6770756d);
+    var bytes: [128]u8 = undefined;
+    for (0..1000) |_| {
+        random.random().bytes(&bytes);
+        _ = parseGpuMetricsVideo(bytes[0..random.random().intRangeAtMost(usize, 0, bytes.len)]);
+    }
 }
 test "pci.ids scanner tokenizes indentation, skips junk and prefers brackets" {
     var scanner: PciIdsScanner = .{ .target_vendor = 0x1002, .target_device = 0x744c };
