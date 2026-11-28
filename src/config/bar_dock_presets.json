@@ -29,7 +29,7 @@
   },
   {
     "id": "windows",
-    "name": "Windows",
+    "name": "Windows 11",
     "description": "Taskbar at the bottom: widgets on the left, pinned and running applications in the center, clock on the right.",
     "preview": "/org/aqueous/Pearl/previews/windows.avif",
     "bar": {
@@ -46,6 +46,35 @@
       "left": ["weather"],
       "center": ["launcher", "dock"],
       "right": ["media", "tray", "audio", "network", "battery", "notifications", "control", "clock"]
+    },
+    "dock": {
+      "enabled": false,
+      "edge": "bottom",
+      "mode": "always",
+      "icon_size": 32,
+      "margin": 4,
+      "opacity_sync": true
+    }
+  },
+  {
+    "id": "windows-10",
+    "name": "Windows 10",
+    "description": "Taskbar at the bottom: launcher and applications on the left, status widgets and clock on the right.",
+    "preview": "/org/aqueous/Pearl/previews/windows-10.avif",
+    "bar": {
+      "mode": "always",
+      "edge": "bottom",
+      "size": 40,
+      "radius": 0,
+      "islands": false,
+      "attached": true,
+      "workspace_mode": "small",
+      "running_apps_per_window": false
+    },
+    "widgets": {
+      "left": ["launcher", "dock"],
+      "center": [],
+      "right": ["weather", "media", "tray", "audio", "network", "battery", "notifications", "control", "clock"]
     },
     "dock": {
       "enabled": false,
