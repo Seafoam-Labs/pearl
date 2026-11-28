@@ -236,6 +236,14 @@ test "the macOS and Windows presets describe their layouts" {
     try t.expectEqual(@as(u8, 32), windows.dock.icon_size);
     try t.expectEqualStrings("Bar bottom · Applications in bar", try summary(alloc, (try find(alloc, "windows")).?));
     try t.expectEqualStrings("Bar top · Dock bottom", try summary(alloc, (try find(alloc, "macos")).?));
+    const win10 = try prefs.parse(alloc, try apply(alloc, "{}", "windows-10"));
+    try t.expectEqual(prefs.Edge.bottom, win10.bar.edge);
+    try t.expectEqual(@as(u16, 40), win10.bar.size);
+    // The classic taskbar keeps launcher and applications together on the left.
+    try t.expectEqualStrings("launcher,dock", win10.bar.groups.left);
+    try t.expectEqualStrings("", win10.bar.groups.center);
+    try t.expect(!win10.dock.enabled);
+    try t.expectEqualStrings("Bar bottom · Applications in bar", try summary(alloc, (try find(alloc, "windows-10")).?));
 }
 
 test "presets leave unrelated preferences, display overrides and user widgets alone" {

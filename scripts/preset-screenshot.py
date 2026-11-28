@@ -79,6 +79,7 @@ def main():
     parser.add_argument('--output', type=Path, default=ROOT / 'artifacts/preset-screenshot')
     parser.add_argument('--previews', type=Path, default=ROOT / 'resources/previews')
     parser.add_argument('--format', choices=('avif', 'webp', 'png'), default='avif')
+    parser.add_argument('--only', help='capture just the preset with this id')
     parser.add_argument('--idle', type=float, default=3.0, help='seconds to wait for wallpaper, palette and bar paint')
     parser.add_argument('--reuse', action='store_true', help='recompose previews from existing captures without starting a session')
     parser.add_argument('--detail', action='store_true', help='encode close-up bar/dock sheets instead of the full 16:9 desktop')
@@ -87,6 +88,8 @@ def main():
     args.previews.mkdir(parents=True, exist_ok=True)
     catalog = json.loads((ROOT / 'src/config/bar_dock_presets.json').read_text())
     for preset in catalog:
+        if args.only and preset['id'] != args.only:
+            continue
         png = args.output / f"{preset['id']}.png"
         if not (args.reuse and png.is_file()):
             with PrivateSession(args.output / preset['id'], aqueous=args.aqueous) as session:

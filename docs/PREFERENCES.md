@@ -154,8 +154,9 @@ Pearl. The implementation uses Zig 0.16.0 and the pinned Ghostty GTK/GIO binding
 ## Standalone editor
 
 **Bar & dock → Layout presets** starts the bar and dock from a shipped layout —
-**macOS** (slim top bar, always-visible bottom dock) and **Windows** (bottom
-taskbar with the applications strip in the bar). A preset rewrites only the bar
+**macOS** (slim top bar, always-visible bottom dock), **Windows 11** (bottom
+taskbar with the applications strip centered in the bar) and **Windows 10**
+(bottom taskbar with launcher and applications on the left). A preset rewrites only the bar
 and dock settings it names and their widgets; everything else — other
 preferences, per-display overrides, pinned applications and widget data such as
 the weather location and custom clocks — is left exactly as it was. Installed

@@ -1,0 +1,44 @@
+ts=2026-11-27T22:28:00Z pid=89319 info(platform): event=background-effect-owner owner=gtk gtk=4.24.1
+ts=2026-11-27T22:28:00Z pid=89319 info(desktop): event=steam-library-sync games=0 created=0 removed=0
+ts=2026-11-27T22:28:00Z pid=89319 info(platform): event=blur-capability available=false
+ts=2026-11-27T22:28:00Z pid=89319 info(services): event=sched-profile-systemd result=polling
+ts=2026-11-27T22:28:00Z pid=89319 info(pearl): event=aqueous-availability state=connecting
+ts=2026-11-27T22:28:00Z pid=89319 info(pearl): event=ready mode=session
+ts=2026-11-27T22:28:00Z pid=89319 info(desktop): event=app-index-ready entries=52 truncated=false
+ts=2026-11-27T22:28:00Z pid=89319 warning(services): event=sched-profile-systemd step=unit result=failed
+ts=2026-11-27T22:28:00Z pid=89319 debug(aqueous): event=ipc-request op=hello
+ts=2026-11-27T22:28:00Z pid=89319 debug(aqueous): event=ipc-request op=hello
+ts=2026-11-27T22:28:00Z pid=89319 debug(aqueous): event=ipc-response op=hello
+ts=2026-11-27T22:28:00Z pid=89319 debug(aqueous): event=ipc-response op=hello
+ts=2026-11-27T22:28:00Z pid=89319 info(pearl): event=aqueous-availability state=subscribing
+ts=2026-11-27T22:28:00Z pid=89319 debug(aqueous): event=ipc-request op=subscribe
+ts=2026-11-27T22:28:00Z pid=89319 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"
+ts=2026-11-27T22:28:00Z pid=89319 info(ui): event=popup-close-reason reason=bar-inhibited
+ts=2026-11-27T22:28:00Z pid=89319 debug(aqueous): event=ipc-response op=subscribe
+ts=2026-11-27T22:28:00Z pid=89319 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-27T22:28:00Z pid=89319 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-27T22:28:00Z pid=89319 info(pearl): event=aqueous-availability state=ready
+ts=2026-11-27T22:28:00Z pid=89319 info(services): event=autostart-launched file=/etc/xdg/autostart/xdg-user-dirs.desktop
+ts=2026-11-27T22:28:00Z pid=89319 info(services): event=autostart-run entries=4 launched=1
+No default user directories
+ts=2026-11-27T22:28:00Z pid=89319 info(ui): event=output-mapped id=1 connector=HEADLESS-2 scale=1 renderer=GskCairoRenderer gpu_agreement=unverified session_hash=9141405e81144269
+ts=2026-11-27T22:28:00Z pid=89319 info(ui): event=output-mapped id=2 connector=HEADLESS-1 scale=1 renderer=GskCairoRenderer gpu_agreement=unverified session_hash=9141405e81144269
+ts=2026-11-27T22:28:00Z pid=89319 info(pearl): event=settings-backend-ready session_hash=9141405e81144269
+ts=2026-11-27T22:28:00Z pid=89319 info(pearl): event=control-ready session_hash=9141405e81144269
+ts=2026-11-27T22:28:00Z pid=89319 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-27T22:28:00Z pid=89319 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-27T22:28:00Z pid=89319 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-27T22:28:00Z pid=89319 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-27T22:28:00Z pid=89319 info(config): event=preferences-applied revision=1 mode=static cache=false
+ts=2026-11-27T22:28:00Z pid=89319 info(desktop): event=app-index-ready entries=52 truncated=false
+ts=2026-11-27T22:28:00Z pid=89319 info(config): event=wallpaper-applications-applied generation=2 elapsed_us=32379 success=true
+ts=2026-11-27T22:28:00Z pid=89319 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-27T22:28:00Z pid=89319 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-27T22:28:00Z pid=89319 debug(aqueous): event=ipc-request op=ack
+ts=2026-11-27T22:28:00Z pid=89319 debug(aqueous): event=ipc-response op=ack
+ts=2026-11-27T22:28:00Z pid=89319 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"
+ts=2026-11-27T22:28:02Z pid=89319 warning(services): event=sched-profile-list result=failed detail="systemctl show scx.service failed: Failed to connect to system scope bus via local transport: No such file or directory"
+ts=2026-11-27T22:28:03Z pid=89319 info(pearl): event=stopping reason=signal pending=false
+ts=2026-11-27T22:28:03Z pid=89319 info(pearl): event=aqueous-availability state=stopped
+ts=2026-11-27T22:28:03Z pid=89319 info(pearl): event=cleanup pending=false watched_objects=0
+ts=2026-11-27T22:28:03Z pid=89319 info(pearl): event=stopped
