@@ -690,8 +690,10 @@ test "global switcher negotiates independently and carries no stale workspace co
     try t.expectEqual(@as(usize, 0), switcher.count(&m, focus.output.?.id, false));
     try t.expectEqual(@as(usize, 1), switcher.count(&m, focus.output.?.id, true));
     var window = m.get(.window, "18446744073709551615").?.*;
+    // Minimized windows stay globally cycleable (issue #179); only an unknown
+    // output/workspace removes them.
     window.minimized = true;
-    try t.expect(!switcher.globalEligible(&m, window));
+    try t.expect(switcher.globalEligible(&m, window));
     window.minimized = false;
     window.output = "missing";
     try t.expect(!switcher.globalEligible(&m, window));

@@ -5,7 +5,10 @@ const Window = @import("../aqueous/entities.zig").Window;
 const commands = @import("../aqueous/commands.zig");
 pub const Direction = enum { next, previous, dismiss };
 pub fn eligible(window: Window, output: []const u8, workspace: []const u8) bool {
-    return (window.switcher_eligible orelse true) and window.can_activate and !window.skip_switcher and !window.minimized and
+    // Minimized windows remain cycleable so a window that minimized itself on
+    // focus loss (e.g. a fullscreen game, issue #179) can be switched back into;
+    // the compositor restores it on activation. Mirrors WindowSwitcher.eligible.
+    return (window.switcher_eligible orelse true) and window.can_activate and !window.skip_switcher and
         std.mem.eql(u8, window.output orelse return false, output) and
         std.mem.eql(u8, window.workspace orelse return false, workspace);
 }
@@ -34,7 +37,7 @@ pub fn action(model: *const Model, output: []const u8, direction: Direction, red
         .dismiss => .{ .switcher_dismiss = fields },
     };
 }
-test "switcher includes obscured and skip-taskbar windows but excludes minimized remote and skip-switcher" {
+test "switcher includes obscured, skip-taskbar and minimized windows but excludes remote and skip-switcher" {
     var w = std.mem.zeroes(Window);
     w.output = "o";
     w.workspace = "w";
@@ -44,7 +47,7 @@ test "switcher includes obscured and skip-taskbar windows but excludes minimized
     try std.testing.expect(!eligible(w, "other", "w"));
     try std.testing.expect(!eligible(w, "o", "other"));
     w.minimized = true;
-    try std.testing.expect(!eligible(w, "o", "w"));
+    try std.testing.expect(eligible(w, "o", "w"));
     w.minimized = false;
     w.skip_switcher = true;
     try std.testing.expect(!eligible(w, "o", "w"));
