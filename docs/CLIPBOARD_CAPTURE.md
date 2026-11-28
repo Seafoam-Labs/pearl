@@ -44,11 +44,10 @@ and `image/png`. PNG takes precedence when both image and text are offered.
 Other formats, NUL-containing or invalid UTF-8 text, empty/truncated payloads,
 and oversized payloads are rejected. A disappeared owner can leave already
 received history intact; selecting an entry creates a fresh data-control source
-with its own retained payload and promotes that entry to most-recent. Paste
-remains an action in the destination app. Deleting a history entry does not
-interrupt an already selected payload or an in-progress paste. Clear releases
-Pearl's current selection as well as history; it does not erase a selection
-owned by another application.
+with its own retained payload and promotes that entry to most-recent. Deleting
+a history entry does not interrupt an already selected payload or an in-progress
+paste. Clear releases Pearl's current selection as well as history; it does not
+erase a selection owned by another application.
 
 | Resource | Bound |
 | --- | --- |
@@ -124,9 +123,6 @@ unchanged. Clear can retry even when history is already empty. A successful
 retry clears the dirty/error state. Shutdown frees runtime resources without
 saving an accidental empty history. Delete/Clear do not promise forensic erasure
 from backups, filesystem snapshots or interrupted private temporary files.
-
-Legacy `$XDG_STATE_HOME/pearl/clipboard/history.bin` files are left untouched;
-they are neither migrated nor read as a fallback. Clear affects JSON history only.
 
 ## Privacy and lock integration
 
@@ -262,7 +258,7 @@ Delete/Clear complete synchronously. Their `SaveFailed` error can accompany an
 already-applied in-memory removal, as described above. Status exposes `dirty`
 and `persistence_error` while access is open; storage errors do not make native
 clipboard access unavailable. Suspended status hides retained content and paging
-metadata. There are no persistence operation tokens or completion queries.
+metadata.
 
 Capture requests acknowledge queueing, not completion. Wait for `pending: false`
 and an increased `generation`; inspect the message if it did not increase.
@@ -278,28 +274,14 @@ zig build test-clipboard-history -Doptimize=safe -j2
 python3 scripts/test.py check-registry --python-only
 ```
 
-Use Zig 0.17.1. The registered `test-clipboard-history` target checks controlled-clock
-expiry, JSON and payload bounds, private atomic saves, restart restoration,
-unsafe storage, save failures, paging and suspension callbacks. It uses disposable
-state directories and socket pairs, without accessing desktop clipboard history.
-GTK widget tests require `PEARL_TEST_CLIPBOARD_GTK=1` and an explicitly isolated
-display, such as a private Broadway server with `GDK_BACKEND=broadway` and a
-private `XDG_RUNTIME_DIR`.
-They otherwise report skips and never use an inherited desktop display.
+Use Zig 0.17.1. `test-clipboard-history` checks history, persistence and privacy
+using disposable state directories and socket pairs. GTK widget tests are opt-in
+(`PEARL_TEST_CLIPBOARD_GTK=1`) and require an isolated display. For Broadway, set
+`GDK_BACKEND=broadway` and use a private `XDG_RUNTIME_DIR`.
 
 The `test-clipboard-capture`, `test-launcher-calculator`,
-`test-security` and `test-capture-master` targets use the pinned private Aqueous
-fixture from `scripts/aqueous-target.json`, isolated XDG directories and D-Bus/PAM
-fixtures. The harness supplies private user and system autostart roots to Pearl's
-test build; isolated XDG directories alone do not override its system autostart
-directory. `wl-paste` checks real paste and screenshots check transforms and crops.
-Run these suites only with verified fixtures and autostart isolation, never against
-the installed desktop. Build and headless passes do not establish compositor acceptance.
-
-Reported manual Devario acceptance covers JSON persistence/restoration, duplicate
-promotion, Delete/Clear persistence, screenshot-to-PNG copy, lock/unlock privacy
-(text retained, PNG discarded), 100-entry retention after 105 copies, 20-entry CLI
-pages, and the text, PNG and retained-payload limits. These are manual results,
-separate from automated checks. Real Wayland verification remains for controlled-clock
-seven-day expiry, exact PNG dimension boundaries and unexpected device-loss recovery.
-Hardware HDR and screen-reader interaction also need dedicated validation.
+`test-security` and `test-capture-master` targets require the pinned Aqueous fixture
+from `scripts/aqueous-target.json`, isolated XDG directories, D-Bus/PAM fixtures
+and private autostart roots. Use the harness's explicit autostart overrides for
+Pearl's test build; XDG isolation alone does not override `/etc/xdg/autostart`.
+Never run these suites against the installed desktop.

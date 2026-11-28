@@ -2,14 +2,11 @@
 
 ## Clipboard text history simplification, November 7, 2026
 
-Clipboard history now saves text to `$XDG_STATE_HOME/pearl/clipboard.json` using
-synchronous best-effort atomic saves. PNGs remain in memory and are discarded
-on privacy or device suspension. The combined history limit is 100 entries,
-with seven-day activity-driven expiry after the latest copy or selection.
-Storage failures leave clipboard use available; failed removals may return after
-a restart. Legacy binary history is left untouched without automatic migration.
-See [the clipboard contract](CLIPBOARD_CAPTURE.md) for behavior and validation
-boundaries.
+Clipboard text history now uses synchronous, best-effort atomic JSON saves at
+`$XDG_STATE_HOME/pearl/clipboard.json`, with 100 combined entries and seven-day
+activity-driven expiry. Privacy or device suspension hides text and discards
+memory-only PNGs. Storage failures leave clipboard use available; failed removals
+may return after restart. See [the clipboard contract](CLIPBOARD_CAPTURE.md).
 
 ## Wi-Fi profiles created from the panel now persist, October 9, 2026
 
