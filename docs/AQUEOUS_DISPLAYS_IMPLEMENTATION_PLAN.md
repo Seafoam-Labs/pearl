@@ -106,8 +106,10 @@ Avoid horizontal page scrolling, clipped fields, or footer-covered controls.
 - Keep Exact position and More display options collapsed initially; retain
   disclosure state during edits and ordinary rebuilds.
 - Move declaration/profile/source tools, disconnected declarations, custom modes,
-  policy, adaptive sync, auto-HDR, and detailed diagnostics under labelled nested
+  policy, auto-HDR, and detailed diagnostics under labelled nested
   disclosures in More display options. Keep their existing editing capabilities.
+  Adaptive sync was later promoted to the main editor card below HDR for
+  discoverability (Aqueous#159); see ADAPTIVE_SYNC_DISPLAY_PLAN.md.
 - Scope new styles in `resources/settings-layout.css` and the existing theme
   stylesheets. Preserve the shared editor's compact host and other Aqueous pages.
 

@@ -89,6 +89,7 @@ pub const pearl_manifest = [_]PearlEntry{
     .{ .id = "dock.enabled", .label = "Show dock", .description = "Enable the dock", .route = .bar, .breadcrumb = "Bar & dock › Dock", .keywords = "dock enable show" },
     .{ .id = "dock.edge", .label = "Dock edge", .description = "Screen edge for the dock", .route = .bar, .breadcrumb = "Bar & dock › Dock", .keywords = "dock edge position" },
     .{ .id = "dock.mode", .label = "Dock visibility", .description = "Always, autohide or intelligent dock", .route = .bar, .breadcrumb = "Bar & dock › Dock", .keywords = "dock visibility autohide intelligent" },
+    .{ .id = "dock.running_indicators", .label = "Running app indicators", .description = "Show dots for running applications", .route = .bar, .breadcrumb = "Bar & dock › Dock", .keywords = "dock running indicators dots open applications" },
     .{ .id = "dock.icon_size", .label = "Dock icon size", .description = "Dock icon size in pixels", .route = .bar, .breadcrumb = "Bar & dock › Dock", .keywords = "dock icon size" },
     .{ .id = "popup.placement", .label = "Flyout placement", .description = "Anchored or centered flyouts", .route = .bar, .breadcrumb = "Bar & dock › Flyouts", .keywords = "flyout popup placement anchored centered" },
     .{ .id = "raw", .label = "Pearl preferences JSON", .description = "Edit the full preferences document", .route = .advanced, .breadcrumb = "Advanced", .keywords = "json raw preferences config document advanced" },

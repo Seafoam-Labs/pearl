@@ -101,7 +101,7 @@ pub fn group(field: m.Value) Group {
     const id = m.str(m.get(field, "id"));
     const page = m.fieldCategory(field);
     if (eq(page, "appearance")) {
-        if (one(id, &.{ "layout.border_width", "layout.border_focused", "decoration.corner_radius" })) return .borders;
+        if (one(id, &.{ "layout.border_width", "layout.border_focused", "decoration.corner_radius", "decoration.renderer" })) return .borders;
         if (one(id, &.{ "blur.enabled", "opacity.enabled" })) return .effects;
         if (prefix(id, &.{ "blur.", "opacity.", "workspace_transition.", "layout.border_" })) return .effect_tuning;
         if (prefix(id, &.{ "desktop.font.", "desktop.cursor." })) return .typography;
@@ -207,7 +207,7 @@ test "all pinned scalar fields have exactly one section and future fields remain
     const parsed = try std.json.parseFromSlice(m.Value, a, @embedFile("aqueous_presentation_fixture"), .{});
     defer parsed.deinit();
     const fields = m.list(m.get(parsed.value, "fields"));
-    try std.testing.expectEqual(@as(usize, 241), fields.len);
+    try std.testing.expectEqual(@as(usize, 242), fields.len);
     var seen = std.StringHashMap(void).init(a);
     defer seen.deinit();
     for (fields) |f| {

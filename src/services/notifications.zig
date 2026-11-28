@@ -176,7 +176,7 @@ pub const Notifications = struct {
         }
         const m = std.mem.span(member);
         if (std.mem.eql(u8, m, "GetCapabilities")) {
-            invocation.returnValue(db.tuple(&.{db.array("s", &.{ db.str("body"), db.str("actions"), db.str("persistence"), db.str("icon-static") })}));
+            invocation.returnValue(db.tuple(&.{db.array("s", &.{ db.str("body"), db.str("actions"), db.str("persistence"), db.str("icon-static"), db.str("x-pearl-progress") })}));
         } else if (std.mem.eql(u8, m, "GetServerInformation")) {
             invocation.returnValue(db.tuple(&.{ db.str("Pearl"), db.str("Aqueous"), db.str(@import("../version.zig").string), db.str("1.2") }));
         } else if (std.mem.eql(u8, m, "CloseNotification")) {
@@ -246,6 +246,13 @@ pub const Notifications = struct {
             if (db.lookup(hints, "urgency", "y")) |v| {
                 defer v.unref();
                 r.urgency = @min(2, v.getByte());
+            }
+            // Transfer progress: a fraction in [0, 1] or -1 for an unknown total.
+            // Anything else (NaN, infinities, out of range) is ignored, never fatal.
+            if (db.lookup(hints, "x-pearl-progress", "d")) |v| {
+                defer v.unref();
+                const value = v.getDouble();
+                if (std.math.isFinite(value) and value >= -1.0 and value <= 1.0) r.progress = value;
             }
             if (db.lookup(hints, "desktop-entry", "s")) |v| {
                 defer v.unref();

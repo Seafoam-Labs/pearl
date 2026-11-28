@@ -30,6 +30,18 @@ writes blocked; discard does not erase the uncertainty. Preserve the pending
 record and helper journal for recovery; deleting them is not proof of rollback.
 Pearl never repeats an uncertain save under a new operation ID.
 
+Recovery must always have an exit. When the receipt can never be recovered
+(the helper reports the operation absent, or a replacement helper no longer
+has the journal), Refresh compares the live snapshot generation with the
+pre-apply baseline stored in the pending record: an unchanged generation
+proves the interrupted save never persisted, and the record resolves
+automatically. Otherwise **Resolve unresolved save** (Settings footer, or
+`pearlctl aqueous resolve`) retires the record after explicit confirmation,
+refreshes the snapshot and unblocks writes, retaining the draft. The
+configuration may already contain the interrupted save; resolution is not
+proof of rollback, and the next Apply validates a fresh candidate against the
+current state rather than replaying the old operation.
+
 Rules, custom shortcuts and snap layouts now have GTK forms sharing the Advanced
 draft. Current master validates these mutations but cannot completely classify
 their impact, so protected save remains blocked. Enablement, primary, profiles and

@@ -87,7 +87,7 @@ msgstr ""
 msgid "15 minutes"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:421
+#: src/desktop/aqueous_settings.zig:490
 msgid "180"
 msgstr ""
 
@@ -95,7 +95,7 @@ msgstr ""
 msgid "24-hour time"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:421
+#: src/desktop/aqueous_settings.zig:490
 msgid "270"
 msgstr ""
 
@@ -111,7 +111,7 @@ msgstr ""
 msgid "7-day forecast"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:421
+#: src/desktop/aqueous_settings.zig:490
 msgid "90"
 msgstr ""
 
@@ -139,7 +139,7 @@ msgstr ""
 msgid "A profile takes at most 32 options."
 msgstr ""
 
-#: src/desktop/dock.zig:698
+#: src/desktop/dock.zig:709
 msgid "A unique application identity is needed. Existing choices can be removed in Settings."
 msgstr ""
 
@@ -174,7 +174,7 @@ msgstr ""
 msgid "Aa     +1"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:1006
+#: src/ui/surfaces/manager.zig:1097
 msgid "About {0} h {1} min left"
 msgstr ""
 
@@ -206,7 +206,7 @@ msgstr ""
 msgid "Action unavailable or failed. Try again."
 msgstr ""
 
-#: src/desktop/dock.zig:948 src/desktop/dock.zig:969
+#: src/desktop/dock.zig:959 src/desktop/dock.zig:980
 msgid "Action unavailable; the application or window may have changed."
 msgstr ""
 
@@ -222,6 +222,10 @@ msgstr ""
 msgid "Active on some displays"
 msgstr ""
 
+#: src/desktop/aqueous_display_setup.zig:188
+msgid "Active."
+msgstr ""
+
 #: src/ui/components/network.zig:490
 msgid "Adapter unavailable"
 msgstr ""
@@ -232,6 +236,22 @@ msgstr ""
 
 #: src/desktop/connectivity.zig:82
 msgid "Adapters, nearby and saved networks"
+msgstr ""
+
+#: src/desktop/aqueous_display_setup.zig:438 src/desktop/aqueous_display_setup.zig:439
+msgid "Adaptive sync (VRR)"
+msgstr ""
+
+#: src/desktop/aqueous_display_setup.zig:188
+msgid "Adaptive sync could not be enabled on this display."
+msgstr ""
+
+#: src/desktop/aqueous_display_setup.zig:188
+msgid "Adaptive sync is unavailable while mirroring."
+msgstr ""
+
+#: src/desktop/aqueous_display_setup.zig:188
+msgid "Adaptive sync preview is not available for this display."
 msgstr ""
 
 #: src/settings/autostart_view.zig:245
@@ -347,7 +367,7 @@ msgstr ""
 msgid "Additional setup required"
 msgstr ""
 
-#: src/config/aqueous_presentation.zig:148 src/desktop/aqueous_settings.zig:269 src/desktop/settings.zig:66 src/desktop/settings_navigation.zig:38 src/settings/search_index.zig:42 src/settings/window.zig:475
+#: src/config/aqueous_presentation.zig:148 src/desktop/aqueous_settings.zig:275 src/desktop/settings.zig:66 src/desktop/settings_navigation.zig:38 src/settings/search_index.zig:42 src/settings/window.zig:475
 msgid "Advanced"
 msgstr ""
 
@@ -375,11 +395,11 @@ msgstr ""
 msgid "Album art"
 msgstr ""
 
-#: src/desktop/aqueous_display_setup.zig:448
+#: src/desktop/aqueous_display_setup.zig:477
 msgid "Align edges"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:575
+#: src/desktop/aqueous_settings.zig:646
 msgid "All Aqueous settings saved"
 msgstr ""
 
@@ -391,7 +411,7 @@ msgstr ""
 msgid "All caught up"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:605
+#: src/desktop/aqueous_settings.zig:676
 msgid "All display settings saved.\nChanges take effect only when you apply them."
 msgstr ""
 
@@ -482,7 +502,7 @@ msgstr ""
 msgid "Another color service is active"
 msgstr ""
 
-#: src/desktop/notifications.zig:108
+#: src/desktop/notifications.zig:112
 msgid "Another notification service is active."
 msgstr ""
 
@@ -502,7 +522,7 @@ msgstr ""
 msgid "Appearance: font synchronization"
 msgstr ""
 
-#: src/desktop/apps.zig:39 src/desktop/notifications.zig:141
+#: src/desktop/apps.zig:39 src/desktop/notifications.zig:145
 msgid "Application"
 msgstr ""
 
@@ -566,15 +586,15 @@ msgstr ""
 msgid "Applications dock"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:132 src/desktop/settings.zig:144 src/settings/window.zig:206
+#: src/desktop/aqueous_settings.zig:136 src/desktop/settings.zig:144 src/settings/window.zig:206
 msgid "Apply & save"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:776
+#: src/desktop/aqueous_settings.zig:847
 msgid "Apply all Aqueous changes"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:599
+#: src/desktop/aqueous_settings.zig:670
 msgid "Apply changes"
 msgstr ""
 
@@ -606,7 +626,7 @@ msgstr ""
 msgid "Apply saves all Pearl preferences. Filters affect future arrivals; DND and history actions are immediate."
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:774
+#: src/desktop/aqueous_settings.zig:845
 msgid "Apply validates the candidate. Display effects require a protected preview before saving."
 msgstr ""
 
@@ -646,7 +666,7 @@ msgstr ""
 msgid "Aqueous owns the preview deadline and rollback. Keep authorizes one durable save. Preview availability is reported per output and feature below."
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:111 src/desktop/panels.zig:282
+#: src/desktop/aqueous_settings.zig:113 src/desktop/panels.zig:282
 msgid "Aqueous settings"
 msgstr ""
 
@@ -658,7 +678,7 @@ msgstr ""
 msgid "Arrange by name"
 msgstr ""
 
-#: src/desktop/aqueous_display_setup.zig:384
+#: src/desktop/aqueous_display_setup.zig:401
 msgid "Arrange side by side"
 msgstr ""
 
@@ -670,7 +690,7 @@ msgstr ""
 msgid "Arrange your desktop bar and dock."
 msgstr ""
 
-#: src/desktop/aqueous_display_setup.zig:376
+#: src/desktop/aqueous_display_setup.zig:393
 msgid "Arrange your displays"
 msgstr ""
 
@@ -739,7 +759,7 @@ msgstr ""
 msgid "Automatic (first connected display)"
 msgstr ""
 
-#: src/desktop/aqueous_display_setup.zig:492
+#: src/desktop/aqueous_display_setup.zig:521
 msgid "Automatic SDR brightness uses inherited/default settings. Other color options and display profiles are below."
 msgstr ""
 
@@ -747,7 +767,7 @@ msgstr ""
 msgid "Automatic arrangement"
 msgstr ""
 
-#: src/desktop/aqueous_layout.zig:204
+#: src/desktop/aqueous_layout.zig:217
 msgid "Automatic border colors: open Pearl Appearance"
 msgstr ""
 
@@ -841,7 +861,7 @@ msgstr ""
 msgid "Bar & dock"
 msgstr ""
 
-#: src/settings/search_index.zig:115
+#: src/settings/search_index.zig:116
 msgid "Bar & dock › Layout presets"
 msgstr ""
 
@@ -898,7 +918,7 @@ msgstr ""
 msgid "Battery service unavailable"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:996
+#: src/ui/surfaces/manager.zig:1087
 msgid "Battery very low"
 msgstr ""
 
@@ -1111,7 +1131,7 @@ msgstr ""
 msgid "Calculation · Enter to copy · = to continue"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:775 src/desktop/clipboard_capture.zig:149 src/desktop/connectivity.zig:117 src/desktop/services.zig:296 src/desktop/wallpaper_crop.zig:243 src/services/polkit.zig:315 src/settings/assistant_tools_view.zig:250 src/settings/autostart_view.zig:266 src/settings/bar_view.zig:1144 src/settings/notification_filters_view.zig:437 src/settings/scheduler_view.zig:387 src/settings/scheduler_view.zig:440 src/settings/semantic_view.zig:284
+#: src/desktop/aqueous_settings.zig:846 src/desktop/aqueous_settings.zig:915 src/desktop/clipboard_capture.zig:149 src/desktop/connectivity.zig:117 src/desktop/services.zig:296 src/desktop/wallpaper_crop.zig:243 src/services/polkit.zig:315 src/settings/assistant_tools_view.zig:250 src/settings/autostart_view.zig:266 src/settings/bar_view.zig:1144 src/settings/notification_filters_view.zig:437 src/settings/scheduler_view.zig:387 src/settings/scheduler_view.zig:440 src/settings/semantic_view.zig:284
 msgid "Cancel"
 msgstr ""
 
@@ -1184,7 +1204,7 @@ msgstr ""
 msgid "Celsius (°C)"
 msgstr ""
 
-#: src/desktop/aqueous_display_setup.zig:455
+#: src/desktop/aqueous_display_setup.zig:484
 msgid "Center"
 msgstr ""
 
@@ -1262,7 +1282,7 @@ msgctxt "aqueous.input.repeat_rate.description"
 msgid "Characters per second; zero disables repeat."
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:1013
+#: src/ui/surfaces/manager.zig:1104
 msgid "Charge is running low."
 msgstr ""
 
@@ -1306,7 +1326,7 @@ msgstr ""
 msgid "Checking installed runtimes… If installation is needed, complete the package manager prompts in the terminal. Setup continues until the terminal exits."
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:599
+#: src/desktop/aqueous_settings.zig:670
 msgid "Checking settings…"
 msgstr ""
 
@@ -1446,7 +1466,7 @@ msgstr ""
 msgid "Clear sky"
 msgstr ""
 
-#: src/desktop/aqueous_display_setup.zig:386
+#: src/desktop/aqueous_display_setup.zig:403
 msgid "Click a screen to change its settings."
 msgstr ""
 
@@ -1478,7 +1498,7 @@ msgstr ""
 msgid "Clock saved to draft. Apply & save to update the bar."
 msgstr ""
 
-#: src/settings/window.zig:1276
+#: src/desktop/window_menu.zig:134 src/settings/window.zig:1276
 msgid "Close"
 msgstr ""
 
@@ -1620,6 +1640,10 @@ msgstr ""
 msgid "Complete the expression"
 msgstr ""
 
+#: src/desktop/aqueous_settings.zig:432
+msgid "Compositor borders — all capable apps"
+msgstr ""
+
 #: src/settings/notification_filters_view.zig:377
 msgid "Condition"
 msgstr ""
@@ -1690,7 +1714,7 @@ msgstr ""
 msgid "Connect and manage your wireless devices."
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:1009
+#: src/ui/surfaces/manager.zig:1100
 msgid "Connect power now to avoid losing unsaved work."
 msgstr ""
 
@@ -1899,7 +1923,7 @@ msgstr ""
 msgid "Critical"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:997
+#: src/ui/surfaces/manager.zig:1088
 msgid "Critical battery level"
 msgstr ""
 
@@ -1931,7 +1955,7 @@ msgstr ""
 msgid "Current arrangement; Validate updates the diagram from Aqueous's candidate"
 msgstr ""
 
-#: src/desktop/aqueous_display_setup.zig:249 src/desktop/aqueous_display_setup.zig:377
+#: src/desktop/aqueous_display_setup.zig:266 src/desktop/aqueous_display_setup.zig:394
 msgid "Current layout"
 msgstr ""
 
@@ -1939,7 +1963,7 @@ msgstr ""
 msgid "Current location"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:429
+#: src/desktop/aqueous_settings.zig:498
 msgid "Current mode, or 1920x1080@60"
 msgstr ""
 
@@ -1981,7 +2005,7 @@ msgstr ""
 msgid "Custom GGUF: verify compatibility before use."
 msgstr ""
 
-#: src/desktop/aqueous_display_setup.zig:229
+#: src/desktop/aqueous_display_setup.zig:245
 msgid "Custom arrangement. Drag a screen or set its exact position."
 msgstr ""
 
@@ -1997,7 +2021,7 @@ msgstr ""
 msgid "Custom mistralrs absolute path"
 msgstr ""
 
-#: src/desktop/aqueous_display_setup.zig:167
+#: src/desktop/aqueous_display_setup.zig:170
 msgid "Custom settings in More display options."
 msgstr ""
 
@@ -2033,7 +2057,7 @@ msgstr ""
 msgid "Cycle windows requires updated Aqueous"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:1736
+#: src/ui/surfaces/manager.zig:1843
 msgid "Cycle →"
 msgstr ""
 
@@ -2240,19 +2264,19 @@ msgstr ""
 msgid "Disabled button"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:598 src/settings/window.zig:205
+#: src/desktop/aqueous_settings.zig:669 src/settings/window.zig:205
 msgid "Discard"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:776
+#: src/desktop/aqueous_settings.zig:847
 msgid "Discard all Aqueous changes"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:756
+#: src/desktop/aqueous_settings.zig:827
 msgid "Discard all Aqueous changes?"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:126 src/desktop/settings.zig:139
+#: src/desktop/aqueous_settings.zig:128 src/desktop/settings.zig:139
 msgid "Discard draft"
 msgstr ""
 
@@ -2292,7 +2316,7 @@ msgstr ""
 msgid "Discovery starts when you choose Find devices."
 msgstr ""
 
-#: src/desktop/notifications.zig:76 src/ui/components/network.zig:110
+#: src/desktop/notifications.zig:80 src/ui/components/network.zig:110
 msgid "Dismiss"
 msgstr ""
 
@@ -2333,7 +2357,7 @@ msgctxt "aqueous.display.identify_by.label"
 msgid "Display identity"
 msgstr ""
 
-#: src/desktop/aqueous_display_setup.zig:483 src/settings/bar_view.zig:559
+#: src/desktop/aqueous_display_setup.zig:512 src/settings/bar_view.zig:559
 msgid "Display mode"
 msgstr ""
 
@@ -2361,7 +2385,7 @@ msgstr ""
 msgid "Displays"
 msgstr ""
 
-#: src/desktop/aqueous_display_setup.zig:244
+#: src/desktop/aqueous_display_setup.zig:261
 msgid "Displays overlap. Move them apart or choose mirroring before applying."
 msgstr ""
 
@@ -2377,11 +2401,11 @@ msgstr ""
 msgid "Do not disturb"
 msgstr ""
 
-#: src/desktop/notifications.zig:107
+#: src/desktop/notifications.zig:111
 msgid "Do not disturb · Off"
 msgstr ""
 
-#: src/desktop/notifications.zig:107
+#: src/desktop/notifications.zig:111
 msgid "Do not disturb · On"
 msgstr ""
 
@@ -2445,11 +2469,11 @@ msgstr ""
 msgid "Draft exceeds 64 KiB. Reduce its size before applying."
 msgstr ""
 
-#: src/desktop/aqueous_layout.zig:309
+#: src/desktop/aqueous_layout.zig:322
 msgid "Draft illustration"
 msgstr ""
 
-#: src/desktop/aqueous_layout.zig:303
+#: src/desktop/aqueous_layout.zig:316
 msgid "Draft illustration · Not applied"
 msgstr ""
 
@@ -2473,7 +2497,7 @@ msgstr ""
 msgid "Draft · Apply & save to update your desktop."
 msgstr ""
 
-#: src/desktop/aqueous_display_setup.zig:376
+#: src/desktop/aqueous_display_setup.zig:393
 msgid "Drag screens to match how they sit on your desk."
 msgstr ""
 
@@ -2622,7 +2646,7 @@ msgctxt "aqueous.input.touchpad.middle_emulation.description"
 msgid "Emulate a middle button chord."
 msgstr ""
 
-#: src/desktop/aqueous_display_setup.zig:413 src/desktop/aqueous_display_setup.zig:414
+#: src/desktop/aqueous_display_setup.zig:430 src/desktop/aqueous_display_setup.zig:431
 msgid "Enable HDR"
 msgstr ""
 
@@ -2651,7 +2675,7 @@ msgctxt "aqueous.opacity.enabled.description"
 msgid "Enable compositor-controlled opacity."
 msgstr ""
 
-#: src/desktop/aqueous_display_setup.zig:411
+#: src/desktop/aqueous_display_setup.zig:428
 msgid "Enable display"
 msgstr ""
 
@@ -2679,8 +2703,16 @@ msgstr ""
 msgid "Enabled"
 msgstr ""
 
+#: src/desktop/aqueous_display_setup.zig:188
+msgid "Enabled for fullscreen apps."
+msgstr ""
+
 #: src/settings/plugins_view.zig:153
 msgid "Enabled in draft"
+msgstr ""
+
+#: src/desktop/aqueous_display_setup.zig:188
+msgid "Enabled."
 msgstr ""
 
 #: src/settings/preferences_view.zig:370
@@ -2745,6 +2777,10 @@ msgstr ""
 
 #: src/settings/palette_editor.zig:97 src/theme/palette_preview.zig:84
 msgid "Example error message"
+msgstr ""
+
+#: src/desktop/window_menu.zig:105
+msgid "Exit fullscreen"
 msgstr ""
 
 #: src/core/application.zig:185
@@ -2986,7 +3022,7 @@ msgstr ""
 msgid "Full draft request"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:297
+#: src/desktop/aqueous_settings.zig:303
 msgid "Full draft request (JSON). Collection editors: monitor_changes, custom_keybind_changes, window_rule_changes, snap_zone_changes, snap_layouts and default_snap_layout. See docs/AQUEOUS_SETTINGS.md for exact examples. Apply saves personal copies of changed system defaults."
 msgstr ""
 
@@ -3004,6 +3040,10 @@ msgstr ""
 
 #: src/desktop/panels.zig:106 src/desktop/panels.zig:223 src/desktop/panels.zig:468
 msgid "Full settings is not installed."
+msgstr ""
+
+#: src/desktop/window_menu.zig:105
+msgid "Fullscreen"
 msgstr ""
 
 #: tests/fixtures/aqueous-master/snapshot.json
@@ -3129,11 +3169,11 @@ msgctxt "aqueous.layout.options.grid.single_window_aspect_ratio.label"
 msgid "Grid: Single window aspect ratio"
 msgstr ""
 
-#: src/desktop/aqueous_display_setup.zig:484
+#: src/desktop/aqueous_display_setup.zig:513
 msgid "HDR adjustments"
 msgstr ""
 
-#: src/desktop/aqueous_display_setup.zig:487
+#: src/desktop/aqueous_display_setup.zig:516
 msgid "HDR brightness"
 msgstr ""
 
@@ -3176,7 +3216,7 @@ msgstr ""
 msgid "History only — no popup"
 msgstr ""
 
-#: src/desktop/aqueous_display_setup.zig:473
+#: src/desktop/aqueous_display_setup.zig:502
 msgid "Horizontal (X)"
 msgstr ""
 
@@ -3207,11 +3247,11 @@ msgstr ""
 msgid "Icon theme name"
 msgstr ""
 
-#: src/desktop/aqueous_display_setup.zig:374
+#: src/desktop/aqueous_display_setup.zig:391
 msgid "Identify"
 msgstr ""
 
-#: src/desktop/aqueous_display_setup.zig:375
+#: src/desktop/aqueous_display_setup.zig:392
 msgid "Identify displays"
 msgstr ""
 
@@ -3407,7 +3447,7 @@ msgstr ""
 msgid "Keep at least one condition."
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:600 src/desktop/aqueous_settings.zig:651
+#: src/desktop/aqueous_settings.zig:671 src/desktop/aqueous_settings.zig:722
 msgid "Keep changes"
 msgstr ""
 
@@ -3415,7 +3455,7 @@ msgstr ""
 msgid "Keep current / omitted"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:140 src/desktop/aqueous_settings.zig:600
+#: src/desktop/aqueous_settings.zig:144 src/desktop/aqueous_settings.zig:671
 msgid "Keep displays"
 msgstr ""
 
@@ -3439,7 +3479,7 @@ msgstr ""
 msgid "Keep the PNG at its selected location. Display overrides remain in Advanced."
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:638 src/desktop/aqueous_settings.zig:644
+#: src/desktop/aqueous_settings.zig:709 src/desktop/aqueous_settings.zig:715
 msgid "Keep these display settings?"
 msgstr ""
 
@@ -3500,11 +3540,11 @@ msgstr ""
 msgid "Last {0} minutes · this session"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:274
+#: src/desktop/aqueous_settings.zig:280
 msgid "Latest native preview and rollback status"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:278
+#: src/desktop/aqueous_settings.zig:284
 msgid "Latest operation receipt and recovery details"
 msgstr ""
 
@@ -3549,7 +3589,7 @@ msgstr ""
 msgid "Layout behavior"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:2942
+#: src/ui/surfaces/manager.zig:3050
 msgid "Layout change unavailable"
 msgstr ""
 
@@ -3616,7 +3656,7 @@ msgstr ""
 msgid "Layouts"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:112
+#: src/desktop/aqueous_settings.zig:114
 msgid "Layouts, windows, input and your desktop appearance"
 msgstr ""
 
@@ -3728,7 +3768,7 @@ msgstr ""
 msgid "Loading service state…"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:117
+#: src/desktop/aqueous_settings.zig:119
 msgid "Loading settings…"
 msgstr ""
 
@@ -3785,7 +3825,7 @@ msgstr ""
 msgid "Low"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:995
+#: src/ui/surfaces/manager.zig:1086
 msgid "Low battery"
 msgstr ""
 
@@ -3908,6 +3948,10 @@ msgstr ""
 msgid "Matugen scheme"
 msgstr ""
 
+#: src/desktop/window_menu.zig:104
+msgid "Maximize"
+msgstr ""
+
 #: tests/fixtures/aqueous-master/snapshot.json
 msgctxt "aqueous.state.maximize_full_output.label"
 msgid "Maximize to full output"
@@ -3996,15 +4040,19 @@ msgctxt "aqueous.input.raise_on_focus_delay_ms.description"
 msgid "Milliseconds to wait before raising a newly focused freeform window."
 msgstr ""
 
+#: src/desktop/window_menu.zig:103
+msgid "Minimize"
+msgstr ""
+
 #: src/desktop/launcher.zig:315
 msgid "Minimized"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:439
+#: src/desktop/aqueous_settings.zig:508
 msgid "Mirror of (empty for independent)"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:441
+#: src/desktop/aqueous_settings.zig:510
 msgid "Mirror target connector"
 msgstr ""
 
@@ -4097,6 +4145,10 @@ msgstr ""
 
 #: src/desktop/services.zig:93 src/settings/sound_view.zig:196
 msgid "Move to default"
+msgstr ""
+
+#: src/desktop/window_menu.zig:128
+msgid "Move to workspace"
 msgstr ""
 
 #: src/settings/scheduler_view.zig:195
@@ -4215,7 +4267,7 @@ msgstr ""
 msgid "Next rules"
 msgstr ""
 
-#: src/desktop/aqueous_display_setup.zig:447
+#: src/desktop/aqueous_display_setup.zig:476
 msgid "Next to"
 msgstr ""
 
@@ -4263,7 +4315,7 @@ msgstr ""
 msgid "No capturable windows"
 msgstr ""
 
-#: src/desktop/aqueous_display_setup.zig:363
+#: src/desktop/aqueous_display_setup.zig:380
 msgid "No connected displays. Refresh after reconnecting to Aqueous."
 msgstr ""
 
@@ -4323,7 +4375,7 @@ msgstr ""
 msgid "No matching settings"
 msgstr ""
 
-#: src/desktop/aqueous_layout.zig:299
+#: src/desktop/aqueous_layout.zig:312
 msgid "No matching shortcuts. Clear the search to see all actions."
 msgstr ""
 
@@ -4477,6 +4529,10 @@ msgstr ""
 msgid "Off · warmer screen colors on supported displays"
 msgstr ""
 
+#: src/desktop/aqueous_settings.zig:431
+msgid "Off — applications draw their own"
+msgstr ""
+
 #: src/settings/themes_view.zig:432
 msgid "Offline · showing cached repository metadata"
 msgstr ""
@@ -4520,6 +4576,10 @@ msgstr ""
 
 #: src/desktop/settings.zig:114
 msgid "One taskbar button per window"
+msgstr ""
+
+#: src/desktop/aqueous_display_setup.zig:446 src/desktop/aqueous_display_setup.zig:447
+msgid "Only when a fullscreen app is running"
 msgstr ""
 
 #: src/desktop/bar.zig:670
@@ -4670,7 +4730,7 @@ msgstr ""
 msgid "Ordered conditions and effects"
 msgstr ""
 
-#: src/desktop/aqueous_display_setup.zig:434
+#: src/desktop/aqueous_display_setup.zig:463
 msgid "Orientation"
 msgstr ""
 
@@ -4820,7 +4880,7 @@ msgstr ""
 msgid "Pause automatic idle"
 msgstr ""
 
-#: src/core/application.zig:179 src/ui/surfaces/manager.zig:1530
+#: src/core/application.zig:179 src/ui/surfaces/manager.zig:1637
 msgid "Pearl"
 msgstr ""
 
@@ -4854,6 +4914,10 @@ msgstr ""
 
 #: src/desktop/bar_autohide.zig:40
 msgid "Pearl bar reveal"
+msgstr ""
+
+#: src/desktop/aqueous_settings.zig:913
+msgid "Pearl could not determine whether the interrupted save reached the configuration."
 msgstr ""
 
 #: src/desktop/dock.zig:157
@@ -4926,6 +4990,14 @@ msgstr ""
 
 #: src/settings/scheduler_view.zig:215
 msgid "Pearl switches back to this profile when a scheduler fails, so it cannot be changed."
+msgstr ""
+
+#: src/desktop/aqueous_settings.zig:434
+msgid "Pearl titlebars — all capable apps"
+msgstr ""
+
+#: src/desktop/aqueous_settings.zig:433
+msgid "Pearl titlebars — apps that request them"
 msgstr ""
 
 #: src/services/polkit.zig:208
@@ -5015,7 +5087,7 @@ msgctxt "aqueous.struts.right.description"
 msgid "Pixels reserved right of windows."
 msgstr ""
 
-#: src/desktop/aqueous_display_setup.zig:438
+#: src/desktop/aqueous_display_setup.zig:467
 msgid "Place this display"
 msgstr ""
 
@@ -5123,7 +5195,7 @@ msgctxt "aqueous.desktop.font.width.description"
 msgid "Portable width selected with the installed face."
 msgstr ""
 
-#: src/desktop/aqueous_display_setup.zig:435
+#: src/desktop/aqueous_display_setup.zig:464
 msgid "Position"
 msgstr ""
 
@@ -5193,11 +5265,11 @@ msgstr ""
 msgid "Preferences were saved. An export needs attention; your changes remain applied."
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:359
+#: src/desktop/aqueous_settings.zig:365
 msgid "Preserved value"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:1006
+#: src/desktop/aqueous_settings.zig:1108
 msgid "Press a shortcut. Escape cancels; recording ends after 30 seconds."
 msgstr ""
 
@@ -5217,7 +5289,7 @@ msgstr ""
 msgid "Preview only · committed appearance is unchanged. To select a package, choose Use theme, then Apply & save."
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:1735
+#: src/ui/surfaces/manager.zig:1842
 msgid "Previous"
 msgstr ""
 
@@ -5237,7 +5309,7 @@ msgstr ""
 msgid "Previous rules"
 msgstr ""
 
-#: src/desktop/aqueous_display_setup.zig:162 src/desktop/aqueous_display_setup.zig:422
+#: src/desktop/aqueous_display_setup.zig:165 src/desktop/aqueous_display_setup.zig:451
 msgid "Primary display"
 msgstr ""
 
@@ -5338,7 +5410,7 @@ msgstr ""
 msgid "Raw configuration"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:285
+#: src/desktop/aqueous_settings.zig:291
 msgid "Raw edits are retained as you type, including invalid TOML. A file cannot have both raw and structured edits; resolve overlaps in the request below."
 msgstr ""
 
@@ -5358,7 +5430,7 @@ msgstr ""
 msgid "Reading printer capabilities…"
 msgstr ""
 
-#: src/desktop/aqueous_layout.zig:247 src/desktop/aqueous_settings.zig:128
+#: src/desktop/aqueous_layout.zig:260 src/desktop/aqueous_settings.zig:130
 msgid "Rebase draft"
 msgstr ""
 
@@ -5366,11 +5438,11 @@ msgstr ""
 msgid "Receive coarse activity notifications. No typed text, key identities or pointer positions are exposed."
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:870
+#: src/desktop/aqueous_settings.zig:972
 msgid "Record custom shortcut"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:389
+#: src/desktop/aqueous_settings.zig:395
 msgid "Record shortcut"
 msgstr ""
 
@@ -5378,7 +5450,7 @@ msgstr ""
 msgid "Recording"
 msgstr ""
 
-#: src/desktop/aqueous_layout.zig:228
+#: src/desktop/aqueous_layout.zig:241
 msgid "Recording waits for Aqueous to inhibit shortcuts. Escape cancels."
 msgstr ""
 
@@ -5398,11 +5470,15 @@ msgstr ""
 msgid "Reduced motion"
 msgstr ""
 
+#: src/desktop/aqueous_display_setup.zig:188
+msgid "Reduces tearing by matching the refresh rate to the content."
+msgstr ""
+
 #: src/desktop/launcher.zig:454
 msgid "Refine your search for more results"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:124 src/ui/components/network.zig:116 src/ui/components/network.zig:383
+#: src/desktop/aqueous_settings.zig:126 src/ui/components/network.zig:116 src/ui/components/network.zig:383
 msgid "Refresh"
 msgstr ""
 
@@ -5422,11 +5498,11 @@ msgstr ""
 msgid "Refresh plugins"
 msgstr ""
 
-#: src/desktop/aqueous_display_setup.zig:429
+#: src/desktop/aqueous_display_setup.zig:458
 msgid "Refresh rate"
 msgstr ""
 
-#: src/desktop/aqueous_layout.zig:245
+#: src/desktop/aqueous_layout.zig:258
 msgid "Refresh status"
 msgstr ""
 
@@ -5536,7 +5612,7 @@ msgstr ""
 msgid "Request in progress…"
 msgstr ""
 
-#: src/portal/backend.zig:524
+#: src/portal/backend.zig:536
 msgid "Requested by {0}"
 msgstr ""
 
@@ -5568,8 +5644,20 @@ msgstr ""
 msgid "Reset to default"
 msgstr ""
 
-#: src/desktop/aqueous_display_setup.zig:428
+#: src/desktop/aqueous_display_setup.zig:457
 msgid "Resolution"
+msgstr ""
+
+#: src/desktop/aqueous_settings.zig:905
+msgid "Resolve the unresolved save?"
+msgstr ""
+
+#: src/desktop/aqueous_settings.zig:134 src/desktop/aqueous_settings.zig:916
+msgid "Resolve unresolved save"
+msgstr ""
+
+#: src/desktop/aqueous_settings.zig:914
+msgid "Resolving retires the pending record and unblocks writes. The configuration may already contain the interrupted save; review the current settings before applying again. Your draft is retained."
 msgstr ""
 
 #: src/desktop/bar.zig:409 src/desktop/resource_view.zig:247
@@ -5590,6 +5678,10 @@ msgstr ""
 
 #: src/desktop/panels.zig:114 src/desktop/services.zig:287 src/desktop/services.zig:321
 msgid "Restart…"
+msgstr ""
+
+#: src/desktop/window_menu.zig:103 src/desktop/window_menu.zig:104
+msgid "Restore"
 msgstr ""
 
 #: src/settings/scheduler_view.zig:382
@@ -5636,7 +5728,7 @@ msgstr ""
 msgid "Retry committed application themes"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:142
+#: src/desktop/aqueous_settings.zig:146
 msgid "Retry compositor reload"
 msgstr ""
 
@@ -5674,19 +5766,19 @@ msgctxt "aqueous.layout.options.reverse-dwindle.single_window_aspect_ratio.label
 msgid "Reverse-Dwindle: Single window aspect ratio"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:601 src/desktop/aqueous_settings.zig:650
+#: src/desktop/aqueous_settings.zig:672 src/desktop/aqueous_settings.zig:721
 msgid "Revert"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:141 src/desktop/aqueous_settings.zig:601
+#: src/desktop/aqueous_settings.zig:145 src/desktop/aqueous_settings.zig:672
 msgid "Revert displays"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:599
+#: src/desktop/aqueous_settings.zig:670
 msgid "Review & apply"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:756
+#: src/desktop/aqueous_settings.zig:827
 msgid "Review Aqueous changes"
 msgstr ""
 
@@ -5706,7 +5798,7 @@ msgstr ""
 msgid "Review external Qt changes"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:134
+#: src/desktop/aqueous_settings.zig:138
 msgid "Review issue"
 msgstr ""
 
@@ -5766,7 +5858,7 @@ msgctxt "aqueous.layout.options.rows.single_window_aspect_ratio.label"
 msgid "Rows: Single window aspect ratio"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:575
+#: src/desktop/aqueous_settings.zig:646
 msgid "Rule order changed. Review & apply or Discard before making other Aqueous edits."
 msgstr ""
 
@@ -5820,7 +5912,7 @@ msgstr ""
 msgid "SA"
 msgstr ""
 
-#: src/desktop/aqueous_display_setup.zig:489
+#: src/desktop/aqueous_display_setup.zig:518
 msgid "SDR content brightness"
 msgstr ""
 
@@ -5933,7 +6025,7 @@ msgstr ""
 msgid "Saving power settings…"
 msgstr ""
 
-#: src/desktop/aqueous_display_setup.zig:432
+#: src/desktop/aqueous_display_setup.zig:461
 msgid "Scale"
 msgstr ""
 
@@ -6147,6 +6239,11 @@ msgstr ""
 msgid "Sequential"
 msgstr ""
 
+#: tests/fixtures/aqueous-master/snapshot.json
+msgctxt "aqueous.decoration.renderer.label"
+msgid "Server-side decoration renderer"
+msgstr ""
+
 #: src/settings/window.zig:1096
 msgid "Service controls take effect immediately. Pearl preference draft retained."
 msgstr ""
@@ -6179,7 +6276,7 @@ msgstr ""
 msgid "Set an automatic lock time earlier than suspend in Session & lock. This change was not saved."
 msgstr ""
 
-#: src/desktop/aqueous_display_setup.zig:162 src/desktop/aqueous_display_setup.zig:421
+#: src/desktop/aqueous_display_setup.zig:165 src/desktop/aqueous_display_setup.zig:450
 msgid "Set as primary"
 msgstr ""
 
@@ -6837,11 +6934,11 @@ msgctxt "aqueous.window_switcher_previous.description"
 msgid "Shortcut for this built-in action."
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:1001
+#: src/desktop/aqueous_settings.zig:1103
 msgid "Shortcut inhibition was revoked."
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:992 src/desktop/aqueous_settings.zig:1014
+#: src/desktop/aqueous_settings.zig:1094 src/desktop/aqueous_settings.zig:1116
 msgid "Shortcut recording cancelled."
 msgstr ""
 
@@ -7312,15 +7409,15 @@ msgstr ""
 msgid "The default profiles could not be restored."
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:1504
+#: src/ui/surfaces/manager.zig:1611
 msgid "The desktop action could not be completed."
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:1500
+#: src/ui/surfaces/manager.zig:1607
 msgid "The desktop action could not be confirmed."
 msgstr ""
 
-#: src/desktop/aqueous_display_setup.zig:533
+#: src/desktop/aqueous_display_setup.zig:562
 msgid "The draft cannot be edited as declarations. Open Aqueous Advanced to correct the draft JSON."
 msgstr ""
 
@@ -7360,7 +7457,7 @@ msgstr ""
 msgid "The preference draft needs repair. Open Advanced to fix it; your text is retained."
 msgstr ""
 
-#: src/ui/i18n.zig:48 src/core/application.zig:421
+#: src/ui/i18n.zig:48 src/core/application.zig:422
 msgid "The preview could not be loaded."
 msgstr ""
 
@@ -7473,7 +7570,7 @@ msgstr ""
 msgid "This Pearl session uses an incompatible Settings version."
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:770
+#: src/desktop/aqueous_settings.zig:841
 msgid "This action includes the complete Aqueous draft. Pearl preferences are separate."
 msgstr ""
 
@@ -7481,7 +7578,11 @@ msgstr ""
 msgid "This action is unavailable in the sample desktop."
 msgstr ""
 
-#: src/desktop/aqueous_display_setup.zig:229
+#: src/desktop/aqueous_display_setup.zig:188
+msgid "This display does not support adaptive sync."
+msgstr ""
+
+#: src/desktop/aqueous_display_setup.zig:245
 msgid "This display mirrors another screen."
 msgstr ""
 
@@ -7694,11 +7795,15 @@ msgstr ""
 msgid "Turn on"
 msgstr ""
 
-#: src/desktop/aqueous_display_setup.zig:167
+#: src/desktop/aqueous_display_setup.zig:170
 msgid "Turn on this display to use HDR."
 msgstr ""
 
-#: src/desktop/aqueous_display_setup.zig:229
+#: src/desktop/aqueous_display_setup.zig:188
+msgid "Turn on this display to use adaptive sync."
+msgstr ""
+
+#: src/desktop/aqueous_display_setup.zig:245
 msgid "Turn on two displays to arrange them."
 msgstr ""
 
@@ -7747,11 +7852,11 @@ msgstr ""
 msgid "Unmute"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:581
+#: src/desktop/aqueous_settings.zig:652
 msgid "Unsaved Aqueous changes"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:575
+#: src/desktop/aqueous_settings.zig:646
 msgid "Unsaved Aqueous changes · Review includes every section."
 msgstr ""
 
@@ -7759,7 +7864,7 @@ msgstr ""
 msgid "Unsaved changes"
 msgstr ""
 
-#: src/desktop/aqueous_display_setup.zig:249
+#: src/desktop/aqueous_display_setup.zig:266
 msgid "Unsaved layout"
 msgstr ""
 
@@ -7817,7 +7922,7 @@ msgstr ""
 msgid "Use ascending page ranges, such as 1-3,5."
 msgstr ""
 
-#: src/desktop/aqueous_display_setup.zig:490
+#: src/desktop/aqueous_display_setup.zig:519
 msgid "Use automatic settings"
 msgstr ""
 
@@ -7857,7 +7962,7 @@ msgstr ""
 msgid "Use launcher"
 msgstr ""
 
-#: src/desktop/dock.zig:684 src/desktop/dock.zig:685
+#: src/desktop/dock.zig:695 src/desktop/dock.zig:696
 msgid "Use launcher…"
 msgstr ""
 
@@ -7903,7 +8008,7 @@ msgstr ""
 msgid "User entry"
 msgstr ""
 
-#: src/desktop/aqueous_display_setup.zig:167 src/desktop/aqueous_display_setup.zig:418
+#: src/desktop/aqueous_display_setup.zig:170 src/desktop/aqueous_display_setup.zig:435
 msgid "Uses automatic settings."
 msgstr ""
 
@@ -7919,15 +8024,15 @@ msgstr ""
 msgid "Valid palette · preview only until Save palette."
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:130
+#: src/desktop/aqueous_settings.zig:132
 msgid "Validate"
 msgstr ""
 
-#: src/desktop/aqueous_layout.zig:246
+#: src/desktop/aqueous_layout.zig:259
 msgid "Validate draft"
 msgstr ""
 
-#: src/desktop/aqueous_display_setup.zig:249
+#: src/desktop/aqueous_display_setup.zig:266
 msgid "Validated arrangement · unsaved"
 msgstr ""
 
@@ -7935,7 +8040,7 @@ msgstr ""
 msgid "Validated candidate arrangement"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:282
+#: src/desktop/aqueous_settings.zig:288
 msgid "Validated candidate effects"
 msgstr ""
 
@@ -7951,7 +8056,7 @@ msgstr ""
 msgid "Verify model and test tools locally"
 msgstr ""
 
-#: src/desktop/aqueous_display_setup.zig:474
+#: src/desktop/aqueous_display_setup.zig:503
 msgid "Vertical (Y)"
 msgstr ""
 
@@ -7997,7 +8102,7 @@ msgstr ""
 msgid "Wait until the profile being applied or saved is done."
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:976
+#: src/desktop/aqueous_settings.zig:1078
 msgid "Waiting for Aqueous to inhibit shortcuts… Escape cancels."
 msgstr ""
 
@@ -8106,6 +8211,15 @@ msgctxt "aqueous.layout.options.scrolling.new_window_position.description"
 msgid "Where new windows are placed relative to the focused window; any explicit position overrides portrait stacking."
 msgstr ""
 
+#: src/desktop/aqueous_settings.zig:429
+msgid "Who draws server-side decorations and which windows get them. Apps that only support client-side decorations always keep their own."
+msgstr ""
+
+#: tests/fixtures/aqueous-master/snapshot.json
+msgctxt "aqueous.decoration.renderer.description"
+msgid "Who draws server-side window decorations: the compositor's built-in borders, or the Pearl shell's themed titlebars. Pearl must be running for shell rendering; otherwise borders remain."
+msgstr ""
+
 #: src/ui/i18n.zig:17 src/desktop/bar.zig:756 src/desktop/connectivity.zig:75 src/ui/components/network.zig:89 src/ui/components/network.zig:92
 msgid "Wi-Fi"
 msgstr ""
@@ -8172,8 +8286,16 @@ msgctxt "aqueous.decoration.corner_radius.label"
 msgid "Window corner radius"
 msgstr ""
 
+#: src/desktop/aqueous_settings.zig:426 src/desktop/aqueous_settings.zig:439
+msgid "Window decorations"
+msgstr ""
+
 #: src/config/aqueous_presentation.zig:48
 msgid "Window effects"
+msgstr ""
+
+#: src/desktop/window_menu.zig:84
+msgid "Window menu"
 msgstr ""
 
 #: tests/fixtures/aqueous-master/snapshot.json
@@ -8220,7 +8342,7 @@ msgstr ""
 msgid "Working…"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:1817
+#: src/ui/surfaces/manager.zig:1924
 msgid "Workspace"
 msgstr ""
 
@@ -8254,7 +8376,7 @@ msgctxt "aqueous.input.xkb_variant.description"
 msgid "XKB layout variant."
 msgstr ""
 
-#: src/desktop/notifications.zig:157
+#: src/desktop/notifications.zig:176
 msgid "You're all caught up"
 msgstr ""
 
@@ -8317,7 +8439,7 @@ msgctxt "aqueous.input.touchpad.accel_profile.option"
 msgid "adaptive"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:286
+#: src/desktop/aqueous_settings.zig:292
 msgid "appearance"
 msgstr ""
 
@@ -8404,6 +8526,12 @@ msgstr ""
 #. Display label only; the underlying Aqueous option value is unchanged.
 msgctxt "aqueous.layout.slots.tertiary.option"
 msgid "composable"
+msgstr ""
+
+#: tests/fixtures/aqueous-master/snapshot.json
+#. Display label only; the underlying Aqueous option value is unchanged.
+msgctxt "aqueous.decoration.renderer.option"
+msgid "compositor"
 msgstr ""
 
 #: tests/fixtures/aqueous-master/snapshot.json
@@ -8548,19 +8676,19 @@ msgctxt "aqueous.input.touchpad.accel_profile.option"
 msgid "flat"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:421
+#: src/desktop/aqueous_settings.zig:490
 msgid "flipped"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:421
+#: src/desktop/aqueous_settings.zig:490
 msgid "flipped-180"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:421
+#: src/desktop/aqueous_settings.zig:490
 msgid "flipped-270"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:421
+#: src/desktop/aqueous_settings.zig:490
 msgid "flipped-90"
 msgstr ""
 
@@ -8762,7 +8890,7 @@ msgstr ""
 msgid "https://search.example.org"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:286
+#: src/desktop/aqueous_settings.zig:292
 msgid "input"
 msgstr ""
 
@@ -8776,7 +8904,7 @@ msgctxt "aqueous.desktop.font.slant.option"
 msgid "italic"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:286
+#: src/desktop/aqueous_settings.zig:292
 msgid "layout"
 msgstr ""
 
@@ -8975,7 +9103,7 @@ msgctxt "aqueous.input.touchpad.scroll_method.option"
 msgid "no-scroll"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:421
+#: src/desktop/aqueous_settings.zig:490
 msgid "normal"
 msgstr ""
 
@@ -9043,7 +9171,7 @@ msgctxt "aqueous.bell.mode.option"
 msgid "off"
 msgstr ""
 
-#: src/desktop/aqueous_display_editor.zig:224 src/desktop/aqueous_settings.zig:286
+#: src/desktop/aqueous_display_editor.zig:224 src/desktop/aqueous_settings.zig:292
 msgid "outputs"
 msgstr ""
 
@@ -9176,7 +9304,7 @@ msgctxt "aqueous.layout.slots.tertiary.option"
 msgid "rows"
 msgstr ""
 
-#: src/desktop/aqueous_settings.zig:286
+#: src/desktop/aqueous_settings.zig:292
 msgid "rules"
 msgstr ""
 
@@ -9303,6 +9431,12 @@ msgstr ""
 #: tests/fixtures/aqueous-master/snapshot.json
 msgctxt "aqueous.set_layout_tertiary.label"
 msgid "set_layout_tertiary"
+msgstr ""
+
+#: tests/fixtures/aqueous-master/snapshot.json
+#. Display label only; the underlying Aqueous option value is unchanged.
+msgctxt "aqueous.decoration.renderer.option"
+msgid "shell"
 msgstr ""
 
 #: tests/fixtures/aqueous-master/snapshot.json
@@ -9624,7 +9758,7 @@ msgstr ""
 msgid "windows"
 msgstr ""
 
-#: src/desktop/aqueous_display_editor.zig:224 src/desktop/aqueous_settings.zig:286
+#: src/desktop/aqueous_display_editor.zig:224 src/desktop/aqueous_settings.zig:292
 msgid "wm"
 msgstr ""
 
@@ -9665,7 +9799,7 @@ msgstr ""
 msgid "{0} is selected but stopped; the kernel's default scheduler is running. Choose it to start it again."
 msgstr ""
 
-#: src/desktop/aqueous_layout.zig:299
+#: src/desktop/aqueous_layout.zig:312
 msgid "{0} matching actions"
 msgstr ""
 
@@ -9702,7 +9836,7 @@ msgstr ""
 msgid "{0} with its own defaults"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:1012
+#: src/ui/surfaces/manager.zig:1103
 msgid "{0} {1}"
 msgstr ""
 
@@ -9714,7 +9848,7 @@ msgstr ""
 msgid "{0} {1}{2}{3}"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:1017
+#: src/ui/surfaces/manager.zig:1108
 msgid "{0} · {1}%"
 msgstr ""
 
@@ -9722,11 +9856,11 @@ msgstr ""
 msgid "{0} — {1} {2}, all workspaces{3}{4}"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:1004
+#: src/ui/surfaces/manager.zig:1095
 msgid "{0}% charge remaining"
 msgstr ""
 
-#: src/ui/surfaces/manager.zig:1004
+#: src/ui/surfaces/manager.zig:1095
 msgid "{0}% remaining · about {1} h {2} min left"
 msgstr ""
 

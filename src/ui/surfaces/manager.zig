@@ -7,6 +7,7 @@ const glib = @import("glib2");
 const object = @import("gobject2");
 const layer = @import("gtk4layershell1");
 const native = @import("../../platform/wayland/effects.zig");
+const decorations_native = @import("../../platform/wayland/decorations.zig");
 const adapter = @import("../../aqueous/client.zig");
 const protocol = @import("../../cli/protocol.zig");
 const diagnostics = @import("../../diagnostics/safe_text.zig");
@@ -168,6 +169,8 @@ pub const Manager = struct {
     display: *gdk.Display,
     client: *adapter.Client,
     effects: native.Effects = undefined,
+    decorations: ?decorations_native.Decorations = null,
+    window_menu: ?*@import("../../desktop/window_menu.zig").Menu = null,
     outputs: std.ArrayList(*Output) = .empty,
     popup: ?*Surface = null,
     popup_rect: ?Rect = null,
@@ -258,6 +261,17 @@ pub const Manager = struct {
         self.effects.context = self;
         self.effects.changed = nativeChanged;
         self.effects.start();
+        self.decorations = decorations_native.Decorations.init(self.display) catch |err| blk: {
+            log.warn("event=shell-decorations-unavailable error={s}", .{@errorName(err)});
+            break :blk null;
+        };
+        if (self.decorations) |*decorations| {
+            decorations.context = self;
+            decorations.action = decorationAction;
+            decorations.icon = decorationIcon;
+            decorations.menu = decorationMenu;
+            decorations.start();
+        }
         self.layout = try Layout.init(self.display, self, layoutChanged);
         self.layout.?.start();
         self.index.start();
@@ -377,6 +391,8 @@ pub const Manager = struct {
         self.outputs.deinit(a);
         if (self.activity) |broker| broker.destroy();
         self.activity = null;
+        if (self.decorations) |*decorations| decorations.deinit();
+        self.decorations = null;
         self.effects.deinit();
         if (self.layout) |*layout| layout.deinit();
         self.layout = null;
@@ -441,6 +457,11 @@ pub const Manager = struct {
         self.hidePopup();
         self.hideOsd();
         self.hideNotifications();
+        if (self.decorations) |*decorations| decorations.clear();
+        if (self.window_menu) |menu| {
+            menu.close();
+            self.window_menu = null;
+        }
         for (self.outputs.items) |o| o.destroy();
         self.outputs.clearRetainingCapacity();
         self.tasks.snapshot.reset();
@@ -499,6 +520,76 @@ pub const Manager = struct {
     fn aqueousCanRecord(context: *anyopaque) bool {
         const self: *Manager = @ptrCast(@alignCast(context));
         return aqueousCanReload(context) and self.client.capabilities.shortcut_inhibition;
+    }
+    /// Titlebar button/double-click actions route through the validated IPC
+    /// command queue, exactly like the dock and running-apps controls.
+    fn decorationAction(context: *anyopaque, window_id: []const u8, action: decorations_native.Action) void {
+        const self: *Manager = @ptrCast(@alignCast(context));
+        if (self.client.availability != .ready) return;
+        const commands = @import("../../aqueous/commands.zig");
+        const mapped: commands.Action = switch (action) {
+            .close => .{ .window_close = .{ .id = window_id } },
+            .activate => .{ .window_activate = .{ .id = window_id } },
+            .minimize => |value| .{ .window_minimized = .{ .id = window_id, .value = value } },
+            .maximize => |value| .{ .window_maximized = .{ .id = window_id, .value = value } },
+        };
+        _ = self.client.enqueue(mapped) catch |err| {
+            log.debug("event=decoration-action-failed error={s}", .{@errorName(err)});
+        };
+    }
+    /// Borrowed icon lookup for titlebar drawing; only valid for the call.
+    fn decorationIcon(context: *anyopaque, window_id: []const u8, size: u16, scale: u16) ?*pixbuf.Pixbuf {
+        const self: *Manager = @ptrCast(@alignCast(context));
+        if (self.client.availability != .ready) return null;
+        const window = self.client.model.get(.window, window_id) orelse return null;
+        const icon = window.icon orelse return null;
+        if (!icon.has_pixels) return null;
+        return self.client.icon(.{ .id = window_id, .revision = icon.revision, .size = size, .scale = scale }) catch null;
+    }
+    /// Right-click on a titlebar: open the window menu at the pointer.
+    fn decorationMenu(context: *anyopaque, window_id: []const u8, x: i32, y: i32) void {
+        const self: *Manager = @ptrCast(@alignCast(context));
+        if (self.window_menu) |menu| {
+            menu.close();
+            self.window_menu = null;
+        }
+        if (self.client.availability != .ready) return;
+        var target: ?*Output = null;
+        for (self.outputs.items) |o| {
+            if (x >= o.bounds.x and x < o.bounds.x + o.bounds.width and y >= o.bounds.y and y < o.bounds.y + o.bounds.height) {
+                target = o;
+                break;
+            }
+        }
+        const output = target orelse return;
+        self.window_menu = @import("../../desktop/window_menu.zig").Menu.open(.{
+            .app = self.app,
+            .client = self.client,
+            .monitor = output.monitor,
+            .x = x,
+            .y = y,
+            .origin_x = output.bounds.x,
+            .origin_y = output.bounds.y,
+            .window_id = window_id,
+            .dark = self.preferences.prefs().theme.variant != .light,
+        }) catch |err| {
+            log.debug("event=decoration-menu-open-failed error={s}", .{@errorName(err)});
+            return;
+        };
+    }
+    /// Match the titlebar's top corners to the compositor's window rounding.
+    fn decorationCornerRadius(self: *Manager) i32 {
+        const m = @import("../../config/aqueous_model.zig");
+        const value = self.aqueous_settings.value();
+        const fields = m.get(value, "fields");
+        if (fields != .array) return 15;
+        for (fields.array.items) |field| {
+            if (!std.mem.eql(u8, m.str(m.get(field, "id")), "decoration.corner_radius")) continue;
+            const raw = m.get(field, "value");
+            if (raw == .integer) return std.math.clamp(@as(i32, @intCast(raw.integer)), 0, 128);
+            return 15;
+        }
+        return 15;
     }
     fn aqueousCanReload(context: *anyopaque) bool {
         const self: *Manager = @ptrCast(@alignCast(context));
@@ -1283,6 +1374,22 @@ pub const Manager = struct {
         if (!std.mem.eql(u8, &identity, self.client.model.session)) {
             self.clear();
             return error.SessionDisplayMismatch;
+        }
+        if (self.decorations) |*decorations| {
+            const live_palette = if (self.preferences.live) |live| live.palette else @import("../../theme/theme.zig").dark;
+            const prefs = self.preferences.prefs();
+            decorations.sync(&self.client.model, live_palette, .{
+                .font = prefs.font,
+                .font_size_pt = prefs.font_size,
+                .corner_radius = self.decorationCornerRadius(),
+                .shadows = !prefs.reduced_motion,
+            });
+        }
+        if (self.window_menu) |menu| {
+            if (self.client.model.get(.window, menu.window_id) == null) {
+                menu.close();
+                self.window_menu = null;
+            }
         }
         // Autostart runs once per login session, after the compositor session
         // is verified and unlocked; a session that starts locked defers to the
@@ -2466,6 +2573,7 @@ pub const Manager = struct {
             .aqueous_keep => try self.aqueous_settings.choose(true),
             .aqueous_revert => try self.aqueous_settings.choose(false),
             .aqueous_rebase => try self.aqueous_settings.rebase(),
+            .aqueous_resolve => try self.aqueous_settings.resolve(),
             .aqueous_record => {
                 const view = if (self.popup) |p| p.aqueous_settings else null;
                 try (view orelse return error.Unavailable).record(request.text.?);

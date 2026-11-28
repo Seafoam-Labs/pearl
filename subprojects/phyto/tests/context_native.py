@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Native context menus, target identities and operations in an isolated session."""
-import argparse, configparser, hashlib, json, os, sys, time
+import argparse, configparser, hashlib, json, os, sys, tarfile, time
 from pathlib import Path
 PROJECT = Path(__file__).resolve().parents[1]
 PEARL = PROJECT.parents[1]
@@ -97,6 +97,35 @@ def main():
             def capture(name):
                 rect = windows()[0]['geometry']
                 s.run(['grim', '-g', f"{rect['x']},{rect['y']} {rect['width']}x{rect['height']}", output / (name + '.png')])
+
+            def archive_names(path):
+                try:
+                    with tarfile.open(path) as t:
+                        return t.getnames()
+                except Exception:
+                    return None
+
+            def archive_bytes(path, name):
+                try:
+                    with tarfile.open(path) as t:
+                        member = t.extractfile(name)
+                        return member.read() if member else None
+                except Exception:
+                    return None
+
+            def detail_size():
+                v = probe()['widgets']
+                for i, w in enumerate(v[:-1]):
+                    if w['label'] == 'Size' and w['kind'] == 'label' and not w['menu']:
+                        return v[i + 1]['label']
+                return None
+
+            def spawned_writer_settled():
+                # The coalesced post-spawn refresh lands ~500ms after the
+                # action; let it fire and finish before opening another menu
+                # (a refresh closes open menus and drops the selection).
+                time.sleep(0.6)
+                wait_for(lambda: not probe()['loading'])
 
             def dialog_click(title, label):
                 row = next(x for x in probe()['operation_dialog_widgets'] if x['label'] == label)
@@ -220,6 +249,40 @@ def main():
             wait_for(lambda: (source / 'Folder/two.txt').exists())
             wait_for(lambda: not probe()['busy'])
             passed('Paste into folder uses the clicked destination')
+            assert probe()['details']
+            click('Folder')
+            old_size = wait_for(lambda: v if (v := detail_size()) not in (None, 'Calculating…', 'Unavailable') else False)
+            (source / 'Folder/external.bin').write_bytes(b'x' * 4096)
+            wait_for(lambda: (v := detail_size()) not in (None, old_size, 'Calculating…', 'Unavailable'))
+            passed('Details pane re-measures a selected folder after external changes')
+            count_before = probe()['count']
+            click('one.txt', button='right')
+            click('Send to tar.xz', menu=True)
+            wait_for(lambda: archive_names(source / 'one.txt.tar.xz') == ['one.txt'])
+            wait_for(lambda: archive_bytes(source / 'one.txt.tar.xz', 'one.txt') == (source / 'one.txt').read_bytes())
+            wait_for(lambda: any(w['label'] == 'one.txt.tar.xz' and w['kind'] == 'file' for w in probe()['widgets']))
+            assert probe()['count'] == count_before + 1
+            passed('Send to tar.xz archive appears in the listing without a manual refresh')
+            spawned_writer_settled()
+            # The incremental refresh must keep the prior selection (a wholesale
+            # reload would drop it) and re-bind the new archive with its final
+            # on-disk size rather than the creation-time size the monitor saw.
+            assert probe()['selected'] == 1
+            click('one.txt.tar.xz')
+            archive_size = (source / 'one.txt.tar.xz').stat().st_size
+            wait_for(lambda: detail_size() not in (None, '0 bytes', 'Unavailable', 'Calculating…'))
+            if archive_size < 1024:
+                assert detail_size() == f'{archive_size} bytes', detail_size()
+            passed('Send to tar.xz refresh updates the archive size and keeps the selection')
+            click('one.txt', button='right')
+            click('Send to tar.xz', menu=True)
+            wait_for(lambda: archive_names(source / 'one.txt (2).tar.xz') == ['one.txt'])
+            spawned_writer_settled()
+            click('Folder', button='right')
+            click('Send to tar.xz', menu=True)
+            wait_for(lambda: 'Folder/nested.txt' in (archive_names(source / 'Folder.tar.xz') or []))
+            spawned_writer_settled()
+            passed('Send to tar.xz writes numbered compressed archives beside the selection')
             rect = windows()[0]['geometry']
             s.run(['wlrctl', 'pointer', 'move', '-100000', '-100000'])
             s.run(['wlrctl', 'pointer', 'move', str(rect['x'] + 700), str(rect['y'] + 620)])

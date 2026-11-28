@@ -10,6 +10,7 @@ test {
     _ = @import("desktop/calculator.zig");
     _ = @import("services/notification_filter_policy.zig");
     _ = @import("desktop/window_switcher.zig");
+    _ = @import("desktop/window_menu.zig");
     _ = @import("services/audio_feedback.zig");
     _ = @import("services/brightness_feedback.zig");
     _ = @import("services/brightness_model.zig");
@@ -53,6 +54,7 @@ test {
     _ = @import("config/aqueous_presentation.zig");
     _ = @import("config/aqueous_draft.zig");
     _ = @import("config/border_theme.zig");
+    _ = @import("config/decoration_mode.zig");
     _ = @import("config/aqueous_contract.zig");
     _ = @import("config/aqueous_instance.zig");
     _ = @import("config/aqueous_collections.zig");

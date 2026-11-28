@@ -67,6 +67,11 @@ pub fn build(b: *std.Build) void {
     const io_priority_module = createModule(b, .{ .root_source_file = b.path("src/platform/io_priority.zig"), .target = target, .optimize = optimize, .link_libc = true });
     const io_priority_tests = b.addTest(.{ .root_module = io_priority_module });
     test_step.dependOn(&b.addRunArtifact(io_priority_tests).step);
+    const measure_module = createModule(b, .{ .root_source_file = b.path("src/platform/measure.zig"), .target = target, .optimize = optimize, .link_libc = true });
+    for ([_][]const u8{ "gtk4", "gio2", "glib2", "gobject2" }) |name| measure_module.addImport(name, bindings.module(name));
+    measure_module.linkSystemLibrary("gtk4", .{ .use_pkg_config = .yes });
+    const measure_tests = b.addTest(.{ .root_module = measure_module });
+    test_step.dependOn(&b.addRunArtifact(measure_tests).step);
     const network_module = createModule(b, .{ .root_source_file = b.path("src/network_tests.zig"), .target = target, .optimize = optimize, .link_libc = true });
     for ([_][]const u8{ "gtk4", "gdk4", "gio2", "glib2", "gobject2", "pango1", "gdkpixbuf2" }) |name| network_module.addImport(name, bindings.module(name));
     const network_tests = b.addTest(.{ .root_module = network_module });
@@ -99,6 +104,14 @@ pub fn build(b: *std.Build) void {
     menus.addArtifactArg(test_exe);
     menus.addPassthruArgs();
     b.step("test-context-menus", "Exercise native context menus and batch operations").dependOn(&menus.step);
+    const trash = b.addSystemCommand(&.{ "python3", "tests/trash_native.py", "--binary" });
+    trash.addArtifactArg(test_exe);
+    trash.addPassthruArgs();
+    b.step("test-trash", "Exercise the Empty Trash toolbar button in an isolated session").dependOn(&trash.step);
+    const properties = b.addSystemCommand(&.{ "python3", "tests/properties_native.py", "--binary" });
+    properties.addArtifactArg(test_exe);
+    properties.addPassthruArgs();
+    b.step("test-properties", "Exercise the Properties dialog and permission editing in an isolated session").dependOn(&properties.step);
     b.step("integration", "Exercise native GTK in a private Aqueous session and capture evidence").dependOn(&integration.step);
     const themes = b.addSystemCommand(&.{ "python3", "tests/themes.py", "--binary" });
     themes.addArtifactArg(test_exe);

@@ -11,7 +11,7 @@ const w = @import("../ui/components/widgets.zig");
 pub fn For(comptime View: type) type {
     return struct {
         const Self = @This();
-        const Control = enum { enabled, hdr, primary, resolution, refresh, scale, transform, x, y, side, relative, mirror, hdr_level, sdr_white };
+        const Control = enum { enabled, hdr, adaptive_sync, fullscreen_only_adaptive_sync, primary, resolution, refresh, scale, transform, x, y, side, relative, mirror, hdr_level, sdr_white };
         const Binding = struct { form: *Form, key: Control };
         const Choice = struct { form: *Form, index: usize };
         const Head = struct { output: m.Value, rect: model.Rect, enabled: bool, number: usize };
@@ -30,9 +30,12 @@ pub fn For(comptime View: type) type {
             status: *gtk.Label,
             warning: *gtk.Label,
             hdr_help: *gtk.Label,
+            vrr_help: *gtk.Label,
             position_help: *gtk.Label,
             enabled: *gtk.Switch,
             hdr: *gtk.CheckButton,
+            adaptive_sync: *gtk.CheckButton,
+            fullscreen_only: *gtk.CheckButton,
             primary: *gtk.Button,
             resolution: *gtk.DropDown,
             refresh: *gtk.DropDown,
@@ -169,6 +172,20 @@ pub fn For(comptime View: type) type {
                 const white_explicit = white_value != .null and (m.get(m.get(m.get(out, "configured"), "sdr_white_level"), "value") != .null or staged(f, "sdr_white_level"));
                 try numericOptions(f, f.sdr_white, &f.whites, &.{ 0, 100, 200, 300 }, if (white_explicit) model.num(white_value, 200) else 0, false);
                 for ([_]*gtk.Widget{ f.hdr_level.as(gtk.Widget), f.sdr_white.as(gtk.Widget), f.level_reset.as(gtk.Widget) }) |widget| widget.setSensitive(@intFromBool(head.enabled and hdr_supported and hdr));
+                const mirrored = m.str(f.val("mirror_of")).len > 0;
+                const vrr = m.equal(f.val("adaptive_sync"), .{ .bool = true });
+                const vrr_support = m.get(m.get(out, "support"), "vrr");
+                const vrr_reason = m.str(m.get(vrr_support, "reason"));
+                const vrr_supported = m.equal(m.get(vrr_support, "test"), .{ .bool = true }) or m.equal(m.get(vrr_support, "preview"), .{ .bool = true }) or m.equal(m.get(m.get(out, "actual"), "adaptive_sync"), .{ .bool = true }) or vrr;
+                const vrr_usable = head.enabled and vrr_supported and !mirrored;
+                f.adaptive_sync.setActive(@intFromBool(vrr));
+                f.adaptive_sync.as(gtk.Widget).setSensitive(@intFromBool(vrr_usable));
+                const fullscreen_only = m.equal(f.val("fullscreen_only_adaptive_sync"), .{ .bool = true });
+                f.fullscreen_only.setActive(@intFromBool(fullscreen_only));
+                f.fullscreen_only.as(gtk.Widget).setSensitive(@intFromBool(vrr_usable and vrr));
+                const vrr_error = m.str(m.get(out, "adaptive_sync_error"));
+                const vrr_effective = m.equal(m.get(out, "effective_adaptive_sync"), .{ .bool = true });
+                f.vrr_help.setText(if (!head.enabled) @import("i18n").dtr("pearl", "Turn on this display to use adaptive sync.") else if (mirrored) @import("i18n").dtr("pearl", "Adaptive sync is unavailable while mirroring.") else if (!vrr_supported) (if (std.mem.eql(u8, vrr_reason, "vrr_unsupported")) @import("i18n").dtr("pearl", "This display does not support adaptive sync.") else @import("i18n").dtr("pearl", "Adaptive sync preview is not available for this display.")) else if (vrr_error.len > 0) @import("i18n").dtr("pearl", "Adaptive sync could not be enabled on this display.") else if (!vrr) @import("i18n").dtr("pearl", "Reduces tearing by matching the refresh rate to the content.") else if (fullscreen_only and !vrr_effective) @import("i18n").dtr("pearl", "Enabled for fullscreen apps.") else if (vrr_effective) @import("i18n").dtr("pearl", "Active.") else @import("i18n").dtr("pearl", "Enabled."));
                 try numericOptions(f, f.scale, &f.scales, &.{ 50, 75, 100, 125, 150, 175, 200, 250, 300 }, model.num(f.val("scale"), 1) * 100, true);
                 const transforms = [_][]const u8{ "normal", "90", "180", "270", "flipped", "flipped-90", "flipped-180", "flipped-270" };
                 for (transforms, 0..) |t, i| if (std.mem.eql(u8, t, m.str(f.val("transform")))) {
@@ -177,7 +194,6 @@ pub fn For(comptime View: type) type {
                 try f.refreshModes();
                 f.x.setValue(head.rect.x);
                 f.y.setValue(head.rect.y);
-                const mirrored = m.str(f.val("mirror_of")).len > 0;
                 const previous_other = f.relativeIndex();
                 var references: std.ArrayList(usize) = .empty;
                 var labels: std.ArrayList([]const u8) = .empty;
@@ -239,6 +255,7 @@ pub fn For(comptime View: type) type {
                         if (!m.equal(m.get(s, "preview"), .{ .bool = true })) unavailable = m.str(m.get(s, "reason"));
                     }
                     if (m.equal(model.value(f.base, f.draft, h.output, "hdr"), .{ .bool = true }) and !m.equal(m.get(m.get(m.get(h.output, "support"), "hdr"), "preview"), .{ .bool = true })) unavailable = "HDR preview is unavailable on this backend.";
+                    if (m.equal(model.value(f.base, f.draft, h.output, "adaptive_sync"), .{ .bool = true }) and !m.equal(m.get(m.get(m.get(h.output, "support"), "vrr"), "preview"), .{ .bool = true })) unavailable = "Adaptive sync preview is unavailable on this backend.";
                 };
                 if (unavailable.len > 0 or f.input_error != null) f.view.display_blocked = true;
                 f.warning.setText(if (f.input_error) |err| f.z(err) else if (overlap) @import("i18n").dtr("pearl", "Displays overlap. Move them apart or choose mirroring before applying.") else f.z(unavailable));
@@ -418,6 +435,18 @@ pub fn For(comptime View: type) type {
             const hdr_help = w.label(@import("i18n").dtr("pearl", "Uses automatic settings."), "pearl-secondary");
             hdr_help.as(gtk.Widget).setMarginStart(24);
             hdr_row.append(hdr_help.as(gtk.Widget));
+            const adaptive_sync = gtk.CheckButton.newWithLabel(@import("i18n").dtr("pearl", "Adaptive sync (VRR)"));
+            w.name(adaptive_sync.as(gtk.Widget), @import("i18n").dtr("pearl", "Adaptive sync (VRR)"));
+            const vrr_row = w.column(4);
+            settings.append(vrr_row.as(gtk.Widget));
+            vrr_row.append(adaptive_sync.as(gtk.Widget));
+            const vrr_help = w.label("", "pearl-secondary");
+            vrr_help.as(gtk.Widget).setMarginStart(24);
+            vrr_row.append(vrr_help.as(gtk.Widget));
+            const fullscreen_only = gtk.CheckButton.newWithLabel(@import("i18n").dtr("pearl", "Only when a fullscreen app is running"));
+            w.name(fullscreen_only.as(gtk.Widget), @import("i18n").dtr("pearl", "Only when a fullscreen app is running"));
+            fullscreen_only.as(gtk.Widget).setMarginStart(24);
+            vrr_row.append(fullscreen_only.as(gtk.Widget));
             const primary = gtk.Button.newWithLabel(@import("i18n").dtr("pearl", "Set as primary"));
             w.name(primary.as(gtk.Widget), @import("i18n").dtr("pearl", "Primary display"));
             primary.as(gtk.Widget).setHalign(.start);
@@ -490,8 +519,8 @@ pub fn For(comptime View: type) type {
             const reset = gtk.Button.newWithLabel(@import("i18n").dtr("pearl", "Use automatic settings"));
             advanced.append(reset.as(gtk.Widget));
             advanced.append(w.label(@import("i18n").dtr("pearl", "Automatic SDR brightness uses inherited/default settings. Other color options and display profiles are below."), "pearl-secondary").as(gtk.Widget));
-            f.* = .{ .view = view, .base = base, .draft = .null, .heads = heads, .canvas = canvas, .title = title, .subtitle = subtitle, .status = status, .warning = warning, .hdr_help = hdr_help, .position_help = position_help, .enabled = enabled, .hdr = hdr, .primary = primary, .resolution = resolution, .refresh = refresh, .scale = scale, .transform = transform, .x = x, .y = y, .side = side, .relative = relative, .mirror = mirror, .hdr_level = level, .sdr_white = white, .tabs = tabs, .align_buttons = align_buttons, .level_reset = reset };
-            inline for (.{ .{ enabled, .enabled }, .{ hdr, .hdr }, .{ primary, .primary }, .{ resolution, .resolution }, .{ refresh, .refresh }, .{ scale, .scale }, .{ transform, .transform }, .{ x, .x }, .{ y, .y }, .{ side, .side }, .{ relative, .relative }, .{ mirror, .mirror }, .{ level, .hdr_level }, .{ white, .sdr_white } }) |entry| try bind(f, entry[0].as(gtk.Widget), entry[1]);
+            f.* = .{ .view = view, .base = base, .draft = .null, .heads = heads, .canvas = canvas, .title = title, .subtitle = subtitle, .status = status, .warning = warning, .hdr_help = hdr_help, .vrr_help = vrr_help, .position_help = position_help, .enabled = enabled, .hdr = hdr, .adaptive_sync = adaptive_sync, .fullscreen_only = fullscreen_only, .primary = primary, .resolution = resolution, .refresh = refresh, .scale = scale, .transform = transform, .x = x, .y = y, .side = side, .relative = relative, .mirror = mirror, .hdr_level = level, .sdr_white = white, .tabs = tabs, .align_buttons = align_buttons, .level_reset = reset };
+            inline for (.{ .{ enabled, .enabled }, .{ hdr, .hdr }, .{ adaptive_sync, .adaptive_sync }, .{ fullscreen_only, .fullscreen_only_adaptive_sync }, .{ primary, .primary }, .{ resolution, .resolution }, .{ refresh, .refresh }, .{ scale, .scale }, .{ transform, .transform }, .{ x, .x }, .{ y, .y }, .{ side, .side }, .{ relative, .relative }, .{ mirror, .mirror }, .{ level, .hdr_level }, .{ white, .sdr_white } }) |entry| try bind(f, entry[0].as(gtk.Widget), entry[1]);
             try register(f, "arrangement", canvas.as(gtk.Widget));
             try register(f, "exact", exact.as(gtk.Widget));
             try register(f, "more", more.as(gtk.Widget));
@@ -614,6 +643,8 @@ pub fn For(comptime View: type) type {
                     try f.stage("hdr", .{ .bool = f.hdr.getActive() != 0 });
                     if (f.hdr.getActive() != 0 and !staged(f, "hdr_level") and m.get(m.get(m.get(f.output(), "configured"), "hdr_level"), "value") == .null) try f.stage("hdr_level", .{ .string = "auto" });
                 },
+                .adaptive_sync => try f.stage("adaptive_sync", .{ .bool = f.adaptive_sync.getActive() != 0 }),
+                .fullscreen_only_adaptive_sync => try f.stage("fullscreen_only_adaptive_sync", .{ .bool = f.fullscreen_only.getActive() != 0 }),
                 .primary => {
                     if (f.view.client.job != null or f.view.client.conflict()) return;
                     const primary = try model.stagePrimary(f.alloc(), f.base, f.view.client.draft orelse try f.view.client.emptyDraft(f.alloc()), f.output());

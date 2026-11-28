@@ -37,6 +37,7 @@ pub const Manager = struct {
     requests: std.ArrayList(*Request) = .empty,
     volume_monitor: *gio.VolumeMonitor,
     volume_signals: [3]c_ulong = undefined,
+    mounts: std.ArrayList(*gio.Mount) = .empty,
     file_monitor: ?*gio.FileMonitor = null,
     monitor_signal: c_ulong = 0,
     notify_id: c_uint = 0,
@@ -60,6 +61,7 @@ pub const Manager = struct {
         self.file_monitor = file.monitorFile(.{}, null, null);
         if (self.file_monitor) |m| self.monitor_signal = object.signalConnectData(m.as(object.Object), "changed", @ptrCast(&fileChanged), self, null, .{});
         inline for (.{ "mount-added", "mount-removed", "mount-changed" }, 0..) |name, i| self.volume_signals[i] = object.signalConnectData(self.volume_monitor.as(object.Object), name, @ptrCast(&mountsChanged), self, null, .{});
+        self.refreshMountCache();
         self.syncProfiles();
         return self;
     }
@@ -75,6 +77,8 @@ pub const Manager = struct {
             m.unref();
         }
         for (self.volume_signals) |id| object.signalHandlerDisconnect(self.volume_monitor.as(object.Object), id);
+        for (self.mounts.items) |m| m.unref();
+        self.mounts.deinit(a);
         self.volume_monitor.unref();
         for (self.entries.items) |e| {
             a.free(e.id);
@@ -137,27 +141,37 @@ pub const Manager = struct {
         return 0;
     }
     fn mountsChanged(_: *gio.VolumeMonitor, _: *gio.Mount, self: *Manager) callconv(.c) void {
+        self.refreshMountCache();
         self.reconcile();
         self.notify();
+    }
+    /// Rebuild the mount cache from the volume monitor. Only called from init
+    /// and mount-change signals, so the connect()/reconcile() hot path never
+    /// issues a synchronous D-Bus round-trip on the main loop.
+    fn refreshMountCache(self: *Manager) void {
+        for (self.mounts.items) |m| m.unref();
+        self.mounts.clearRetainingCapacity();
+        const list = g_volume_monitor_get_mounts(self.volume_monitor) orelse return;
+        defer list.free();
+        var node: ?*glib.List = list;
+        while (node) |n| : (node = n.f_next) {
+            const mount: *gio.Mount = @ptrCast(@alignCast(n.f_data.?));
+            // get_mounts transfers a ref per element; adopt it into the cache.
+            self.mounts.append(a, mount) catch unreachable;
+        }
     }
     pub fn mounted(self: *Manager, uri: [:0]const u8) ?*gio.Mount {
         const file = gio.File.newForUri(uri);
         defer file.unref();
-        const list = g_volume_monitor_get_mounts(self.volume_monitor) orelse return null;
-        defer list.free();
-        var found: ?*gio.Mount = null;
-        var node: ?*glib.List = list;
-        while (node) |n| : (node = n.f_next) {
-            const mount: *gio.Mount = @ptrCast(@alignCast(n.f_data.?));
+        for (self.mounts.items) |mount| {
             const root = mount.getRoot();
-            if (found == null and (file.equal(root) != 0 or file.hasPrefix(root) != 0)) {
+            defer root.unref();
+            if (file.equal(root) != 0 or file.hasPrefix(root) != 0) {
                 mount.ref();
-                found = mount;
+                return mount;
             }
-            root.unref();
-            mount.unref();
         }
-        return found;
+        return null;
     }
     pub fn represents(self: *Manager, mount: *gio.Mount) bool {
         const root = mount.getRoot();
@@ -311,14 +325,14 @@ pub const Manager = struct {
                 state = r.interaction;
                 detail = "Click the device to continue securely.";
             } else if (err) |e| {
-                if (e.matches(gio.ioErrorQuark(), @intFromEnum(gio.IOErrorEnum.already_mounted)) == 0) {
+                if (e.matches(gio.ioErrorQuark(), @backingInt(gio.IOErrorEnum.already_mounted)) == 0) {
                     state = .failed;
                     detail = "Could not connect. Check the server address, network and access permissions, then retry.";
-                    if (e.matches(gio.ioErrorQuark(), @intFromEnum(gio.IOErrorEnum.not_supported)) != 0) {
+                    if (e.matches(gio.ioErrorQuark(), @backingInt(gio.IOErrorEnum.not_supported)) != 0) {
                         state = .unsupported;
                         detail = "Protocol support is unavailable. Install the appropriate GVfs backend for this connection.";
                     }
-                    if (e.matches(gio.ioErrorQuark(), @intFromEnum(gio.IOErrorEnum.cancelled)) != 0 or e.matches(gio.ioErrorQuark(), @intFromEnum(gio.IOErrorEnum.failed_handled)) != 0) {
+                    if (e.matches(gio.ioErrorQuark(), @backingInt(gio.IOErrorEnum.cancelled)) != 0 or e.matches(gio.ioErrorQuark(), @backingInt(gio.IOErrorEnum.failed_handled)) != 0) {
                         state = .disconnected;
                         detail = "Connection cancelled. The device is still saved.";
                     }

@@ -50,6 +50,7 @@ const Job = struct {
     operation_id: []const u8 = "",
     saved: bool = false,
     uncertain: bool = false,
+    resolve: bool = false,
     reconciled: bool = false,
     reload_applied: bool = false,
     reload_reported: bool = false,
@@ -233,8 +234,18 @@ pub const Client = struct {
         try self.keepDraft(try @import("aqueous_draft.zig").field(arena.allocator(), self.baseValue(), self.draft, id, value_));
     }
     pub fn begin(self: *Client, op: Operation) !void {
+        return self.beginChecked(op, false);
+    }
+    /// Explicit user resolution of an uncertain save: retires the pending
+    /// record without proof of rollback and refreshes the snapshot. The
+    /// configuration may already contain the interrupted save.
+    pub fn resolve(self: *Client) !void {
+        if (!self.unresolved) return error.NoUncertainty;
+        return self.beginChecked(.refresh, true);
+    }
+    fn beginChecked(self: *Client, op: Operation, resolving: bool) !void {
         if (!self.running or self.job != null or self.reload_ticket != null) return error.Busy;
-        return self.beginInner(op) catch |err| {
+        return self.beginInner(op, resolving) catch |err| {
             if (@import("aqueous_instance.zig").failureDetail(err)) |detail| {
                 self.err = err;
                 self.detail = @splat(0);
@@ -244,7 +255,7 @@ pub const Client = struct {
             return err;
         };
     }
-    fn beginInner(self: *Client, op: Operation) !void {
+    fn beginInner(self: *Client, op: Operation, resolving: bool) !void {
         if (op != .refresh and self.draft == null) return error.NoDraft;
         if (op == .apply and !self.can_reload(self.context)) return error.ReloadUnavailable;
         if (op == .apply and self.unresolved) return error.SaveUncertain;
@@ -256,13 +267,15 @@ pub const Client = struct {
         }
         if (self.backups == null) self.backups = try std.fmt.allocPrintSentinel(a, "{s}/pearl/aqueous-backups", .{std.mem.span(glib.getUserStateDir())}, 0);
         const j = try a.create(Job);
-        j.* = .{ .owner = self, .op = op, .arena = .init(a), .cancel = gio.Cancellable.new(), .revision = self.revision };
+        j.* = .{ .owner = self, .op = op, .arena = .init(a), .cancel = gio.Cancellable.new(), .revision = self.revision, .resolve = resolving };
         errdefer j.destroy();
         const alloc = j.arena.allocator();
         const pid = (self.peer_pid orelse return error.AqueousInstanceUnavailable)(self.context) orelse return error.AqueousInstanceUnavailable;
         j.instance = try @import("aqueous_instance.zig").read(alloc, pid);
+        // An explicit resolution may query a replacement helper; the old
+        // journal is gone, so refusing the query would block recovery forever.
         if (self.helper) |old| {
-            if (!std.mem.eql(u8, old, j.instance.helper) and (self.draft != null or self.unresolved)) return error.OperationHelperChanged;
+            if (!resolving and !std.mem.eql(u8, old, j.instance.helper) and (self.draft != null or self.unresolved)) return error.OperationHelperChanged;
         }
         const helper = try a.dupeSentinel(u8, j.instance.helper, 0);
         if (self.helper) |old| a.free(old);
@@ -403,6 +416,23 @@ pub const Client = struct {
         j.operation_id = id;
         try acceptResult(j, store, pending, try structured(j, id, null));
     }
+    /// Proof of no write: the live generation still equals the pre-apply
+    /// baseline recorded in the pending intent, so the interrupted save never
+    /// persisted and retiring the record cannot hide a half-applied change.
+    fn resolveUnwritten(j: *Job, store: operations.Store, pending: model.Value) !bool {
+        const snapshot = try Document.create(try call(j, "snapshot", null));
+        if (!model.equal(model.get(snapshot.value, "generation"), model.get(pending, "generation"))) {
+            snapshot.destroy();
+            return false;
+        }
+        try store.resolved(model.str(model.get(pending, "operation_id")));
+        j.operation_resolved = true;
+        j.uncertain = false;
+        j.failure = error.SaveNeverWritten;
+        j.detail = "The interrupted save never changed the configuration; the pending record was resolved automatically.";
+        j.response = snapshot;
+        return true;
+    }
     fn awaitPreview(j: *Job, store: operations.Store, client: *display_ipc.Client, token: []const u8, interactive: bool) !bool {
         const expected = (try store.preview()) orelse return error.InvalidPreviewRecord;
         const deadline = glib.getMonotonicTime() + 35000000;
@@ -490,11 +520,30 @@ pub const Client = struct {
         const caps = contract.Capabilities.read(version);
         const store = try operations.Store.open(alloc);
         defer store.close();
+        if (j.resolve) {
+            const pending = store.pending() catch null;
+            const id = if (pending) |p| model.str(model.get(p, "operation_id")) else std.mem.sliceTo(&j.owner.operation_id, 0);
+            try store.resolved(id);
+            j.operation_resolved = true;
+            j.uncertain = false;
+            j.failure = error.OperationRetired;
+            j.detail = "The unresolved save was retired at your request. The configuration may already contain it; review the current settings before applying again.";
+            j.response = try Document.create(try call(j, "snapshot", null));
+            return;
+        }
         if (store.pending() catch {
             j.uncertain = true;
             return error.InvalidOperationRecord;
         }) |pending| {
-            try recover(j, store, pending);
+            recover(j, store, pending) catch |err| {
+                // A receipt that can never be recovered (absent operation or
+                // replacement helper) still resolves when the live snapshot
+                // proves the interrupted save never persisted.
+                if (err == error.SaveUncertain or err == error.OperationHelperChanged) {
+                    if (try resolveUnwritten(j, store, pending)) return;
+                }
+                return err;
+            };
             if (j.operation_resolved) try finishOperationPreview(j, store);
             // Recovery never replays the requested action or its side effects.
             if (j.response == null) j.response = try Document.create(try call(j, "snapshot", null));
@@ -722,6 +771,14 @@ pub const Client = struct {
         }, .{});
     }
 };
+test "resolve requires an unresolved save and an idle running client" {
+    var client: Client = .{ .app = undefined, .context = undefined, .changed = undefined, .reload = undefined, .can_reload = undefined, .can_record = undefined };
+    defer client.free();
+    try std.testing.expectError(error.NoUncertainty, client.resolve());
+    client.unresolved = true;
+    try std.testing.expectError(error.Busy, client.resolve());
+}
+
 test "first GTK field edit creates a JSON changes array and retains its base" {
     var client: Client = .{ .app = undefined, .context = undefined, .changed = undefined, .reload = undefined, .can_reload = undefined, .can_record = undefined };
     defer client.free();
