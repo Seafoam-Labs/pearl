@@ -164,6 +164,13 @@ class PrivateSession:
             directory.mkdir(mode=0o700)
             self.env[key] = str(directory)
         self.runtime = Path(self.env['XDG_RUNTIME_DIR'])
+        # Pearl's test build uses explicit autostart roots; XDG_CONFIG_DIRS
+        # alone does not override its /etc/xdg/autostart fallback.
+        for key, name in [('PEARL_TEST_AUTOSTART_USER', 'autostart-user'),
+                          ('PEARL_TEST_AUTOSTART_SYSTEM', 'autostart-system')]:
+            directory = self.base / name
+            directory.mkdir(mode=0o700)
+            self.env[key] = str(directory)
         if self.tool_prefix:
             for binary in ('aqueous', 'aqueousctl', 'aqueous-config'):
                 if not (self.tool_prefix/'bin'/binary).is_file():raise FileNotFoundError(binary)

@@ -1,5 +1,13 @@
 # Pearl implementation progress
 
+## Clipboard text history simplification, November 7, 2026
+
+Clipboard text history now uses synchronous, best-effort atomic JSON saves at
+`$XDG_STATE_HOME/pearl/clipboard.json`, with 100 combined entries and seven-day
+activity-driven expiry. Privacy or device suspension hides text and discards
+memory-only PNGs. Storage failures leave clipboard use available; failed removals
+may return after restart. See [the clipboard contract](CLIPBOARD_CAPTURE.md).
+
 ## Wi-Fi profiles created from the panel now persist, October 9, 2026
 
 Connecting a new access point asked NetworkManager for a volatile profile with

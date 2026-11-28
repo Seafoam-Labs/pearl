@@ -627,6 +627,20 @@
     "options": []
   },
   {
+    "id": "test-clipboard-history",
+    "description": "Verify clipboard JSON, private filesystem persistence, history and opt-in GTK panel behavior",
+    "groups": ["native"],
+    "cwd": ".",
+    "targets": ["test-clipboard-history"],
+    "capabilities": ["zig", "native"],
+    "fixture": null,
+    "output": "none",
+    "timeout": 900,
+    "sources": [],
+    "args": [],
+    "options": []
+  },
+  {
     "id": "test-notification-filters",
     "description": "Verify notification Unicode matching and policy lifetime",
     "groups": [

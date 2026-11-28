@@ -447,7 +447,7 @@ parser calls, and 256 operations. It runs inside the launcher's existing search
 worker, including with an empty application catalog. Calculator activation uses
 the same query/session freshness checks as other results and synchronizes
 clipboard privacy before copying. Expressions are not logged or persisted.
-Only an explicitly copied result enters the existing memory-only clipboard
+Only an explicitly copied result enters the existing text-persistent clipboard
 history. See the [implementation plan](LAUNCHER_CALCULATOR_IMPLEMENTATION_PLAN.md).
 
 ## Native runtime layout
@@ -535,9 +535,9 @@ python3 scripts/check-wayland-bindings.py
 The desktop suite requires Python/PyGObject GTK4, Pillow, `wtype`, `wlrctl`,
 `wlr-randr`, `grim`, D-Bus and the existing private T00 Aqueous binary. It reuses
 Aqueous's standalone C input fixture, generated/compiled in the temporary test
-runtime; that executable is not linked into Pearl. Its source path is currently
-`/home/zoey/RiderProjects/Aqueous`. All desktop files, terminal stubs, activation
-names, injected input, output changes and rules belong to private sessions.
+runtime; that executable is not linked into Pearl. Its source comes from the
+pinned fixture or `PEARL_TEST_AQUEOUS_SOURCE`. All desktop files, terminal stubs,
+activation names, injected input, output changes and rules belong to private sessions.
 Nothing enables Pearl on the user's desktop.
 
 [Desktop results](../artifacts/t06/latest/results.json) cover 2,000 catalog apps,

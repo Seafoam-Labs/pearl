@@ -35,25 +35,27 @@ result keeps history intact and says so in place of the list.
 
 Pearl uses generated **ext-data-control-v1** bindings on GTK's Wayland connection.
 GTK remains the only reader of that connection. There is no wl-copy/wl-paste
-production dependency, synthetic typing, primary-selection history, persistent
-history file, D-Bus clipboard service, or portal ownership change.
+production dependency, synthetic typing, primary-selection history, D-Bus
+clipboard service, or portal ownership change. Text history is saved as JSON;
+PNG images remain memory-only.
 
 The regular selection accepts UTF-8 `text/plain;charset=utf-8` (or `text/plain`)
 and `image/png`. PNG takes precedence when both image and text are offered.
 Other formats, NUL-containing or invalid UTF-8 text, empty/truncated payloads,
 and oversized payloads are rejected. A disappeared owner can leave already
 received history intact; selecting an entry creates a fresh data-control source
-with its own retained payload and promotes that entry to most-recent. Paste
-remains an action in the destination app. Deleting a history entry does not
-interrupt an already selected payload or an in-progress paste. Clear releases
-Pearl's current selection as well as history; it does not erase a selection
-owned by another application.
+with its own retained payload and promotes that entry to most-recent. Deleting
+a history entry does not interrupt an already selected payload or an in-progress
+paste. Clear releases Pearl's current selection as well as history; it does not
+erase a selection owned by another application.
 
 | Resource | Bound |
 | --- | --- |
-| Retained entries | 20, duplicates retained once; a copy promotes its entry to most-recent and eviction drops the least-recently used tail |
+| Retained entries | 100 across text and PNG; an exact duplicate is promoted, not added again |
 | Retained payload total | 16 MiB |
 | Text per entry | 256 KiB |
+| Retention | Seven days from the latest copy or selection |
+| After restart | Eligible text restored; PNG images are never persisted |
 | PNG input and sanitized clipboard PNG | 8 MiB each |
 | PNG dimensions | Each axis ≤ 8192; product ≤ 8,388,608 pixels |
 | Incoming pipe transfers | One, cancelled when the selection changes |
@@ -85,23 +87,62 @@ selection publication cannot start, the old selection and the history order are
 preserved and the launcher stays open for retry. Expressions are not retained
 as calculator history, and a pending copy is never replayed after unlock.
 
+## Persistent text history
+
+Text is saved to `$XDG_STATE_HOME/pearl/clipboard.json`, normally
+`~/.local/state/pearl/clipboard.json`, as an array of `{text,last_used}` records.
+The Pearl state directory must be private (`0700`); snapshots use `0600` and
+atomic replacement. The contents are **plaintext, not encrypted**. PNGs and
+runtime entry IDs are never serialized. Unsafe files, symlinks and permissions
+are rejected rather than repaired automatically.
+
+On the first eligible unlock, saved text is loaded with its original timestamps
+and order. Restoring history never publishes a clipboard selection. Missing
+files start empty. Malformed or oversized JSON is rejected without overwriting
+it merely because loading failed. A later successful mutation can save a fresh
+snapshot. Equal-time entries retain their saved order.
+
+An entry expires seven days after its latest copy or selection, at an age of
+604800 whole Unix seconds. Copying a duplicate promotes the same entry and
+refreshes its lifetime. Expiry is checked during history access and mutations,
+including filtering or navigating an already-open panel. This is activity-driven
+cleanup, **not a background deletion deadline**; an idle file can retain expired
+bytes until a subsequent operation. Existing byte limits can evict entries sooner.
+
+Saves run synchronously on GTK's main context and are best effort. Storage errors
+are logged without clipboard contents. Capturing, copying and pasting remain
+usable when storage fails. PNG-only history changes avoid writes unless they
+also remove text or retry a previously failed text save. Slow storage can delay
+an event dispatch.
+
+Delete and Clear remove entries from memory immediately, then attempt to save.
+A `SaveFailed` response means persistence was not confirmed; the panel explains
+that removed entries may return after restarting. An error can occur after the
+new file was renamed into place, so failure does not establish that disk stayed
+unchanged. Clear can retry even when history is already empty. A successful
+retry clears the dirty/error state. Shutdown frees runtime resources without
+saving an accidental empty history. Delete/Clear do not promise forensic erasure
+from backups, filesystem snapshots or interrupted private temporary files.
+
 ## Privacy and lock integration
 
-History is memory-only. Selections advertising `x-kde-passwordManagerHint`,
+Selections advertising `x-kde-passwordManagerHint`,
 `application/x-keepassxc`, or `application/x-pearl-private` are excluded regardless
-of the hint's contents. Hints are advisory: an application that copies an
-unmarked secret cannot be distinguished from ordinary text.
+of the hint's contents. Hints are advisory: unmarked secrets cannot be
+distinguished from ordinary text and may be saved as plaintext.
 
 Lock requests, authoritative Aqueous lock state, sleep preparation, inactive or
 unavailable session state, mismatched native/IPC session identities, and Pearl
-polkit prompts suspend these services.
-Pearl cancels transfers/capture work, clears history and screenshot previews,
-releases its selection, and disconnects data-control collection. Status replies
-contain no retained clipboard content while suspended. Changes are applied when
-Aqueous state arrives and when lifecycle/authentication state changes, before
-waiting for surface reconciliation. Reconnecting skips the initial selection,
-so text copied while locked is not imported on unlock. Startup also skips the
-pre-existing selection.
+polkit prompts suspend clipboard and capture access. Pearl cancels transfers,
+hides retained clipboard history in the panel and CLI, clears screenshot
+previews, releases its own selection, and disconnects data-control collection.
+**Suspension retains hidden text history and discards PNG history from memory.**
+This also applies to device/manager/seat loss and ambiguous-seat suspension.
+Lock/unlock does not refresh text timestamps. The status
+response exposes no retained entries, IDs, counts, timestamps or paging tokens
+while suspended. Reconnecting skips the initial selection, so text copied while
+locked is not collected on unlock. Unlock never automatically republishes an
+old clipboard item or a cancelled calculator copy.
 
 Buffers explicitly owned by these services are zeroed before release. This is
 not a promise to erase copies held by other applications, GTK, the compositor,
@@ -183,10 +224,12 @@ commands; the reused `--generation` flag carries either identity.
 
 ```sh
 pearlctl clipboard status
+pearlctl clipboard status --offset 20 --limit 20
+pearlctl clipboard status --offset 20 --limit 20 --revision REV --instance INSTANCE
 pearlctl clipboard show --output OUTPUT_ID
 pearlctl clipboard toggle --output OUTPUT_ID
-pearlctl clipboard select --generation ENTRY_ID
-pearlctl clipboard delete --generation ENTRY_ID
+pearlctl clipboard select --generation ENTRY_ID --instance INSTANCE
+pearlctl clipboard delete --generation ENTRY_ID --instance INSTANCE
 pearlctl clipboard clear
 
 pearlctl capture output --output OUTPUT_ID
@@ -202,6 +245,21 @@ pearlctl capture save --generation SCREENSHOT_GENERATION --path /absolute/new.pn
 pearlctl capture cancel
 ```
 
+Clipboard status defaults to at most 20 previews per page. `total`, `returned`,
+`has_more` and `next_offset` expose all 100 entries; `revision` and `instance`
+reject stale traversals. The complete response, including framing and newline,
+fits 8192 bytes. Select and Delete require the `instance` returned alongside the
+entry ID. Missing/malformed instances fail request validation; a different
+instance returns `StaleInstance` before the action. IDs can be reused after a
+restart, so callers must retain the matching instance. Clear accepts an optional
+instance guard.
+
+Delete/Clear complete synchronously. Their `SaveFailed` error can accompany an
+already-applied in-memory removal, as described above. Status exposes `dirty`
+and `persistence_error` while access is open; storage errors do not make native
+clipboard access unavailable. Suspended status hides retained content and paging
+metadata.
+
 Capture requests acknowledge queueing, not completion. Wait for `pending: false`
 and an increased `generation`; inspect the message if it did not increase.
 Copy/save reject stale generations. There is no clipboard payload argument in
@@ -210,22 +268,20 @@ control requests and no bulk payload in status responses.
 ## Validation and boundaries
 
 ```sh
-PEARL_TEST_AQUEOUS_PREFIX="$PWD/.cache/aqueous-master" ZIG_GLOBAL_CACHE_DIR="$PWD/.cache/zig" zig build test-clipboard-capture test-capture-master -Drelease=true -Doptimize=ReleaseSafe
-python3 scripts/check-wayland-bindings.py
+zig build -Doptimize=safe -j2
+zig build test -Doptimize=safe -j2
+zig build test-clipboard-history -Doptimize=safe -j2
+python3 scripts/test.py check-registry --python-only
 ```
 
-The suite uses private Aqueous outputs, D-Bus services, generated-Zig clipboard
-producers and a private PAM fixture. `wl-paste` verifies interoperability and
-`grim` supplies independent screenshot references only in tests. All eight
-output transforms and fractional-scale crops are compared against actual PNGs.
-The mathematical transform conventions were cross-checked against upstream
-[grim rendering](https://github.com/emersion/grim/blob/master/render.c) and
-[output transforms](https://github.com/emersion/grim/blob/master/output-layout.c).
+Use Zig 0.17.1. `test-clipboard-history` checks history, persistence and privacy
+using disposable state directories and socket pairs. GTK widget tests are opt-in
+(`PEARL_TEST_CLIPBOARD_GTK=1`) and require an isolated display. For Broadway, set
+`GDK_BACKEND=broadway` and use a private `XDG_RUNTIME_DIR`.
 
-Current evidence lives in `artifacts/aqueous-master/functional/test-capture-master`
-and `test-clipboard-capture`; earlier `artifacts/t14` remains historical. The
-master suite compares eight transformed outputs against independently captured
-color-corrected references and proves that an undescribed isolated source cannot
-leave a PNG ready. Hardware HDR, isolated scene pixel/color correctness after an
-upstream metadata fix, very large displays and real screen-reader interaction
-remain unaccepted. No host clipboard, output, PAM or portal service is mutated.
+The `test-clipboard-capture`, `test-launcher-calculator`,
+`test-security` and `test-capture-master` targets require the pinned Aqueous fixture
+from `scripts/aqueous-target.json`, isolated XDG directories, D-Bus/PAM fixtures
+and private autostart roots. Use the harness's explicit autostart overrides for
+Pearl's test build; XDG isolation alone does not override `/etc/xdg/autostart`.
+Never run these suites against the installed desktop.

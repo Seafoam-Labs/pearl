@@ -12,6 +12,7 @@ const apps = @import("apps.zig");
 const Clipboard = @import("../services/clipboard.zig").Clipboard;
 const Capture = @import("../services/capture.zig").Capture;
 const history = @import("../services/clipboard_policy.zig");
+const history_limit = history.entries_limit;
 const test_hooks = @import("build_options").test_hooks;
 const a = std.heap.c_allocator;
 const Action = enum { take, region, window, cancel, save, copy, clear };
@@ -33,6 +34,7 @@ const Row = struct {
         if (object.signalHandlerIsConnected(self.remove.as(object.Object), self.remove_signal) != 0) object.signalHandlerDisconnect(self.remove.as(object.Object), self.remove_signal);
     }
 };
+
 const Cursor = struct { id: ?u64 = null, position: c_uint = 0 };
 const Rect = struct { x: i32, y: i32, width: i32, height: i32 };
 fn bounds(widget: *gtk.Widget, root: *gtk.Widget) ?Rect {
@@ -66,12 +68,13 @@ pub const View = struct {
     picture: *gtk.Picture,
     buttons: std.ArrayList(*Button) = .empty,
     rows: std.ArrayList(*Row) = .empty,
-    records: [history.entries_limit]Record = undefined,
+    records: [history_limit]Record = undefined,
     record_count: usize = 0,
-    visible: [history.entries_limit]usize = undefined,
+    visible: [history_limit]usize = undefined,
     visible_count: usize = 0,
     query: ?[:0]u8 = null,
     composing: bool = false,
+    redacting: bool = false,
     stamp: u64 = 0,
     image_generation: u64 = 0,
     connections: [8]struct { instance: *object.Object, id: c_ulong } = undefined,
@@ -169,7 +172,7 @@ pub const View = struct {
         const keys = gtk.EventControllerKey.new();
         keys.as(gtk.EventController).setPropagationPhase(.capture);
         self.connect(keys.as(object.Object), gtk.EventControllerKey.signals.key_pressed.connect(keys, *View, key, self, .{}));
-        search.as(gtk.Widget).addController(keys.as(gtk.EventController));
+        clipboard_page.as(gtk.Widget).addController(keys.as(gtk.EventController));
         if (search.as(gtk.Editable).getDelegate()) |delegate| if (object.ext.cast(gtk.Text, delegate)) |text| {
             self.connect(text.as(object.Object), gtk.Text.signals.preedit_changed.connect(text, *View, preeditChanged, self, .{}));
         };
@@ -229,13 +232,18 @@ pub const View = struct {
         clearButtons(&self.buttons);
         self.buttons.deinit(a);
         self.freeRecords();
-        if (self.query) |query| a.free(query);
+        if (self.query) |query| {
+            std.crypto.secureZero(u8, query);
+            a.free(query);
+        }
         self.selection.unref();
         self.strings.unref();
         a.destroy(self);
     }
     fn clicked(_: *gtk.Button, b: *Button) callconv(.c) void {
-        b.view.act(b.action) catch |err| report(if (b.action == .clear) b.view.clipboard_info else b.view.info, err);
+        b.view.act(b.action) catch |err| {
+            if (b.action == .clear) b.view.reportRemoval(err) else report(b.view.info, err);
+        };
     }
     fn copyClicked(_: *gtk.Button, row: *Row) callconv(.c) void {
         const self = row.view;
@@ -249,7 +257,10 @@ pub const View = struct {
     fn removeClicked(_: *gtk.Button, row: *Row) callconv(.c) void {
         const self = row.view;
         const id = self.entryAt(row.item.getPosition()) orelse return;
-        self.clipboard.delete(id) catch |err| report(self.clipboard_info, err);
+        self.clipboard.delete(id) catch |err| self.reportRemoval(err);
+    }
+    fn reportRemoval(self: *View, err: anyerror) void {
+        if (err == error.SaveFailed) self.clipboard_info.setText(self.clipboard.message) else report(self.clipboard_info, err);
     }
     fn report(label: *gtk.Label, err: anyerror) void {
         label.setText(switch (err) {
@@ -270,15 +281,14 @@ pub const View = struct {
             .cancel => self.capture.cancel(),
             .save => try self.capture.save(self.capture.generation, null),
             .copy => try self.capture.copy(self.clipboard, self.capture.generation),
-            .clear => self.clipboard.clear(),
+            .clear => try self.clipboard.clear(),
         }
     }
     fn entryAt(self: *const View, position: c_uint) ?u64 {
-        if (position >= self.visible_count) return null;
-        return self.records[self.visible[position]].id;
+        return if (self.recordAt(position)) |record| record.id else null;
     }
     fn recordAt(self: *const View, position: c_uint) ?*const Record {
-        if (position >= self.visible_count) return null;
+        if (position >= self.visible_count or self.visible[position] >= self.record_count) return null;
         return &self.records[self.visible[position]];
     }
     fn rowAt(self: *const View, item: *gtk.ListItem) ?*Row {
@@ -287,13 +297,16 @@ pub const View = struct {
     }
     fn cursor(self: *View) Cursor {
         const position = self.selection.getSelected();
-        if (position >= self.visible_count) return .{};
-        return .{ .id = self.records[self.visible[position]].id, .position = position };
+        return .{ .id = self.entryAt(position) orelse return .{}, .position = position };
     }
     fn changed(_: *gtk.SearchEntry, self: *View) callconv(.c) void {
-        if (self.query) |query| a.free(query);
+        if (self.redacting) return;
+        if (self.query) |query| {
+            std.crypto.secureZero(u8, query);
+            a.free(query);
+        }
         self.query = apps.fold(a, std.mem.span(self.search.as(gtk.Editable).getText())) catch null;
-        self.publish(.{});
+        _ = self.refreshHistory(.{}, true);
     }
     fn preeditChanged(_: *gtk.Text, preedit: [*:0]u8, self: *View) callconv(.c) void {
         self.composing = preedit[0] != 0;
@@ -308,17 +321,17 @@ pub const View = struct {
     fn key(_: *gtk.EventControllerKey, value: c_uint, _: c_uint, _: gdk.ModifierType, self: *View) callconv(.c) c_int {
         switch (value) {
             0xff52, 0xff54 => {
+                _ = self.refreshHistory(self.cursor(), false);
                 if (self.visible_count == 0) return 1;
-                const last: c_uint = @intCast(self.visible_count - 1);
-                const old = @min(self.selection.getSelected(), last);
-                const position = if (value == 0xff54) @min(old + 1, last) else old -| 1;
-                self.selection.setSelected(position);
-                self.list.scrollTo(position, .{}, null);
+                const current = @min(self.selection.getSelected(), self.visible_count - 1);
+                const position = if (value == 0xff54) @min(current + 1, self.visible_count - 1) else current -| 1;
+                self.selection.setSelected(@intCast(position));
+                self.list.scrollTo(@intCast(position), .{}, null);
                 return 1;
             },
             // Delete removes the entry instead of deleting a character of the filter.
             0xffff => {
-                if (self.entryAt(self.selection.getSelected())) |id| self.clipboard.delete(id) catch |err| report(self.clipboard_info, err);
+                if (self.entryAt(self.selection.getSelected())) |id| self.clipboard.delete(id) catch |err| self.reportRemoval(err);
                 return 1;
             },
             else => return 0,
@@ -391,15 +404,17 @@ pub const View = struct {
     }
     fn freeRecords(self: *View) void {
         for (self.records[0..self.record_count]) |*record| {
+            std.crypto.secureZero(u8, record.label);
+            std.crypto.secureZero(u8, record.folded);
             a.free(record.label);
             a.free(record.folded);
             if (record.image) |image| image.unref();
         }
         self.record_count = 0;
     }
-    fn rebuild(self: *View, keep: Cursor) void {
+    fn rebuild(self: *View, keep: Cursor, entries: []const @import("../services/clipboard.zig").Entry) void {
         self.freeRecords();
-        if (!self.clipboard.locked) for (self.clipboard.entries.items) |entry| {
+        for (entries) |entry| {
             if (self.record_count == self.records.len) break;
             const label = history.preview(a, if (entry.kind == .text) entry.bytes else @import("i18n").dtr("pearl", "PNG image")) catch continue;
             const folded = apps.fold(a, label) catch {
@@ -408,29 +423,49 @@ pub const View = struct {
             };
             self.records[self.record_count] = .{ .id = entry.id, .label = label, .folded = folded, .image = if (entry.kind == .png) decode(entry.bytes) else null };
             self.record_count += 1;
-        };
+        }
         self.publish(keep);
     }
     fn publish(self: *View, keep: Cursor) void {
+        if (!self.clipboard.accessible()) {
+            self.redact();
+            return;
+        }
         self.visible_count = 0;
-        for (self.records[0..self.record_count], 0..) |*record, index| {
-            if (self.query) |query| if (query.len > 0 and std.mem.indexOf(u8, record.folded, query) == null) continue;
+        for (self.records[0..self.record_count], 0..) |record, index| {
+            if (self.query) |query| if (std.mem.indexOf(u8, record.folded, query) == null) continue;
             self.visible[self.visible_count] = index;
             self.visible_count += 1;
         }
-        var values: [history.entries_limit + 1:null]?[*:0]const u8 = @splat(null);
-        var selected: ?c_uint = null;
+        var values: [history_limit + 1:null]?[*:0]const u8 = @splat(null);
         for (self.visible[0..self.visible_count], 0..) |index, position| {
             values[position] = self.records[index].label;
-            if (keep.id) |id| {
-                if (self.records[index].id == id) selected = @intCast(position);
-            }
         }
         self.strings.splice(0, self.strings.as(gio.ListModel).getNItems(), @ptrCast(&values));
-        const last: c_uint = if (self.visible_count == 0) 0 else @intCast(self.visible_count - 1);
-        self.selection.setSelected(selected orelse @min(keep.position, last));
-        self.hint.setText(if (self.record_count == 0) @import("i18n").dtr("pearl", "Copy text or a PNG image to start. History is cleared when locking.") else @import("i18n").dtr("pearl", "No matching entries"));
+        var selected: c_uint = if (self.visible_count == 0) std.math.maxInt(c_uint) else @intCast(@min(keep.position, self.visible_count - 1));
+        if (keep.id) |wanted| for (self.visible[0..self.visible_count], 0..) |index, position| {
+            if (self.records[index].id == wanted) selected = @intCast(position);
+        };
+        self.selection.setSelected(selected);
+        self.hint.setText(if (self.record_count == 0) @import("i18n").dtr("pearl", "Copy text or a PNG image to start. Text can be restored for seven days. Locking hides text and discards images.") else @import("i18n").dtr("pearl", "No matching entries"));
         self.hint.as(gtk.Widget).setVisible(@intFromBool(self.visible_count == 0));
+    }
+    fn refreshHistory(self: *View, keep: Cursor, filter_changed: bool) usize {
+        // One maintenance attempt, shared by normal updates, search and keys.
+        // Its notification may synchronously redact this view.
+        const entries = self.clipboard.entries();
+        const accessible = self.clipboard.accessible();
+        self.clipboard_info.setText(self.clipboard.message);
+        const stamp = if (accessible) self.clipboard.revision +% 1 else 0;
+        if (stamp != self.stamp) {
+            if (!accessible) {
+                self.redact();
+            } else {
+                self.stamp = stamp;
+                self.rebuild(keep, entries);
+            }
+        } else if (filter_changed and accessible) self.publish(keep);
+        return entries.len;
     }
     fn updateWindows(self: *View) void {
         var hash = std.hash.Wyhash.init(@intFromBool(self.capture.locked));
@@ -462,6 +497,7 @@ pub const View = struct {
         self.window_selector.setSelected(selected);
     }
     pub fn update(self: *View) void {
+        const entry_count = self.refreshHistory(self.cursor(), false);
         self.updateWindows();
         self.info.setText(if (self.capture.saved.len > 0) self.capture.saved.z() else self.capture.message);
         self.clipboard_info.setText(self.clipboard.message);
@@ -471,7 +507,7 @@ pub const View = struct {
             .take, .region => !self.capture.locked and !busy and self.capture.manager != null,
             .save, .copy => !self.capture.locked and self.capture.image != null and !busy,
             .cancel => busy,
-            .clear => !self.clipboard.locked and self.clipboard.entries.items.len > 0,
+            .clear => self.clipboard.accessible() and (entry_count > 0 or self.clipboard.dirty or self.clipboard.persistence_error != null),
         }));
         if (self.capture.image == null) {
             self.picture.setPaintable(null);
@@ -487,12 +523,33 @@ pub const View = struct {
             }
             self.image_generation = self.capture.generation;
         }
-        var hash = std.hash.Wyhash.init(@intFromBool(self.clipboard.locked));
-        for (self.clipboard.entries.items) |entry| hash.update(std.mem.asBytes(&entry.id));
-        const stamp = hash.final();
-        if (stamp == self.stamp) return;
-        self.stamp = stamp;
-        self.rebuild(self.cursor());
+    }
+    /// Called synchronously when a privacy gate closes, including from a UI
+    /// callback. Keep the view alive until normal reconciliation destroys it.
+    pub fn redact(self: *View) void {
+        self.redacting = true;
+        defer self.redacting = false;
+        self.composing = false;
+        if (self.query) |query| {
+            std.crypto.secureZero(u8, query);
+            a.free(query);
+            self.query = null;
+        }
+        self.search.as(gtk.Editable).setText("");
+        // Wipe GTK's copies before removing model items: splice may tear down
+        // rows, and a retained ListItem can otherwise keep its accessible label.
+        for (self.rows.items) |row| {
+            row.label.setText("");
+            row.image.setPaintable(null);
+            row.item.setAccessibleLabel("");
+        }
+        self.strings.splice(0, self.strings.as(gio.ListModel).getNItems(), null);
+        self.freeRecords();
+        self.visible_count = 0;
+        self.stamp = 0;
+        self.clipboard_info.setText("");
+        self.hint.setText(@import("i18n").dtr("pearl", "History is hidden while clipboard access is paused"));
+        self.hint.as(gtk.Widget).setVisible(1);
     }
     /// Compiled only when called by the private integration control hook.
     pub fn testReport(self: *View, alloc: std.mem.Allocator, root: *gtk.Widget) ![]const u8 {
@@ -519,3 +576,161 @@ pub const View = struct {
         }, .{});
     }
 };
+
+// GTK tests opt in only on an explicitly supplied private display. Merely
+// inheriting DISPLAY/WAYLAND_DISPLAY must never connect tests to the desktop.
+var panel_test_display: ?bool = null;
+const PanelTest = struct {
+    fixture: @import("../testing/clipboard.zig").Fixture = undefined,
+    capture: Capture = undefined,
+    window: *gtk.Window = undefined,
+    view: *View = undefined,
+    dismissed: bool = false,
+    fn init(self: *PanelTest) !void {
+        if (glib.getenv("PEARL_TEST_CLIPBOARD_GTK") == null) return error.SkipZigTest;
+        if (panel_test_display == null) panel_test_display = gtk.initCheck() != 0;
+        if (!panel_test_display.?) return error.SkipZigTest;
+        self.* = .{};
+        self.fixture.init();
+        self.fixture.clipboard.device = @ptrFromInt(1); // availability only
+        self.capture = .{ .app = undefined, .display = undefined, .context = self, .changed = noop };
+        self.window = gtk.Window.new();
+        _ = self.window.as(object.Object).refSink();
+        const host = gtk.Box.new(.vertical, 0);
+        self.window.setChild(host.as(gtk.Widget));
+        self.window.setDefaultSize(600, 560);
+        self.view = try View.create(host, &self.fixture.clipboard, &self.capture, self, take, dismiss);
+        self.fixture.context = self.view;
+        self.fixture.on_change = changed;
+        self.window.present();
+        self.drain();
+    }
+    fn deinit(self: *PanelTest) void {
+        self.fixture.on_change = null;
+        self.view.destroy();
+        self.window.destroy();
+        self.window.unref();
+        self.fixture.deinit();
+    }
+    fn drain(_: *PanelTest) void {
+        for (0..100) |_| {
+            if (glib.MainContext.default().pending() == 0) break;
+            _ = glib.MainContext.default().iteration(0);
+        }
+    }
+    fn changed(context: *anyopaque) void {
+        const view: *View = @ptrCast(@alignCast(context));
+        if (!view.clipboard.accessible()) view.redact();
+    }
+    fn noop(_: *anyopaque) void {}
+    fn dismiss(context: *anyopaque) void {
+        const self: *PanelTest = @ptrCast(@alignCast(context));
+        self.dismissed = true;
+    }
+    fn take(_: *anyopaque, _: ?[]const u8) anyerror!void {
+        return error.Unavailable;
+    }
+};
+
+test "GTK history filters navigates preserves selection and removes with truthful retry feedback" {
+    const t = std.testing;
+    var panel: PanelTest = undefined;
+    try panel.init();
+    defer panel.deinit();
+    const view = panel.view;
+    const first = try panel.fixture.copy("alpha one", 100);
+    _ = try panel.fixture.copy("beta", 110);
+    _ = try panel.fixture.copy("alpha two", 120);
+    view.update();
+    view.search.as(gtk.Editable).setText("alpha");
+    View.changed(view.search, view);
+    try t.expectEqual(@as(usize, 2), view.visible_count);
+    _ = View.key(undefined, 0xff54, 0, .{}, view);
+    try t.expectEqual(first, view.entryAt(view.selection.getSelected()).?);
+    _ = try panel.fixture.copy("alpha three", 130);
+    view.update();
+    try t.expectEqual(first, view.entryAt(view.selection.getSelected()).?);
+    _ = View.key(undefined, 0xffff, 0, .{}, view);
+    view.update();
+    for (panel.fixture.clipboard.rows[0..panel.fixture.clipboard.len]) |entry| try t.expect(entry.id != first);
+    panel.fixture.fail = true;
+    _ = View.key(undefined, 0xffff, 0, .{}, view);
+    try t.expect(panel.fixture.clipboard.removal_failed);
+    try t.expect(std.mem.indexOf(u8, std.mem.span(view.clipboard_info.getText()), "may return") != null);
+    try t.expectError(error.SaveFailed, view.act(.clear));
+    view.reportRemoval(error.SaveFailed);
+    view.update();
+    try t.expectEqual(@as(usize, 0), view.visible_count);
+    try t.expect(std.mem.indexOf(u8, std.mem.span(view.clipboard_info.getText()), "may return") != null);
+    for (view.buttons.items) |button| if (button.action == .clear) try t.expect(button.widget.as(gtk.Widget).getSensitive() != 0);
+    const writes = panel.fixture.writes;
+    panel.fixture.fail = false;
+    try view.act(.clear);
+    view.update();
+    try t.expectEqual(writes + 1, panel.fixture.writes);
+    for (view.buttons.items) |button| if (button.action == .clear) try t.expect(button.widget.as(gtk.Widget).getSensitive() == 0);
+}
+
+test "GTK open panel expires on filtering navigation and row activation without recursive updates" {
+    const t = std.testing;
+    for (0..3) |mode| {
+        var panel: PanelTest = undefined;
+        try panel.init();
+        defer panel.deinit();
+        const view = panel.view;
+        _ = try panel.fixture.copy("old preview", 100);
+        _ = try panel.fixture.copy("live preview", 200);
+        view.update();
+        const label = view.records[0].label.ptr;
+        const revision = panel.fixture.clipboard.revision;
+        view.update();
+        try t.expectEqual(label, view.records[0].label.ptr);
+        try t.expectEqual(revision, panel.fixture.clipboard.revision);
+        const notifications = panel.fixture.notifications;
+        panel.fixture.clipboard.test_time = 100 + history.retention_seconds;
+        switch (mode) {
+            0 => View.changed(view.search, view),
+            1 => _ = View.key(undefined, 0xff54, 0, .{}, view),
+            2 => View.activated(undefined, 1, view), // cached expired row ID
+            else => unreachable,
+        }
+        view.update();
+        try t.expectEqual(@as(usize, 1), view.record_count);
+        try t.expectEqualStrings("live preview", view.records[0].label);
+        try t.expectEqual(notifications + 1, panel.fixture.notifications);
+        try t.expect(!panel.dismissed);
+    }
+}
+
+test "GTK lock synchronously redacts cached text images query and accessible labels after save allocation failure" {
+    const t = std.testing;
+    var panel: PanelTest = undefined;
+    try panel.init();
+    defer panel.deinit();
+    const view = panel.view;
+    panel.fixture.save_error = error.OutOfMemory;
+    _ = try panel.fixture.copy("secret preview", 100);
+    const png = try @import("../testing/clipboard.zig").image(0x123456ff);
+    defer a.free(png);
+    try panel.fixture.clipboard.add(.png, png);
+    view.update();
+    try t.expectEqual(@as(usize, 2), view.record_count);
+    try t.expect(view.records[0].image != null);
+    view.search.as(gtk.Editable).setText("secret");
+    View.changed(view.search, view);
+    panel.drain();
+    try t.expect(view.rows.items.len != 0);
+    const item = view.rows.items[0].item;
+    _ = item.as(object.Object).ref();
+    defer item.unref();
+    const writes = panel.fixture.writes;
+    panel.fixture.clipboard.device = null;
+    panel.fixture.clipboard.setLocked(true);
+    try t.expect(view.query == null and view.record_count == 0 and view.visible_count == 0);
+    try t.expectEqualStrings("", std.mem.span(view.search.as(gtk.Editable).getText()));
+    try t.expectEqual(@as(c_uint, 0), view.strings.as(gio.ListModel).getNItems());
+    try t.expectEqualStrings("", std.mem.span(item.getAccessibleLabel()));
+    try t.expectEqual(@as(usize, 1), panel.fixture.clipboard.len);
+    try t.expectEqualStrings("secret preview", panel.fixture.clipboard.rows[0].bytes);
+    try t.expectEqual(writes, panel.fixture.writes);
+}

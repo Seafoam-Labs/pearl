@@ -197,16 +197,16 @@ const Slot = struct {
             break :blk self.owner.handle(self.owner.context, request, alloc);
         } catch |err| {
             try self.failure(alloc, request.id, switch (err) {
+                error.StaleInstance, error.ResponseTooLarge, error.InvalidRequest, error.StaleRevision, error.CounterExhausted => err,
                 error.OutputColorEligibilityUnavailable, error.SessionInactive, error.ClockUnavailable, error.Stale, error.InvalidRegion, error.InvalidPayload, error.InvalidPath, error.SaveFailed, error.Unavailable, error.OutputUnavailable, error.Locked, error.AmbiguousSeat, error.EdgeOccupied, error.InvalidSize, error.InvalidGroups, error.InvalidValue, error.Conflict, error.Busy, error.Unsupported, error.StaleConfirmation, error.NoConfirmation, error.InhibitorUnavailable, error.LockFailed, error.LockerMissing, error.SettingsNotInstalled, error.SettingsLaunchFailed => err,
                 else => if (request.op == .preferences_apply and err != error.OutOfMemory) err else error.Internal,
             });
             return;
         };
-        const frame = try std.fmt.allocPrint(alloc, "{{\"pearl\":1,\"id\":\"{s}\",\"ok\":true,\"result\":{s}}}\n", .{ request.id, result });
-        if (frame.len - 1 > protocol.max_frame) {
-            try self.failure(alloc, request.id, error.ResponseTooLarge);
+        const frame = @import("frame.zig").success(alloc, request.id, result) catch |err| {
+            try self.failure(alloc, request.id, err);
             return;
-        }
+        };
         try self.wire.send(frame);
         self.quit_after_reply = request.op == .quit;
     }

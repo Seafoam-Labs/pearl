@@ -472,6 +472,13 @@ pub fn build(b: *std.Build) void {
     const steam_library_tests = b.addRunArtifact(b.addTest(.{ .root_module = steam_library_module }));
     b.step("test-steam-library", "Verify Steam library scanning, shortcut generation and stale-entry pruning").dependOn(&steam_library_tests.step);
     const test_step = b.step("test", "Run model and Unicode policy tests without GTK or a compositor");
+    const clipboard_module = gtkModule(b, bindings, target, optimize, "src/clipboard_json_tests.zig", pulse_module);
+    clipboard_module.addImport("wayland", native);
+    configureApp(b, clipboard_module, resources, false, false, community_theme_repository, false, portal_variant == .git);
+    const clipboard_core_tests = b.addRunArtifact(b.addTest(.{ .root_module = clipboard_module }));
+    clipboard_core_tests.has_side_effects = true;
+    clipboard_core_tests.setEnvironmentVariable("LC_ALL", "C");
+    b.step("test-clipboard-history", "Verify clipboard JSON, private filesystem persistence, history and GTK panel behavior").dependOn(&clipboard_core_tests.step);
     test_step.dependOn(&b.addRunArtifact(pure).step);
     test_step.dependOn(&filter_tests.step);
     test_step.dependOn(&catalog_watch.step);
