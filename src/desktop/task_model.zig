@@ -36,7 +36,7 @@ pub fn resolve(apps: []const Application, win: entities.Window, choices: []const
     }
     return match(apps, win, pins);
 }
-pub const Window = struct { id: [:0]const u8, title: [:0]const u8, workspace: ?[:0]const u8, output: ?[:0]const u8, focused: bool, minimized: bool, can_activate: bool, icon: ?entities.Icon = null };
+pub const Window = struct { id: [:0]const u8, title: [:0]const u8, workspace: ?[:0]const u8, output: ?[:0]const u8, focused: bool, minimized: bool, can_activate: bool, can_minimize: bool = false, icon: ?entities.Icon = null };
 /// A flat task order alongside the chooser groups. Strings share the snapshot arena.
 pub const Task = struct { window: Window, group: [:0]const u8 };
 pub const Group = struct {
@@ -121,7 +121,7 @@ pub const Snapshot = struct {
             }
             const ws = if (win.workspace) |id| model.get(.workspace, id) else null;
             const output = if (win.output) |id| model.get(.output, id) else null;
-            try groups.items[slot.value_ptr.*].windows.append(a, .{ .id = try a.dupeSentinel(u8, win.id, 0), .title = try a.dupeSentinel(u8, nonempty(win.title) orelse identity orelse "Application", 0), .workspace = if (ws) |v| try a.dupeSentinel(u8, v.name, 0) else null, .output = if (output) |v| try a.dupeSentinel(u8, v.name, 0) else null, .focused = win.focused, .minimized = win.minimized, .can_activate = win.can_activate, .icon = try entities.clone(?entities.Icon, a, win.icon) });
+            try groups.items[slot.value_ptr.*].windows.append(a, .{ .id = try a.dupeSentinel(u8, win.id, 0), .title = try a.dupeSentinel(u8, nonempty(win.title) orelse identity orelse "Application", 0), .workspace = if (ws) |v| try a.dupeSentinel(u8, v.name, 0) else null, .output = if (output) |v| try a.dupeSentinel(u8, v.name, 0) else null, .focused = win.focused, .minimized = win.minimized, .can_activate = win.can_activate, .can_minimize = win.can_minimize, .icon = try entities.clone(?entities.Icon, a, win.icon) });
             const group = groups.items[slot.value_ptr.*];
             windows[i] = .{ .window = group.windows.items[group.windows.items.len - 1], .group = group.key };
         }
@@ -227,6 +227,7 @@ test "global snapshot retains all windows, exclusions, owned identities and stab
         win.minimized = i % 2 == 0;
         win.skip_switcher = true;
         win.can_activate = i != 69;
+        win.can_minimize = true;
         try values.append(a, .{ .window = win });
     }
     for (0..40) |i| try values.append(a, .{ .window = fixtureWindow(try std.fmt.allocPrint(a, "one-{d}", .{i}), try std.fmt.allocPrint(a, "App-{d}", .{i})) });
@@ -243,6 +244,7 @@ test "global snapshot retains all windows, exclusions, owned identities and stab
     try t.expect(snapshot.find("app:Excluded") == null);
     try t.expect(snapshot.find("window:anonymous-1") != null and snapshot.find("window:anonymous-2") != null);
     try t.expect(snapshot.find("app:Many").?.windows.items[0].workspace == null);
+    try t.expect(snapshot.find("app:Many").?.windows.items[0].can_minimize);
     const order = try a.dupe(u8, snapshot.groups[0].key);
     const revision = snapshot.revision;
     try snapshot.update(&model, &.{}, 0);

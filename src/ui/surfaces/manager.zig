@@ -3005,6 +3005,10 @@ fn runningAction(context: *anyopaque, event: Running.Event) void {
             self.enqueueAction(.{ .window_activate = .{ .id = id } });
             self.hidePopup();
         },
+        .minimize => |id| {
+            self.enqueueAction(.{ .window_minimized = .{ .id = id, .value = true } });
+            self.hidePopup();
+        },
         .group => |group| {
             const owned = a.dupe(u8, group) catch return;
             defer a.free(owned);

@@ -43,6 +43,11 @@ pub fn indicator(alloc: std.mem.Allocator, windows: usize, focused: bool, minimi
     if (windows > 0 or elsewhere > 0) return "•";
     return "";
 }
+/// Left-clicking a focused single-window app minimizes it (KDE-style);
+/// multi-window groups keep their cycling/chooser behavior.
+pub fn minimizeOnClick(windows: usize, focused: bool, can_minimize: bool) bool {
+    return windows == 1 and focused and can_minimize;
+}
 pub fn eligible(window: e.Window, output: []const u8) bool {
     return !window.skip_taskbar and window.output != null and std.mem.eql(u8, window.output.?, output);
 }
@@ -104,6 +109,15 @@ test "dock hiding gates override interaction and keep non-obscured output visibl
     try t.expectError(error.InvalidDock, validate(.{ .icon_size = 90 }));
     try t.expect((Config{}).opacity_sync);
     try t.expectError(error.InvalidBarOpacity, validate(.{ .background_opacity = .{ .percent = 101 } }));
+}
+
+test "left click minimizes only a focused single-window app that supports it" {
+    const t = std.testing;
+    try t.expect(minimizeOnClick(1, true, true));
+    try t.expect(!minimizeOnClick(1, false, true));
+    try t.expect(!minimizeOnClick(1, true, false));
+    try t.expect(!minimizeOnClick(2, true, true));
+    try t.expect(!minimizeOnClick(0, false, false));
 }
 
 test "dock running indicators cover local, remote and disabled states" {
