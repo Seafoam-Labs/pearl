@@ -286,11 +286,33 @@ pub const PciIdsScanner = struct {
     }
 };
 pub const LabeledFile = struct { file: []const u8, label: []const u8 };
-pub fn chooseTemp(entries: []const LabeledFile) []const u8 {
-    for (entries) |entry| if (std.mem.eql(u8, entry.label, "edge")) return entry.file;
-    return "temp1";
+const intel_temp_labels = [_][]const u8{ "pkg", "gpu", "edge" };
+/// Capacity `tempCandidates` needs: the longest label ladder plus the temp1 fallback.
+pub const max_temp_candidates = intel_temp_labels.len + 1;
+/// Temperature sensor file bases to try in order. Intel labels the GPU package `pkg` (and need not
+/// put it on temp1), so its ladder starts there; AMD's GPU temperature is `edge`. A caller moves to
+/// the next candidate when a sensor's input cannot be read; `temp1` is tried last for Intel and as
+/// the legacy fallback when no label matched.
+pub fn tempCandidates(entries: []const LabeledFile, intel: bool, out: *[max_temp_candidates][]const u8) []const []const u8 {
+    var n: usize = 0;
+    const labels: []const []const u8 = if (intel) &intel_temp_labels else &.{"edge"};
+    for (labels) |label| {
+        if (fileForLabel(entries, label)) |file| {
+            out[n] = file;
+            n += 1;
+        }
+    }
+    if (intel or n == 0) {
+        var present = false;
+        for (out[0..n]) |file| present = present or std.mem.eql(u8, file, "temp1");
+        if (!present) {
+            out[n] = "temp1";
+            n += 1;
+        }
+    }
+    return out[0..n];
 }
-pub fn chooseClock(entries: []const LabeledFile, label: []const u8) ?[]const u8 {
+pub fn fileForLabel(entries: []const LabeledFile, label: []const u8) ?[]const u8 {
     for (entries) |entry| if (std.mem.eql(u8, entry.label, label)) return entry.file;
     return null;
 }
@@ -604,12 +626,33 @@ test "GPU sysfs parsers: sclk list, PCIe generation, uevent and labels" {
     try std.testing.expectEqualStrings("0000:03:00.0", ueventValue("DRIVER=amdgpu\nPCI_SLOT_NAME=0000:03:00.0\n", "PCI_SLOT_NAME").?);
     try std.testing.expect(ueventValue("DRIVER=amdgpu\n", "PCI_SLOT_NAME") == null);
     const labels = [_]LabeledFile{ .{ .file = "temp1", .label = "junction" }, .{ .file = "temp2", .label = "edge" } };
-    try std.testing.expectEqualStrings("temp2", chooseTemp(&labels));
-    try std.testing.expectEqualStrings("temp1", chooseTemp(&.{}));
+    var candidates: [max_temp_candidates][]const u8 = undefined;
+    const amd = tempCandidates(&labels, false, &candidates);
+    try std.testing.expectEqual(@as(usize, 1), amd.len);
+    try std.testing.expectEqualStrings("temp2", amd[0]);
+    const legacy = tempCandidates(&.{}, false, &candidates);
+    try std.testing.expectEqual(@as(usize, 1), legacy.len);
+    try std.testing.expectEqualStrings("temp1", legacy[0]);
+    // Intel: matching labels in preference order, then temp1; a matched sensor missing from temp1 still counts.
+    const intel_labels = [_]LabeledFile{ .{ .file = "temp1", .label = "junction" }, .{ .file = "temp3", .label = "edge" }, .{ .file = "temp2", .label = "pkg" } };
+    const intel = tempCandidates(&intel_labels, true, &candidates);
+    try std.testing.expectEqual(@as(usize, 3), intel.len);
+    try std.testing.expectEqualStrings("temp2", intel[0]);
+    try std.testing.expectEqualStrings("temp3", intel[1]);
+    try std.testing.expectEqualStrings("temp1", intel[2]);
+    const intel_bare = tempCandidates(&.{}, true, &candidates);
+    try std.testing.expectEqual(@as(usize, 1), intel_bare.len);
+    try std.testing.expectEqualStrings("temp1", intel_bare[0]);
+    // A matched label already on temp1 must not list it twice.
+    const intel_temp1 = [_]LabeledFile{ .{ .file = "temp1", .label = "pkg" }, .{ .file = "temp3", .label = "edge" } };
+    const deduped = tempCandidates(&intel_temp1, true, &candidates);
+    try std.testing.expectEqual(@as(usize, 2), deduped.len);
+    try std.testing.expectEqualStrings("temp1", deduped[0]);
+    try std.testing.expectEqualStrings("temp3", deduped[1]);
     const clocks = [_]LabeledFile{ .{ .file = "freq1", .label = "mclk" }, .{ .file = "freq2", .label = "sclk" } };
-    try std.testing.expectEqualStrings("freq2", chooseClock(&clocks, "sclk").?);
-    try std.testing.expectEqualStrings("freq1", chooseClock(&clocks, "mclk").?);
-    try std.testing.expect(chooseClock(&clocks, "vclk") == null);
+    try std.testing.expectEqualStrings("freq2", fileForLabel(&clocks, "sclk").?);
+    try std.testing.expectEqualStrings("freq1", fileForLabel(&clocks, "mclk").?);
+    try std.testing.expect(fileForLabel(&clocks, "vclk") == null);
 }
 test "pci.ids scanner tokenizes indentation, skips junk and prefers brackets" {
     var scanner: PciIdsScanner = .{ .target_vendor = 0x1002, .target_device = 0x744c };

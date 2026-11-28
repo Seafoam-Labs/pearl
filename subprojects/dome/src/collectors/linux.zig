@@ -469,11 +469,16 @@ fn collectGpu(s: *m.Snapshot, root: []const u8, ids_paths: []const []const u8) v
             const sclk_path = io.path("{s}/pp_dpm_sclk", .{base.slice()});
             if (io.read(sclk_path.slice(), &clock_buffer)) |text| gpu.max_frequency = m.parseSclkList(text);
         }
-        const speed_path = io.path("{s}/current_link_speed", .{base.slice()});
-        const speed = io.text(speed_path.slice());
-        gpu.pcie_gen = m.pcieGen(speed.slice());
-        const width_path = io.path("{s}/current_link_width", .{base.slice()});
-        if (io.integer(width_path.slice())) |width| gpu.pcie_width = @intCast(@min(width, std.math.maxInt(u32)));
+        // Intel's current_link_* can report the power-on default instead of the live link
+        // (2.5 GT/s x1 shown while a DMA transfer measured ~19 GB/s), so only AMD is read: unknown
+        // beats a confidently wrong number.
+        if (gpu.vendor == 0x1002) {
+            const speed_path = io.path("{s}/current_link_speed", .{base.slice()});
+            const speed = io.text(speed_path.slice());
+            gpu.pcie_gen = m.pcieGen(speed.slice());
+            const width_path = io.path("{s}/current_link_width", .{base.slice()});
+            if (io.integer(width_path.slice())) |width| gpu.pcie_width = @intCast(@min(width, std.math.maxInt(u32)));
+        }
         const hw_path = io.path("{s}/hwmon", .{base.slice()});
         const hw_names = sortedEntries(a, hw_path.slice());
         if (hw_names.len > 0) {
@@ -487,14 +492,21 @@ fn collectGpu(s: *m.Snapshot, root: []const u8, ids_paths: []const []const u8) v
                 const label_copy = a.dupe(u8, hw_label.slice()) catch continue;
                 labels.append(a, .{ .file = file_name[0 .. file_name.len - 6], .label = label_copy }) catch continue;
             }
-            const temp_path = io.path("{s}/{s}_input", .{ hw_dev_path.slice(), m.chooseTemp(labels.items) });
-            if (io.number(temp_path.slice())) |value| gpu.temp = value / 1000;
+            var temp_files: [m.max_temp_candidates][]const u8 = undefined;
+            const temp_candidates = m.tempCandidates(labels.items, gpu.vendor == 0x8086, &temp_files);
+            for (temp_candidates) |file| {
+                const temp_path = io.path("{s}/{s}_input", .{ hw_dev_path.slice(), file });
+                if (io.number(temp_path.slice())) |value| {
+                    gpu.temp = value / 1000;
+                    break; // a labelled sensor whose input is missing must not hide the next one
+                }
+            }
             if (gpu.vendor == 0x1002) {
-                if (m.chooseClock(labels.items, "sclk")) |file| {
+                if (m.fileForLabel(labels.items, "sclk")) |file| {
                     const p = io.path("{s}/{s}_input", .{ hw_dev_path.slice(), file });
                     if (io.number(p.slice())) |value| gpu.frequency = value / 1000000;
                 }
-                if (m.chooseClock(labels.items, "mclk")) |file| {
+                if (m.fileForLabel(labels.items, "mclk")) |file| {
                     const p = io.path("{s}/{s}_input", .{ hw_dev_path.slice(), file });
                     if (io.number(p.slice())) |value| gpu.mem_frequency = value / 1000000;
                 }
@@ -743,12 +755,23 @@ test "GPU fixture reads AMD sysfs fields, dedups and orders cards" {
     try writeFixture(tmp.dir, "drm/card2/device/uevent", "DRIVER=amdgpu\nPCI_SLOT_NAME=0000:04:00.0\n");
     try writeFixture(tmp.dir, "drm/card3/device/product_name", "Duplicate card\n");
     try writeFixture(tmp.dir, "drm/card3/device/uevent", "DRIVER=amdgpu\nPCI_SLOT_NAME=0000:03:00.0\n");
+    try writeFixture(tmp.dir, "drm/card4/device/vendor", "0x8086\n");
+    try writeFixture(tmp.dir, "drm/card4/device/product_name", "Fixture Intel Arc\n");
+    // The power-on default, not the live link: Intel's fields must stay unknown.
+    try writeFixture(tmp.dir, "drm/card4/device/current_link_speed", "2.5 GT/s PCIe\n");
+    try writeFixture(tmp.dir, "drm/card4/device/current_link_width", "1\n");
+    try writeFixture(tmp.dir, "drm/card4/device/uevent", "DRIVER=xe\nPCI_SLOT_NAME=0000:05:00.0\n");
+    // Xe labels the GPU package `pkg` on temp2, with no temp1 sensor at all. Here pkg's input is
+    // missing, so the next labelled candidate must win.
+    try writeFixture(tmp.dir, "drm/card4/device/hwmon/hwmon2/temp2_label", "pkg\n");
+    try writeFixture(tmp.dir, "drm/card4/device/hwmon/hwmon2/temp3_label", "gpu\n");
+    try writeFixture(tmp.dir, "drm/card4/device/hwmon/hwmon2/temp3_input", "41000\n");
     try writeFixture(tmp.dir, "pci.ids", "# fixture ids\n1002  Advanced Micro Devices, Inc. [AMD/ATI]\n\t--  Subclass separator\n\tzzzz  Not a device\n\t1234  Fixture Graphics [Fixture Marketing]\n\t\t17aa  Subsystem line\n");
     var s: m.Snapshot = .{ .arena = .init(std.testing.allocator) };
     defer s.arena.deinit();
     const ids_paths = [_][]const u8{ids_path};
     collectGpu(&s, root, &ids_paths);
-    try std.testing.expectEqual(@as(usize, 2), s.gpus.len);
+    try std.testing.expectEqual(@as(usize, 3), s.gpus.len);
     const gpu = s.gpus[0];
     try std.testing.expectEqualStrings("Fixture Discrete 7900", gpu.name.slice());
     try std.testing.expect(!gpu.integrated);
@@ -768,7 +791,13 @@ test "GPU fixture reads AMD sysfs fields, dedups and orders cards" {
     try std.testing.expectEqual(@as(?f64, 2500), gpu.max_frequency);
     try std.testing.expectEqual(@as(?u32, 4), gpu.pcie_gen);
     try std.testing.expectEqual(@as(?u32, 16), gpu.pcie_width);
-    const apu = s.gpus[1];
+    // Discrete cards first, then by total: the Intel card's total is unknown, so it precedes the APU.
+    const intel = s.gpus[1];
+    try std.testing.expectEqualStrings("Fixture Intel Arc", intel.name.slice());
+    try std.testing.expectEqual(@as(?u32, null), intel.pcie_gen);
+    try std.testing.expectEqual(@as(?u32, null), intel.pcie_width);
+    try std.testing.expectEqual(@as(?f64, 41), intel.temp);
+    const apu = s.gpus[2];
     try std.testing.expectEqualStrings("AMD Fixture Marketing", apu.name.slice());
     try std.testing.expect(apu.integrated);
     try std.testing.expectEqual(@as(?f64, 5), apu.usage);
